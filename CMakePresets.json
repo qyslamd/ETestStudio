@@ -1,0 +1,111 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "windows-base",
+            "displayName": "Windows Base Configuration",
+            "description": "基础 Windows 配置，使用 Visual Studio 2019 工具链",
+            "generator": "Visual Studio 16 2019",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "architecture": "x64",
+            "toolset": "host=x64",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_C_STANDARD": "11",
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL"
+            },
+            "environment": {}
+        },
+        {
+            "name": "windows-debug",
+            "displayName": "Windows Debug",
+            "description": "Windows 调试版本配置",
+            "inherits": "windows-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebugDLL",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true
+            }
+        },
+        {
+            "name": "windows-release",
+            "displayName": "Windows Release",
+            "description": "Windows 发布版本配置",
+            "inherits": "windows-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
+                "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
+            }
+        },
+        {
+            "name": "ninja-debug",
+            "displayName": "Ninja Debug",
+            "description": "使用Ninja构建的Debug版本（需要在x64 Native Tools Command Prompt for VS2019中启动VSCode）",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_C_STANDARD": "11",
+                "Qt5_DIR": "D:\\Qt\\Qt5.12.12\\5.12.12\\msvc2017_64\\lib\\cmake\\Qt5"
+            }
+        },
+        {
+            "name": "ninja-release",
+            "displayName": "Ninja Release",
+            "description": "使用Ninja构建的Release版本（需要在x64 Native Tools Command Prompt for VS2019中启动VSCode）",
+            "inherits": "ninja-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_C_STANDARD": "11",
+                "Qt5_DIR": "D:\\Qt\\Qt5.12.12\\5.12.12\\msvc2017_64\\lib\\cmake\\Qt5"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug-build",
+            "displayName": "Build Debug",
+            "description": "构建调试版本",
+            "configurePreset": "windows-debug",
+            "targets": "ALL_BUILD"
+        },
+        {
+            "name": "release-build",
+            "displayName": "Build Release",
+            "description": "构建发布版本",
+            "configurePreset": "windows-release"
+        },
+        {
+            "name": "ninja-debug-build",
+            "displayName": "Ninja Build Debug",
+            "description": "使用Ninja构建调试版本",
+            "configurePreset": "ninja-debug",
+            "targets": "all"
+        },
+        {
+            "name": "ninja-release-build",
+            "displayName": "Ninja Build Release",
+            "description": "使用Ninja构建发布版本",
+            "configurePreset": "ninja-release",
+            "targets": "ALL_BUILD"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "ninja-debug-test",
+            "displayName": "Ninja Test Debug",
+            "description": "使用Ninja测试调试版本",
+            "configurePreset": "ninja-debug"
+        },
+        {
+            "name": "ninja-release-test",
+            "displayName": "Ninja Test Release",
+            "description": "使用Ninja测试发布版本",
+            "configurePreset": "ninja-release"
+        }
+    ]
+}

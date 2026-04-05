@@ -1,0 +1,26 @@
+build/
+
+# 常见的Qt使用CMake构建的必须要被忽略的文件和目录
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.log
+*.user
+*.pro.user
+*.pro.user.*
+
+# 其他可能的构建文件和目录
+build-*/
+dist/
+out/
+.vs/
+*.vcxproj*
+*.sln
+*.ninja

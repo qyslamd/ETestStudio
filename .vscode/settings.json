@@ -1,0 +1,7 @@
+{
+    "editor.formatOnSave": true,
+    "clang-format.executable": "D:\\Qt\\Tools\\QtCreator\\bin\\clang\\bin\\clang-format.exe",
+    "clang-format.fallbackStyle": "Chromium",
+    "editor.fontSize": 14,
+    "editor.fontFamily": "Cascadia Mono PL"
+}
