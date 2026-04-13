@@ -1,4 +1,5 @@
 build/
+ninja-debug/
 
 # 常见的Qt使用CMake构建的必须要被忽略的文件和目录
 CMakeFiles/
@@ -24,3 +25,4 @@ out/
 *.vcxproj*
 *.sln
 *.ninja
+run_app.bat

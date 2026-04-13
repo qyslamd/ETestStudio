@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
-project(qt_gradient_demo
+project(qt_cmake_base_env
     VERSION 1.0.0
-    DESCRIPTION "Cpp demo projects"
+    DESCRIPTION "Qt demo projects"
     LANGUAGES CXX)
 
 #=======================================
@@ -26,10 +26,10 @@ endif()
 
 #=======================================
 # 添加可执行文件
-set(TARGET_NAME "qt_gradient_demo")
-
+set(TARGET_NAME ${PROJECT_NAME})
 add_executable(${TARGET_NAME}
     main.cpp
+    resource.qrc
 )
 
 #=======================================
@@ -52,3 +52,24 @@ target_link_libraries(${TARGET_NAME}
     Qt5::Gui
     Qt5::Widgets
     )
+
+#=======================================
+# 生成运行脚本
+set(QT_ROOT_DIR "${Qt5_DIR}/../../..")
+
+if(WIN32)
+    set(QT_BIN_DIR "${QT_ROOT_DIR}/bin")
+    set(QT_PLUGINS_DIR "${QT_ROOT_DIR}/plugins")
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        set(BUILD_TYPE "ninja-debug")
+    else()
+        set(BUILD_TYPE "ninja-release")
+    endif()
+
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/run_app.bat.in"
+        "${CMAKE_SOURCE_DIR}/run_app.bat"
+        @ONLY
+    )
+endif()

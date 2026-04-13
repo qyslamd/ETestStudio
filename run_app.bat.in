@@ -1,0 +1,7 @@
+@echo off
+setlocal enabledelayedexpansion
+
+set "PATH=@QT_BIN_DIR@;%PATH%"
+set "QT_PLUGIN_PATH=@QT_PLUGINS_DIR@"
+
+build\@BUILD_TYPE@\bin\@TARGET_NAME@.exe
