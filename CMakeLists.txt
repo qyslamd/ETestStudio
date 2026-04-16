@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(qt_cmake_base_env
+project(etest_demo
     VERSION 1.0.0
     DESCRIPTION "Qt demo projects"
     LANGUAGES CXX)
