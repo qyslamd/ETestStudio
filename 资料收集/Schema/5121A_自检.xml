@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO1</Name>
+			<Description>\5121A\ch0</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch0</LinkTo>
+		</Item>
+		<Item>
+			<Offset>4</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO2</Name>
+			<Description>\5121A\ch1</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch1</LinkTo>
+		</Item>
+		<Item>
+			<Offset>8</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO3</Name>
+			<Description>\5121A\ch2</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch2</LinkTo>
+		</Item>
+		<Item>
+			<Offset>12</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO4</Name>
+			<Description>\5121A\ch3</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch3</LinkTo>
+		</Item>
+		<Item>
+			<Offset>16</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO5</Name>
+			<Description>\5121A\ch4</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch4</LinkTo>
+		</Item>
+		<Item>
+			<Offset>20</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO6</Name>
+			<Description>\5121A\ch5</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch5</LinkTo>
+		</Item>
+		<Item>
+			<Offset>24</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO7</Name>
+			<Description>\5121A\ch6</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>28</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO8</Name>
+			<Description>\5121A\ch7</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch7</LinkTo>
+		</Item>
+		<Item>
+			<Offset>32</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO9</Name>
+			<Description>\5121A\ch8</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch8</LinkTo>
+		</Item>
+		<Item>
+			<Offset>36</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO10</Name>
+			<Description>\5121A\ch9</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch9</LinkTo>
+		</Item>
+		<Item>
+			<Offset>40</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO11</Name>
+			<Description>\5121A\ch16</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch16</LinkTo>
+		</Item>
+		<Item>
+			<Offset>44</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO12</Name>
+			<Description>\5121A\ch17</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch17</LinkTo>
+		</Item>
+		<Item>
+			<Offset>48</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO13</Name>
+			<Description>\5121A\ch18</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch18</LinkTo>
+		</Item>
+		<Item>
+			<Offset>52</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO14</Name>
+			<Description>\5121A\ch19</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch19</LinkTo>
+		</Item>
+		<Item>
+			<Offset>56</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO15</Name>
+			<Description>\5121A\ch20</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch20</LinkTo>
+		</Item>
+		<Item>
+			<Offset>60</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO16</Name>
+			<Description>\5121A\ch21</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch21</LinkTo>
+		</Item>
+		<Item>
+			<Offset>64</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO17</Name>
+			<Description>\5121A\ch22</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch22</LinkTo>
+		</Item>
+		<Item>
+			<Offset>68</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO18</Name>
+			<Description>\5121A\ch23</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch23</LinkTo>
+		</Item>
+		<Item>
+			<Offset>72</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO19</Name>
+			<Description>\5121A\ch24</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch24</LinkTo>
+		</Item>
+		<Item>
+			<Offset>76</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DO20</Name>
+			<Description>\5121A\ch25</Description>
+			<GroupName>输入通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch25</LinkTo>
+		</Item>
+		<Item>
+			<Offset>80</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI1</Name>
+			<Description>\5121A\ch32</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch32</LinkTo>
+		</Item>
+		<Item>
+			<Offset>84</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI2</Name>
+			<Description>\5121A\ch33</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch33</LinkTo>
+		</Item>
+		<Item>
+			<Offset>88</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI3</Name>
+			<Description>\5121A\ch34</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch34</LinkTo>
+		</Item>
+		<Item>
+			<Offset>92</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI4</Name>
+			<Description>\5121A\ch35</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch35</LinkTo>
+		</Item>
+		<Item>
+			<Offset>96</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI5</Name>
+			<Description>\5121A\ch36</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch36</LinkTo>
+		</Item>
+		<Item>
+			<Offset>100</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI6</Name>
+			<Description>\5121A\ch37</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch37</LinkTo>
+		</Item>
+		<Item>
+			<Offset>104</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI7</Name>
+			<Description>\5121A\ch38</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch38</LinkTo>
+		</Item>
+		<Item>
+			<Offset>108</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI8</Name>
+			<Description>\5121A\ch39</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch39</LinkTo>
+		</Item>
+		<Item>
+			<Offset>112</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI9</Name>
+			<Description>\5121A\ch40</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch40</LinkTo>
+		</Item>
+		<Item>
+			<Offset>116</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI10</Name>
+			<Description>\5121A\ch41</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch41</LinkTo>
+		</Item>
+		<Item>
+			<Offset>120</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI11</Name>
+			<Description>\5121A\ch48</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch48</LinkTo>
+		</Item>
+		<Item>
+			<Offset>124</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI12</Name>
+			<Description>\5121A\ch49</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch49</LinkTo>
+		</Item>
+		<Item>
+			<Offset>128</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI13</Name>
+			<Description>\5121A\ch50</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch50</LinkTo>
+		</Item>
+		<Item>
+			<Offset>132</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI14</Name>
+			<Description>\5121A\ch51</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch51</LinkTo>
+		</Item>
+		<Item>
+			<Offset>136</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI15</Name>
+			<Description>\5121A\ch52</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch52</LinkTo>
+		</Item>
+		<Item>
+			<Offset>140</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI16</Name>
+			<Description>\5121A\ch53</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch53</LinkTo>
+		</Item>
+		<Item>
+			<Offset>144</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI17</Name>
+			<Description>\5121A\ch54</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch54</LinkTo>
+		</Item>
+		<Item>
+			<Offset>148</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI18</Name>
+			<Description>\5121A\ch55</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch55</LinkTo>
+		</Item>
+		<Item>
+			<Offset>152</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI19</Name>
+			<Description>\5121A\ch56</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch56</LinkTo>
+		</Item>
+		<Item>
+			<Offset>156</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>EPH5121A DI20</Name>
+			<Description>\5121A\ch57</Description>
+			<GroupName>输出通道</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>离散量</SystemName>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5121A\ch57</LinkTo>
+		</Item>
+	</Data>
+</ICDData>

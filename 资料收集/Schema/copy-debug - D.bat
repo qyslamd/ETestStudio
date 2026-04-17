@@ -1,0 +1,1 @@
+copy /Y  *.xml D:\435\workspace\eph435\bin\Debug\Schema

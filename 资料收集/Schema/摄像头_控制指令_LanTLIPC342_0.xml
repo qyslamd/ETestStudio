@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>高清摄像头 截图指令</Name>
+			<Description>截图</Description>
+			<GroupName>高清摄像头</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>高清摄像头</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\LanTLIPC342_0\ch0</LinkTo>
+		</Item>
+		<Item>
+			<Offset>4</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>高清摄像头 录像指令</Name>
+			<Description>0:停止录制，1：开始录制</Description>
+			<GroupName>高清摄像头</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>高清摄像头</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>停止录制=0,开始录制=1</ValueTextList>
+			<LinkTo>\LanTLIPC342_0\ch0</LinkTo>
+		</Item>
+		<Item>
+			<Offset>8</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>2080</BitWidth>
+			<Type>string</Type>
+			<Name>高清摄像头 截图路径</Name>
+			<Description>截图路径</Description>
+			<GroupName>高清摄像头</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>高清摄像头</SystemName>
+			<Tag>0</Tag>
+			<LinkTo>\LanTLIPC342_0\ch0</LinkTo>
+		</Item>
+		<Item>
+			<Offset>268</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>2080</BitWidth>
+			<Type>string</Type>
+			<Name>高清摄像头 录像路径</Name>
+			<Description>录像路径</Description>
+			<GroupName>高清摄像头</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>高清摄像头</SystemName>
+			<Tag>0</Tag>
+			<LinkTo>\LanTLIPC342_0\ch0</LinkTo>
+		</Item>
+	</Data>
+</ICDData>

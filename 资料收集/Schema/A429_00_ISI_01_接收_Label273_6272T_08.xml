@@ -1,0 +1,147 @@
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>ISI-01#A429_OUT(273) 接收数据</Name>
+			<Description>接收的32位数据</Description>
+			<GroupName>ISI-01#A429_OUT(273)</GroupName>
+			<IsScaled>0</IsScaled>
+			<Childs>
+				<Item>
+					<Offset>0</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>8</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(273) LABEL</Name>
+					<Description>8bit有效,八进制,273</Description>
+					<GroupName>ISI-01#A429_OUT(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>40</Tag>
+					<ValueTextList>187</ValueTextList>
+<<<<<<< HEAD
+					<LinkTo>\6272T_08\ch8</LinkTo>
+=======
+					<LinkTo>6272T_00\ch0</LinkTo>
+>>>>>>> 65a49280ce73fa5643f132301f9d69071d289295
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(273) SDI</Name>
+					<Description>2bit有效,内容:ISIS=0</Description>
+					<GroupName>ISI-01#A429_OUT(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+<<<<<<< HEAD
+					<LinkTo>\6272T_08\ch8</LinkTo>
+=======
+					<LinkTo>6272T_00\ch0</LinkTo>
+>>>>>>> 65a49280ce73fa5643f132301f9d69071d289295
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>2</StartBit>
+					<BitWidth>3</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(273) PAD1</Name>
+					<Description>3bit有效</Description>
+					<GroupName>ISI-01#A429_OUT(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+<<<<<<< HEAD
+					<LinkTo>\6272T_08\ch8</LinkTo>
+=======
+					<LinkTo>6272T_00\ch0</LinkTo>
+>>>>>>> 65a49280ce73fa5643f132301f9d69071d289295
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(273) NLG_Dnlocked</Name>
+					<Description>1bit有效,内容:not_Dnlocked=0,Dnlocked=1</Description>
+					<GroupName>ISI-01#A429_OUT(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>not_Dnlocked=0,Dnlocked=1</ValueTextList>
+<<<<<<< HEAD
+					<LinkTo>\6272T_08\ch8</LinkTo>
+=======
+					<LinkTo>6272T_00\ch0</LinkTo>
+>>>>>>> 65a49280ce73fa5643f132301f9d69071d289295
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>6</StartBit>
+					<BitWidth>15</BitWidth>
+					<Type>short</Type>
+					<Name>ISI-01#A429_OUT(273) PAD2</Name>
+					<Description>15bit有效</Description>
+					<GroupName>ISI-01#A429_OUT(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+<<<<<<< HEAD
+					<LinkTo>\6272T_08\ch8</LinkTo>
+=======
+					<LinkTo>6272T_00\ch0</LinkTo>
+>>>>>>> 65a49280ce73fa5643f132301f9d69071d289295
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(273) SSM</Name>
+					<Description>2bit有效</Description>
+					<GroupName>ISI-01#A429_OUT(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+<<<<<<< HEAD
+					<LinkTo>\6272T_08\ch8</LinkTo>
+=======
+					<LinkTo>6272T_00\ch0</LinkTo>
+>>>>>>> 65a49280ce73fa5643f132301f9d69071d289295
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>7</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(273) PARITY</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_OUT(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+<<<<<<< HEAD
+					<LinkTo>\6272T_08\ch8</LinkTo>
+=======
+					<LinkTo>6272T_00\ch0</LinkTo>
+>>>>>>> 65a49280ce73fa5643f132301f9d69071d289295
+				</Item>
+			</Childs>
+			<SystemName>Arinc429</SystemName>
+		</Item>
+	</Data>
+</ICDData>

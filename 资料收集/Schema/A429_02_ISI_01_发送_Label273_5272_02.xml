@@ -1,0 +1,125 @@
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>ISI-01#A429_IN3(273) 发送数据</Name>
+			<Description>发送的32位数据</Description>
+			<GroupName>ISI-01#A429_IN3(273)</GroupName>
+			<IsScaled>0</IsScaled>
+			<Childs>
+				<Item>
+					<Offset>0</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>8</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN3(273) LABEL</Name>
+					<Description>8bit有效,八进制,273</Description>
+					<GroupName>ISI-01#A429_IN3(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>40</Tag>
+					<ValueTextList>187</ValueTextList>
+					<LinkTo>5272_02\ch2</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN3(273) SDI</Name>
+					<Description>2bit有效,SOURCE/Destination Identifier</Description>
+					<GroupName>ISI-01#A429_IN3(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>无=0,A429_LGCU1_ConCh_Tx1=1,A429_LGCU2_ConCh_Tx1=2,A429_LGCU3_ConCh_Tx1=3</ValueTextList>
+					<LinkTo>5272_02\ch2</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>2</StartBit>
+					<BitWidth>3</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN3(273) PAD1</Name>
+					<Description>3bit有效</Description>
+					<IsScaled>0</IsScaled>
+					<Tag>0</Tag>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN3(273) NLG_Dnlocked</Name>
+					<Description>1bit有效,not Downlocked=0,Downlocked=1</Description>
+					<GroupName>ISI-01#A429_IN3(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>not Downlocked=0,Downlocked=1</ValueTextList>
+					<LinkTo>5272_02\ch2</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>6</StartBit>
+					<BitWidth>14</BitWidth>
+					<Type>word</Type>
+					<Name>ISI-01#A429_IN3(273) re1</Name>
+					<Description>14bit有效</Description>
+					<IsScaled>0</IsScaled>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>4</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN3(273) PAD2</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_IN3(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN3(273) SSM</Name>
+					<Description>2bit有效,Sign/Status Matrix</Description>
+					<GroupName>ISI-01#A429_IN3(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>2</ValueTextList>
+					<LinkTo>5272_02\ch2</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>7</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN3(273) Parity</Name>
+					<Description>1bit有效,Set to obtain odd word parity</Description>
+					<GroupName>ISI-01#A429_IN3(273)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_02\ch2</LinkTo>
+				</Item>
+			</Childs>
+			<SystemName>Arinc429</SystemName>
+		</Item>
+	</Data>
+</ICDData>

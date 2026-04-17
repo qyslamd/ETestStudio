@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>16</BitWidth>
+			<Type>word</Type>
+			<Name>串口通道00 发送_帧头</Name>
+			<Description>帧头，0xAA55 = 43605</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>1</Tag>
+			<ValueTextList>43605</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>2</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte0</Name>
+			<Description>字节，byte0</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>0</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>3</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte1</Name>
+			<Description>字节，byte1</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>1</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>4</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte2</Name>
+			<Description>字节，byte2</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>2</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>5</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte3</Name>
+			<Description>字节，byte3</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>3</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>6</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte4</Name>
+			<Description>字节，byte4</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>4</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>7</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte5</Name>
+			<Description>字节，byte5</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>5</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>8</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte6</Name>
+			<Description>字节，byte6</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>6</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>9</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte7</Name>
+			<Description>字节，byte7</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>7</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>10</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte8</Name>
+			<Description>字节，byte8</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>8</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>11</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte9</Name>
+			<Description>字节，byte9</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>9</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>12</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte10</Name>
+			<Description>字节，byte10</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>10</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>13</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte11</Name>
+			<Description>字节，byte11</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>11</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>14</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte12</Name>
+			<Description>字节，byte12</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>12</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>15</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte13</Name>
+			<Description>字节，byte13</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>13</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>16</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte14</Name>
+			<Description>字节，byte14</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>14</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>17</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte15</Name>
+			<Description>字节，byte15</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>15</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>18</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte16</Name>
+			<Description>字节，byte16</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>16</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+		<Item>
+			<Offset>19</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>串口通道00 发送_Byte17</Name>
+			<Description>字节，byte17</Description>
+			<GroupName>串口通道00</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>串口</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>17</ValueTextList>
+			<LinkTo>\5276H_00_COM6\ch6</LinkTo>
+		</Item>
+	</Data>
+</ICDData>

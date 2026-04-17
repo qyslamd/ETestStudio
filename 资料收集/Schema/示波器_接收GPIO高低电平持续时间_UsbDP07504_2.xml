@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+  <Name />
+  <Data>
+    <Item>
+      <Offset>0</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>32</BitWidth>
+      <Type>float</Type>
+      <Name>示波器 CH3-信号高电平时间</Name>
+      <Description>单位为s</Description>
+      <GroupName>CH3</GroupName>
+      <IsScaled>0</IsScaled>
+      <SystemName>示波器</SystemName>
+      <Unit>S</Unit>
+      <Tag>0</Tag>
+      <LinkTo>\UsbDP07504_2\ch2</LinkTo>
+    </Item>
+    <Item>
+      <Offset>4</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>32</BitWidth>
+      <Type>float</Type>
+      <Name>示波器 CH3-信号低电平时间</Name>
+      <Description>单位为s</Description>
+      <GroupName>CH3</GroupName>
+      <IsScaled>0</IsScaled>
+      <SystemName>示波器</SystemName>
+      <Unit>S</Unit>
+      <Tag>0</Tag>
+      <LinkTo>\UsbDP07504_2\ch2</LinkTo>
+    </Item>
+    <Item>
+      <Offset>8</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>32</BitWidth>
+      <Type>float</Type>
+      <Name>示波器 CH3-信号测量周期</Name>
+      <Description>单位为s</Description>
+      <GroupName>CH3</GroupName>
+      <IsScaled>0</IsScaled>
+      <SystemName>示波器</SystemName>
+      <Unit>S</Unit>
+      <Tag>0</Tag>
+      <LinkTo>\UsbDP07504_2\ch2</LinkTo>
+    </Item>
+    <Item>
+      <Offset>12</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>32</BitWidth>
+      <Type>float</Type>
+      <Name>示波器 CH3-信号测量空比</Name>
+      <Description>单位为s</Description>
+      <GroupName>CH3</GroupName>
+      <IsScaled>0</IsScaled>
+      <SystemName>示波器</SystemName>
+      <Unit>S</Unit>
+      <Tag>0</Tag>
+      <LinkTo>\UsbDP07504_2\ch2</LinkTo>
+    </Item>
+  </Data>
+</ICDData>

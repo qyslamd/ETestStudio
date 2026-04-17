@@ -1,0 +1,149 @@
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>ISI-01#A429_OUT(150) 接收数据</Name>
+			<Description>接收的32位数据</Description>
+			<GroupName>ISI-01#A429_IN(150)</GroupName>
+			<IsScaled>0</IsScaled>
+			<Childs>
+				<Item>
+					<Offset>0</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>8</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) LABEL</Name>
+					<Description>8bit有效,八进制,150</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>40</Tag>
+					<ValueTextList>104</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) SDI</Name>
+					<Description>2bit有效,内容:ISIS=0</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>2</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) UTC_SOURCE</Name>
+					<Description>1bit有效,内容:OUTTIME=0,GNSSINNERTIME=1</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>OUTTIME=0,GNSSINNERTIME=1</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>3</StartBit>
+					<BitWidth>6</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) UTC_Second</Name>
+					<Description>6bit有效,范围:0~59</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Unit>secs</Unit>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>2</Offset>
+					<StartBit>1</StartBit>
+					<BitWidth>6</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) UTC_Minute</Name>
+					<Description>6bit有效,范围:0~59</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Unit>minutes</Unit>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>2</Offset>
+					<StartBit>7</StartBit>
+					<BitWidth>5</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) UTC_Hour</Name>
+					<Description>5bit有效,范围:0~23</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Unit>hrs</Unit>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>4</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) PAD</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) SSM</Name>
+					<Description>2bit有效</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>7</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(150) PARITY</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_IN(150)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>Arinc429</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_00\ch0</LinkTo>
+				</Item>
+			</Childs>
+			<SystemName>Arinc429</SystemName>
+		</Item>
+	</Data>
+</ICDData>
