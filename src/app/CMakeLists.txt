@@ -25,6 +25,15 @@ target_link_libraries(${TARGET_NAME}
     Qt5::Core
     Qt5::Gui
     Qt5::Widgets
+    # 第三方依赖
+    spdlog::spdlog
+    gtest
+    gmock
+    lua
+    libharu
+    qtadvanceddocking
+    qscintilla2_qt5
+    QtXlsx::QtXlsx
     )
 
 #=======================================

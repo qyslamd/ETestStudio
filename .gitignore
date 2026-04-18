@@ -26,3 +26,7 @@ out/
 *.sln
 *.ninja
 run_app.bat
+# 第三方依赖缓存目录
+3rdparty/
+# 编译输出目录
+bin/
