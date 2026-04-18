@@ -1,11 +1,12 @@
 #include <QApplication>
-#include <QMainWindow>
 #include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <thread>
+
+#include "MainWindow.h"
 
 // 第三方依赖头文件引入
 #include "spdlog/spdlog.h"
@@ -32,18 +33,15 @@ int main(int argc, char* argv[]) {
   if(pdf) HPDF_Free(pdf);
   spdlog::info("✅ libharu PDF库验证通过");
 
-  // 4. Qt Advanced Docking System 验证
-  ads::CDockManager dockManager;
-  spdlog::info("✅ QADS停靠布局框架验证通过");
-
-  // 5. QXlsx Excel库验证
+  // 4. QXlsx Excel库验证
   QXlsx::Document xlsx;
   spdlog::info("✅ QXlsx Excel库验证通过");
 
   spdlog::info("🎉 所有已配置第三方依赖全部验证成功！");
 
-  QWidget w;
-  w.resize(800, 600);
-  w.show();
+  // 启动主窗口（集成QADS停靠布局）
+  MainWindow main_window;
+  main_window.show();
+
   return app.exec();
 }

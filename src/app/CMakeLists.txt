@@ -3,6 +3,8 @@
 set(TARGET_NAME ${PROJECT_NAME})
 add_executable(${TARGET_NAME}
     main.cpp
+    MainWindow.h
+    MainWindow.cpp
     resource.qrc
 )
 
