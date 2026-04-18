@@ -15,10 +15,6 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 )
 
 #=======================================
-# 查找Qt库
-find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
-
-#=======================================
 # 链接Qt库
 target_link_libraries(${TARGET_NAME}
     PRIVATE

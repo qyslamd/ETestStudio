@@ -27,6 +27,14 @@ out/
 *.ninja
 run_app.bat
 # 第三方依赖缓存目录
-3rdparty/
+3rdparty/spdlog-1.17.0/
+3rdparty/googletest-1.17.0/
+3rdparty/libharu-2.4.6/
+3rdparty/lua-5.4.4/
+3rdparty/QScintilla_src-2.14.1/
+3rdparty/Qt-Advanced-Docking-System-3.8.3/
+3rdparty/QXlsx-1.5.0/
+3rdparty/lua/
+3rdparty/zlib-1.3.2/
 # 编译输出目录
 bin/

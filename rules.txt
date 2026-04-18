@@ -1,0 +1,13 @@
+# 任何改动都需要遵循的规则
+
+- 每次修改仅仅改动和我确认过的内容，不能擅自执行未经确认的任何改动！
+- 如果执行CMake，或者编译改动的代码，必须使用 build_ninja.bat
+- 如果需要运行主程序，必须使用 run_app.bat
+
+- C/C++的代码编写必须符合 Google C++ Style Guide。参考地址：<https://google.github.io/styleguide/cppguide.html>
+  - 如果改动的是C++代码，在编写代码之前，你需要考虑你生成的代码是否满足设计模式的基本原则：即SOLID。
+  - 如果改动的代码是Qt的界面相关的，你需要将界面的初始化的C++代码和连接信号和槽的代码分开在两个函数中：
+    - 例如：需要在构造函数中初始化的界面的C++代码，可以封装一个 initUi();函数
+    - 例如：需要在构造函数中连接信号和槽的C++代码，可以封装一个 initSignals() 函数
+
+- 如果需要让你将某些内容写入到 markdown 文档，必须符合 Markdown style guide，参考地址：<https://google.github.io/styleguide/docguide/style.html>
