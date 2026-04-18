@@ -32,6 +32,7 @@ find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 
 # Qt-Advanced-Docking-System Qt版本的 ribbon和dock组件
 set(ADS_VERSION "3.8.3")  # 可以覆盖默认的版本提取方式，直接指定版本号
+set(BUILD_STATIC ON CACHE BOOL "Build static libraries for Qt-Advanced-Docking-System" FORCE)
 add_subdirectory(3rdparty/Qt-Advanced-Docking-System-3.8.3)
 
 # QXlsx Excel读写库

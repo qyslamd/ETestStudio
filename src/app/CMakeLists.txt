@@ -15,14 +15,28 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 )
 
 #=======================================
+# 添加第三方依赖头文件路径
+target_include_directories(${TARGET_NAME}
+    PRIVATE
+    ${CMAKE_SOURCE_DIR}/3rdparty/libharu-2.4.6/include
+    ${CMAKE_BINARY_DIR}/3rdparty/libharu-2.4.6/include
+    ${CMAKE_SOURCE_DIR}/3rdparty/Qt-Advanced-Docking-System-3.8.3/src
+)
+
+#=======================================
 # 链接Qt库
 target_link_libraries(${TARGET_NAME}
     PRIVATE
     Qt5::Core
     Qt5::Gui
     Qt5::Widgets
-    # 第三方依赖
+    # 已配置第三方依赖
     spdlog::spdlog
+    gtest
+    gmock
+    hpdf
+    qtadvanceddocking
+    QXlsx::QXlsx
     )
 
 #=======================================
