@@ -7,9 +7,15 @@
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), dock_manager_(nullptr) {
+  // 配置无边框窗口属性
+  setWindowFlags(windowFlags() | Qt::FramelessWindowHint |
+                 Qt::WindowSystemMenuHint |
+                 Qt::WindowMinMaxButtonsHint |
+                 Qt::WindowCloseButtonHint);
+
   initUi();
   initSignals();
-  spdlog::info("MainWindow初始化完成");
+  spdlog::info("MainWindow(无边框模式)初始化完成");
 }
 
 MainWindow::~MainWindow() {
@@ -17,10 +23,14 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::initUi() {
+  // 无边框窗口属性设置
   setWindowTitle("QADS 停靠布局示例");
+  setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
+               Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
   resize(1200, 800);
 
   // 创建停靠管理器作为中心部件
+  // QADS 3.8.3版本无边框功能通过Qt窗口属性自动处理拖拽
   dock_manager_ = new ads::CDockManager(this);
   dock_manager_->setStyleSheet("");
 
