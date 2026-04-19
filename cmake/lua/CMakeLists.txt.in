@@ -36,7 +36,8 @@ if ( WIN32 AND NOT CYGWIN )
   # Windows systems
   option ( LUA_USE_WINDOWS "Windows specific build." ON )
   option ( LUA_BUILD_WLUA "Build wLua interpretter without console output." ON )
-  option ( LUA_BUILD_AS_DLL "Build Lua library as Dll." ${BUILD_SHARED_LIBS} )
+  # Force static Lua library build for better compatibility in this project
+  set(LUA_BUILD_AS_DLL OFF)
 
   # Paths (Double escapes needed)
   set ( LUA_DIRSEP "\\\\" )
@@ -88,18 +89,30 @@ endif ( )
 
 # Sources and headers
 include_directories ( src ${CMAKE_CURRENT_BINARY_DIR} )
-set ( SRC_CORE src/lapi.c src/lcode.c src/lctype.c src/ldebug.c src/ldo.c src/ldump.c
-  src/lfunc.c src/lgc.c src/llex.c src/lmem.c src/lobject.c src/lopcodes.c src/lparser.c
-  src/lstate.c src/lstring.c src/ltable.c src/ltm.c src/lundump.c src/lvm.c src/lzio.c )
-set ( SRC_LIB src/lauxlib.c src/lbaselib.c src/lbitlib.c src/lcorolib.c src/ldblib.c
-  src/liolib.c src/lmathlib.c src/loslib.c src/lstrlib.c src/ltablib.c src/linit.c
-  src/lutf8lib.c )
-set ( SRC_LUA src/lua.c )
-set ( SRC_LUAC src/luac.c )
+set (LUA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/lua-5.4.4")
+file(GLOB_RECURSE ALL_LUA_SOURCES "${LUA_ROOT}/src/*.c")
+# Safeguard: remove specific files that may be missing in some Lua sources configurations
+list(REMOVE_ITEM ALL_LUA_SOURCES "${LUA_ROOT}/src/lbitlib.c")
+if (EXISTS "${LUA_ROOT}/src/loadlib_rel.c")
+  list(REMOVE_ITEM ALL_LUA_SOURCES "${LUA_ROOT}/src/loadlib_rel.c")
+endif()
+set (SRC_CORE ${ALL_LUA_SOURCES})
+# Ensure lua.c is not included in liblua/luac/luaw cores to avoid duplicate mains
+list(REMOVE_ITEM SRC_CORE "${LUA_ROOT}/src/lua.c")
+set (SRC_LIB
+  "${LUA_ROOT}/src/lauxlib.c" "${LUA_ROOT}/src/lbaselib.c" "${LUA_ROOT}/src/lcorolib.c" "${LUA_ROOT}/src/ldblib.c"
+  "${LUA_ROOT}/src/liolib.c" "${LUA_ROOT}/src/lmathlib.c" "${LUA_ROOT}/src/loslib.c" "${LUA_ROOT}/src/lstrlib.c" "${LUA_ROOT}/src/ltablib.c" "${LUA_ROOT}/src/linit.c"
+  "${LUA_ROOT}/src/lutf8lib.c"
+)
+set (SRC_LUA "${LUA_ROOT}/src/lua.c" )
 
 if ( LUA_USE_RELATIVE_LOADLIB )
-  # Use modified loadlib
-  list ( APPEND SRC_LIB src/loadlib_rel.c )
+  # Use modified loadlib only if it exists; otherwise fallback to standard loadlib
+  if (EXISTS "${LUA_ROOT}/src/loadlib_rel.c")
+    list ( APPEND SRC_LIB src/loadlib_rel.c )
+  else()
+    list ( APPEND SRC_LIB src/loadlib.c )
+  endif()
 else ( )
   list ( APPEND SRC_LIB src/loadlib.c )
 endif ( )
@@ -115,22 +128,28 @@ endif ()
 
 add_executable ( lua ${SRC_LUA})
 if(EXISTS src/lua.rc )
-    target_source(wlua PRIVATE src/lua.rc)
-  endif()
+    target_source(luaw PRIVATE src/lua.rc)
+endif()
 
 target_link_libraries ( lua liblua )
 
-add_executable ( luac ${SRC_CORE} ${SRC_LIB} ${SRC_LUAC} src/luac.rc )
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/luac.rc")
+set (LUAC_CORE_SOURCES ${SRC_CORE})
+list(REMOVE_ITEM LUAC_CORE_SOURCES "${LUA_ROOT}/src/lua.c")
+add_executable ( luac ${LUAC_CORE_SOURCES} ${SRC_LIB} ${SRC_LUAC} src/luac.rc )
+else()
+  add_executable ( luac ${SRC_CORE} ${SRC_LIB} ${SRC_LUAC} )
+endif()
 target_link_libraries ( luac ${LIBS} )
 
 # On windows a variant of the lua interpreter without console output needs to be built
 if ( LUA_BUILD_WLUA )
-  add_executable ( wlua WIN32 src/wmain.c ${SRC_LUA} )
+  add_executable ( luaw WIN32 src/wmain.c ${SRC_LUA} )
   if(EXISTS src/lua.rc )
-    target_source(wlua PRIVATE src/lua.rc)
+    target_source(luaw PRIVATE src/lua.rc)
   endif()
-  target_link_libraries ( wlua liblua )
-  #install_executable ( wlua )
+  target_link_libraries ( luaw liblua )
+  #install_executable ( luaw )
 endif ( )
 
 #install_executable ( lua luac )

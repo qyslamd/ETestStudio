@@ -50,7 +50,8 @@ add_subdirectory(3rdparty/spdlog-1.17.0)
 # googletest 单元测库
 add_subdirectory(3rdparty/googletest-1.17.0)
 
-# lua lua库 还没有CMakeLists.txt，暂时不编译
+# lua lua库 通过 CMake 补丁方式集成，生成静态库 + 可执行文件
+# 使用 configure_file 动态生成 3rdparty/lua-5.4.4/CMakeLists.txt，以及 wmain.c
 set(LUA_CMAKE_FILES_DIR ${CMAKE_SOURCE_DIR}/cmake/lua)  # 指定Lua CMake文件的目录
 configure_file(${CMAKE_SOURCE_DIR}/cmake/lua/CMakeLists.txt.in 
                ${CMAKE_SOURCE_DIR}/3rdparty/lua-5.4.4/CMakeLists.txt @ONLY)
@@ -81,3 +82,15 @@ endif()
 # =======================================
 # 包含src目录下的CMakeLists.txt，编译应用程序
 add_subdirectory(src)
+
+include(CTest)
+if (BUILD_TESTING)
+  enable_testing()
+  # Lua smoke tests: verify lua.exe and luaw.exe basic functionality
+  add_test(NAME LuaSmokeBasic
+           COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" lua.exe -e "print('Lua smoke ok')")
+  add_test(NAME LuaSmokeNoConsole
+           COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" luaw.exe -e "print('Lua smoke no-console')")
+  add_test(NAME LuaSmokeBytecode
+           COMMAND cmd /C "${CMAKE_SOURCE_DIR}/lua_smoke_bytecode.bat")
+endif()
