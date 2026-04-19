@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <Qsci/qsciscintilla.h>
 #include "DockManager.h"
 
 class MainWindow : public QMainWindow {
@@ -19,6 +20,8 @@ class MainWindow : public QMainWindow {
 
   // QADS停靠管理器
   ads::CDockManager* dock_manager_;
+  // QScintilla测试编辑器
+  QsciScintilla* m_editor;
 };
 
 #endif // MAINWINDOW_H

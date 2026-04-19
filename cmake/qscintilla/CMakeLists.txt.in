@@ -10,8 +10,8 @@ set(CMAKE_CXX_EXTENSIONS ON)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
 
 # 自动收集所有源文件和头文件
-file(GLOB QSCI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/qsci/*.cpp)
-file(GLOB QSCI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/qsci/*.h)
+file(GLOB QSCI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Qsci/*.cpp)
+file(GLOB QSCI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/Qsci/*.h)
 file(GLOB SCINTILLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src/*.cxx)
 file(GLOB SCINTILLA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/include/*.h ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src/*.h)
 file(GLOB LEXERS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/lexers/*.cxx)
@@ -22,7 +22,7 @@ add_definitions(-DQSCI_STATIC -DSCINTILLA_QT -DQT_NO_KEYWORDS)
 
 # 包含目录配置
 include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/qsci
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/include
     ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src
     ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/lexlib
@@ -61,6 +61,6 @@ endif()
 
 # 导出头文件目录给上层项目使用
 target_include_directories(qsci INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qsci>
-    $<INSTALL_INTERFACE:include/qsci>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:include>
 )

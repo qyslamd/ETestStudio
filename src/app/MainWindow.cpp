@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include <Qsci/qscilexercpp.h>
 #include <QTreeWidget>
 #include <QTableWidget>
 #include <QTextEdit>
@@ -89,6 +90,29 @@ void MainWindow::initUi() {
 
   // 添加到底部停靠区域
   dock_manager_->addDockWidget(ads::BottomDockWidgetArea, output_dock);
+
+  // ==================== 4. 中心停靠：QScintilla编辑器测试 ====================
+  ads::CDockWidget* editor_dock = new ads::CDockWidget("代码编辑器");
+  editor_dock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
+
+  m_editor = new QsciScintilla();
+  // 显示行号
+  m_editor->setMarginType(0, QsciScintilla::NumberMargin);
+  m_editor->setMarginWidth(0, "0000");
+  // 开启C++语法高亮
+  QsciLexerCPP* lexer = new QsciLexerCPP(m_editor);
+  m_editor->setLexer(lexer);
+  // 设置测试代码
+  m_editor->setText(R"(#include <iostream>
+
+int main() {
+    std::cout << "Hello QScintilla!" << std::endl;
+    return 0;
+})");
+  editor_dock->setWidget(m_editor);
+
+  // 添加到中心停靠区域
+  dock_manager_->addDockWidget(ads::CenterDockWidgetArea, editor_dock);
 }
 
 void MainWindow::initSignals() {

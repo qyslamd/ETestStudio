@@ -39,6 +39,7 @@ target_link_libraries(${TARGET_NAME}
     hpdf
     qtadvanceddocking
     QXlsx::QXlsx
+    qsci
     )
 
 #=======================================

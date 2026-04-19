@@ -11,3 +11,4 @@
     - 例如：需要在构造函数中连接信号和槽的C++代码，可以封装一个 initSignals() 函数
 
 - 如果需要让你将某些内容写入到 markdown 文档，必须符合 Markdown style guide，参考地址：<https://google.github.io/styleguide/docguide/style.html>
+- 按照和我确认的信息执行某个任务以及最终的产物/结果必须正确，允许你未完成。如果你没有完成某个任务，诚实的告诉我，不要试图编造你没完成的任务的结果。
