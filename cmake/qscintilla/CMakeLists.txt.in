@@ -10,22 +10,22 @@ set(CMAKE_CXX_EXTENSIONS ON)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
 
 # 自动收集所有源文件和头文件
-file(GLOB QSCI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Qsci/*.cpp)
-file(GLOB QSCI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/Qsci/*.h)
-file(GLOB SCINTILLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src/*.cxx)
-file(GLOB SCINTILLA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/include/*.h ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src/*.h)
-file(GLOB LEXERS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/lexers/*.cxx)
-file(GLOB LEXLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/lexlib/*.cxx)
+file(GLOB QSCI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Qt4Qt5/*.cpp)
+file(GLOB QSCI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/Qt4Qt5/Qsci/*.h)
+file(GLOB SCINTILLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(GLOB SCINTILLA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
+file(GLOB LEXERS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/lexers/*.cpp)
+file(GLOB LEXLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/lexlib/*.cpp)
 
 # 静态编译标识
-add_definitions(-DQSCI_STATIC -DSCINTILLA_QT -DQT_NO_KEYWORDS)
+add_definitions(-DQSCI_STATIC -DSCINTILLA_QT)
 
 # 包含目录配置
 include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Qt4Qt5
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/lexlib
+    ${CMAKE_CURRENT_SOURCE_DIR}/lexlib
 )
 
 # 生成静态库
@@ -38,8 +38,8 @@ add_library(qsci STATIC
     ${LEXLIB_SOURCES}
 )
 
-# 明确指定链接语言为C++
-set_target_properties(qsci PROPERTIES LINKER_LANGUAGE CXX)
+# 明确指定链接语言为C++，启用AUTOMOC处理Qt信号槽
+set_target_properties(qsci PROPERTIES LINKER_LANGUAGE CXX AUTOMOC ON)
 
 # 链接Qt库
 target_link_libraries(qsci PRIVATE
@@ -61,6 +61,6 @@ endif()
 
 # 导出头文件目录给上层项目使用
 target_include_directories(qsci INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Qt4Qt5>
     $<INSTALL_INTERFACE:include>
 )

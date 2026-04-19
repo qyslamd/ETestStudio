@@ -1,19 +1,13 @@
 #include "MainWindow.h"
 #include <Qsci/qscilexercpp.h>
-#include <QTreeWidget>
+#include <QHeaderView>
 #include <QTableWidget>
 #include <QTextEdit>
-#include <QHeaderView>
+#include <QTreeWidget>
 #include "spdlog/spdlog.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), dock_manager_(nullptr) {
-  // 配置无边框窗口属性
-  setWindowFlags(windowFlags() | Qt::FramelessWindowHint |
-                 Qt::WindowSystemMenuHint |
-                 Qt::WindowMinMaxButtonsHint |
-                 Qt::WindowCloseButtonHint);
-
   initUi();
   initSignals();
   spdlog::info("MainWindow(无边框模式)初始化完成");
@@ -24,10 +18,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::initUi() {
-  // 无边框窗口属性设置
   setWindowTitle("QADS 停靠布局示例");
-  setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
-               Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
   resize(1200, 800);
 
   // 创建停靠管理器作为中心部件
@@ -42,11 +33,11 @@ void MainWindow::initUi() {
 
   QTreeWidget* project_tree = new QTreeWidget();
   project_tree->setHeaderLabel("项目文件");
-  QTreeWidgetItem* root = new QTreeWidgetItem(project_tree, { "测试项目" });
-  new QTreeWidgetItem(root, { "main.cpp" });
-  new QTreeWidgetItem(root, { "test.proto" });
-  new QTreeWidgetItem(root, { "test.prot" });
-  new QTreeWidgetItem(root, { "test_config.json" });
+  QTreeWidgetItem* root = new QTreeWidgetItem(project_tree, {"测试项目"});
+  new QTreeWidgetItem(root, {"main.cpp"});
+  new QTreeWidgetItem(root, {"test.proto"});
+  new QTreeWidgetItem(root, {"test.prot"});
+  new QTreeWidgetItem(root, {"test_config.json"});
   root->setExpanded(true);
   project_dock->setWidget(project_tree);
 
@@ -59,8 +50,9 @@ void MainWindow::initUi() {
 
   QTableWidget* property_table = new QTableWidget();
   property_table->setColumnCount(2);
-  property_table->setHorizontalHeaderLabels({ "属性", "值" });
-  property_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  property_table->setHorizontalHeaderLabels({"属性", "值"});
+  property_table->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::Stretch);
   property_table->setRowCount(5);
   property_table->setItem(0, 0, new QTableWidgetItem("窗口宽度"));
   property_table->setItem(0, 1, new QTableWidgetItem("1200"));
