@@ -66,8 +66,8 @@ add_subdirectory(3rdparty/libharu-2.4.6)
 # QScintilla 高级文本编辑器，补丁模式集成，不修改原源码
 set(QSCINTILLA_CMAKE_DIR ${CMAKE_SOURCE_DIR}/cmake/qscintilla)
 configure_file(${QSCINTILLA_CMAKE_DIR}/CMakeLists.txt.in
-               ${CMAKE_SOURCE_DIR}/3rdparty/QScintilla_src-2.14.1/CMakeLists.txt @ONLY)
-add_subdirectory(3rdparty/QScintilla_src-2.14.1)
+               ${CMAKE_SOURCE_DIR}/3rdparty/QScintilla-2.11.3/CMakeLists.txt @ONLY)
+add_subdirectory(3rdparty/QScintilla-2.11.3)
 
 # 设置编译选项，特别是Windows平台下的Unicode支持
 # 对于MSVC编译器，启用UTF-8编码支持，并定义Unicode相关的宏，以确保应用程序能够正确处理Unicode字符。
