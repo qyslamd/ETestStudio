@@ -86,6 +86,9 @@ endif()
 # 包含src目录下的CMakeLists.txt，编译应用程序
 add_subdirectory(src)
 
+# 包含QScintilla单元测试
+add_subdirectory(tests/qscintilla)
+
 include(CTest)
 if (BUILD_TESTING)
   enable_testing()
