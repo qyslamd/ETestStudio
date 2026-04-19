@@ -39,18 +39,24 @@ add_subdirectory(3rdparty/Qt-Advanced-Docking-System-3.8.3)
 add_subdirectory(3rdparty/QXlsx-1.5.0/QXlsx)
 
 #  zlib 压缩库，通常被大多数库依赖，放在最前面编译
+set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Do not build shared libraries for zlib" FORCE)
 add_subdirectory(3rdparty/zlib-1.3.2)
 
 # spdlog 日志库
-set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
-set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "Do not build spdlog examples" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "Do not build spdlog tests" FORCE)
 add_subdirectory(3rdparty/spdlog-1.17.0)
 
 # googletest 单元测库
 add_subdirectory(3rdparty/googletest-1.17.0)
 
 # lua lua库 还没有CMakeLists.txt，暂时不编译
-#add_subdirectory(3rdparty/lua-5.4.4)
+set(LUA_CMAKE_FILES_DIR ${CMAKE_SOURCE_DIR}/cmake/lua)  # 指定Lua CMake文件的目录
+configure_file(${CMAKE_SOURCE_DIR}/cmake/lua/CMakeLists.txt.in 
+               ${CMAKE_SOURCE_DIR}/3rdparty/lua-5.4.4/CMakeLists.txt @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/lua/wmain.c.in 
+               ${CMAKE_SOURCE_DIR}/3rdparty/lua-5.4.4/src/wmain.c COPYONLY)
+add_subdirectory(3rdparty/lua-5.4.4)
 
 # libharu PDF库
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static library for libharu" FORCE)
