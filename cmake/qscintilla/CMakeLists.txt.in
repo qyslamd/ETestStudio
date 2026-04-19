@@ -1,0 +1,66 @@
+cmake_minimum_required(VERSION 3.19)
+project(qscintilla LANGUAGES CXX)
+
+# 继承项目全局编译配置
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+
+# 查找Qt依赖
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
+
+# 自动收集所有源文件和头文件
+file(GLOB QSCI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/qsci/*.cpp)
+file(GLOB QSCI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/qsci/*.h)
+file(GLOB SCINTILLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src/*.cxx)
+file(GLOB SCINTILLA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/include/*.h ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src/*.h)
+file(GLOB LEXERS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/lexers/*.cxx)
+file(GLOB LEXLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/lexlib/*.cxx)
+
+# 静态编译标识
+add_definitions(-DQSCI_STATIC -DSCINTILLA_QT -DQT_NO_KEYWORDS)
+
+# 包含目录配置
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/qsci
+    ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/scintilla/lexlib
+)
+
+# 生成静态库
+add_library(qsci STATIC
+    ${QSCI_SOURCES}
+    ${QSCI_HEADERS}
+    ${SCINTILLA_SOURCES}
+    ${SCINTILLA_HEADERS}
+    ${LEXERS_SOURCES}
+    ${LEXLIB_SOURCES}
+)
+
+# 明确指定链接语言为C++
+set_target_properties(qsci PROPERTIES LINKER_LANGUAGE CXX)
+
+# 链接Qt库
+target_link_libraries(qsci PRIVATE
+    Qt5::Core
+    Qt5::Gui
+    Qt5::Widgets
+    Qt5::PrintSupport
+)
+
+# MSVC编译选项适配
+if(MSVC)
+    target_compile_options(qsci PRIVATE /utf-8)
+    target_compile_definitions(qsci PRIVATE
+        UNICODE
+        _UNICODE
+        _CRT_SECURE_NO_WARNINGS
+    )
+endif()
+
+# 导出头文件目录给上层项目使用
+target_include_directories(qsci INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qsci>
+    $<INSTALL_INTERFACE:include/qsci>
+)

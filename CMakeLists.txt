@@ -63,8 +63,11 @@ add_subdirectory(3rdparty/lua-5.4.4)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static library for libharu" FORCE)
 add_subdirectory(3rdparty/libharu-2.4.6)
 
-# scintilla 编辑器组件，还没有CMakeLists.txt，暂时不编译
-#add_subdirectory(3rdparty/QScintilla_src-2.14.1)
+# QScintilla 高级文本编辑器，补丁模式集成，不修改原源码
+set(QSCINTILLA_CMAKE_DIR ${CMAKE_SOURCE_DIR}/cmake/qscintilla)
+configure_file(${QSCINTILLA_CMAKE_DIR}/CMakeLists.txt.in
+               ${CMAKE_SOURCE_DIR}/3rdparty/QScintilla_src-2.14.1/CMakeLists.txt @ONLY)
+add_subdirectory(3rdparty/QScintilla_src-2.14.1)
 
 # 设置编译选项，特别是Windows平台下的Unicode支持
 # 对于MSVC编译器，启用UTF-8编码支持，并定义Unicode相关的宏，以确保应用程序能够正确处理Unicode字符。
