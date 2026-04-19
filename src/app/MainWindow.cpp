@@ -91,8 +91,15 @@ void MainWindow::initUi() {
   // 显示行号
   m_editor->setMarginType(0, QsciScintilla::NumberMargin);
   m_editor->setMarginWidth(0, "0000");
-  // 开启C++语法高亮
+  // 开启C++语法高亮，设置经典VS风格配色
   QsciLexerCPP* lexer = new QsciLexerCPP(m_editor);
+  lexer->setColor(QColor(0, 0, 255), QsciLexerCPP::Keyword);              // 关键字蓝色
+  lexer->setColor(QColor(0, 128, 0), QsciLexerCPP::Comment);              // 注释绿色
+  lexer->setColor(QColor(163, 21, 21), QsciLexerCPP::DoubleQuotedString); // 双引号字符串暗红色
+  lexer->setColor(QColor(163, 21, 21), QsciLexerCPP::SingleQuotedString); // 单引号字符串暗红色
+  lexer->setColor(QColor(0, 0, 255), QsciLexerCPP::PreProcessor);         // 预处理指令蓝色
+  lexer->setColor(QColor(43, 145, 175), QsciLexerCPP::Number);            // 数字蓝绿色
+  lexer->setColor(QColor(128, 128, 128), QsciLexerCPP::Operator);         // 运算符灰色
   m_editor->setLexer(lexer);
   // 设置测试代码
   m_editor->setText(R"(#include <iostream>
