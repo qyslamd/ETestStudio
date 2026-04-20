@@ -43,3 +43,19 @@ set_target_properties(test_spdlog_basic PROPERTIES
 add_test(NAME SpdlogBasicTest 
          COMMAND test_spdlog_basic
          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+#=======================================
+# 生成运行脚本
+if(WIN32)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        set(BUILD_TYPE "ninja-debug")
+    else()
+        set(BUILD_TYPE "ninja-release")
+    endif()
+
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/run_spdlog_test.bat.in"
+        "${CMAKE_CURRENT_SOURCE_DIR}/run_spdlog_test.bat"
+        @ONLY
+    )
+endif()

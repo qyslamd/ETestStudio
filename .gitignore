@@ -1,6 +1,3 @@
-build/
-ninja-debug/
-
 # 常见的Qt使用CMake构建的必须要被忽略的文件和目录
 CMakeFiles/
 CMakeCache.txt
@@ -18,18 +15,23 @@ Makefile
 *.pro.user.*
 
 # 其他可能的构建文件和目录
-build-*/
-dist/
-out/
 .vs/
 *.vcxproj*
 *.sln
 *.ninja
+dist/
+out/
+bin/ 
+build-*/
+build/
+ninja-debug/
 
 # 一些测试生成的执行脚本
 run_app.bat
+run_libharu_test.bat
 run_qscintilla_test.bat
 run_qxlsx_test.bat
+run_spdlog_test.bat
 
 # 第三方依赖缓存目录
 3rdparty/spdlog-1.17.0/
@@ -42,5 +44,3 @@ run_qxlsx_test.bat
 3rdparty/QXlsx-1.5.0/
 3rdparty/lua/
 3rdparty/zlib-1.3.2/
-# 编译输出目录
-bin/

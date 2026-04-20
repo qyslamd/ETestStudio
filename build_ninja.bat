@@ -10,9 +10,7 @@ call "D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary
 set PATH=%PATH%;"D:\Program Files\CMake\bin"
 
 :: 配置CMake项目
-cmake -S . ^
-    --preset ninja-debug ^
-    -B build\ninja-debug
+cmake -S . --preset ninja-debug 
    
 if errorlevel 1 (
     echo "CMake 配置失败"

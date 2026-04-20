@@ -73,6 +73,7 @@ configure_file(${QSCINTILLA_CMAKE_DIR}/CMakeLists.txt.in
                ${CMAKE_SOURCE_DIR}/3rdparty/QScintilla-2.11.3/CMakeLists.txt @ONLY)
 add_subdirectory(3rdparty/QScintilla-2.11.3)
 
+#=======================================
 # 设置编译选项，特别是Windows平台下的Unicode支持
 # 对于MSVC编译器，启用UTF-8编码支持，并定义Unicode相关的宏，以确保应用程序能够正确处理Unicode字符。
 if(MSVC)
