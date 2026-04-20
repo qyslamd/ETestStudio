@@ -58,9 +58,11 @@ endif ( )
 
 ## SETUP
 # Optional libraries
-find_package ( Readline )
-if ( READLINE_FOUND )
-  option ( LUA_USE_READLINE "Use readline in the Lua CLI." ON )
+if ( NOT WIN32 )
+  find_package ( Readline )
+  if ( READLINE_FOUND )
+    option ( LUA_USE_READLINE "Use readline in the Lua CLI." ON )
+  endif ( )
 endif ( )
 
 # Setup needed variables and libraries
