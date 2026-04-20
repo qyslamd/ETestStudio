@@ -16,7 +16,10 @@ project(etest_demo
 
 #=======================================
 # 自动解压第三方依赖库
-include(cmake/scripts/extract_dependencies.cmake)
+if (EXISTS "cmake/scripts/extract_dependencies.cmake")
+    include(cmake/scripts/extract_dependencies.cmake)
+endif()
+
 
 #=======================================
 # CMake全局变量
@@ -30,7 +33,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 #=======================================
 # 添加自己编写的一些cmake模块
-include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
+if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake")
+    include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
+endif()
 
 #=======================================
 # 第三方依赖本地源码编译
@@ -44,9 +49,10 @@ set(BUILD_STATIC ON CACHE BOOL "Build static libraries for Qt-Advanced-Docking-S
 set(BUILD_EXAMPLES OFF CACHE BOOL "Do not build examples for Qt-Advanced-Docking-System" FORCE)  # 不需要编译示例
 
 # 应用Qt-Advanced-Docking-System CMake补丁
-include(cmake/qads/patch_cmake_version.cmake)
-
-add_subdirectory(3rdparty/Qt-Advanced-Docking-System-3.8.3)
+if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/qads/patch_cmake_version.cmake")
+    include(cmake/qads/patch_cmake_version.cmake)
+    add_subdirectory(3rdparty/Qt-Advanced-Docking-System-3.8.3)
+endif()
 
 # QXlsx Excel读写库
 add_subdirectory(3rdparty/QXlsx-1.5.0/QXlsx)
@@ -57,18 +63,20 @@ add_subdirectory(3rdparty/zlib-1.3.2)
 
 # libpng PNG库
 # 应用libpng CMake补丁
-include(cmake/libpng/patch_cmake_version.cmake)
+if(EXISTS "cmake/libpng/patch_cmake_version.cmake")
+    include(cmake/libpng/patch_cmake_version.cmake)
 
-set(PNG_STATIC ON CACHE BOOL "Build static libpng" FORCE)
-set(PNG_SHARED OFF CACHE BOOL "Do not build shared libpng" FORCE)
-set(PNG_TESTS OFF CACHE BOOL "Do not build libpng tests" FORCE)
+    set(PNG_STATIC ON CACHE BOOL "Build static libpng" FORCE)
+    set(PNG_SHARED OFF CACHE BOOL "Do not build shared libpng" FORCE)
+    set(PNG_TESTS OFF CACHE BOOL "Do not build libpng tests" FORCE)
 
-# 让libpng使用我们自己的zlib目标
-set(ZLIB_FOUND TRUE CACHE BOOL "ZLIB found" FORCE)
-set(ZLIB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/zlib-1.3.2" CACHE PATH "ZLIB include dir" FORCE)
-set(ZLIB_LIBRARY ZLIB::ZLIBSTATIC CACHE FILEPATH "ZLIB library" FORCE)
+    # 让libpng使用我们自己的zlib目标
+    set(ZLIB_FOUND TRUE CACHE BOOL "ZLIB found" FORCE)
+    set(ZLIB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/zlib-1.3.2" CACHE PATH "ZLIB include dir" FORCE)
+    set(ZLIB_LIBRARY ZLIB::ZLIBSTATIC CACHE FILEPATH "ZLIB library" FORCE)
 
-add_subdirectory(3rdparty/libpng-1.6.43)
+    add_subdirectory(3rdparty/libpng-1.6.43)
+endif()
 
 # spdlog 日志库
 set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "Do not build spdlog examples" FORCE)
@@ -100,7 +108,7 @@ set(PNG_PNG_INCLUDE_DIR
 set(PNG_LIBRARY png_static CACHE FILEPATH "PNG library" FORCE)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static library for libharu" FORCE)
-add_subdirectory(3rdparty/libharu-2.4.6)
+#add_subdirectory(3rdparty/libharu-2.4.6)
 
 # QScintilla 高级文本编辑器，补丁模式集成，不修改原源码
 set(QSCINTILLA_CMAKE_DIR ${CMAKE_SOURCE_DIR}/cmake/qscintilla)

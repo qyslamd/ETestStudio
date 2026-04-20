@@ -1,0 +1,10 @@
+@echo off
+echo Running Lua C++ interop unit tests...
+echo Build type: @BUILD_TYPE@
+echo ======================================
+
+@CMAKE_BINARY_DIR@/bin/test_lua_cpp_interop.exe
+
+echo ======================================
+echo Test completed.
+pause

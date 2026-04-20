@@ -35,6 +35,7 @@ run_libharu_test.bat
 run_qscintilla_test.bat
 run_qxlsx_test.bat
 run_spdlog_test.bat
+run_lua_unit_test.bat
 
 # 第三方依赖缓存目录
 3rdparty/spdlog-1.17.0/
