@@ -2,8 +2,15 @@
 echo =======================================
 echo Running QScintilla C++ Highlight Tests
 echo =======================================
+
+set "PATH=@QT_BIN_DIR@;%PATH%"
+set "QT_PLUGIN_PATH=@QT_PLUGINS_DIR@"
+
+chcp 65001 >nul
+
 cd ..\..\build\ninja-debug\bin
 qscintilla_highlight_test.exe
+
 echo =======================================
 echo Test completed!
 pause

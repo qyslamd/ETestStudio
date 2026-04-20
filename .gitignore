@@ -26,6 +26,8 @@ out/
 *.sln
 *.ninja
 run_app.bat
+run_qscintilla_test.bat
+
 # 第三方依赖缓存目录
 3rdparty/spdlog-1.17.0/
 3rdparty/googletest-1.17.0/
