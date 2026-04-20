@@ -3,7 +3,6 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
-*.cmake
 *.o
 *.obj
 *.so
@@ -13,6 +12,9 @@ Makefile
 *.user
 *.pro.user
 *.pro.user.*
+
+# 一些在文档中需要忽略的文件或目录
+Schema/
 
 # 其他可能的构建文件和目录
 .vs/
