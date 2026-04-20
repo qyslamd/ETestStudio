@@ -70,7 +70,6 @@ set(ZLIB_LIBRARY ZLIB::ZLIBSTATIC CACHE FILEPATH "ZLIB library" FORCE)
 
 add_subdirectory(3rdparty/libpng-1.6.43)
 
-return()
 # spdlog 日志库
 set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "Do not build spdlog examples" FORCE)
 set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "Do not build spdlog tests" FORCE)
@@ -94,7 +93,10 @@ set(ZLIB_FOUND TRUE CACHE BOOL "ZLIB found" FORCE)
 set(ZLIB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/zlib-1.3.2" CACHE PATH "ZLIB include dir" FORCE)
 set(ZLIB_LIBRARY zlibstatic CACHE FILEPATH "ZLIB library" FORCE)
 set(PNG_FOUND TRUE CACHE BOOL "PNG found" FORCE)
-set(PNG_PNG_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/libpng-1.6.43" CACHE PATH "PNG include dir" FORCE)
+set(PNG_PNG_INCLUDE_DIR 
+    "${CMAKE_SOURCE_DIR}/3rdparty/libpng-1.6.43"
+    "${CMAKE_BINARY_DIR}/3rdparty/libpng-1.6.43"
+    CACHE PATH "PNG include dirs" FORCE)
 set(PNG_LIBRARY png_static CACHE FILEPATH "PNG library" FORCE)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static library for libharu" FORCE)
