@@ -25,6 +25,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 #=======================================
+# 添加自己编写的一些cmake模块
+include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
+
+#=======================================
 # 第三方依赖本地源码编译
 #=======================================
 # 查找Qt库
@@ -86,17 +90,31 @@ endif()
 # 包含src目录下的CMakeLists.txt，编译应用程序
 add_subdirectory(src)
 
-# 包含QScintilla单元测试
-add_subdirectory(tests/qscintilla)
-
-include(CTest)
+# =======================================
+# 包含单元测试
 if (BUILD_TESTING)
-  enable_testing()
-  # Lua smoke tests: verify lua.exe and luaw.exe basic functionality
-  add_test(NAME LuaSmokeBasic
-           COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" lua.exe -e "print('Lua smoke ok')")
-  add_test(NAME LuaSmokeNoConsole
-           COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" luaw.exe -e "print('Lua smoke no-console')")
-  add_test(NAME LuaSmokeBytecode
-           COMMAND cmd /C "${CMAKE_SOURCE_DIR}/lua_smoke_bytecode.bat")
+    include(CTest)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
+
+# =======================================
+# 生成windows下的clang-format脚本
+if(WIN32)
+    # 找到 clang-format 可执行文件路径，生成 run_clang_format.bat 脚本 
+    find_program(CLANG_FORMAT_EXECUTABLE 
+        NAMES clang-format clang-format-15 clang-format-14 clang-format-13 clang-format-12
+        HINTS $ENV{VSINSTALLDIR}/VC/Tools/Llvm/bin
+              $ENV{ProgramFiles}/LLVM/bin
+        )
+    if(NOT CLANG_FORMAT_EXECUTABLE)
+        message(WARNING "clang-format executable not found. Please install clang-format and ensure it's in your PATH.")
+    else()
+        configure_file(
+            "${CMAKE_SOURCE_DIR}/cmake/format_code.bat.in"
+            "${CMAKE_SOURCE_DIR}/format_code.bat"
+            @ONLY
+        )
+    endif()
 endif()

@@ -57,7 +57,7 @@ if(WIN32)
     endif()
 
     configure_file(
-        "${CMAKE_SOURCE_DIR}/run_app.bat.in"
+        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
         "${CMAKE_SOURCE_DIR}/run_app.bat"
         @ONLY
     )

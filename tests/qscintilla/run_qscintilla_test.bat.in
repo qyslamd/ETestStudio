@@ -5,10 +5,11 @@ echo =======================================
 
 set "PATH=@QT_BIN_DIR@;%PATH%"
 set "QT_PLUGIN_PATH=@QT_PLUGINS_DIR@"
+set "BUILD_TYPE=@BUILD_TYPE@"
 
 chcp 65001 >nul
 
-cd ..\..\build\ninja-debug\bin
+cd ..\..\build\%BUILD_TYPE%\bin
 qscintilla_highlight_test.exe
 
 echo =======================================

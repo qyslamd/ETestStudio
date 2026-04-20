@@ -1,0 +1,11 @@
+@echo off
+set "PATH=@QT_BIN_DIR@;%PATH%"
+set "QT_PLUGIN_PATH=@QT_PLUGINS_DIR@"
+set "BUILD_TYPE=@BUILD_TYPE@"
+
+echo Running QXlsx unit test...
+cd /d %~dp0..\..\build\%BUILD_TYPE%\bin
+test_qxlsx_basic.exe
+echo.
+echo Test completed, press any key to exit...
+pause >nul
