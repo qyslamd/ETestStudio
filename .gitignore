@@ -30,6 +30,7 @@ run_app.bat
 3rdparty/spdlog-1.17.0/
 3rdparty/googletest-1.17.0/
 3rdparty/libharu-2.4.6/
+3rdparty/lua/
 3rdparty/lua-5.4.4/
 3rdparty/QScintilla-2.11.3/
 3rdparty/Qt-Advanced-Docking-System-3.8.3/
