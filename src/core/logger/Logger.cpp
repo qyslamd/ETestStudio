@@ -1,4 +1,6 @@
 #include "Logger.h"
+#include "config/ConfigManager.h"
+#include "config/ConfigDefs.h"
 #include <QStandardPaths>
 #include <QDir>
 #include <QDateTime>
@@ -59,16 +61,39 @@ void Logger::init() {
         spdlog::thread_pool(),
         spdlog::async_overflow_policy::block
     );
-    defaultLogger->set_level(spdlog::level::debug);
     defaultLogger->flush_on(spdlog::level::err);
     spdlog::register_logger(defaultLogger);
     spdlog::set_default_logger(defaultLogger);
+
+    // 从配置读取日志级别
+    auto updateLogLevel = []() {
+        int level = ConfigManager::instance().get<int>(CONFIG_LOG_LEVEL, CONFIG_LOG_DEFAULT_LEVEL);
+        spdlog::level::level_enum spdLevel = spdlog::level::info;
+        switch (level) {
+            case 0: spdLevel = spdlog::level::debug; break;
+            case 1: spdLevel = spdlog::level::info; break;
+            case 2: spdLevel = spdlog::level::warn; break;
+            case 3: spdLevel = spdlog::level::err; break;
+            case 4: spdLevel = spdlog::level::critical; break;
+            default: spdLevel = spdlog::level::info; break;
+        }
+        spdlog::set_level(spdLevel);
+    };
+    updateLogLevel();
+
+    // 监听配置变更，日志级别实时生效
+    QObject::connect(&ConfigManager::instance(), &ConfigManager::configChanged, [=](const QString& key) {
+        if (key == CONFIG_LOG_LEVEL) {
+            updateLogLevel();
+            LOG_INFO("LOGGER", "日志级别已更新为: {}", ConfigManager::instance().get<int>(CONFIG_LOG_LEVEL));
+        }
+    });
 
     // 自动每秒flush一次
     spdlog::flush_every(std::chrono::seconds(1));
 
     s_initialized = true;
-    LOG_INFO("LOGGER", "日志系统初始化完成");
+    LOG_INFO("LOGGER", "日志系统初始化完成，当前日志级别: {}", ConfigManager::instance().get<int>(CONFIG_LOG_LEVEL));
 }
 
 void Logger::shutdown() {
