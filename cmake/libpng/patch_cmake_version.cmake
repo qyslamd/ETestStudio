@@ -10,36 +10,110 @@ function(patch_libpng_cmake cmake_path description)
     
     # 读取原文件内容
     file(READ "${cmake_path}" CMAKE_CONTENT)
-    
-    # 检查是否已经patch过（避免重复patch）
-    if(CMAKE_CONTENT MATCHES "cmake_minimum_required\\(VERSION 3.15\\)")
-        message(STATUS "${description} already patched, skipping")
+    if("${CMAKE_CONTENT}" STREQUAL "")
+        message(WARNING "Read ${cmake_path} failed, content is empty, skipping patch")
         return()
     endif()
     
+    # 强制初始化修改后的内容为原始内容，避免空变量问题
+    set(CMAKE_CONTENT_MODIFIED "${CMAKE_CONTENT}")
+    set(PATCH_APPLIED FALSE)
+    
     # 1. 替换版本号
-    string(REPLACE "cmake_minimum_required(VERSION 3.6)" 
-                   "cmake_minimum_required(VERSION 3.15)" 
-                   CMAKE_CONTENT_MODIFIED "${CMAKE_CONTENT}")
+    if(NOT CMAKE_CONTENT MATCHES "cmake_minimum_required\\(VERSION 3.15\\)")
+        string(REPLACE "cmake_minimum_required(VERSION 3.6)" 
+                "cmake_minimum_required(VERSION 3.15)" 
+                TMP_CONTENT "${CMAKE_CONTENT_MODIFIED}")
+        if(NOT "${TMP_CONTENT}" STREQUAL "${CMAKE_CONTENT_MODIFIED}")
+            set(CMAKE_CONTENT_MODIFIED "${TMP_CONTENT}")
+            set(PATCH_APPLIED TRUE)
+            message(STATUS "  ✅ Patched cmake_minimum_required version to 3.15")
+        else()
+            message(WARNING "  ⚠️ Failed to patch cmake_minimum_required version, pattern not found")
+        endif()
+    else()
+        message(STATUS "  ℹ️ cmake_minimum_required already at 3.15, skipping")
+    endif()
     
     # 2. 注释掉find_package(ZLIB REQUIRED)，因为我们自己提供zlib
-    string(REPLACE "  find_package(ZLIB REQUIRED)" 
-                   "#  find_package(ZLIB REQUIRED)  # 使用项目自己的zlib" 
-                   CMAKE_CONTENT_MODIFIED "${CMAKE_CONTENT_MODIFIED}")
+    if(CMAKE_CONTENT MATCHES "  find_package\\(ZLIB REQUIRED\\)")
+        string(REPLACE "  find_package(ZLIB REQUIRED)" 
+                       "#  find_package(ZLIB REQUIRED)  # 使用项目自己的zlib" 
+                       TMP_CONTENT "${CMAKE_CONTENT_MODIFIED}")
+        if(NOT "${TMP_CONTENT}" STREQUAL "${CMAKE_CONTENT_MODIFIED}")
+            set(CMAKE_CONTENT_MODIFIED "${TMP_CONTENT}")
+            set(PATCH_APPLIED TRUE)
+            message(STATUS "  ✅ Patched find_package(ZLIB) comment")
+        endif()
+    else()
+        message(STATUS "  ℹ️ find_package(ZLIB) already commented, skipping")
+    endif()
     
     # 3. 修改链接目标，使用我们的静态zlib
     # 注意：这里不使用${M_LIBRARY}，因为在patch执行时变量还不存在
-    string(REPLACE "target_link_libraries(png_shared PUBLIC ZLIB::ZLIB" 
-                   "target_link_libraries(png_shared PUBLIC ZLIB::ZLIBSTATIC" 
-                   CMAKE_CONTENT_MODIFIED "${CMAKE_CONTENT_MODIFIED}")
-    string(REPLACE "target_link_libraries(png_static PUBLIC ZLIB::ZLIB" 
-                   "target_link_libraries(png_static PUBLIC ZLIB::ZLIBSTATIC" 
-                   CMAKE_CONTENT_MODIFIED "${CMAKE_CONTENT_MODIFIED}")
+    if(CMAKE_CONTENT MATCHES "target_link_libraries\\(png_shared PUBLIC ZLIB::ZLIB")
+        string(REPLACE "target_link_libraries(png_shared PUBLIC ZLIB::ZLIB" 
+                       "target_link_libraries(png_shared PUBLIC ZLIB::ZLIBSTATIC" 
+                       TMP_CONTENT "${CMAKE_CONTENT_MODIFIED}")
+        if(NOT "${TMP_CONTENT}" STREQUAL "${CMAKE_CONTENT_MODIFIED}")
+            set(CMAKE_CONTENT_MODIFIED "${TMP_CONTENT}")
+            set(PATCH_APPLIED TRUE)
+            message(STATUS "  ✅ Patched png_shared zlib link target")
+        endif()
+    else()
+        message(STATUS "  ℹ️ png_shared zlib link target already patched, skipping")
+    endif()
     
-    # 写入修改后的内容（会覆盖原文件）
-    file(WRITE "${cmake_path}" "${CMAKE_CONTENT_MODIFIED}")
+    if(CMAKE_CONTENT MATCHES "target_link_libraries\\(png_static PUBLIC ZLIB::ZLIB")
+        string(REPLACE "target_link_libraries(png_static PUBLIC ZLIB::ZLIB" 
+                       "target_link_libraries(png_static PUBLIC ZLIB::ZLIBSTATIC" 
+                       TMP_CONTENT "${CMAKE_CONTENT_MODIFIED}")
+        if(NOT "${TMP_CONTENT}" STREQUAL "${CMAKE_CONTENT_MODIFIED}")
+            set(CMAKE_CONTENT_MODIFIED "${TMP_CONTENT}")
+            set(PATCH_APPLIED TRUE)
+            message(STATUS "  ✅ Patched png_static zlib link target")
+        endif()
+    else()
+        message(STATUS "  ℹ️ png_static zlib link target already patched, skipping")
+    endif()
     
-    message(STATUS "Patched ${description}: cmake_minimum_required updated to 3.15, zlib integration complete")
+    # 4. 添加CMP0194政策设置，解决MSVC下ASM编译器警告
+    if(NOT CMAKE_CONTENT MATCHES "POLICY CMP0194")
+        string(REPLACE "project(libpng
+        VERSION \${PNGLIB_VERSION}
+        LANGUAGES C ASM)"
+"if(POLICY CMP0194)
+  cmake_policy(SET CMP0194 NEW)
+endif()
+project(libpng
+        VERSION \${PNGLIB_VERSION}
+        LANGUAGES C ASM)"
+        TMP_CONTENT "${CMAKE_CONTENT_MODIFIED}")
+        if(NOT "${TMP_CONTENT}" STREQUAL "${CMAKE_CONTENT_MODIFIED}")
+            set(CMAKE_CONTENT_MODIFIED "${TMP_CONTENT}")
+            set(PATCH_APPLIED TRUE)
+            message(STATUS "  ✅ Added CMP0194 policy patch")
+        else()
+            message(WARNING "  ⚠️ Failed to add CMP0194 policy patch, project pattern not found")
+        endif()
+    else()
+        message(STATUS "  ℹ️ CMP0194 policy already patched, skipping")
+    endif()
+    
+    # 写入前有效性校验，避免写入空内容损坏文件
+    if("${CMAKE_CONTENT_MODIFIED}" STREQUAL "")
+        message(WARNING "Modified content is empty, aborting write to avoid damaging original file")
+        return()
+    endif()
+    
+    # 只有实际有修改的时候才写入文件，避免不必要的文件IO和时间戳变更
+    if(PATCH_APPLIED)
+        # 写入修改后的内容（会覆盖原文件）
+        file(WRITE "${cmake_path}" "${CMAKE_CONTENT_MODIFIED}")
+        message(STATUS "Patched ${description}: all patches applied successfully")
+    else()
+        message(STATUS "${description} already fully patched, no changes needed")
+    endif()
 endfunction()
 
 # 补丁 libpng CMakeLists.txt
