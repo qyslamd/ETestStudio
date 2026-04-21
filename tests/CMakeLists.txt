@@ -26,8 +26,10 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" lua.exe -e "print('Lua smoke ok')")
     add_test(NAME LuaSmokeNoConsole
         COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" luaw.exe -e "print('Lua smoke no-console')")
-    add_test(NAME LuaSmokeBytecode
-        COMMAND cmd /C "${CMAKE_SOURCE_DIR}/lua_smoke_bytecode.bat")
+add_test(NAME LuaSmokeBytecode
+    COMMAND ${CMAKE_COMMAND} -E chdir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    luac.exe -o test_bytecode.luac ${CMAKE_CURRENT_LIST_DIR}/lua/batch_smoke_test/test.lua
+    lua.exe test_bytecode.luac)
 endif()
 
 add_subdirectory(lua/unit_test)
