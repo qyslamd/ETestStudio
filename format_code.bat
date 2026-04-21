@@ -8,9 +8,6 @@ if not exist %CLANG_FORMAT% (
     exit /b 1
 )
 
-set PROJECT_ROOT=%~dp0
-cd /d "%PROJECT_ROOT%.."
-
 set EXCLUDE_DIRS=build cmake-build out Release Debug
 
 echo Formatting .cpp and .h files...
