@@ -49,34 +49,6 @@ function(patch_libpng_cmake cmake_path description)
         message(STATUS "  ℹ️ find_package(ZLIB) already commented, skipping")
     endif()
     
-    # 3. 修改链接目标，使用我们的静态zlib
-    # 注意：这里不使用${M_LIBRARY}，因为在patch执行时变量还不存在
-    if(CMAKE_CONTENT MATCHES "target_link_libraries\\(png_shared PUBLIC ZLIB::ZLIB")
-        string(REPLACE "target_link_libraries(png_shared PUBLIC ZLIB::ZLIB" 
-                       "target_link_libraries(png_shared PUBLIC ZLIB::ZLIBSTATIC" 
-                       TMP_CONTENT "${CMAKE_CONTENT_MODIFIED}")
-        if(NOT "${TMP_CONTENT}" STREQUAL "${CMAKE_CONTENT_MODIFIED}")
-            set(CMAKE_CONTENT_MODIFIED "${TMP_CONTENT}")
-            set(PATCH_APPLIED TRUE)
-            message(STATUS "  ✅ Patched png_shared zlib link target")
-        endif()
-    else()
-        message(STATUS "  ℹ️ png_shared zlib link target already patched, skipping")
-    endif()
-    
-    if(CMAKE_CONTENT MATCHES "target_link_libraries\\(png_static PUBLIC ZLIB::ZLIB")
-        string(REPLACE "target_link_libraries(png_static PUBLIC ZLIB::ZLIB" 
-                       "target_link_libraries(png_static PUBLIC ZLIB::ZLIBSTATIC" 
-                       TMP_CONTENT "${CMAKE_CONTENT_MODIFIED}")
-        if(NOT "${TMP_CONTENT}" STREQUAL "${CMAKE_CONTENT_MODIFIED}")
-            set(CMAKE_CONTENT_MODIFIED "${TMP_CONTENT}")
-            set(PATCH_APPLIED TRUE)
-            message(STATUS "  ✅ Patched png_static zlib link target")
-        endif()
-    else()
-        message(STATUS "  ℹ️ png_static zlib link target already patched, skipping")
-    endif()
-    
     # 4. 添加CMP0194政策设置 + 移除不必要的ASM语言声明，解决MSVC下ASM编译器错误
     if(CMAKE_CONTENT MATCHES "LANGUAGES C ASM")
         string(REPLACE "project(libpng
@@ -117,7 +89,9 @@ project(libpng
 endfunction()
 
 # 补丁 libpng CMakeLists.txt
-patch_libpng_cmake(
-    "${CMAKE_SOURCE_DIR}/3rdparty/libpng-1.6.43/CMakeLists.txt"
-    "libpng root CMakeLists.txt"
-)
+if(WIN32)
+    patch_libpng_cmake(
+        "${CMAKE_SOURCE_DIR}/3rdparty/libpng-1.6.43/CMakeLists.txt"
+        "libpng root CMakeLists.txt"
+    )
+endif()
