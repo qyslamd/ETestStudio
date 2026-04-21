@@ -77,8 +77,8 @@ function(patch_libpng_cmake cmake_path description)
         message(STATUS "  ℹ️ png_static zlib link target already patched, skipping")
     endif()
     
-    # 4. 添加CMP0194政策设置，解决MSVC下ASM编译器警告
-    if(NOT CMAKE_CONTENT MATCHES "POLICY CMP0194")
+    # 4. 添加CMP0194政策设置 + 移除不必要的ASM语言声明，解决MSVC下ASM编译器错误
+    if(CMAKE_CONTENT MATCHES "LANGUAGES C ASM")
         string(REPLACE "project(libpng
         VERSION \${PNGLIB_VERSION}
         LANGUAGES C ASM)"
@@ -87,17 +87,17 @@ function(patch_libpng_cmake cmake_path description)
 endif()
 project(libpng
         VERSION \${PNGLIB_VERSION}
-        LANGUAGES C ASM)"
+        LANGUAGES C)"
         TMP_CONTENT "${CMAKE_CONTENT_MODIFIED}")
         if(NOT "${TMP_CONTENT}" STREQUAL "${CMAKE_CONTENT_MODIFIED}")
             set(CMAKE_CONTENT_MODIFIED "${TMP_CONTENT}")
             set(PATCH_APPLIED TRUE)
-            message(STATUS "  ✅ Added CMP0194 policy patch")
+            message(STATUS "  ✅ Added CMP0194 policy and removed ASM language requirement")
         else()
-            message(WARNING "  ⚠️ Failed to add CMP0194 policy patch, project pattern not found")
+            message(WARNING "  ⚠️ Failed to patch project declaration, pattern not found")
         endif()
     else()
-        message(STATUS "  ℹ️ CMP0194 policy already patched, skipping")
+        message(STATUS "  ℹ️ Project declaration already patched (ASM removed), skipping")
     endif()
     
     # 写入前有效性校验，避免写入空内容损坏文件

@@ -3,6 +3,11 @@ setlocal enabledelayedexpansion
 
 chcp 65001 >nul
 
+set PROJECT_ROOT=%~dp0
+set PROJECT_ROOT=%PROJECT_ROOT%
+
+cd /d "%PROJECT_ROOT%.."
+
 :: 检查是否有修改
 git status --short >nul
 if errorlevel 1 (
