@@ -8,7 +8,7 @@
 
 - 每次修改仅仅改动和我确认过的内容，不能擅自执行未经确认的任何改动！
   - 要对已经存在的代码和文档做出修改，也必须经过我的明确授权
-- 如果执行CMake，或者编译改动的代码，必须使用 `build_ninja.bat`
+- 如果执行CMake，或者编译改动的代码，必须使用 `scripts/build_ninja.bat`
 - 如果需要运行主程序，必须使用 `run_app.bat`
 - 如果需要删除构建目录，通常是 `build/ninja_build`, 请一定要征求我的同意
 - C/C++的代码编写必须符合 Google C++ Style Guide。参考地址：<https://google.github.io/styleguide/cppguide.html>
