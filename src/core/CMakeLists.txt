@@ -1,4 +1,6 @@
 # core 核心库CMake配置
+add_subdirectory(crashhandler)
+
 add_library(core STATIC
     logger/Logger.cpp
 )
@@ -10,6 +12,7 @@ target_include_directories(core PUBLIC
 target_link_libraries(core PUBLIC
     Qt5::Core
     spdlog::spdlog
+    core_crashhandler
 )
 
 # 编译选项

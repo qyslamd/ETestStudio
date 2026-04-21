@@ -8,6 +8,7 @@
 
 #include "MainWindow.h"
 #include "logger/Logger.h"
+#include "crashhandler/CrashHandler.h"
 
 // 第三方依赖头文件引入
 #include "gtest/gtest.h"
@@ -20,6 +21,13 @@ int main(int argc, char* argv[]) {
 
   // 初始化日志系统
   Logger::init();
+
+  // 初始化崩溃捕获模块
+  auto crashHandler = CrashHandler::create();
+  if (crashHandler) {
+      crashHandler->init();
+      LOG_INFO("MAIN", "✅ 崩溃捕获模块初始化完成");
+  }
 
   // 逐个验证已配置第三方依赖
   // 1. googletest 验证（仅验证头文件和链接有效性）
