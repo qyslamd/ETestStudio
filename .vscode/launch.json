@@ -14,7 +14,7 @@
             "cwd": "${workspaceFolder}/build/ninja-debug/bin",
             "environment": [],
             "console": "externalTerminal",
-            "visualizerFile": "c:\\Users\\zhouy\\AppData\\Roaming\\Code\\User\\workspaceStorage\\09500226b0e705fc90296cfc874acc1e\\tonka3000.qtvsctools\\qt.natvis.xml"
+            "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         }
     ]
 }
