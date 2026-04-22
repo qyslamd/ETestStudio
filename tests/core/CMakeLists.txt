@@ -1,10 +1,11 @@
-# 开启AUTOMOC处理Qt元对象
-set(CMAKE_AUTOMOC ON)
-
 # 崩溃捕获模块测试（仅Windows实现）
 if(WIN32)
-    add_executable(test_core_crashhandler crashhandler_test.cpp)
-    target_link_libraries(test_core_crashhandler PRIVATE
+    set(TARGET_NAME "test_core_crashhandler")
+    add_executable(${TARGET_NAME} crashhandler_test.cpp)
+    set_target_properties(${TARGET_NAME} PROPERTIES
+        AUTOMOC ON
+    )
+    target_link_libraries(${TARGET_NAME} PRIVATE
         core
         gtest
         gtest_main
@@ -13,21 +14,25 @@ if(WIN32)
     )
     
     add_test(NAME CrashHandlerBasicTest
-        COMMAND test_core_crashhandler
+        COMMAND ${TARGET_NAME}
         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()
 
 # 配置管理模块测试
-add_executable(test_core_config config_test.cpp)
-target_link_libraries(test_core_config PRIVATE
+set(TARGET_NAME "test_core_config")
+add_executable(${TARGET_NAME} config_test.cpp)
+target_link_libraries(${TARGET_NAME} PRIVATE
     core
     gtest
     gtest_main
     Qt5::Core
 )
+set_target_properties(${TARGET_NAME} PROPERTIES
+    AUTOMOC ON
+)
 
 add_test(NAME ConfigBasicTest
-    COMMAND test_core_config
+    COMMAND ${TARGET_NAME}
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )

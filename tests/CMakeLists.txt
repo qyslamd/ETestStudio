@@ -3,23 +3,25 @@ if(Qt5_FOUND)
     get_target_property(_qt_core_location Qt5::Core LOCATION)
     get_filename_component(QT_LIB_DIR "${_qt_core_location}" DIRECTORY)
     if(WIN32)
-        # Windows平台：Qt动态库在bin目录，插件在同级plugins目录
         get_filename_component(QT_BIN_DIR "${QT_LIB_DIR}/../bin" ABSOLUTE)
-        set(TEST_ENV
+        set(TEST_ENV_QT
             "PATH=${QT_BIN_DIR};$ENV{PATH}"
             "QT_PLUGIN_PATH=${QT_BIN_DIR}/../plugins"
         )
-        #message(FATAL_ERROR "QT_BIN_DIR: ${QT_BIN_DIR}" ${QT_BIN_DIR}/../plugins)
     else()
-        # Linux平台：Qt动态库在lib目录，插件在同级plugins目录
-        set(TEST_ENV
+        set(TEST_ENV_QT
             "LD_LIBRARY_PATH=${QT_LIB_DIR}:$ENV{LD_LIBRARY_PATH}"
             "QT_PLUGIN_PATH=${QT_LIB_DIR}/../plugins"
         )
-        message(FATAL_ERROR "QT_PLUGIN_PATH: ${QT_PLUGIN_PATH}")
     endif()
-    # 应用到当前目录下所有测试
-    set_property(DIRECTORY APPEND PROPERTY TEST_ENVIRONMENT "${TEST_ENV}")
+
+    # 辅助函数：批量给指定目录下所有测试设置环境变量
+    function(set_test_env_for_dir dir)
+        get_property(tests DIRECTORY "${dir}" PROPERTY TESTS)
+        if(tests)
+            set_tests_properties(${tests} PROPERTIES ENVIRONMENT "${TEST_ENV_QT}")
+        endif()
+    endfunction()
 endif()
 
 # Lua smoke tests: verify lua.exe and luaw.exe basic functionality

@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 3.19)
 project(etest_demo
     VERSION 1.0.0
     DESCRIPTION "Use Qt to a app like ETest"
-    LANGUAGES CXX)
+    LANGUAGES CXX C)
 
 #=======================================
 # 自动解压第三方依赖库
@@ -39,7 +39,8 @@ include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
 # 第三方依赖本地源码编译
 #=======================================
 # 查找Qt库
-find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test Xml Svg
+    CONFIG REQUIRED)
 
 # Qt-Advanced-Docking-System Qt版本的 ribbon和dock组件
 set(ADS_VERSION "3.8.3")  # 可以覆盖默认的版本提取方式，直接指定版本号
