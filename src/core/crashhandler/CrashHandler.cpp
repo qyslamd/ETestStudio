@@ -19,7 +19,7 @@ std::unique_ptr<CrashHandler> CrashHandler::create() {
 
 QString CrashHandler::generateCrashFileName() const {
     return QString("etest_crash_%1.log")
-        .arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+        .arg(QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss"));
 }
 
 QString CrashHandler::collectCommonInfo() const {

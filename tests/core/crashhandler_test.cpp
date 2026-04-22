@@ -58,7 +58,7 @@ TEST(CrashHandlerTest, GenerateFileName) {
   QString fileName = handler->generateCrashFileName();
   EXPECT_TRUE(fileName.startsWith("etest_crash_"));
   EXPECT_TRUE(fileName.endsWith(".log"));
-  // "etest_crash_YYYYMMDD_HHMMSS.log" 长度固定31
+  // "etest_crash_YYYYMMDD_HHmmss.log" 长度固定31
   EXPECT_EQ(fileName.size(), 31);
 }
 

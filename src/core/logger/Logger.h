@@ -2,7 +2,9 @@
 #define LOGGER_H
 
 #include <QString>
+#include <QMutex>
 #include <spdlog/spdlog.h>
+#include <unordered_map>
 
 // 日志级别枚举
 enum LogLevel {
@@ -32,7 +34,11 @@ public:
     static void log(const QString& module, LogLevel level, const char* file, int line, const char* format, ...);
 
 private:
+    // 按需创建模块logger，线程安全（调用方需持有s_mutex）
+    static spdlog::logger* getOrCreateModuleLogger(const std::string& moduleName);
     static bool s_initialized;
+    static QMutex s_mutex;
+    static std::unordered_map<std::string, spdlog::logger*> s_moduleLoggers;
 };
 
 // 全局日志调用宏
