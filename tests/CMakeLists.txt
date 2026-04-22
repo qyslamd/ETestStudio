@@ -91,7 +91,8 @@ macro(add_etest)
 
     # 9. 自动生成Windows下的run_test.bat，完全保留原有特性
     if(WIN32 AND NOT ETEST_NO_RUN_SCRIPT)
-        configure_file("${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in" "${CMAKE_CURRENT_SOURCE_DIR}/run_test.bat" @ONLY)
+        set(TARGET_NAME ${ETEST_NAME})
+        configure_file("${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run_${ETEST_NAME}.bat" @ONLY)
     endif()
 endmacro()
 

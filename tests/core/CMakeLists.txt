@@ -35,3 +35,21 @@ add_etest(
     QT_MODULES Core
     LABELS CORE
 )
+
+# 字符串工具类测试
+add_etest(
+    NAME test_core_string_util
+    SOURCES string_util_test.cpp
+    LIBS core
+    QT_MODULES Core
+    LABELS CORE
+)
+
+# 字节处理工具类测试
+add_etest(
+    NAME test_core_byte_util
+    SOURCES byte_util_test.cpp
+    LIBS core
+    QT_MODULES Core
+    LABELS CORE
+)

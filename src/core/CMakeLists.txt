@@ -6,8 +6,12 @@ set(SOURCES
     crashhandler/CrashHandler.cpp
     common/FileException.cpp
     common/TimeException.cpp
+    common/StringException.cpp
+    common/ByteException.cpp
     utils/FileUtil.cpp
     utils/TimeUtil.cpp
+    utils/StringUtil.cpp
+    utils/ByteUtil.cpp
 )
 
 set(HEADERS
@@ -17,8 +21,12 @@ set(HEADERS
     crashhandler/CrashHandler.h
     common/FileException.h
     common/TimeException.h
+    common/StringException.h
+    common/ByteException.h
     utils/FileUtil.h
     utils/TimeUtil.h
+    utils/StringUtil.h
+    utils/ByteUtil.h
 )
 
 if(WIN32)
