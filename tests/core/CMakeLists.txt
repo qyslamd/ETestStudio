@@ -17,3 +17,12 @@ if(WIN32)
         LABELS CORE
     )
 endif()
+
+# 工具类测试
+add_etest(
+    NAME test_core_utils
+    SOURCES utils_test.cpp
+    LIBS core
+    QT_MODULES Core
+    LABELS CORE
+)

@@ -4,6 +4,10 @@ set(SOURCES
     logger/Logger.cpp
     config/ConfigManager.cpp
     crashhandler/CrashHandler.cpp
+    common/FileException.cpp
+    common/TimeException.cpp
+    utils/FileUtil.cpp
+    utils/TimeUtil.cpp
 )
 
 set(HEADERS
@@ -11,6 +15,10 @@ set(HEADERS
     config/ConfigManager.h
     config/ConfigDefs.h
     crashhandler/CrashHandler.h
+    common/FileException.h
+    common/TimeException.h
+    utils/FileUtil.h
+    utils/TimeUtil.h
 )
 
 if(WIN32)
@@ -32,6 +40,8 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/logger
     ${CMAKE_CURRENT_SOURCE_DIR}/config
     ${CMAKE_CURRENT_SOURCE_DIR}/crashhandler
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
 )
 
 target_link_libraries(${TARGET_NAME} PUBLIC
