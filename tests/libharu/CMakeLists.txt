@@ -1,53 +1,9 @@
-# 测试可执行文件
-set(TARGET_NAME "test_libharu_basic")
-add_executable(${TARGET_NAME} test_libharu_basic.cpp)
-set_target_properties(${TARGET_NAME} PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED ON
-        CXX_EXTENSIONS ON
-        C_STANDARD 99
-        C_EXTENSIONS ON
-    )
-
-# 包含目录
-target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/3rdparty/libharu-2.4.6/include
-    ${CMAKE_BINARY_DIR}/3rdparty/libharu-2.4.6/include
-    ${CMAKE_SOURCE_DIR}/3rdparty/googletest-1.17.0/googletest/include
-    ${CMAKE_SOURCE_DIR}/3rdparty/googletest-1.17.0/googlemock/include
+add_etest(
+    NAME test_libharu_basic
+    SOURCES test_libharu_basic.cpp
+    LIBS hpdf zlibstatic
+    INCLUDES 
+        ${CMAKE_SOURCE_DIR}/3rdparty/libharu-2.4.6/include
+        ${CMAKE_BINARY_DIR}/3rdparty/libharu-2.4.6/include
+    LABELS THIRD_PARTY
 )
-
-# 链接库
-target_link_libraries(${TARGET_NAME} PRIVATE
-    hpdf
-    zlibstatic
-    gtest
-    gtest_main
-    gmock
-)
-
-# 适配MSVC编译选项
-if(MSVC)
-    target_compile_options(${TARGET_NAME} PRIVATE /utf-8)
-    target_compile_definitions(${TARGET_NAME} PRIVATE
-        UNICODE
-        _UNICODE
-        _CRT_SECURE_NO_WARNINGS
-    )
-endif()
-
-# 注册到CTest
-add_test(NAME LibHaruBasicTest 
-         COMMAND ${TARGET_NAME}
-         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-#=======================================
-# 生成运行脚本，不依赖于CTest，直接双击运行
-if(WIN32)
-    # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
-    configure_file(
-        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
-        "${CMAKE_CURRENT_SOURCE_DIR}/run_test.bat"
-        @ONLY
-    )
-endif()
