@@ -34,6 +34,11 @@ endif()
 add_test(NAME QXlsxBasicTest 
          COMMAND ${TARGET_NAME}
          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+         
+# =======================
+# 设置 Qt 的环境变量
+# cmake函数 set_test_env_for_dir 在上一层定义 
+set_test_env_for_dir(${CMAKE_CURRENT_SOURCE_DIR})
 
 #=======================================
 # 生成运行脚本，不依赖于CTest，直接双击运行
