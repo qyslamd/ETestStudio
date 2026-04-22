@@ -67,6 +67,7 @@ add_subdirectory(3rdparty/QXlsx-1.5.0/QXlsx)
 
 #  zlib 压缩库，通常被大多数库依赖，放在最前面编译
 set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Do not build shared libraries for zlib" FORCE)
+set(ZLIB_BUILD_TESTING OFF CACHE BOOL "Do not build tests for zlib" FORCE)
 add_subdirectory(3rdparty/zlib-1.3.2)
 
 # libpng PNG库

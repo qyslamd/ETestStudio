@@ -95,30 +95,6 @@ macro(add_etest)
     endif()
 endmacro()
 
-# ============== Lua冒烟测试（修复硬编码兼容跨平台） ==============
-if(WIN32)
-    set(LUA_EXECUTABLE "lua.exe")
-    set(LUAC_EXECUTABLE "luac.exe")
-else()
-    set(LUA_EXECUTABLE "lua")
-    set(LUAC_EXECUTABLE "luac")
-endif()
-
-add_test(NAME LuaSmokeBasic
-    COMMAND ${CMAKE_COMMAND} -E chdir "${ETEST_GLOBAL_RUNTIME_OUTPUT_DIR}" ${LUA_EXECUTABLE} -e "print('Lua smoke ok')")
-set_tests_properties(LuaSmokeBasic PROPERTIES LABELS "LUA;SMOKE" ENVIRONMENT "${TEST_ENV_QT}")
-
-if(WIN32)
-    add_test(NAME LuaSmokeNoConsole
-        COMMAND ${CMAKE_COMMAND} -E chdir "${ETEST_GLOBAL_RUNTIME_OUTPUT_DIR}" luaw.exe -e "print('Lua smoke no-console')")
-    set_tests_properties(LuaSmokeNoConsole PROPERTIES LABELS "LUA;SMOKE" ENVIRONMENT "${TEST_ENV_QT}")
-endif()
-
-add_test(NAME LuaSmokeBytecode
-    COMMAND ${CMAKE_COMMAND} -E chdir "${ETEST_GLOBAL_RUNTIME_OUTPUT_DIR}"
-    cmd /c "${LUAC_EXECUTABLE} -o test_bytecode.luac \"${CMAKE_CURRENT_LIST_DIR}/lua/batch_smoke_test/test.lua\" && ${LUA_EXECUTABLE} test_bytecode.luac")
-set_tests_properties(LuaSmokeBytecode PROPERTIES LABELS "LUA;SMOKE" ENVIRONMENT "${TEST_ENV_QT}")
-
 # ============== 全局开关配置 ==============
 option(BUILD_TESTS_THIRD_PARTY "Build third party library tests" ON)
 option(BUILD_TEST_COVERAGE "Generate test coverage report" OFF)
@@ -131,6 +107,7 @@ if(BUILD_TEST_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 # ============== 子目录注册 ==============
+add_subdirectory(lua/batch_smoke_test)
 add_subdirectory(lua/unit_test)
 
 if(BUILD_TESTS_THIRD_PARTY)
