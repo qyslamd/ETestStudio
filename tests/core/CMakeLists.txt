@@ -32,7 +32,13 @@ set_target_properties(${TARGET_NAME} PROPERTIES
     AUTOMOC ON
 )
 
+# =======================
+# 添加到CTest管理
 add_test(NAME ConfigBasicTest
     COMMAND ${TARGET_NAME}
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )
+# =======================
+# 设置 Qt 的环境变量
+# cmake函数 set_test_env_for_dir 在上一层定义 
+set_test_env_for_dir(${CMAKE_CURRENT_SOURCE_DIR})

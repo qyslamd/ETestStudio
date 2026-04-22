@@ -37,12 +37,18 @@ if(MSVC)
     )
 endif()
 
+# =======================================
 # 注册到CTest
 add_test(NAME QScintillaHighlightTest 
          COMMAND ${TARGET_NAME}
          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+         
+# =======================================
+# 设置 Qt 的环境变量
+# cmake函数 set_test_env_for_dir 在上一层定义 
+set_test_env_for_dir(${CMAKE_CURRENT_SOURCE_DIR})
 
-#=======================================
+# =======================================
 # 生成运行脚本
 set(QT_ROOT_DIR "${Qt5_DIR}/../../..")
 

@@ -44,13 +44,9 @@ target_link_libraries(${TARGET_NAME}
     )
 
 #=======================================
-# 生成运行脚本
-set(QT_ROOT_DIR "${Qt5_DIR}/../../..")
-
+# 生成运行脚本,适用于单独运行测试，不依赖CTest
 if(WIN32)
-    set(QT_BIN_DIR "${QT_ROOT_DIR}/bin")
-    set(QT_PLUGINS_DIR "${QT_ROOT_DIR}/plugins")
-
+    # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
     if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
         set(BUILD_TYPE "ninja-debug")
     else()

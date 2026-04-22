@@ -42,6 +42,17 @@ include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
 find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test Xml Svg
     CONFIG REQUIRED)
 
+if(Qt5_FOUND)
+    get_target_property(_qt_core_location Qt5::Core LOCATION)
+    get_filename_component(QT_LIB_DIR "${_qt_core_location}" DIRECTORY)
+    if(WIN32)
+        get_filename_component(QT_BIN_DIR "${QT_LIB_DIR}/../bin" ABSOLUTE)
+        get_filename_component(QT_PLUGINS_DIR "${QT_BIN_DIR}/../plugins" ABSOLUTE)
+    else()
+        # TODO：
+    endif()
+endif()
+
 # Qt-Advanced-Docking-System Qt版本的 ribbon和dock组件
 set(ADS_VERSION "3.8.3")  # 可以覆盖默认的版本提取方式，直接指定版本号
 set(BUILD_STATIC ON CACHE BOOL "Build static libraries for Qt-Advanced-Docking-System" FORCE)

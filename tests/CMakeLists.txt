@@ -1,7 +1,5 @@
 # 统一配置Qt测试运行环境变量
 if(Qt5_FOUND)
-    get_target_property(_qt_core_location Qt5::Core LOCATION)
-    get_filename_component(QT_LIB_DIR "${_qt_core_location}" DIRECTORY)
     if(WIN32)
         get_filename_component(QT_BIN_DIR "${QT_LIB_DIR}/../bin" ABSOLUTE)
         set(TEST_ENV_QT
@@ -15,7 +13,7 @@ if(Qt5_FOUND)
         )
     endif()
 
-    # 辅助函数：批量给指定目录下所有测试设置环境变量
+    # 辅助函数：批量给指定目录下所有测试设置Qt运行时的环境变量
     function(set_test_env_for_dir dir)
         get_property(tests DIRECTORY "${dir}" PROPERTY TESTS)
         if(tests)
@@ -41,4 +39,4 @@ add_subdirectory(libharu)
 add_subdirectory(qscintilla)
 add_subdirectory(qxlsx)
 add_subdirectory(spdlog)
-add_subdirectory(core core_test)
+add_subdirectory(core)
