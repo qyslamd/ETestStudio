@@ -38,17 +38,12 @@ add_test(NAME SpdlogBasicTest
          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 #=======================================
-# 生成运行脚本
+# 生成运行脚本，不依赖于CTest，直接双击运行
 if(WIN32)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        set(BUILD_TYPE "ninja-debug")
-    else()
-        set(BUILD_TYPE "ninja-release")
-    endif()
-
+    # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
     configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/run_spdlog_test.bat.in"
-        "${CMAKE_CURRENT_SOURCE_DIR}/run_spdlog_test.bat"
+        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
+        "${CMAKE_CURRENT_SOURCE_DIR}/run_test.bat"
         @ONLY
     )
 endif()

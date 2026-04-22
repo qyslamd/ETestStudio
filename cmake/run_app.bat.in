@@ -1,9 +1,9 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal
 
 set "PATH=@QT_BIN_DIR@;%PATH%"
 set "QT_PLUGIN_PATH=@QT_PLUGINS_DIR@"
 
 chcp 65001 >nul
 
-build\@BUILD_TYPE@\bin\@TARGET_NAME@.exe
+@CMAKE_RUNTIME_OUTPUT_DIRECTORY@/@TARGET_NAME@.exe

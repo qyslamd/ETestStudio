@@ -42,29 +42,19 @@ endif()
 add_test(NAME QScintillaHighlightTest 
          COMMAND ${TARGET_NAME}
          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-         
+
 # =======================================
 # 设置 Qt 的环境变量
 # cmake函数 set_test_env_for_dir 在上一层定义 
 set_test_env_for_dir(${CMAKE_CURRENT_SOURCE_DIR})
 
-# =======================================
-# 生成运行脚本
-set(QT_ROOT_DIR "${Qt5_DIR}/../../..")
-
+#=======================================
+# 生成运行脚本，不依赖于CTest，直接双击运行
 if(WIN32)
-    set(QT_BIN_DIR "${QT_ROOT_DIR}/bin")
-    set(QT_PLUGINS_DIR "${QT_ROOT_DIR}/plugins")
-
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        set(BUILD_TYPE "ninja-debug")
-    else()
-        set(BUILD_TYPE "ninja-release")
-    endif()
-
+    # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
     configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/run_qscintilla_test.bat.in"
-        "${CMAKE_CURRENT_SOURCE_DIR}/run_qscintilla_test.bat"
+        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
+        "${CMAKE_CURRENT_SOURCE_DIR}/run_test.bat"
         @ONLY
     )
 endif()

@@ -44,15 +44,9 @@ target_link_libraries(${TARGET_NAME}
     )
 
 #=======================================
-# 生成运行脚本,适用于单独运行测试，不依赖CTest
+# 生成运行脚本，自动设置Qt运行时环境变量
 if(WIN32)
     # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        set(BUILD_TYPE "ninja-debug")
-    else()
-        set(BUILD_TYPE "ninja-release")
-    endif()
-
     configure_file(
         "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
         "${CMAKE_SOURCE_DIR}/run_app.bat"

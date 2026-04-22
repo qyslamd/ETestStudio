@@ -42,3 +42,15 @@ add_test(NAME ConfigBasicTest
 # 设置 Qt 的环境变量
 # cmake函数 set_test_env_for_dir 在上一层定义 
 set_test_env_for_dir(${CMAKE_CURRENT_SOURCE_DIR})
+
+
+#=======================================
+# 生成运行脚本，不依赖于CTest，直接双击运行
+if(WIN32)
+    # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
+        "${CMAKE_CURRENT_SOURCE_DIR}/run_test.bat"
+        @ONLY
+    )
+endif()

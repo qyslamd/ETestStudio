@@ -53,7 +53,7 @@ if(Qt5_FOUND)
     endif()
 endif()
 
-# Qt-Advanced-Docking-System Qt版本的 ribbon和dock组件
+# Qt-Advanced-Docking-System Qt版本的 dock 组件
 set(ADS_VERSION "3.8.3")  # 可以覆盖默认的版本提取方式，直接指定版本号
 set(BUILD_STATIC ON CACHE BOOL "Build static libraries for Qt-Advanced-Docking-System" FORCE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "Do not build examples for Qt-Advanced-Docking-System" FORCE)  # 不需要编译示例
