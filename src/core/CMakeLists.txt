@@ -1,25 +1,53 @@
-# core 核心库CMake配置
-add_subdirectory(crashhandler)
-add_subdirectory(config)
+set(TARGET_NAME core)
 
-add_library(core STATIC
+set(SOURCES
     logger/Logger.cpp
+    config/ConfigManager.cpp
+    crashhandler/CrashHandler.cpp
 )
 
-target_include_directories(core PUBLIC
+set(HEADERS
+    logger/Logger.h
+    config/ConfigManager.h
+    config/ConfigDefs.h
+    crashhandler/CrashHandler.h
+)
+
+if(WIN32)
+    list(APPEND SOURCES crashhandler/WindowsCrashHandler.cpp)
+    list(APPEND HEADERS crashhandler/WindowsCrashHandler.h)
+endif()
+
+# ============================
+# 添加静态库目标
+add_library(${TARGET_NAME} STATIC ${SOURCES} ${HEADERS})
+
+set_target_properties(${TARGET_NAME} PROPERTIES
+    AUTOUIC ON
+    AUTOMOC ON
+    AUTORCC ON
+)
+target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/logger
+    ${CMAKE_CURRENT_SOURCE_DIR}/config
+    ${CMAKE_CURRENT_SOURCE_DIR}/crashhandler
 )
 
-target_link_libraries(core PUBLIC
+target_link_libraries(${TARGET_NAME} PUBLIC
     Qt5::Core
+    Qt5::Gui
+    Qt5::Widgets
     spdlog::spdlog
-    core_crashhandler
-    core_config
 )
+
+if(WIN32)
+    target_link_libraries(${TARGET_NAME} PRIVATE dbghelp)
+endif()
 
 # 编译选项
 if(MSVC)
-    target_compile_options(core PRIVATE /W4 /WX-)
+    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX-)
 else()
-    target_compile_options(core PRIVATE -Wall -Wextra -pedantic)
+    target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -pedantic)
 endif()
