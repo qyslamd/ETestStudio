@@ -159,6 +159,13 @@ if (BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
+# =======================================
+# 包含示例插件
+option(BUILD_ETEST_EXAMPLES "Build etest example plugins" ON)
+if (BUILD_ETEST_EXAMPLES)
+    add_subdirectory(examples/plugins/hello_plugin)
+endif()
+
 
 # =======================================
 # 生成windows下的clang-format脚本

@@ -45,4 +45,7 @@ constexpr int CONFIG_BACKUP_DEFAULT_MAX_COUNT = 5; // 默认保留5份
 const QString CONFIG_DEFAULT_PROJECT_PATH = "default/project_path";
 const QString CONFIG_DEFAULT_PROTOCOL_PATH = "default/protocol_path";
 
+// 插件配置组
+const QString CONFIG_PLUGIN_SEARCH_PATHS = "plugin/search_paths";  // 分号分隔的自定义搜索路径
+
 #endif // CONFIGDEFS_H

@@ -12,6 +12,7 @@ set(SOURCES
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
     utils/ByteUtil.cpp
+    plugin/PluginManager.cpp
 )
 
 set(HEADERS
@@ -27,6 +28,9 @@ set(HEADERS
     utils/TimeUtil.h
     utils/StringUtil.h
     utils/ByteUtil.h
+    plugin/IPlugin.h
+    plugin/PluginMetaData.h
+    plugin/PluginManager.h
 )
 
 if(WIN32)
@@ -50,6 +54,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/crashhandler
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugin
 )
 
 target_link_libraries(${TARGET_NAME} PUBLIC

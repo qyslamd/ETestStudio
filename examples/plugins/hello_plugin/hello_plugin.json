@@ -1,0 +1,9 @@
+{
+    "id": "etest.plugin.example.hello",
+    "name": "Hello示例插件",
+    "version": "1.0.0",
+    "description": "通用插件框架验证用示例插件",
+    "author": "slamdd",
+    "category": "example",
+    "dependencies": []
+}

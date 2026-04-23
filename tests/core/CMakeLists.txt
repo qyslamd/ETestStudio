@@ -3,7 +3,7 @@ add_etest(
     NAME test_core_config
     SOURCES config_test.cpp
     LIBS core
-    QT_MODULES Core
+    QT_MODULES Core Test
     LABELS CORE
 )
 
@@ -12,7 +12,7 @@ add_etest(
     NAME test_core_logger
     SOURCES logger_test.cpp
     LIBS core
-    QT_MODULES Core
+    QT_MODULES Core Test
     LABELS CORE
 )
 
@@ -22,7 +22,7 @@ if(WIN32)
         NAME test_core_crashhandler
         SOURCES crashhandler_test.cpp
         LIBS core dbghelp
-        QT_MODULES Core Widgets
+        QT_MODULES Core Test Widgets
         LABELS CORE
     )
 endif()
@@ -32,7 +32,7 @@ add_etest(
     NAME test_core_utils
     SOURCES utils_test.cpp
     LIBS core
-    QT_MODULES Core
+    QT_MODULES Core Test
     LABELS CORE
 )
 
@@ -41,7 +41,7 @@ add_etest(
     NAME test_core_string_util
     SOURCES string_util_test.cpp
     LIBS core
-    QT_MODULES Core
+    QT_MODULES Core Test
     LABELS CORE
 )
 
@@ -50,6 +50,15 @@ add_etest(
     NAME test_core_byte_util
     SOURCES byte_util_test.cpp
     LIBS core
-    QT_MODULES Core
+    QT_MODULES Core Test
+    LABELS CORE
+)
+
+# 插件管理器测试
+add_etest(
+    NAME test_core_plugin_manager
+    SOURCES plugin_manager_test.cpp
+    LIBS core
+    QT_MODULES Core Test Widgets
     LABELS CORE
 )
