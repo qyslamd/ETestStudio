@@ -13,6 +13,8 @@ set(SOURCES
     utils/StringUtil.cpp
     utils/ByteUtil.cpp
     plugin/PluginManager.cpp
+    project/ProjectInfo.cpp
+    project/ProjectManager.cpp
 )
 
 set(HEADERS
@@ -31,6 +33,8 @@ set(HEADERS
     plugin/IPlugin.h
     plugin/PluginMetaData.h
     plugin/PluginManager.h
+    project/ProjectInfo.h
+    project/ProjectManager.h
 )
 
 if(WIN32)
@@ -55,6 +59,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin
+    ${CMAKE_CURRENT_SOURCE_DIR}/project
 )
 
 target_link_libraries(${TARGET_NAME} PUBLIC

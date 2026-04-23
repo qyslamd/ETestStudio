@@ -49,4 +49,8 @@ const QString CONFIG_DEFAULT_PROTOCOL_PATH = "default/protocol_path";
 // 插件配置组
 const QString CONFIG_PLUGIN_SEARCH_PATHS = "plugin/search_paths";  // 分号分隔的自定义搜索路径
 
+// 项目配置组
+const QString CONFIG_PROJECT_AUTO_OPEN_LAST = "project/auto_open_last";
+constexpr bool CONFIG_PROJECT_DEFAULT_AUTO_OPEN_LAST = false;
+
 #endif // CONFIGDEFS_H

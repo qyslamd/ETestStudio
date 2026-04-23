@@ -10,6 +10,10 @@ class OutputPanel;
 class ProblemsPanel;
 class TerminalPanel;
 
+class QMenu;
+class QAction;
+class QLabel;
+
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -30,6 +34,15 @@ class MainWindow : public QMainWindow {
   void createMenuBar();
   void createStatusBar();
 
+  // 项目相关
+  void onNewProject();
+  void onOpenProject();
+  void onCloseProject();
+  void onProjectOpened(const QString& projectPath);
+  void onProjectClosed();
+  void updateWindowTitle();
+  void updateRecentProjectsMenu();
+
   // QADS
   ads::CDockManager* dock_manager_;
 
@@ -41,6 +54,11 @@ class MainWindow : public QMainWindow {
   OutputPanel* output_panel_;
   ProblemsPanel* problems_panel_;
   TerminalPanel* terminal_panel_;
+
+  // 菜单和状态
+  QMenu* recent_projects_menu_ = nullptr;
+  QAction* close_project_action_ = nullptr;
+  QLabel* status_project_label_ = nullptr;
 };
 
 #endif  // ETEST_APP_MAINWINDOW_H_

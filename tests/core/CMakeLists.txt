@@ -62,3 +62,12 @@ add_etest(
     QT_MODULES Core Test Widgets
     LABELS CORE
 )
+
+# 项目管理器测试
+add_etest(
+    NAME test_core_project_manager
+    SOURCES project_manager_test.cpp
+    LIBS core
+    QT_MODULES Core Test
+    LABELS CORE
+)

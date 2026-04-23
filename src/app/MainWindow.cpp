@@ -1,9 +1,11 @@
 #include "MainWindow.h"
 
 #include <QCloseEvent>
+#include <QFileDialog>
 #include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMessageBox>
 #include <QStatusBar>
 #include <QTabWidget>
 
@@ -12,9 +14,11 @@
 #include "ProblemsPanel.h"
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
+#include "dialogs/NewProjectDialog.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "logger/Logger.h"
+#include "project/ProjectManager.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
@@ -26,6 +30,7 @@ MainWindow::MainWindow(QWidget* parent)
       terminal_panel_(nullptr) {
   initUi();
   initSignals();
+  updateWindowTitle();
   LOG_INFO("MAIN", "主窗口初始化完成");
 }
 
@@ -106,14 +111,37 @@ void MainWindow::initSignals() {
   // 活动栏切换侧边栏
   connect(activity_bar_, &ActivityBarWidget::activityClicked, sidebar_,
           &SidebarWidget::switchPage);
+
+  // 项目管理信号
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+          this, &MainWindow::onProjectOpened);
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+          this, &MainWindow::onProjectClosed);
+  connect(&projectMgr,
+          &etest::core::project::ProjectManager::recentProjectsChanged, this,
+          &MainWindow::updateRecentProjectsMenu);
 }
 
 void MainWindow::createMenuBar() {
   auto* menuBar = this->menuBar();
 
   auto* fileMenu = menuBar->addMenu(QStringLiteral("文件(&F)"));
-  fileMenu->addAction(QStringLiteral("新建项目"), this, []() {});
-  fileMenu->addAction(QStringLiteral("打开项目"), this, []() {});
+  fileMenu->addAction(QStringLiteral("新建项目"), this,
+                       &MainWindow::onNewProject);
+  fileMenu->addAction(QStringLiteral("打开项目"), this,
+                       &MainWindow::onOpenProject);
+  close_project_action_ =
+      fileMenu->addAction(QStringLiteral("关闭项目"), this,
+                           &MainWindow::onCloseProject);
+  close_project_action_->setEnabled(false);
+
+  fileMenu->addSeparator();
+
+  recent_projects_menu_ =
+      fileMenu->addMenu(QStringLiteral("最近项目"));
+  updateRecentProjectsMenu();
+
   fileMenu->addSeparator();
   fileMenu->addAction(QStringLiteral("退出"), this, &QWidget::close);
 
@@ -124,10 +152,148 @@ void MainWindow::createMenuBar() {
 }
 
 void MainWindow::createStatusBar() {
+  status_project_label_ = new QLabel(this);
+  status_project_label_->setText(QStringLiteral("无打开项目"));
+  statusBar()->addPermanentWidget(status_project_label_);
   statusBar()->showMessage(QStringLiteral("就绪"));
 }
 
+void MainWindow::onNewProject() {
+  etest::app::NewProjectDialog dlg(this);
+  if (dlg.exec() == QDialog::Accepted) {
+    auto& projectMgr = etest::core::project::ProjectManager::instance();
+    if (!projectMgr.createProject(dlg.projectName(), dlg.projectLocation())) {
+      QMessageBox::warning(this, QStringLiteral("新建项目失败"),
+                           QStringLiteral("无法创建项目，请检查名称和路径。"));
+    }
+  }
+}
+
+void MainWindow::onOpenProject() {
+  auto& cfg = ConfigManager::instance();
+  QString lastPath = cfg.get<QString>(CONFIG_RECENT_LAST_OPEN_PATH);
+  if (lastPath.isEmpty()) {
+    lastPath = QDir::homePath();
+  }
+
+  QString filePath = QFileDialog::getOpenFileName(
+      this, QStringLiteral("打开项目"), lastPath,
+      QStringLiteral("ETest项目文件 (*.etproj)"));
+
+  if (!filePath.isEmpty()) {
+    auto& projectMgr = etest::core::project::ProjectManager::instance();
+    if (!projectMgr.openProject(filePath)) {
+      QMessageBox::warning(
+          this, QStringLiteral("打开项目失败"),
+          QStringLiteral("无法打开项目文件：%1").arg(filePath));
+    }
+  }
+}
+
+void MainWindow::onCloseProject() {
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  if (!projectMgr.isProjectOpen()) return;
+
+  if (projectMgr.hasUnsavedChanges()) {
+    int ret = QMessageBox::question(
+        this, QStringLiteral("保存更改"),
+        QStringLiteral("项目有未保存的更改，是否保存？"),
+        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+
+    if (ret == QMessageBox::Cancel) return;
+    if (ret == QMessageBox::Yes) {
+      projectMgr.saveProject();
+    }
+  }
+
+  projectMgr.closeProject();
+}
+
+void MainWindow::onProjectOpened(const QString& projectPath) {
+  close_project_action_->setEnabled(true);
+
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  auto* project = projectMgr.currentProject();
+  if (project) {
+    status_project_label_->setText(project->name());
+  }
+
+  updateWindowTitle();
+  statusBar()->showMessage(
+      QStringLiteral("项目已打开：%1").arg(projectPath));
+}
+
+void MainWindow::onProjectClosed() {
+  close_project_action_->setEnabled(false);
+  status_project_label_->setText(QStringLiteral("无打开项目"));
+  updateWindowTitle();
+  statusBar()->showMessage(QStringLiteral("项目已关闭"));
+}
+
+void MainWindow::updateWindowTitle() {
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  if (projectMgr.isProjectOpen()) {
+    auto* project = projectMgr.currentProject();
+    setWindowTitle(
+        QStringLiteral("%1 - ETest Demo").arg(project->name()));
+  } else {
+    setWindowTitle(QStringLiteral("ETest Demo"));
+  }
+}
+
+void MainWindow::updateRecentProjectsMenu() {
+  recent_projects_menu_->clear();
+
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  QStringList recentList = projectMgr.recentProjects();
+
+  if (recentList.isEmpty()) {
+    auto* emptyAction =
+        recent_projects_menu_->addAction(QStringLiteral("（无）"));
+    emptyAction->setEnabled(false);
+  } else {
+    for (const QString& path : recentList) {
+      recent_projects_menu_->addAction(
+          path, this, [this, path]() {
+            auto& pm =
+                etest::core::project::ProjectManager::instance();
+            if (!pm.openProject(path)) {
+              QMessageBox::warning(
+                  this, QStringLiteral("打开项目失败"),
+                  QStringLiteral("无法打开项目文件：%1").arg(path));
+            }
+          });
+    }
+
+    recent_projects_menu_->addSeparator();
+    recent_projects_menu_->addAction(
+        QStringLiteral("清除最近项目"), this, [this]() {
+          etest::core::project::ProjectManager::instance()
+              .clearRecentProjects();
+        });
+  }
+}
+
 void MainWindow::closeEvent(QCloseEvent* event) {
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  if (projectMgr.isProjectOpen()) {
+    if (projectMgr.hasUnsavedChanges()) {
+      int ret = QMessageBox::question(
+          this, QStringLiteral("保存更改"),
+          QStringLiteral("项目有未保存的更改，是否保存？"),
+          QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+
+      if (ret == QMessageBox::Cancel) {
+        event->ignore();
+        return;
+      }
+      if (ret == QMessageBox::Yes) {
+        projectMgr.saveProject();
+      }
+    }
+    projectMgr.closeProject();
+  }
+
   saveWindowState();
   QMainWindow::closeEvent(event);
 }
