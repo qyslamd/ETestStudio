@@ -12,6 +12,7 @@ const QString CONFIG_WINDOW_HEIGHT = "window/height";
 const QString CONFIG_WINDOW_X = "window/x";
 const QString CONFIG_WINDOW_Y = "window/y";
 const QString CONFIG_WINDOW_MAXIMIZED = "window/maximized";
+const QString CONFIG_DOCK_LAYOUT = "window/dock_layout";
 
 // 最近项目配置组
 const QString CONFIG_RECENT_PROJECT_LIST = "recent/project_list";

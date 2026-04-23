@@ -1,119 +1,169 @@
 #include "MainWindow.h"
-#include <Qsci/qscilexercpp.h>
-#include <QHeaderView>
-#include <QTableWidget>
-#include <QTextEdit>
-#include <QTreeWidget>
-#include "spdlog/spdlog.h"
+
+#include <QCloseEvent>
+#include <QLabel>
+#include <QMenu>
+#include <QMenuBar>
+#include <QStatusBar>
+#include <QTabWidget>
+
+#include "ActivityBarWidget.h"
+#include "OutputPanel.h"
+#include "ProblemsPanel.h"
+#include "SidebarWidget.h"
+#include "TerminalPanel.h"
+#include "config/ConfigDefs.h"
+#include "config/ConfigManager.h"
+#include "logger/Logger.h"
 
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent), dock_manager_(nullptr) {
+    : QMainWindow(parent),
+      dock_manager_(nullptr),
+      activity_bar_(nullptr),
+      sidebar_(nullptr),
+      output_panel_(nullptr),
+      problems_panel_(nullptr),
+      terminal_panel_(nullptr) {
   initUi();
   initSignals();
-  spdlog::info("MainWindow(无边框模式)初始化完成");
+  LOG_INFO("MAIN", "主窗口初始化完成");
 }
 
-MainWindow::~MainWindow() {
-  // QADS会自动管理子控件生命周期，无需手动释放
-}
+MainWindow::~MainWindow() = default;
 
 void MainWindow::initUi() {
-  setWindowTitle("QADS 停靠布局示例");
-  resize(1200, 800);
+  setWindowTitle("ETest Demo");
+  setMinimumSize(900, 600);
 
-  // 创建停靠管理器作为中心部件
-  // QADS 3.8.3版本无边框功能通过Qt窗口属性自动处理拖拽
+  createMenuBar();
+  createStatusBar();
+
+  // QADS Dock Manager
   dock_manager_ = new ads::CDockManager(this);
-  dock_manager_->setStyleSheet("");
 
-  // ==================== 1. 左侧停靠：项目视图 ====================
-  ads::CDockWidget* project_dock = new ads::CDockWidget("项目视图");
-  project_dock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
-  project_dock->setFeature(ads::CDockWidget::DockWidgetClosable, true);
+  // ==================== 中央编辑器占位 ====================
+  auto* centralPlaceholder = new QLabel(QStringLiteral("编辑器区域"), this);
+  centralPlaceholder->setAlignment(Qt::AlignCenter);
+  auto* centralDock = new ads::CDockWidget(QStringLiteral("编辑器"));
+  centralDock->setWidget(centralPlaceholder);
+  centralDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
+  centralDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  centralDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
+  dock_manager_->setCentralWidget(centralDock);
 
-  QTreeWidget* project_tree = new QTreeWidget();
-  project_tree->setHeaderLabel("项目文件");
-  QTreeWidgetItem* root = new QTreeWidgetItem(project_tree, {"测试项目"});
-  new QTreeWidgetItem(root, {"main.cpp"});
-  new QTreeWidgetItem(root, {"test.proto"});
-  new QTreeWidgetItem(root, {"test.prot"});
-  new QTreeWidgetItem(root, {"test_config.json"});
-  root->setExpanded(true);
-  project_dock->setWidget(project_tree);
+  // ==================== 左侧：活动栏 ====================
+  activity_bar_ = new ActivityBarWidget(this);
+  auto* activityDock = new ads::CDockWidget(QStringLiteral("活动栏"));
+  activityDock->setWidget(activity_bar_);
+  activityDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
+  activityDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
+  activityDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, activityDock);
 
-  // 添加到左侧停靠区域
-  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, project_dock);
+  // ==================== 左侧：侧边栏 ====================
+  sidebar_ = new SidebarWidget(this);
+  auto* sidebarDock = new ads::CDockWidget(QStringLiteral("侧边栏"));
+  sidebarDock->setWidget(sidebar_);
+  sidebarDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
+  sidebarDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
+  sidebarDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, sidebarDock);
 
-  // ==================== 2. 右侧停靠：属性编辑器 ====================
-  ads::CDockWidget* property_dock = new ads::CDockWidget("属性编辑器");
-  property_dock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
+  // ==================== 底部：输出面板 ====================
+  output_panel_ = new OutputPanel(this);
+  auto* outputDock = new ads::CDockWidget(QStringLiteral("输出"));
+  outputDock->setWidget(output_panel_);
 
-  QTableWidget* property_table = new QTableWidget();
-  property_table->setColumnCount(2);
-  property_table->setHorizontalHeaderLabels({"属性", "值"});
-  property_table->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::Stretch);
-  property_table->setRowCount(5);
-  property_table->setItem(0, 0, new QTableWidgetItem("窗口宽度"));
-  property_table->setItem(0, 1, new QTableWidgetItem("1200"));
-  property_table->setItem(1, 0, new QTableWidgetItem("窗口高度"));
-  property_table->setItem(1, 1, new QTableWidgetItem("800"));
-  property_table->setItem(2, 0, new QTableWidgetItem("主题"));
-  property_table->setItem(2, 1, new QTableWidgetItem("浅色"));
-  property_table->setItem(3, 0, new QTableWidgetItem("语言"));
-  property_table->setItem(3, 1, new QTableWidgetItem("中文"));
-  property_table->setItem(4, 0, new QTableWidgetItem("版本"));
-  property_table->setItem(4, 1, new QTableWidgetItem("1.0.0"));
-  property_dock->setWidget(property_table);
+  // ==================== 底部：问题面板 ====================
+  problems_panel_ = new ProblemsPanel(this);
+  auto* problemsDock = new ads::CDockWidget(QStringLiteral("问题"));
+  problemsDock->setWidget(problems_panel_);
 
-  // 添加到右侧停靠区域
-  dock_manager_->addDockWidget(ads::RightDockWidgetArea, property_dock);
+  // ==================== 底部：终端面板 ====================
+  terminal_panel_ = new TerminalPanel(this);
+  auto* terminalDock = new ads::CDockWidget(QStringLiteral("终端"));
+  terminalDock->setWidget(terminal_panel_);
 
-  // ==================== 3. 底部停靠：输出面板 ====================
-  ads::CDockWidget* output_dock = new ads::CDockWidget("输出面板");
-  output_dock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
+  // 底部面板区域：输出面板为主，问题和终端tab到输出面板
+  dock_manager_->addDockWidget(ads::BottomDockWidgetArea, outputDock);
+  problemsDock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
+  dock_manager_->addDockWidgetTab(ads::BottomDockWidgetArea, problemsDock);
+  terminalDock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
+  dock_manager_->addDockWidgetTab(ads::BottomDockWidgetArea, terminalDock);
 
-  QTextEdit* output_edit = new QTextEdit();
-  output_edit->setReadOnly(true);
-  output_edit->append("[INFO] 程序启动成功");
-  output_edit->append("[INFO] QADS停靠框架初始化完成");
-  output_edit->append("[INFO] 所有模块加载正常");
-  output_dock->setWidget(output_edit);
+  // ==================== 右侧：属性面板占位 ====================
+  auto* propertyPlaceholder = new QLabel(QStringLiteral("属性面板"), this);
+  propertyPlaceholder->setAlignment(Qt::AlignCenter);
+  auto* propertyDock = new ads::CDockWidget(QStringLiteral("属性"));
+  propertyDock->setWidget(propertyPlaceholder);
+  dock_manager_->addDockWidget(ads::RightDockWidgetArea, propertyDock);
 
-  // 添加到底部停靠区域
-  dock_manager_->addDockWidget(ads::BottomDockWidgetArea, output_dock);
-
-  // ==================== 4. 中心停靠：QScintilla编辑器测试 ====================
-  ads::CDockWidget* editor_dock = new ads::CDockWidget("代码编辑器");
-  editor_dock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
-
-  m_editor = new QsciScintilla();
-  // 显示行号
-  m_editor->setMarginType(0, QsciScintilla::NumberMargin);
-  m_editor->setMarginWidth(0, "0000");
-  // 开启C++语法高亮，设置经典VS风格配色
-  QsciLexerCPP* lexer = new QsciLexerCPP(m_editor);
-  lexer->setColor(QColor(0, 0, 255), QsciLexerCPP::Keyword);              // 关键字蓝色
-  lexer->setColor(QColor(0, 128, 0), QsciLexerCPP::Comment);              // 注释绿色
-  lexer->setColor(QColor(163, 21, 21), QsciLexerCPP::DoubleQuotedString); // 双引号字符串暗红色
-  lexer->setColor(QColor(163, 21, 21), QsciLexerCPP::SingleQuotedString); // 单引号字符串暗红色
-  lexer->setColor(QColor(0, 0, 255), QsciLexerCPP::PreProcessor);         // 预处理指令蓝色
-  lexer->setColor(QColor(43, 145, 175), QsciLexerCPP::Number);            // 数字蓝绿色
-  lexer->setColor(QColor(128, 128, 128), QsciLexerCPP::Operator);         // 运算符灰色
-  m_editor->setLexer(lexer);
-  // 设置测试代码
-  m_editor->setText(R"(#include <iostream>
-
-int main() {
-    std::cout << "Hello QScintilla!" << std::endl;
-    return 0;
-})");
-  editor_dock->setWidget(m_editor);
-
-  // 添加到中心停靠区域
-  dock_manager_->addDockWidget(ads::CenterDockWidgetArea, editor_dock);
+  // 恢复窗口状态
+  restoreWindowState();
 }
 
 void MainWindow::initSignals() {
-  // 目前暂无需信号槽连接，后续功能扩展可在这里添加
+  // 活动栏切换侧边栏
+  connect(activity_bar_, &ActivityBarWidget::activityClicked, sidebar_,
+          &SidebarWidget::switchPage);
+}
+
+void MainWindow::createMenuBar() {
+  auto* menuBar = this->menuBar();
+
+  auto* fileMenu = menuBar->addMenu(QStringLiteral("文件(&F)"));
+  fileMenu->addAction(QStringLiteral("新建项目"), this, []() {});
+  fileMenu->addAction(QStringLiteral("打开项目"), this, []() {});
+  fileMenu->addSeparator();
+  fileMenu->addAction(QStringLiteral("退出"), this, &QWidget::close);
+
+  menuBar->addMenu(QStringLiteral("编辑(&E)"));
+  menuBar->addMenu(QStringLiteral("视图(&V)"));
+  menuBar->addMenu(QStringLiteral("工具(&T)"));
+  menuBar->addMenu(QStringLiteral("帮助(&H)"));
+}
+
+void MainWindow::createStatusBar() {
+  statusBar()->showMessage(QStringLiteral("就绪"));
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+  saveWindowState();
+  QMainWindow::closeEvent(event);
+}
+
+void MainWindow::saveWindowState() {
+  auto& cfg = ConfigManager::instance();
+  cfg.set(CONFIG_WINDOW_WIDTH, width());
+  cfg.set(CONFIG_WINDOW_HEIGHT, height());
+  cfg.set(CONFIG_WINDOW_X, x());
+  cfg.set(CONFIG_WINDOW_Y, y());
+  cfg.set(CONFIG_WINDOW_MAXIMIZED, isMaximized());
+
+  QByteArray dockState = dock_manager_->saveState();
+  cfg.set(CONFIG_DOCK_LAYOUT, QString(dockState.toBase64()));
+}
+
+void MainWindow::restoreWindowState() {
+  auto& cfg = ConfigManager::instance();
+
+  int w = cfg.get<int>(CONFIG_WINDOW_WIDTH, 1200);
+  int h = cfg.get<int>(CONFIG_WINDOW_HEIGHT, 800);
+  resize(w, h);
+
+  int x = cfg.get<int>(CONFIG_WINDOW_X, -1);
+  int y = cfg.get<int>(CONFIG_WINDOW_Y, -1);
+  if (x >= 0 && y >= 0) {
+    move(x, y);
+  }
+
+  if (cfg.get<bool>(CONFIG_WINDOW_MAXIMIZED, false)) {
+    showMaximized();
+  }
+
+  QString dockStateStr = cfg.get<QString>(CONFIG_DOCK_LAYOUT);
+  if (!dockStateStr.isEmpty()) {
+    QByteArray dockState = QByteArray::fromBase64(dockStateStr.toUtf8());
+    dock_manager_->restoreState(dockState);
+  }
 }

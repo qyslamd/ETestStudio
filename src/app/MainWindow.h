@@ -1,9 +1,14 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef ETEST_APP_MAINWINDOW_H_
+#define ETEST_APP_MAINWINDOW_H_
 
 #include <QMainWindow>
-#include <Qsci/qsciscintilla.h>
 #include "DockManager.h"
+
+class ActivityBarWidget;
+class SidebarWidget;
+class OutputPanel;
+class ProblemsPanel;
+class TerminalPanel;
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -12,16 +17,30 @@ class MainWindow : public QMainWindow {
   explicit MainWindow(QWidget* parent = nullptr);
   ~MainWindow() override;
 
+ protected:
+  void closeEvent(QCloseEvent* event) override;
+
  private:
-  // 初始化界面元素
   void initUi();
-  // 初始化信号槽连接
   void initSignals();
 
-  // QADS停靠管理器
+  void saveWindowState();
+  void restoreWindowState();
+
+  void createMenuBar();
+  void createStatusBar();
+
+  // QADS
   ads::CDockManager* dock_manager_;
-  // QScintilla测试编辑器
-  QsciScintilla* m_editor;
+
+  // 活动栏 + 侧边栏
+  ActivityBarWidget* activity_bar_;
+  SidebarWidget* sidebar_;
+
+  // 底部面板
+  OutputPanel* output_panel_;
+  ProblemsPanel* problems_panel_;
+  TerminalPanel* terminal_panel_;
 };
 
-#endif // MAINWINDOW_H
+#endif  // ETEST_APP_MAINWINDOW_H_

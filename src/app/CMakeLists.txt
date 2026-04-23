@@ -5,6 +5,16 @@ add_executable(${TARGET_NAME}
     main.cpp
     MainWindow.h
     MainWindow.cpp
+    ActivityBarWidget.h
+    ActivityBarWidget.cpp
+    SidebarWidget.h
+    SidebarWidget.cpp
+    OutputPanel.h
+    OutputPanel.cpp
+    ProblemsPanel.h
+    ProblemsPanel.cpp
+    TerminalPanel.h
+    TerminalPanel.cpp
     resource.qrc
 )
 
