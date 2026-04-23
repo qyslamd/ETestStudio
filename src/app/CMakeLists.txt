@@ -9,6 +9,8 @@ add_executable(${TARGET_NAME}
     ActivityBarWidget.cpp
     SidebarWidget.h
     SidebarWidget.cpp
+    FileExplorerWidget.h
+    FileExplorerWidget.cpp
     OutputPanel.h
     OutputPanel.cpp
     ProblemsPanel.h

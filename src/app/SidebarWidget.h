@@ -6,6 +6,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+class FileExplorerWidget;
+
 class SidebarWidget : public QWidget {
   Q_OBJECT
 
@@ -14,10 +16,13 @@ class SidebarWidget : public QWidget {
 
   void switchPage(int index);
 
+  FileExplorerWidget* fileExplorer() const;
+
  private:
   void setupUi();
 
   QStackedWidget* stack_;
+  FileExplorerWidget* file_explorer_ = nullptr;
 };
 
 #endif  // ETEST_APP_SIDEBAR_WIDGET_H_

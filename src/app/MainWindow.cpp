@@ -10,6 +10,7 @@
 #include <QTabWidget>
 
 #include "ActivityBarWidget.h"
+#include "FileExplorerWidget.h"
 #include "OutputPanel.h"
 #include "ProblemsPanel.h"
 #include "SidebarWidget.h"
@@ -121,6 +122,21 @@ void MainWindow::initSignals() {
   connect(&projectMgr,
           &etest::core::project::ProjectManager::recentProjectsChanged, this,
           &MainWindow::updateRecentProjectsMenu);
+
+  // 文件浏览器：项目打开/关闭时设置根路径
+  auto* fileExplorer = sidebar_->fileExplorer();
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+          fileExplorer, [fileExplorer](const QString& projectPath) {
+            fileExplorer->setRootPath(projectPath);
+          });
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+          fileExplorer, [fileExplorer]() { fileExplorer->setRootPath({}); });
+
+  // 文件浏览器：双击文件打开（当前阶段仅日志，编辑器模块对接后创建标签页）
+  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, this,
+          [](const QString& filePath) {
+            LOG_INFO("MAIN", "请求打开文件：{}", filePath.toStdString());
+          });
 }
 
 void MainWindow::createMenuBar() {
