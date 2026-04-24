@@ -56,6 +56,8 @@ if(MSVC)
         UNICODE
         _UNICODE
         _CRT_SECURE_NO_WARNINGS
+        SCINTILLA_QT 
+        SCI_LEXER
     )
 endif()
 

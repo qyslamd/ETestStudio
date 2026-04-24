@@ -2,6 +2,7 @@
 
 #include <QFile>
 #include <QFileInfo>
+#include <QKeyEvent>
 #include <QTextStream>
 #include <QVBoxLayout>
 
@@ -22,6 +23,10 @@ EditorWidget::EditorWidget(const QString& filePath, QWidget* parent)
 
   editor_ = new QsciScintilla(this);
   layout->addWidget(editor_);
+
+  // 拦截QsciScintilla的快捷键，防止被Scintilla引擎消费
+  editor_->installEventFilter(this);
+  editor_->viewport()->installEventFilter(this);
 
   setupEditor();
 
@@ -144,6 +149,19 @@ void EditorWidget::applyLexer(const QString& suffix) {
   } else {
     editor_->setLexer(nullptr);
   }
+}
+
+bool EditorWidget::eventFilter(QObject* obj, QEvent* event) {
+  if (event->type() == QEvent::ShortcutOverride) {
+    auto* ke = static_cast<QKeyEvent*>(event);
+    // 让应用级快捷键（Ctrl+S/Ctrl+W等）冒泡到菜单栏，不被Scintilla消费
+    if (ke->modifiers() == Qt::ControlModifier &&
+        (ke->key() == Qt::Key_S || ke->key() == Qt::Key_W)) {
+      event->ignore();
+      return true;
+    }
+  }
+  return QWidget::eventFilter(obj, event);
 }
 
 void EditorWidget::applyColorScheme(QsciLexer* lexer) {

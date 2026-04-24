@@ -28,6 +28,8 @@ class EditorWidget : public QWidget {
   void applyLexer(const QString& suffix);
   void applyColorScheme(QsciLexer* lexer);
 
+  bool eventFilter(QObject* obj, QEvent* event) override;
+
   QsciScintilla* editor_;
   QString file_path_;
 };
