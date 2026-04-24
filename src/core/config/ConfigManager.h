@@ -6,6 +6,8 @@
 #include <memory>
 #include "ConfigDefs.h"
 
+namespace etest::core::config {
+
 class ConfigManager : public QObject {
   Q_OBJECT
  public:
@@ -60,5 +62,6 @@ QVariant ConfigManager::get<QVariant>(const QString& key,
                                       const QVariant& defaultValue) const;
 template <>
 void ConfigManager::set<QVariant>(const QString& key, const QVariant& value);
+}  // namespace etest::core::config
 
 #endif  // CONFIGMANAGER_H

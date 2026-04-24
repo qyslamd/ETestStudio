@@ -1,7 +1,11 @@
-#ifndef CONFIGDEFS_H
-#define CONFIGDEFS_H
+#ifndef ETEST_CORE_CONFIG_CONFIGDEFS_H_
+#define ETEST_CORE_CONFIG_CONFIGDEFS_H_
 
 #include <QString>
+
+namespace etest {
+namespace core {
+namespace config {
 
 // 配置版本号
 constexpr int CONFIG_VERSION = 1;
@@ -53,4 +57,8 @@ const QString CONFIG_PLUGIN_SEARCH_PATHS = "plugin/search_paths";  // 分号分�
 const QString CONFIG_PROJECT_AUTO_OPEN_LAST = "project/auto_open_last";
 constexpr bool CONFIG_PROJECT_DEFAULT_AUTO_OPEN_LAST = false;
 
-#endif // CONFIGDEFS_H
+}  // namespace config
+}  // namespace core
+}  // namespace etest
+
+#endif  // ETEST_CORE_CONFIG_CONFIGDEFS_H_

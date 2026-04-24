@@ -10,7 +10,7 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <functional>
-
+using namespace etest::core::crashhandler;
 
 // 普通功能测试（可自动运行，无崩溃）
 TEST(CrashHandlerTest, CreateInstance) {

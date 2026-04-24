@@ -6,6 +6,9 @@
 #include <QVector>
 #include <QWidget>
 
+namespace etest {
+namespace app {
+
 class ActivityBarWidget : public QWidget {
   Q_OBJECT
 
@@ -26,5 +29,8 @@ class ActivityBarWidget : public QWidget {
   QVector<QPushButton*> buttons_;
   int active_index_ = 0;
 };
+
+}  // namespace app
+}  // namespace etest
 
 #endif  // ETEST_APP_ACTIVITY_BAR_WIDGET_H_

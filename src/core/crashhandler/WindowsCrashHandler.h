@@ -1,12 +1,16 @@
 #include <QtGlobal>
 #ifdef Q_OS_WIN
 
-#ifndef WINDOWSCRASHHANDLER_H
-#define WINDOWSCRASHHANDLER_H
+#ifndef ETEST_CORE_CRASHHANDLER_WINDOWSCRASHHANDLER_H_
+#define ETEST_CORE_CRASHHANDLER_WINDOWSCRASHHANDLER_H_
 
 #include "CrashHandler.h"
 #include <windows.h>
 #include <dbghelp.h>
+
+namespace etest {
+namespace core {
+namespace crashhandler {
 
 class WindowsCrashHandler : public CrashHandler {
 public:
@@ -29,6 +33,10 @@ private:
     LPTOP_LEVEL_EXCEPTION_FILTER m_prevFilter;
 };
 
-#endif // WINDOWSCRASHHANDLER_H
+}  // namespace crashhandler
+}  // namespace core
+}  // namespace etest
+
+#endif  // ETEST_CORE_CRASHHANDLER_WINDOWSCRASHHANDLER_H_
 
 #endif // Q_OS_WIN

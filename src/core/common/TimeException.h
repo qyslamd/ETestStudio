@@ -1,12 +1,10 @@
 #ifndef ETEST_CORE_COMMON_TIME_EXCEPTION_H_
 #define ETEST_CORE_COMMON_TIME_EXCEPTION_H_
 
-#include <stdexcept>
 #include <QString>
+#include <stdexcept>
 
-namespace etest {
-namespace core {
-namespace common {
+namespace etest::core::common {
 
 class TimeException : public std::runtime_error {
  public:
@@ -19,7 +17,9 @@ class TimeException : public std::runtime_error {
   };
 
   explicit TimeException(Code code, const QString& message);
-  explicit TimeException(Code code, const QString& message, const QString& input);
+  explicit TimeException(Code code,
+                         const QString& message,
+                         const QString& input);
 
   Code code() const;
   const QString& input() const;
@@ -33,8 +33,6 @@ class TimeException : public std::runtime_error {
   QString message_;
 };
 
-}  // namespace common
-}  // namespace core
-}  // namespace etest
+}  // namespace etest::core::common
 
 #endif  // ETEST_CORE_COMMON_TIME_EXCEPTION_H_

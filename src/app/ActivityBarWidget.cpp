@@ -1,5 +1,8 @@
 #include "ActivityBarWidget.h"
 
+namespace etest {
+namespace app {
+
 ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
   setupUi();
 }
@@ -51,3 +54,6 @@ void ActivityBarWidget::setActiveIndex(int index) {
 int ActivityBarWidget::activeIndex() const {
   return active_index_;
 }
+
+}  // namespace app
+}  // namespace etest

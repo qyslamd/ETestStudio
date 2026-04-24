@@ -8,6 +8,10 @@
 #include "WindowsCrashHandler.h"
 #endif
 
+namespace etest {
+namespace core {
+namespace crashhandler {
+
 std::unique_ptr<CrashHandler> CrashHandler::create() {
 #ifdef Q_OS_WIN
     return std::make_unique<WindowsCrashHandler>();
@@ -36,3 +40,7 @@ QString CrashHandler::collectCommonInfo() const {
     info += "\n";
     return info;
 }
+
+}  // namespace crashhandler
+}  // namespace core
+}  // namespace etest

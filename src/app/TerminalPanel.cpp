@@ -1,6 +1,9 @@
 #include "TerminalPanel.h"
 #include <QProcess>
 
+namespace etest {
+namespace app {
+
 TerminalPanel::TerminalPanel(QWidget* parent) : QWidget(parent) {
   setupUi();
 }
@@ -22,3 +25,6 @@ void TerminalPanel::setupUi() {
 #endif
   });
 }
+
+}  // namespace app
+}  // namespace etest

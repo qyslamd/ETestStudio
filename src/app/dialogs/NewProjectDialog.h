@@ -7,9 +7,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 
-namespace etest {
-namespace app {
-
+namespace etest::app {
 class NewProjectDialog : public QDialog {
   Q_OBJECT
 
@@ -40,7 +38,6 @@ class NewProjectDialog : public QDialog {
   QPushButton* cancel_button_;
 };
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
 
 #endif  // ETEST_APP_DIALOGS_NEWPROJECTDIALOG_H_

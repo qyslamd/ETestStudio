@@ -4,13 +4,12 @@
 #include <QtPlugin>
 #include "plugin/IPlugin.h"
 
-namespace etest {
-namespace example {
+namespace etest::example {
 
 class HelloPlugin : public QObject, public etest::core::plugin::IPlugin {
   Q_OBJECT
-  Q_PLUGIN_METADATA(IID "etest.core.plugin.IPlugin/1.0"
-                        FILE "hello_plugin.json")
+  Q_PLUGIN_METADATA(IID "etest.core.plugin.IPlugin/1.0" FILE
+                        "hello_plugin.json")
   Q_INTERFACES(etest::core::plugin::IPlugin)
 
  public:
@@ -30,7 +29,6 @@ class HelloPlugin : public QObject, public etest::core::plugin::IPlugin {
   etest::core::plugin::PluginMetaData meta_;
 };
 
-}  // namespace example
-}  // namespace etest
+}  // namespace etest::example
 
 #endif  // ETEST_EXAMPLE_HELLO_PLUGIN_H_

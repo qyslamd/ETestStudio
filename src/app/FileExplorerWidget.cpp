@@ -1,6 +1,7 @@
 #include "FileExplorerWidget.h"
 
 #include <QApplication>
+
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QDir>
@@ -11,12 +12,17 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QUrl>
 #include <QTimer>
+#include <QUrl>
 #include <QVBoxLayout>
 
 #include "logger/Logger.h"
 #include "utils/FileUtil.h"
+
+using namespace etest::core::utils;
+using namespace etest::core::logger;
+
+namespace etest::app {
 
 FileExplorerWidget::FileExplorerWidget(QWidget* parent) : QWidget(parent) {
   initUi();
@@ -46,7 +52,9 @@ void FileExplorerWidget::setRootPath(const QString& path) {
   tree_view_->expandToDepth(0);
 }
 
-QString FileExplorerWidget::rootPath() const { return root_path_; }
+QString FileExplorerWidget::rootPath() const {
+  return root_path_;
+}
 
 void FileExplorerWidget::initUi() {
   auto* mainLayout = new QVBoxLayout(this);
@@ -78,12 +86,12 @@ void FileExplorerWidget::initUi() {
 void FileExplorerWidget::initSignals() {
   connect(tree_view_, &QTreeView::doubleClicked, this,
           [this](const QModelIndex& index) {
-            if (!model_) return;
+            if (!model_)
+              return;
             QString path = model_->filePath(index);
             QFileInfo fi(path);
             if (fi.isFile()) {
-              LOG_INFO("EXPLORER", "双击打开文件：{}",
-                       path.toStdString());
+              LOG_INFO("EXPLORER", "双击打开文件：{}", path.toStdString());
               emit fileOpenRequested(path);
             }
           });
@@ -98,29 +106,30 @@ void FileExplorerWidget::onCustomContextMenu(const QPoint& pos) {
   if (!context_menu_) {
     context_menu_ = new QMenu(this);
     context_menu_->addAction(QStringLiteral("新建文件"), this,
-                              &FileExplorerWidget::onNewFile);
+                             &FileExplorerWidget::onNewFile);
     context_menu_->addAction(QStringLiteral("新建文件夹"), this,
-                              &FileExplorerWidget::onNewFolder);
+                             &FileExplorerWidget::onNewFolder);
     context_menu_->addSeparator();
     context_menu_->addAction(QStringLiteral("重命名"), this,
-                              &FileExplorerWidget::onRename);
+                             &FileExplorerWidget::onRename);
     context_menu_->addAction(QStringLiteral("删除"), this,
-                              &FileExplorerWidget::onDelete);
+                             &FileExplorerWidget::onDelete);
     context_menu_->addSeparator();
     context_menu_->addAction(QStringLiteral("复制路径"), this,
-                              &FileExplorerWidget::onCopyPath);
+                             &FileExplorerWidget::onCopyPath);
     context_menu_->addAction(QStringLiteral("复制相对路径"), this,
-                              &FileExplorerWidget::onCopyRelativePath);
+                             &FileExplorerWidget::onCopyRelativePath);
     context_menu_->addSeparator();
     context_menu_->addAction(QStringLiteral("在文件系统中打开"), this,
-                              &FileExplorerWidget::onOpenInFileSystem);
+                             &FileExplorerWidget::onOpenInFileSystem);
   }
 
   context_menu_->popup(tree_view_->viewport()->mapToGlobal(pos));
 }
 
 void FileExplorerWidget::onNewFile() {
-  if (root_path_.isEmpty()) return;
+  if (root_path_.isEmpty())
+    return;
 
   QString parentDir = root_path_;
   if (context_index_.isValid() && model_) {
@@ -134,8 +143,8 @@ void FileExplorerWidget::onNewFile() {
 
   int counter = 1;
   while (QFile::exists(filePath)) {
-    filePath = QDir(parentDir).filePath(
-        QStringLiteral("新建文件%1").arg(counter++));
+    filePath =
+        QDir(parentDir).filePath(QStringLiteral("新建文件%1").arg(counter++));
   }
 
   etest::core::utils::FileUtil::writeTextFile(filePath, "");
@@ -143,7 +152,8 @@ void FileExplorerWidget::onNewFile() {
 }
 
 void FileExplorerWidget::onNewFolder() {
-  if (root_path_.isEmpty()) return;
+  if (root_path_.isEmpty())
+    return;
 
   QString parentDir = root_path_;
   if (context_index_.isValid() && model_) {
@@ -157,8 +167,8 @@ void FileExplorerWidget::onNewFolder() {
 
   int counter = 1;
   while (QDir(folderPath).exists()) {
-    folderPath = QDir(parentDir).filePath(
-        QStringLiteral("新建文件夹%1").arg(counter++));
+    folderPath =
+        QDir(parentDir).filePath(QStringLiteral("新建文件夹%1").arg(counter++));
   }
 
   etest::core::utils::FileUtil::createDirectory(folderPath);
@@ -172,7 +182,8 @@ void FileExplorerWidget::onRename() {
 }
 
 void FileExplorerWidget::onDelete() {
-  if (!context_index_.isValid() || !model_) return;
+  if (!context_index_.isValid() || !model_)
+    return;
 
   QString path = model_->filePath(context_index_);
   QFileInfo fi(path);
@@ -182,7 +193,8 @@ void FileExplorerWidget::onDelete() {
       QStringLiteral("确定要删除 \"%1\" 吗？").arg(fi.fileName()),
       QMessageBox::Yes | QMessageBox::No);
 
-  if (ret != QMessageBox::Yes) return;
+  if (ret != QMessageBox::Yes)
+    return;
 
   bool success = false;
   if (fi.isDir()) {
@@ -227,3 +239,5 @@ void FileExplorerWidget::onOpenInFileSystem() {
     QDesktopServices::openUrl(QUrl::fromLocalFile(path));
   }
 }
+
+}  // namespace etest::app

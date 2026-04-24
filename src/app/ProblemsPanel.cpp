@@ -1,6 +1,9 @@
 #include "ProblemsPanel.h"
 #include <QHeaderView>
 
+namespace etest {
+namespace app {
+
 ProblemsPanel::ProblemsPanel(QWidget* parent) : QWidget(parent) {
   setupUi();
 }
@@ -19,3 +22,6 @@ void ProblemsPanel::setupUi() {
   table_->setSelectionBehavior(QAbstractItemView::SelectRows);
   layout->addWidget(table_);
 }
+
+}  // namespace app
+}  // namespace etest

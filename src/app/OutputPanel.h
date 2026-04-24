@@ -5,6 +5,9 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+namespace etest {
+namespace app {
+
 class OutputPanel : public QWidget {
   Q_OBJECT
 
@@ -19,5 +22,8 @@ class OutputPanel : public QWidget {
 
   QTextEdit* text_edit_;
 };
+
+}  // namespace app
+}  // namespace etest
 
 #endif  // ETEST_APP_OUTPUT_PANEL_H_

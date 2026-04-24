@@ -7,8 +7,9 @@
 
 #include "DockManager.h"
 
-class EditorWidget;
+namespace etest::app {
 
+class EditorWidget;
 class EditorManager : public QObject {
   Q_OBJECT
 
@@ -43,5 +44,7 @@ class EditorManager : public QObject {
   QMap<QString, EditorWidget*> editors_;
   QString current_file_path_;
 };
+
+}  // namespace etest::app
 
 #endif  // ETEST_APP_EDITOR_MANAGER_H_

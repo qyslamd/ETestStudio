@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+namespace etest::app {
 class FileExplorerWidget;
 
 class SidebarWidget : public QWidget {
@@ -24,5 +25,7 @@ class SidebarWidget : public QWidget {
   QStackedWidget* stack_;
   FileExplorerWidget* file_explorer_ = nullptr;
 };
+
+}  // namespace etest::app
 
 #endif  // ETEST_APP_SIDEBAR_WIDGET_H_

@@ -1,9 +1,14 @@
 #include <QApplication>
 
 #include "MainWindow.h"
-#include "logger/Logger.h"
-#include "crashhandler/CrashHandler.h"
 #include "config/ConfigManager.h"
+#include "crashhandler/CrashHandler.h"
+#include "logger/Logger.h"
+
+using namespace etest::core::config;
+using namespace etest::core::logger;
+using namespace etest::core::crashhandler;
+using namespace etest::app;
 
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);

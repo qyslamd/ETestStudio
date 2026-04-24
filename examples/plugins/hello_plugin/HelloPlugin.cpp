@@ -1,9 +1,9 @@
 #include "HelloPlugin.h"
 #include "logger/Logger.h"
 
-namespace etest {
-namespace example {
+using namespace etest::core::logger;
 
+namespace etest::example {
 HelloPlugin::HelloPlugin() {
   meta_.id = "etest.plugin.example.hello";
   meta_.name = "Hello示例插件";
@@ -43,5 +43,4 @@ bool HelloPlugin::isRunning() const {
   return running_;
 }
 
-}  // namespace example
-}  // namespace etest
+}  // namespace etest::example

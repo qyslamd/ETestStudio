@@ -4,6 +4,8 @@
 #include <Qsci/qsciscintilla.h>
 #include <QWidget>
 
+namespace etest::app {
+
 class EditorWidget : public QWidget {
   Q_OBJECT
 
@@ -33,5 +35,7 @@ class EditorWidget : public QWidget {
   QsciScintilla* editor_;
   QString file_path_;
 };
+
+}  // namespace etest::app
 
 #endif  // ETEST_APP_EDITOR_WIDGET_H_

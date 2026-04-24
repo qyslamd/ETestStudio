@@ -1,5 +1,8 @@
 #include "OutputPanel.h"
 
+namespace etest {
+namespace app {
+
 OutputPanel::OutputPanel(QWidget* parent) : QWidget(parent) {
   setupUi();
 }
@@ -21,3 +24,6 @@ void OutputPanel::appendLog(const QString& text) {
 void OutputPanel::clearLog() {
   text_edit_->clear();
 }
+
+}  // namespace app
+}  // namespace etest

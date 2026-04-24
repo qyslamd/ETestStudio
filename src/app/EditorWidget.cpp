@@ -8,13 +8,15 @@
 
 #include <Qsci/qscilexercmake.h>
 #include <Qsci/qscilexercpp.h>
-#include <Qsci/qscilexerjson.h>
 #include <Qsci/qscilexerjavascript.h>
+#include <Qsci/qscilexerjson.h>
 #include <Qsci/qscilexerlua.h>
 #include <Qsci/qscilexermarkdown.h>
 #include <Qsci/qscilexerpython.h>
 #include <Qsci/qscilexerxml.h>
 #include <Qsci/qscilexeryaml.h>
+
+namespace etest::app {
 
 EditorWidget::EditorWidget(const QString& filePath, QWidget* parent)
     : QWidget(parent), file_path_(filePath) {
@@ -64,7 +66,8 @@ bool EditorWidget::loadFile() {
 }
 
 bool EditorWidget::saveFile() {
-  if (file_path_.isEmpty()) return false;
+  if (file_path_.isEmpty())
+    return false;
   QFile file(file_path_);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
     return false;
@@ -219,3 +222,5 @@ void EditorWidget::applyColorScheme(QsciLexer* lexer) {
   // QsciLexerJavaScript 继承自 QsciLexerCPP，qobject_cast<QsciLexerCPP*> 可匹配
   // QsciLexerMarkdown 无传统关键字/注释/字符串概念，不配色
 }
+
+}  // namespace etest::app

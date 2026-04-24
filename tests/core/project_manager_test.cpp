@@ -12,6 +12,7 @@
 #include "project/ProjectManager.h"
 
 using namespace etest::core::project;
+using namespace etest::core::config;
 
 namespace {
 QString testDir() {
@@ -125,7 +126,8 @@ TEST_F(ProjectInfoTest, DirectoryPathHelpers) {
   info.setRootPath("/home/user/project");
 
   EXPECT_EQ(info.scriptsPath(), QDir("/home/user/project").filePath("scripts"));
-  EXPECT_EQ(info.protocolPath(), QDir("/home/user/project").filePath("protocol"));
+  EXPECT_EQ(info.protocolPath(),
+            QDir("/home/user/project").filePath("protocol"));
   EXPECT_EQ(info.configPath(), QDir("/home/user/project").filePath("config"));
   EXPECT_EQ(info.backupPath(), QDir("/home/user/project").filePath("backup"));
 }
@@ -321,8 +323,7 @@ TEST_F(ProjectManagerTest, AddToRecentProjectsDedup) {
 TEST_F(ProjectManagerTest, RecentProjectsMaxCount) {
   pm_->clearRecentProjects();
   for (int i = 0; i < 15; ++i) {
-    pm_->addToRecentProjects(
-        QString("/path/project%1.etproj").arg(i));
+    pm_->addToRecentProjects(QString("/path/project%1.etproj").arg(i));
   }
 
   QStringList recent = pm_->recentProjects();

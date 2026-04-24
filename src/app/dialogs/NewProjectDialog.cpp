@@ -11,8 +11,9 @@
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 
-namespace etest {
-namespace app {
+using namespace etest::core::config;
+
+namespace etest::app {
 
 NewProjectDialog::NewProjectDialog(QWidget* parent) : QDialog(parent) {
   initUi();
@@ -148,8 +149,7 @@ void NewProjectDialog::validateInputs() {
 
   QString fullPath = fullProjectPath();
   if (QDir(fullPath).exists()) {
-    error_label_->setText(
-        QStringLiteral("目标目录已存在：%1").arg(fullPath));
+    error_label_->setText(QStringLiteral("目标目录已存在：%1").arg(fullPath));
     create_button_->setEnabled(false);
     return;
   }
@@ -171,5 +171,4 @@ void NewProjectDialog::updatePreview() {
       QStringLiteral("项目路径：%1").arg(fullProjectPath()));
 }
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app

@@ -4,16 +4,18 @@
 #include <QMainWindow>
 #include "DockManager.h"
 
+class QMenu;
+class QAction;
+class QLabel;
+
+namespace etest::app {
+
 class ActivityBarWidget;
 class SidebarWidget;
 class OutputPanel;
 class ProblemsPanel;
 class TerminalPanel;
 class EditorManager;
-
-class QMenu;
-class QAction;
-class QLabel;
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -74,5 +76,7 @@ class MainWindow : public QMainWindow {
   QAction* close_all_files_action_ = nullptr;
   QLabel* status_project_label_ = nullptr;
 };
+
+}  // namespace etest::app
 
 #endif  // ETEST_APP_MAINWINDOW_H_

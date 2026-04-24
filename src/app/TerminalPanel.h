@@ -5,6 +5,9 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+namespace etest {
+namespace app {
+
 class TerminalPanel : public QWidget {
   Q_OBJECT
 
@@ -16,5 +19,8 @@ class TerminalPanel : public QWidget {
 
   QPushButton* open_terminal_btn_;
 };
+
+}  // namespace app
+}  // namespace etest
 
 #endif  // ETEST_APP_TERMINAL_PANEL_H_

@@ -10,9 +10,10 @@
 #include <QJsonObject>
 #include <QPluginLoader>
 
-namespace etest {
-namespace core {
-namespace plugin {
+namespace etest::core::plugin {
+
+using namespace etest::core::config;
+using namespace etest::core::logger;
 
 class PluginManager::Impl {
  public:
@@ -29,11 +30,9 @@ class PluginManager::Impl {
   QStringList search_paths_;
 };
 
-PluginManager::PluginManager()
-    : QObject(nullptr), m_impl(new Impl()) {
+PluginManager::PluginManager() : QObject(nullptr), m_impl(new Impl()) {
   // 默认搜索路径：可执行文件旁的plugins/目录
-  QString defaultPath =
-      QCoreApplication::applicationDirPath() + "/plugins";
+  QString defaultPath = QCoreApplication::applicationDirPath() + "/plugins";
   m_impl->search_paths_.append(defaultPath);
 
   // 从ConfigManager读取自定义搜索路径
@@ -76,8 +75,7 @@ void PluginManager::unloadAll() {
 
 bool PluginManager::loadPlugin(const QString& pluginId) {
   if (m_impl->loaded_plugins_.contains(pluginId)) {
-    LOG_WARN("PLUGIN", "插件 {} 已加载，跳过重复加载",
-             pluginId.toStdString());
+    LOG_WARN("PLUGIN", "插件 {} 已加载，跳过重复加载", pluginId.toStdString());
     return true;
   }
 
@@ -98,8 +96,7 @@ bool PluginManager::loadPlugin(const QString& pluginId) {
   PluginMetaData meta = parseMetaDataFromLib(libPath);
   for (const QString& dep : meta.dependencies) {
     if (!m_impl->loaded_plugins_.contains(dep)) {
-      emit pluginLoadFailed(pluginId,
-                            QString("依赖插件 %1 未加载").arg(dep));
+      emit pluginLoadFailed(pluginId, QString("依赖插件 %1 未加载").arg(dep));
       delete loader;
       return false;
     }
@@ -108,8 +105,8 @@ bool PluginManager::loadPlugin(const QString& pluginId) {
   QObject* obj = loader->instance();
   if (!obj) {
     QString error = loader->errorString();
-    LOG_ERROR("PLUGIN", "加载插件 {} 失败: {}",
-              pluginId.toStdString(), error.toStdString());
+    LOG_ERROR("PLUGIN", "加载插件 {} 失败: {}", pluginId.toStdString(),
+              error.toStdString());
     emit pluginLoadFailed(pluginId, error);
     delete loader;
     return false;
@@ -117,8 +114,7 @@ bool PluginManager::loadPlugin(const QString& pluginId) {
 
   IPlugin* plugin = qobject_cast<IPlugin*>(obj);
   if (!plugin) {
-    LOG_ERROR("PLUGIN", "插件 {} 未实现IPlugin接口",
-              pluginId.toStdString());
+    LOG_ERROR("PLUGIN", "插件 {} 未实现IPlugin接口", pluginId.toStdString());
     emit pluginLoadFailed(pluginId, "未实现IPlugin接口");
     loader->unload();
     delete loader;
@@ -142,15 +138,16 @@ bool PluginManager::loadPlugin(const QString& pluginId) {
   m_impl->loaders_[pluginId] = loader;
   m_impl->loaded_plugins_[pluginId] = plugin;
 
-  LOG_INFO("PLUGIN", "插件 {} v{} 加载成功",
-           meta.name.toStdString(), meta.version.toStdString());
+  LOG_INFO("PLUGIN", "插件 {} v{} 加载成功", meta.name.toStdString(),
+           meta.version.toStdString());
   emit pluginLoaded(pluginId);
   return true;
 }
 
 bool PluginManager::unloadPlugin(const QString& pluginId) {
   IPlugin* p = m_impl->loaded_plugins_.value(pluginId);
-  if (!p) return false;
+  if (!p)
+    return false;
 
   p->stop();
   p->uninitialize();
@@ -193,7 +190,8 @@ QStringList PluginManager::searchPaths() const {
 void PluginManager::scanPluginDirs() {
   for (const QString& dirPath : m_impl->search_paths_) {
     QDir dir(dirPath);
-    if (!dir.exists()) continue;
+    if (!dir.exists())
+      continue;
 
     QStringList filters;
 #ifdef Q_OS_WIN
@@ -242,6 +240,4 @@ PluginMetaData PluginManager::parseMetaDataFromLib(
   return meta;
 }
 
-}  // namespace plugin
-}  // namespace core
-}  // namespace etest
+}  // namespace etest::core::plugin

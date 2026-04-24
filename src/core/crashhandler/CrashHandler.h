@@ -1,9 +1,13 @@
-#ifndef CRASHHANDLER_H
-#define CRASHHANDLER_H
+#ifndef ETEST_CORE_CRASHHANDLER_CRASHHANDLER_H_
+#define ETEST_CORE_CRASHHANDLER_CRASHHANDLER_H_
 
 #include <QString>
 #include <memory>
 #include <functional>
+
+namespace etest {
+namespace core {
+namespace crashhandler {
 
 class CrashHandler {
 public:
@@ -13,7 +17,7 @@ public:
     virtual bool init() = 0;
     virtual void setDumpPath(const QString& path) = 0;
     virtual void setCrashCallback(std::function<void(const QString& crashLog)> callback) = 0;
-    
+
     // 测试用公共接口
     QString generateCrashFileName() const;
     QString collectCommonInfo() const;
@@ -22,4 +26,8 @@ protected:
     CrashHandler() = default;
 };
 
-#endif // CRASHHANDLER_H
+}  // namespace crashhandler
+}  // namespace core
+}  // namespace etest
+
+#endif  // ETEST_CORE_CRASHHANDLER_CRASHHANDLER_H_

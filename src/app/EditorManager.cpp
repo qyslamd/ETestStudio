@@ -6,6 +6,10 @@
 #include "EditorWidget.h"
 #include "logger/Logger.h"
 
+using namespace etest::core::logger;
+
+namespace etest::app {
+
 EditorManager::EditorManager(ads::CDockManager* dockManager,
                              ads::CDockAreaWidget* centralArea,
                              QObject* parent)
@@ -73,18 +77,22 @@ void EditorManager::openFile(const QString& filePath) {
 
 bool EditorManager::closeFile(const QString& filePath) {
   auto it = editors_.find(filePath);
-  if (it == editors_.end()) return false;
+  if (it == editors_.end())
+    return false;
 
   auto* editor = it.value();
   if (editor->isModified()) {
     int ret = QMessageBox::question(
         nullptr, QStringLiteral("保存更改"),
-        QStringLiteral("文件 \"%1\" 已修改，是否保存？").arg(editor->fileName()),
+        QStringLiteral("文件 \"%1\" 已修改，是否保存？")
+            .arg(editor->fileName()),
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
 
-    if (ret == QMessageBox::Cancel) return false;
+    if (ret == QMessageBox::Cancel)
+      return false;
     if (ret == QMessageBox::Yes) {
-      if (!editor->saveFile()) return false;
+      if (!editor->saveFile())
+        return false;
     }
   }
 
@@ -108,7 +116,8 @@ bool EditorManager::closeFile(const QString& filePath) {
 bool EditorManager::closeAllFiles() {
   QStringList files = editors_.keys();
   for (const QString& fp : files) {
-    if (!closeFile(fp)) return false;
+    if (!closeFile(fp))
+      return false;
   }
   return true;
 }
@@ -123,13 +132,15 @@ bool EditorManager::isOpen(const QString& filePath) const {
 
 bool EditorManager::hasUnsavedChanges() const {
   for (auto* editor : editors_) {
-    if (editor->isModified()) return true;
+    if (editor->isModified())
+      return true;
   }
   return false;
 }
 
 EditorWidget* EditorManager::currentEditor() const {
-  if (current_file_path_.isEmpty()) return nullptr;
+  if (current_file_path_.isEmpty())
+    return nullptr;
   return editors_.value(current_file_path_, nullptr);
 }
 
@@ -138,7 +149,8 @@ QString EditorManager::currentFilePath() const {
 }
 
 void EditorManager::onDockWidgetActivated(ads::CDockWidget* dock) {
-  if (!dock) return;
+  if (!dock)
+    return;
 
   // 查找dock对应的文件路径
   QString filePath;
@@ -150,7 +162,8 @@ void EditorManager::onDockWidgetActivated(ads::CDockWidget* dock) {
     }
   }
 
-  if (filePath.isEmpty() || filePath == current_file_path_) return;
+  if (filePath.isEmpty() || filePath == current_file_path_)
+    return;
 
   current_file_path_ = filePath;
   auto* editor = editors_.value(filePath, nullptr);
@@ -165,3 +178,5 @@ void EditorManager::updateDockTitle(EditorWidget* editor,
   }
   dock->setWindowTitle(title);
 }
+
+}  // namespace etest::app

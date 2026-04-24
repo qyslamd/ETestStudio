@@ -3,10 +3,14 @@
 
 #include <QFileSystemModel>
 #include <QModelIndex>
+#include <QString>
 #include <QTreeView>
 #include <QWidget>
 
+
 class QMenu;
+
+namespace etest::app {
 
 class FileExplorerWidget : public QWidget {
   Q_OBJECT
@@ -40,5 +44,7 @@ class FileExplorerWidget : public QWidget {
   QModelIndex context_index_;
   QMenu* context_menu_ = nullptr;
 };
+
+}  // namespace etest::app
 
 #endif  // ETEST_APP_FILEEXPLORERWIDGET_H_

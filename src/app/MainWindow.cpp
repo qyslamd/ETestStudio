@@ -15,11 +15,17 @@
 #include "ProblemsPanel.h"
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
-#include "dialogs/NewProjectDialog.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
+#include "dialogs/NewProjectDialog.h"
 #include "logger/Logger.h"
 #include "project/ProjectManager.h"
+
+using namespace etest::core::config;
+using namespace etest::core::project;
+using namespace etest::core::logger;
+
+namespace etest::app {
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
@@ -128,9 +134,8 @@ void MainWindow::initSignals() {
           this, [this]() { editor_manager_->closeAllFiles(); });
 
   // 注册编辑器脏检查回调到ProjectManager
-  projectMgr.setDirtyCheckCallback([this]() {
-    return editor_manager_->hasUnsavedChanges();
-  });
+  projectMgr.setDirtyCheckCallback(
+      [this]() { return editor_manager_->hasUnsavedChanges(); });
 
   // 文件浏览器：项目打开/关闭时设置根路径
   auto* fileExplorer = sidebar_->fileExplorer();
@@ -142,8 +147,8 @@ void MainWindow::initSignals() {
           fileExplorer, [fileExplorer]() { fileExplorer->setRootPath({}); });
 
   // 文件浏览器：双击文件打开编辑器
-  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested,
-          editor_manager_, &EditorManager::openFile);
+  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, editor_manager_,
+          &EditorManager::openFile);
 
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
   connect(editor_manager_, &EditorManager::currentEditorChanged, this,
@@ -161,10 +166,9 @@ void MainWindow::initSignals() {
             }
           });
 
-  connect(editor_manager_, &EditorManager::fileOpened, this,
-          [this](const QString&) {
-            close_all_files_action_->setEnabled(true);
-          });
+  connect(
+      editor_manager_, &EditorManager::fileOpened, this,
+      [this](const QString&) { close_all_files_action_->setEnabled(true); });
   connect(editor_manager_, &EditorManager::fileClosed, this,
           [this](const QString&) {
             close_all_files_action_->setEnabled(
@@ -177,18 +181,17 @@ void MainWindow::createMenuBar() {
 
   auto* fileMenu = menuBar->addMenu(QStringLiteral("文件(&F)"));
   fileMenu->addAction(QStringLiteral("新建项目"), this,
-                       &MainWindow::onNewProject);
+                      &MainWindow::onNewProject);
   fileMenu->addAction(QStringLiteral("打开项目"), this,
-                       &MainWindow::onOpenProject);
-  close_project_action_ =
-      fileMenu->addAction(QStringLiteral("关闭项目"), this,
-                           &MainWindow::onCloseProject);
+                      &MainWindow::onOpenProject);
+  close_project_action_ = fileMenu->addAction(QStringLiteral("关闭项目"), this,
+                                              &MainWindow::onCloseProject);
   close_project_action_->setEnabled(false);
 
   fileMenu->addSeparator();
 
   save_action_ = fileMenu->addAction(QStringLiteral("保存(&S)"), this,
-                                      &MainWindow::onSaveFile);
+                                     &MainWindow::onSaveFile);
   save_action_->setShortcut(QKeySequence::Save);
   save_action_->setEnabled(false);
 
@@ -199,19 +202,17 @@ void MainWindow::createMenuBar() {
   fileMenu->addSeparator();
 
   close_file_action_ = fileMenu->addAction(QStringLiteral("关闭文件(&W)"), this,
-                                            &MainWindow::onCloseCurrentFile);
+                                           &MainWindow::onCloseCurrentFile);
   close_file_action_->setShortcut(QKeySequence::Close);
   close_file_action_->setEnabled(false);
 
-  close_all_files_action_ =
-      fileMenu->addAction(QStringLiteral("关闭所有文件"), this,
-                           &MainWindow::onCloseAllFiles);
+  close_all_files_action_ = fileMenu->addAction(
+      QStringLiteral("关闭所有文件"), this, &MainWindow::onCloseAllFiles);
   close_all_files_action_->setEnabled(false);
 
   fileMenu->addSeparator();
 
-  recent_projects_menu_ =
-      fileMenu->addMenu(QStringLiteral("最近项目"));
+  recent_projects_menu_ = fileMenu->addMenu(QStringLiteral("最近项目"));
   updateRecentProjectsMenu();
 
   fileMenu->addSeparator();
@@ -248,9 +249,9 @@ void MainWindow::onOpenProject() {
     lastPath = QDir::homePath();
   }
 
-  QString filePath = QFileDialog::getOpenFileName(
-      this, QStringLiteral("打开项目"), lastPath,
-      QStringLiteral("ETest项目文件 (*.etproj)"));
+  QString filePath =
+      QFileDialog::getOpenFileName(this, QStringLiteral("打开项目"), lastPath,
+                                   QStringLiteral("ETest项目文件 (*.etproj)"));
 
   if (!filePath.isEmpty()) {
     auto& projectMgr = etest::core::project::ProjectManager::instance();
@@ -264,7 +265,8 @@ void MainWindow::onOpenProject() {
 
 void MainWindow::onCloseProject() {
   auto& projectMgr = etest::core::project::ProjectManager::instance();
-  if (!projectMgr.isProjectOpen()) return;
+  if (!projectMgr.isProjectOpen())
+    return;
 
   if (projectMgr.hasUnsavedChanges()) {
     int ret = QMessageBox::question(
@@ -272,7 +274,8 @@ void MainWindow::onCloseProject() {
         QStringLiteral("项目有未保存的更改，是否保存？"),
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
 
-    if (ret == QMessageBox::Cancel) return;
+    if (ret == QMessageBox::Cancel)
+      return;
     if (ret == QMessageBox::Yes) {
       projectMgr.saveProject();
     }
@@ -291,8 +294,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   }
 
   updateWindowTitle();
-  statusBar()->showMessage(
-      QStringLiteral("项目已打开：%1").arg(projectPath));
+  statusBar()->showMessage(QStringLiteral("项目已打开：%1").arg(projectPath));
 }
 
 void MainWindow::onProjectClosed() {
@@ -306,8 +308,7 @@ void MainWindow::updateWindowTitle() {
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   if (projectMgr.isProjectOpen()) {
     auto* project = projectMgr.currentProject();
-    setWindowTitle(
-        QStringLiteral("%1 - ETest Demo").arg(project->name()));
+    setWindowTitle(QStringLiteral("%1 - ETest Demo").arg(project->name()));
   } else {
     setWindowTitle(QStringLiteral("ETest Demo"));
   }
@@ -325,16 +326,14 @@ void MainWindow::updateRecentProjectsMenu() {
     emptyAction->setEnabled(false);
   } else {
     for (const QString& path : recentList) {
-      recent_projects_menu_->addAction(
-          path, this, [this, path]() {
-            auto& pm =
-                etest::core::project::ProjectManager::instance();
-            if (!pm.openProject(path)) {
-              QMessageBox::warning(
-                  this, QStringLiteral("打开项目失败"),
-                  QStringLiteral("无法打开项目文件：%1").arg(path));
-            }
-          });
+      recent_projects_menu_->addAction(path, this, [this, path]() {
+        auto& pm = etest::core::project::ProjectManager::instance();
+        if (!pm.openProject(path)) {
+          QMessageBox::warning(
+              this, QStringLiteral("打开项目失败"),
+              QStringLiteral("无法打开项目文件：%1").arg(path));
+        }
+      });
     }
 
     recent_projects_menu_->addSeparator();
@@ -348,16 +347,19 @@ void MainWindow::updateRecentProjectsMenu() {
 
 void MainWindow::onSaveFile() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor) return;
+  if (!editor)
+    return;
   if (!editor->saveFile()) {
-    QMessageBox::warning(this, QStringLiteral("保存失败"),
-                         QStringLiteral("无法保存文件：%1").arg(editor->filePath()));
+    QMessageBox::warning(
+        this, QStringLiteral("保存失败"),
+        QStringLiteral("无法保存文件：%1").arg(editor->filePath()));
   }
 }
 
 void MainWindow::onSaveFileAs() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor) return;
+  if (!editor)
+    return;
 
   QString newPath = QFileDialog::getSaveFileName(
       this, QStringLiteral("另存为"), editor->filePath(),
@@ -372,7 +374,8 @@ void MainWindow::onSaveFileAs() {
 
 void MainWindow::onCloseCurrentFile() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor) return;
+  if (!editor)
+    return;
   editor_manager_->closeFile(editor->filePath());
 }
 
@@ -445,3 +448,5 @@ void MainWindow::restoreWindowState() {
     dock_manager_->restoreState(dockState);
   }
 }
+
+}  // namespace etest::app

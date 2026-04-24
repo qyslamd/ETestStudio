@@ -8,9 +8,10 @@
 #include "logger/Logger.h"
 #include "utils/FileUtil.h"
 
-namespace etest {
-namespace core {
-namespace project {
+namespace etest::core::project {
+
+using namespace etest::core::config;
+using namespace etest::core::logger;
 
 class ProjectManager::Impl {
  public:
@@ -18,10 +19,12 @@ class ProjectManager::Impl {
   DirtyCheckCallback dirty_check_callback;
 
   bool createProjectStructure(const QString& projectDir) {
-    if (!utils::FileUtil::createDirectory(projectDir)) return false;
+    if (!utils::FileUtil::createDirectory(projectDir))
+      return false;
     if (!utils::FileUtil::createDirectory(QDir(projectDir).filePath("scripts")))
       return false;
-    if (!utils::FileUtil::createDirectory(QDir(projectDir).filePath("protocol")))
+    if (!utils::FileUtil::createDirectory(
+            QDir(projectDir).filePath("protocol")))
       return false;
     if (!utils::FileUtil::createDirectory(QDir(projectDir).filePath("config")))
       return false;
@@ -50,7 +53,8 @@ ProjectManager& ProjectManager::instance() {
   return inst;
 }
 
-bool ProjectManager::createProject(const QString& name, const QString& location) {
+bool ProjectManager::createProject(const QString& name,
+                                   const QString& location) {
   if (name.isEmpty() || location.isEmpty()) {
     LOG_WARN("PROJECT", "创建项目失败：名称或路径为空");
     return false;
@@ -61,7 +65,8 @@ bool ProjectManager::createProject(const QString& name, const QString& location)
 
   // 检查目录是否已存在
   if (utils::FileUtil::exists(projectDir)) {
-    LOG_WARN("PROJECT", "创建项目失败：目录已存在 {}", projectDir.toStdString());
+    LOG_WARN("PROJECT", "创建项目失败：目录已存在 {}",
+             projectDir.toStdString());
     return false;
   }
 
@@ -144,7 +149,8 @@ bool ProjectManager::openProject(const QString& filePath) {
 }
 
 bool ProjectManager::closeProject() {
-  if (!isProjectOpen()) return true;
+  if (!isProjectOpen())
+    return true;
 
   QString projectPath = m_impl->current_project->rootPath();
 
@@ -156,7 +162,8 @@ bool ProjectManager::closeProject() {
 }
 
 bool ProjectManager::saveProject() {
-  if (!isProjectOpen()) return false;
+  if (!isProjectOpen())
+    return false;
   return m_impl->current_project->saveToFile();
 }
 
@@ -213,7 +220,8 @@ bool ProjectManager::hasUnsavedChanges() const {
 }
 
 bool ProjectManager::doCloseProject() {
-  if (!isProjectOpen()) return true;
+  if (!isProjectOpen())
+    return true;
 
   // 保存recent_files等信息
   m_impl->current_project->saveToFile();
@@ -224,6 +232,4 @@ bool ProjectManager::doCloseProject() {
   return true;
 }
 
-}  // namespace project
-}  // namespace core
-}  // namespace etest
+}  // namespace etest::core::project

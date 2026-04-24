@@ -1,12 +1,13 @@
 #include <gtest/gtest.h>
 #include <QCoreApplication>
 
-#include "utils/ByteUtil.h"
 #include "common/ByteException.h"
+#include "utils/ByteUtil.h"
 
-using etest::core::utils::ByteUtil;
-using etest::core::utils::ByteOrder;
+
 using etest::core::common::ByteException;
+using etest::core::utils::ByteOrder;
+using etest::core::utils::ByteUtil;
 
 class ByteUtilTest : public ::testing::Test {};
 
@@ -22,7 +23,8 @@ TEST_F(ByteUtilTest, SwapEndian32) {
 }
 
 TEST_F(ByteUtilTest, SwapEndian64) {
-  EXPECT_EQ(ByteUtil::swapEndian64(0x0123456789ABCDEFULL), 0xEFCDAB8967452301ULL);
+  EXPECT_EQ(ByteUtil::swapEndian64(0x0123456789ABCDEFULL),
+            0xEFCDAB8967452301ULL);
 }
 
 TEST_F(ByteUtilTest, SwapEndianIdentity) {
@@ -105,7 +107,8 @@ TEST_F(ByteUtilTest, Int32ToBytesBigEndian) {
 }
 
 TEST_F(ByteUtilTest, Int64ToBytesBigEndian) {
-  QByteArray ba = ByteUtil::int64ToBytes(0x0102030405060708LL, ByteOrder::kBigEndian);
+  QByteArray ba =
+      ByteUtil::int64ToBytes(0x0102030405060708LL, ByteOrder::kBigEndian);
   EXPECT_EQ(ba.size(), 8);
   EXPECT_EQ(static_cast<unsigned char>(ba[0]), 0x01);
   EXPECT_EQ(static_cast<unsigned char>(ba[7]), 0x08);

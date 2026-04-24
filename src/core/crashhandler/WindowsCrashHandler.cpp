@@ -10,6 +10,10 @@
 
 #pragma comment(lib, "dbghelp.lib")
 
+namespace etest {
+namespace core {
+namespace crashhandler {
+
 WindowsCrashHandler* WindowsCrashHandler::s_instance = nullptr;
 
 WindowsCrashHandler::WindowsCrashHandler() 
@@ -209,5 +213,9 @@ QString WindowsCrashHandler::getCallStack(CONTEXT* context) {
     SymCleanup(process);
     return stack;
 }
+
+}  // namespace crashhandler
+}  // namespace core
+}  // namespace etest
 
 #endif // Q_OS_WIN

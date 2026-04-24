@@ -2,12 +2,12 @@
 
 #include <QDateTime>
 
-#include "logger/Logger.h"
 #include "common/TimeException.h"
+#include "logger/Logger.h"
 
-namespace etest {
-namespace core {
-namespace utils {
+namespace etest::core::utils {
+using namespace etest::core::logger;
+using namespace etest::core::common;
 
 namespace {
 
@@ -45,11 +45,11 @@ QString TimeUtil::timestampToISO8601(qint64 timestamp) {
 }
 
 qint64 TimeUtil::stringToTimestamp(const QString& str, const QString& format) {
-  QDateTime dateTime = QDateTime::fromString(str, format.isEmpty() ? kDefaultFormat : format);
+  QDateTime dateTime =
+      QDateTime::fromString(str, format.isEmpty() ? kDefaultFormat : format);
   if (!dateTime.isValid()) {
     throwTimeException(::etest::core::common::TimeException::Code::kParseError,
-                       "Invalid date time string",
-                       str);
+                       "Invalid date time string", str);
     return -1;
   }
   return dateTime.toSecsSinceEpoch();
@@ -59,8 +59,7 @@ qint64 TimeUtil::ISO8601ToTimestamp(const QString& str) {
   QDateTime dateTime = QDateTime::fromString(str, Qt::ISODate);
   if (!dateTime.isValid()) {
     throwTimeException(::etest::core::common::TimeException::Code::kParseError,
-                       "Invalid ISO8601 string",
-                       str);
+                       "Invalid ISO8601 string", str);
     return -1;
   }
   return dateTime.toSecsSinceEpoch();
@@ -89,10 +88,14 @@ QString TimeUtil::formatDuration(qint64 seconds) {
   qint64 secs = seconds % 60;
 
   QStringList parts;
-  if (days > 0) parts.append(QString("%1d").arg(days));
-  if (hours > 0) parts.append(QString("%1h").arg(hours));
-  if (minutes > 0) parts.append(QString("%1m").arg(minutes));
-  if (secs > 0 || parts.isEmpty()) parts.append(QString("%1s").arg(secs));
+  if (days > 0)
+    parts.append(QString("%1d").arg(days));
+  if (hours > 0)
+    parts.append(QString("%1h").arg(hours));
+  if (minutes > 0)
+    parts.append(QString("%1m").arg(minutes));
+  if (secs > 0 || parts.isEmpty())
+    parts.append(QString("%1s").arg(secs));
 
   return parts.join(" ");
 }
@@ -110,10 +113,10 @@ TimeUtil::ScopedTimer::ScopedTimer(const QString& taskName)
 
 TimeUtil::ScopedTimer::~ScopedTimer() {
   auto end = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start_);
-  LOG_INFO("TIME", "%s took %lld ms", qUtf8Printable(taskName_), duration.count());
+  auto duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start_);
+  LOG_INFO("TIME", "%s took %lld ms", qUtf8Printable(taskName_),
+           duration.count());
 }
 
-}  // namespace utils
-}  // namespace core
-}  // namespace etest
+}  // namespace etest::core::utils

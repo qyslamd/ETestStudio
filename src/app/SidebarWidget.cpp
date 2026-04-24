@@ -1,6 +1,8 @@
 #include "SidebarWidget.h"
 #include "FileExplorerWidget.h"
 
+namespace etest::app {
+
 SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
   setupUi();
 }
@@ -44,3 +46,5 @@ void SidebarWidget::switchPage(int index) {
 FileExplorerWidget* SidebarWidget::fileExplorer() const {
   return file_explorer_;
 }
+
+}  // namespace etest::app
