@@ -9,6 +9,7 @@ class SidebarWidget;
 class OutputPanel;
 class ProblemsPanel;
 class TerminalPanel;
+class EditorManager;
 
 class QMenu;
 class QAction;
@@ -43,12 +44,21 @@ class MainWindow : public QMainWindow {
   void updateWindowTitle();
   void updateRecentProjectsMenu();
 
+  // 编辑器相关
+  void onSaveFile();
+  void onSaveFileAs();
+  void onCloseCurrentFile();
+  void onCloseAllFiles();
+
   // QADS
   ads::CDockManager* dock_manager_;
 
   // 活动栏 + 侧边栏
   ActivityBarWidget* activity_bar_;
   SidebarWidget* sidebar_;
+
+  // 编辑器管理
+  EditorManager* editor_manager_;
 
   // 底部面板
   OutputPanel* output_panel_;
@@ -58,6 +68,10 @@ class MainWindow : public QMainWindow {
   // 菜单和状态
   QMenu* recent_projects_menu_ = nullptr;
   QAction* close_project_action_ = nullptr;
+  QAction* save_action_ = nullptr;
+  QAction* save_as_action_ = nullptr;
+  QAction* close_file_action_ = nullptr;
+  QAction* close_all_files_action_ = nullptr;
   QLabel* status_project_label_ = nullptr;
 };
 

@@ -11,6 +11,10 @@ add_executable(${TARGET_NAME}
     SidebarWidget.cpp
     FileExplorerWidget.h
     FileExplorerWidget.cpp
+    EditorWidget.h
+    EditorWidget.cpp
+    EditorManager.h
+    EditorManager.cpp
     OutputPanel.h
     OutputPanel.cpp
     ProblemsPanel.h

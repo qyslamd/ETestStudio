@@ -7,9 +7,10 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QStatusBar>
-#include <QTabWidget>
 
 #include "ActivityBarWidget.h"
+#include "EditorManager.h"
+#include "EditorWidget.h"
 #include "FileExplorerWidget.h"
 #include "OutputPanel.h"
 #include "ProblemsPanel.h"
@@ -26,6 +27,7 @@ MainWindow::MainWindow(QWidget* parent)
       dock_manager_(nullptr),
       activity_bar_(nullptr),
       sidebar_(nullptr),
+      editor_manager_(nullptr),
       output_panel_(nullptr),
       problems_panel_(nullptr),
       terminal_panel_(nullptr) {
@@ -47,8 +49,8 @@ void MainWindow::initUi() {
   // QADS Dock Manager
   dock_manager_ = new ads::CDockManager(this);
 
-  // ==================== 中央编辑器占位 ====================
-  auto* centralPlaceholder = new QLabel(QStringLiteral("编辑器区域"), this);
+  // ==================== 中央编辑器区域 ====================
+  auto* centralPlaceholder = new QLabel(QStringLiteral("双击文件打开编辑器"), this);
   centralPlaceholder->setAlignment(Qt::AlignCenter);
   auto* centralDock = new ads::CDockWidget(QStringLiteral("编辑器"));
   centralDock->setWidget(centralPlaceholder);
@@ -56,6 +58,9 @@ void MainWindow::initUi() {
   centralDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
   centralDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   dock_manager_->setCentralWidget(centralDock);
+
+  // 编辑器管理器
+  editor_manager_ = new EditorManager(dock_manager_, this);
 
   // ==================== 左侧：活动栏 ====================
   activity_bar_ = new ActivityBarWidget(this);
@@ -132,10 +137,34 @@ void MainWindow::initSignals() {
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
           fileExplorer, [fileExplorer]() { fileExplorer->setRootPath({}); });
 
-  // 文件浏览器：双击文件打开（当前阶段仅日志，编辑器模块对接后创建标签页）
-  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, this,
-          [](const QString& filePath) {
-            LOG_INFO("MAIN", "请求打开文件：{}", filePath.toStdString());
+  // 文件浏览器：双击文件打开编辑器
+  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested,
+          editor_manager_, &EditorManager::openFile);
+
+  // 编辑器：当前编辑器切换时更新状态栏和菜单状态
+  connect(editor_manager_, &EditorManager::currentEditorChanged, this,
+          [this](EditorWidget* editor) {
+            bool hasEditor = (editor != nullptr);
+            save_action_->setEnabled(hasEditor);
+            save_as_action_->setEnabled(hasEditor);
+            close_file_action_->setEnabled(hasEditor);
+            close_all_files_action_->setEnabled(hasEditor);
+
+            if (editor) {
+              statusBar()->showMessage(editor->filePath());
+            } else {
+              statusBar()->showMessage(QStringLiteral("就绪"));
+            }
+          });
+
+  connect(editor_manager_, &EditorManager::fileOpened, this,
+          [this](const QString&) {
+            close_all_files_action_->setEnabled(true);
+          });
+  connect(editor_manager_, &EditorManager::fileClosed, this,
+          [this](const QString&) {
+            close_all_files_action_->setEnabled(
+                editor_manager_->currentEditor() != nullptr);
           });
 }
 
@@ -151,6 +180,29 @@ void MainWindow::createMenuBar() {
       fileMenu->addAction(QStringLiteral("关闭项目"), this,
                            &MainWindow::onCloseProject);
   close_project_action_->setEnabled(false);
+
+  fileMenu->addSeparator();
+
+  save_action_ = fileMenu->addAction(QStringLiteral("保存(&S)"), this,
+                                      &MainWindow::onSaveFile);
+  save_action_->setShortcut(QKeySequence::Save);
+  save_action_->setEnabled(false);
+
+  save_as_action_ = fileMenu->addAction(QStringLiteral("另存为..."), this,
+                                        &MainWindow::onSaveFileAs);
+  save_as_action_->setEnabled(false);
+
+  fileMenu->addSeparator();
+
+  close_file_action_ = fileMenu->addAction(QStringLiteral("关闭文件(&W)"), this,
+                                            &MainWindow::onCloseCurrentFile);
+  close_file_action_->setShortcut(QKeySequence::Close);
+  close_file_action_->setEnabled(false);
+
+  close_all_files_action_ =
+      fileMenu->addAction(QStringLiteral("关闭所有文件"), this,
+                           &MainWindow::onCloseAllFiles);
+  close_all_files_action_->setEnabled(false);
 
   fileMenu->addSeparator();
 
@@ -290,7 +342,47 @@ void MainWindow::updateRecentProjectsMenu() {
   }
 }
 
+void MainWindow::onSaveFile() {
+  auto* editor = editor_manager_->currentEditor();
+  if (!editor) return;
+  if (!editor->saveFile()) {
+    QMessageBox::warning(this, QStringLiteral("保存失败"),
+                         QStringLiteral("无法保存文件：%1").arg(editor->filePath()));
+  }
+}
+
+void MainWindow::onSaveFileAs() {
+  auto* editor = editor_manager_->currentEditor();
+  if (!editor) return;
+
+  QString newPath = QFileDialog::getSaveFileName(
+      this, QStringLiteral("另存为"), editor->filePath(),
+      QStringLiteral("所有文件 (*)"));
+  if (!newPath.isEmpty()) {
+    if (!editor->saveFileAs(newPath)) {
+      QMessageBox::warning(this, QStringLiteral("保存失败"),
+                           QStringLiteral("无法保存文件：%1").arg(newPath));
+    }
+  }
+}
+
+void MainWindow::onCloseCurrentFile() {
+  auto* editor = editor_manager_->currentEditor();
+  if (!editor) return;
+  editor_manager_->closeFile(editor->filePath());
+}
+
+void MainWindow::onCloseAllFiles() {
+  editor_manager_->closeAllFiles();
+}
+
 void MainWindow::closeEvent(QCloseEvent* event) {
+  // 关闭所有编辑器文件
+  if (!editor_manager_->closeAllFiles()) {
+    event->ignore();
+    return;
+  }
+
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   if (projectMgr.isProjectOpen()) {
     if (projectMgr.hasUnsavedChanges()) {
