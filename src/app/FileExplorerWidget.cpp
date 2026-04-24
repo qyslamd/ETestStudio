@@ -177,6 +177,7 @@ void FileExplorerWidget::onNewFolder() {
 
 void FileExplorerWidget::onRename() {
   if (context_index_.isValid()) {
+    tree_view_->setCurrentIndex(context_index_); // 先设置为当前index
     tree_view_->edit(context_index_);
   }
 }

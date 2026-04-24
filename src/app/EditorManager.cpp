@@ -11,9 +11,8 @@ using namespace etest::core::logger;
 namespace etest::app {
 
 EditorManager::EditorManager(ads::CDockManager* dockManager,
-                             ads::CDockAreaWidget* centralArea,
                              QObject* parent)
-    : QObject(parent), dock_manager_(dockManager), central_area_(centralArea) {
+    : QObject(parent), dock_manager_(dockManager) {
   connect(dock_manager_, &ads::CDockManager::focusedDockWidgetChanged, this,
           [this](ads::CDockWidget* old, ads::CDockWidget* now) {
             onDockWidgetActivated(now);
@@ -55,7 +54,18 @@ void EditorManager::openFile(const QString& filePath) {
 
   // 如果已有编辑器dock，tab到同一区域
   if (dock_widgets_.isEmpty()) {
-    dock_manager_->addDockWidgetTabToArea(dock, central_area_);
+    // 动态获取中央区域，避免指针悬空
+    ads::CDockWidget* centralDock = dock_manager_->centralWidget();
+    if (centralDock) {
+        ads::CDockAreaWidget* centralArea = centralDock->dockAreaWidget();
+        if (centralArea) {
+            dock_manager_->addDockWidgetTabToArea(dock, centralArea);
+        } else {
+            dock_manager_->addDockWidget(ads::CenterDockWidgetArea, dock);
+        }
+    } else {
+        dock_manager_->addDockWidget(ads::CenterDockWidgetArea, dock);
+    }
   } else {
     auto* existingDock = *dock_widgets_.constBegin();
     auto* area = existingDock->dockAreaWidget();

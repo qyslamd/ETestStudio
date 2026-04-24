@@ -57,15 +57,17 @@ void MainWindow::initUi() {
   // 中央编辑区（必须在添加其他dock之前建立）
   auto* centralPlaceholder = new QWidget(this);
   auto* centralDock = new ads::CDockWidget(QStringLiteral("中央编辑区"));
+  centralDock->setObjectName("CentralDock"); // 设置唯一objectName
   centralDock->setWidget(centralPlaceholder);
   auto* centralArea = dock_manager_->setCentralWidget(centralDock);
 
   // 编辑器管理器
-  editor_manager_ = new EditorManager(dock_manager_, centralArea, this);
+  editor_manager_ = new EditorManager(dock_manager_, this); // 不再需要传入centralArea
 
   // ==================== 左侧：活动栏 ====================
   activity_bar_ = new ActivityBarWidget(this);
   auto* activityDock = new ads::CDockWidget(QStringLiteral("活动栏"));
+  activityDock->setObjectName("ActivityDock"); // 设置唯一objectName
   activityDock->setWidget(activity_bar_);
   activityDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
   activityDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
@@ -75,6 +77,7 @@ void MainWindow::initUi() {
   // ==================== 左侧：侧边栏 ====================
   sidebar_ = new SidebarWidget(this);
   auto* sidebarDock = new ads::CDockWidget(QStringLiteral("侧边栏"));
+  sidebarDock->setObjectName("SidebarDock"); // 设置唯一objectName
   sidebarDock->setWidget(sidebar_);
   sidebarDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
   sidebarDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
@@ -84,16 +87,19 @@ void MainWindow::initUi() {
   // ==================== 底部：输出面板 ====================
   output_panel_ = new OutputPanel(this);
   auto* outputDock = new ads::CDockWidget(QStringLiteral("输出"));
+  outputDock->setObjectName("OutputDock"); // 设置唯一objectName
   outputDock->setWidget(output_panel_);
 
   // ==================== 底部：问题面板 ====================
   problems_panel_ = new ProblemsPanel(this);
   auto* problemsDock = new ads::CDockWidget(QStringLiteral("问题"));
+  problemsDock->setObjectName("ProblemsDock"); // 设置唯一objectName
   problemsDock->setWidget(problems_panel_);
 
   // ==================== 底部：终端面板 ====================
   terminal_panel_ = new TerminalPanel(this);
   auto* terminalDock = new ads::CDockWidget(QStringLiteral("终端"));
+  terminalDock->setObjectName("TerminalDock"); // 设置唯一objectName
   terminalDock->setWidget(terminal_panel_);
 
   // 底部面板区域：输出面板为主，问题和终端tab到输出面板
@@ -107,6 +113,7 @@ void MainWindow::initUi() {
   auto* propertyPlaceholder = new QLabel(QStringLiteral("属性面板"), this);
   propertyPlaceholder->setAlignment(Qt::AlignCenter);
   auto* propertyDock = new ads::CDockWidget(QStringLiteral("属性"));
+  propertyDock->setObjectName("PropertyDock"); // 设置唯一objectName
   propertyDock->setWidget(propertyPlaceholder);
   dock_manager_->addDockWidget(ads::RightDockWidgetArea, propertyDock);
 
