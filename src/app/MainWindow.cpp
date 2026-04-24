@@ -136,10 +136,6 @@ void MainWindow::initSignals() {
           &etest::core::project::ProjectManager::recentProjectsChanged, this,
           &MainWindow::updateRecentProjectsMenu);
 
-  // 项目关闭时关闭所有编辑器文件
-  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
-          this, [this]() { editor_manager_->closeAllFiles(); });
-
   // 注册编辑器脏检查回调到ProjectManager
   projectMgr.setDirtyCheckCallback(
       [this]() { return editor_manager_->hasUnsavedChanges(); });
@@ -156,22 +152,40 @@ void MainWindow::initSignals() {
   // 文件浏览器：双击文件打开编辑器
   connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, editor_manager_,
           &EditorManager::openFile);
+  // 文件浏览器：文件删除/重命名同步到编辑器
+  connect(fileExplorer, &FileExplorerWidget::fileDeleted, editor_manager_,
+          &EditorManager::onFileDeleted);
+  connect(fileExplorer, &FileExplorerWidget::fileRenamed, editor_manager_,
+          &EditorManager::onFileRenamed);
 
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
   connect(editor_manager_, &EditorManager::currentEditorChanged, this,
           [this](EditorWidget* editor) {
             bool hasEditor = (editor != nullptr);
-            save_action_->setEnabled(hasEditor);
             save_as_action_->setEnabled(hasEditor);
             close_file_action_->setEnabled(hasEditor);
             close_all_files_action_->setEnabled(hasEditor);
+
+            // 保存按钮仅在当前文件有修改时启用
+            save_action_->setEnabled(hasEditor && editor->isModified());
 
             if (editor) {
               statusBar()->showMessage(editor->filePath());
             } else {
               statusBar()->showMessage(QStringLiteral("就绪"));
             }
+            updateWindowTitle();
           });
+
+  // 编辑器：未保存更改状态变化时更新窗口标题和保存按钮状态
+  connect(editor_manager_, &EditorManager::unsavedChangesChanged, this, [this]() {
+    updateWindowTitle();
+    // 有任何未保存的更改时启用保存所有按钮
+    save_all_action_->setEnabled(editor_manager_->hasUnsavedChanges());
+    // 更新当前文件的保存按钮状态
+    auto* currentEditor = editor_manager_->currentEditor();
+    save_action_->setEnabled(currentEditor != nullptr && currentEditor->isModified());
+  });
 
   connect(
       editor_manager_, &EditorManager::fileOpened, this,
@@ -206,6 +220,11 @@ void MainWindow::createMenuBar() {
                                         &MainWindow::onSaveFileAs);
   save_as_action_->setEnabled(false);
 
+  save_all_action_ = fileMenu->addAction(QStringLiteral("保存所有(&L)"), this,
+                                        &MainWindow::onSaveAllFiles);
+  save_all_action_->setShortcut(QStringLiteral("Ctrl+Shift+S"));
+  save_all_action_->setEnabled(false);
+
   fileMenu->addSeparator();
 
   close_file_action_ = fileMenu->addAction(QStringLiteral("关闭文件(&W)"), this,
@@ -239,6 +258,11 @@ void MainWindow::createStatusBar() {
 }
 
 void MainWindow::onNewProject() {
+  // 先尝试关闭当前项目
+  if (!tryCloseCurrentProject()) {
+    return; // 用户取消，不继续创建
+  }
+
   etest::app::NewProjectDialog dlg(this);
   if (dlg.exec() == QDialog::Accepted) {
     auto& projectMgr = etest::core::project::ProjectManager::instance();
@@ -250,6 +274,11 @@ void MainWindow::onNewProject() {
 }
 
 void MainWindow::onOpenProject() {
+  // 先尝试关闭当前项目
+  if (!tryCloseCurrentProject()) {
+    return; // 用户取消，不继续打开
+  }
+
   auto& cfg = ConfigManager::instance();
   QString lastPath = cfg.get<QString>(CONFIG_RECENT_LAST_OPEN_PATH);
   if (lastPath.isEmpty()) {
@@ -270,25 +299,45 @@ void MainWindow::onOpenProject() {
   }
 }
 
-void MainWindow::onCloseProject() {
+bool MainWindow::tryCloseCurrentProject() {
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   if (!projectMgr.isProjectOpen())
-    return;
+    return true;
 
-  if (projectMgr.hasUnsavedChanges()) {
+  QString projectRoot = projectMgr.currentProjectRoot();
+  if (editor_manager_->hasUnsavedChangesInDirectory(projectRoot)) {
+    QString message = QStringLiteral("项目中有未保存的文件更改，是否保存？");
+
     int ret = QMessageBox::question(
         this, QStringLiteral("保存更改"),
-        QStringLiteral("项目有未保存的更改，是否保存？"),
+        message,
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
 
     if (ret == QMessageBox::Cancel)
-      return;
+      return false;
+
     if (ret == QMessageBox::Yes) {
-      projectMgr.saveProject();
+      // 只保存项目内的未保存文件
+      if (!editor_manager_->saveModifiedFilesInDirectory(projectRoot)) {
+        QMessageBox::warning(this, QStringLiteral("保存失败"),
+                             QStringLiteral("部分文件保存失败，无法关闭项目。"));
+        return false;
+      }
     }
   }
 
+  // 先关闭项目内的所有文件，如果用户取消关闭文件，则不关闭项目
+  if (!editor_manager_->closeFilesInDirectory(projectRoot)) {
+    return false;
+  }
+
+  // 文件都关闭成功后，再关闭项目
   projectMgr.closeProject();
+  return true;
+}
+
+void MainWindow::onCloseProject() {
+  tryCloseCurrentProject();
 }
 
 void MainWindow::onProjectOpened(const QString& projectPath) {
@@ -315,7 +364,12 @@ void MainWindow::updateWindowTitle() {
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   if (projectMgr.isProjectOpen()) {
     auto* project = projectMgr.currentProject();
-    setWindowTitle(QStringLiteral("%1 - ETest Demo").arg(project->name()));
+    QString title = project->name();
+    if (projectMgr.hasUnsavedChanges()) {
+      title.prepend("* ");
+    }
+    title += " - ETest Demo";
+    setWindowTitle(title);
   } else {
     setWindowTitle(QStringLiteral("ETest Demo"));
   }
@@ -334,6 +388,11 @@ void MainWindow::updateRecentProjectsMenu() {
   } else {
     for (const QString& path : recentList) {
       recent_projects_menu_->addAction(path, this, [this, path]() {
+        // 先尝试关闭当前项目
+        if (!tryCloseCurrentProject()) {
+          return; // 用户取消，不继续打开
+        }
+
         auto& pm = etest::core::project::ProjectManager::instance();
         if (!pm.openProject(path)) {
           QMessageBox::warning(
@@ -379,6 +438,10 @@ void MainWindow::onSaveFileAs() {
   }
 }
 
+void MainWindow::onSaveAllFiles() {
+  editor_manager_->saveAllFiles();
+}
+
 void MainWindow::onCloseCurrentFile() {
   auto* editor = editor_manager_->currentEditor();
   if (!editor)
@@ -391,28 +454,15 @@ void MainWindow::onCloseAllFiles() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-  // 关闭所有编辑器文件
+  // 先尝试关闭所有编辑器文件，如果用户取消则不关闭程序
   if (!editor_manager_->closeAllFiles()) {
     event->ignore();
     return;
   }
 
+  // 再关闭项目
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   if (projectMgr.isProjectOpen()) {
-    if (projectMgr.hasUnsavedChanges()) {
-      int ret = QMessageBox::question(
-          this, QStringLiteral("保存更改"),
-          QStringLiteral("项目有未保存的更改，是否保存？"),
-          QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-
-      if (ret == QMessageBox::Cancel) {
-        event->ignore();
-        return;
-      }
-      if (ret == QMessageBox::Yes) {
-        projectMgr.saveProject();
-      }
-    }
     projectMgr.closeProject();
   }
 

@@ -38,6 +38,7 @@ class MainWindow : public QMainWindow {
   void createStatusBar();
 
   // 项目相关
+  bool tryCloseCurrentProject();
   void onNewProject();
   void onOpenProject();
   void onCloseProject();
@@ -49,6 +50,7 @@ class MainWindow : public QMainWindow {
   // 编辑器相关
   void onSaveFile();
   void onSaveFileAs();
+  void onSaveAllFiles();
   void onCloseCurrentFile();
   void onCloseAllFiles();
 
@@ -72,6 +74,7 @@ class MainWindow : public QMainWindow {
   QAction* close_project_action_ = nullptr;
   QAction* save_action_ = nullptr;
   QAction* save_as_action_ = nullptr;
+  QAction* save_all_action_ = nullptr;
   QAction* close_file_action_ = nullptr;
   QAction* close_all_files_action_ = nullptr;
   QLabel* status_project_label_ = nullptr;

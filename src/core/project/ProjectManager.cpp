@@ -55,6 +55,11 @@ ProjectManager& ProjectManager::instance() {
 
 bool ProjectManager::createProject(const QString& name,
                                    const QString& location) {
+  if (isProjectOpen()) {
+    LOG_ERROR("PROJECT", "创建新项目失败：请先关闭当前项目");
+    return false;
+  }
+
   if (name.isEmpty() || location.isEmpty()) {
     LOG_WARN("PROJECT", "创建项目失败：名称或路径为空");
     return false;
@@ -90,11 +95,6 @@ bool ProjectManager::createProject(const QString& name,
     return false;
   }
 
-  // 关闭当前项目（如有）
-  if (isProjectOpen()) {
-    doCloseProject();
-  }
-
   m_impl->current_project = std::move(info);
   addToRecentProjects(etprojPath);
 
@@ -105,6 +105,11 @@ bool ProjectManager::createProject(const QString& name,
 }
 
 bool ProjectManager::openProject(const QString& filePath) {
+  if (isProjectOpen()) {
+    LOG_ERROR("PROJECT", "打开新项目失败：请先关闭当前项目");
+    return false;
+  }
+
   if (!utils::FileUtil::isFile(filePath)) {
     LOG_WARN("PROJECT", "打开项目失败：文件不存在 {}", filePath.toStdString());
     return false;
@@ -129,11 +134,6 @@ bool ProjectManager::openProject(const QString& filePath) {
     info->setRootPath(rootPath);
   }
 
-  // 关闭当前项目
-  if (isProjectOpen()) {
-    doCloseProject();
-  }
-
   QString projectPath = info->rootPath();
   m_impl->current_project = std::move(info);
 
@@ -154,9 +154,8 @@ bool ProjectManager::closeProject() {
 
   QString projectPath = m_impl->current_project->rootPath();
 
-  if (hasUnsavedChanges()) {
-    emit projectAboutToClose(projectPath);
-  }
+  // 无论有没有未保存更改，都要发出即将关闭的信号，用于关闭项目内的文件
+  emit projectAboutToClose(projectPath);
 
   return doCloseProject();
 }
@@ -173,6 +172,13 @@ bool ProjectManager::isProjectOpen() const {
 
 const ProjectInfo* ProjectManager::currentProject() const {
   return m_impl->current_project.get();
+}
+
+QString ProjectManager::currentProjectRoot() const {
+  if (!isProjectOpen()) {
+    return QString();
+  }
+  return m_impl->current_project->rootPath();
 }
 
 QStringList ProjectManager::recentProjects() const {

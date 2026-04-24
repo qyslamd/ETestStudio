@@ -23,6 +23,8 @@ class FileExplorerWidget : public QWidget {
 
  Q_SIGNALS:
   void fileOpenRequested(const QString& filePath);
+  void fileDeleted(const QString& filePath);
+  void fileRenamed(const QString& oldPath, const QString& newPath);
 
  private:
   void initUi();

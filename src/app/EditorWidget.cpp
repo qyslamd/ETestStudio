@@ -37,8 +37,11 @@ EditorWidget::EditorWidget(const QString& filePath, QWidget* parent)
 
   loadFile();
 
-  connect(editor_, &QsciScintilla::modificationChanged, this,
-          [this](bool m) { emit modificationChanged(m); });
+  // 监听Scintilla底层保存点变化信号，转发为自定义信号
+  connect(editor_, &QsciScintilla::SCN_SAVEPOINTLEFT, this,
+          [this]() { emit modificationChanged(true); });
+  connect(editor_, &QsciScintilla::SCN_SAVEPOINTREACHED, this,
+          [this]() { emit modificationChanged(false); });
 }
 
 QString EditorWidget::filePath() const {
@@ -51,6 +54,14 @@ QString EditorWidget::fileName() const {
 
 bool EditorWidget::isModified() const {
   return editor_->isModified();
+}
+
+void EditorWidget::setFilePath(const QString& newPath) {
+  file_path_ = newPath;
+  // 如果后缀变了，重新应用语法高亮
+  QFileInfo fi(newPath);
+  applyLexer(fi.suffix().toLower());
+  emit modificationChanged(editor_->isModified());
 }
 
 bool EditorWidget::loadFile() {
@@ -76,6 +87,7 @@ bool EditorWidget::saveFile() {
   out.setCodec("UTF-8");
   out << editor_->text();
   editor_->setModified(false);
+  emit modificationChanged(false);
   return true;
 }
 

@@ -16,6 +16,8 @@ class EditorWidget : public QWidget {
   QString fileName() const;
   bool isModified() const;
 
+  void setFilePath(const QString& newPath);
+
   bool loadFile();
   bool saveFile();
   bool saveFileAs(const QString& newPath);

@@ -45,9 +45,24 @@ void FileExplorerWidget::setRootPath(const QString& path) {
     for (int i = 1; i < model_->columnCount(); ++i) {
       tree_view_->hideColumn(i);
     }
+
+    // 监听文件重命名信号
+    connect(model_, &QFileSystemModel::fileRenamed, this,
+            [this](const QString& path, const QString& oldName, const QString& newName) {
+              QFileInfo oldFi(QDir(path), oldName);
+              QFileInfo newFi(QDir(path), newName);
+              emit fileRenamed(oldFi.absoluteFilePath(), newFi.absoluteFilePath());
+            });
   }
 
   model_->setRootPath(path);
+  // 确保tree_view的model是当前的model_（关闭项目时会被设为nullptr）
+  if (tree_view_->model() != model_) {
+    tree_view_->setModel(model_);
+    for (int i = 1; i < model_->columnCount(); ++i) {
+      tree_view_->hideColumn(i);
+    }
+  }
   tree_view_->setRootIndex(model_->index(path));
   tree_view_->expandToDepth(0);
 }
@@ -209,6 +224,7 @@ void FileExplorerWidget::onDelete() {
                          QStringLiteral("无法删除 \"%1\"").arg(fi.fileName()));
   } else {
     LOG_INFO("EXPLORER", "已删除：{}", path.toStdString());
+    emit fileDeleted(path);
   }
 }
 

@@ -2,6 +2,7 @@
 
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QDir>
 
 #include "EditorWidget.h"
 #include "logger/Logger.h"
@@ -46,6 +47,7 @@ void EditorManager::openFile(const QString& filePath) {
               title.prepend("* ");
             }
             dock->setWindowTitle(title);
+            emit unsavedChangesChanged();
           });
 
   // 标签关闭按钮：走closeFile流程（脏检查）
@@ -114,12 +116,26 @@ bool EditorManager::closeFile(const QString& filePath) {
   }
 
   if (current_file_path_ == filePath) {
-    current_file_path_.clear();
-    emit currentEditorChanged(nullptr);
+    // 关闭的是当前文件，尝试切换到其他打开的文件
+    if (!editors_.isEmpty()) {
+      // 切换到第一个编辑器
+      current_file_path_ = editors_.firstKey();
+      // 激活对应的dock
+      auto* dock = dock_widgets_[current_file_path_];
+      if (dock) {
+        dock->raise();
+      }
+      emit currentEditorChanged(editors_.first());
+    } else {
+      // 没有其他打开的文件
+      current_file_path_.clear();
+      emit currentEditorChanged(nullptr);
+    }
   }
 
   LOG_INFO("EDITOR", "关闭文件：{}", filePath.toStdString());
   emit fileClosed(filePath);
+  emit unsavedChangesChanged();
   return true;
 }
 
@@ -128,6 +144,68 @@ bool EditorManager::closeAllFiles() {
   for (const QString& fp : files) {
     if (!closeFile(fp))
       return false;
+  }
+  return true;
+}
+
+bool EditorManager::saveAllFiles() {
+  for (auto* editor : editors_) {
+    if (editor->isModified()) {
+      if (!editor->saveFile()) {
+        LOG_ERROR("EDITOR", "保存文件失败：{}", editor->filePath().toStdString());
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool EditorManager::saveModifiedFiles(const QStringList& filePaths) {
+  if (filePaths.isEmpty()) {
+    return saveAllFiles();
+  }
+
+  // 如果只有一个路径且是目录，保存该目录下的所有未保存文件
+  if (filePaths.size() == 1) {
+    QString path = filePaths.first();
+    QFileInfo fi(path);
+    if (fi.isDir()) {
+      return saveModifiedFilesInDirectory(path);
+    }
+  }
+
+  // 否则保存指定的文件列表
+  for (const QString& fp : filePaths) {
+    auto it = editors_.find(fp);
+    if (it != editors_.end() && it.value()->isModified()) {
+      if (!it.value()->saveFile()) {
+        LOG_ERROR("EDITOR", "保存文件失败：{}", fp.toStdString());
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool EditorManager::saveModifiedFilesInDirectory(const QString& dirPath) {
+  if (dirPath.isEmpty()) {
+    return saveAllFiles();
+  }
+
+  QDir dir(dirPath);
+  if (!dir.exists()) {
+    return false;
+  }
+
+  for (auto it = editors_.constBegin(); it != editors_.constEnd(); ++it) {
+    // 使用relativeFilePath判断：如果返回的路径不以".."开头，说明是子目录
+    QString relativePath = dir.relativeFilePath(it.key());
+    if (!relativePath.startsWith("..") && it.value()->isModified()) {
+      if (!it.value()->saveFile()) {
+        LOG_ERROR("EDITOR", "保存文件失败：{}", it.key().toStdString());
+        return false;
+      }
+    }
   }
   return true;
 }
@@ -144,6 +222,26 @@ bool EditorManager::hasUnsavedChanges() const {
   for (auto* editor : editors_) {
     if (editor->isModified())
       return true;
+  }
+  return false;
+}
+
+bool EditorManager::hasUnsavedChangesInDirectory(const QString& dirPath) const {
+  if (dirPath.isEmpty()) {
+    return hasUnsavedChanges();
+  }
+
+  QDir dir(dirPath);
+  if (!dir.exists()) {
+    return false;
+  }
+
+  for (auto it = editors_.constBegin(); it != editors_.constEnd(); ++it) {
+    // 使用relativeFilePath判断：如果返回的路径不以".."开头，说明是子目录
+    QString relativePath = dir.relativeFilePath(it.key());
+    if (!relativePath.startsWith("..") && it.value()->isModified()) {
+      return true;
+    }
   }
   return false;
 }
@@ -187,6 +285,95 @@ void EditorManager::updateDockTitle(EditorWidget* editor,
     title.prepend("* ");
   }
   dock->setWindowTitle(title);
+}
+
+void EditorManager::onFileDeleted(const QString& filePath) {
+  auto it = editors_.find(filePath);
+  if (it == editors_.end()) {
+    return; // 文件没有打开，不需要处理
+  }
+
+  auto* editor = it.value();
+  if (editor->isModified()) {
+    // 文件已修改，提示用户
+    int ret = QMessageBox::question(
+        nullptr, QStringLiteral("文件已删除"),
+        QStringLiteral("文件 \"%1\" 已被删除，是否保存更改到其他位置？")
+            .arg(editor->fileName()),
+        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+
+    if (ret == QMessageBox::Save) {
+      // 用户选择另存为
+      editor->saveFileAs(QString());
+      // 不管保存是否成功，都关闭编辑器
+    } else if (ret == QMessageBox::Cancel) {
+      // 用户取消，不关闭编辑器
+      return;
+    }
+    // 选择Discard的话直接关闭
+  }
+
+  // 关闭编辑器
+  closeFile(filePath);
+}
+
+void EditorManager::onFileRenamed(const QString& oldPath, const QString& newPath) {
+  auto it = editors_.find(oldPath);
+  if (it == editors_.end()) {
+    return; // 文件没有打开，不需要处理
+  }
+
+  auto* editor = it.value();
+  auto* dock = dock_widgets_[oldPath];
+
+  // 更新编辑器的文件路径
+  editor->setFilePath(newPath);
+
+  // 更新maps中的key
+  editors_.remove(oldPath);
+  editors_[newPath] = editor;
+  dock_widgets_.remove(oldPath);
+  dock_widgets_[newPath] = dock;
+
+  // 更新当前文件路径如果需要
+  if (current_file_path_ == oldPath) {
+    current_file_path_ = newPath;
+  }
+
+  // 更新dock标题
+  updateDockTitle(editor, dock);
+
+  LOG_INFO("EDITOR", "文件已重命名：{} -> {}", oldPath.toStdString(), newPath.toStdString());
+}
+
+bool EditorManager::closeFilesInDirectory(const QString& dirPath) {
+  if (dirPath.isEmpty()) {
+    return closeAllFiles();
+  }
+
+  QDir dir(dirPath);
+  if (!dir.exists()) {
+    return true;
+  }
+
+  // 收集所有属于该目录的文件
+  QStringList filesToClose;
+  for (const QString& filePath : editors_.keys()) {
+    // 使用relativeFilePath判断：如果返回的路径不以".."开头，说明是子目录
+    QString relativePath = dir.relativeFilePath(filePath);
+    if (!relativePath.startsWith("..")) {
+      filesToClose.append(filePath);
+    }
+  }
+
+  // 逐个关闭
+  for (const QString& fp : filesToClose) {
+    if (!closeFile(fp)) {
+      return false; // 用户取消关闭
+    }
+  }
+
+  return true;
 }
 
 }  // namespace etest::app

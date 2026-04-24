@@ -30,6 +30,7 @@ class ProjectManager : public QObject {
   // 项目状态
   bool isProjectOpen() const;
   const ProjectInfo* currentProject() const;
+  QString currentProjectRoot() const;
 
   // 最近项目
   QStringList recentProjects() const;

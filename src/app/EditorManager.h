@@ -20,10 +20,21 @@ class EditorManager : public QObject {
   void openFile(const QString& filePath);
   bool closeFile(const QString& filePath);
   bool closeAllFiles();
+  bool saveAllFiles();
+  bool saveModifiedFiles(const QStringList& filePaths = QStringList());
+
+  // 文件变更同步
+  void onFileDeleted(const QString& filePath);
+  void onFileRenamed(const QString& oldPath, const QString& newPath);
+
+  // 关闭指定目录下的所有文件（用于项目关闭时保留项目外的文件）
+  bool closeFilesInDirectory(const QString& dirPath);
 
   EditorWidget* editorForFile(const QString& filePath) const;
   bool isOpen(const QString& filePath) const;
   bool hasUnsavedChanges() const;
+  bool hasUnsavedChangesInDirectory(const QString& dirPath) const;
+  bool saveModifiedFilesInDirectory(const QString& dirPath);
 
   EditorWidget* currentEditor() const;
   QString currentFilePath() const;
@@ -32,6 +43,7 @@ class EditorManager : public QObject {
   void fileOpened(const QString& filePath);
   void fileClosed(const QString& filePath);
   void currentEditorChanged(EditorWidget* editor);
+  void unsavedChangesChanged();
 
  private:
   void onDockWidgetActivated(ads::CDockWidget* dock);
