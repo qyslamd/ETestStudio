@@ -154,12 +154,50 @@ void EditorWidget::applyColorScheme(QsciLexer* lexer) {
   QColor teal(43, 145, 175);
   QColor gray(128, 128, 128);
 
-  // 通用样式：关键字、注释、字符串
-  lexer->setColor(blue, QsciLexerCPP::Keyword);
-  lexer->setColor(green, QsciLexerCPP::Comment);
-  lexer->setColor(green, QsciLexerCPP::CommentLine);
-  lexer->setColor(darkRed, QsciLexerCPP::DoubleQuotedString);
-  lexer->setColor(darkRed, QsciLexerCPP::SingleQuotedString);
-  lexer->setColor(teal, QsciLexerCPP::Number);
-  lexer->setColor(gray, QsciLexerCPP::Operator);
+  // 根据lexer类型使用各自的样式枚举
+  if (auto* cpp = qobject_cast<QsciLexerCPP*>(lexer)) {
+    cpp->setColor(blue, QsciLexerCPP::Keyword);
+    cpp->setColor(green, QsciLexerCPP::Comment);
+    cpp->setColor(green, QsciLexerCPP::CommentLine);
+    cpp->setColor(darkRed, QsciLexerCPP::DoubleQuotedString);
+    cpp->setColor(darkRed, QsciLexerCPP::SingleQuotedString);
+    cpp->setColor(teal, QsciLexerCPP::Number);
+    cpp->setColor(gray, QsciLexerCPP::Operator);
+  } else if (auto* lua = qobject_cast<QsciLexerLua*>(lexer)) {
+    lua->setColor(blue, QsciLexerLua::Keyword);
+    lua->setColor(green, QsciLexerLua::Comment);
+    lua->setColor(green, QsciLexerLua::LineComment);
+    lua->setColor(darkRed, QsciLexerLua::String);
+    lua->setColor(darkRed, QsciLexerLua::Character);
+    lua->setColor(teal, QsciLexerLua::Number);
+  } else if (auto* json = qobject_cast<QsciLexerJSON*>(lexer)) {
+    json->setColor(blue, QsciLexerJSON::Keyword);
+    json->setColor(green, QsciLexerJSON::CommentLine);
+    json->setColor(green, QsciLexerJSON::CommentBlock);
+    json->setColor(darkRed, QsciLexerJSON::String);
+    json->setColor(teal, QsciLexerJSON::Number);
+  } else if (auto* xml = qobject_cast<QsciLexerXML*>(lexer)) {
+    xml->setColor(blue, QsciLexerXML::Tag);
+    xml->setColor(green, QsciLexerXML::HTMLComment);
+    xml->setColor(darkRed, QsciLexerXML::HTMLDoubleQuotedString);
+    xml->setColor(darkRed, QsciLexerXML::HTMLSingleQuotedString);
+    xml->setColor(teal, QsciLexerXML::HTMLNumber);
+  } else if (auto* py = qobject_cast<QsciLexerPython*>(lexer)) {
+    py->setColor(blue, QsciLexerPython::Keyword);
+    py->setColor(green, QsciLexerPython::Comment);
+    py->setColor(darkRed, QsciLexerPython::DoubleQuotedString);
+    py->setColor(darkRed, QsciLexerPython::SingleQuotedString);
+    py->setColor(teal, QsciLexerPython::Number);
+  } else if (auto* yaml = qobject_cast<QsciLexerYAML*>(lexer)) {
+    yaml->setColor(blue, QsciLexerYAML::Keyword);
+    yaml->setColor(green, QsciLexerYAML::Comment);
+    yaml->setColor(teal, QsciLexerYAML::Number);
+  } else if (auto* cmake = qobject_cast<QsciLexerCMake*>(lexer)) {
+    cmake->setColor(blue, QsciLexerCMake::Function);
+    cmake->setColor(green, QsciLexerCMake::Comment);
+    cmake->setColor(darkRed, QsciLexerCMake::String);
+    cmake->setColor(teal, QsciLexerCMake::Number);
+  }
+  // QsciLexerJavaScript 继承自 QsciLexerCPP，qobject_cast<QsciLexerCPP*> 可匹配
+  // QsciLexerMarkdown 无传统关键字/注释/字符串概念，不配色
 }

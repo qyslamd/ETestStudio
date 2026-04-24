@@ -8,11 +8,20 @@
             "name": "(Windows) 启动",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ninja-debug/bin/demo.exe",
+            "program": "${workspaceFolder}/build/ninja-debug/bin/qscintilla-demo.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/ninja-debug/bin",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/bin;${env:PATH}"
+                },
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/plugins"
+                }
+            ],
             "console": "externalTerminal",
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         }

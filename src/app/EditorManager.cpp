@@ -6,10 +6,14 @@
 #include "EditorWidget.h"
 #include "logger/Logger.h"
 
-EditorManager::EditorManager(ads::CDockManager* dockManager, QObject* parent)
-    : QObject(parent), dock_manager_(dockManager) {
+EditorManager::EditorManager(ads::CDockManager* dockManager,
+                             ads::CDockAreaWidget* centralArea,
+                             QObject* parent)
+    : QObject(parent), dock_manager_(dockManager), central_area_(centralArea) {
   connect(dock_manager_, &ads::CDockManager::focusedDockWidgetChanged, this,
-          &EditorManager::onDockWidgetActivated);
+          [this](ads::CDockWidget* old, ads::CDockWidget* now) {
+            onDockWidgetActivated(now);
+          });
 }
 
 void EditorManager::openFile(const QString& filePath) {
@@ -29,6 +33,7 @@ void EditorManager::openFile(const QString& filePath) {
   auto* dock = new ads::CDockWidget(fi.fileName());
   dock->setWidget(editor);
   dock->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
+  dock->setFeature(ads::CDockWidget::CustomCloseHandling, true);
 
   // 脏标记：修改时在标题前加 *
   connect(editor, &EditorWidget::modificationChanged, this,
@@ -40,9 +45,13 @@ void EditorManager::openFile(const QString& filePath) {
             dock->setWindowTitle(title);
           });
 
+  // 标签关闭按钮：走closeFile流程（脏检查）
+  connect(dock, &ads::CDockWidget::closeRequested, this,
+          [this, filePath]() { closeFile(filePath); });
+
   // 如果已有编辑器dock，tab到同一区域
   if (dock_widgets_.isEmpty()) {
-    dock_manager_->addDockWidget(ads::CenterDockWidgetArea, dock);
+    dock_manager_->addDockWidgetTabToArea(dock, central_area_);
   } else {
     auto* existingDock = *dock_widgets_.constBegin();
     auto* area = existingDock->dockAreaWidget();

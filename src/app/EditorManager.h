@@ -14,6 +14,7 @@ class EditorManager : public QObject {
 
  public:
   explicit EditorManager(ads::CDockManager* dockManager,
+                         ads::CDockAreaWidget* centralArea,
                          QObject* parent = nullptr);
 
   void openFile(const QString& filePath);
@@ -37,6 +38,7 @@ class EditorManager : public QObject {
   void updateDockTitle(EditorWidget* editor, ads::CDockWidget* dock);
 
   ads::CDockManager* dock_manager_;
+  ads::CDockAreaWidget* central_area_;
   QMap<QString, ads::CDockWidget*> dock_widgets_;
   QMap<QString, EditorWidget*> editors_;
   QString current_file_path_;

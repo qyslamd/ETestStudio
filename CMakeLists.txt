@@ -132,6 +132,12 @@ configure_file(${QSCINTILLA_CMAKE_DIR}/CMakeLists.txt.in
                ${CMAKE_SOURCE_DIR}/3rdparty/QScintilla-2.11.3/CMakeLists.txt @ONLY)
 add_subdirectory(3rdparty/QScintilla-2.11.3)
 
+if(NOT TARGET QScintilla AND TARGET qsci)
+    add_library(QScintilla ALIAS qsci)
+else()
+    message(FATAL_ERROR "Failed to create alias for QScintilla target. Please check if the target 'qsci' exists.")
+endif()
+
 #=======================================
 # 设置编译选项，特别是Windows平台下的Unicode支持
 # 对于MSVC编译器，启用UTF-8编码支持，并定义Unicode相关的宏，以确保应用程序能够正确处理Unicode字符。
@@ -164,6 +170,7 @@ endif()
 option(BUILD_ETEST_EXAMPLES "Build etest example plugins" ON)
 if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/plugins/hello_plugin)
+    add_subdirectory(examples/qscintlla-demo)
 endif()
 
 

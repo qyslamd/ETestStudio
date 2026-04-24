@@ -2,7 +2,6 @@
 
 #include <QCloseEvent>
 #include <QFileDialog>
-#include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -49,18 +48,14 @@ void MainWindow::initUi() {
   // QADS Dock Manager
   dock_manager_ = new ads::CDockManager(this);
 
-  // ==================== 中央编辑器区域 ====================
-  auto* centralPlaceholder = new QLabel(QStringLiteral("双击文件打开编辑器"), this);
-  centralPlaceholder->setAlignment(Qt::AlignCenter);
-  auto* centralDock = new ads::CDockWidget(QStringLiteral("编辑器"));
+  // 中央编辑区（必须在添加其他dock之前建立）
+  auto* centralPlaceholder = new QWidget(this);
+  auto* centralDock = new ads::CDockWidget(QStringLiteral("中央编辑区"));
   centralDock->setWidget(centralPlaceholder);
-  centralDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
-  centralDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
-  centralDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
-  dock_manager_->setCentralWidget(centralDock);
+  auto* centralArea = dock_manager_->setCentralWidget(centralDock);
 
   // 编辑器管理器
-  editor_manager_ = new EditorManager(dock_manager_, this);
+  editor_manager_ = new EditorManager(dock_manager_, centralArea, this);
 
   // ==================== 左侧：活动栏 ====================
   activity_bar_ = new ActivityBarWidget(this);
@@ -127,6 +122,15 @@ void MainWindow::initSignals() {
   connect(&projectMgr,
           &etest::core::project::ProjectManager::recentProjectsChanged, this,
           &MainWindow::updateRecentProjectsMenu);
+
+  // 项目关闭时关闭所有编辑器文件
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+          this, [this]() { editor_manager_->closeAllFiles(); });
+
+  // 注册编辑器脏检查回调到ProjectManager
+  projectMgr.setDirtyCheckCallback([this]() {
+    return editor_manager_->hasUnsavedChanges();
+  });
 
   // 文件浏览器：项目打开/关闭时设置根路径
   auto* fileExplorer = sidebar_->fileExplorer();

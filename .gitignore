@@ -32,6 +32,7 @@ install/
 # 一些测试生成的执行脚本
 run_app.bat
 run_test.bat
+run_qscintilla-demo.bat
 
 # 第三方依赖缓存目录
 3rdparty/spdlog-1.17.0/

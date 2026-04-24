@@ -32,6 +32,7 @@ void FileExplorerWidget::setRootPath(const QString& path) {
 
   if (!model_) {
     model_ = new QFileSystemModel(this);
+    model_->setReadOnly(false);
     model_->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
     model_->setNameFilterDisables(false);
     tree_view_->setModel(model_);
