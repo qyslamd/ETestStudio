@@ -171,6 +171,7 @@ option(BUILD_ETEST_EXAMPLES "Build etest example plugins" ON)
 if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/plugins/hello_plugin)
     add_subdirectory(examples/qscintlla-demo)
+    add_subdirectory(examples/guidance-demo)
 endif()
 
 

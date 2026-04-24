@@ -33,6 +33,7 @@ install/
 run_app.bat
 run_test.bat
 run_qscintilla-demo.bat
+run_guidance-demo.bat
 
 # 第三方依赖缓存目录
 3rdparty/spdlog-1.17.0/

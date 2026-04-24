@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GuidanceHomePage</class>
+ <widget class="QWidget" name="GuidanceHomePage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1216</width>
+    <height>666</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QWidget" name="widget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>60</y>
+     <width>741</width>
+     <height>501</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnClose">
+        <property name="minimumSize">
+         <size>
+          <width>36</width>
+          <height>36</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>36</width>
+          <height>36</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QToolButton {
+	background: 
+qlineargradient(x1: 1, y1: 0, x2: 0, y2: 1,
+stop: 0 #a445b2,
+stop: 0.52 #d41872,
+stop: 1 #ff0066
+)
+;
+	border: none;
+    color:white;
+	border-radius: 16px;
+}
+QToolButton:hover {
+	background: qlineargradient(x1: 1, y1: 0, x2: 0, y2: 1,
+stop: 0 #231557,
+stop: 0.29 #44107a,
+stop: 0.67 #ff1361,
+stop: 1 #fff800
+)
+;
+
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../res.qrc">
+          <normaloff>:/resrouces/icons/multiply.svg</normaloff>:/resrouces/icons/multiply.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>32</width>
+          <height>32</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QFrame" name="frame">
+      <property name="styleSheet">
+       <string notr="true">QFrame#frame{
+border:2px solid rgba(76,175,80, 1);
+border-radius:12px;
+}</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,1">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QListView" name="listView">
+         <property name="styleSheet">
+          <string notr="true">/* QListView 基础样式 */
+QListView {
+background: qlineargradient(x1:0.0, y1:0.5, x2:1.0, y2:0.5, 
+stop:0.00 rgba(89,97,100, 0.7), 
+stop:0.04 rgba(134,143,150, 0.3),
+
+stop:0.96 rgba(134,143,150, 0.3),
+stop:1.00 rgba(89,97,100, 0.7)
+);
+    padding: 8px;
+    color: #f1f5f9;
+    font-size: 14px;
+    font-family: &quot;Segoe UI&quot;, &quot;Microsoft YaHei&quot;, sans-serif;
+}
+
+/* 项目样式 */
+QListView::item {
+    padding: 10px 12px;
+    margin: 2px 4px;
+    border-radius: 12px;
+    min-height: 32px;
+    color: #ffffff;
+    background: rgba(76,175,80, 0.2);
+}
+
+/* 项目悬停状态 */
+QListView::item:hover {
+    background: rgba(76,175,80, 0.5);
+    color: #ffffff;
+}
+
+/* 项目选中状态 */
+QListView::item:selected {
+    background: rgba(76,175,80, 0.7);
+    color: #ffffff;
+    border: 1px solid rgba(212,252,121, 1);
+}
+
+/* 项目禁用状态 */
+QListView::item:disabled {
+    color: rgba(148, 163, 184, 0.5);
+    background: transparent;
+}
+
+/* 禁用状态 */
+QListView:disabled {
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(71, 85, 105, 0.2);
+    color: rgba(148, 163, 184, 0.5);
+}
+
+/* 焦点状态 */
+QListView:focus {
+    /*border: 2px solid rgba(96, 165, 250, 0.6);*/
+    outline: none;
+}</string>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="rightWidget" native="true">
+         <property name="styleSheet">
+          <string notr="true">QWidget#rightWidget{
+background: qlineargradient(x1:0.0, y1:0.5, x2:1.0, y2:0.5, 
+stop:0.00 rgba(89,97,100, 0.9), 
+stop:0.04 rgba(134,143,150, 0.7),
+
+stop:0.96 rgba(134,143,150, 0.7),
+stop:1.00 rgba(89,97,100, 0.9)
+);
+
+border:none;
+border-left:2px solid rgba(76,175,80, 1);
+}</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,2,0,0,0,0">
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelTitle">
+            <property name="styleSheet">
+             <string notr="true">QLabel{
+color:#FFFFFF;
+font: 100 22pt &quot;等线&quot;;
+text-decoration:underline;
+}</string>
+            </property>
+            <property name="text">
+             <string>标题</string>
+            </property>
+            <property name="textFormat">
+             <enum>Qt::PlainText</enum>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelDesc">
+            <property name="styleSheet">
+             <string notr="true">QLabel{
+font-size:14pt;
+color:#FFFFFF;
+font-family:&quot;等线&quot;;
+}</string>
+            </property>
+            <property name="text">
+             <string>内容</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnAll">
+              <property name="minimumSize">
+               <size>
+                <width>112</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QPushButton { 
+min-width:64px;
+background: #4CAF50; 
+border: none; 
+color: white; 
+padding: 8px 24px; 
+border-radius: 4px; 
+font-size: 14px;
+} 
+
+QPushButton:hover { 
+background: #45a049; 
+}
+QPushButton:disabled { 
+background-color: #adb5bd; 
+}</string>
+              </property>
+              <property name="text">
+               <string>全部演示</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnGo">
+              <property name="minimumSize">
+               <size>
+                <width>96</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QPushButton { 
+min-width:48px;
+background: #4CAF50; 
+border: none; 
+color: white; 
+padding: 8px 24px; 
+border-radius: 4px; 
+font-size: 14px;
+} 
+
+QPushButton:hover { 
+background: #45a049; 
+}
+QPushButton:disabled { 
+background-color: #adb5bd; 
+}</string>
+              </property>
+              <property name="text">
+               <string>GO</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBoxAuto">
+            <property name="layoutDirection">
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color:white;</string>
+            </property>
+            <property name="text">
+             <string>自动演示</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../res.qrc"/>
+ </resources>
+ <connections/>
+</ui>
