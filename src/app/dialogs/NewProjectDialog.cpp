@@ -27,11 +27,13 @@ QString NewProjectDialog::projectName() const {
 }
 
 QString NewProjectDialog::projectLocation() const {
-  return location_edit_->text().trimmed();
+  // 返回绝对路径
+  return QDir(location_edit_->text().trimmed()).absolutePath();
 }
 
 QString NewProjectDialog::fullProjectPath() const {
-  return QDir(projectLocation()).filePath(projectName());
+  // 返回绝对路径
+  return QDir(QDir(projectLocation()).absolutePath()).filePath(projectName());
 }
 
 void NewProjectDialog::initUi() {
@@ -125,6 +127,7 @@ void NewProjectDialog::validateInputs() {
     return;
   }
 
+  // 平台无关的非法字符检查
   static const QString invalidChars = "\\/:*?\"<>|";
   for (const QChar& c : name) {
     if (invalidChars.contains(c)) {
@@ -141,13 +144,25 @@ void NewProjectDialog::validateInputs() {
     return;
   }
 
-  if (!QDir(location).exists()) {
+  // 使用绝对路径进行验证
+  QString absLocation = projectLocation(); // 已经是绝对路径
+
+  QDir dir(absLocation);
+  if (!dir.exists()) {
     error_label_->setText(QStringLiteral("所选位置路径不存在"));
     create_button_->setEnabled(false);
     return;
   }
 
-  QString fullPath = fullProjectPath();
+  // 检查目录是否可写
+  QFileInfo dirInfo(absLocation);
+  if (!dirInfo.isWritable()) {
+    error_label_->setText(QStringLiteral("所选位置不可写，请检查权限"));
+    create_button_->setEnabled(false);
+    return;
+  }
+
+  QString fullPath = fullProjectPath(); // 使用绝对路径
   if (QDir(fullPath).exists()) {
     error_label_->setText(QStringLiteral("目标目录已存在：%1").arg(fullPath));
     create_button_->setEnabled(false);

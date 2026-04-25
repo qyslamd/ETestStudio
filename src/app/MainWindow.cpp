@@ -42,7 +42,15 @@ MainWindow::MainWindow(QWidget* parent)
   LOG_INFO("MAIN", "主窗口初始化完成");
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow() {
+  // 清除ProjectManager中的脏检查回调，避免悬空指针
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  projectMgr.setDirtyCheckCallback({});
+
+  // 显式断开与ProjectManager的所有信号连接
+  // Qt会在接收者销毁时自动断开，但显式断开更清晰
+  projectMgr.disconnect(this);
+}
 
 void MainWindow::initUi() {
   setWindowTitle("ETest Demo");

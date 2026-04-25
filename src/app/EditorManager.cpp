@@ -3,6 +3,7 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QDir>
+#include <QApplication>
 
 #include "EditorWidget.h"
 #include "logger/Logger.h"
@@ -94,8 +95,13 @@ bool EditorManager::closeFile(const QString& filePath) {
 
   auto* editor = it.value();
   if (editor->isModified()) {
+    // 获取有效的父窗口
+    QWidget* parentWidget = dock_manager_->topLevelWidget();
+    if (!parentWidget && qApp) {
+      parentWidget = qApp->activeWindow();
+    }
     int ret = QMessageBox::question(
-        nullptr, QStringLiteral("保存更改"),
+        parentWidget, QStringLiteral("保存更改"),
         QStringLiteral("文件 \"%1\" 已修改，是否保存？")
             .arg(editor->fileName()),
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
@@ -296,24 +302,36 @@ void EditorManager::onFileDeleted(const QString& filePath) {
   auto* editor = it.value();
   if (editor->isModified()) {
     // 文件已修改，提示用户
+    // 获取有效的父窗口
+    QWidget* parentWidget = dock_manager_->topLevelWidget();
+    if (!parentWidget && qApp) {
+      parentWidget = qApp->activeWindow();
+    }
     int ret = QMessageBox::question(
-        nullptr, QStringLiteral("文件已删除"),
+        parentWidget, QStringLiteral("文件已删除"),
         QStringLiteral("文件 \"%1\" 已被删除，是否保存更改到其他位置？")
             .arg(editor->fileName()),
         QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
 
-    if (ret == QMessageBox::Save) {
-      // 用户选择另存为
-      editor->saveFileAs(QString());
-      // 不管保存是否成功，都关闭编辑器
-    } else if (ret == QMessageBox::Cancel) {
+    if (ret == QMessageBox::Cancel) {
       // 用户取消，不关闭编辑器
       return;
     }
-    // 选择Discard的话直接关闭
+
+    if (ret == QMessageBox::Save) {
+      // 用户选择另存为
+      if (!editor->saveFileAs(QString())) {
+        // 保存失败或用户取消，不关闭编辑器
+        return;
+      }
+      // 保存成功，编辑器已标记为未修改，继续关闭
+    } else if (ret == QMessageBox::Discard) {
+      // 用户选择丢弃更改，将编辑器标记为未修改，避免closeFile重复提示
+      editor->editor()->setModified(false);
+    }
   }
 
-  // 关闭编辑器
+  // 关闭编辑器，此时编辑器要么未修改，要么已保存
   closeFile(filePath);
 }
 
