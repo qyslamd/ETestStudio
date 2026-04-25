@@ -37,11 +37,17 @@ EditorWidget::EditorWidget(const QString& filePath, QWidget* parent)
 
   loadFile();
 
-  // 监听Scintilla底层保存点变化信号，转发为自定义信号
-  connect(editor_, &QsciScintilla::SCN_SAVEPOINTLEFT, this,
-          [this]() { emit modificationChanged(true); });
-  connect(editor_, &QsciScintilla::SCN_SAVEPOINTREACHED, this,
-          [this]() { emit modificationChanged(false); });
+  // 监听Scintilla的修改状态变化信号
+  connect(editor_, &QsciScintilla::modificationChanged, this,
+          &EditorWidget::modificationChanged);
+
+  // 同时监听textChanged信号作为备用，确保修改状态被检测到
+  connect(editor_, &QsciScintilla::textChanged, this, [this]() {
+    // 当文本改变时，如果编辑器被标记为已修改，发射信号
+    if (editor_->isModified()) {
+      emit modificationChanged(true);
+    }
+  });
 }
 
 QString EditorWidget::filePath() const {
@@ -172,8 +178,8 @@ bool EditorWidget::eventFilter(QObject* obj, QEvent* event) {
     // 让应用级快捷键（Ctrl+S/Ctrl+W等）冒泡到菜单栏，不被Scintilla消费
     if (ke->modifiers() == Qt::ControlModifier &&
         (ke->key() == Qt::Key_S || ke->key() == Qt::Key_W)) {
-      event->ignore();
-      return true;
+      // 不调用ignore()或accept()，让Qt默认处理快捷键
+      return false;
     }
   }
   return QWidget::eventFilter(obj, event);

@@ -44,6 +44,7 @@ class EditorManager : public QObject {
   void fileClosed(const QString& filePath);
   void currentEditorChanged(EditorWidget* editor);
   void unsavedChangesChanged();
+  void modificationChanged(bool modified);  // 新增：转发单个编辑器的脏标记变化
 
  private:
   void onDockWidgetActivated(ads::CDockWidget* dock);

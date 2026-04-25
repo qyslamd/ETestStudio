@@ -183,17 +183,27 @@ void MainWindow::initSignals() {
               statusBar()->showMessage(QStringLiteral("就绪"));
             }
             updateWindowTitle();
+
+            // 断开之前编辑器的连接
+            QObject::disconnect(current_editor_modification_connection_);
+
+            // 连接新编辑器的modificationChanged信号
+            if (editor) {
+              current_editor_modification_connection_ =
+                  connect(editor, &EditorWidget::modificationChanged, this,
+                          [this](bool modified) {
+                            save_action_->setEnabled(modified);
+                          });
+            }
           });
 
-  // 编辑器：未保存更改状态变化时更新窗口标题和保存按钮状态
+  // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
   connect(editor_manager_, &EditorManager::unsavedChangesChanged, this, [this]() {
     updateWindowTitle();
     // 有任何未保存的更改时启用保存所有按钮
     save_all_action_->setEnabled(editor_manager_->hasUnsavedChanges());
-    // 更新当前文件的保存按钮状态
-    auto* currentEditor = editor_manager_->currentEditor();
-    save_action_->setEnabled(currentEditor != nullptr && currentEditor->isModified());
   });
+
 
   connect(
       editor_manager_, &EditorManager::fileOpened, this,

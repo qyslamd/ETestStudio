@@ -78,6 +78,9 @@ class MainWindow : public QMainWindow {
   QAction* close_file_action_ = nullptr;
   QAction* close_all_files_action_ = nullptr;
   QLabel* status_project_label_ = nullptr;
+
+  // 当前编辑器的信号连接
+  QMetaObject::Connection current_editor_modification_connection_;
 };
 
 }  // namespace etest::app

@@ -49,6 +49,7 @@ void EditorManager::openFile(const QString& filePath) {
             }
             dock->setWindowTitle(title);
             emit unsavedChangesChanged();
+            emit modificationChanged(modified);  // 新增：转发信号
           });
 
   // 标签关闭按钮：走closeFile流程（脏检查）
