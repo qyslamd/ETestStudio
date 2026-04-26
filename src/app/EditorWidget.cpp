@@ -1,10 +1,15 @@
 #include "EditorWidget.h"
+#include "config/ConfigDefs.h"
 
 #include <QFile>
 #include <QFileInfo>
 #include <QKeyEvent>
 #include <QTextStream>
 #include <QVBoxLayout>
+#include <QMenu>
+#include <QContextMenuEvent>
+#include <QGuiApplication>
+#include <QClipboard>
 
 #include <Qsci/qscilexercmake.h>
 #include <Qsci/qscilexercpp.h>
@@ -48,6 +53,9 @@ EditorWidget::EditorWidget(const QString& filePath, QWidget* parent)
       emit modificationChanged(true);
     }
   });
+
+  // 文本变化时发射状态变化信号
+  connect(editor_, &QsciScintilla::textChanged, this, &EditorWidget::editorStateChanged);
 }
 
 QString EditorWidget::filePath() const {
@@ -114,19 +122,29 @@ QsciScintilla* EditorWidget::editor() const {
 }
 
 void EditorWidget::setupEditor() {
+  using namespace etest::core::config;
+
+  ConfigManager& config = ConfigManager::instance();
+
   // 行号
+  bool showLineNumber = config.get<bool>(CONFIG_EDITOR_SHOW_LINE_NUMBER, CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
   editor_->setMarginType(0, QsciScintilla::NumberMargin);
   editor_->setMarginWidth(0, "0000");
-  editor_->setMarginLineNumbers(0, true);
+  editor_->setMarginLineNumbers(0, showLineNumber);
 
   // 代码折叠
   editor_->setFolding(QsciScintilla::PlainFoldStyle);
 
   // 自动缩进
-  editor_->setAutoIndent(true);
+  bool autoIndent = config.get<bool>(CONFIG_EDITOR_AUTO_INDENT, CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
+  editor_->setAutoIndent(autoIndent);
   editor_->setIndentationGuides(true);
-  editor_->setTabWidth(4);
-  editor_->setIndentationsUseTabs(false);
+
+  int tabWidth = config.get<int>(CONFIG_EDITOR_TAB_WIDTH, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
+  editor_->setTabWidth(tabWidth);
+
+  bool spacesForTab = config.get<bool>(CONFIG_EDITOR_SPACES_FOR_TAB, CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
+  editor_->setIndentationsUseTabs(!spacesForTab);
 
   // 换行模式
   editor_->setWrapMode(QsciScintilla::WrapNone);
@@ -137,6 +155,16 @@ void EditorWidget::setupEditor() {
 
   // UTF-8
   editor_->setUtf8(true);
+
+  // 字体大小
+  int fontSize = config.get<int>(CONFIG_EDITOR_FONT_SIZE, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
+  QFont font = editor_->font();
+  font.setPointSize(fontSize);
+  editor_->setFont(font);
+  editor_->setMarginsFont(font);
+
+  // 连接配置变化信号
+  connect(&config, &ConfigManager::configChanged, this, &EditorWidget::onConfigChanged);
 }
 
 void EditorWidget::applyLexer(const QString& suffix) {
@@ -239,6 +267,70 @@ void EditorWidget::applyColorScheme(QsciLexer* lexer) {
   }
   // QsciLexerJavaScript 继承自 QsciLexerCPP，qobject_cast<QsciLexerCPP*> 可匹配
   // QsciLexerMarkdown 无传统关键字/注释/字符串概念，不配色
+}
+
+void EditorWidget::contextMenuEvent(QContextMenuEvent* event) {
+  QMenu menu(this);
+
+  // 撤销/重做
+  QAction* undoAction = menu.addAction(QStringLiteral("撤销"), editor_, &QsciScintilla::undo);
+  undoAction->setEnabled(editor_->isUndoAvailable());
+  undoAction->setShortcut(QKeySequence::Undo);
+
+  QAction* redoAction = menu.addAction(QStringLiteral("重做"), editor_, &QsciScintilla::redo);
+  redoAction->setEnabled(editor_->isRedoAvailable());
+  redoAction->setShortcut(QKeySequence::Redo);
+
+  menu.addSeparator();
+
+  // 剪切/复制/粘贴/删除
+  QAction* cutAction = menu.addAction(QStringLiteral("剪切"), editor_, &QsciScintilla::cut);
+  cutAction->setEnabled(editor_->hasSelectedText());
+  cutAction->setShortcut(QKeySequence::Cut);
+
+  QAction* copyAction = menu.addAction(QStringLiteral("复制"), editor_, &QsciScintilla::copy);
+  copyAction->setEnabled(editor_->hasSelectedText());
+  copyAction->setShortcut(QKeySequence::Copy);
+
+  QAction* pasteAction = menu.addAction(QStringLiteral("粘贴"), editor_, &QsciScintilla::paste);
+  pasteAction->setEnabled(!QGuiApplication::clipboard()->text().isEmpty());
+  pasteAction->setShortcut(QKeySequence::Paste);
+
+  QAction* deleteAction = menu.addAction(QStringLiteral("删除"), editor_, &QsciScintilla::removeSelectedText);
+  deleteAction->setEnabled(editor_->hasSelectedText());
+
+  menu.addSeparator();
+
+  // 全选
+  QAction* selectAllAction = menu.addAction(QStringLiteral("全选"), editor_, &QsciScintilla::selectAll);
+  selectAllAction->setShortcut(QKeySequence::SelectAll);
+
+  // 显示菜单
+  menu.exec(event->globalPos());
+}
+
+void EditorWidget::onConfigChanged(const QString& key) {
+  using namespace etest::core::config;
+
+  if (key == CONFIG_EDITOR_SHOW_LINE_NUMBER) {
+    bool show = ConfigManager::instance().get<bool>(key, CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
+    editor_->setMarginLineNumbers(0, show);
+  } else if (key == CONFIG_EDITOR_AUTO_INDENT) {
+    bool autoIndent = ConfigManager::instance().get<bool>(key, CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
+    editor_->setAutoIndent(autoIndent);
+  } else if (key == CONFIG_EDITOR_TAB_WIDTH) {
+    int tabWidth = ConfigManager::instance().get<int>(key, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
+    editor_->setTabWidth(tabWidth);
+  } else if (key == CONFIG_EDITOR_SPACES_FOR_TAB) {
+    bool spacesForTab = ConfigManager::instance().get<bool>(key, CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
+    editor_->setIndentationsUseTabs(!spacesForTab);
+  } else if (key == CONFIG_EDITOR_FONT_SIZE) {
+    int fontSize = ConfigManager::instance().get<int>(key, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
+    QFont font = editor_->font();
+    font.setPointSize(fontSize);
+    editor_->setFont(font);
+    editor_->setMarginsFont(font);
+  }
 }
 
 }  // namespace etest::app

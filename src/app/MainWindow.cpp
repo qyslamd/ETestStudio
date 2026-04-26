@@ -6,6 +6,10 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QStatusBar>
+#include <QClipboard>
+#include <QGuiApplication>
+#include <QInputDialog>
+#include <QMessageBox>
 
 #include "ActivityBarWidget.h"
 #include "EditorManager.h"
@@ -189,15 +193,39 @@ void MainWindow::initSignals() {
 
               statusBar()->showMessage(editor->filePath());
 
-              // 监听选择变化
-              connect(sci_editor, &QsciScintilla::selectionChanged, this,
+              // 断开之前编辑器的所有信号连接
+              QObject::disconnect(current_editor_selection_connection_);
+              QObject::disconnect(current_editor_state_connection_);
+
+              // 连接新编辑器的选择变化信号
+              current_editor_selection_connection_ = connect(sci_editor, &QsciScintilla::selectionChanged, this,
                       [this, sci_editor]() {
                         bool hasSelection = sci_editor->hasSelectedText();
                         edit_cut_action_->setEnabled(hasSelection);
                         edit_copy_action_->setEnabled(hasSelection);
                       });
+
+              // 连接编辑器状态变化信号，更新撤销/重做按钮状态
+              current_editor_state_connection_ = connect(editor, &EditorWidget::editorStateChanged, this, [this, sci_editor]() {
+                edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
+                edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
+              });
+
+              // 初始化撤销/重做按钮状态
+              edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
+              edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
             } else {
               statusBar()->showMessage(QStringLiteral("就绪"));
+              // 没有编辑器时，断开旧连接并禁用相关按钮
+              QObject::disconnect(current_editor_selection_connection_);
+              QObject::disconnect(current_editor_state_connection_);
+              edit_cut_action_->setEnabled(false);
+              edit_copy_action_->setEnabled(false);
+              edit_undo_action_->setEnabled(false);
+              edit_redo_action_->setEnabled(false);
+              edit_find_action_->setEnabled(false);
+              edit_replace_action_->setEnabled(false);
+              edit_go_to_line_action_->setEnabled(false);
             }
             updateWindowTitle();
 
@@ -207,6 +235,9 @@ void MainWindow::initSignals() {
             edit_cut_action_->setEnabled(hasSelection);
             edit_copy_action_->setEnabled(hasSelection);
             edit_paste_action_->setEnabled(hasEditor);
+            edit_find_action_->setEnabled(hasEditor);
+            edit_replace_action_->setEnabled(hasEditor);
+            edit_go_to_line_action_->setEnabled(hasEditor);
           });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
@@ -247,6 +278,16 @@ void MainWindow::initSignals() {
   edit_cut_action_->setEnabled(hasSelection);
   edit_copy_action_->setEnabled(hasSelection);
   edit_paste_action_->setEnabled(hasEditor);
+
+  // 剪贴板处理：动态更新粘贴按钮状态
+  clipboard_ = QGuiApplication::clipboard();
+  auto updatePasteState = [this]() {
+    bool hasEditor = (editor_manager_->currentEditor() != nullptr);
+    bool hasText = !clipboard_->text().isEmpty();
+    edit_paste_action_->setEnabled(hasEditor && hasText);
+  };
+  connect(clipboard_, &QClipboard::dataChanged, this, updatePasteState);
+  updatePasteState(); // 初始化状态
 }
 
 void MainWindow::createMenuBar() {
@@ -407,6 +448,28 @@ void MainWindow::createEditMenu() {
       edit_menu->addAction(QStringLiteral("粘贴"), this, &MainWindow::onPaste);
   edit_paste_action_->setShortcut(QKeySequence::Paste);
   edit_paste_action_->setEnabled(false);
+
+  edit_menu->addSeparator();
+
+  // 查找
+  edit_find_action_ =
+      edit_menu->addAction(QStringLiteral("查找"), this, &MainWindow::onFind);
+  edit_find_action_->setShortcut(QKeySequence::Find);
+  edit_find_action_->setEnabled(false);
+
+  // 替换
+  edit_replace_action_ =
+      edit_menu->addAction(QStringLiteral("替换"), this, &MainWindow::onReplace);
+  edit_replace_action_->setShortcut(QKeySequence::Replace);
+  edit_replace_action_->setEnabled(false);
+
+  edit_menu->addSeparator();
+
+  // 跳转到行
+  edit_go_to_line_action_ =
+      edit_menu->addAction(QStringLiteral("跳转到行"), this, &MainWindow::onGoToLine);
+  edit_go_to_line_action_->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
+  edit_go_to_line_action_->setEnabled(false);
 }
 
 void MainWindow::onNewProject() {
@@ -632,6 +695,99 @@ void MainWindow::onCopy() {
 void MainWindow::onPaste() {
   if (auto* editor = editor_manager_->currentEditor()) {
     editor->editor()->paste();
+  }
+}
+
+void MainWindow::onFind() {
+  auto* editor = editor_manager_->currentEditor();
+  if (!editor) return;
+
+  bool ok;
+  QString searchText = QInputDialog::getText(this, QStringLiteral("查找"),
+                                             QStringLiteral("查找内容:"), QLineEdit::Normal,
+                                             QString(), &ok);
+  if (ok && !searchText.isEmpty()) {
+    // 获取当前光标位置
+    int line, column;
+    editor->editor()->getCursorPosition(&line, &column);
+
+    // 查找第一个匹配项
+    bool found = editor->editor()->findFirst(searchText, false, false, false, true, true,
+                                             line, column, true);
+    if (!found) {
+      QMessageBox::information(this, QStringLiteral("查找"), QStringLiteral("找不到指定内容"));
+    }
+  }
+}
+
+void MainWindow::onReplace() {
+  auto* editor = editor_manager_->currentEditor();
+  if (!editor) return;
+
+  bool ok;
+  QString searchText = QInputDialog::getText(this, QStringLiteral("替换"),
+                                              QStringLiteral("查找内容:"), QLineEdit::Normal,
+                                              QString(), &ok);
+  if (!ok || searchText.isEmpty()) return;
+
+  QString replaceText = QInputDialog::getText(this, QStringLiteral("替换"),
+                                               QStringLiteral("替换为:"), QLineEdit::Normal,
+                                               QString(), &ok);
+  if (!ok) return;
+
+  // 获取当前光标位置
+  int line, column;
+  editor->editor()->getCursorPosition(&line, &column);
+
+  // 查找第一个匹配项
+  bool found = editor->editor()->findFirst(searchText, false, false, false, true, true,
+                                           line, column, true);
+  if (found) {
+    int ret = QMessageBox::question(this, QStringLiteral("替换"),
+                                    QStringLiteral("替换当前匹配项吗？"),
+                                    QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+    if (ret == QMessageBox::Cancel) {
+      return;
+    } else if (ret == QMessageBox::Yes) {
+      editor->editor()->replace(replaceText);
+    }
+
+    // 继续查找下一个
+    while (editor->editor()->findNext()) {
+      ret = QMessageBox::question(this, QStringLiteral("替换"),
+                                  QStringLiteral("替换当前匹配项吗？"),
+                                  QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+      if (ret == QMessageBox::Cancel) {
+        break;
+      } else if (ret == QMessageBox::Yes) {
+        editor->editor()->replace(replaceText);
+      }
+    }
+
+    QMessageBox::information(this, QStringLiteral("替换"), QStringLiteral("替换完成"));
+  } else {
+    QMessageBox::information(this, QStringLiteral("替换"), QStringLiteral("找不到指定内容"));
+  }
+}
+
+void MainWindow::onGoToLine() {
+  auto* editor = editor_manager_->currentEditor();
+  if (!editor) return;
+
+  int lineCount = editor->editor()->lines();
+  bool ok;
+
+  // 获取当前行号
+  int currentLine, currentColumn;
+  editor->editor()->getCursorPosition(&currentLine, &currentColumn);
+
+  int lineNumber = QInputDialog::getInt(this, QStringLiteral("跳转到行"),
+                                        QStringLiteral("行号 (1-%1):").arg(lineCount),
+                                        currentLine + 1, // 当前行号
+                                        1, lineCount, 1, &ok);
+  if (ok) {
+    editor->editor()->setCursorPosition(lineNumber - 1, 0);
+    editor->editor()->ensureLineVisible(lineNumber - 1);
   }
 }
 

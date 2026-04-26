@@ -64,6 +64,13 @@ class MainWindow : public QMainWindow {
   void onCopy();
   void onPaste();
 
+  // 搜索替换
+  void onFind();
+  void onReplace();
+
+  // 跳转到行
+  void onGoToLine();
+
   // QADS
   ads::CDockManager* dock_manager_;
 
@@ -101,9 +108,17 @@ class MainWindow : public QMainWindow {
   QAction* edit_cut_action_ = nullptr;
   QAction* edit_copy_action_ = nullptr;
   QAction* edit_paste_action_ = nullptr;
+  QAction* edit_find_action_ = nullptr;
+  QAction* edit_replace_action_ = nullptr;
+  QAction* edit_go_to_line_action_ = nullptr;
+
+  // 剪贴板
+  QClipboard* clipboard_ = nullptr;
 
   // 当前编辑器的信号连接
   QMetaObject::Connection current_editor_modification_connection_;
+  QMetaObject::Connection current_editor_selection_connection_;
+  QMetaObject::Connection current_editor_state_connection_;
 };
 
 }  // namespace etest::app

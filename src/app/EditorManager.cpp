@@ -1,9 +1,13 @@
 #include "EditorManager.h"
+#include "DockAreaWidget.h"
 
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QDir>
 #include <QApplication>
+#include <QMenu>
+#include <QClipboard>
+#include <QDesktopServices>
 
 #include "EditorWidget.h"
 #include "logger/Logger.h"
@@ -39,6 +43,10 @@ void EditorManager::openFile(const QString& filePath) {
   dock->setWidget(editor);
   dock->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
   dock->setFeature(ads::CDockWidget::CustomCloseHandling, true);
+
+  // 设置右键菜单
+  dock->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(dock, &ads::CDockWidget::customContextMenuRequested, this, &EditorManager::onDockCustomContextMenuRequested);
 
   // 脏标记：修改时在标题前加 *
   connect(editor, &EditorWidget::modificationChanged, this,
@@ -397,6 +405,86 @@ bool EditorManager::closeFilesInDirectory(const QString& dirPath) {
   }
 
   return true;
+}
+
+void EditorManager::onDockCustomContextMenuRequested(const QPoint& pos) {
+  auto* dock = qobject_cast<ads::CDockWidget*>(sender());
+  if (!dock) return;
+
+  // 找到对应的文件路径
+  QString filePath;
+  for (auto it = dock_widgets_.constBegin(); it != dock_widgets_.constEnd(); ++it) {
+    if (it.value() == dock) {
+      filePath = it.key();
+      break;
+    }
+  }
+  if (filePath.isEmpty()) return;
+
+  QMenu menu(dock);
+
+  // 关闭当前
+  QAction* closeAction = menu.addAction(QStringLiteral("关闭"));
+  connect(closeAction, &QAction::triggered, this, [this, filePath]() {
+    closeFile(filePath);
+  });
+
+  // 关闭其他
+  QAction* closeOthersAction = menu.addAction(QStringLiteral("关闭其他"));
+  connect(closeOthersAction, &QAction::triggered, this, [this, filePath]() {
+    QStringList allFiles = dock_widgets_.keys();
+    for (const QString& fp : allFiles) {
+      if (fp != filePath) {
+        closeFile(fp);
+      }
+    }
+  });
+
+  // 关闭右侧
+  QAction* closeRightAction = menu.addAction(QStringLiteral("关闭右侧所有"));
+  connect(closeRightAction, &QAction::triggered, this, [this, dock, filePath]() {
+    // 获取当前dock所在的区域
+    auto* area = dock->dockAreaWidget();
+    if (!area) return;
+
+    // 获取区域内的所有dock
+    auto docks = area->dockWidgets();
+    int currentIndex = docks.indexOf(dock);
+    if (currentIndex == -1) return;
+
+    // 关闭右侧的dock
+    for (int i = currentIndex + 1; i < docks.size(); ++i) {
+      // 找到对应的文件路径
+      QString fp;
+      for (auto it = dock_widgets_.constBegin(); it != dock_widgets_.constEnd(); ++it) {
+        if (it.value() == docks[i]) {
+          fp = it.key();
+          break;
+        }
+      }
+      if (!fp.isEmpty()) {
+        closeFile(fp);
+      }
+    }
+  });
+
+  menu.addSeparator();
+
+  // 复制文件路径
+  QAction* copyPathAction = menu.addAction(QStringLiteral("复制文件路径"));
+  connect(copyPathAction, &QAction::triggered, this, [filePath]() {
+    QApplication::clipboard()->setText(filePath);
+  });
+
+  // 打开所在文件夹
+  QAction* openFolderAction = menu.addAction(QStringLiteral("打开所在文件夹"));
+  connect(openFolderAction, &QAction::triggered, this, [filePath]() {
+    QFileInfo fi(filePath);
+    QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absolutePath()));
+  });
+
+  // 显示菜单
+  menu.exec(dock->mapToGlobal(pos));
 }
 
 }  // namespace etest::app

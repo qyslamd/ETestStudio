@@ -3,6 +3,7 @@
 
 #include <Qsci/qsciscintilla.h>
 #include <QWidget>
+#include "config/ConfigManager.h"
 
 namespace etest::app {
 
@@ -26,6 +27,10 @@ class EditorWidget : public QWidget {
 
  Q_SIGNALS:
   void modificationChanged(bool modified);
+  void editorStateChanged(); // 编辑器状态变化（文本修改、撤销栈变化等）
+
+ private slots:
+  void onConfigChanged(const QString& key);
 
  private:
   void setupEditor();
@@ -33,6 +38,7 @@ class EditorWidget : public QWidget {
   void applyColorScheme(QsciLexer* lexer);
 
   bool eventFilter(QObject* obj, QEvent* event) override;
+  void contextMenuEvent(QContextMenuEvent* event) override;
 
   QsciScintilla* editor_;
   QString file_path_;

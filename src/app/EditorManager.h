@@ -46,9 +46,12 @@ class EditorManager : public QObject {
   void unsavedChangesChanged();
   void modificationChanged(bool modified);  // 新增：转发单个编辑器的脏标记变化
 
- private:
+ private slots:
   void onDockWidgetActivated(ads::CDockWidget* dock);
   void updateDockTitle(EditorWidget* editor, ads::CDockWidget* dock);
+  void onDockCustomContextMenuRequested(const QPoint& pos);
+
+ private:
 
   ads::CDockManager* dock_manager_;
   QMap<QString, ads::CDockWidget*> dock_widgets_;

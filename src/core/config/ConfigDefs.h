@@ -66,6 +66,20 @@ constexpr bool CONFIG_TOOLBAR_DEFAULT_VISIBLE = true;
 constexpr int CONFIG_TOOLBAR_DEFAULT_ICON_SIZE = 16;
 constexpr bool CONFIG_TOOLBAR_DEFAULT_TEXT_VISIBLE = false;
 
+// 编辑器配置组
+const QString CONFIG_EDITOR_FONT_SIZE = "editor/font_size";
+const QString CONFIG_EDITOR_SHOW_LINE_NUMBER = "editor/show_line_number";
+const QString CONFIG_EDITOR_AUTO_INDENT = "editor/auto_indent";
+const QString CONFIG_EDITOR_TAB_WIDTH = "editor/tab_width";
+const QString CONFIG_EDITOR_SPACES_FOR_TAB = "editor/spaces_for_tab";
+
+// 编辑器默认值
+constexpr int CONFIG_EDITOR_DEFAULT_FONT_SIZE = 12;
+constexpr bool CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER = true;
+constexpr bool CONFIG_EDITOR_DEFAULT_AUTO_INDENT = true;
+constexpr int CONFIG_EDITOR_DEFAULT_TAB_WIDTH = 4;
+constexpr bool CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB = true;
+
 }  // namespace config
 }  // namespace core
 }  // namespace etest
