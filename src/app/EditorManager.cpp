@@ -83,6 +83,10 @@ void EditorManager::openFile(const QString& filePath) {
   dock_widgets_[filePath] = dock;
   editors_[filePath] = editor;
 
+  // 主动更新当前文件路径，不需要等待dock激活事件（防止刚打开文件就按Ctrl+S时空指针）
+  current_file_path_ = filePath;
+  emit currentEditorChanged(editor);
+
   dock->raise();
 
   LOG_INFO("EDITOR", "打开文件：{}", filePath.toStdString());

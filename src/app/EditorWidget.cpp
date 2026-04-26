@@ -178,8 +178,8 @@ bool EditorWidget::eventFilter(QObject* obj, QEvent* event) {
     // 让应用级快捷键（Ctrl+S/Ctrl+W等）冒泡到菜单栏，不被Scintilla消费
     if (ke->modifiers() == Qt::ControlModifier &&
         (ke->key() == Qt::Key_S || ke->key() == Qt::Key_W)) {
-      // 不调用ignore()或accept()，让Qt默认处理快捷键
-      return false;
+      ke->ignore();  // 告诉Qt这个控件不处理该快捷键
+      return true;   // 拦截事件，不让QsciScintilla收到
     }
   }
   return QWidget::eventFilter(obj, event);

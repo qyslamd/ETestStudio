@@ -57,6 +57,15 @@ const QString CONFIG_PLUGIN_SEARCH_PATHS = "plugin/search_paths";  // 分号分�
 const QString CONFIG_PROJECT_AUTO_OPEN_LAST = "project/auto_open_last";
 constexpr bool CONFIG_PROJECT_DEFAULT_AUTO_OPEN_LAST = false;
 
+// 工具栏配置组
+const QString CONFIG_TOOLBAR_VISIBLE = "toolbar/visible";
+const QString CONFIG_TOOLBAR_ICON_SIZE = "toolbar/icon_size";
+const QString CONFIG_TOOLBAR_TEXT_VISIBLE = "toolbar/text_visible";
+
+constexpr bool CONFIG_TOOLBAR_DEFAULT_VISIBLE = true;
+constexpr int CONFIG_TOOLBAR_DEFAULT_ICON_SIZE = 16;
+constexpr bool CONFIG_TOOLBAR_DEFAULT_TEXT_VISIBLE = false;
+
 }  // namespace config
 }  // namespace core
 }  // namespace etest

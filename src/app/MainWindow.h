@@ -2,6 +2,7 @@
 #define ETEST_APP_MAINWINDOW_H_
 
 #include <QMainWindow>
+#include <QToolBar>
 #include "DockManager.h"
 
 class QMenu;
@@ -36,6 +37,8 @@ class MainWindow : public QMainWindow {
 
   void createMenuBar();
   void createStatusBar();
+  void createToolBar();
+  void createEditMenu();
 
   // 项目相关
   bool tryCloseCurrentProject();
@@ -54,6 +57,13 @@ class MainWindow : public QMainWindow {
   void onCloseCurrentFile();
   void onCloseAllFiles();
 
+  // 编辑操作
+  void onUndo();
+  void onRedo();
+  void onCut();
+  void onCopy();
+  void onPaste();
+
   // QADS
   ads::CDockManager* dock_manager_;
 
@@ -71,6 +81,8 @@ class MainWindow : public QMainWindow {
 
   // 菜单和状态
   QMenu* recent_projects_menu_ = nullptr;
+  QAction* new_project_action_ = nullptr;
+  QAction* open_project_action_ = nullptr;
   QAction* close_project_action_ = nullptr;
   QAction* save_action_ = nullptr;
   QAction* save_as_action_ = nullptr;
@@ -78,6 +90,17 @@ class MainWindow : public QMainWindow {
   QAction* close_file_action_ = nullptr;
   QAction* close_all_files_action_ = nullptr;
   QLabel* status_project_label_ = nullptr;
+
+  // 工具栏相关
+  QToolBar* file_toolbar_ = nullptr;
+  QToolBar* edit_toolbar_ = nullptr;
+
+  // 编辑菜单动作
+  QAction* edit_undo_action_ = nullptr;
+  QAction* edit_redo_action_ = nullptr;
+  QAction* edit_cut_action_ = nullptr;
+  QAction* edit_copy_action_ = nullptr;
+  QAction* edit_paste_action_ = nullptr;
 
   // 当前编辑器的信号连接
   QMetaObject::Connection current_editor_modification_connection_;

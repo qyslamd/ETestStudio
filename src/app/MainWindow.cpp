@@ -57,6 +57,8 @@ void MainWindow::initUi() {
   setMinimumSize(900, 600);
 
   createMenuBar();
+  createEditMenu();
+  createToolBar();
   createStatusBar();
 
   // QADS Dock Manager
@@ -65,17 +67,18 @@ void MainWindow::initUi() {
   // 中央编辑区（必须在添加其他dock之前建立）
   auto* centralPlaceholder = new QWidget(this);
   auto* centralDock = new ads::CDockWidget(QStringLiteral("中央编辑区"));
-  centralDock->setObjectName("CentralDock"); // 设置唯一objectName
+  centralDock->setObjectName("CentralDock");  // 设置唯一objectName
   centralDock->setWidget(centralPlaceholder);
   auto* centralArea = dock_manager_->setCentralWidget(centralDock);
 
   // 编辑器管理器
-  editor_manager_ = new EditorManager(dock_manager_, this); // 不再需要传入centralArea
+  editor_manager_ =
+      new EditorManager(dock_manager_, this);  // 不再需要传入centralArea
 
   // ==================== 左侧：活动栏 ====================
   activity_bar_ = new ActivityBarWidget(this);
   auto* activityDock = new ads::CDockWidget(QStringLiteral("活动栏"));
-  activityDock->setObjectName("ActivityDock"); // 设置唯一objectName
+  activityDock->setObjectName("ActivityDock");  // 设置唯一objectName
   activityDock->setWidget(activity_bar_);
   activityDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
   activityDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
@@ -85,7 +88,7 @@ void MainWindow::initUi() {
   // ==================== 左侧：侧边栏 ====================
   sidebar_ = new SidebarWidget(this);
   auto* sidebarDock = new ads::CDockWidget(QStringLiteral("侧边栏"));
-  sidebarDock->setObjectName("SidebarDock"); // 设置唯一objectName
+  sidebarDock->setObjectName("SidebarDock");  // 设置唯一objectName
   sidebarDock->setWidget(sidebar_);
   sidebarDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
   sidebarDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
@@ -95,19 +98,19 @@ void MainWindow::initUi() {
   // ==================== 底部：输出面板 ====================
   output_panel_ = new OutputPanel(this);
   auto* outputDock = new ads::CDockWidget(QStringLiteral("输出"));
-  outputDock->setObjectName("OutputDock"); // 设置唯一objectName
+  outputDock->setObjectName("OutputDock");  // 设置唯一objectName
   outputDock->setWidget(output_panel_);
 
   // ==================== 底部：问题面板 ====================
   problems_panel_ = new ProblemsPanel(this);
   auto* problemsDock = new ads::CDockWidget(QStringLiteral("问题"));
-  problemsDock->setObjectName("ProblemsDock"); // 设置唯一objectName
+  problemsDock->setObjectName("ProblemsDock");  // 设置唯一objectName
   problemsDock->setWidget(problems_panel_);
 
   // ==================== 底部：终端面板 ====================
   terminal_panel_ = new TerminalPanel(this);
   auto* terminalDock = new ads::CDockWidget(QStringLiteral("终端"));
-  terminalDock->setObjectName("TerminalDock"); // 设置唯一objectName
+  terminalDock->setObjectName("TerminalDock");  // 设置唯一objectName
   terminalDock->setWidget(terminal_panel_);
 
   // 底部面板区域：输出面板为主，问题和终端tab到输出面板
@@ -121,7 +124,7 @@ void MainWindow::initUi() {
   auto* propertyPlaceholder = new QLabel(QStringLiteral("属性面板"), this);
   propertyPlaceholder->setAlignment(Qt::AlignCenter);
   auto* propertyDock = new ads::CDockWidget(QStringLiteral("属性"));
-  propertyDock->setObjectName("PropertyDock"); // 设置唯一objectName
+  propertyDock->setObjectName("PropertyDock");  // 设置唯一objectName
   propertyDock->setWidget(propertyPlaceholder);
   dock_manager_->addDockWidget(ads::RightDockWidgetArea, propertyDock);
 
@@ -170,40 +173,52 @@ void MainWindow::initSignals() {
   connect(editor_manager_, &EditorManager::currentEditorChanged, this,
           [this](EditorWidget* editor) {
             bool hasEditor = (editor != nullptr);
+            bool hasSelection = false;
+
             save_as_action_->setEnabled(hasEditor);
             close_file_action_->setEnabled(hasEditor);
             close_all_files_action_->setEnabled(hasEditor);
 
             // 保存按钮仅在当前文件有修改时启用
-            save_action_->setEnabled(hasEditor && editor->isModified());
+            bool isModified = hasEditor && editor->isModified();
+            save_action_->setEnabled(isModified);
 
-            if (editor) {
+            if (hasEditor) {
+              QsciScintilla* sci_editor = editor->editor();
+              hasSelection = sci_editor->hasSelectedText();
+
               statusBar()->showMessage(editor->filePath());
+
+              // 监听选择变化
+              connect(sci_editor, &QsciScintilla::selectionChanged, this,
+                      [this, sci_editor]() {
+                        bool hasSelection = sci_editor->hasSelectedText();
+                        edit_cut_action_->setEnabled(hasSelection);
+                        edit_copy_action_->setEnabled(hasSelection);
+                      });
             } else {
               statusBar()->showMessage(QStringLiteral("就绪"));
             }
             updateWindowTitle();
 
-            // 断开之前编辑器的连接
-            QObject::disconnect(current_editor_modification_connection_);
-
-            // 连接新编辑器的modificationChanged信号
-            if (editor) {
-              current_editor_modification_connection_ =
-                  connect(editor, &EditorWidget::modificationChanged, this,
-                          [this](bool modified) {
-                            save_action_->setEnabled(modified);
-                          });
-            }
+            // 更新编辑菜单按钮状态（工具栏会自动同步）
+            edit_undo_action_->setEnabled(hasEditor);
+            edit_redo_action_->setEnabled(hasEditor);
+            edit_cut_action_->setEnabled(hasSelection);
+            edit_copy_action_->setEnabled(hasSelection);
+            edit_paste_action_->setEnabled(hasEditor);
           });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
-  connect(editor_manager_, &EditorManager::unsavedChangesChanged, this, [this]() {
-    updateWindowTitle();
-    // 有任何未保存的更改时启用保存所有按钮
-    save_all_action_->setEnabled(editor_manager_->hasUnsavedChanges());
-  });
+  connect(editor_manager_, &EditorManager::unsavedChangesChanged, this,
+          [this]() {
+            updateWindowTitle();
+            // 有任何未保存的更改时启用保存所有按钮
+            save_all_action_->setEnabled(editor_manager_->hasUnsavedChanges());
+          });
 
+  connect(editor_manager_, &EditorManager::modificationChanged, this,
+          [this](bool modified) { save_action_->setEnabled(modified); });
 
   connect(
       editor_manager_, &EditorManager::fileOpened, this,
@@ -213,16 +228,40 @@ void MainWindow::initSignals() {
             close_all_files_action_->setEnabled(
                 editor_manager_->currentEditor() != nullptr);
           });
+
+  // 手动初始化按钮状态，处理程序启动时已经有打开的编辑器的情况
+  EditorWidget* current_editor = editor_manager_->currentEditor();
+  bool hasEditor = (current_editor != nullptr);
+  bool hasSelection = false;
+
+  if (hasEditor) {
+    QsciScintilla* sci_editor = current_editor->editor();
+    hasSelection = sci_editor->hasSelectedText();
+  }
+
+  bool isModified = hasEditor && current_editor->isModified();
+  save_action_->setEnabled(isModified);
+
+  edit_undo_action_->setEnabled(hasEditor);
+  edit_redo_action_->setEnabled(hasEditor);
+  edit_cut_action_->setEnabled(hasSelection);
+  edit_copy_action_->setEnabled(hasSelection);
+  edit_paste_action_->setEnabled(hasEditor);
 }
 
 void MainWindow::createMenuBar() {
   auto* menuBar = this->menuBar();
 
   auto* fileMenu = menuBar->addMenu(QStringLiteral("文件(&F)"));
-  fileMenu->addAction(QStringLiteral("新建项目"), this,
-                      &MainWindow::onNewProject);
-  fileMenu->addAction(QStringLiteral("打开项目"), this,
-                      &MainWindow::onOpenProject);
+  fileMenu->setObjectName("fileMenu");
+
+  new_project_action_ = fileMenu->addAction(QStringLiteral("新建项目"), this,
+                                            &MainWindow::onNewProject);
+  new_project_action_->setShortcut(QStringLiteral("Ctrl+Shift+N"));
+
+  open_project_action_ = fileMenu->addAction(QStringLiteral("打开项目"), this,
+                                             &MainWindow::onOpenProject);
+  open_project_action_->setShortcut(QKeySequence::Open);
   close_project_action_ = fileMenu->addAction(QStringLiteral("关闭项目"), this,
                                               &MainWindow::onCloseProject);
   close_project_action_->setEnabled(false);
@@ -232,6 +271,7 @@ void MainWindow::createMenuBar() {
   save_action_ = fileMenu->addAction(QStringLiteral("保存(&S)"), this,
                                      &MainWindow::onSaveFile);
   save_action_->setShortcut(QKeySequence::Save);
+  save_action_->setShortcutContext(Qt::ApplicationShortcut);  // 全局级快捷键，不受焦点控件影响
   save_action_->setEnabled(false);
 
   save_as_action_ = fileMenu->addAction(QStringLiteral("另存为..."), this,
@@ -239,7 +279,7 @@ void MainWindow::createMenuBar() {
   save_as_action_->setEnabled(false);
 
   save_all_action_ = fileMenu->addAction(QStringLiteral("保存所有(&L)"), this,
-                                        &MainWindow::onSaveAllFiles);
+                                         &MainWindow::onSaveAllFiles);
   save_all_action_->setShortcut(QStringLiteral("Ctrl+Shift+S"));
   save_all_action_->setEnabled(false);
 
@@ -262,7 +302,8 @@ void MainWindow::createMenuBar() {
   fileMenu->addSeparator();
   fileMenu->addAction(QStringLiteral("退出"), this, &QWidget::close);
 
-  menuBar->addMenu(QStringLiteral("编辑(&E)"));
+  QMenu* edit_menu = menuBar->addMenu(QStringLiteral("编辑(&E)"));
+  edit_menu->setObjectName("editMenu");
   menuBar->addMenu(QStringLiteral("视图(&V)"));
   menuBar->addMenu(QStringLiteral("工具(&T)"));
   menuBar->addMenu(QStringLiteral("帮助(&H)"));
@@ -275,10 +316,103 @@ void MainWindow::createStatusBar() {
   statusBar()->showMessage(QStringLiteral("就绪"));
 }
 
+void MainWindow::createToolBar() {
+  // ==================== 文件工具栏 ====================
+  file_toolbar_ = addToolBar(QStringLiteral("文件"));
+  file_toolbar_->setObjectName("FileToolbar");
+  file_toolbar_->setMovable(false);                           // 固定在顶部
+  file_toolbar_->setToolButtonStyle(Qt::ToolButtonIconOnly);  // 仅显示图标
+
+  new_project_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
+  new_project_action_->setToolTip(QStringLiteral("新建项目 (Ctrl+Shift+N)"));
+  file_toolbar_->addAction(new_project_action_);
+
+  open_project_action_->setIcon(
+      style()->standardIcon(QStyle::SP_DialogOpenButton));
+  open_project_action_->setToolTip(QStringLiteral("打开项目 (Ctrl+O)"));
+  file_toolbar_->addAction(open_project_action_);
+
+  file_toolbar_->addSeparator();
+
+  save_action_->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+  save_action_->setToolTip(QStringLiteral("保存 (Ctrl+S)"));
+  file_toolbar_->addAction(save_action_);
+
+  // ==================== 编辑工具栏 ====================
+  edit_toolbar_ = addToolBar(QStringLiteral("编辑"));
+  edit_toolbar_->setObjectName("EditToolbar");
+  edit_toolbar_->setMovable(false);
+  edit_toolbar_->setToolButtonStyle(Qt::ToolButtonIconOnly);
+
+  edit_undo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowBack));
+  edit_undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
+  edit_toolbar_->addAction(edit_undo_action_);
+
+  edit_redo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
+  edit_redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
+  edit_toolbar_->addAction(edit_redo_action_);
+
+  edit_toolbar_->addSeparator();
+
+  edit_cut_action_->setIcon(style()->standardIcon(QStyle::SP_FileLinkIcon));
+  edit_cut_action_->setToolTip(QStringLiteral("剪切 (Ctrl+X)"));
+  edit_toolbar_->addAction(edit_cut_action_);
+
+  edit_copy_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
+  edit_copy_action_->setToolTip(QStringLiteral("复制 (Ctrl+C)"));
+  edit_toolbar_->addAction(edit_copy_action_);
+
+  edit_paste_action_->setIcon(style()->standardIcon(QStyle::SP_FileLinkIcon));
+  edit_paste_action_->setToolTip(QStringLiteral("粘贴 (Ctrl+V)"));
+  edit_toolbar_->addAction(edit_paste_action_);
+}
+
+void MainWindow::createEditMenu() {
+  QMenu* edit_menu = menuBar()->findChild<QMenu*>("editMenu");
+  if (!edit_menu) {
+    edit_menu = menuBar()->addMenu(QStringLiteral("编辑(&E)"));
+    edit_menu->setObjectName("editMenu");
+  }
+
+  // 撤销
+  edit_undo_action_ =
+      edit_menu->addAction(style()->standardIcon(QStyle::SP_ArrowBack),
+                           QStringLiteral("撤销"), this, &MainWindow::onUndo);
+  edit_undo_action_->setShortcut(QKeySequence::Undo);
+  edit_undo_action_->setEnabled(false);
+
+  // 重做
+  edit_redo_action_ =
+      edit_menu->addAction(style()->standardIcon(QStyle::SP_ArrowForward),
+                           QStringLiteral("重做"), this, &MainWindow::onRedo);
+  edit_redo_action_->setShortcut(QKeySequence::Redo);
+  edit_redo_action_->setEnabled(false);
+
+  edit_menu->addSeparator();
+
+  // 剪切
+  edit_cut_action_ =
+      edit_menu->addAction(QStringLiteral("剪切"), this, &MainWindow::onCut);
+  edit_cut_action_->setShortcut(QKeySequence::Cut);
+  edit_cut_action_->setEnabled(false);
+
+  // 复制
+  edit_copy_action_ =
+      edit_menu->addAction(QStringLiteral("复制"), this, &MainWindow::onCopy);
+  edit_copy_action_->setShortcut(QKeySequence::Copy);
+  edit_copy_action_->setEnabled(false);
+
+  // 粘贴
+  edit_paste_action_ =
+      edit_menu->addAction(QStringLiteral("粘贴"), this, &MainWindow::onPaste);
+  edit_paste_action_->setShortcut(QKeySequence::Paste);
+  edit_paste_action_->setEnabled(false);
+}
+
 void MainWindow::onNewProject() {
   // 先尝试关闭当前项目
   if (!tryCloseCurrentProject()) {
-    return; // 用户取消，不继续创建
+    return;  // 用户取消，不继续创建
   }
 
   etest::app::NewProjectDialog dlg(this);
@@ -294,7 +428,7 @@ void MainWindow::onNewProject() {
 void MainWindow::onOpenProject() {
   // 先尝试关闭当前项目
   if (!tryCloseCurrentProject()) {
-    return; // 用户取消，不继续打开
+    return;  // 用户取消，不继续打开
   }
 
   auto& cfg = ConfigManager::instance();
@@ -327,8 +461,7 @@ bool MainWindow::tryCloseCurrentProject() {
     QString message = QStringLiteral("项目中有未保存的文件更改，是否保存？");
 
     int ret = QMessageBox::question(
-        this, QStringLiteral("保存更改"),
-        message,
+        this, QStringLiteral("保存更改"), message,
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
 
     if (ret == QMessageBox::Cancel)
@@ -337,8 +470,9 @@ bool MainWindow::tryCloseCurrentProject() {
     if (ret == QMessageBox::Yes) {
       // 只保存项目内的未保存文件
       if (!editor_manager_->saveModifiedFilesInDirectory(projectRoot)) {
-        QMessageBox::warning(this, QStringLiteral("保存失败"),
-                             QStringLiteral("部分文件保存失败，无法关闭项目。"));
+        QMessageBox::warning(
+            this, QStringLiteral("保存失败"),
+            QStringLiteral("部分文件保存失败，无法关闭项目。"));
         return false;
       }
     }
@@ -408,7 +542,7 @@ void MainWindow::updateRecentProjectsMenu() {
       recent_projects_menu_->addAction(path, this, [this, path]() {
         // 先尝试关闭当前项目
         if (!tryCloseCurrentProject()) {
-          return; // 用户取消，不继续打开
+          return;  // 用户取消，不继续打开
         }
 
         auto& pm = etest::core::project::ProjectManager::instance();
@@ -471,6 +605,36 @@ void MainWindow::onCloseAllFiles() {
   editor_manager_->closeAllFiles();
 }
 
+void MainWindow::onUndo() {
+  if (auto* editor = editor_manager_->currentEditor()) {
+    editor->editor()->undo();
+  }
+}
+
+void MainWindow::onRedo() {
+  if (auto* editor = editor_manager_->currentEditor()) {
+    editor->editor()->redo();
+  }
+}
+
+void MainWindow::onCut() {
+  if (auto* editor = editor_manager_->currentEditor()) {
+    editor->editor()->cut();
+  }
+}
+
+void MainWindow::onCopy() {
+  if (auto* editor = editor_manager_->currentEditor()) {
+    editor->editor()->copy();
+  }
+}
+
+void MainWindow::onPaste() {
+  if (auto* editor = editor_manager_->currentEditor()) {
+    editor->editor()->paste();
+  }
+}
+
 void MainWindow::closeEvent(QCloseEvent* event) {
   // 先尝试关闭所有编辑器文件，如果用户取消则不关闭程序
   if (!editor_manager_->closeAllFiles()) {
@@ -495,6 +659,11 @@ void MainWindow::saveWindowState() {
   cfg.set(CONFIG_WINDOW_X, x());
   cfg.set(CONFIG_WINDOW_Y, y());
   cfg.set(CONFIG_WINDOW_MAXIMIZED, isMaximized());
+
+  // 保存工具栏可见性
+  if (file_toolbar_) {
+    cfg.set(CONFIG_TOOLBAR_VISIBLE, file_toolbar_->isVisible());
+  }
 
   QByteArray dockState = dock_manager_->saveState();
   cfg.set(CONFIG_DOCK_LAYOUT, QString(dockState.toBase64()));
@@ -521,6 +690,14 @@ void MainWindow::restoreWindowState() {
   if (!dockStateStr.isEmpty()) {
     QByteArray dockState = QByteArray::fromBase64(dockStateStr.toUtf8());
     dock_manager_->restoreState(dockState);
+  }
+
+  // 恢复工具栏可见性
+  if (file_toolbar_ && edit_toolbar_) {
+    bool toolbarVisible =
+        cfg.get<bool>(CONFIG_TOOLBAR_VISIBLE, CONFIG_TOOLBAR_DEFAULT_VISIBLE);
+    file_toolbar_->setVisible(toolbarVisible);
+    edit_toolbar_->setVisible(toolbarVisible);
   }
 }
 
