@@ -33,6 +33,7 @@ void ActivityBarWidget::setupUi() {
       background-color: #2A2D2E;
     }
   )");
+  // 上述样式是活动栏特有样式（选中指示器、边框等），无法由全局QSS覆盖
 
   layout_ = new QVBoxLayout(this);
   layout_->setContentsMargins(0, 4, 0, 4);

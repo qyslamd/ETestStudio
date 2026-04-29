@@ -408,23 +408,7 @@ void MainWindow::createMenuBar() {
 }
 
 void MainWindow::createStatusBar() {
-  statusBar()->setStyleSheet(R"(
-    QStatusBar {
-      background-color: #007ACC;
-      color: #FFFFFF;
-      font-size: 12px;
-    }
-    QStatusBar::item {
-      border: none;
-    }
-    QLabel {
-      color: #FFFFFF;
-      padding: 0px 8px;
-    }
-    QLabel:hover {
-      background-color: rgba(255, 255, 255, 30);
-    }
-  )");
+  // 状态栏样式已由全局QSS覆盖，无需内联设置
 
   // 左侧区域
   status_project_label_ = new QLabel(this);

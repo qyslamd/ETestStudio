@@ -42,7 +42,6 @@ QMenu::separator {
 /* 工具栏 */
 QToolBar {
     background-color: #2D2D2D;
-    border-bottom: 1px solid #252526;
     border: none;
     padding: 2px 4px;
     spacing: 2px;
@@ -88,9 +87,53 @@ QStatusBar QLabel:hover {
     background-color: rgba(255, 255, 255, 30);
 }
 
-/* Dock区域 */
+/* ==================== QADS Dock 样式 ==================== */
 ads--CDockManager {
     background-color: #1E1E1E;
+}
+ads--CDockContainerWidget {
+    background-color: #1E1E1E;
+}
+ads--CDockAreaWidget {
+    background-color: #1E1E1E;
+    border: none;
+}
+ads--CDockAreaTitleBar {
+    background-color: #252526;
+    border-bottom: 1px solid #1E1E1E;
+    padding: 0px;
+}
+ads--CDockAreaTitleBar QLabel {
+    color: #858585;
+    font-size: 12px;
+    padding: 2px 6px;
+}
+ads--CDockAreaTitleBar QToolButton {
+    background-color: transparent;
+    border: none;
+    color: #858585;
+    padding: 2px;
+    margin: 0px;
+}
+ads--CDockAreaTitleBar QToolButton:hover {
+    background-color: rgba(255, 255, 255, 10%);
+    color: #FFFFFF;
+}
+ads--CDockWidgetTab {
+    background-color: #2D2D2D;
+    color: #858585;
+    border: none;
+    padding: 4px 10px;
+}
+ads--CDockWidgetTab[selected="true"] {
+    background-color: #1E1E1E;
+    color: #FFFFFF;
+}
+ads--CDockWidgetTab:hover {
+    color: #FFFFFF;
+}
+ads--CDockSplitter {
+    background-color: #252526;
 }
 
 /* 滚动条 */
@@ -289,4 +332,98 @@ QSpinBox {
 }
 QSpinBox:focus {
     border-color: #007ACC;
+}
+
+/* CheckBox */
+QCheckBox {
+    color: #CCCCCC;
+    spacing: 8px;
+}
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #454545;
+    border-radius: 3px;
+    background-color: #3C3C3C;
+}
+QCheckBox::indicator:checked {
+    background-color: #007ACC;
+    border-color: #007ACC;
+}
+QCheckBox::indicator:hover {
+    border-color: #007ACC;
+}
+
+/* RadioButton */
+QRadioButton {
+    color: #CCCCCC;
+    spacing: 8px;
+}
+QRadioButton::indicator {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #454545;
+    border-radius: 7px;
+    background-color: #3C3C3C;
+}
+QRadioButton::indicator:checked {
+    background-color: #007ACC;
+    border-color: #007ACC;
+}
+
+/* GroupBox */
+QGroupBox {
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 4px;
+    margin-top: 12px;
+    padding-top: 16px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0px 8px;
+}
+
+/* ToolTip */
+QToolTip {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: 1px solid #454545;
+    padding: 4px 8px;
+}
+
+/* ProgressBar */
+QProgressBar {
+    background-color: #3C3C3C;
+    border: none;
+    border-radius: 2px;
+    height: 6px;
+    text-align: center;
+    color: transparent;
+}
+QProgressBar::chunk {
+    background-color: #007ACC;
+    border-radius: 2px;
+}
+
+/* ListBox / ListWidget */
+QListWidget {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: none;
+    outline: none;
+    selection-background-color: #094771;
+}
+QListWidget::item:hover {
+    background-color: #2A2D2E;
+}
+QListWidget::item:selected {
+    background-color: #094771;
+}
+
+/* ScrollArea */
+QScrollArea {
+    background-color: #1E1E1E;
+    border: none;
 }
