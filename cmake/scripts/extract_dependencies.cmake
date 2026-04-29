@@ -15,6 +15,7 @@ set(DEPENDENCY_ARCHIVES
     "QScintilla-2.11.3.tar.gz"
     "lua-5.4.4.tar.gz"
     "libpng-1.6.43.tar.gz"
+    "sol2-3.3.0.tar.gz"
 )
 
 # 检测tar解压命令是否可用
