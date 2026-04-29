@@ -116,6 +116,7 @@ if(BUILD_TESTS_THIRD_PARTY)
     add_subdirectory(qscintilla)
     add_subdirectory(qxlsx)
     add_subdirectory(spdlog)
+    add_subdirectory(sol2)
 endif()
 
 add_subdirectory(core)

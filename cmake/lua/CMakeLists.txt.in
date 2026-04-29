@@ -123,6 +123,11 @@ endif ( )
 # Create lua library
 add_library ( liblua ${SRC_CORE} ${SRC_LIB} ${LUA_DLL_RC} )
 target_link_libraries ( liblua ${LIBS} )
+# 现代CMake配置：自动导出Lua头文件路径给所有依赖liblua的目标
+target_include_directories(liblua
+    PUBLIC
+        $<BUILD_INTERFACE:${LUA_ROOT}/src>  # 构建时使用源码目录下的Lua头文件
+)
 set_target_properties ( liblua PROPERTIES OUTPUT_NAME lua CLEAN_DIRECT_OUTPUT 1 )
 if ( LUA_BUILD_AS_DLL )
   set_target_properties ( liblua PROPERTIES COMPILE_DEFINITIONS LUA_BUILD_AS_DLL )
