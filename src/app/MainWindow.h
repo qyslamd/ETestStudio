@@ -16,6 +16,7 @@ class SidebarWidget;
 class OutputPanel;
 class ProblemsPanel;
 class TerminalPanel;
+class PanelContainerWidget;
 class EditorManager;
 
 class MainWindow : public QMainWindow {
@@ -77,6 +78,7 @@ class MainWindow : public QMainWindow {
   // 活动栏 + 侧边栏
   ActivityBarWidget* activity_bar_;
   SidebarWidget* sidebar_;
+  ads::CDockWidget* sidebar_dock_ = nullptr;
 
   // 编辑器管理
   EditorManager* editor_manager_;
@@ -96,7 +98,14 @@ class MainWindow : public QMainWindow {
   QAction* save_all_action_ = nullptr;
   QAction* close_file_action_ = nullptr;
   QAction* close_all_files_action_ = nullptr;
+
+  // 状态栏标签
   QLabel* status_project_label_ = nullptr;
+  QLabel* status_errors_label_ = nullptr;
+  QLabel* status_cursor_label_ = nullptr;
+  QLabel* status_encoding_label_ = nullptr;
+  QLabel* status_eol_label_ = nullptr;
+  QLabel* status_language_label_ = nullptr;
 
   // 工具栏相关
   QToolBar* file_toolbar_ = nullptr;

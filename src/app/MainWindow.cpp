@@ -2,6 +2,7 @@
 
 #include <QCloseEvent>
 #include <QFileDialog>
+#include <QFile>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -9,16 +10,20 @@
 #include <QClipboard>
 #include <QGuiApplication>
 #include <QInputDialog>
-#include <QMessageBox>
+#include <QShortcut>
 
 #include "ActivityBarWidget.h"
 #include "EditorManager.h"
 #include "EditorWidget.h"
 #include "FileExplorerWidget.h"
 #include "OutputPanel.h"
+#include "PanelContainerWidget.h"
 #include "ProblemsPanel.h"
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
+
+#include <DockAreaWidget.h>
+#include <DockAreaTitleBar.h>
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "dialogs/NewProjectDialog.h"
@@ -60,6 +65,13 @@ void MainWindow::initUi() {
   setWindowTitle("ETest Demo");
   setMinimumSize(900, 600);
 
+  // 加载VSCode风格样式表
+  QFile styleFile(":/resources/styles/vscode.qss");
+  if (styleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    setStyleSheet(QString::fromUtf8(styleFile.readAll()));
+    styleFile.close();
+  }
+
   createMenuBar();
   createEditMenu();
   createToolBar();
@@ -71,66 +83,73 @@ void MainWindow::initUi() {
   // 中央编辑区（必须在添加其他dock之前建立）
   auto* centralPlaceholder = new QWidget(this);
   auto* centralDock = new ads::CDockWidget(QStringLiteral("中央编辑区"));
-  centralDock->setObjectName("CentralDock");  // 设置唯一objectName
+  centralDock->setObjectName("CentralDock");
   centralDock->setWidget(centralPlaceholder);
-  auto* centralArea = dock_manager_->setCentralWidget(centralDock);
+  dock_manager_->setCentralWidget(centralDock);
 
   // 编辑器管理器
-  editor_manager_ =
-      new EditorManager(dock_manager_, this);  // 不再需要传入centralArea
+  editor_manager_ = new EditorManager(dock_manager_, this);
 
-  // ==================== 左侧：活动栏 ====================
+  // ==================== 左侧：侧边栏（先添加，占据左侧区域） ====================
+  sidebar_ = new SidebarWidget(this);
+  sidebar_dock_ = new ads::CDockWidget(QStringLiteral("侧边栏"));
+  sidebar_dock_->setObjectName("SidebarDock");
+  sidebar_dock_->setWidget(sidebar_);
+  sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, false);
+  sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
+  sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, sidebar_dock_);
+  // 隐藏侧边栏标题栏
+  sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+
+  // ==================== 左侧：活动栏（侧边栏左侧） ====================
   activity_bar_ = new ActivityBarWidget(this);
   auto* activityDock = new ads::CDockWidget(QStringLiteral("活动栏"));
-  activityDock->setObjectName("ActivityDock");  // 设置唯一objectName
+  activityDock->setObjectName("ActivityDock");
   activityDock->setWidget(activity_bar_);
   activityDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
   activityDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   activityDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
-  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, activityDock);
+  // 活动栏放置在侧边栏左侧
+  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, activityDock,
+      sidebar_dock_->dockAreaWidget());
+  // 隐藏活动栏标题栏
+  activityDock->dockAreaWidget()->titleBar()->hide();
 
-  // ==================== 左侧：侧边栏 ====================
-  sidebar_ = new SidebarWidget(this);
-  auto* sidebarDock = new ads::CDockWidget(QStringLiteral("侧边栏"));
-  sidebarDock->setObjectName("SidebarDock");  // 设置唯一objectName
-  sidebarDock->setWidget(sidebar_);
-  sidebarDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
-  sidebarDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
-  sidebarDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
-  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, sidebarDock);
-
-  // ==================== 底部：输出面板 ====================
+  // ==================== 底部：统一面板容器 ====================
   output_panel_ = new OutputPanel(this);
-  auto* outputDock = new ads::CDockWidget(QStringLiteral("输出"));
-  outputDock->setObjectName("OutputDock");  // 设置唯一objectName
-  outputDock->setWidget(output_panel_);
-
-  // ==================== 底部：问题面板 ====================
   problems_panel_ = new ProblemsPanel(this);
-  auto* problemsDock = new ads::CDockWidget(QStringLiteral("问题"));
-  problemsDock->setObjectName("ProblemsDock");  // 设置唯一objectName
-  problemsDock->setWidget(problems_panel_);
-
-  // ==================== 底部：终端面板 ====================
   terminal_panel_ = new TerminalPanel(this);
-  auto* terminalDock = new ads::CDockWidget(QStringLiteral("终端"));
-  terminalDock->setObjectName("TerminalDock");  // 设置唯一objectName
-  terminalDock->setWidget(terminal_panel_);
 
-  // 底部面板区域：输出面板为主，问题和终端tab到输出面板
-  dock_manager_->addDockWidget(ads::BottomDockWidgetArea, outputDock);
-  problemsDock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
-  dock_manager_->addDockWidgetTab(ads::BottomDockWidgetArea, problemsDock);
-  terminalDock->setFeature(ads::CDockWidget::DockWidgetFloatable, true);
-  dock_manager_->addDockWidgetTab(ads::BottomDockWidgetArea, terminalDock);
+  auto* panelContainer = new PanelContainerWidget(this);
+  panelContainer->addPanel(QStringLiteral("输出"), output_panel_);
+  panelContainer->addPanel(QStringLiteral("问题"), problems_panel_);
+  panelContainer->addPanel(QStringLiteral("终端"), terminal_panel_);
 
-  // ==================== 右侧：属性面板占位 ====================
-  auto* propertyPlaceholder = new QLabel(QStringLiteral("属性面板"), this);
-  propertyPlaceholder->setAlignment(Qt::AlignCenter);
-  auto* propertyDock = new ads::CDockWidget(QStringLiteral("属性"));
-  propertyDock->setObjectName("PropertyDock");  // 设置唯一objectName
-  propertyDock->setWidget(propertyPlaceholder);
-  dock_manager_->addDockWidget(ads::RightDockWidgetArea, propertyDock);
+  auto* panelDock = new ads::CDockWidget(QStringLiteral("面板"));
+  panelDock->setObjectName("PanelDock");
+  panelDock->setWidget(panelContainer);
+  panelDock->setFeature(ads::CDockWidget::DockWidgetClosable, true);
+  panelDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
+  panelDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  dock_manager_->addDockWidget(ads::BottomDockWidgetArea, panelDock);
+
+  // 面板容器信号
+  connect(panelContainer, &PanelContainerWidget::panelClosed, this, [panelDock]() {
+    panelDock->closeDockWidget();
+  });
+
+  // ==================== 右侧：辅助侧边栏（默认隐藏） ====================
+  auto* auxPlaceholder = new QLabel(QStringLiteral("辅助侧边栏"), this);
+  auxPlaceholder->setAlignment(Qt::AlignCenter);
+  auto* auxDock = new ads::CDockWidget(QStringLiteral("辅助侧边栏"));
+  auxDock->setObjectName("AuxSidebarDock");
+  auxDock->setWidget(auxPlaceholder);
+  auxDock->setFeature(ads::CDockWidget::DockWidgetClosable, true);
+  auxDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
+  auxDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  dock_manager_->addDockWidget(ads::RightDockWidgetArea, auxDock);
+  auxDock->closeDockWidget();  // 默认隐藏
 
   // 恢复窗口状态
   restoreWindowState();
@@ -140,6 +159,12 @@ void MainWindow::initSignals() {
   // 活动栏切换侧边栏
   connect(activity_bar_, &ActivityBarWidget::activityClicked, sidebar_,
           &SidebarWidget::switchPage);
+  // 活动栏再次点击已选中按钮时切换侧边栏显隐
+  connect(activity_bar_, &ActivityBarWidget::sidebarToggleRequested, this, [this]() {
+    if (sidebar_dock_) {
+      sidebar_dock_->toggleView(sidebar_dock_->isClosed());
+    }
+  });
 
   // 项目管理信号
   auto& projectMgr = etest::core::project::ProjectManager::instance();
@@ -193,6 +218,16 @@ void MainWindow::initSignals() {
 
               statusBar()->showMessage(editor->filePath());
 
+              // 更新状态栏光标位置
+              int line, col;
+              sci_editor->getCursorPosition(&line, &col);
+              status_cursor_label_->setText(QStringLiteral("行 %1, 列 %2").arg(line + 1).arg(col + 1));
+              // 更新状态栏语言模式
+              status_language_label_->setText(QStringLiteral("纯文本"));
+              // 更新EOL格式
+              status_eol_label_->setText(QStringLiteral("CRLF"));
+              status_encoding_label_->setText(QStringLiteral("UTF-8"));
+
               // 断开之前编辑器的所有信号连接
               QObject::disconnect(current_editor_selection_connection_);
               QObject::disconnect(current_editor_state_connection_);
@@ -216,6 +251,10 @@ void MainWindow::initSignals() {
               edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
             } else {
               statusBar()->showMessage(QStringLiteral("就绪"));
+              status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
+              status_language_label_->setText(QStringLiteral("纯文本"));
+              status_eol_label_->setText(QStringLiteral("CRLF"));
+              status_encoding_label_->setText(QStringLiteral("UTF-8"));
               // 没有编辑器时，断开旧连接并禁用相关按钮
               QObject::disconnect(current_editor_selection_connection_);
               QObject::disconnect(current_editor_state_connection_);
@@ -288,6 +327,24 @@ void MainWindow::initSignals() {
   };
   connect(clipboard_, &QClipboard::dataChanged, this, updatePasteState);
   updatePasteState(); // 初始化状态
+
+  // VSCode风格快捷键
+  // Ctrl+B 切换侧边栏
+  auto* toggleSidebar = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_B), this);
+  connect(toggleSidebar, &QShortcut::activated, this, [this]() {
+    if (sidebar_dock_) {
+      sidebar_dock_->toggleView(sidebar_dock_->isClosed());
+    }
+  });
+
+  // Ctrl+J 切换底部面板
+  auto* togglePanel = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_J), this);
+  connect(togglePanel, &QShortcut::activated, this, [this]() {
+    auto* panelDock = dock_manager_->findDockWidget("PanelDock");
+    if (panelDock) {
+      panelDock->toggleView(panelDock->isClosed());
+    }
+  });
 }
 
 void MainWindow::createMenuBar() {
@@ -351,9 +408,50 @@ void MainWindow::createMenuBar() {
 }
 
 void MainWindow::createStatusBar() {
+  statusBar()->setStyleSheet(R"(
+    QStatusBar {
+      background-color: #007ACC;
+      color: #FFFFFF;
+      font-size: 12px;
+    }
+    QStatusBar::item {
+      border: none;
+    }
+    QLabel {
+      color: #FFFFFF;
+      padding: 0px 8px;
+    }
+    QLabel:hover {
+      background-color: rgba(255, 255, 255, 30);
+    }
+  )");
+
+  // 左侧区域
   status_project_label_ = new QLabel(this);
   status_project_label_->setText(QStringLiteral("无打开项目"));
-  statusBar()->addPermanentWidget(status_project_label_);
+  statusBar()->addWidget(status_project_label_);
+
+  status_errors_label_ = new QLabel(this);
+  status_errors_label_->setText(QStringLiteral("0 错误, 0 警告"));
+  statusBar()->addWidget(status_errors_label_);
+
+  // 右侧区域（addPermanentWidget添加到右侧，顺序从左到右）
+  status_language_label_ = new QLabel(this);
+  status_language_label_->setText(QStringLiteral("纯文本"));
+  statusBar()->addPermanentWidget(status_language_label_);
+
+  status_eol_label_ = new QLabel(this);
+  status_eol_label_->setText(QStringLiteral("CRLF"));
+  statusBar()->addPermanentWidget(status_eol_label_);
+
+  status_encoding_label_ = new QLabel(this);
+  status_encoding_label_->setText(QStringLiteral("UTF-8"));
+  statusBar()->addPermanentWidget(status_encoding_label_);
+
+  status_cursor_label_ = new QLabel(this);
+  status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
+  statusBar()->addPermanentWidget(status_cursor_label_);
+
   statusBar()->showMessage(QStringLiteral("就绪"));
 }
 
@@ -846,6 +944,15 @@ void MainWindow::restoreWindowState() {
   if (!dockStateStr.isEmpty()) {
     QByteArray dockState = QByteArray::fromBase64(dockStateStr.toUtf8());
     dock_manager_->restoreState(dockState);
+  }
+
+  // restoreState会重建标题栏，需要重新隐藏固定dock的标题栏
+  if (sidebar_dock_ && sidebar_dock_->dockAreaWidget()) {
+    sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+  }
+  auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
+  if (activityDock && activityDock->dockAreaWidget()) {
+    activityDock->dockAreaWidget()->titleBar()->hide();
   }
 
   // 恢复工具栏可见性

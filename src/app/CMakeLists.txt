@@ -17,6 +17,8 @@ add_executable(${TARGET_NAME}
     EditorManager.cpp
     OutputPanel.h
     OutputPanel.cpp
+    PanelContainerWidget.h
+    PanelContainerWidget.cpp
     ProblemsPanel.h
     ProblemsPanel.cpp
     TerminalPanel.h

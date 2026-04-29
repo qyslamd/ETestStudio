@@ -6,6 +6,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+class QToolButton;
+
 namespace etest::app {
 class FileExplorerWidget;
 
@@ -23,9 +25,12 @@ class SidebarWidget : public QWidget {
   void setupUi();
 
   QStackedWidget* stack_;
+  QLabel* title_label_;
   FileExplorerWidget* file_explorer_ = nullptr;
+
+  // 视图名称列表
+  QStringList view_titles_;
 };
 
 }  // namespace etest::app
-
 #endif  // ETEST_APP_SIDEBAR_WIDGET_H_

@@ -1,6 +1,7 @@
 #ifndef ETEST_APP_ACTIVITY_BAR_WIDGET_H_
 #define ETEST_APP_ACTIVITY_BAR_WIDGET_H_
 
+#include <QHBoxLayout>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QVector>
@@ -20,12 +21,15 @@ class ActivityBarWidget : public QWidget {
 
  Q_SIGNALS:
   void activityClicked(int index);
+  void sidebarToggleRequested();
 
  private:
   void setupUi();
   QPushButton* createButton(const QString& tooltip, const QString& iconText);
 
   QVBoxLayout* layout_;
+  QVBoxLayout* top_layout_;
+  QVBoxLayout* bottom_layout_;
   QVector<QPushButton*> buttons_;
   int active_index_ = 0;
 };
