@@ -11,6 +11,8 @@ add_executable(${TARGET_NAME}
     SidebarWidget.cpp
     FileExplorerWidget.h
     FileExplorerWidget.cpp
+    HardwareTreeWidget.h
+    HardwareTreeWidget.cpp
     EditorWidget.h
     EditorWidget.cpp
     EditorManager.h

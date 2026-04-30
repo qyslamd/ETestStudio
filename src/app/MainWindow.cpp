@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QFileDialog>
 #include <QFile>
 #include <QMenu>
@@ -16,6 +17,7 @@
 #include "EditorManager.h"
 #include "EditorWidget.h"
 #include "FileExplorerWidget.h"
+#include "HardwareTreeWidget.h"
 #include "OutputPanel.h"
 #include "PanelContainerWidget.h"
 #include "ProblemsPanel.h"
@@ -28,6 +30,7 @@
 #include "config/ConfigManager.h"
 #include "dialogs/NewProjectDialog.h"
 #include "logger/Logger.h"
+#include "plugin/PluginManager.h"
 #include "project/ProjectManager.h"
 
 using namespace etest::core::config;
@@ -48,6 +51,13 @@ MainWindow::MainWindow(QWidget* parent)
   initUi();
   initSignals();
   updateWindowTitle();
+
+  // 加载插件并刷新硬件树
+  auto& pluginMgr = etest::core::plugin::PluginManager::instance();
+  pluginMgr.addSearchPath(QCoreApplication::applicationDirPath() + "/plugins");
+  pluginMgr.loadAll();
+  sidebar_->hardwareTree()->refreshTree();
+
   LOG_INFO("MAIN", "主窗口初始化完成");
 }
 
@@ -345,6 +355,14 @@ void MainWindow::initSignals() {
       panelDock->toggleView(panelDock->isClosed());
     }
   });
+
+  // 硬件树：插件加载/卸载时自动刷新
+  auto* hardwareTree = sidebar_->hardwareTree();
+  auto& pluginMgr = etest::core::plugin::PluginManager::instance();
+  connect(&pluginMgr, &etest::core::plugin::PluginManager::pluginLoaded,
+          hardwareTree, &HardwareTreeWidget::refreshTree);
+  connect(&pluginMgr, &etest::core::plugin::PluginManager::pluginUnloaded,
+          hardwareTree, &HardwareTreeWidget::refreshTree);
 }
 
 void MainWindow::createMenuBar() {

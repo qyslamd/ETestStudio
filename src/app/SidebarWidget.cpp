@@ -1,5 +1,6 @@
 #include "SidebarWidget.h"
 #include "FileExplorerWidget.h"
+#include "HardwareTreeWidget.h"
 
 #include <QHBoxLayout>
 #include <QStyle>
@@ -105,6 +106,11 @@ void SidebarWidget::setupUi() {
   stack_->addWidget(extPage);
   view_titles_ << QStringLiteral("扩展");
 
+  // 页5：硬件树
+  hardware_tree_ = new HardwareTreeWidget(this);
+  stack_->addWidget(hardware_tree_);
+  view_titles_ << QStringLiteral("硬件");
+
   layout->addWidget(stack_);
   setMinimumWidth(200);
 
@@ -123,6 +129,10 @@ void SidebarWidget::switchPage(int index) {
 
 FileExplorerWidget* SidebarWidget::fileExplorer() const {
   return file_explorer_;
+}
+
+HardwareTreeWidget* SidebarWidget::hardwareTree() const {
+  return hardware_tree_;
 }
 
 }  // namespace etest::app

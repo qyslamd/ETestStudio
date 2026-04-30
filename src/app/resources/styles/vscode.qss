@@ -257,6 +257,28 @@ QTreeView::branch {
     background-color: #252526;
 }
 
+/* 硬件树 */
+QTreeWidget {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: none;
+    outline: none;
+    font-size: 13px;
+}
+QTreeWidget::item {
+    padding: 3px 0px;
+    border: none;
+}
+QTreeWidget::item:hover {
+    background-color: #2A2D2E;
+}
+QTreeWidget::item:selected {
+    background-color: #094771;
+}
+QTreeWidget::branch {
+    background-color: #252526;
+}
+
 /* 按钮 */
 QPushButton {
     background-color: #0E639C;

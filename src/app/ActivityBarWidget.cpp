@@ -50,6 +50,7 @@ void ActivityBarWidget::setupUi() {
   buttons_.append(createButton(QStringLiteral("源代码管理"), "G"));
   buttons_.append(createButton(QStringLiteral("调试"), "D"));
   buttons_.append(createButton(QStringLiteral("扩展"), "X"));
+  buttons_.append(createButton(QStringLiteral("硬件"), "H"));
 
   for (int i = 0; i < buttons_.size(); ++i) {
     top_layout_->addWidget(buttons_[i]);
