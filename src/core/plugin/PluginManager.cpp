@@ -231,6 +231,8 @@ PluginMetaData PluginManager::parseMetaDataFromLib(
   meta.description = metaDataObj.value("description").toString();
   meta.author = metaDataObj.value("author").toString();
   meta.category = metaDataObj.value("category").toString();
+  meta.device_type = metaDataObj.value("device_type").toString();
+  meta.device_channels = metaDataObj.value("device_channels").toInt(0);
 
   QJsonArray deps = metaDataObj.value("dependencies").toArray();
   for (const QJsonValue& v : deps) {
@@ -238,6 +240,17 @@ PluginMetaData PluginManager::parseMetaDataFromLib(
   }
 
   return meta;
+}
+
+QList<PluginMetaData> PluginManager::devicesByType(const QString& deviceType) const {
+  QList<PluginMetaData> result;
+  for (IPlugin* p : m_impl->loaded_plugins_.values()) {
+    PluginMetaData meta = p->metaData();
+    if (meta.device_type == deviceType) {
+      result.append(meta);
+    }
+  }
+  return result;
 }
 
 }  // namespace etest::core::plugin

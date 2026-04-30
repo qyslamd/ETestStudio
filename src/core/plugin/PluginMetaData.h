@@ -17,6 +17,10 @@ struct PluginMetaData {
   QString category;          // 分类标签，如 "device"、"icd"、"report"
   QStringList dependencies;  // 依赖的其他插件ID列表
 
+  // 设备插件扩展字段
+  QString device_type;       // 设备类型标识，如 "ad"、"da"、"serial"、"a429"、"can"
+  int device_channels = 0;   // 设备通道数
+
   bool isValid() const { return !id.isEmpty() && !name.isEmpty(); }
 };
 

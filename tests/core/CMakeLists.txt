@@ -63,6 +63,15 @@ add_etest(
     LABELS CORE
 )
 
+# AD设备插件接口测试
+add_etest(
+    NAME test_core_ad_device_plugin
+    SOURCES ad_device_plugin_test.cpp
+    LIBS core
+    QT_MODULES Core Test
+    LABELS CORE
+)
+
 # 项目管理器测试
 add_etest(
     NAME test_core_project_manager

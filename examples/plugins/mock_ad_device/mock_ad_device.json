@@ -1,0 +1,11 @@
+{
+    "id": "etest.plugin.device.mock_ad",
+    "name": "Mock AD采集设备",
+    "version": "1.0.0",
+    "description": "模拟8通道16位AD采集设备，用于验证设备插件框架",
+    "author": "etest",
+    "category": "device",
+    "device_type": "ad",
+    "device_channels": 8,
+    "dependencies": []
+}

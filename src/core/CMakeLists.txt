@@ -31,6 +31,12 @@ set(HEADERS
     utils/StringUtil.h
     utils/ByteUtil.h
     plugin/IPlugin.h
+    plugin/IDevicePlugin.h
+    plugin/IADevicePlugin.h
+    plugin/IDADevicePlugin.h
+    plugin/ISerialDevicePlugin.h
+    plugin/IArinc429Plugin.h
+    plugin/ICANPlugin.h
     plugin/PluginMetaData.h
     plugin/PluginManager.h
     project/ProjectInfo.h

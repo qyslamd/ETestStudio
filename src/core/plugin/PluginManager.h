@@ -36,6 +36,9 @@ class PluginManager : public QObject {
     return static_cast<T*>(plugin(pluginId));
   }
 
+  // 按设备类型查询已加载的设备插件
+  QList<PluginMetaData> devicesByType(const QString& deviceType) const;
+
   // 插件搜索路径
   void addSearchPath(const QString& path);
   QStringList searchPaths() const;
