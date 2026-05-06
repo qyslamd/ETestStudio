@@ -1,17 +1,18 @@
 #include "MainWindow.h"
 
+#include <QClipboard>
 #include <QCloseEvent>
 #include <QCoreApplication>
-#include <QFileDialog>
 #include <QFile>
+#include <QFileDialog>
+#include <QGuiApplication>
+#include <QInputDialog>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <QStatusBar>
-#include <QClipboard>
-#include <QGuiApplication>
-#include <QInputDialog>
 #include <QShortcut>
+#include <QStatusBar>
+
 
 #include "ActivityBarWidget.h"
 #include "EditorManager.h"
@@ -24,8 +25,8 @@
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
 
-#include <DockAreaWidget.h>
 #include <DockAreaTitleBar.h>
+#include <DockAreaWidget.h>
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "dialogs/NewProjectDialog.h"
@@ -33,6 +34,7 @@
 #include "logger/QtConsoleSink.h"
 #include "plugin/PluginManager.h"
 #include "project/ProjectManager.h"
+
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -94,9 +96,8 @@ void MainWindow::initUi() {
   // 覆盖QADS内置的default.css，应用暗色主题（必须设置到CDockManager自身才生效）
   QFile adsStyleFile(":/resources/styles/ads_dark.qss");
   if (adsStyleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    dock_manager_->setStyleSheet(
-        dock_manager_->styleSheet() +
-        QString::fromUtf8(adsStyleFile.readAll()));
+    dock_manager_->setStyleSheet(dock_manager_->styleSheet() +
+                                 QString::fromUtf8(adsStyleFile.readAll()));
     adsStyleFile.close();
   }
 
@@ -110,7 +111,8 @@ void MainWindow::initUi() {
   // 编辑器管理器
   editor_manager_ = new EditorManager(dock_manager_, this);
 
-  // ==================== 左侧：侧边栏（先添加，占据左侧区域） ====================
+  // ==================== 左侧：侧边栏（先添加，占据左侧区域）
+  // ====================
   sidebar_ = new SidebarWidget(this);
   sidebar_dock_ = new ads::CDockWidget(QStringLiteral("侧边栏"));
   sidebar_dock_->setObjectName("SidebarDock");
@@ -132,7 +134,7 @@ void MainWindow::initUi() {
   activityDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
   // 活动栏放置在侧边栏左侧
   dock_manager_->addDockWidget(ads::LeftDockWidgetArea, activityDock,
-      sidebar_dock_->dockAreaWidget());
+                               sidebar_dock_->dockAreaWidget());
   // 隐藏活动栏标题栏
   activityDock->dockAreaWidget()->titleBar()->hide();
 
@@ -155,9 +157,8 @@ void MainWindow::initUi() {
   dock_manager_->addDockWidget(ads::BottomDockWidgetArea, panelDock);
 
   // 面板容器信号
-  connect(panelContainer, &PanelContainerWidget::panelClosed, this, [panelDock]() {
-    panelDock->closeDockWidget();
-  });
+  connect(panelContainer, &PanelContainerWidget::panelClosed, this,
+          [panelDock]() { panelDock->closeDockWidget(); });
 
   // ==================== 右侧：辅助侧边栏（默认隐藏） ====================
   auto* auxPlaceholder = new QLabel(QStringLiteral("辅助侧边栏"), this);
@@ -169,7 +170,7 @@ void MainWindow::initUi() {
   auxDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   auxDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
   dock_manager_->addDockWidget(ads::RightDockWidgetArea, auxDock);
-  auxDock->closeDockWidget();  // 默认隐藏
+  // auxDock->closeDockWidget();  // 默认隐藏
 
   // 恢复窗口状态
   restoreWindowState();
@@ -180,19 +181,21 @@ void MainWindow::initSignals() {
   connect(activity_bar_, &ActivityBarWidget::activityClicked, sidebar_,
           &SidebarWidget::switchPage);
   // 活动栏再次点击已选中按钮时切换侧边栏显隐
-  connect(activity_bar_, &ActivityBarWidget::sidebarToggleRequested, this, [this]() {
-    if (sidebar_dock_) {
-      sidebar_dock_->toggleView(sidebar_dock_->isClosed());
-      // toggleView会重建标题栏，需要重新隐藏
-      if (sidebar_dock_->dockAreaWidget()) {
-        sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-      }
-      auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
-      if (activityDock && activityDock->dockAreaWidget()) {
-        activityDock->dockAreaWidget()->titleBar()->hide();
-      }
-    }
-  });
+  connect(activity_bar_, &ActivityBarWidget::sidebarToggleRequested, this,
+          [this]() {
+            if (sidebar_dock_) {
+              sidebar_dock_->toggleView(sidebar_dock_->isClosed());
+              // toggleView会重建标题栏，需要重新隐藏
+              if (sidebar_dock_->dockAreaWidget()) {
+                sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+              }
+              auto* activityDock =
+                  dock_manager_->findDockWidget("ActivityDock");
+              if (activityDock && activityDock->dockAreaWidget()) {
+                activityDock->dockAreaWidget()->titleBar()->hide();
+              }
+            }
+          });
 
   // 项目管理信号
   auto& projectMgr = etest::core::project::ProjectManager::instance();
@@ -227,85 +230,90 @@ void MainWindow::initSignals() {
           &EditorManager::onFileRenamed);
 
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
-  connect(editor_manager_, &EditorManager::currentEditorChanged, this,
-          [this](EditorWidget* editor) {
-            bool hasEditor = (editor != nullptr);
-            bool hasSelection = false;
+  connect(
+      editor_manager_, &EditorManager::currentEditorChanged, this,
+      [this](EditorWidget* editor) {
+        bool hasEditor = (editor != nullptr);
+        bool hasSelection = false;
 
-            save_as_action_->setEnabled(hasEditor);
-            close_file_action_->setEnabled(hasEditor);
-            close_all_files_action_->setEnabled(hasEditor);
+        save_as_action_->setEnabled(hasEditor);
+        close_file_action_->setEnabled(hasEditor);
+        close_all_files_action_->setEnabled(hasEditor);
 
-            // 保存按钮仅在当前文件有修改时启用
-            bool isModified = hasEditor && editor->isModified();
-            save_action_->setEnabled(isModified);
+        // 保存按钮仅在当前文件有修改时启用
+        bool isModified = hasEditor && editor->isModified();
+        save_action_->setEnabled(isModified);
 
-            if (hasEditor) {
-              QsciScintilla* sci_editor = editor->editor();
-              hasSelection = sci_editor->hasSelectedText();
+        if (hasEditor) {
+          QsciScintilla* sci_editor = editor->editor();
+          hasSelection = sci_editor->hasSelectedText();
 
-              statusBar()->showMessage(editor->filePath());
+          statusBar()->showMessage(editor->filePath());
 
-              // 更新状态栏光标位置
-              int line, col;
-              sci_editor->getCursorPosition(&line, &col);
-              status_cursor_label_->setText(QStringLiteral("行 %1, 列 %2").arg(line + 1).arg(col + 1));
-              // 更新状态栏语言模式
-              status_language_label_->setText(QStringLiteral("纯文本"));
-              // 更新EOL格式
-              status_eol_label_->setText(QStringLiteral("CRLF"));
-              status_encoding_label_->setText(QStringLiteral("UTF-8"));
+          // 更新状态栏光标位置
+          int line, col;
+          sci_editor->getCursorPosition(&line, &col);
+          status_cursor_label_->setText(
+              QStringLiteral("行 %1, 列 %2").arg(line + 1).arg(col + 1));
+          // 更新状态栏语言模式
+          status_language_label_->setText(QStringLiteral("纯文本"));
+          // 更新EOL格式
+          status_eol_label_->setText(QStringLiteral("CRLF"));
+          status_encoding_label_->setText(QStringLiteral("UTF-8"));
 
-              // 断开之前编辑器的所有信号连接
-              QObject::disconnect(current_editor_selection_connection_);
-              QObject::disconnect(current_editor_state_connection_);
+          // 断开之前编辑器的所有信号连接
+          QObject::disconnect(current_editor_selection_connection_);
+          QObject::disconnect(current_editor_state_connection_);
 
-              // 连接新编辑器的选择变化信号
-              current_editor_selection_connection_ = connect(sci_editor, &QsciScintilla::selectionChanged, this,
+          // 连接新编辑器的选择变化信号
+          current_editor_selection_connection_ =
+              connect(sci_editor, &QsciScintilla::selectionChanged, this,
                       [this, sci_editor]() {
                         bool hasSelection = sci_editor->hasSelectedText();
                         edit_cut_action_->setEnabled(hasSelection);
                         edit_copy_action_->setEnabled(hasSelection);
                       });
 
-              // 连接编辑器状态变化信号，更新撤销/重做按钮状态
-              current_editor_state_connection_ = connect(editor, &EditorWidget::editorStateChanged, this, [this, sci_editor]() {
+          // 连接编辑器状态变化信号，更新撤销/重做按钮状态
+          current_editor_state_connection_ = connect(
+              editor, &EditorWidget::editorStateChanged, this,
+              [this, sci_editor]() {
                 edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
                 edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
               });
 
-              // 初始化撤销/重做按钮状态
-              edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
-              edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
-            } else {
-              statusBar()->showMessage(QStringLiteral("就绪"));
-              status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
-              status_language_label_->setText(QStringLiteral("纯文本"));
-              status_eol_label_->setText(QStringLiteral("CRLF"));
-              status_encoding_label_->setText(QStringLiteral("UTF-8"));
-              // 没有编辑器时，断开旧连接并禁用相关按钮
-              QObject::disconnect(current_editor_selection_connection_);
-              QObject::disconnect(current_editor_state_connection_);
-              edit_cut_action_->setEnabled(false);
-              edit_copy_action_->setEnabled(false);
-              edit_undo_action_->setEnabled(false);
-              edit_redo_action_->setEnabled(false);
-              edit_find_action_->setEnabled(false);
-              edit_replace_action_->setEnabled(false);
-              edit_go_to_line_action_->setEnabled(false);
-            }
-            updateWindowTitle();
+          // 初始化撤销/重做按钮状态
+          edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
+          edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
+        } else {
+          statusBar()->showMessage(QStringLiteral("就绪"));
+          status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
+          status_language_label_->setText(QStringLiteral("纯文本"));
+          status_eol_label_->setText(QStringLiteral("CRLF"));
+          status_encoding_label_->setText(QStringLiteral("UTF-8"));
+          // 没有编辑器时，断开旧连接并禁用相关按钮
+          QObject::disconnect(current_editor_selection_connection_);
+          QObject::disconnect(current_editor_state_connection_);
+          edit_cut_action_->setEnabled(false);
+          edit_copy_action_->setEnabled(false);
+          edit_undo_action_->setEnabled(false);
+          edit_redo_action_->setEnabled(false);
+          edit_find_action_->setEnabled(false);
+          edit_replace_action_->setEnabled(false);
+          edit_go_to_line_action_->setEnabled(false);
+        }
+        updateWindowTitle();
 
-            // 更新编辑菜单按钮状态（工具栏会自动同步）
-            edit_undo_action_->setEnabled(hasEditor);
-            edit_redo_action_->setEnabled(hasEditor);
-            edit_cut_action_->setEnabled(hasSelection);
-            edit_copy_action_->setEnabled(hasSelection);
-            edit_paste_action_->setEnabled(hasEditor);
-            edit_find_action_->setEnabled(hasEditor);
-            edit_replace_action_->setEnabled(hasEditor);
-            edit_go_to_line_action_->setEnabled(hasEditor);
-          });
+        // 更新编辑菜单按钮状态（工具栏会自动同步）
+        edit_undo_action_->setEnabled(hasEditor);
+        edit_redo_action_->setEnabled(hasEditor);
+        edit_cut_action_->setEnabled(hasSelection);
+        edit_copy_action_->setEnabled(hasSelection);
+        edit_paste_action_->setEnabled(hasEditor);
+        edit_find_action_->setEnabled(hasEditor);
+        edit_replace_action_->setEnabled(hasEditor);
+        edit_go_to_line_action_->setEnabled(hasEditor);
+      });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
   connect(editor_manager_, &EditorManager::unsavedChangesChanged, this,
@@ -354,7 +362,7 @@ void MainWindow::initSignals() {
     edit_paste_action_->setEnabled(hasEditor && hasText);
   };
   connect(clipboard_, &QClipboard::dataChanged, this, updatePasteState);
-  updatePasteState(); // 初始化状态
+  updatePasteState();  // 初始化状态
 
   // VSCode风格快捷键
   // Ctrl+B 切换侧边栏
@@ -420,7 +428,8 @@ void MainWindow::createMenuBar() {
   save_action_ = fileMenu->addAction(QStringLiteral("保存(&S)"), this,
                                      &MainWindow::onSaveFile);
   save_action_->setShortcut(QKeySequence::Save);
-  save_action_->setShortcutContext(Qt::ApplicationShortcut);  // 全局级快捷键，不受焦点控件影响
+  save_action_->setShortcutContext(
+      Qt::ApplicationShortcut);  // 全局级快捷键，不受焦点控件影响
   save_action_->setEnabled(false);
 
   save_as_action_ = fileMenu->addAction(QStringLiteral("另存为..."), this,
@@ -591,16 +600,16 @@ void MainWindow::createEditMenu() {
   edit_find_action_->setEnabled(false);
 
   // 替换
-  edit_replace_action_ =
-      edit_menu->addAction(QStringLiteral("替换"), this, &MainWindow::onReplace);
+  edit_replace_action_ = edit_menu->addAction(QStringLiteral("替换"), this,
+                                              &MainWindow::onReplace);
   edit_replace_action_->setShortcut(QKeySequence::Replace);
   edit_replace_action_->setEnabled(false);
 
   edit_menu->addSeparator();
 
   // 跳转到行
-  edit_go_to_line_action_ =
-      edit_menu->addAction(QStringLiteral("跳转到行"), this, &MainWindow::onGoToLine);
+  edit_go_to_line_action_ = edit_menu->addAction(QStringLiteral("跳转到行"),
+                                                 this, &MainWindow::onGoToLine);
   edit_go_to_line_action_->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
   edit_go_to_line_action_->setEnabled(false);
 }
@@ -833,52 +842,57 @@ void MainWindow::onPaste() {
 
 void MainWindow::onFind() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor) return;
+  if (!editor)
+    return;
 
   bool ok;
   QString searchText = QInputDialog::getText(this, QStringLiteral("查找"),
-                                             QStringLiteral("查找内容:"), QLineEdit::Normal,
-                                             QString(), &ok);
+                                             QStringLiteral("查找内容:"),
+                                             QLineEdit::Normal, QString(), &ok);
   if (ok && !searchText.isEmpty()) {
     // 获取当前光标位置
     int line, column;
     editor->editor()->getCursorPosition(&line, &column);
 
     // 查找第一个匹配项
-    bool found = editor->editor()->findFirst(searchText, false, false, false, true, true,
-                                             line, column, true);
+    bool found = editor->editor()->findFirst(searchText, false, false, false,
+                                             true, true, line, column, true);
     if (!found) {
-      QMessageBox::information(this, QStringLiteral("查找"), QStringLiteral("找不到指定内容"));
+      QMessageBox::information(this, QStringLiteral("查找"),
+                               QStringLiteral("找不到指定内容"));
     }
   }
 }
 
 void MainWindow::onReplace() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor) return;
+  if (!editor)
+    return;
 
   bool ok;
   QString searchText = QInputDialog::getText(this, QStringLiteral("替换"),
-                                              QStringLiteral("查找内容:"), QLineEdit::Normal,
-                                              QString(), &ok);
-  if (!ok || searchText.isEmpty()) return;
+                                             QStringLiteral("查找内容:"),
+                                             QLineEdit::Normal, QString(), &ok);
+  if (!ok || searchText.isEmpty())
+    return;
 
-  QString replaceText = QInputDialog::getText(this, QStringLiteral("替换"),
-                                               QStringLiteral("替换为:"), QLineEdit::Normal,
-                                               QString(), &ok);
-  if (!ok) return;
+  QString replaceText = QInputDialog::getText(
+      this, QStringLiteral("替换"), QStringLiteral("替换为:"),
+      QLineEdit::Normal, QString(), &ok);
+  if (!ok)
+    return;
 
   // 获取当前光标位置
   int line, column;
   editor->editor()->getCursorPosition(&line, &column);
 
   // 查找第一个匹配项
-  bool found = editor->editor()->findFirst(searchText, false, false, false, true, true,
-                                           line, column, true);
+  bool found = editor->editor()->findFirst(searchText, false, false, false,
+                                           true, true, line, column, true);
   if (found) {
-    int ret = QMessageBox::question(this, QStringLiteral("替换"),
-                                    QStringLiteral("替换当前匹配项吗？"),
-                                    QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+    int ret = QMessageBox::question(
+        this, QStringLiteral("替换"), QStringLiteral("替换当前匹配项吗？"),
+        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
     if (ret == QMessageBox::Cancel) {
       return;
     } else if (ret == QMessageBox::Yes) {
@@ -887,9 +901,9 @@ void MainWindow::onReplace() {
 
     // 继续查找下一个
     while (editor->editor()->findNext()) {
-      ret = QMessageBox::question(this, QStringLiteral("替换"),
-                                  QStringLiteral("替换当前匹配项吗？"),
-                                  QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+      ret = QMessageBox::question(
+          this, QStringLiteral("替换"), QStringLiteral("替换当前匹配项吗？"),
+          QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
       if (ret == QMessageBox::Cancel) {
         break;
       } else if (ret == QMessageBox::Yes) {
@@ -897,15 +911,18 @@ void MainWindow::onReplace() {
       }
     }
 
-    QMessageBox::information(this, QStringLiteral("替换"), QStringLiteral("替换完成"));
+    QMessageBox::information(this, QStringLiteral("替换"),
+                             QStringLiteral("替换完成"));
   } else {
-    QMessageBox::information(this, QStringLiteral("替换"), QStringLiteral("找不到指定内容"));
+    QMessageBox::information(this, QStringLiteral("替换"),
+                             QStringLiteral("找不到指定内容"));
   }
 }
 
 void MainWindow::onGoToLine() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor) return;
+  if (!editor)
+    return;
 
   int lineCount = editor->editor()->lines();
   bool ok;
@@ -914,10 +931,11 @@ void MainWindow::onGoToLine() {
   int currentLine, currentColumn;
   editor->editor()->getCursorPosition(&currentLine, &currentColumn);
 
-  int lineNumber = QInputDialog::getInt(this, QStringLiteral("跳转到行"),
-                                        QStringLiteral("行号 (1-%1):").arg(lineCount),
-                                        currentLine + 1, // 当前行号
-                                        1, lineCount, 1, &ok);
+  int lineNumber =
+      QInputDialog::getInt(this, QStringLiteral("跳转到行"),
+                           QStringLiteral("行号 (1-%1):").arg(lineCount),
+                           currentLine + 1,  // 当前行号
+                           1, lineCount, 1, &ok);
   if (ok) {
     editor->editor()->setCursorPosition(lineNumber - 1, 0);
     editor->editor()->ensureLineVisible(lineNumber - 1);
@@ -988,7 +1006,7 @@ void MainWindow::restoreWindowState() {
   auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
   if (activityDock && activityDock->dockAreaWidget()) {
     activityDock->dockAreaWidget()->titleBar()->hide();
-  }
+  };
 
   // 恢复工具栏可见性
   if (file_toolbar_ && edit_toolbar_) {
