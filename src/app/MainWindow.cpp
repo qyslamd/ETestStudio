@@ -183,6 +183,14 @@ void MainWindow::initSignals() {
   connect(activity_bar_, &ActivityBarWidget::sidebarToggleRequested, this, [this]() {
     if (sidebar_dock_) {
       sidebar_dock_->toggleView(sidebar_dock_->isClosed());
+      // toggleView会重建标题栏，需要重新隐藏
+      if (sidebar_dock_->dockAreaWidget()) {
+        sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+      }
+      auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
+      if (activityDock && activityDock->dockAreaWidget()) {
+        activityDock->dockAreaWidget()->titleBar()->hide();
+      }
     }
   });
 
@@ -354,6 +362,14 @@ void MainWindow::initSignals() {
   connect(toggleSidebar, &QShortcut::activated, this, [this]() {
     if (sidebar_dock_) {
       sidebar_dock_->toggleView(sidebar_dock_->isClosed());
+      // toggleView会重建标题栏，需要重新隐藏
+      if (sidebar_dock_->dockAreaWidget()) {
+        sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+      }
+      auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
+      if (activityDock && activityDock->dockAreaWidget()) {
+        activityDock->dockAreaWidget()->titleBar()->hide();
+      }
     }
   });
 
