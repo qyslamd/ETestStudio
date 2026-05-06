@@ -8,5 +8,17 @@
         <file>resources/icons/svg/close_dark.svg</file>
         <file>resources/icons/svg/drop_down_arrow_light.svg</file>
         <file>resources/icons/svg/drop_down_arrow_dark.svg</file>
+        <file>resources/icons/svg/project_dark.svg</file>
+        <file>resources/icons/svg/project_light.svg</file>
+        <file>resources/icons/svg/debug_dark.svg</file>
+        <file>resources/icons/svg/debug_light.svg</file>
+        <file>resources/icons/svg/hardware_dark.svg</file>
+        <file>resources/icons/svg/hardware_light.svg</file>
+        <file>resources/icons/svg/search_dark.svg</file>
+        <file>resources/icons/svg/search_light.svg</file>
+        <file>resources/icons/svg/git_dark.svg</file>
+        <file>resources/icons/svg/git_light.svg</file>
+        <file>resources/icons/svg/extensions_dark.svg</file>
+        <file>resources/icons/svg/extensions_light.svg</file>
     </qresource>
 </RCC>

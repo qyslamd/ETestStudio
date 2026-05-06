@@ -25,7 +25,9 @@ class ActivityBarWidget : public QWidget {
 
  private:
   void setupUi();
-  QPushButton* createButton(const QString& tooltip, const QString& iconText);
+  QPushButton* createButton(const QString& tooltip,
+                            const QString& darkIconPath,
+                            const QString& lightIconPath);
 
   QVBoxLayout* layout_;
   QVBoxLayout* top_layout_;

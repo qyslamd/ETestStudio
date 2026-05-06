@@ -1,5 +1,7 @@
 #include "ActivityBarWidget.h"
 
+#include <QFile>
+
 namespace etest {
 namespace app {
 
@@ -10,6 +12,11 @@ ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
 void ActivityBarWidget::setupUi() {
   setFixedWidth(48);
 
+  // 强制设置背景色，防止被QADS的样式覆盖
+  setAutoFillBackground(true);
+  QPalette pal = palette();
+  pal.setColor(QPalette::Window, QColor("#333333"));
+  setPalette(pal);
 
   layout_ = new QVBoxLayout(this);
   layout_->setContentsMargins(0, 4, 0, 4);
@@ -17,22 +24,33 @@ void ActivityBarWidget::setupUi() {
 
   // 顶部按钮区域
   top_layout_ = new QVBoxLayout();
-  top_layout_->setSpacing(0);
+  top_layout_->setSpacing(4);
   top_layout_->setContentsMargins(0, 0, 0, 0);
 
   // 主功能按钮（顶部）
-  buttons_.append(createButton(QStringLiteral("资源管理器"), "E"));
-  buttons_.append(createButton(QStringLiteral("搜索"), "S"));
-  buttons_.append(createButton(QStringLiteral("源代码管理"), "G"));
-  buttons_.append(createButton(QStringLiteral("调试"), "D"));
-  buttons_.append(createButton(QStringLiteral("扩展"), "X"));
-  buttons_.append(createButton(QStringLiteral("硬件"), "H"));
+  buttons_.append(createButton(QStringLiteral("资源管理器"),
+                                ":/resources/icons/svg/project_dark.svg",
+                                ":/resources/icons/svg/project_light.svg"));
+  buttons_.append(createButton(QStringLiteral("搜索"),
+                                ":/resources/icons/svg/search_dark.svg",
+                                ":/resources/icons/svg/search_light.svg"));
+  buttons_.append(createButton(QStringLiteral("源代码管理"),
+                                ":/resources/icons/svg/git_dark.svg",
+                                ":/resources/icons/svg/git_light.svg"));
+  buttons_.append(createButton(QStringLiteral("调试"),
+                                ":/resources/icons/svg/debug_dark.svg",
+                                ":/resources/icons/svg/debug_dark.svg"));
+  buttons_.append(createButton(QStringLiteral("扩展"),
+                                ":/resources/icons/svg/extensions_dark.svg",
+                                ":/resources/icons/svg/extensions_light.svg"));
+  buttons_.append(createButton(QStringLiteral("硬件"),
+                                ":/resources/icons/svg/hardware_dark.svg",
+                                ":/resources/icons/svg/hardware_light.svg"));
 
   for (int i = 0; i < buttons_.size(); ++i) {
     top_layout_->addWidget(buttons_[i]);
     connect(buttons_[i], &QPushButton::clicked, this, [this, i]() {
       if (active_index_ == i) {
-        // 再次点击已选中的按钮，切换侧边栏显隐
         emit sidebarToggleRequested();
       } else {
         setActiveIndex(i);
@@ -49,22 +67,29 @@ void ActivityBarWidget::setupUi() {
   bottom_layout_->setSpacing(0);
   bottom_layout_->setContentsMargins(0, 0, 0, 0);
 
-  auto* settingsBtn = createButton(QStringLiteral("设置"), "G");
-  bottom_layout_->addWidget(settingsBtn);
-
   layout_->addLayout(bottom_layout_);
 
   setActiveIndex(0);
 }
 
 QPushButton* ActivityBarWidget::createButton(const QString& tooltip,
-                                             const QString& iconText) {
-  QPushButton* btn = new QPushButton(iconText, this);
+                                             const QString& darkIconPath,
+                                             const QString& lightIconPath) {
+  QPushButton* btn = new QPushButton(this);
   btn->setToolTip(tooltip);
   btn->setFixedSize(48, 40);
   btn->setCheckable(true);
   btn->setFlat(true);
   btn->setFocusPolicy(Qt::NoFocus);
+
+  // 加载图标，优先dark版本（当前为暗色主题）
+  QIcon icon;
+  icon.addFile(darkIconPath, QSize(), QIcon::Normal, QIcon::Off);
+  icon.addFile(lightIconPath, QSize(), QIcon::Disabled, QIcon::Off);
+  btn->setIcon(icon);
+  btn->setIconSize(QSize(24, 24));
+  btn->setText(QString());
+
   return btn;
 }
 

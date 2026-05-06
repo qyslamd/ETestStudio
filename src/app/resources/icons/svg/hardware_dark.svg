@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="100" height="100">
+  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="2" d="M1,5h1c1.657,0,3,1.343,3,3v37" />
+  <path d="M36 22A3 3 0 1 0 36 28A3 3 0 1 0 36 22Z" fill="#FFFFFF" />
+  <path fill="none" stroke="#FFFFFF" stroke-width="2" d="M5,11h42c1.105,0,2,0.895,2,2v24c0,1.105-0.895,2-2,2H5" />
+  <path fill="none" stroke="#FFFFFF" stroke-linejoin="round" stroke-width="2" d="M18 39L18 43 33 43 33 39" />
+  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 39L14 43 10 43 10 39M37 39L37 43 39 43" />
+  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="2" d="M29.263 30.954c.565-.198 1.271-.488 1.999-.909 3.464-2 3.835-3.742 4.737-5.045M37.786 33.821c.112-.59.214-1.35.214-2.196 0-4-1.324-5.192-2-6.625" />
+  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="2" d="M27.472 22.14c.455.391 1.06.858 1.791 1.28 3.464 2 5.158 1.45 6.737 1.58M44.528 27.86c-.455-.391-1.06-.858-1.791-1.28-3.464-2-5.158-1.45-6.737-1.58M34.214 16.179C34.102 16.769 34 17.529 34 18.375c0 4 1.324 5.192 2 6.625" />
+  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="2" d="M42.737,19.046c-0.565,0.198-1.271,0.488-1.999,0.909c-3.464,2-3.835,3.742-4.737,5.045" />
+  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="2" d="M36 16A9 9 0 1 0 36 34A9 9 0 1 0 36 16Z" />
+  <path fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 17L22 17M10 22L22 22M10 28L22 28M10 33L22 33" />
+</svg>
