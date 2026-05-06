@@ -62,12 +62,12 @@ void NewProjectDialog::initUi() {
 
   // 路径预览
   preview_label_ = new QLabel(this);
-  preview_label_->setStyleSheet("color: gray;");
+  preview_label_->setObjectName("previewLabel");
   mainLayout->addWidget(preview_label_);
 
   // 错误提示
   error_label_ = new QLabel(this);
-  error_label_->setStyleSheet("color: red;");
+  error_label_->setObjectName("errorLabel");
   error_label_->setWordWrap(true);
   mainLayout->addWidget(error_label_);
 

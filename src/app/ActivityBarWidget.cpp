@@ -9,31 +9,7 @@ ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
 
 void ActivityBarWidget::setupUi() {
   setFixedWidth(48);
-  setStyleSheet(R"(
-    ActivityBarWidget {
-      background-color: #333333;
-      border-right: 1px solid #252526;
-    }
-    QPushButton {
-      background-color: transparent;
-      border: none;
-      border-left: 2px solid transparent;
-      color: #858585;
-      font-size: 16px;
-      padding: 0px;
-      margin: 0px;
-    }
-    QPushButton:hover {
-      background-color: #2A2D2E;
-      color: #FFFFFF;
-    }
-    QPushButton:checked {
-      border-left: 2px solid #007ACC;
-      color: #FFFFFF;
-      background-color: #2A2D2E;
-    }
-  )");
-  // 上述样式是活动栏特有样式（选中指示器、边框等），无法由全局QSS覆盖
+
 
   layout_ = new QVBoxLayout(this);
   layout_->setContentsMargins(0, 4, 0, 4);

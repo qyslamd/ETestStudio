@@ -13,39 +13,7 @@ PanelContainerWidget::PanelContainerWidget(QWidget* parent) : QWidget(parent) {
 }
 
 void PanelContainerWidget::setupUi() {
-  setStyleSheet(R"(
-    PanelContainerWidget {
-      background-color: #1E1E1E;
-    }
-    QTabWidget::pane {
-      border: none;
-      background-color: #1E1E1E;
-    }
-    QTabBar::tab {
-      background-color: #2D2D2D;
-      color: #858585;
-      border: none;
-      padding: 4px 12px;
-      margin-right: 1px;
-    }
-    QTabBar::tab:selected {
-      background-color: #1E1E1E;
-      color: #FFFFFF;
-      border-bottom: 1px solid #007ACC;
-    }
-    QTabBar::tab:hover:!selected {
-      color: #FFFFFF;
-    }
-    QToolButton {
-      background-color: transparent;
-      border: none;
-      color: #858585;
-      padding: 2px;
-    }
-    QToolButton:hover {
-      color: #FFFFFF;
-    }
-  )");
+
 
   auto* main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);

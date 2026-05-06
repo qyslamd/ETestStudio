@@ -13,26 +13,7 @@ SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
 }
 
 void SidebarWidget::setupUi() {
-  setStyleSheet(R"(
-    SidebarWidget {
-      background-color: #252526;
-      border-right: 1px solid #1E1E1E;
-    }
-    QLabel {
-      color: #BBBBBB;
-      font-size: 11px;
-      font-weight: bold;
-    }
-    QToolButton {
-      background-color: transparent;
-      border: none;
-      color: #858585;
-      padding: 2px;
-    }
-    QToolButton:hover {
-      color: #FFFFFF;
-    }
-  )");
+
 
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
