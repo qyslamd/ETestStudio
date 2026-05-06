@@ -89,7 +89,10 @@ class MainWindow : public QMainWindow {
   TerminalPanel* terminal_panel_;
 
   // 菜单和状态
+  QMenu* view_menu_ = nullptr;
   QMenu* recent_projects_menu_ = nullptr;
+  QAction* view_panel_action_ = nullptr;
+  QAction* view_aux_sidebar_action_ = nullptr;
   QAction* new_project_action_ = nullptr;
   QAction* open_project_action_ = nullptr;
   QAction* close_project_action_ = nullptr;

@@ -177,6 +177,20 @@ void MainWindow::initUi() {
 }
 
 void MainWindow::initSignals() {
+  // View菜单显示时同步菜单项选中状态与实际dock状态
+  if (view_menu_) {
+    connect(view_menu_, &QMenu::aboutToShow, this, [this]() {
+      auto* panelDock = dock_manager_->findDockWidget("PanelDock");
+      if (panelDock && view_panel_action_) {
+        view_panel_action_->setChecked(!panelDock->isClosed());
+      }
+      auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
+      if (auxDock && view_aux_sidebar_action_) {
+        view_aux_sidebar_action_->setChecked(!auxDock->isClosed());
+      }
+    });
+  }
+
   // 活动栏切换侧边栏
   connect(activity_bar_, &ActivityBarWidget::activityClicked, sidebar_,
           &SidebarWidget::switchPage);
@@ -381,15 +395,6 @@ void MainWindow::initSignals() {
     }
   });
 
-  // Ctrl+J 切换底部面板
-  auto* togglePanel = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_J), this);
-  connect(togglePanel, &QShortcut::activated, this, [this]() {
-    auto* panelDock = dock_manager_->findDockWidget("PanelDock");
-    if (panelDock) {
-      panelDock->toggleView(panelDock->isClosed());
-    }
-  });
-
   // 硬件树：插件加载/卸载时自动刷新
   auto* hardwareTree = sidebar_->hardwareTree();
   auto& pluginMgr = etest::core::plugin::PluginManager::instance();
@@ -462,7 +467,35 @@ void MainWindow::createMenuBar() {
 
   QMenu* edit_menu = menuBar->addMenu(QStringLiteral("编辑(&E)"));
   edit_menu->setObjectName("editMenu");
-  menuBar->addMenu(QStringLiteral("视图(&V)"));
+  view_menu_ = menuBar->addMenu(QStringLiteral("视图(&V)"));
+
+  // 输出面板
+  view_panel_action_ = view_menu_->addAction(QStringLiteral("输出面板"));
+  view_panel_action_->setShortcut(QStringLiteral("Ctrl+J"));
+  view_panel_action_->setCheckable(true);
+  view_panel_action_->setChecked(true);
+  connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
+    auto* panelDock = dock_manager_->findDockWidget("PanelDock");
+    if (panelDock) {
+      if (checked) {
+        panelDock->toggleView(true);
+      } else {
+        panelDock->closeDockWidget();
+      }
+    }
+  });
+
+  // 辅助侧边栏
+  view_aux_sidebar_action_ = view_menu_->addAction(QStringLiteral("辅助侧边栏"));
+  view_aux_sidebar_action_->setCheckable(true);
+  view_aux_sidebar_action_->setChecked(true);
+  connect(view_aux_sidebar_action_, &QAction::triggered, this, [this](bool checked) {
+    auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
+    if (auxDock) {
+      auxDock->toggleView(checked);
+    }
+  });
+
   menuBar->addMenu(QStringLiteral("工具(&T)"));
   menuBar->addMenu(QStringLiteral("帮助(&H)"));
 }
