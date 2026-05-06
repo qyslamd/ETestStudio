@@ -1,0 +1,11 @@
+{
+    "id": "etest.plugin.device.mock_da",
+    "name": "Mock DA输出设备",
+    "version": "1.0.0",
+    "description": "模拟4通道16位DA输出设备，用于验证设备插件框架",
+    "author": "etest",
+    "category": "device",
+    "device_type": "da",
+    "device_channels": 4,
+    "dependencies": []
+}

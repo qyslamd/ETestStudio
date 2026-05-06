@@ -1,0 +1,11 @@
+{
+    "id": "etest.plugin.device.mock_a429",
+    "name": "Mock A429设备",
+    "version": "1.0.0",
+    "description": "模拟ARINC 429总线设备，用于验证设备插件框架",
+    "author": "etest",
+    "category": "device",
+    "device_type": "a429",
+    "device_channels": 2,
+    "dependencies": []
+}
