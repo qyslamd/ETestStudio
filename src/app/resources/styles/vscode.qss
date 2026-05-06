@@ -87,78 +87,8 @@ QStatusBar QLabel:hover {
     background-color: rgba(255, 255, 255, 30);
 }
 
-/* ==================== QADS Dock 样式 ==================== */
-ads--CDockManager {
-    background-color: #1E1E1E;
-}
-ads--CDockContainerWidget {
-    background-color: #1E1E1E;
-}
-ads--CDockAreaWidget {
-    background-color: #1E1E1E;
-    border: none;
-}
-ads--CDockAreaTitleBar {
-    background-color: #252526;
-    border-bottom: 1px solid #1E1E1E;
-    padding: 0px;
-}
-ads--CDockAreaTitleBar QLabel {
-    color: #858585;
-    font-size: 12px;
-    padding: 2px 6px;
-}
-ads--CDockAreaTitleBar QToolButton {
-    background-color: transparent;
-    border: none;
-    color: #858585;
-    padding: 2px;
-    margin: 0px;
-}
-ads--CDockAreaTitleBar QToolButton:hover {
-    background-color: rgba(255, 255, 255, 10%);
-    color: #FFFFFF;
-}
-ads--CDockWidgetTab {
-    background-color: #2D2D2D;
-    color: #858585;
-    border: none;
-    padding: 4px 10px;
-}
-ads--CDockWidgetTab[activeTab="true"] {
-    background-color: #1E1E1E;
-    color: #FFFFFF;
-}
-ads--CDockWidgetTab:hover {
-    color: #FFFFFF;
-}
-ads--CDockSplitter {
-    background-color: #252526;
-}
-
-/* 编辑器 Dock 内容区域 */
-ads--CDockWidget {
-    background-color: #1E1E1E;
-    border: none;
-}
-
-/* Tab 标签中的文字 */
-ads--CDockWidgetTab QLabel {
-    color: #858585;
-}
-ads--CDockWidgetTab[activeTab="true"] QLabel {
-    color: #FFFFFF;
-}
-
-/* Tab 关闭按钮 */
-#tabCloseButton {
-    background: none;
-    border: none;
-    padding: 0px;
-}
-#tabCloseButton:hover {
-    background-color: rgba(255, 255, 255, 10%);
-}
+/* ==================== QADS Dock 样式（暗色覆盖）已迁移至 ads_dark.qss ==================== */
+/* QADS的样式必须设置到CDockManager自身，否则会被QADS内置的default.css覆盖 */
 
 /* 滚动条 */
 QScrollBar:vertical {

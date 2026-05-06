@@ -1,0 +1,119 @@
+/* QADS Dark Theme Override - 必须设置到CDockManager上才能覆盖QADS内置的default.css */
+
+ads--CDockContainerWidget {
+    background: #1E1E1E;
+}
+
+ads--CDockContainerWidget > QSplitter {
+    padding: 1 0 1 0;
+}
+
+ads--CDockContainerWidget ads--CDockSplitter::handle {
+    background: #252526;
+}
+
+ads--CDockAreaWidget {
+    background: #1E1E1E;
+    border: none;
+}
+
+ads--CDockWidgetTab {
+    background: #191A1B;
+    border-color: #3C3C3C;
+    border-style: solid;
+    border-width: 0 1px 0 0;
+    padding: 0 0px;
+}
+
+ads--CDockWidgetTab[activeTab="true"] {
+    background: #121314;
+    border-top: 1px solid #3893BB;
+    border-left: 1px solid #3893BB;
+    border-right: 1px solid #3893BB;
+    border-bottom: none;
+}
+
+ads--CDockWidgetTab:hover {
+    background: #121314;
+}
+
+ads--CDockWidgetTab QLabel {
+    color: #969696;
+    font-size: 12px;
+}
+
+ads--CDockWidgetTab[activeTab="true"] QLabel {
+    color: #FFFFFF;
+}
+
+ads--CDockWidget {
+    background: #1E1E1E;
+    border-color: #1E1E1E;
+    border-style: solid;
+    border-width: 1px 0 0 0;
+}
+
+ads--CDockAreaTitleBar {
+    background: #252526;
+    border-top: 1px solid #1E1E1E;
+    border-bottom: 1px solid #1E1E1E;
+    padding: 0px;
+}
+
+ads--CDockAreaTitleBar QLabel {
+    color: #858585;
+    font-size: 12px;
+    padding: 2px 6px;
+}
+
+ads--CDockAreaTitleBar QToolButton {
+    background-color: transparent;
+    border: none;
+    color: #858585;
+    padding: 2px;
+    margin: 0px;
+}
+
+ads--CDockAreaTitleBar QToolButton:hover {
+    background-color: rgba(255, 255, 255, 10%);
+    color: #FFFFFF;
+}
+
+ads--CDockSplitter {
+    background: #252526;
+}
+
+ads--CTitleBarButton {
+    padding: 0px 0px;
+}
+
+QScrollArea#dockWidgetScrollArea {
+    padding: 0px;
+    border: none;
+}
+
+#tabCloseButton {
+    margin-top: 2px;
+    background: none;
+    border: none;
+    padding: 0px -2px;
+}
+
+#tabCloseButton:hover {
+    border: 1px solid rgba(255, 255, 255, 32);
+    background: rgba(255, 255, 255, 16);
+}
+
+#tabCloseButton:pressed {
+    background: rgba(255, 255, 255, 32);
+}
+
+#tabsMenuButton::menu-indicator {
+    image: none;
+}
+
+#dockAreaCloseButton {
+}
+
+#detachGroupButton {
+}

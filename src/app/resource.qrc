@@ -3,5 +3,6 @@
         <file>resources/icons/svg/switch_off.svg</file>
         <file>resources/icons/svg/switch_on.svg</file>
         <file>resources/styles/vscode.qss</file>
+        <file>resources/styles/ads_dark.qss</file>
     </qresource>
 </RCC>

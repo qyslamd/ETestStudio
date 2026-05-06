@@ -91,6 +91,15 @@ void MainWindow::initUi() {
   // QADS Dock Manager
   dock_manager_ = new ads::CDockManager(this);
 
+  // 覆盖QADS内置的default.css，应用暗色主题（必须设置到CDockManager自身才生效）
+  QFile adsStyleFile(":/resources/styles/ads_dark.qss");
+  if (adsStyleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    dock_manager_->setStyleSheet(
+        dock_manager_->styleSheet() +
+        QString::fromUtf8(adsStyleFile.readAll()));
+    adsStyleFile.close();
+  }
+
   // 中央编辑区（必须在添加其他dock之前建立）
   auto* centralPlaceholder = new QWidget(this);
   auto* centralDock = new ads::CDockWidget(QStringLiteral("中央编辑区"));
