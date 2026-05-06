@@ -3,8 +3,6 @@
 #include "HardwareTreeWidget.h"
 
 #include <QHBoxLayout>
-#include <QStyle>
-#include <QToolButton>
 
 namespace etest::app {
 
@@ -29,13 +27,6 @@ void SidebarWidget::setupUi() {
   title_label_ = new QLabel(this);
   title_layout->addWidget(title_label_);
   title_layout->addStretch();
-
-  // 视图操作按钮（折叠全部）
-  auto* collapse_btn = new QToolButton(this);
-  collapse_btn->setText(QStringLiteral("C"));
-  collapse_btn->setToolTip(QStringLiteral("折叠全部"));
-  collapse_btn->setFixedSize(22, 22);
-  title_layout->addWidget(collapse_btn);
 
   layout->addWidget(title_bar);
 

@@ -76,16 +76,6 @@ void FileExplorerWidget::initUi() {
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
-  // 标题栏
-  auto* titleBar = new QWidget(this);
-  auto* titleLayout = new QHBoxLayout(titleBar);
-  titleLayout->setContentsMargins(8, 4, 4, 4);
-  auto* titleLabel = new QLabel(QStringLiteral("资源管理器"), this);
-  titleLayout->addWidget(titleLabel);
-  titleLayout->addStretch();
-  titleBar->setFixedHeight(28);
-  mainLayout->addWidget(titleBar);
-
   // 文件树
   tree_view_ = new QTreeView(this);
   tree_view_->setHeaderHidden(true);
