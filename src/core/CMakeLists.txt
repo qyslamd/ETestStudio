@@ -2,6 +2,7 @@ set(TARGET_NAME core)
 
 set(SOURCES
     logger/Logger.cpp
+    logger/QtConsoleSink.cpp
     config/ConfigManager.cpp
     crashhandler/CrashHandler.cpp
     common/FileException.cpp
@@ -19,6 +20,7 @@ set(SOURCES
 
 set(HEADERS
     logger/Logger.h
+    logger/QtConsoleSink.h
     config/ConfigManager.h
     config/ConfigDefs.h
     crashhandler/CrashHandler.h

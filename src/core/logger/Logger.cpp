@@ -1,11 +1,11 @@
 #include "Logger.h"
+#include "QtConsoleSink.h"
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/wincolor_sink.h>
 #include <QDateTime>
 #include <QDir>
 #include <QStandardPaths>
-#include <cstdarg>
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 
@@ -15,6 +15,7 @@ namespace etest::core::logger {
 
 bool Logger::s_initialized = false;
 QMutex Logger::s_mutex;
+QtConsoleSink* Logger::s_qtSink = nullptr;
 std::unordered_map<std::string, spdlog::logger*> Logger::s_moduleLoggers;
 
 void Logger::init() {
@@ -66,8 +67,13 @@ void Logger::init() {
   fileSink->set_level(spdlog::level::debug);
   fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [%t] [%n] [%s:%#] %v");
 
+  // 创建Qt控制台sink，输出到界面
+  auto qtSink = std::make_shared<QtConsoleSink>();
+  qtSink->set_level(spdlog::level::debug);
+  s_qtSink = qtSink.get();
+
   // 注册默认logger，所有模块共用
-  std::vector<spdlog::sink_ptr> sinks = {consoleSink, fileSink};
+  std::vector<spdlog::sink_ptr> sinks = {consoleSink, fileSink, qtSink};
   auto defaultLogger = std::make_shared<spdlog::async_logger>(
       "default", sinks.begin(), sinks.end(), spdlog::thread_pool(),
       spdlog::async_overflow_policy::block);
@@ -129,6 +135,7 @@ void Logger::shutdown() {
   }
   LOG_INFO("LOGGER", "日志系统关闭");
   s_moduleLoggers.clear();
+  s_qtSink = nullptr;
   spdlog::shutdown();
   s_initialized = false;
 }
@@ -179,35 +186,14 @@ spdlog::logger* Logger::getOrCreateModuleLogger(const std::string& moduleName) {
   return rawPtr;
 }
 
-void Logger::log(const QString& module,
-                 LogLevel level,
-                 const char* file,
-                 int line,
-                 const char* format,
-                 ...) {
-  if (!s_initialized)
-    return;
+spdlog::logger* Logger::getLogger(const QString& module) {
+  if (!s_initialized) return nullptr;
+  QMutexLocker locker(&s_mutex);
+  return getOrCreateModuleLogger(module.toStdString());
+}
 
-  std::string moduleName = module.toStdString();
-  spdlog::logger* logger = nullptr;
-
-  {
-    QMutexLocker locker(&s_mutex);
-    logger = getOrCreateModuleLogger(moduleName);
-  }
-
-  if (!logger) {
-    logger = spdlog::default_logger().get();
-  }
-
-  va_list args;
-  va_start(args, format);
-  char buf[1024] = {0};
-  vsnprintf(buf, sizeof(buf) - 1, format, args);
-  va_end(args);
-
-  spdlog::source_loc loc(file, line, "");
-  logger->log(loc, static_cast<spdlog::level::level_enum>(level), buf);
+QtConsoleSink* Logger::qtConsoleSink() {
+  return s_qtSink;
 }
 
 }  // namespace etest::core::logger

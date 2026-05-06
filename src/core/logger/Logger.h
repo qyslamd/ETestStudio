@@ -6,6 +6,8 @@
 #include <QString>
 #include <unordered_map>
 
+class QtConsoleSink;
+
 namespace etest::core::logger {
 // 日志级别枚举
 enum LogLevel {
@@ -31,40 +33,56 @@ class Logger {
   // 设置所有模块的日志级别
   static void setAllLevel(LogLevel level);
 
-  // 内部日志输出接口，不建议直接调用，使用下面的宏
-  static void log(const QString& module,
-                  LogLevel level,
-                  const char* file,
-                  int line,
-                  const char* format,
-                  ...);
+  // 获取Qt控制台sink，用于连接UI信号
+  static QtConsoleSink* qtConsoleSink();
+
+  // 获取模块logger指针，供LOG宏使用
+  static spdlog::logger* getLogger(const QString& module);
 
  private:
   // 按需创建模块logger，线程安全（调用方需持有s_mutex）
   static spdlog::logger* getOrCreateModuleLogger(const std::string& moduleName);
   static bool s_initialized;
   static QMutex s_mutex;
+  static QtConsoleSink* s_qtSink;
   static std::unordered_map<std::string, spdlog::logger*> s_moduleLoggers;
 };
 }  // namespace etest::core::logger
 
-// 全局日志调用宏
-#define LOG_DEBUG(module, format, ...)                             \
-  Logger::log(module, LOG_LEVEL_DEBUG, __FILE__, __LINE__, format, \
-              ##__VA_ARGS__)
+// 全局日志调用宏 - 使用fmt格式化语法 ({})
+#define LOG_DEBUG(module, ...)                                           \
+  do {                                                                   \
+    auto* _l = etest::core::logger::Logger::getLogger(module);           \
+    if (_l) _l->log(spdlog::source_loc{__FILE__, __LINE__, ""},        \
+                     spdlog::level::debug, __VA_ARGS__);                 \
+  } while (0)
 
-#define LOG_INFO(module, format, ...) \
-  Logger::log(module, LOG_LEVEL_INFO, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#define LOG_INFO(module, ...)                                            \
+  do {                                                                   \
+    auto* _l = etest::core::logger::Logger::getLogger(module);           \
+    if (_l) _l->log(spdlog::source_loc{__FILE__, __LINE__, ""},        \
+                     spdlog::level::info, __VA_ARGS__);                  \
+  } while (0)
 
-#define LOG_WARN(module, format, ...) \
-  Logger::log(module, LOG_LEVEL_WARN, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#define LOG_WARN(module, ...)                                            \
+  do {                                                                   \
+    auto* _l = etest::core::logger::Logger::getLogger(module);           \
+    if (_l) _l->log(spdlog::source_loc{__FILE__, __LINE__, ""},        \
+                     spdlog::level::warn, __VA_ARGS__);                  \
+  } while (0)
 
-#define LOG_ERROR(module, format, ...)                             \
-  Logger::log(module, LOG_LEVEL_ERROR, __FILE__, __LINE__, format, \
-              ##__VA_ARGS__)
+#define LOG_ERROR(module, ...)                                           \
+  do {                                                                   \
+    auto* _l = etest::core::logger::Logger::getLogger(module);           \
+    if (_l) _l->log(spdlog::source_loc{__FILE__, __LINE__, ""},        \
+                     spdlog::level::err, __VA_ARGS__);                   \
+  } while (0)
 
-#define LOG_FATAL(module, format, ...)                             \
-  Logger::log(module, LOG_LEVEL_FATAL, __FILE__, __LINE__, format, \
-              ##__VA_ARGS__)
+#define LOG_FATAL(module, ...)                                           \
+  do {                                                                   \
+    auto* _l = etest::core::logger::Logger::getLogger(module);           \
+    if (_l) _l->log(spdlog::source_loc{__FILE__, __LINE__, ""},        \
+                     spdlog::level::critical, __VA_ARGS__);              \
+  } while (0)
 
 #endif  // LOGGER_H

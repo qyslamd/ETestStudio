@@ -105,6 +105,7 @@ bool ProjectManager::createProject(const QString& name,
 }
 
 bool ProjectManager::openProject(const QString& filePath) {
+  LOG_INFO("PROJECT", "尝试打开项目文件：{}", filePath.toStdString());
   if (isProjectOpen()) {
     LOG_ERROR("PROJECT", "打开新项目失败：请先关闭当前项目");
     return false;

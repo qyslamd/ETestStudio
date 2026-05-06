@@ -14,13 +14,16 @@ class OutputPanel : public QWidget {
  public:
   explicit OutputPanel(QWidget* parent = nullptr);
 
-  void appendLog(const QString& text);
+  void appendLog(int level, const QString& text);
   void clearLog();
 
  private:
   void setupUi();
+  QString levelColor(int level) const;
+  QString levelName(int level) const;
 
   QTextEdit* text_edit_;
+  static constexpr int kMaxLines = 5000;
 };
 
 }  // namespace app

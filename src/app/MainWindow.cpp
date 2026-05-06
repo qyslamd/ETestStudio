@@ -30,6 +30,7 @@
 #include "config/ConfigManager.h"
 #include "dialogs/NewProjectDialog.h"
 #include "logger/Logger.h"
+#include "logger/QtConsoleSink.h"
 #include "plugin/PluginManager.h"
 #include "project/ProjectManager.h"
 
@@ -363,6 +364,13 @@ void MainWindow::initSignals() {
           hardwareTree, &HardwareTreeWidget::refreshTree);
   connect(&pluginMgr, &etest::core::plugin::PluginManager::pluginUnloaded,
           hardwareTree, &HardwareTreeWidget::refreshTree);
+
+  // 日志输出到界面
+  auto* qtSink = etest::core::logger::Logger::qtConsoleSink();
+  if (qtSink) {
+    connect(qtSink, &QtConsoleSink::logMessage, output_panel_,
+            &OutputPanel::appendLog);
+  }
 }
 
 void MainWindow::createMenuBar() {
