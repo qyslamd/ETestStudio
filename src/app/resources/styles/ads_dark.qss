@@ -22,7 +22,7 @@ ads--CDockWidgetTab {
     border-color: #3C3C3C;
     border-style: solid;
     border-width: 0 1px 0 0;
-    padding: 0 0px;
+    padding: 0 4px;
 }
 
 ads--CDockWidgetTab[activeTab="true"] {
@@ -40,6 +40,7 @@ ads--CDockWidgetTab:hover {
 ads--CDockWidgetTab QLabel {
     color: #969696;
     font-size: 12px;
+    min-width: 60px;
 }
 
 ads--CDockWidgetTab[activeTab="true"] QLabel {
@@ -97,6 +98,8 @@ QScrollArea#dockWidgetScrollArea {
     background: none;
     border: none;
     padding: 0px -2px;
+    qproperty-icon: url(:/resources/icons/svg/close_dark.svg);
+    qproperty-iconSize: 16px;
 }
 
 #tabCloseButton:hover {
@@ -112,7 +115,14 @@ QScrollArea#dockWidgetScrollArea {
     image: none;
 }
 
+#tabsMenuButton {
+    qproperty-icon: url(:/resources/icons/svg/drop_down_arrow_dark.svg);
+    qproperty-iconSize: 16px;
+}
+
 #dockAreaCloseButton {
+    qproperty-icon: url(:/resources/icons/svg/close_dark.svg);
+    qproperty-iconSize: 16px;
 }
 
 #detachGroupButton {
