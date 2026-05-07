@@ -41,9 +41,19 @@
                 {
                     "name": "QT_PLUGIN_PATH",
                     "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/plugins"
+                },
+                // 强制调试进程用UTF-8
+                {
+                    "name": "LC_ALL",
+                    "value": "zh_CN.UTF-8"
+                },
+                {
+                    "name": "CHCP",
+                    "value": "65001"
                 }
             ],
-            "console": "externalTerminal",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         },
         {
