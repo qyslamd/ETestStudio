@@ -262,7 +262,7 @@ void MainWindow::initSignals() {
           QsciScintilla* sci_editor = editor->editor();
           hasSelection = sci_editor->hasSelectedText();
 
-          statusBar()->showMessage(editor->filePath());
+          status_message_label_->setText(editor->filePath());
 
           // 更新状态栏光标位置
           int line, col;
@@ -300,7 +300,7 @@ void MainWindow::initSignals() {
           edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
           edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
         } else {
-          statusBar()->showMessage(QStringLiteral("就绪"));
+          status_message_label_->setText(QStringLiteral("就绪"));
           status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
           status_language_label_->setText(QStringLiteral("纯文本"));
           status_eol_label_->setText(QStringLiteral("CRLF"));
@@ -430,7 +430,7 @@ void MainWindow::createMenuBar() {
 
   fileMenu->addSeparator();
 
-  save_action_ = fileMenu->addAction(QStringLiteral("保存(&S)"), this,
+  save_action_ = fileMenu->addAction(QStringLiteral("保存"), this,
                                      &MainWindow::onSaveFile);
   save_action_->setShortcut(QKeySequence::Save);
   save_action_->setShortcutContext(
@@ -441,14 +441,14 @@ void MainWindow::createMenuBar() {
                                         &MainWindow::onSaveFileAs);
   save_as_action_->setEnabled(false);
 
-  save_all_action_ = fileMenu->addAction(QStringLiteral("保存所有(&L)"), this,
+  save_all_action_ = fileMenu->addAction(QStringLiteral("保存所有"), this,
                                          &MainWindow::onSaveAllFiles);
   save_all_action_->setShortcut(QStringLiteral("Ctrl+Shift+S"));
   save_all_action_->setEnabled(false);
 
   fileMenu->addSeparator();
 
-  close_file_action_ = fileMenu->addAction(QStringLiteral("关闭文件(&W)"), this,
+  close_file_action_ = fileMenu->addAction(QStringLiteral("关闭文件"), this,
                                            &MainWindow::onCloseCurrentFile);
   close_file_action_->setShortcut(QKeySequence::Close);
   close_file_action_->setEnabled(false);
@@ -504,6 +504,10 @@ void MainWindow::createStatusBar() {
   // 状态栏样式已由全局QSS覆盖，无需内联设置
 
   // 左侧区域
+  status_message_label_ = new QLabel(this);
+  status_message_label_->setText(QStringLiteral("就绪"));
+  statusBar()->addWidget(status_message_label_);
+
   status_project_label_ = new QLabel(this);
   status_project_label_->setText(QStringLiteral("无打开项目"));
   statusBar()->addWidget(status_project_label_);
@@ -529,7 +533,7 @@ void MainWindow::createStatusBar() {
   status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
   statusBar()->addPermanentWidget(status_cursor_label_);
 
-  statusBar()->showMessage(QStringLiteral("就绪"));
+  statusBar()->clearMessage();
 }
 
 void MainWindow::createToolBar() {
@@ -740,14 +744,14 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   }
 
   updateWindowTitle();
-  statusBar()->showMessage(QStringLiteral("项目已打开：%1").arg(projectPath));
+  status_message_label_->setText(QStringLiteral("项目已打开：%1").arg(projectPath));
 }
 
 void MainWindow::onProjectClosed() {
   close_project_action_->setEnabled(false);
   status_project_label_->setText(QStringLiteral("无打开项目"));
   updateWindowTitle();
-  statusBar()->showMessage(QStringLiteral("项目已关闭"));
+  status_message_label_->setText(QStringLiteral("项目已关闭"));
 }
 
 void MainWindow::updateWindowTitle() {

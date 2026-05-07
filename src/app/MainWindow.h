@@ -103,6 +103,7 @@ class MainWindow : public QMainWindow {
   QAction* close_all_files_action_ = nullptr;
 
   // 状态栏标签
+  QLabel* status_message_label_ = nullptr;
   QLabel* status_project_label_ = nullptr;
   QLabel* status_errors_label_ = nullptr;
   QLabel* status_cursor_label_ = nullptr;
