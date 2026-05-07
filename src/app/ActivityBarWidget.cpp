@@ -62,10 +62,18 @@ void ActivityBarWidget::setupUi() {
   layout_->addLayout(top_layout_);
   layout_->addStretch();
 
-  // 底部按钮区域
+  // 底部按钮区域（设置按钮）
   bottom_layout_ = new QVBoxLayout();
   bottom_layout_->setSpacing(0);
   bottom_layout_->setContentsMargins(0, 0, 0, 0);
+
+  buttons_.append(createButton(QStringLiteral("设置"),
+                               ":/resources/icons/svg/settings_dark.svg",
+                               ":/resources/icons/svg/settings_light.svg"));
+  int settingsIndex = buttons_.size() - 1;
+  bottom_layout_->addWidget(buttons_[settingsIndex]);
+  connect(buttons_[settingsIndex], &QPushButton::clicked, this,
+          [this]() { emit settingsTriggered(); });
 
   layout_->addLayout(bottom_layout_);
 

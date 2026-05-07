@@ -28,6 +28,7 @@ build-*/
 build/
 ninja-debug/
 install/
+temp/
 
 # 一些测试生成的执行脚本
 run_app.bat

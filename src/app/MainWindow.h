@@ -15,6 +15,7 @@ class ActivityBarWidget;
 class SidebarWidget;
 class OutputPanel;
 class ProblemsPanel;
+class SettingsWidget;
 class TerminalPanel;
 class PanelContainerWidget;
 class EditorManager;
@@ -88,6 +89,9 @@ class MainWindow : public QMainWindow {
   OutputPanel* output_panel_;
   ProblemsPanel* problems_panel_;
   TerminalPanel* terminal_panel_;
+
+  // 设置对话框（非模态，只创建一次）
+  SettingsWidget* settings_dialog_ = nullptr;
 
   // 菜单和状态
   QMenu* view_menu_ = nullptr;

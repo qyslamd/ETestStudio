@@ -25,6 +25,8 @@ add_executable(${TARGET_NAME}
     ProblemsPanel.cpp
     TerminalPanel.h
     TerminalPanel.cpp
+    SettingsWidget.h
+    SettingsWidget.cpp
     dialogs/NewProjectDialog.h
     dialogs/NewProjectDialog.cpp
     resource.qrc

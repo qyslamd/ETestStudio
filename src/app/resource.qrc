@@ -20,6 +20,8 @@
         <file>resources/icons/svg/git_light.svg</file>
         <file>resources/icons/svg/extensions_dark.svg</file>
         <file>resources/icons/svg/extensions_light.svg</file>
+        <file>resources/icons/svg/settings_dark.svg</file>
+        <file>resources/icons/svg/settings_light.svg</file>
         <file>resources/icons/svg/maximize_dark.svg</file>
         <file>resources/icons/svg/restore_dark.svg</file>
         <file>resources/fonts/fontawesome-webfont.ttf</file>

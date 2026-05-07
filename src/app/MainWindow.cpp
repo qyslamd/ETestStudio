@@ -23,6 +23,7 @@
 #include "OutputPanel.h"
 #include "PanelContainerWidget.h"
 #include "ProblemsPanel.h"
+#include "SettingsWidget.h"
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
 
@@ -436,6 +437,16 @@ void MainWindow::initSignals() {
     connect(qtSink, &QtConsoleSink::logMessage, output_panel_,
             &OutputPanel::appendLog);
   }
+
+  // 设置对话框
+  connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
+    if (!settings_dialog_) {
+      settings_dialog_ = new SettingsWidget(this);
+    }
+    settings_dialog_->show();
+    settings_dialog_->raise();
+    settings_dialog_->activateWindow();
+  });
 }
 
 void MainWindow::createMenuBar() {
