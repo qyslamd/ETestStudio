@@ -499,3 +499,8 @@ TerminalPanel QPlainTextEdit {
     selection-background-color: #264F78;
     selection-color: #FFFFFF;
 }
+
+/* ==================== 中央编辑区占位 ==================== */
+QWidget#centralPlaceholder {
+    background-color: #1E1E1E;
+}

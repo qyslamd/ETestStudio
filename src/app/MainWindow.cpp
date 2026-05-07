@@ -104,6 +104,7 @@ void MainWindow::initUi() {
 
   // 中央编辑区（必须在添加其他dock之前建立）
   auto* centralPlaceholder = new QWidget(this);
+  centralPlaceholder->setObjectName("centralPlaceholder");
   auto* centralDock = new ads::CDockWidget(QStringLiteral("中央编辑区"));
   centralDock->setObjectName("CentralDock");
   centralDock->setWidget(centralPlaceholder);
