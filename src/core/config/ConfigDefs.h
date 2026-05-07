@@ -80,6 +80,20 @@ constexpr bool CONFIG_EDITOR_DEFAULT_AUTO_INDENT = true;
 constexpr int CONFIG_EDITOR_DEFAULT_TAB_WIDTH = 4;
 constexpr bool CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB = true;
 
+// 终端配置组
+const QString CONFIG_TERMINAL_SHELL = "terminal/shell";
+const QString CONFIG_TERMINAL_FONT_SIZE = "terminal/font_size";
+const QString CONFIG_TERMINAL_SCROLLBACK = "terminal/scrollback";
+
+// 终端默认值
+#ifdef Q_OS_WIN
+constexpr const char* CONFIG_TERMINAL_DEFAULT_SHELL = "cmd.exe";
+#else
+constexpr const char* CONFIG_TERMINAL_DEFAULT_SHELL = "/bin/bash";
+#endif
+constexpr int CONFIG_TERMINAL_DEFAULT_FONT_SIZE = 11;
+constexpr int CONFIG_TERMINAL_DEFAULT_SCROLLBACK = 10000;
+
 }  // namespace config
 }  // namespace core
 }  // namespace etest

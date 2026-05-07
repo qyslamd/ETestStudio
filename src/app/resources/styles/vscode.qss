@@ -488,3 +488,14 @@ QLabel#previewLabel {
 QLabel#errorLabel {
     color: red;
 }
+
+/* ==================== TerminalPanel ==================== */
+TerminalPanel QPlainTextEdit {
+    background-color: #1E1E1E;
+    color: #CCCCCC;
+    border: none;
+    font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
+    font-size: 11px;
+    selection-background-color: #264F78;
+    selection-color: #FFFFFF;
+}

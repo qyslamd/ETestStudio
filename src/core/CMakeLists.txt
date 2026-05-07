@@ -16,6 +16,8 @@ set(SOURCES
     plugin/PluginManager.cpp
     project/ProjectInfo.cpp
     project/ProjectManager.cpp
+    terminal/PtyProcess.cpp
+    terminal/VtParser.cpp
 )
 
 set(HEADERS
@@ -43,11 +45,18 @@ set(HEADERS
     plugin/PluginManager.h
     project/ProjectInfo.h
     project/ProjectManager.h
+    terminal/PtyProcess.h
+    terminal/VtParser.h
 )
 
 if(WIN32)
     list(APPEND SOURCES crashhandler/WindowsCrashHandler.cpp)
     list(APPEND HEADERS crashhandler/WindowsCrashHandler.h)
+    list(APPEND SOURCES terminal/ConPtyProcess.cpp)
+    list(APPEND HEADERS terminal/ConPtyProcess.h)
+else()
+    list(APPEND SOURCES terminal/PosixPtyProcess.cpp)
+    list(APPEND HEADERS terminal/PosixPtyProcess.h)
 endif()
 
 # ============================
@@ -68,6 +77,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin
     ${CMAKE_CURRENT_SOURCE_DIR}/project
+    ${CMAKE_CURRENT_SOURCE_DIR}/terminal
 )
 
 target_link_libraries(${TARGET_NAME} PUBLIC
