@@ -144,10 +144,7 @@ void MainWindow::initUi() {
   problems_panel_ = new ProblemsPanel(this);
   terminal_panel_ = new TerminalPanel(this);
 
-  // 延迟启动终端shell，等待widget布局完成
-  QTimer::singleShot(0, this, [this]() {
-    if (terminal_panel_) terminal_panel_->startShell();
-  });
+  // Terminal shell auto-starts via TerminalPanel::showEvent()
 
   auto* panelContainer = new PanelContainerWidget(this);
   panelContainer->addPanel(QStringLiteral("输出"), output_panel_);

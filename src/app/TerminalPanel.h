@@ -91,6 +91,7 @@ class TerminalPanel : public QWidget {
   QVector<Line> scrollback_;  // lines scrolled off the top
   static const int kMaxScrollback = 10000;
   bool shellExited_ = false;
+  bool shell_started_ = false;
   int lastExitCode_ = 0;
   QTimer* resize_timer_ = nullptr;
 };

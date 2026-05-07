@@ -90,9 +90,34 @@ void TerminalPanel::initSignals() {
       state_.rows = rows;
       state_.scrollRegionBottom = rows - 1;
 
+      // Save truncated lines to scrollback before vertical shrink
+      int oldRows = screen_.size();
+      if (rows < oldRows) {
+        for (int r = rows; r < oldRows; ++r) {
+          bool hasContent = false;
+          for (int c = 0; c < screen_[r].length(); ++c) {
+            if (screen_[r].cells[c].ch != QChar::Space) {
+              hasContent = true;
+              break;
+            }
+          }
+          if (hasContent) {
+            scrollback_.append(screen_[r]);
+            while (scrollback_.size() > kMaxScrollback) {
+              scrollback_.removeFirst();
+            }
+          }
+        }
+      }
+
       // Resize screen buffer
       screen_.resize(rows);
       for (auto& line : screen_) {
+        line.resize(cols);
+      }
+
+      // Resize scrollback lines to match new width
+      for (auto& line : scrollback_) {
         line.resize(cols);
       }
 
@@ -121,6 +146,7 @@ void TerminalPanel::startShell(const QString& command) {
   state_.currentBold = false;
   state_.dirty = false;
   scrollback_.clear();
+  display_->clear();
   shellExited_ = false;
   lastExitCode_ = 0;
 
@@ -709,9 +735,15 @@ bool TerminalPanel::eventFilter(QObject* obj, QEvent* event) {
 
 void TerminalPanel::showEvent(QShowEvent* event) {
   QWidget::showEvent(event);
-  // Set focus to display when terminal tab becomes visible
   if (display_) {
     display_->setFocus();
+  }
+
+  // Auto-start shell on first show, deferred to next event loop iteration
+  // so that the widget layout (and viewport size) is fully settled
+  if (!shell_started_) {
+    shell_started_ = true;
+    QTimer::singleShot(0, this, [this]() { startShell(); });
   }
 }
 
