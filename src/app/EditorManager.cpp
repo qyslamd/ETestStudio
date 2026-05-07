@@ -101,6 +101,18 @@ void EditorManager::openFile(const QString& filePath) {
   emit fileOpened(filePath);
 }
 
+void EditorManager::openFileAtLine(const QString& filePath, int line) {
+  openFile(filePath);
+
+  auto it = editors_.find(filePath);
+  if (it != editors_.end()) {
+    auto* editor = it.value();
+    int targetLine = qMax(0, line - 1);
+    editor->editor()->setCursorPosition(targetLine, 0);
+    editor->editor()->ensureLineVisible(targetLine);
+  }
+}
+
 bool EditorManager::closeFile(const QString& filePath) {
   auto it = editors_.find(filePath);
   if (it == editors_.end())

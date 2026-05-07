@@ -1,6 +1,7 @@
 #include "SidebarWidget.h"
 #include "FileExplorerWidget.h"
 #include "HardwareTreeWidget.h"
+#include "SearchWidget.h"
 
 #include <QHBoxLayout>
 #include <QPalette>
@@ -48,14 +49,9 @@ void SidebarWidget::setupUi() {
   stack_->addWidget(file_explorer_);
   view_titles_ << QStringLiteral("资源管理器");
 
-  // 页1：搜索占位
-  auto* searchPage = new QWidget(this);
-  auto* searchLayout = new QVBoxLayout(searchPage);
-  searchLayout->setContentsMargins(0, 0, 0, 0);
-  auto* searchLabel = new QLabel(QStringLiteral("全局搜索\n（待实现）"), this);
-  searchLabel->setAlignment(Qt::AlignCenter);
-  searchLayout->addWidget(searchLabel);
-  stack_->addWidget(searchPage);
+  // 页1：全局搜索
+  search_widget_ = new SearchWidget(this);
+  stack_->addWidget(search_widget_);
   view_titles_ << QStringLiteral("搜索");
 
   // 页2：源代码管理占位
@@ -115,6 +111,10 @@ FileExplorerWidget* SidebarWidget::fileExplorer() const {
 
 HardwareTreeWidget* SidebarWidget::hardwareTree() const {
   return hardware_tree_;
+}
+
+SearchWidget* SidebarWidget::searchWidget() const {
+  return search_widget_;
 }
 
 }  // namespace etest::app

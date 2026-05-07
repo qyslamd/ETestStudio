@@ -11,6 +11,7 @@ class QToolButton;
 namespace etest::app {
 class FileExplorerWidget;
 class HardwareTreeWidget;
+class SearchWidget;
 
 class SidebarWidget : public QWidget {
   Q_OBJECT
@@ -22,6 +23,7 @@ class SidebarWidget : public QWidget {
 
   FileExplorerWidget* fileExplorer() const;
   HardwareTreeWidget* hardwareTree() const;
+  SearchWidget* searchWidget() const;
 
  private:
   void setupUi();
@@ -30,6 +32,7 @@ class SidebarWidget : public QWidget {
   QLabel* title_label_;
   FileExplorerWidget* file_explorer_ = nullptr;
   HardwareTreeWidget* hardware_tree_ = nullptr;
+  SearchWidget* search_widget_ = nullptr;
 
   // 视图名称列表
   QStringList view_titles_;

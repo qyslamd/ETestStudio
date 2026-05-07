@@ -18,6 +18,7 @@ class EditorManager : public QObject {
                          QObject* parent = nullptr);
 
   void openFile(const QString& filePath);
+  void openFileAtLine(const QString& filePath, int line);
   bool closeFile(const QString& filePath);
   bool closeAllFiles();
   bool saveAllFiles();

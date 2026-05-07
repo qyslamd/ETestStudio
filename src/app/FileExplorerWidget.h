@@ -11,6 +11,7 @@
 class QMenu;
 
 namespace etest::app {
+class FileTypeIconProvider;
 
 class FileExplorerWidget : public QWidget {
   Q_OBJECT
@@ -41,6 +42,7 @@ class FileExplorerWidget : public QWidget {
 
   QTreeView* tree_view_ = nullptr;
   QFileSystemModel* model_ = nullptr;
+  FileTypeIconProvider* icon_provider_ = nullptr;
   QString root_path_;
 
   QModelIndex context_index_;

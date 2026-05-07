@@ -18,6 +18,7 @@
 
 #include "logger/Logger.h"
 #include "utils/FileUtil.h"
+#include "FileTypeIconProvider.h"
 
 using namespace etest::core::utils;
 using namespace etest::core::logger;
@@ -41,6 +42,10 @@ void FileExplorerWidget::setRootPath(const QString& path) {
     model_->setReadOnly(false);
     model_->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
     model_->setNameFilterDisables(false);
+    if (!icon_provider_) {
+      icon_provider_ = new FileTypeIconProvider();
+    }
+    model_->setIconProvider(icon_provider_);
     tree_view_->setModel(model_);
     for (int i = 1; i < model_->columnCount(); ++i) {
       tree_view_->hideColumn(i);

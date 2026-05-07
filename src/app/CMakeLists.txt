@@ -11,6 +11,8 @@ add_executable(${TARGET_NAME}
     SidebarWidget.cpp
     FileExplorerWidget.h
     FileExplorerWidget.cpp
+    FileTypeIconProvider.h
+    FileTypeIconProvider.cpp
     HardwareTreeWidget.h
     HardwareTreeWidget.cpp
     EditorWidget.h
@@ -27,6 +29,8 @@ add_executable(${TARGET_NAME}
     TerminalPanel.cpp
     SettingsWidget.h
     SettingsWidget.cpp
+    SearchWidget.h
+    SearchWidget.cpp
     dialogs/NewProjectDialog.h
     dialogs/NewProjectDialog.cpp
     resource.qrc

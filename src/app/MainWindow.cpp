@@ -23,6 +23,7 @@
 #include "OutputPanel.h"
 #include "PanelContainerWidget.h"
 #include "ProblemsPanel.h"
+#include "SearchWidget.h"
 #include "SettingsWidget.h"
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
@@ -271,6 +272,19 @@ void MainWindow::initSignals() {
   connect(fileExplorer, &FileExplorerWidget::fileRenamed, editor_manager_,
           &EditorManager::onFileRenamed);
 
+  // 搜索组件：项目打开/关闭时设置搜索根目录
+  auto* searchWidget = sidebar_->searchWidget();
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+          searchWidget, [searchWidget](const QString& projectPath) {
+            searchWidget->setSearchRoot(projectPath);
+          });
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+          searchWidget, [searchWidget]() { searchWidget->setSearchRoot({}); });
+
+  // 搜索组件：点击结果打开文件并跳转到行
+  connect(searchWidget, &SearchWidget::fileOpenRequested, editor_manager_,
+          &EditorManager::openFileAtLine);
+
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
   connect(
       editor_manager_, &EditorManager::currentEditorChanged, this,
@@ -420,6 +434,27 @@ void MainWindow::initSignals() {
       if (activityDock && activityDock->dockAreaWidget()) {
         activityDock->dockAreaWidget()->titleBar()->hide();
       }
+    }
+  });
+
+  // Ctrl+Shift+F 全局搜索
+  auto* globalSearchShortcut = new QShortcut(
+      QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F), this);
+  connect(globalSearchShortcut, &QShortcut::activated, this, [this]() {
+    sidebar_->switchPage(1);
+    activity_bar_->setActiveIndex(1);
+    if (sidebar_dock_ && sidebar_dock_->isClosed()) {
+      sidebar_dock_->toggleView(true);
+      if (sidebar_dock_->dockAreaWidget()) {
+        sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+      }
+      auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
+      if (activityDock && activityDock->dockAreaWidget()) {
+        activityDock->dockAreaWidget()->titleBar()->hide();
+      }
+    }
+    if (auto* sw = sidebar_->searchWidget()) {
+      sw->setFocusOnSearchInput();
     }
   });
 

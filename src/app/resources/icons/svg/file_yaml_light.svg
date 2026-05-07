@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="#FFFFFF"/>
+  <path d="M14 2v6h6" fill="#E8E8E8"/>
+  <rect x="4" y="13" width="16" height="9" rx="2" fill="#CB171E"/>
+  <text x="12" y="20" fill="#FFFFFF" font-size="7" font-weight="bold" text-anchor="middle" font-family="Arial,sans-serif">YML</text>
+</svg>
