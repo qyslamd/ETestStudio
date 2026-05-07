@@ -73,6 +73,7 @@ class MainWindow : public QMainWindow {
   void onGoToLine();
 
   // QADS
+  static void hideDockTitleBarButtons(ads::CDockAreaWidget* area);
   ads::CDockManager* dock_manager_;
 
   // 活动栏 + 侧边栏

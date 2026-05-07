@@ -12,6 +12,7 @@
 #include <QMessageBox>
 #include <QShortcut>
 #include <QStatusBar>
+#include <QToolButton>
 
 
 #include "ActivityBarWidget.h"
@@ -155,10 +156,32 @@ void MainWindow::initUi() {
   panelDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   panelDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
   dock_manager_->addDockWidget(ads::BottomDockWidgetArea, panelDock);
+  // 隐藏面板标题栏右侧的三个按钮（PanelContainerWidget内部已有tab和关闭按钮）
+  hideDockTitleBarButtons(panelDock->dockAreaWidget());
 
   // 面板容器信号
   connect(panelContainer, &PanelContainerWidget::panelClosed, this,
           [panelDock]() { panelDock->closeDockWidget(); });
+  connect(panelContainer, &PanelContainerWidget::panelMaximized, this, [this]() {
+    if (sidebar_dock_) sidebar_dock_->closeDockWidget();
+    auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
+    if (activityDock) activityDock->closeDockWidget();
+  });
+  connect(panelContainer, &PanelContainerWidget::panelRestored, this, [this]() {
+    if (sidebar_dock_) {
+      sidebar_dock_->toggleView(true);
+      if (sidebar_dock_->dockAreaWidget()) {
+        sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+      }
+    }
+    auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
+    if (activityDock) {
+      activityDock->toggleView(true);
+      if (activityDock->dockAreaWidget()) {
+        activityDock->dockAreaWidget()->titleBar()->hide();
+      }
+    }
+  });
 
   // ==================== 右侧：辅助侧边栏（默认隐藏） ====================
   auto* auxPlaceholder = new QLabel(QStringLiteral("辅助侧边栏"), this);
@@ -170,6 +193,7 @@ void MainWindow::initUi() {
   auxDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   auxDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
   dock_manager_->addDockWidget(ads::RightDockWidgetArea, auxDock);
+  hideDockTitleBarButtons(auxDock->dockAreaWidget());
   // auxDock->closeDockWidget();  // 默认隐藏
 
   // 恢复窗口状态
@@ -479,6 +503,8 @@ void MainWindow::createMenuBar() {
     if (panelDock) {
       if (checked) {
         panelDock->toggleView(true);
+        // toggleView会重建标题栏，需要重新隐藏按钮
+        hideDockTitleBarButtons(panelDock->dockAreaWidget());
       } else {
         panelDock->closeDockWidget();
       }
@@ -493,6 +519,8 @@ void MainWindow::createMenuBar() {
     auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
     if (auxDock) {
       auxDock->toggleView(checked);
+      // toggleView会重建标题栏，需要重新隐藏按钮
+      hideDockTitleBarButtons(auxDock->dockAreaWidget());
     }
   });
 
@@ -1040,10 +1068,18 @@ void MainWindow::restoreWindowState() {
   if (sidebar_dock_ && sidebar_dock_->dockAreaWidget()) {
     sidebar_dock_->dockAreaWidget()->titleBar()->hide();
   }
+  auto* panelDock = dock_manager_->findDockWidget("PanelDock");
+  if (panelDock && panelDock->dockAreaWidget()) {
+    hideDockTitleBarButtons(panelDock->dockAreaWidget());
+  }
   auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
   if (activityDock && activityDock->dockAreaWidget()) {
     activityDock->dockAreaWidget()->titleBar()->hide();
   };
+  auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
+  if (auxDock && auxDock->dockAreaWidget()) {
+    hideDockTitleBarButtons(auxDock->dockAreaWidget());
+  }
 
   // 恢复工具栏可见性
   if (file_toolbar_ && edit_toolbar_) {
@@ -1051,6 +1087,19 @@ void MainWindow::restoreWindowState() {
         cfg.get<bool>(CONFIG_TOOLBAR_VISIBLE, CONFIG_TOOLBAR_DEFAULT_VISIBLE);
     file_toolbar_->setVisible(toolbarVisible);
     edit_toolbar_->setVisible(toolbarVisible);
+  }
+}
+
+void MainWindow::hideDockTitleBarButtons(ads::CDockAreaWidget* area) {
+  if (!area) return;
+  auto* titleBar = area->titleBar();
+  if (!titleBar) return;
+  for (auto* btn : titleBar->findChildren<QToolButton*>()) {
+    auto name = btn->objectName();
+    if (name == "tabsMenuButton" || name == "detachGroupButton" ||
+        name == "dockAreaCloseButton") {
+      btn->hide();
+    }
   }
 }
 
