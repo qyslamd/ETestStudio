@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QFont>
 
 #include "MainWindow.h"
 #include "config/ConfigManager.h"
@@ -12,6 +13,7 @@ using namespace etest::app;
 
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
+  app.setFont(QFont("Microsoft YaHei", 10));
 
   // 初始化全局配置管理（优先于日志初始化，日志需要读取配置）
   ConfigManager::instance();
