@@ -3,5 +3,17 @@
     "clang-format.executable": "D:\\Qt\\Tools\\QtCreator\\bin\\clang\\bin\\clang-format.exe",
     "clang-format.fallbackStyle": "Chromium",
     "editor.fontSize": 14,
-    "editor.fontFamily": "Cascadia Mono PL"
+    "editor.fontFamily": "Cascadia Mono PL",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "terminal.integrated.profiles.windows": {
+        "Command Prompt": {
+            "path": "C:\\Windows\\System32\\cmd.exe",
+            "args": [
+                "/K",
+                "chcp 65001 >nul"
+            ]
+        }
+    },
+    "cmake.outputLogEncoding": "utf8",
+    "terminal.integrated.fontFamily": "Cascadia Code, Microsoft YaHei, monospace"
 }
