@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <QCoreApplication>
-#include <QPluginLoader>
+#include <QElapsedTimer>
 #include <QThread>
 #include "IADevicePlugin.h"
 #include "IDevicePlugin.h"
@@ -9,10 +9,19 @@
 
 using namespace etest::core::plugin;
 
+// 处理 Qt 事件循环并等待指定毫秒，确保 QTimer 等异步事件能触发
+static void processEventsFor(int ms) {
+  QElapsedTimer t;
+  t.start();
+  while (t.elapsed() < ms) {
+    QCoreApplication::processEvents();
+    QThread::msleep(5);
+  }
+}
+
 class ADDevicePluginTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    // 测试可执行文件在bin/tests/下，插件在bin/plugins/下
     QString pluginPath = QCoreApplication::applicationDirPath() + "/../plugins";
     auto& pm = PluginManager::instance();
     pm.addSearchPath(pluginPath);
@@ -74,77 +83,9 @@ TEST_F(ADDevicePluginTest, ReadChannelWithoutDevice) {
   IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
   ASSERT_NE(ad, nullptr);
 
-  // 未打开设备时读取应返回0
   EXPECT_DOUBLE_EQ(ad->readChannel(0), 0.0);
-
-  // 无效通道
   EXPECT_DOUBLE_EQ(ad->readChannel(-1), 0.0);
   EXPECT_DOUBLE_EQ(ad->readChannel(8), 0.0);
-}
-
-TEST_F(ADDevicePluginTest, ReadChannelBeforeAcquisition) {
-  auto& pm = PluginManager::instance();
-  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
-  ASSERT_NE(ad, nullptr);
-
-  ad->openDevice();
-  // 未启动采集时，缓冲区为0
-  EXPECT_DOUBLE_EQ(ad->readChannel(0), 0.0);
-}
-
-TEST_F(ADDevicePluginTest, ReadChannelDuringAcquisition) {
-  auto& pm = PluginManager::instance();
-  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
-  ASSERT_NE(ad, nullptr);
-
-  ad->openDevice();
-  ad->startAcquisition();
-
-  // 等待几个采样周期（默认1kHz，等50ms足够）
-  QThread::msleep(50);
-
-  double value = ad->readChannel(0);
-  // 采集运行后应该有数据（正弦波大概率非零）
-  // 但不强制非零，因为可能恰好在零点
-  EXPECT_NO_THROW(ad->readChannel(0));
-
-  ad->stopAcquisition();
-  ad->closeDevice();
-}
-
-TEST_F(ADDevicePluginTest, ReadAllChannels) {
-  auto& pm = PluginManager::instance();
-  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
-  ASSERT_NE(ad, nullptr);
-
-  ad->openDevice();
-  QVector<double> values = ad->readAllChannels();
-  EXPECT_EQ(values.size(), 8);
-}
-
-TEST_F(ADDevicePluginTest, AcquisitionControl) {
-  auto& pm = PluginManager::instance();
-  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
-  ASSERT_NE(ad, nullptr);
-
-  // 未打开设备不能开始采集
-  EXPECT_FALSE(ad->isAcquiring());
-  EXPECT_FALSE(ad->startAcquisition());
-
-  ad->openDevice();
-
-  // 开始采集
-  EXPECT_TRUE(ad->startAcquisition());
-  EXPECT_TRUE(ad->isAcquiring());
-
-  // 重复开始不报错
-  EXPECT_TRUE(ad->startAcquisition());
-
-  // 停止采集
-  ad->stopAcquisition();
-  EXPECT_FALSE(ad->isAcquiring());
-
-  ad->closeDevice();
 }
 
 TEST_F(ADDevicePluginTest, SampleRate) {
@@ -152,19 +93,31 @@ TEST_F(ADDevicePluginTest, SampleRate) {
   IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
   ASSERT_NE(ad, nullptr);
 
-  // 默认采样率1000Hz
   EXPECT_DOUBLE_EQ(ad->sampleRate(), 1000.0);
 
-  // 设置采样率
   EXPECT_TRUE(ad->setSampleRate(500.0));
   EXPECT_DOUBLE_EQ(ad->sampleRate(), 500.0);
 
-  // 无效采样率
   EXPECT_FALSE(ad->setSampleRate(0.0));
   EXPECT_FALSE(ad->setSampleRate(-100.0));
 
-  // 采样率不变
   EXPECT_DOUBLE_EQ(ad->sampleRate(), 500.0);
+}
+
+TEST_F(ADDevicePluginTest, SampleLength) {
+  auto& pm = PluginManager::instance();
+  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
+  ASSERT_NE(ad, nullptr);
+
+  EXPECT_EQ(ad->sampleLength(), 1024);
+
+  EXPECT_TRUE(ad->setSampleLength(2048));
+  EXPECT_EQ(ad->sampleLength(), 2048);
+
+  EXPECT_FALSE(ad->setSampleLength(0));
+  EXPECT_FALSE(ad->setSampleLength(-1));
+
+  EXPECT_EQ(ad->sampleLength(), 2048);
 }
 
 TEST_F(ADDevicePluginTest, ChannelConfig) {
@@ -176,28 +129,193 @@ TEST_F(ADDevicePluginTest, ChannelConfig) {
 
   // 默认配置
   ADChannelConfig defaultCfg = ad->channelConfig(0);
-  EXPECT_EQ(defaultCfg.waveform, WaveformType::Sine);
-  EXPECT_DOUBLE_EQ(defaultCfg.amplitude, 1.0);
+  EXPECT_DOUBLE_EQ(defaultCfg.range, 10.0);
+  EXPECT_EQ(defaultCfg.coupling, ADCoupling::DC);
+  EXPECT_FALSE(defaultCfg.icp_enabled);
 
-  // 设置方波配置
-  ADChannelConfig squareCfg;
-  squareCfg.waveform = WaveformType::Square;
-  squareCfg.frequency = 2.0;
-  squareCfg.amplitude = 0.5;
-  squareCfg.offset = 0.1;
-  squareCfg.noise_level = 0.0;
+  // 修改量程和耦合
+  ADChannelConfig cfg;
+  cfg.range = 5.0;
+  cfg.coupling = ADCoupling::AC;
+  cfg.icp_enabled = true;
+  cfg.trigger_edge = ADTriggerEdge::Rising;
+  cfg.trigger_level = 1.5;
 
-  EXPECT_TRUE(ad->setChannelConfig(0, squareCfg));
+  EXPECT_TRUE(ad->setChannelConfig(0, cfg));
   ADChannelConfig readCfg = ad->channelConfig(0);
-  EXPECT_EQ(readCfg.waveform, WaveformType::Square);
-  EXPECT_DOUBLE_EQ(readCfg.frequency, 2.0);
-  EXPECT_DOUBLE_EQ(readCfg.amplitude, 0.5);
-  EXPECT_DOUBLE_EQ(readCfg.offset, 0.1);
+  EXPECT_DOUBLE_EQ(readCfg.range, 5.0);
+  EXPECT_EQ(readCfg.coupling, ADCoupling::AC);
+  EXPECT_TRUE(readCfg.icp_enabled);
+  EXPECT_DOUBLE_EQ(readCfg.trigger_level, 1.5);
 
   // 无效通道
-  EXPECT_FALSE(ad->setChannelConfig(-1, squareCfg));
-  EXPECT_FALSE(ad->setChannelConfig(8, squareCfg));
+  EXPECT_FALSE(ad->setChannelConfig(-1, cfg));
+  EXPECT_FALSE(ad->setChannelConfig(8, cfg));
 
+  ad->closeDevice();
+}
+
+TEST_F(ADDevicePluginTest, TriggerConfig) {
+  auto& pm = PluginManager::instance();
+  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
+  ASSERT_NE(ad, nullptr);
+
+  // 默认软件触发
+  ADTriggerConfig defaultTrg = ad->triggerConfig();
+  EXPECT_EQ(defaultTrg.mode, ADTriggerMode::Software);
+  EXPECT_TRUE(defaultTrg.enabled);
+
+  // 切换为内部触发
+  ADTriggerConfig trg;
+  trg.mode = ADTriggerMode::Internal;
+  trg.enabled = true;
+  EXPECT_TRUE(ad->setTriggerConfig(trg));
+  EXPECT_EQ(ad->triggerConfig().mode, ADTriggerMode::Internal);
+}
+
+TEST_F(ADDevicePluginTest, AcquisitionControl) {
+  auto& pm = PluginManager::instance();
+  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
+  ASSERT_NE(ad, nullptr);
+
+  EXPECT_FALSE(ad->isAcquiring());
+  EXPECT_EQ(ad->sampleStatus(), ADSampleStatus::Idle);
+  EXPECT_FALSE(ad->startAcquisition());  // 未打开设备
+
+  ad->openDevice();
+  ad->setSampleLength(100000);  // 足够大，不会在测试期间自动完成
+
+  // 触发未使能，直接开始
+  ADTriggerConfig trg;
+  trg.enabled = false;
+  ad->setTriggerConfig(trg);
+
+  EXPECT_TRUE(ad->startAcquisition());
+  EXPECT_TRUE(ad->isAcquiring());
+  EXPECT_EQ(ad->sampleStatus(), ADSampleStatus::Sampling);
+
+  ad->stopAcquisition();
+  EXPECT_FALSE(ad->isAcquiring());
+  EXPECT_EQ(ad->sampleStatus(), ADSampleStatus::Idle);
+
+  ad->closeDevice();
+}
+
+TEST_F(ADDevicePluginTest, SoftwareTrigger) {
+  auto& pm = PluginManager::instance();
+  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
+  ASSERT_NE(ad, nullptr);
+
+  ad->openDevice();
+
+  // 启用软件触发
+  ADTriggerConfig trg;
+  trg.mode = ADTriggerMode::Software;
+  trg.enabled = true;
+  ad->setTriggerConfig(trg);
+
+  // 设置较大的存储深度以避免采集立即完成
+  ad->setSampleLength(10000);
+
+  EXPECT_TRUE(ad->startAcquisition());
+  processEventsFor(10);  // 让 Waiting 状态生效
+  EXPECT_EQ(ad->sampleStatus(), ADSampleStatus::Waiting);
+
+  // 发送软件触发
+  EXPECT_TRUE(ad->softwareTrigger());
+  EXPECT_EQ(ad->sampleStatus(), ADSampleStatus::Sampling);
+
+  // 等待一些数据
+  processEventsFor(50);
+
+  double value = ad->readChannel(0);
+  EXPECT_NO_THROW(ad->readChannel(0));
+
+  ad->stopAcquisition();
+  ad->closeDevice();
+}
+
+TEST_F(ADDevicePluginTest, ReadChannelData) {
+  auto& pm = PluginManager::instance();
+  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
+  ASSERT_NE(ad, nullptr);
+
+  ad->openDevice();
+  ad->setSampleLength(10000);
+
+  // 触发未使能，直接开始
+  ADTriggerConfig trg;
+  trg.enabled = false;
+  ad->setTriggerConfig(trg);
+
+  ad->startAcquisition();
+  processEventsFor(100);
+
+  QVector<double> data = ad->readChannelData(0, 10);
+  EXPECT_GT(data.size(), 0);
+  EXPECT_LE(data.size(), 10);
+
+  // 读取值应在量程范围内
+  for (double v : data) {
+    EXPECT_GE(v, -10.0);
+    EXPECT_LE(v, 10.0);
+  }
+
+  ad->stopAcquisition();
+  ad->closeDevice();
+}
+
+TEST_F(ADDevicePluginTest, ReadAllChannelsData) {
+  auto& pm = PluginManager::instance();
+  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
+  ASSERT_NE(ad, nullptr);
+
+  ad->openDevice();
+  ad->setSampleLength(10000);
+
+  ADTriggerConfig trg;
+  trg.enabled = false;
+  ad->setTriggerConfig(trg);
+
+  ad->startAcquisition();
+  processEventsFor(100);
+
+  QVector<double> data = ad->readAllChannelsData(5);
+  // 8通道 × min(5, available) 个点
+  EXPECT_GT(data.size(), 0);
+
+  ad->stopAcquisition();
+  ad->closeDevice();
+}
+
+TEST_F(ADDevicePluginTest, ReadChannelInRange) {
+  auto& pm = PluginManager::instance();
+  IADevicePlugin* ad = pm.pluginAs<IADevicePlugin>("etest.plugin.device.mock_ad");
+  ASSERT_NE(ad, nullptr);
+
+  ad->openDevice();
+  ad->setSampleLength(10000);
+
+  // 设置量程 ±5V
+  ADChannelConfig cfg;
+  cfg.range = 5.0;
+  for (int i = 0; i < 8; ++i) {
+    ad->setChannelConfig(i, cfg);
+  }
+
+  ADTriggerConfig trg;
+  trg.enabled = false;
+  ad->setTriggerConfig(trg);
+
+  ad->startAcquisition();
+  processEventsFor(100);
+
+  // 读取值应在量程范围内
+  double value = ad->readChannel(0);
+  EXPECT_GE(value, -5.5);  // 允许少量噪声越界
+  EXPECT_LE(value, 5.5);
+
+  ad->stopAcquisition();
   ad->closeDevice();
 }
 

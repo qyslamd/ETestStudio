@@ -14,8 +14,8 @@ using namespace core::logger;
 MockADPlugin::MockADPlugin() {
   meta_.id = "etest.plugin.device.mock_ad";
   meta_.name = "Mock AD采集设备";
-  meta_.version = "1.0.0";
-  meta_.description = "模拟8通道16位AD采集设备，支持可配置采样率和信号类型";
+  meta_.version = "2.0.0";
+  meta_.description = "模拟8通道16位AD采集设备，支持量程/耦合/触发配置";
   meta_.author = "etest";
   meta_.category = "device";
   meta_.device_type = "ad";
@@ -24,6 +24,11 @@ MockADPlugin::MockADPlugin() {
   acquisition_timer_ = new QTimer(this);
   connect(acquisition_timer_, &QTimer::timeout, this,
           &MockADPlugin::onAcquisitionTick);
+
+  trigger_delay_timer_ = new QTimer(this);
+  trigger_delay_timer_->setSingleShot(true);
+  connect(trigger_delay_timer_, &QTimer::timeout, this,
+          &MockADPlugin::startFillingData);
 }
 
 MockADPlugin::~MockADPlugin() {
@@ -57,20 +62,20 @@ bool MockADPlugin::isRunning() const { return running_; }
 bool MockADPlugin::openDevice() {
   device_opened_ = true;
 
-  // 分配环形缓冲区和通道配置
   ring_buffers_.resize(kChannelCount);
   buffer_write_pos_.resize(kChannelCount);
   buffer_write_pos_.fill(0);
   channel_configs_.resize(kChannelCount);
+  injected_data_.resize(kChannelCount);
 
   for (int i = 0; i < kChannelCount; ++i) {
-    ring_buffers_[i].resize(kRingBufferSize);
+    ring_buffers_[i].resize(sample_length_);
     ring_buffers_[i].fill(0.0);
-    channel_configs_[i] = ADChannelConfig{};
-    channel_configs_[i].frequency = (i + 1) * 0.5;  // 每通道不同频率
   }
 
   sample_counter_ = 0;
+  samples_collected_ = 0;
+  sample_status_ = ADSampleStatus::Idle;
   LOG_INFO("MOCK_AD", "Mock AD设备已打开");
   return true;
 }
@@ -81,6 +86,8 @@ void MockADPlugin::closeDevice() {
   ring_buffers_.clear();
   buffer_write_pos_.clear();
   channel_configs_.clear();
+  injected_data_.clear();
+  sample_status_ = ADSampleStatus::Idle;
   LOG_INFO("MOCK_AD", "Mock AD设备已关闭");
 }
 
@@ -97,30 +104,9 @@ DeviceStatus MockADPlugin::deviceStatus() const {
   return device_opened_ ? DeviceStatus::Online : DeviceStatus::Offline;
 }
 
-bool MockADPlugin::startAcquisition() {
-  if (!device_opened_) return false;
-  if (acquiring_) return true;
-
-  int interval = static_cast<int>(1000.0 / sample_rate_);
-  if (interval < 1) interval = 1;
-  acquisition_timer_->start(interval);
-  acquiring_ = true;
-  LOG_INFO("MOCK_AD", "开始采集，采样率={}Hz", sample_rate_);
-  return true;
-}
-
-void MockADPlugin::stopAcquisition() {
-  acquisition_timer_->stop();
-  acquiring_ = false;
-  LOG_INFO("MOCK_AD", "停止采集");
-}
-
-bool MockADPlugin::isAcquiring() const { return acquiring_; }
-
 bool MockADPlugin::setSampleRate(double rate) {
   if (rate <= 0) return false;
   sample_rate_ = rate;
-  // 采集中切换采样率，立即生效
   if (acquiring_) {
     int interval = static_cast<int>(1000.0 / sample_rate_);
     if (interval < 1) interval = 1;
@@ -130,6 +116,22 @@ bool MockADPlugin::setSampleRate(double rate) {
 }
 
 double MockADPlugin::sampleRate() const { return sample_rate_; }
+
+bool MockADPlugin::setSampleLength(int length) {
+  if (length <= 0) return false;
+  sample_length_ = length;
+  // 如果设备已打开，重新分配缓冲区
+  if (device_opened_) {
+    for (int i = 0; i < kChannelCount; ++i) {
+      ring_buffers_[i].resize(sample_length_);
+      ring_buffers_[i].fill(0.0);
+      buffer_write_pos_[i] = 0;
+    }
+  }
+  return true;
+}
+
+int MockADPlugin::sampleLength() const { return sample_length_; }
 
 bool MockADPlugin::setChannelConfig(int channel,
                                      const ADChannelConfig& config) {
@@ -143,13 +145,117 @@ ADChannelConfig MockADPlugin::channelConfig(int channel) const {
   return channel_configs_[channel];
 }
 
+bool MockADPlugin::setTriggerConfig(const ADTriggerConfig& config) {
+  trigger_config_ = config;
+  return true;
+}
+
+ADTriggerConfig MockADPlugin::triggerConfig() const {
+  return trigger_config_;
+}
+
+bool MockADPlugin::softwareTrigger() {
+  if (!acquiring_ || trigger_fired_) return false;
+  if (trigger_config_.mode != ADTriggerMode::Software) return false;
+
+  startFillingData();
+  return true;
+}
+
+bool MockADPlugin::startAcquisition() {
+  if (!device_opened_) return false;
+  if (acquiring_) return true;
+
+  acquiring_ = true;
+  trigger_fired_ = false;
+  samples_collected_ = 0;
+  sample_counter_ = 0;
+  buffer_write_pos_.fill(0);
+
+  // 根据触发模式决定行为
+  if (!trigger_config_.enabled || trigger_config_.mode == ADTriggerMode::Software) {
+    // 软件触发模式：等待 softwareTrigger() 调用
+    // 如果触发未使能，直接开始
+    if (!trigger_config_.enabled) {
+      startFillingData();
+    } else {
+      sample_status_ = ADSampleStatus::Waiting;
+      LOG_INFO("MOCK_AD", "等待软件触发...");
+    }
+  } else {
+    // 硬件触发模式：模拟延时后自动触发
+    sample_status_ = ADSampleStatus::Waiting;
+    int delay = (trigger_config_.mode == ADTriggerMode::Internal) ? 50 : 200;
+    trigger_delay_timer_->start(delay);
+    LOG_INFO("MOCK_AD", "等待触发，模式={}，延时={}ms",
+             static_cast<int>(trigger_config_.mode), delay);
+  }
+
+  return true;
+}
+
+void MockADPlugin::startFillingData() {
+  trigger_fired_ = true;
+  sample_status_ = ADSampleStatus::Sampling;
+
+  int interval = static_cast<int>(1000.0 / sample_rate_);
+  if (interval < 1) interval = 1;
+  acquisition_timer_->start(interval);
+  LOG_INFO("MOCK_AD", "开始采集，采样率={}Hz，存储深度={}", sample_rate_,
+           sample_length_);
+}
+
+void MockADPlugin::stopAcquisition() {
+  acquisition_timer_->stop();
+  trigger_delay_timer_->stop();
+  acquiring_ = false;
+  trigger_fired_ = false;
+  sample_status_ = ADSampleStatus::Idle;
+  LOG_INFO("MOCK_AD", "停止采集");
+}
+
+bool MockADPlugin::isAcquiring() const { return acquiring_; }
+
+ADSampleStatus MockADPlugin::sampleStatus() const { return sample_status_; }
+
 void MockADPlugin::onAcquisitionTick() {
   for (int i = 0; i < kChannelCount; ++i) {
-    double value = generateSignal(i);
-    ring_buffers_[i][buffer_write_pos_[i]] = value;
-    buffer_write_pos_[i] = (buffer_write_pos_[i] + 1) % kRingBufferSize;
+    double value = generateSample(i);
+    if (samples_collected_ < sample_length_) {
+      ring_buffers_[i][samples_collected_] = value;
+    }
   }
+  buffer_write_pos_[0] = samples_collected_;  // 所有通道同步写入
   ++sample_counter_;
+  ++samples_collected_;
+
+  // 存储深度达到后自动完成
+  if (samples_collected_ >= sample_length_) {
+    acquisition_timer_->stop();
+    acquiring_ = false;
+    sample_status_ = ADSampleStatus::Completed;
+    LOG_INFO("MOCK_AD", "采集完成，共 {} 个采样点", samples_collected_);
+  }
+}
+
+double MockADPlugin::generateSample(int channel) const {
+  double range = channel_configs_[channel].range;
+
+  // 有注入数据时循环回放
+  if (channel < injected_data_.size() && !injected_data_[channel].isEmpty()) {
+    const auto& data = injected_data_[channel];
+    int idx = sample_counter_ % data.size();
+    return data[idx] * range;  // 注入数据归一化到 [-1, 1]，乘以量程
+  }
+
+  // 默认：生成正弦波
+  double t = sample_counter_ / sample_rate_;
+  double value = qSin(2.0 * M_PI * kDefaultFrequency * t);
+
+  // 加少量噪声模拟真实采集
+  value += (QRandomGenerator::global()->bounded(1.0) * 2.0 - 1.0) * 0.01;
+
+  return value * range;
 }
 
 double MockADPlugin::readChannel(int channel) {
@@ -157,8 +263,9 @@ double MockADPlugin::readChannel(int channel) {
   if (channel < 0 || channel >= kChannelCount) return 0.0;
   if (ring_buffers_.isEmpty()) return 0.0;
 
-  // 读最新值：write_pos前一个位置
-  int latest = (buffer_write_pos_[channel] - 1 + kRingBufferSize) % kRingBufferSize;
+  // 返回最新采集到的采样点
+  int latest = qMin(samples_collected_, sample_length_) - 1;
+  if (latest < 0) return 0.0;
   return ring_buffers_[channel][latest];
 }
 
@@ -170,33 +277,52 @@ QVector<double> MockADPlugin::readAllChannels() {
   return values;
 }
 
-double MockADPlugin::generateSignal(int channel) const {
-  const auto& cfg = channel_configs_[channel];
-  double t = sample_counter_ / sample_rate_;
-  double value = 0.0;
+QVector<double> MockADPlugin::readChannelData(int channel, int count) {
+  if (!device_opened_) return {};
+  if (channel < 0 || channel >= kChannelCount) return {};
+  if (count <= 0) return {};
 
-  switch (cfg.waveform) {
-    case WaveformType::Sine:
-      value = qSin(2.0 * M_PI * cfg.frequency * t);
-      break;
-    case WaveformType::Square:
-      value = std::fmod(t * cfg.frequency, 1.0) < 0.5 ? 1.0 : -1.0;
-      break;
-    case WaveformType::Triangle:
-      value = 2.0 * std::fabs(2.0 * std::fmod(t * cfg.frequency, 1.0) - 1.0) - 1.0;
-      break;
-    case WaveformType::DC:
-      value = 0.0;
-      break;
+  int available = qMin(samples_collected_, sample_length_);
+  count = qMin(count, available);
+
+  QVector<double> data(count);
+  for (int i = 0; i < count; ++i) {
+    data[i] = ring_buffers_[channel][i];
   }
+  return data;
+}
 
-  value = value * cfg.amplitude + cfg.offset;
-  if (cfg.noise_level > 0) {
-    value += (QRandomGenerator::global()->bounded(1.0) * 2.0 - 1.0) * cfg.noise_level;
+QVector<double> MockADPlugin::readAllChannelsData(int count) {
+  if (!device_opened_) return {};
+  if (count <= 0) return {};
+
+  int available = qMin(samples_collected_, sample_length_);
+  count = qMin(count, available);
+
+  QVector<double> data;
+  data.reserve(kChannelCount * count);
+  for (int ch = 0; ch < kChannelCount; ++ch) {
+    for (int i = 0; i < count; ++i) {
+      data.append(ring_buffers_[ch][i]);
+    }
   }
+  return data;
+}
 
-  double maxVal = (1 << kResolution) / 2.0 - 1;
-  return value * maxVal;
+void MockADPlugin::injectChannelData(int channel, const QVector<double>& data) {
+  if (channel < 0 || channel >= kChannelCount) return;
+  if (injected_data_.size() <= channel) {
+    injected_data_.resize(kChannelCount);
+  }
+  injected_data_[channel] = data;
+  LOG_INFO("MOCK_AD", "通道 {} 注入 {} 个采样点", channel, data.size());
+}
+
+void MockADPlugin::clearInjectedData() {
+  for (auto& d : injected_data_) {
+    d.clear();
+  }
+  LOG_INFO("MOCK_AD", "已清除所有注入数据");
 }
 
 }  // namespace examples
