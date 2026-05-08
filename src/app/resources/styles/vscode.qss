@@ -198,7 +198,7 @@ QTreeView {
     selection-color: #FFFFFF;
 }
 QTreeView::item {
-    padding: 2px 0px;
+    padding: 2px 4px 2px 0px;
     border: none;
 }
 QTreeView::item:hover {
@@ -209,6 +209,14 @@ QTreeView::item:selected {
 }
 QTreeView::branch {
     background-color: #252526;
+}
+QTreeView QLineEdit {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #007ACC;
+    padding: 0px 2px;
+    margin: 0px;
+    selection-background-color: #264F78;
 }
 
 /* 硬件树 */

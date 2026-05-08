@@ -11,6 +11,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
+#include <QStyledItemDelegate>
 #include <QPushButton>
 #include <QTimer>
 #include <QUrl>
@@ -22,6 +23,31 @@
 
 using namespace etest::core::utils;
 using namespace etest::core::logger;
+
+namespace {
+
+// 自定义委托：编辑时扩展编辑器宽度，避免文字被截断
+class FileItemDelegate : public QStyledItemDelegate {
+ public:
+  explicit FileItemDelegate(QObject* parent = nullptr)
+      : QStyledItemDelegate(parent) {}
+
+  void updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option,
+                            const QModelIndex& index) const override {
+    QStyledItemDelegate::updateEditorGeometry(editor, option, index);
+    // 扩展编辑器宽度：在原始宽度基础上加一段余量，避免文字截断
+    int minWidth = option.fontMetrics.horizontalAdvance(
+                       index.data(Qt::EditRole).toString()) +
+                   20;
+    if (editor->width() < minWidth) {
+      auto* tree = qobject_cast<QTreeView*>(parent());
+      int maxW = tree ? tree->viewport()->width() - option.rect.left() : minWidth;
+      editor->resize(qMin(minWidth, maxW), editor->height());
+    }
+  }
+};
+
+}  // namespace
 
 namespace etest::app {
 
@@ -90,6 +116,7 @@ void FileExplorerWidget::initUi() {
   tree_view_->setAcceptDrops(false);
   tree_view_->setIndentation(16);
   tree_view_->setMinimumWidth(150);
+  tree_view_->setItemDelegate(new FileItemDelegate(tree_view_));
   mainLayout->addWidget(tree_view_);
 }
 
@@ -159,6 +186,21 @@ void FileExplorerWidget::onNewFile() {
 
   etest::core::utils::FileUtil::writeTextFile(filePath, "");
   LOG_INFO("EXPLORER", "新建文件：{}", filePath.toStdString());
+
+  // 展开父目录并进入重命名编辑状态
+  if (model_) {
+    QModelIndex parentIndex = model_->index(parentDir);
+    tree_view_->expand(parentIndex);
+    // QFileSystemModel 需要时间刷新，用延时等待新文件出现在模型中
+    QTimer::singleShot(100, this, [this, filePath]() {
+      QModelIndex idx = model_->index(filePath);
+      if (idx.isValid()) {
+        tree_view_->scrollTo(idx);
+        tree_view_->setCurrentIndex(idx);
+        tree_view_->edit(idx);
+      }
+    });
+  }
 }
 
 void FileExplorerWidget::onNewFolder() {
@@ -183,6 +225,20 @@ void FileExplorerWidget::onNewFolder() {
 
   etest::core::utils::FileUtil::createDirectory(folderPath);
   LOG_INFO("EXPLORER", "新建文件夹：{}", folderPath.toStdString());
+
+  // 展开父目录并进入重命名编辑状态
+  if (model_) {
+    QModelIndex parentIndex = model_->index(parentDir);
+    tree_view_->expand(parentIndex);
+    QTimer::singleShot(100, this, [this, folderPath]() {
+      QModelIndex idx = model_->index(folderPath);
+      if (idx.isValid()) {
+        tree_view_->scrollTo(idx);
+        tree_view_->setCurrentIndex(idx);
+        tree_view_->edit(idx);
+      }
+    });
+  }
 }
 
 void FileExplorerWidget::onRename() {
