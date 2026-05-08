@@ -9,6 +9,7 @@ set(SOURCES
     common/TimeException.cpp
     common/StringException.cpp
     common/ByteException.cpp
+    common/GlobalExceptionHandler.cpp
     utils/FileUtil.cpp
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
@@ -30,6 +31,7 @@ set(HEADERS
     common/TimeException.h
     common/StringException.h
     common/ByteException.h
+    common/GlobalExceptionHandler.h
     utils/FileUtil.h
     utils/TimeUtil.h
     utils/StringUtil.h

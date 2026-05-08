@@ -1,0 +1,9 @@
+@echo off
+setlocal
+
+set "PATH=@QT_BIN_DIR@;%PATH%"
+set "QT_PLUGIN_PATH=@QT_PLUGINS_DIR@"
+
+chcp 65001 >nul
+
+@CMAKE_RUNTIME_OUTPUT_DIRECTORY@/@TARGET_NAME@.exe --gtest_also_run_disabled_tests

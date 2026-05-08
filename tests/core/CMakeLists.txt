@@ -25,6 +25,10 @@ if(WIN32)
         QT_MODULES Core Test Widgets
         LABELS CORE
     )
+    # 生成disabled崩溃测试脚本
+    set(TARGET_NAME test_core_crashhandler)
+    configure_file("${CMAKE_SOURCE_DIR}/cmake/run_disabled_test.bat.in"
+                   "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run_${TARGET_NAME}_disabled.bat" @ONLY)
 endif()
 
 # 工具类测试
@@ -80,3 +84,16 @@ add_etest(
     QT_MODULES Core Test
     LABELS CORE
 )
+
+# 全局异常处理器测试
+add_etest(
+    NAME test_core_global_exception_handler
+    SOURCES global_exception_handler_test.cpp
+    LIBS core
+    QT_MODULES Core Test Widgets
+    LABELS CORE
+)
+# 生成disabled崩溃测试脚本
+set(TARGET_NAME test_core_global_exception_handler)
+configure_file("${CMAKE_SOURCE_DIR}/cmake/run_disabled_test.bat.in"
+               "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run_${TARGET_NAME}_disabled.bat" @ONLY)
