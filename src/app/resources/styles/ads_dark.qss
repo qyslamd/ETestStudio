@@ -40,7 +40,6 @@ ads--CDockWidgetTab:hover {
 ads--CDockWidgetTab QLabel {
     color: #969696;
     font-size: 12px;
-    min-width: 60px;
 }
 
 ads--CDockWidgetTab[activeTab="true"] QLabel {

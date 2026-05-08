@@ -1,5 +1,6 @@
 #include "EditorManager.h"
 #include "DockAreaWidget.h"
+#include "DockWidgetTab.h"
 
 #include <QFileInfo>
 #include <QMessageBox>
@@ -43,6 +44,7 @@ void EditorManager::openFile(const QString& filePath) {
   dock->setWidget(editor);
   dock->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
   dock->setFeature(ads::CDockWidget::CustomCloseHandling, true);
+  dock->tabWidget()->setElideMode(Qt::ElideNone);
 
   // 设置右键菜单
   dock->setContextMenuPolicy(Qt::CustomContextMenu);

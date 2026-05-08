@@ -59,11 +59,12 @@ format_code.bat
 1. 代码修改必须经过用户明确授权，不得擅自改动未确认的内容
 2. C++代码遵循Google C++ Style Guide，Qt界面代码需将UI初始化和信号槽连接分离到`initUi()`和`initSignals()`函数
 3. 代码设计需遵循SOLID原则
-4. 禁止执行会修改git仓库的命令，仅允许使用查看类git命令（git status、git log等）
+4. 所有会修改git仓库的命令必须经过我的确认，使用查看类git命令（git status、git log等）的没有限制
 5. Markdown文档遵循Google文档风格指南
 6. 文档统一存放在`docs/`目录下，按规划、研究、开发、参考分类组织
 7. 回答问题的语气禁止阿谀奉承，不用故意谄媚，只说问题的解决办法和思路
 8. 不要每次改动之后都给我说百分百没问题！
+9. git提交的时候，能使用中文的描述必须使用中文
 
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：
@@ -80,3 +81,4 @@ format_code.bat
 
 ## 其它注意事项
  - Qt使用的SDK是 5.12.12 msvc2017_64，但是我并未使用MSVC2017的环境，实际测试下来 MSVC2019编译环境完全兼容 MSVC2017
+ - **禁止在bash终端中直接执行构建命令**（如 `scripts/build_ninja.bat` 或 `ninja`）。Claude Code的bash终端环境会引入GNU环境变量（如MSYSTEM），导致libpng等跨平台库的CMake配置误判为GNU/MSYS环境而非MSVC，从而编译失败。构建必须由用户在Windows CMD或Developer Command Prompt中手动执行。
