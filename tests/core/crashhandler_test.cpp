@@ -28,8 +28,8 @@ TEST(CrashHandlerTest, DefaultDumpPath) {
   ASSERT_NE(handler, nullptr);
 
   QString expectedPath =
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) +
-      "/etest/crash/";
+      QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) +
+      "/crash/";
   EXPECT_TRUE(QDir(expectedPath).exists());
 #endif
 }

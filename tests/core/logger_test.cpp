@@ -88,9 +88,9 @@ TEST_F(LoggerTest, LogFileCreated) {
   spdlog::default_logger()->flush();
 
   // 验证日志文件存在
-  QString docPath =
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-  QString logPath = docPath + "/etest/logs/etest.log";
+  QString localPath =
+      QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+  QString logPath = localPath + "/logs/etest.log";
   EXPECT_TRUE(QFile::exists(logPath));
 }
 

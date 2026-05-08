@@ -2,6 +2,7 @@
 #ifdef Q_OS_WIN
 
 #include "WindowsCrashHandler.h"
+#include <QCoreApplication>
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
@@ -19,13 +20,17 @@ WindowsCrashHandler* WindowsCrashHandler::s_instance = nullptr;
 WindowsCrashHandler::WindowsCrashHandler() 
     : m_prevFilter(nullptr) {
     s_instance = this;
-    // 默认崩溃日志路径
-    QString docPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    m_dumpPath = docPath + "/etest/crash/";
+    // 默认崩溃日志路径：AppData/Local/etest_demo/crash/
+    QString localPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    m_dumpPath = localPath + "/crash/";
     QDir().mkpath(m_dumpPath);
 }
 
 WindowsCrashHandler::~WindowsCrashHandler() {
+    if (m_vectoredHandler) {
+        RemoveVectoredExceptionHandler(m_vectoredHandler);
+        m_vectoredHandler = nullptr;
+    }
     if (m_prevFilter) {
         SetUnhandledExceptionFilter(m_prevFilter);
     }
@@ -34,7 +39,8 @@ WindowsCrashHandler::~WindowsCrashHandler() {
 
 bool WindowsCrashHandler::init() {
     m_prevFilter = SetUnhandledExceptionFilter(exceptionHandler);
-    return m_prevFilter != nullptr;
+    m_vectoredHandler = AddVectoredExceptionHandler(1, vectoredHandler);
+    return m_prevFilter != nullptr || m_vectoredHandler != nullptr;
 }
 
 void WindowsCrashHandler::setDumpPath(const QString& path) {
@@ -44,6 +50,29 @@ void WindowsCrashHandler::setDumpPath(const QString& path) {
 
 void WindowsCrashHandler::setCrashCallback(std::function<void(const QString& crashLog)> callback) {
     m_crashCallback = std::move(callback);
+}
+
+LONG WINAPI WindowsCrashHandler::vectoredHandler(PEXCEPTION_POINTERS pExceptionInfo) {
+    if (!s_instance) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    DWORD code = pExceptionInfo->ExceptionRecord->ExceptionCode;
+    // 只处理真正的崩溃异常，忽略调试和控制流异常
+    if (code == EXCEPTION_ACCESS_VIOLATION ||
+        code == EXCEPTION_STACK_OVERFLOW ||
+        code == EXCEPTION_ILLEGAL_INSTRUCTION ||
+        code == EXCEPTION_INT_DIVIDE_BY_ZERO ||
+        code == EXCEPTION_FLT_DIVIDE_BY_ZERO ||
+        code == EXCEPTION_IN_PAGE_ERROR ||
+        code == EXCEPTION_ARRAY_BOUNDS_EXCEEDED ||
+        code == EXCEPTION_DATATYPE_MISALIGNMENT ||
+        code == EXCEPTION_PRIV_INSTRUCTION ||
+        code == EXCEPTION_NONCONTINUABLE_EXCEPTION) {
+        return exceptionHandler(pExceptionInfo);
+    }
+
+    return EXCEPTION_CONTINUE_SEARCH;
 }
 
 LONG WINAPI WindowsCrashHandler::exceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
@@ -72,11 +101,38 @@ LONG WINAPI WindowsCrashHandler::exceptionHandler(PEXCEPTION_POINTERS pException
     // 写入日志文件
     QString fileName = s_instance->generateCrashFileName();
     QString fullPath = s_instance->m_dumpPath + fileName;
-    
+
     QFile file(fullPath);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         file.write(crashLog.toUtf8());
         file.close();
+    }
+
+    // 写入MiniDump文件
+    QString dumpFileName = fileName;
+    dumpFileName.replace(".log", ".dmp");
+    QString dumpFullPath = s_instance->m_dumpPath + dumpFileName;
+
+    HANDLE hDumpFile = CreateFileW(
+        reinterpret_cast<LPCWSTR>(dumpFullPath.utf16()),
+        GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL, nullptr);
+
+    if (hDumpFile != INVALID_HANDLE_VALUE) {
+        MINIDUMP_EXCEPTION_INFORMATION mei;
+        mei.ThreadId = GetCurrentThreadId();
+        mei.ExceptionPointers = pExceptionInfo;
+        mei.ClientPointers = FALSE;
+
+        MINIDUMP_TYPE dumpType = static_cast<MINIDUMP_TYPE>(
+            MiniDumpWithDataSegs |
+            MiniDumpWithHandleData |
+            MiniDumpWithFullMemoryInfo |
+            MiniDumpWithThreadInfo);
+
+        MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
+                          hDumpFile, dumpType, &mei, nullptr, nullptr);
+        CloseHandle(hDumpFile);
     }
 
     // 执行回调
@@ -84,10 +140,16 @@ LONG WINAPI WindowsCrashHandler::exceptionHandler(PEXCEPTION_POINTERS pException
         s_instance->m_crashCallback(crashLog);
     }
 
-    // 显示友好提示
-    QMessageBox::critical(nullptr, "程序崩溃", 
-        QString("程序发生异常，已生成崩溃日志：\n%1\n\n请联系开发者解决问题。").arg(fullPath),
-        QMessageBox::Ok);
+    // 显示友好提示（仅当QApplication存在时）
+    if (QCoreApplication::instance()) {
+        auto* app = QCoreApplication::instance();
+        if (app->inherits("QApplication")) {
+            QMessageBox::critical(nullptr, "程序崩溃",
+                QString("程序发生异常，已生成崩溃日志：\n%1\n已生成转储文件：\n%2\n\n请联系开发者解决问题。")
+                    .arg(fullPath, dumpFullPath),
+                QMessageBox::Ok);
+        }
+    }
 
     // 终止程序
     TerminateProcess(GetCurrentProcess(), pExceptionInfo->ExceptionRecord->ExceptionCode);

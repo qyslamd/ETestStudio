@@ -66,6 +66,15 @@
                 "CMAKE_C_STANDARD": "11",
                 "Qt5_DIR": "D:\\Qt\\Qt5.12.12\\5.12.12\\msvc2017_64\\lib\\cmake\\Qt5"
             }
+        },
+        {
+            "name": "ninja-relwithdebinfo",
+            "displayName": "Ninja RelWithDebInfo",
+            "description": "使用Ninja构建的RelWithDebInfo版本，带调试信息的优化构建，崩溃dump可配合PDB调试",
+            "inherits": "ninja-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
         }
     ],
     "buildPresets": [
@@ -95,6 +104,13 @@
             "description": "使用Ninja构建发布版本",
             "configurePreset": "ninja-release",
             "targets": "ALL_BUILD"
+        },
+        {
+            "name": "ninja-relwithdebinfo-build",
+            "displayName": "Ninja Build RelWithDebInfo",
+            "description": "使用Ninja构建RelWithDebInfo版本",
+            "configurePreset": "ninja-relwithdebinfo",
+            "targets": "all"
         }
     ],
     "testPresets": [
@@ -109,6 +125,12 @@
             "displayName": "Ninja Test Release",
             "description": "使用Ninja测试发布版本",
             "configurePreset": "ninja-release"
+        },
+        {
+            "name": "ninja-relwithdebinfo-test",
+            "displayName": "Ninja Test RelWithDebInfo",
+            "description": "使用Ninja测试RelWithDebInfo版本",
+            "configurePreset": "ninja-relwithdebinfo"
         }
     ]
 }

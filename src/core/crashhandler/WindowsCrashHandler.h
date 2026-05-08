@@ -23,6 +23,7 @@ public:
 
 private:
     static LONG WINAPI exceptionHandler(PEXCEPTION_POINTERS pExceptionInfo);
+    static LONG WINAPI vectoredHandler(PEXCEPTION_POINTERS pExceptionInfo);
     static QString getExceptionString(DWORD exceptionCode);
     static QString getCallStack(CONTEXT* context);
     static QString getRegisterContext(CONTEXT* context);
@@ -31,6 +32,7 @@ private:
     QString m_dumpPath;
     std::function<void(const QString&)> m_crashCallback;
     LPTOP_LEVEL_EXCEPTION_FILTER m_prevFilter;
+    PVOID m_vectoredHandler = nullptr;
 };
 
 }  // namespace crashhandler

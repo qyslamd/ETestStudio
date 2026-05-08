@@ -23,10 +23,10 @@ void Logger::init() {
     return;
   }
 
-  // 创建日志存储目录
-  QString docPath =
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-  QString logDir = docPath + "/etest/logs";
+  // 创建日志存储目录：AppData/Local/etest_demo/logs/
+  QString localPath =
+      QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+  QString logDir = localPath + "/logs";
   QDir().mkpath(logDir);
 
   // 从配置读取清理天数，未配置则使用默认值7天
