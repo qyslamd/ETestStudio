@@ -49,6 +49,13 @@
         <file>resources/icons/svg/file_js_light.svg</file>
         <file>resources/icons/svg/refresh_dark.svg</file>
         <file>resources/icons/svg/refresh_light.svg</file>
+        <file>resources/icons/svg/checkbox_unchecked.svg</file>
+        <file>resources/icons/svg/checkbox_unchecked_hover.svg</file>
+        <file>resources/icons/svg/checkbox_unchecked_disabled.svg</file>
+        <file>resources/icons/svg/checkbox_checked.svg</file>
+        <file>resources/icons/svg/checkbox_checked_hover.svg</file>
+        <file>resources/icons/svg/checkbox_checked_disabled.svg</file>
+        <file>resources/icons/svg/checkbox_indeterminate.svg</file>
         <file>resources/fonts/fontawesome-webfont.ttf</file>
     </qresource>
 </RCC>

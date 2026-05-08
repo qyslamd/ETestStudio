@@ -326,16 +326,25 @@ QCheckBox {
 QCheckBox::indicator {
     width: 16px;
     height: 16px;
-    border: 1px solid #454545;
-    border-radius: 3px;
-    background-color: #3C3C3C;
-}
-QCheckBox::indicator:checked {
-    background-color: #007ACC;
-    border-color: #007ACC;
+    image: url(:/resources/icons/svg/checkbox_unchecked.svg);
 }
 QCheckBox::indicator:hover {
-    border-color: #007ACC;
+    image: url(:/resources/icons/svg/checkbox_unchecked_hover.svg);
+}
+QCheckBox::indicator:checked {
+    image: url(:/resources/icons/svg/checkbox_checked.svg);
+}
+QCheckBox::indicator:checked:hover {
+    image: url(:/resources/icons/svg/checkbox_checked_hover.svg);
+}
+QCheckBox::indicator:disabled {
+    image: url(:/resources/icons/svg/checkbox_unchecked_disabled.svg);
+}
+QCheckBox::indicator:checked:disabled {
+    image: url(:/resources/icons/svg/checkbox_checked_disabled.svg);
+}
+QCheckBox::indicator:indeterminate {
+    image: url(:/resources/icons/svg/checkbox_indeterminate.svg);
 }
 
 /* RadioButton */
@@ -490,13 +499,16 @@ SearchWidget QCheckBox {
 SearchWidget QCheckBox::indicator {
     width: 14px;
     height: 14px;
-    border: 1px solid #454545;
-    border-radius: 3px;
-    background-color: #3C3C3C;
+    image: url(:/resources/icons/svg/checkbox_unchecked.svg);
+}
+SearchWidget QCheckBox::indicator:hover {
+    image: url(:/resources/icons/svg/checkbox_unchecked_hover.svg);
 }
 SearchWidget QCheckBox::indicator:checked {
-    background-color: #007ACC;
-    border-color: #007ACC;
+    image: url(:/resources/icons/svg/checkbox_checked.svg);
+}
+SearchWidget QCheckBox::indicator:checked:hover {
+    image: url(:/resources/icons/svg/checkbox_checked_hover.svg);
 }
 SearchWidget QTreeWidget {
     background-color: #252526;
@@ -750,16 +762,25 @@ SettingsWidget QCheckBox {
 SettingsWidget QCheckBox::indicator {
     width: 16px;
     height: 16px;
-    border: 1px solid #454545;
-    border-radius: 3px;
-    background-color: #3C3C3C;
-}
-SettingsWidget QCheckBox::indicator:checked {
-    background-color: #007ACC;
-    border-color: #007ACC;
+    image: url(:/resources/icons/svg/checkbox_unchecked.svg);
 }
 SettingsWidget QCheckBox::indicator:hover {
-    border-color: #007ACC;
+    image: url(:/resources/icons/svg/checkbox_unchecked_hover.svg);
+}
+SettingsWidget QCheckBox::indicator:checked {
+    image: url(:/resources/icons/svg/checkbox_checked.svg);
+}
+SettingsWidget QCheckBox::indicator:checked:hover {
+    image: url(:/resources/icons/svg/checkbox_checked_hover.svg);
+}
+SettingsWidget QCheckBox::indicator:disabled {
+    image: url(:/resources/icons/svg/checkbox_unchecked_disabled.svg);
+}
+SettingsWidget QCheckBox::indicator:checked:disabled {
+    image: url(:/resources/icons/svg/checkbox_checked_disabled.svg);
+}
+SettingsWidget QCheckBox::indicator:indeterminate {
+    image: url(:/resources/icons/svg/checkbox_indeterminate.svg);
 }
 
 /* 设置页中的按钮 */

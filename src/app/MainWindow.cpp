@@ -32,6 +32,7 @@
 
 #include <DockAreaTitleBar.h>
 #include <DockAreaWidget.h>
+#include <DockWidgetTab.h>
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "dialogs/NewProjectDialog.h"
@@ -113,6 +114,7 @@ void MainWindow::initUi() {
   auto* centralDock = new ads::CDockWidget(QStringLiteral("中央编辑区"));
   centralDock->setObjectName("CentralDock");
   centralDock->setWidget(centralPlaceholder);
+  centralDock->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(centralDock);
 
   // 编辑器管理器
@@ -127,6 +129,7 @@ void MainWindow::initUi() {
   sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, false);
   sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  sidebar_dock_->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->addDockWidget(ads::LeftDockWidgetArea, sidebar_dock_);
   // 隐藏侧边栏标题栏
   sidebar_dock_->dockAreaWidget()->titleBar()->hide();
@@ -139,6 +142,7 @@ void MainWindow::initUi() {
   activityDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
   activityDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   activityDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  activityDock->tabWidget()->setElideMode(Qt::ElideNone);
   // 活动栏放置在侧边栏左侧
   dock_manager_->addDockWidget(ads::LeftDockWidgetArea, activityDock,
                                sidebar_dock_->dockAreaWidget());
@@ -163,6 +167,7 @@ void MainWindow::initUi() {
   panelDock->setFeature(ads::CDockWidget::DockWidgetClosable, true);
   panelDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   panelDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  panelDock->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->addDockWidget(ads::BottomDockWidgetArea, panelDock);
   // 隐藏面板标题栏右侧的三个按钮（PanelContainerWidget内部已有tab和关闭按钮）
   hideDockTitleBarButtons(panelDock->dockAreaWidget());
@@ -200,6 +205,7 @@ void MainWindow::initUi() {
   auxDock->setFeature(ads::CDockWidget::DockWidgetClosable, true);
   auxDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   auxDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
+  auxDock->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->addDockWidget(ads::RightDockWidgetArea, auxDock);
   hideDockTitleBarButtons(auxDock->dockAreaWidget());
   // auxDock->closeDockWidget();  // 默认隐藏
