@@ -1,5 +1,6 @@
 #include "SidebarWidget.h"
 #include "FileExplorerWidget.h"
+#include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "SearchWidget.h"
 
@@ -54,14 +55,9 @@ void SidebarWidget::setupUi() {
   stack_->addWidget(search_widget_);
   view_titles_ << QStringLiteral("搜索");
 
-  // 页2：源代码管理占位
-  auto* gitPage = new QWidget(this);
-  auto* gitLayout = new QVBoxLayout(gitPage);
-  gitLayout->setContentsMargins(0, 0, 0, 0);
-  auto* gitLabel = new QLabel(QStringLiteral("源代码管理\n（待实现）"), this);
-  gitLabel->setAlignment(Qt::AlignCenter);
-  gitLayout->addWidget(gitLabel);
-  stack_->addWidget(gitPage);
+  // 页2：源代码管理
+  git_widget_ = new GitWidget(this);
+  stack_->addWidget(git_widget_);
   view_titles_ << QStringLiteral("源代码管理");
 
   // 页3：调试占位
@@ -115,6 +111,10 @@ HardwareTreeWidget* SidebarWidget::hardwareTree() const {
 
 SearchWidget* SidebarWidget::searchWidget() const {
   return search_widget_;
+}
+
+GitWidget* SidebarWidget::gitWidget() const {
+  return git_widget_;
 }
 
 }  // namespace etest::app

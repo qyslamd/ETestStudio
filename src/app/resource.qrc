@@ -46,6 +46,8 @@
         <file>resources/icons/svg/file_cmake_light.svg</file>
         <file>resources/icons/svg/file_js_dark.svg</file>
         <file>resources/icons/svg/file_js_light.svg</file>
+        <file>resources/icons/svg/refresh_dark.svg</file>
+        <file>resources/icons/svg/refresh_light.svg</file>
         <file>resources/fonts/fontawesome-webfont.ttf</file>
     </qresource>
 </RCC>

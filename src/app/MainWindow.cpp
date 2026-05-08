@@ -23,6 +23,7 @@
 #include "OutputPanel.h"
 #include "PanelContainerWidget.h"
 #include "ProblemsPanel.h"
+#include "GitWidget.h"
 #include "SearchWidget.h"
 #include "SettingsWidget.h"
 #include "SidebarWidget.h"
@@ -284,6 +285,19 @@ void MainWindow::initSignals() {
   // 搜索组件：点击结果打开文件并跳转到行
   connect(searchWidget, &SearchWidget::fileOpenRequested, editor_manager_,
           &EditorManager::openFileAtLine);
+
+  // Git面板：项目打开/关闭时设置根目录
+  auto* gitWidget = sidebar_->gitWidget();
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+          gitWidget, [gitWidget](const QString& projectPath) {
+            gitWidget->setProjectRoot(projectPath);
+          });
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+          gitWidget, [gitWidget]() { gitWidget->setProjectRoot({}); });
+
+  // Git面板：点击文件打开编辑器
+  connect(gitWidget, &GitWidget::fileOpenRequested, editor_manager_,
+          &EditorManager::openFile);
 
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
   connect(

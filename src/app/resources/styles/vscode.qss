@@ -513,6 +513,69 @@ SearchWidget QLabel {
     background-color: transparent;
 }
 
+/* ==================== GitWidget ==================== */
+GitWidget {
+    background-color: #252526;
+}
+GitWidget QLabel {
+    color: #CCCCCC;
+    background-color: transparent;
+}
+GitWidget QTextEdit {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 2px;
+    selection-background-color: #264F78;
+    font-size: 13px;
+}
+GitWidget QTextEdit:focus {
+    border-color: #007ACC;
+}
+GitWidget QPushButton {
+    background-color: #0E639C;
+    color: #FFFFFF;
+    border: 1px solid #0E639C;
+    border-radius: 2px;
+    padding: 2px 6px;
+}
+GitWidget QPushButton:hover {
+    background-color: #1177BB;
+}
+GitWidget QPushButton:pressed {
+    background-color: #0D5A8F;
+}
+GitWidget QPushButton#refresh_button_ {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+}
+GitWidget QPushButton#refresh_button_:hover {
+    background-color: #505050;
+    border-radius: 3px;
+}
+GitWidget QTreeWidget {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: none;
+    outline: none;
+    font-size: 13px;
+}
+GitWidget QTreeWidget::item {
+    padding: 2px 0px;
+    border: none;
+}
+GitWidget QTreeWidget::item:hover {
+    background-color: #2A2D2E;
+}
+GitWidget QTreeWidget::item:selected {
+    background-color: #094771;
+}
+GitWidget QLabel#gitEmptyLabel {
+    color: #858585;
+    font-size: 13px;
+}
+
 /* ==================== PanelContainerWidget ==================== */
 PanelContainerWidget {
     background-color: #1E1E1E;

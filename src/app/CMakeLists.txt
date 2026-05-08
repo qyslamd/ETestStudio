@@ -13,6 +13,8 @@ add_executable(${TARGET_NAME}
     FileExplorerWidget.cpp
     FileTypeIconProvider.h
     FileTypeIconProvider.cpp
+    GitWidget.h
+    GitWidget.cpp
     HardwareTreeWidget.h
     HardwareTreeWidget.cpp
     EditorWidget.h
