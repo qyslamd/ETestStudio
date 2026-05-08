@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QGuiApplication>
+#include <QIcon>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMenuBar>
@@ -81,6 +82,7 @@ MainWindow::~MainWindow() {
 void MainWindow::initUi() {
   setWindowTitle("ETest Demo");
   setMinimumSize(900, 600);
+  setWindowIcon(QIcon(":/resources/icons/app_icon.ico"));
 
   // 加载VSCode风格样式表
   QFile styleFile(":/resources/styles/vscode.qss");

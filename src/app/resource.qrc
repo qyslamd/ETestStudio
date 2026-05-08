@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file>resources/icons/app_icon.ico</file>
         <file>resources/icons/svg/switch_off.svg</file>
         <file>resources/icons/svg/switch_on.svg</file>
         <file>resources/styles/vscode.qss</file>

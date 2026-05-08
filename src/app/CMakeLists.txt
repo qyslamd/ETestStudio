@@ -36,6 +36,7 @@ add_executable(${TARGET_NAME}
     dialogs/NewProjectDialog.h
     dialogs/NewProjectDialog.cpp
     resource.qrc
+    app.rc
 )
 
 #=======================================
