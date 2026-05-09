@@ -48,10 +48,10 @@ void FileTypeIconProvider::loadIcons() {
 }
 
 QIcon FileTypeIconProvider::loadDualThemeIcon(const QString& baseName) const {
-  QString darkPath = QStringLiteral(":/resources/icons/svg/%1_dark.svg").arg(baseName);
-  QIcon icon(darkPath);
+  QString lightPath = QStringLiteral(":/resources/icons/svg/%1_light.svg").arg(baseName);
+  QIcon icon(lightPath);
   if (icon.isNull()) {
-    LOG_WARN("UI", "Failed to load icon: {}", darkPath.toStdString());
+    LOG_WARN("UI", "Failed to load icon: {}", lightPath.toStdString());
   }
   return icon;
 }
