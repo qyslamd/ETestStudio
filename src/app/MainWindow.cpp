@@ -636,8 +636,22 @@ void MainWindow::createMenuBar() {
     }
   });
 
-  menuBar->addMenu(QStringLiteral("工具(&T)"));
-  menuBar->addMenu(QStringLiteral("帮助(&H)"));
+  auto* toolsMenu = menuBar->addMenu(QStringLiteral("工具(&T)"));
+  toolsMenu->addAction(QStringLiteral("设置(&S)..."), this, [this]() {
+    if (!settings_dialog_) {
+      settings_dialog_ = new SettingsWidget(this);
+    }
+    settings_dialog_->show();
+    settings_dialog_->raise();
+    settings_dialog_->activateWindow();
+  });
+
+  auto* helpMenu = menuBar->addMenu(QStringLiteral("帮助(&H)"));
+  helpMenu->addAction(QStringLiteral("关于(&A)..."), this, [this]() {
+    QMessageBox::about(this, QStringLiteral("关于 ETest Demo"),
+                       QStringLiteral("ETest Demo v1.0.0\n\n"
+                                      "基于 Qt/C++ 的测试系统仿真实现。"));
+  });
 }
 
 void MainWindow::createStatusBar() {
