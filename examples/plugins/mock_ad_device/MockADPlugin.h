@@ -10,7 +10,7 @@ namespace examples {
 
 class MockADPlugin : public QObject, public core::plugin::IADevicePlugin {
   Q_OBJECT
-  Q_PLUGIN_METADATA(IID "etest.core.plugin.IADevicePlugin/2.0" FILE "mock_ad_device.json")
+  Q_PLUGIN_METADATA(IID "etest.core.plugin.IADevicePlugin/3.0" FILE "mock_ad_device.json")
   Q_INTERFACES(etest::core::plugin::IPlugin etest::core::plugin::IDevicePlugin etest::core::plugin::IADevicePlugin)
 
  public:
@@ -56,6 +56,17 @@ class MockADPlugin : public QObject, public core::plugin::IADevicePlugin {
   QVector<double> readChannelData(int channel, int count) override;
   QVector<double> readAllChannelsData(int count) override;
 
+  // IADevicePlugin (新增 v3.0)
+  bool setReadMode(core::plugin::ADReadMode mode) override;
+  core::plugin::ADReadMode readMode() const override;
+  bool setMemoryMode(core::plugin::ADMemoryMode mode) override;
+  core::plugin::ADMemoryMode memoryMode() const override;
+  bool setScanList(const QVector<int>& scanList) override;
+  QVector<int> scanList() const override;
+  int maxScanDepth() const override;
+  QVector<qint16> readChannelRaw(int channel, int count) override;
+  QVector<qint16> readAllChannelsRaw(int count) override;
+
   // 测试用：注入预定义波形数据，采集时循环回放
   void injectChannelData(int channel, const QVector<double>& data);
   void clearInjectedData();
@@ -80,6 +91,9 @@ class MockADPlugin : public QObject, public core::plugin::IADevicePlugin {
 
   core::plugin::ADTriggerConfig trigger_config_;
   core::plugin::ADSampleStatus sample_status_ = core::plugin::ADSampleStatus::Idle;
+  core::plugin::ADReadMode read_mode_ = core::plugin::ADReadMode::Direct;
+  core::plugin::ADMemoryMode memory_mode_ = core::plugin::ADMemoryMode::ChannelStorage;
+  QVector<int> scan_list_;
 
   QVector<QVector<double>> ring_buffers_;
   QVector<int> buffer_write_pos_;

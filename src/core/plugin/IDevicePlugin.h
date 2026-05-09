@@ -18,6 +18,9 @@ struct DeviceInfo {
   int resolution = 0;
   QString model;
   QString manufacturer;
+  int bus_number = 0;       // PXI 总线号
+  int slot_number = 0;      // 设备号
+  int card_serial = 0;      // 板卡序列号
 };
 
 class IDevicePlugin : public IPlugin {

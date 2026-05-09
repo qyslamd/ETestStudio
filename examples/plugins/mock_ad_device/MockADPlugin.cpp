@@ -325,5 +325,62 @@ void MockADPlugin::clearInjectedData() {
   LOG_INFO("MOCK_AD", "已清除所有注入数据");
 }
 
+// ============ IADevicePlugin v3.0 新增接口 ============
+
+bool MockADPlugin::setReadMode(ADReadMode mode) {
+  read_mode_ = mode;
+  LOG_INFO("MOCK_AD", "设置读取模式={}", static_cast<int>(mode));
+  return true;
+}
+
+ADReadMode MockADPlugin::readMode() const {
+  return read_mode_;
+}
+
+bool MockADPlugin::setMemoryMode(ADMemoryMode mode) {
+  memory_mode_ = mode;
+  LOG_INFO("MOCK_AD", "设置存储模式={}", static_cast<int>(mode));
+  return true;
+}
+
+ADMemoryMode MockADPlugin::memoryMode() const {
+  return memory_mode_;
+}
+
+bool MockADPlugin::setScanList(const QVector<int>& scanList) {
+  scan_list_ = scanList;
+  LOG_INFO("MOCK_AD", "设置扫描表，深度={}", scanList.size());
+  return true;
+}
+
+QVector<int> MockADPlugin::scanList() const {
+  return scan_list_;
+}
+
+int MockADPlugin::maxScanDepth() const {
+  return 256;  // 模拟值
+}
+
+QVector<qint16> MockADPlugin::readChannelRaw(int channel, int count) {
+  QVector<double> volts = readChannelData(channel, count);
+  QVector<qint16> raw(volts.size());
+  for (int i = 0; i < volts.size(); ++i) {
+    double range = channel_configs_.value(channel).range;
+    if (range > 0.0) {
+      raw[i] = static_cast<qint16>(volts[i] / range * 32768.0);
+    }
+  }
+  return raw;
+}
+
+QVector<qint16> MockADPlugin::readAllChannelsRaw(int count) {
+  QVector<qint16> data;
+  for (int ch = 0; ch < kChannelCount; ++ch) {
+    QVector<qint16> chRaw = readChannelRaw(ch, count);
+    data.append(chRaw);
+  }
+  return data;
+}
+
 }  // namespace examples
 }  // namespace etest

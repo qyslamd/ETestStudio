@@ -131,13 +131,13 @@ TEST_F(ADDevicePluginTest, ChannelConfig) {
   ADChannelConfig defaultCfg = ad->channelConfig(0);
   EXPECT_DOUBLE_EQ(defaultCfg.range, 10.0);
   EXPECT_EQ(defaultCfg.coupling, ADCoupling::DC);
-  EXPECT_FALSE(defaultCfg.icp_enabled);
 
-  // 修改量程和耦合
+  // 修改量程、耦合和通道模式
   ADChannelConfig cfg;
   cfg.range = 5.0;
   cfg.coupling = ADCoupling::AC;
-  cfg.icp_enabled = true;
+  cfg.differential = true;
+  cfg.gain = 2;
   cfg.trigger_edge = ADTriggerEdge::Rising;
   cfg.trigger_level = 1.5;
 
@@ -145,7 +145,8 @@ TEST_F(ADDevicePluginTest, ChannelConfig) {
   ADChannelConfig readCfg = ad->channelConfig(0);
   EXPECT_DOUBLE_EQ(readCfg.range, 5.0);
   EXPECT_EQ(readCfg.coupling, ADCoupling::AC);
-  EXPECT_TRUE(readCfg.icp_enabled);
+  EXPECT_TRUE(readCfg.differential);
+  EXPECT_EQ(readCfg.gain, 2);
   EXPECT_DOUBLE_EQ(readCfg.trigger_level, 1.5);
 
   // 无效通道
