@@ -29,6 +29,7 @@ class SettingsWidget : public QDialog {
   QWidget* createEditorPage();
   QWidget* createTerminalPage();
   QWidget* createAppearancePage();
+  QWidget* createBackupPage();
 
   // Form row creators — return the control widget for signal wiring
   QSpinBox* addSpinBoxRow(QWidget* parent, const QString& label,

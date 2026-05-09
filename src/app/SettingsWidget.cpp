@@ -8,6 +8,7 @@
 
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
+#include "backup/BackupManager.h"
 
 namespace etest {
 namespace app {
@@ -40,12 +41,14 @@ void SettingsWidget::initUi() {
   auto* itemEditor = new QTreeWidgetItem(tree_, {QStringLiteral("编辑器")});
   auto* itemTerminal = new QTreeWidgetItem(tree_, {QStringLiteral("终端")});
   auto* itemAppearance = new QTreeWidgetItem(tree_, {QStringLiteral("外观")});
+  auto* itemBackup = new QTreeWidgetItem(tree_, {QStringLiteral("备份")});
 
   // Assign indices for selection tracking
   itemGeneral->setData(0, Qt::UserRole, 0);
   itemEditor->setData(0, Qt::UserRole, 1);
   itemTerminal->setData(0, Qt::UserRole, 2);
   itemAppearance->setData(0, Qt::UserRole, 3);
+  itemBackup->setData(0, Qt::UserRole, 4);
 
   layout->addWidget(tree_);
 
@@ -56,6 +59,7 @@ void SettingsWidget::initUi() {
   pages_->addWidget(createEditorPage());     // index 1
   pages_->addWidget(createTerminalPage());   // index 2
   pages_->addWidget(createAppearancePage()); // index 3
+  pages_->addWidget(createBackupPage());     // index 4
 
   scroll_area_ = new QScrollArea(this);
   scroll_area_->setWidgetResizable(true);
@@ -191,6 +195,32 @@ QWidget* SettingsWidget::createAppearancePage() {
                  CONFIG_TOOLBAR_DEFAULT_VISIBLE);
   addButtonRow(page, QStringLiteral("窗口布局"),
                QStringLiteral("恢复默认"));
+  layout->addStretch();
+  return page;
+}
+
+QWidget* SettingsWidget::createBackupPage() {
+  auto* page = new QWidget(this);
+  auto* layout = new QVBoxLayout(page);
+  layout->setContentsMargins(20, 16, 20, 16);
+  layout->setSpacing(8);
+
+  layout->addWidget(createSectionHeader(QStringLiteral("自动备份")));
+  addCheckBoxRow(page, QStringLiteral("启用自动备份"), CONFIG_BACKUP_ENABLED,
+                 CONFIG_BACKUP_DEFAULT_ENABLED);
+  addSpinBoxRow(page, QStringLiteral("备份间隔(分钟)"), CONFIG_BACKUP_INTERVAL_MIN,
+                1, 60, 1, CONFIG_BACKUP_DEFAULT_INTERVAL_MIN);
+  addSpinBoxRow(page, QStringLiteral("最大备份数"), CONFIG_BACKUP_MAX_COUNT,
+                1, 50, 1, CONFIG_BACKUP_DEFAULT_MAX_COUNT);
+
+  layout->addSpacing(16);
+  layout->addWidget(createSectionHeader(QStringLiteral("手动操作")));
+  auto* manualBtn = addButtonRow(page, QStringLiteral("立即备份"),
+                                  QStringLiteral("备份"));
+  connect(manualBtn, &QPushButton::clicked, this, []() {
+    etest::core::backup::BackupManager::instance().manualBackup();
+  });
+
   layout->addStretch();
   return page;
 }

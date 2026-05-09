@@ -71,3 +71,31 @@
 4. **测试执行**: 实时监控、断点调试、报告生成
 5. **RUI可视化界面**: 基于Web的测试监控面板
 6. **测试用例生成器**: 因果图/组合对/模糊测试/测试流程模型
+
+## Windows崩溃处理机制
+
+### SetUnhandledExceptionFilter vs AddVectoredExceptionHandler
+- `SetUnhandledExceptionFilter` 只在异常链最后才被调用，gtest/CRT的SEH handler会先拦截
+- `AddVectoredExceptionHandler(1, handler)` 注册在VEH链最前端，优先级最高
+- 实际使用中两者都注册：VEH负责优先捕获，SetUnhandledExceptionFilter作为兜底
+- VEH handler需过滤异常类型，只处理真正的崩溃（ACCESS_VIOLATION等），放行调试和控制流异常
+
+### MiniDumpWriteDump要点
+- 需要dbghelp.lib（已在CMake中链接）
+- MiniDumpWithDataSegs | MiniDumpWithHandleData | MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo 为推荐级别
+- MiniDumpWithFullMemory会包含全部进程内存，文件可能数百MB
+- 生成的.dmp配合PDB可在任意机器用WinDbg/VS调试
+
+### QStandardPaths在Windows上的路径
+| 枚举值 | 实际路径 |
+|--------|----------|
+| AppLocalDataLocation | C:/Users/<user>/AppData/Local/etest_demo/ |
+| AppConfigLocation | C:/Users/<user>/AppData/Local/etest_demo/ |
+| AppDataLocation | C:/Users/<user>/AppData/Roaming/etest_demo/ |
+| DocumentsLocation | C:/Users/<user>/Documents/ |
+
+### gtest崩溃测试
+- gtest默认用SEH __try/__except包裹测试体，崩溃异常到不了SetUnhandledExceptionFilter
+- `--gtest_catch_exceptions=0` 可禁用gtest的SEH拦截
+- 即使加了此参数，gtest进程内的其他SEH handler仍可能拦截，VEH才能保证优先
+- DISABLED_前缀测试不会自动运行，需`--gtest_also_run_disabled_tests`

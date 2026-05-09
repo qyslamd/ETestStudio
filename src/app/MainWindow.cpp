@@ -35,6 +35,7 @@
 #include <DockWidgetTab.h>
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
+#include "backup/BackupManager.h"
 #include "dialogs/NewProjectDialog.h"
 #include "logger/Logger.h"
 #include "logger/QtConsoleSink.h"
@@ -302,6 +303,15 @@ void MainWindow::initSignals() {
           });
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
           gitWidget, [gitWidget]() { gitWidget->setProjectRoot({}); });
+
+  // 备份管理：项目打开/关闭时启停自动备份
+  auto& backupMgr = etest::core::backup::BackupManager::instance();
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+          &backupMgr, [&backupMgr](const QString& projectPath) {
+            backupMgr.onProjectOpened(projectPath);
+          });
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+          &backupMgr, [&backupMgr]() { backupMgr.onProjectClosed(); });
 
   // Git面板：点击文件打开编辑器
   connect(gitWidget, &GitWidget::fileOpenRequested, editor_manager_,

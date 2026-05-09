@@ -10,7 +10,7 @@
 | 阶段 | 状态 | 完成度 |
 |------|------|--------|
 | 1.1 开发环境搭建 | ✅ 已完成 | 100% |
-| 1.2 核心基础设施 | ✅ 已完成 | 95%（异常框架、自动备份待补） |
+| 1.2 核心基础设施 | ✅ 已完成 | 100% |
 | 1.3 主窗口框架 | ✅ 已完成 | 100% |
 | 2 设备管理 | ❌ 未开始 | 0% |
 | 3 ICD协议管理 | ❌ 未开始 | 0% |
@@ -38,8 +38,8 @@
 
 ### 遗留可选项（不影响阶段完成）
 - [ ] SidebarWidget Git/调试/扩展页仍为占位符（P2，后续阶段按需实现）
-- [ ] 异常框架补全（1.2遗留）
-- [ ] 自动备份功能（1.2遗留）
+- [x] 异常框架补全（1.2遗留）— GlobalExceptionHandler已实现
+- [x] 自动备份功能（1.2遗留）— BackupManager已实现
 
 ---
 
@@ -124,3 +124,8 @@
 | 2026-05-08 | 设置页面改为独立QDialog而非侧边栏嵌入 | 类似VS Code以独立Tab打开设置，简化交互 |
 | 2026-05-08 | 文件图标采用Seti风格（填充+底部彩色标签） | 纯描边图标在16px下难以区分，彩色标签一目了然 |
 | 2026-05-08 | 全局搜索为主线程同步搜索（MVP） | 项目<10K文件够用，后续可改为QThreadPool |
+| 2026-05-09 | GlobalExceptionHandler单例QObject，信号捕获+Qt消息重定向 | 统一异常处理入口，CrashHandler专注崩溃dump |
+| 2026-05-09 | 崩溃/日志路径从Documents迁移到AppData/Local | 崩溃dump和日志是机器相关数据，不适合放用户文档目录 |
+| 2026-05-09 | CrashHandler添加VEH+MiniDump | SetUnhandledExceptionFilter在gtest等SEH环境中不够优先，VEH在链最前端 |
+| 2026-05-09 | 发布采用RelWithDebInfo而非Release | 带PDB的优化构建，崩溃dump可在任意机器用WinDbg/VS调试 |
+| 2026-05-09 | disabled测试脚本加--gtest_catch_exceptions=0 | gtest默认SEH拦截崩溃，导致CrashHandler无法触发 |

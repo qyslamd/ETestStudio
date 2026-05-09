@@ -10,6 +10,7 @@ set(SOURCES
     common/StringException.cpp
     common/ByteException.cpp
     common/GlobalExceptionHandler.cpp
+    backup/BackupManager.cpp
     utils/FileUtil.cpp
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
@@ -32,6 +33,7 @@ set(HEADERS
     common/StringException.h
     common/ByteException.h
     common/GlobalExceptionHandler.h
+    backup/BackupManager.h
     utils/FileUtil.h
     utils/TimeUtil.h
     utils/StringUtil.h
@@ -76,6 +78,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/config
     ${CMAKE_CURRENT_SOURCE_DIR}/crashhandler
     ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/backup
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin
     ${CMAKE_CURRENT_SOURCE_DIR}/project

@@ -1,5 +1,28 @@
 # ETest Demo — 进度日志
 
+## 2026-05-09
+
+### 已完成
+- GlobalExceptionHandler实现（信号捕获6种、Qt消息重定向、单例QObject、exceptionCaught信号）
+- main.cpp初始化顺序调整：Logger → GlobalExceptionHandler → CrashHandler
+- GlobalExceptionHandler单元测试（4个常规 + 5个DISABLED崩溃测试）
+- run_disabled_test.bat.in模板，含disabled测试的模块生成专用bat脚本
+- CMakePresets新增ninja-relwithdebinfo配置/构建/测试预设
+- build_ninja.bat支持构建类型参数[debug|relwithdebinfo|release]
+- WindowsCrashHandler添加MiniDumpWriteDump生成.dmp转储文件
+- WindowsCrashHandler添加AddVectoredExceptionHandler优先捕获崩溃
+- 崩溃弹窗仅在QApplication环境中显示（inherits判断）
+- 日志/崩溃路径从Documents迁移到AppData/Local/etest_demo/
+- RelWithDebInfo构建与崩溃调试指南文档
+- 主程序崩溃测试验证通过（.log + .dmp均生成）
+
+### 当前状态
+- **阶段1.2全部完成** ✅
+- 下一步：**阶段2 设备管理**
+
+### 阻塞项
+- 无
+
 ## 2026-05-08
 
 ### 已完成
