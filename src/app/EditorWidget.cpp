@@ -139,6 +139,8 @@ void EditorWidget::setupEditor() {
   bool autoIndent = config.get<bool>(CONFIG_EDITOR_AUTO_INDENT, CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
   editor_->setAutoIndent(autoIndent);
   editor_->setIndentationGuides(true);
+  editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
+      QsciScintilla::STYLE_INDENTGUIDE, QColor(67, 67, 67));
 
   int tabWidth = config.get<int>(CONFIG_EDITOR_TAB_WIDTH, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
   editor_->setTabWidth(tabWidth);
@@ -162,8 +164,18 @@ void EditorWidget::setupEditor() {
 
   // 行号区深色主题
   editor_->setMarginBackgroundColor(0, QColor(37, 37, 37));
+  editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
+      QsciScintilla::STYLE_LINENUMBER, QColor(37, 37, 37));
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
       QsciScintilla::STYLE_LINENUMBER, QColor(133, 133, 133));
+  // 符号标记区 (margin 1) 深色主题
+  editor_->setMarginType(1, QsciScintilla::SymbolMargin);
+  editor_->setMarginWidth(1, 16);
+  editor_->setMarginBackgroundColor(1, QColor(37, 37, 37));
+  // 折叠区 (margin 2) 深色主题
+  editor_->setMarginBackgroundColor(2, QColor(37, 37, 37));
+  editor_->setMarginsForegroundColor(QColor(133, 133, 133));
+  editor_->setFoldMarginColors(QColor(133, 133, 133), QColor(37, 37, 37));
 
   // 括号匹配
   editor_->setBraceMatching(QsciScintilla::SloppyBraceMatch);
@@ -182,6 +194,7 @@ void EditorWidget::setupEditor() {
   // 字体大小
   int fontSize = config.get<int>(CONFIG_EDITOR_FONT_SIZE, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
   QFont font = editor_->font();
+  font.setFamily("Consolas");
   font.setPointSize(fontSize);
   editor_->setFont(font);
   editor_->setMarginsFont(font);
