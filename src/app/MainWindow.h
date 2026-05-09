@@ -1,6 +1,7 @@
 #ifndef ETEST_APP_MAINWINDOW_H_
 #define ETEST_APP_MAINWINDOW_H_
 
+#include <QJsonObject>
 #include <QMainWindow>
 #include <QToolBar>
 #include "DockManager.h"
@@ -37,6 +38,9 @@ class MainWindow : public QMainWindow {
 
   void saveWindowState();
   void restoreWindowState();
+  QJsonObject captureSessionData();
+  void writeSessionFile(const QJsonObject& data);
+  void restoreSession();
 
   void createMenuBar();
   void createStatusBar();
@@ -93,6 +97,7 @@ class MainWindow : public QMainWindow {
   OutputPanel* output_panel_;
   ProblemsPanel* problems_panel_;
   TerminalPanel* terminal_panel_;
+  PanelContainerWidget* panel_container_ = nullptr;
 
   // 设置对话框（非模态，只创建一次）
   SettingsWidget* settings_dialog_ = nullptr;

@@ -15,9 +15,13 @@
 - 日志/崩溃路径从Documents迁移到AppData/Local/etest_demo/
 - RelWithDebInfo构建与崩溃调试指南文档
 - 主程序崩溃测试验证通过（.log + .dmp均生成）
+- 会话持久化：captureSessionData/writeSessionFile/restoreSession
+- EditorManager::openFiles() 接口
+- PanelContainerWidget::setMaximized(bool) setter
+- 工具/帮助菜单补全，修复空菜单崩溃
 
 ### 当前状态
-- **阶段1.2全部完成** ✅
+- **阶段1.3全部完成** ✅
 - 下一步：**阶段2 设备管理**
 
 ### 阻塞项

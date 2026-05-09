@@ -247,6 +247,8 @@ EditorWidget* EditorManager::editorForFile(const QString& filePath) const {
   return editors_.value(filePath, nullptr);
 }
 
+QStringList EditorManager::openFiles() const { return editors_.keys(); }
+
 bool EditorManager::isOpen(const QString& filePath) const {
   return editors_.contains(filePath);
 }

@@ -21,6 +21,7 @@ class SidebarWidget : public QWidget {
   explicit SidebarWidget(QWidget* parent = nullptr);
 
   void switchPage(int index);
+  int pageCount() const;
 
   FileExplorerWidget* fileExplorer() const;
   HardwareTreeWidget* hardwareTree() const;

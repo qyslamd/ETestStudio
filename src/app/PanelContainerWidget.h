@@ -22,6 +22,7 @@ class PanelContainerWidget : public QWidget {
   int currentPanelIndex() const;
 
   bool isMaximized() const;
+  void setMaximized(bool maximized);
 
  Q_SIGNALS:
   void panelMaximized();

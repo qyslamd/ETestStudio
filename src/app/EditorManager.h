@@ -37,6 +37,7 @@ class EditorManager : public QObject {
   bool hasUnsavedChangesInDirectory(const QString& dirPath) const;
   bool saveModifiedFilesInDirectory(const QString& dirPath);
 
+  QStringList openFiles() const;
   EditorWidget* currentEditor() const;
   QString currentFilePath() const;
 

@@ -98,5 +98,16 @@ bool PanelContainerWidget::isMaximized() const {
   return maximized_;
 }
 
+void PanelContainerWidget::setMaximized(bool maximized) {
+  maximized_ = maximized;
+  if (maximized_) {
+    max_button_->setIcon(QIcon(":/resources/icons/svg/restore_dark.svg"));
+    max_button_->setToolTip(QStringLiteral("还原面板"));
+  } else {
+    max_button_->setIcon(QIcon(":/resources/icons/svg/maximize_dark.svg"));
+    max_button_->setToolTip(QStringLiteral("最大化面板"));
+  }
+}
+
 }  // namespace app
 }  // namespace etest

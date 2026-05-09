@@ -92,6 +92,10 @@ void SidebarWidget::setupUi() {
   switchPage(0);
 }
 
+int SidebarWidget::pageCount() const {
+  return stack_->count();
+}
+
 void SidebarWidget::switchPage(int index) {
   if (index >= 0 && index < stack_->count()) {
     stack_->setCurrentIndex(index);

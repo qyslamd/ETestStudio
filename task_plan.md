@@ -33,6 +33,7 @@
 - [x] **全局搜索**（SearchWidget、项目文本搜索、点击跳转行、Ctrl+Shift+F）
 - [x] **设置页面**（SettingsWidget独立对话框、分类树+表单、ConfigManager双向绑定）
 - [x] **文件类型图标**（FileTypeIconProvider、11类Seti风格彩色SVG图标）
+- [x] **会话持久化**（captureSessionData/writeSessionFile/restoreSession，恢复编辑器/侧边栏/面板状态）
 - [x] 窗口大小/位置/布局状态持久化（ConfigManager）
 - [x] 单元测试（10+测试文件）
 
@@ -124,7 +125,7 @@
 | 2026-05-08 | 设置页面改为独立QDialog而非侧边栏嵌入 | 类似VS Code以独立Tab打开设置，简化交互 |
 | 2026-05-08 | 文件图标采用Seti风格（填充+底部彩色标签） | 纯描边图标在16px下难以区分，彩色标签一目了然 |
 | 2026-05-08 | 全局搜索为主线程同步搜索（MVP） | 项目<10K文件够用，后续可改为QThreadPool |
-| 2026-05-09 | GlobalExceptionHandler单例QObject，信号捕获+Qt消息重定向 | 统一异常处理入口，CrashHandler专注崩溃dump |
+| 2026-05-09 | 会话持久化采用JSON格式存入AppData/Local/session.json | 轻量、可读、与ConfigManager分离，关闭确认后才写盘 |
 | 2026-05-09 | 崩溃/日志路径从Documents迁移到AppData/Local | 崩溃dump和日志是机器相关数据，不适合放用户文档目录 |
 | 2026-05-09 | CrashHandler添加VEH+MiniDump | SetUnhandledExceptionFilter在gtest等SEH环境中不够优先，VEH在链最前端 |
 | 2026-05-09 | 发布采用RelWithDebInfo而非Release | 带PDB的优化构建，崩溃dump可在任意机器用WinDbg/VS调试 |

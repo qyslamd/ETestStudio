@@ -5,15 +5,22 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QScrollBar>
 #include <QShortcut>
+#include <QStandardPaths>
 #include <QStatusBar>
 #include <QToolButton>
+
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 
 #include "ActivityBarWidget.h"
@@ -61,6 +68,7 @@ MainWindow::MainWindow(QWidget* parent)
       terminal_panel_(nullptr) {
   initUi();
   initSignals();
+  restoreSession();
   updateWindowTitle();
 
   // 加载插件并刷新硬件树
@@ -164,14 +172,14 @@ void MainWindow::initUi() {
 
   // Terminal shell auto-starts via TerminalPanel::showEvent()
 
-  auto* panelContainer = new PanelContainerWidget(this);
-  panelContainer->addPanel(QStringLiteral("输出"), output_panel_);
-  panelContainer->addPanel(QStringLiteral("问题"), problems_panel_);
-  panelContainer->addPanel(QStringLiteral("终端"), terminal_panel_);
+  panel_container_ = new PanelContainerWidget(this);
+  panel_container_->addPanel(QStringLiteral("输出"), output_panel_);
+  panel_container_->addPanel(QStringLiteral("问题"), problems_panel_);
+  panel_container_->addPanel(QStringLiteral("终端"), terminal_panel_);
 
   auto* panelDock = new ads::CDockWidget(QStringLiteral("面板"));
   panelDock->setObjectName("PanelDock");
-  panelDock->setWidget(panelContainer);
+  panelDock->setWidget(panel_container_);
   panelDock->setFeature(ads::CDockWidget::DockWidgetClosable, true);
   panelDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   panelDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
@@ -181,14 +189,14 @@ void MainWindow::initUi() {
   hideDockTitleBarButtons(panelDock->dockAreaWidget());
 
   // 面板容器信号
-  connect(panelContainer, &PanelContainerWidget::panelClosed, this,
+  connect(panel_container_, &PanelContainerWidget::panelClosed, this,
           [panelDock]() { panelDock->closeDockWidget(); });
-  connect(panelContainer, &PanelContainerWidget::panelMaximized, this, [this]() {
+  connect(panel_container_, &PanelContainerWidget::panelMaximized, this, [this]() {
     if (sidebar_dock_) sidebar_dock_->closeDockWidget();
     auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
     if (activityDock) activityDock->closeDockWidget();
   });
-  connect(panelContainer, &PanelContainerWidget::panelRestored, this, [this]() {
+  connect(panel_container_, &PanelContainerWidget::panelRestored, this, [this]() {
     if (sidebar_dock_) {
       sidebar_dock_->toggleView(true);
       if (sidebar_dock_->dockAreaWidget()) {
@@ -1134,18 +1142,24 @@ void MainWindow::onGoToLine() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-  // 先尝试关闭所有编辑器文件，如果用户取消则不关闭程序
+  // 捕获当前会话状态（文件都还开着，数据完整）
+  QJsonObject sessionData = captureSessionData();
+
+  // 尝试关闭所有编辑器文件，如果用户取消则不关闭程序
   if (!editor_manager_->closeAllFiles()) {
     event->ignore();
+    // sessionData 出作用域自动释放
     return;
   }
 
-  // 再关闭项目
+  // 关闭项目
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   if (projectMgr.isProjectOpen()) {
     projectMgr.closeProject();
   }
 
+  // 确认关闭后才写盘
+  writeSessionFile(sessionData);
   saveWindowState();
   QMainWindow::closeEvent(event);
 }
@@ -1214,6 +1228,206 @@ void MainWindow::restoreWindowState() {
     file_toolbar_->setVisible(toolbarVisible);
     edit_toolbar_->setVisible(toolbarVisible);
   }
+}
+
+QJsonObject MainWindow::captureSessionData() {
+  QJsonObject root;
+  root["version"] = 1;
+
+  // 当前项目路径
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  if (projectMgr.isProjectOpen()) {
+    root["projectPath"] =
+        projectMgr.currentProject()->projectFilePath();
+  }
+
+  // 编辑器状态
+  QJsonObject editorsObj;
+  editorsObj["activeFile"] = editor_manager_->currentFilePath();
+
+  QJsonArray filesArray;
+  for (const QString& path : editor_manager_->openFiles()) {
+    QJsonObject fileObj;
+    fileObj["path"] = path;
+    auto* editor = editor_manager_->editorForFile(path);
+    if (editor) {
+      int line, col;
+      editor->editor()->getCursorPosition(&line, &col);
+      fileObj["cursorLine"] = line;
+      fileObj["cursorColumn"] = col;
+      fileObj["scrollPos"] =
+          editor->editor()->verticalScrollBar()->value();
+    }
+    filesArray.append(fileObj);
+  }
+  editorsObj["openFiles"] = filesArray;
+  root["editors"] = editorsObj;
+
+  // 侧边栏状态（只保存 sidebar 有效页，排除设置按钮 index 6）
+  QJsonObject sidebarObj;
+  int barIdx = activity_bar_->activeIndex();
+  if (barIdx >= 0 && barIdx < sidebar_->pageCount()) {
+    sidebarObj["activeTab"] = barIdx;
+  } else {
+    sidebarObj["activeTab"] = 0;  // fallback 到资源管理器
+  }
+  sidebarObj["visible"] =
+      sidebar_dock_ && !sidebar_dock_->isClosed();
+  root["sidebar"] = sidebarObj;
+
+  // 面板状态
+  QJsonObject panelObj;
+  if (panel_container_) {
+    panelObj["activeTab"] = panel_container_->currentPanelIndex();
+    panelObj["maximized"] = panel_container_->isMaximized();
+  }
+  auto* panelDock = dock_manager_->findDockWidget("PanelDock");
+  panelObj["visible"] = panelDock && !panelDock->isClosed();
+  root["panel"] = panelObj;
+
+  int fileCount = editorsObj["openFiles"].toArray().size();
+  LOG_INFO("SESSION", "会话已捕获：项目={}, 文件={}, 侧边栏tab={}, 面板tab={}",
+           root.contains("projectPath") ? root["projectPath"].toString().toStdString() : "无",
+           fileCount,
+           sidebarObj["activeTab"].toInt(),
+           panelObj["activeTab"].toInt());
+  return root;
+}
+
+void MainWindow::writeSessionFile(const QJsonObject& data) {
+  QString sessionPath =
+      QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation)
+      + "/session.json";
+  QFile file(sessionPath);
+  if (file.open(QIODevice::WriteOnly)) {
+    qint64 bytes = file.write(QJsonDocument(data).toJson());
+    LOG_INFO("SESSION", "会话已写入：{} ({} 字节)", sessionPath.toStdString(), bytes);
+  } else {
+    LOG_WARN("SESSION", "会话写入失败：无法打开 {}", sessionPath.toStdString());
+  }
+}
+
+void MainWindow::restoreSession() {
+  QString sessionPath =
+      QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation)
+      + "/session.json";
+  QFile file(sessionPath);
+  if (!file.open(QIODevice::ReadOnly)) return;
+
+  QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  QJsonObject root = doc.object();
+  if (root["version"].toInt() != 1) return;
+
+  // 恢复侧边栏
+  QJsonObject sidebarObj = root["sidebar"].toObject();
+  if (!sidebarObj.isEmpty()) {
+    int tab = sidebarObj["activeTab"].toInt();
+    if (tab >= 0 && tab < sidebar_->pageCount()) {
+      activity_bar_->setActiveIndex(tab);
+      sidebar_->switchPage(tab);
+    } else {
+      activity_bar_->setActiveIndex(0);
+      sidebar_->switchPage(0);
+    }
+
+    if (sidebar_dock_) {
+      if (sidebarObj["visible"].toBool(true) &&
+          sidebar_dock_->isClosed()) {
+        sidebar_dock_->toggleView(true);
+        if (sidebar_dock_->dockAreaWidget()) {
+          sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+        }
+      } else if (!sidebarObj["visible"].toBool(true) &&
+                 !sidebar_dock_->isClosed()) {
+        sidebar_dock_->closeDockWidget();
+      }
+    }
+  }
+
+  // 恢复面板
+  QJsonObject panelObj = root["panel"].toObject();
+  if (!panelObj.isEmpty() && panel_container_) {
+    panel_container_->setCurrentPanel(
+        panelObj["activeTab"].toInt());
+
+    auto* panelDock = dock_manager_->findDockWidget("PanelDock");
+    if (panelDock) {
+      if (panelObj["visible"].toBool(true) &&
+          panelDock->isClosed()) {
+        panelDock->toggleView(true);
+        hideDockTitleBarButtons(panelDock->dockAreaWidget());
+      } else if (!panelObj["visible"].toBool(true) &&
+                 !panelDock->isClosed()) {
+        panelDock->closeDockWidget();
+      }
+    }
+
+    if (panelObj["maximized"].toBool()) {
+      panel_container_->setMaximized(true);
+      if (sidebar_dock_) sidebar_dock_->closeDockWidget();
+      auto* activityDock =
+          dock_manager_->findDockWidget("ActivityDock");
+      if (activityDock) activityDock->closeDockWidget();
+    }
+  }
+
+  // 恢复项目
+  QString projectPath = root["projectPath"].toString();
+  if (!projectPath.isEmpty() && QFileInfo::exists(projectPath)) {
+    etest::core::project::ProjectManager::instance().openProject(
+        projectPath);
+  }
+
+  // 恢复编辑器（先恢复所有文件，最后激活 activeFile）
+  QJsonObject editorsObj = root["editors"].toObject();
+  QJsonArray filesArray = editorsObj["openFiles"].toArray();
+  QString activeFile = editorsObj["activeFile"].toString();
+
+  for (const QJsonValue& val : filesArray) {
+    QJsonObject fileObj = val.toObject();
+    QString path = fileObj["path"].toString();
+    if (path.isEmpty() || !QFileInfo::exists(path)) continue;
+
+    editor_manager_->openFile(path);
+
+    // 光标/滚动位置 clamp 到文件实际范围
+    auto* editor = editor_manager_->editorForFile(path);
+    if (editor) {
+      int line = fileObj["cursorLine"].toInt();
+      int col = fileObj["cursorColumn"].toInt();
+      int scrollPos = fileObj["scrollPos"].toInt();
+
+      int maxLine = editor->editor()->lines() - 1;
+      if (line > maxLine) line = maxLine;
+      if (line < 0) line = 0;
+
+      int maxCol = editor->editor()->text(line).length();
+      if (col > maxCol) col = maxCol;
+      if (col < 0) col = 0;
+
+      editor->editor()->setCursorPosition(line, col);
+
+      int maxScroll = editor->editor()->verticalScrollBar()->maximum();
+      if (scrollPos > maxScroll) scrollPos = maxScroll;
+      if (scrollPos < 0) scrollPos = 0;
+      editor->editor()->verticalScrollBar()->setValue(scrollPos);
+    }
+  }
+
+  // 激活之前正在编辑的文件（已在循环中打开，只需 raise）
+  if (!activeFile.isEmpty() && editor_manager_->isOpen(activeFile)) {
+    // 查找对应的 dock 并置前
+    editor_manager_->openFile(activeFile);
+  }
+
+  int restoredCount = filesArray.size();
+  int skippedCount = 0;
+  for (const QJsonValue& val : filesArray) {
+    if (!QFileInfo::exists(val.toObject()["path"].toString())) skippedCount++;
+  }
+  LOG_INFO("SESSION", "会话恢复完成：文件={}, 跳过={}, 项目={}",
+           restoredCount - skippedCount, skippedCount,
+           projectPath.isEmpty() ? "无" : projectPath.toStdString());
 }
 
 void MainWindow::hideDockTitleBarButtons(ads::CDockAreaWidget* area) {
