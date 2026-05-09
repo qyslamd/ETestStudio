@@ -18,6 +18,7 @@ Schema/
 
 # 其他可能的构建文件和目录
 .vs/
+.opencode/
 *.vcxproj*
 *.sln
 *.ninja

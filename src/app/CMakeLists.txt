@@ -33,6 +33,8 @@ add_executable(${TARGET_NAME}
     SettingsWidget.cpp
     SearchWidget.h
     SearchWidget.cpp
+    WelcomeWidget.h
+    WelcomeWidget.cpp
     dialogs/NewProjectDialog.h
     dialogs/NewProjectDialog.cpp
     resource.qrc

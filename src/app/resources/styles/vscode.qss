@@ -648,9 +648,67 @@ TerminalPanel QPlainTextEdit {
     selection-color: #FFFFFF;
 }
 
-/* ==================== 中央编辑区占位 ==================== */
-QWidget#centralPlaceholder {
+/* ==================== 欢迎页 ==================== */
+QWidget#WelcomeWidget {
     background-color: #1E1E1E;
+}
+QWidget#WelcomeCenter {
+    background-color: #1E1E1E;
+}
+QLabel#WelcomeLogo {
+    color: #CCCCCC;
+    font-size: 28px;
+    font-weight: bold;
+}
+QLabel#WelcomeVersion {
+    color: #888888;
+    font-size: 13px;
+}
+QLabel#WelcomeSectionHeader {
+    color: #BBBBBB;
+    font-size: 14px;
+    font-weight: bold;
+}
+QPushButton#WelcomeActionButton {
+    background-color: #0E639C;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 3px;
+    padding: 6px 20px;
+    font-size: 13px;
+}
+QPushButton#WelcomeActionButton:hover {
+    background-color: #1177BB;
+}
+QPushButton#WelcomeActionButton:pressed {
+    background-color: #0D5A8F;
+}
+QListWidget#WelcomeRecentList {
+    background-color: #252526;
+    border: 1px solid #3C3C3C;
+    border-radius: 3px;
+    color: #CCCCCC;
+    font-size: 13px;
+    outline: none;
+}
+QListWidget#WelcomeRecentList::item {
+    padding: 6px 10px;
+    border-bottom: 1px solid #2D2D2D;
+}
+QListWidget#WelcomeRecentList::item:hover {
+    background-color: #2A2D2E;
+}
+QListWidget#WelcomeRecentList::item:selected {
+    background-color: #094771;
+}
+QLabel#WelcomeShortcutKey {
+    color: #888888;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 12px;
+}
+QLabel#WelcomeShortcutDesc {
+    color: #CCCCCC;
+    font-size: 12px;
 }
 
 /* ==================== SettingsDialog ==================== */

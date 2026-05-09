@@ -179,6 +179,11 @@ spdlog::logger* Logger::getOrCreateModuleLogger(const std::string& moduleName) {
       spdlog::thread_pool(), spdlog::async_overflow_policy::block);
   moduleLogger->set_level(defaultLogger->level());
   moduleLogger->flush_on(spdlog::level::err);
+
+  // 如果spdlog全局registry中已存在同名logger，先移除再注册
+  if (spdlog::get(moduleName)) {
+    spdlog::drop(moduleName);
+  }
   spdlog::register_logger(moduleLogger);
 
   auto* rawPtr = moduleLogger.get();

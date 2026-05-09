@@ -29,6 +29,7 @@
 #include "SettingsWidget.h"
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
+#include "WelcomeWidget.h"
 
 #include <DockAreaTitleBar.h>
 #include <DockAreaWidget.h>
@@ -99,6 +100,7 @@ void MainWindow::initUi() {
   createStatusBar();
 
   // QADS Dock Manager
+  ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   dock_manager_ = new ads::CDockManager(this);
 
   // 覆盖QADS内置的default.css，应用暗色主题（必须设置到CDockManager自身才生效）
@@ -109,14 +111,19 @@ void MainWindow::initUi() {
     adsStyleFile.close();
   }
 
-  // 中央编辑区（必须在添加其他dock之前建立）
-  auto* centralPlaceholder = new QWidget(this);
-  centralPlaceholder->setObjectName("centralPlaceholder");
-  auto* centralDock = new ads::CDockWidget(QStringLiteral("中央编辑区"));
+  // 中央编辑区：Welcome页面（必须在添加其他dock之前建立）
+  welcome_widget_ = new WelcomeWidget(this);
+  auto* centralDock = new ads::CDockWidget(QStringLiteral("欢迎"));
   centralDock->setObjectName("CentralDock");
-  centralDock->setWidget(centralPlaceholder);
+  centralDock->setWidget(welcome_widget_);
   centralDock->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(centralDock);
+
+  // 隐藏中央区域标题栏的菜单和分离按钮，保留tab
+  auto* centralArea = centralDock->dockAreaWidget();
+  if (centralArea) {
+    hideDockTitleBarButtons(centralArea);
+  }
 
   // 编辑器管理器
   editor_manager_ = new EditorManager(dock_manager_, this);
@@ -312,6 +319,21 @@ void MainWindow::initSignals() {
           });
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
           &backupMgr, [&backupMgr]() { backupMgr.onProjectClosed(); });
+
+  // 欢迎页：快捷操作和最近项目
+  connect(welcome_widget_, &WelcomeWidget::newProjectRequested, this,
+          &MainWindow::onNewProject);
+  connect(welcome_widget_, &WelcomeWidget::openProjectRequested, this,
+          &MainWindow::onOpenProject);
+  connect(welcome_widget_, &WelcomeWidget::projectOpenRequested, this,
+          [this](const QString& projectPath) {
+            auto& pm = etest::core::project::ProjectManager::instance();
+            pm.openProject(projectPath);
+          });
+
+  // 项目打开后刷新欢迎页的最近项目列表
+  connect(&projectMgr, &etest::core::project::ProjectManager::recentProjectsChanged,
+          welcome_widget_, &WelcomeWidget::refreshRecentProjects);
 
   // Git面板：点击文件打开编辑器
   connect(gitWidget, &GitWidget::fileOpenRequested, editor_manager_,
@@ -573,6 +595,15 @@ void MainWindow::createMenuBar() {
   QMenu* edit_menu = menuBar->addMenu(QStringLiteral("编辑(&E)"));
   edit_menu->setObjectName("editMenu");
   view_menu_ = menuBar->addMenu(QStringLiteral("视图(&V)"));
+
+  // 欢迎页
+  auto* welcomeViewAction = view_menu_->addAction(QStringLiteral("欢迎页(&W)"));
+  connect(welcomeViewAction, &QAction::triggered, this, [this]() {
+    auto* centralDock = dock_manager_->findDockWidget("CentralDock");
+    if (centralDock && centralDock->dockAreaWidget()) {
+      centralDock->dockAreaWidget()->setCurrentIndex(0);
+    }
+  });
 
   // 输出面板
   view_panel_action_ = view_menu_->addAction(QStringLiteral("输出面板"));

@@ -19,6 +19,7 @@ class SettingsWidget;
 class TerminalPanel;
 class PanelContainerWidget;
 class EditorManager;
+class WelcomeWidget;
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -84,6 +85,9 @@ class MainWindow : public QMainWindow {
 
   // 编辑器管理
   EditorManager* editor_manager_;
+
+  // 欢迎页
+  WelcomeWidget* welcome_widget_ = nullptr;
 
   // 底部面板
   OutputPanel* output_panel_;
