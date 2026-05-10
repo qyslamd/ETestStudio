@@ -275,6 +275,11 @@ void EditorWidget::applyColorScheme(QsciLexer* lexer) {
     cpp->setColor(string, QsciLexerCPP::DoubleQuotedString);
     cpp->setColor(string, QsciLexerCPP::SingleQuotedString);
     cpp->setColor(number, QsciLexerCPP::Number);
+    cpp->setColor(QColor(204, 204, 204), QsciLexerCPP::Operator);
+    cpp->setColor(QColor(155, 155, 155), QsciLexerCPP::PreProcessor);
+    cpp->setColor(QColor(78, 201, 176), QsciLexerCPP::GlobalClass);
+    cpp->setColor(QColor(215, 186, 125), QsciLexerCPP::EscapeSequence);
+    cpp->setColor(comment, QsciLexerCPP::CommentDoc);
   } else if (auto* lua = qobject_cast<QsciLexerLua*>(lexer)) {
     lua->setColor(keyword, QsciLexerLua::Keyword);
     lua->setColor(comment, QsciLexerLua::Comment);
@@ -289,6 +294,9 @@ void EditorWidget::applyColorScheme(QsciLexer* lexer) {
     json->setColor(comment, QsciLexerJSON::CommentBlock);
     json->setColor(string, QsciLexerJSON::String);
     json->setColor(number, QsciLexerJSON::Number);
+    json->setColor(QColor(204, 204, 204), QsciLexerJSON::Operator);
+    json->setColor(QColor(215, 186, 125), QsciLexerJSON::EscapeSequence);
+    json->setColor(QColor(220, 220, 170), QsciLexerJSON::Property);
   } else if (auto* xml = qobject_cast<QsciLexerXML*>(lexer)) {
     xml->setColor(tag, QsciLexerXML::Tag);
     xml->setColor(comment, QsciLexerXML::HTMLComment);
