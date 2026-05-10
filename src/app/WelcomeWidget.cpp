@@ -11,6 +11,7 @@
 #include <QPainterPath>
 #include <QPixmap>
 
+#include "version.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "project/ProjectManager.h"
@@ -78,7 +79,7 @@ void WelcomeWidget::initUi() {
   layout->addWidget(titleRow);
 
   // === 版本 ===
-  auto* versionLabel = new QLabel("v1.0.0", this);
+  auto* versionLabel = new QLabel(QString("v%1").arg(PROJECT_VERSION), this);
   versionLabel->setObjectName("WelcomeVersion");
   versionLabel->setAlignment(Qt::AlignCenter);
 
