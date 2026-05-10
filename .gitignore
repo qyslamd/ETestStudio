@@ -39,6 +39,9 @@ run_test.bat
 run_qscintilla-demo.bat
 run_guidance-demo.bat
 
+# cmake生成的代码统计脚本
+code_stats.bat
+
 # 一些cmake生成的文件或会被修改的文件
 version.txt
 

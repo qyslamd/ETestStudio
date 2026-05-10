@@ -204,4 +204,19 @@ if(WIN32)
             @ONLY
         )
     endif()
+
+    # 找到 cloc 可执行文件路径（用于统计代码行数），生成 code_stats.bat 脚本
+    find_program(CLOC_EXECUTABLE
+        NAMES cloc cloc-2.06
+        HINTS ${CMAKE_SOURCE_DIR}/3rdparty/cloc-2.06
+    )
+    if(NOT CLOC_EXECUTABLE)
+        message(WARNING "cloc executable not found! Put cloc-2.06.exe in 3rdparty/cloc-2.06/")
+    else()
+        configure_file(
+            "${CMAKE_SOURCE_DIR}/cmake/code_stats.bat.in"
+            "${CMAKE_SOURCE_DIR}/code_stats.bat"
+            @ONLY
+        )
+    endif()
 endif()

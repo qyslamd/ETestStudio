@@ -1,0 +1,22 @@
+@echo off
+setlocal enabledelayedexpansion
+
+set CLOC="@CLOC_EXECUTABLE@"
+
+if not exist %CLOC% (
+    echo Error: cloc.exe not found at %CLOC%
+    exit /b 1
+)
+
+echo ========================================
+echo  etest-demo 代码行数统计
+echo ========================================
+echo.
+
+%CLOC% --exclude-dir=3rdparty,build,.git,cmake-build,out,Release,Debug ^
+       --exclude-ext=md,txt,bat,ps1,json,ini,iss,svg ^
+       --by-file src/ tests/ examples/ 2>&1
+
+echo.
+echo Done!
+endlocal
