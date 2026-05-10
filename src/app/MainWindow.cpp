@@ -1184,17 +1184,17 @@ void MainWindow::saveWindowState() {
 void MainWindow::restoreWindowState() {
   auto& cfg = ConfigManager::instance();
 
-  int w = cfg.get<int>(CONFIG_WINDOW_WIDTH, 1200);
-  int h = cfg.get<int>(CONFIG_WINDOW_HEIGHT, 800);
+  int w = cfg.get<int>(CONFIG_WINDOW_WIDTH, CONFIG_WINDOW_DEFAULT_WIDTH);
+  int h = cfg.get<int>(CONFIG_WINDOW_HEIGHT, CONFIG_WINDOW_DEFAULT_HEIGHT);
   resize(w, h);
 
-  int x = cfg.get<int>(CONFIG_WINDOW_X, -1);
-  int y = cfg.get<int>(CONFIG_WINDOW_Y, -1);
+  int x = cfg.get<int>(CONFIG_WINDOW_X, CONFIG_WINDOW_DEFAULT_X);
+  int y = cfg.get<int>(CONFIG_WINDOW_Y, CONFIG_WINDOW_DEFAULT_Y);
   if (x >= 0 && y >= 0) {
     move(x, y);
   }
 
-  if (cfg.get<bool>(CONFIG_WINDOW_MAXIMIZED, false)) {
+  if (cfg.get<bool>(CONFIG_WINDOW_MAXIMIZED, CONFIG_WINDOW_DEFAULT_MAXIMIZED)) {
     showMaximized();
   }
 

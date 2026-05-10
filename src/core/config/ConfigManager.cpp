@@ -27,11 +27,11 @@ class ConfigManager::Impl {
 
   void initDefaultValues() {
     // 初始化所有默认值映射
-    m_defaultValues[CONFIG_WINDOW_WIDTH] = 1280;
-    m_defaultValues[CONFIG_WINDOW_HEIGHT] = 720;
-    m_defaultValues[CONFIG_WINDOW_X] = 100;
-    m_defaultValues[CONFIG_WINDOW_Y] = 100;
-    m_defaultValues[CONFIG_WINDOW_MAXIMIZED] = false;
+    m_defaultValues[CONFIG_WINDOW_WIDTH] = CONFIG_WINDOW_DEFAULT_WIDTH;
+    m_defaultValues[CONFIG_WINDOW_HEIGHT] = CONFIG_WINDOW_DEFAULT_HEIGHT;
+    m_defaultValues[CONFIG_WINDOW_X] = CONFIG_WINDOW_DEFAULT_X;
+    m_defaultValues[CONFIG_WINDOW_Y] = CONFIG_WINDOW_DEFAULT_Y;
+    m_defaultValues[CONFIG_WINDOW_MAXIMIZED] = CONFIG_WINDOW_DEFAULT_MAXIMIZED;
 
     m_defaultValues[CONFIG_RECENT_PROJECT_LIST] = QStringList();
     m_defaultValues[CONFIG_RECENT_LAST_OPEN_PATH] =

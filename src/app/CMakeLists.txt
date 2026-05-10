@@ -97,8 +97,6 @@ target_link_libraries(${TARGET_NAME}
     core
     # 已配置第三方依赖
     spdlog::spdlog
-    gtest
-    gmock
     hpdf
     qtadvanceddocking
     QXlsx::QXlsx
