@@ -2,6 +2,7 @@
 #include <QFont>
 
 #include "MainWindow.h"
+#include "common/SingleInstance.h"
 #include "config/ConfigManager.h"
 #include "common/GlobalExceptionHandler.h"
 #include "crashhandler/CrashHandler.h"
@@ -10,11 +11,21 @@
 using namespace etest::core::config;
 using namespace etest::core::logger;
 using namespace etest::core::crashhandler;
+using namespace etest::core::common;
 using namespace etest::app;
 
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   app.setFont(QFont("Microsoft YaHei", 10));
+
+  // 单实例检测
+  SingleInstance singleInstance("etest_demo");
+  if (singleInstance.isAppAlreadyRunning()) {
+    singleInstance.connectToExistingInstance(
+        QCoreApplication::arguments());
+    return 0;
+  }
+  singleInstance.startListening();
 
   // 初始化全局配置管理（优先于日志初始化，日志需要读取配置）
   ConfigManager::instance();
@@ -23,7 +34,7 @@ int main(int argc, char* argv[]) {
   Logger::init();
 
   // 初始化全局异常处理器（信号捕获 + Qt消息重定向）
-  etest::core::common::GlobalExceptionHandler::instance().init();
+  GlobalExceptionHandler::instance().init();
 
   LOG_INFO("MAIN", "全局配置管理模块初始化完成");
 
@@ -38,10 +49,12 @@ int main(int argc, char* argv[]) {
   MainWindow main_window;
   main_window.show();
 
+  singleInstance.setActivationWindow(&main_window);
+
   int ret = app.exec();
 
   // 关闭全局异常处理器
-  etest::core::common::GlobalExceptionHandler::instance().shutdown();
+  GlobalExceptionHandler::instance().shutdown();
 
   // 关闭日志系统
   Logger::shutdown();

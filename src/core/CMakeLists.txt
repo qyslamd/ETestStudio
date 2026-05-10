@@ -10,6 +10,7 @@ set(SOURCES
     common/StringException.cpp
     common/ByteException.cpp
     common/GlobalExceptionHandler.cpp
+    common/SingleInstance.cpp
     backup/BackupManager.cpp
     utils/FileUtil.cpp
     utils/TimeUtil.cpp
@@ -33,6 +34,7 @@ set(HEADERS
     common/StringException.h
     common/ByteException.h
     common/GlobalExceptionHandler.h
+    common/SingleInstance.h
     backup/BackupManager.h
     utils/FileUtil.h
     utils/TimeUtil.h
@@ -89,6 +91,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     Qt5::Core
     Qt5::Gui
     Qt5::Widgets
+    Qt5::Network
     spdlog::spdlog
 )
 
