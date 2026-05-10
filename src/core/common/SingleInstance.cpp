@@ -35,14 +35,17 @@ bool SingleInstance::isAppAlreadyRunning() {
   QLocalSocket socket;
   socket.connectToServer(app_key_, QIODevice::ReadWrite);
   if (socket.waitForConnected(CONNECTION_TIMEOUT)) {
+    LOG_INFO("SingleInstance", "检测到已有实例运行 (LocalSocket)");
     socket.disconnectFromServer();
     return true;
   }
 
   if (shared_memory_.attach()) {
+    LOG_INFO("SingleInstance", "检测到已有实例运行 (SharedMemory)");
     shared_memory_.detach();
     return true;
   }
+  LOG_DEBUG("SingleInstance", "未检测到其他实例");
   return false;
 }
 
@@ -50,8 +53,11 @@ bool SingleInstance::connectToExistingInstance(const QStringList& arguments) {
   QLocalSocket socket;
   socket.connectToServer(app_key_, QIODevice::WriteOnly);
   if (!socket.waitForConnected(CONNECTION_TIMEOUT)) {
+    LOG_WARN("SingleInstance", "连接到已有实例失败");
     return false;
   }
+
+  LOG_INFO("SingleInstance", "转发参数到已有实例, 参数数: {}", arguments.size());
 
   QByteArray message;
   QDataStream stream(&message, QIODevice::WriteOnly);
@@ -66,6 +72,7 @@ bool SingleInstance::connectToExistingInstance(const QStringList& arguments) {
   socket.flush();
   socket.waitForBytesWritten(CONNECTION_TIMEOUT);
   socket.disconnectFromServer();
+  LOG_INFO("SingleInstance", "参数转发完成, 发送字节数: {}", bytesWritten);
   return bytesWritten > 0;
 }
 
@@ -111,6 +118,7 @@ QWidget* SingleInstance::activationWindow() const {
 void SingleInstance::handleNewConnection() {
   auto* socket = local_server_->nextPendingConnection();
   if (socket) {
+    LOG_INFO("SingleInstance", "收到新实例连接请求");
     connect(socket, &QLocalSocket::readyRead, this,
             &SingleInstance::handleSocketReadyRead);
     connect(socket, &QLocalSocket::disconnected, socket,
@@ -129,6 +137,9 @@ void SingleInstance::handleSocketReadyRead() {
   auto data = socket->readAll();
   QStringList arguments = parseMessage(data);
   if (!arguments.isEmpty()) {
+    LOG_INFO("SingleInstance", "接收到参数, 参数数: {}, 首参数: {}",
+             arguments.size(),
+             arguments.isEmpty() ? "" : arguments.first().toStdString());
     emit newInstanceLaunched(arguments);
     activateWindow();
   }
@@ -165,12 +176,15 @@ QStringList SingleInstance::parseMessage(const QByteArray& message) {
 
 void SingleInstance::activateWindow() {
   if (!activate_window_) {
+    LOG_WARN("SingleInstance", "激活窗口为空，发出 showApplication 信号");
     emit showApplication();
     return;
   }
+  LOG_INFO("SingleInstance", "激活现有窗口");
 #ifdef _WIN32
   HWND hwnd = (HWND)activate_window_->winId();
   if (IsIconic(hwnd)) {
+    LOG_INFO("SingleInstance", "窗口已最小化，执行恢复");
     ShowWindow(hwnd, SW_RESTORE);
   }
   SetForegroundWindow(hwnd);
