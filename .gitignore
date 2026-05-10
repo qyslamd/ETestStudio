@@ -39,6 +39,9 @@ run_test.bat
 run_qscintilla-demo.bat
 run_guidance-demo.bat
 
+# 一些cmake生成的文件或会被修改的文件
+version.txt
+
 # 第三方依赖缓存目录
 3rdparty/spdlog-1.17.0/
 3rdparty/googletest-1.17.0/

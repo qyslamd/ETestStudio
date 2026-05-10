@@ -53,6 +53,8 @@ add_executable(${TARGET_NAME}
     dialogs/NewProjectDialog.cpp
     utils/window_mover.h
     utils/window_mover.cpp
+    utils/eph_qt_switch_button.h
+    utils/eph_qt_switch_button.cpp
     resource.qrc
 )
 
