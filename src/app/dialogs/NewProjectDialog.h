@@ -1,14 +1,14 @@
 #ifndef ETEST_APP_DIALOGS_NEWPROJECTDIALOG_H_
 #define ETEST_APP_DIALOGS_NEWPROJECTDIALOG_H_
 
-#include <QDialog>
+#include "AnimationDialog.h"
 
 class QLabel;
 class QLineEdit;
 class QPushButton;
 
 namespace etest::app {
-class NewProjectDialog : public QDialog {
+class NewProjectDialog : public AnimationDialog {
   Q_OBJECT
 
  public:

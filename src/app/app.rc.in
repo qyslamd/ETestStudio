@@ -1,0 +1,32 @@
+#include <windows.h>
+
+IDI_ICON1 ICON "resources/icons/app_icon.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION    @APP_VERSION_MAJOR@,@APP_VERSION_MINOR@,@APP_VERSION_PATCH@,@APP_VERSION_TWEAK@
+ PRODUCTVERSION @APP_VERSION_MAJOR@,@APP_VERSION_MINOR@,@APP_VERSION_PATCH@,@APP_VERSION_TWEAK@
+ FILEFLAGSMASK  0x3fL
+ FILEFLAGS      0x0L
+ FILEOS         0x40004L
+ FILETYPE       0x1L
+ FILESUBTYPE    0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404B0"
+        BEGIN
+            VALUE "CompanyName",      "etest-demo"
+            VALUE "FileDescription",  "etest-demo - KernelYun ETest-like Test System"
+            VALUE "FileVersion",      "@APP_VERSION_MAJOR@.@APP_VERSION_MINOR@.@APP_VERSION_PATCH@.@APP_VERSION_TWEAK@"
+            VALUE "InternalName",     "etest_demo"
+            VALUE "LegalCopyright",   "Copyright 2026"
+            VALUE "OriginalFilename", "etest_demo.exe"
+            VALUE "ProductName",      "etest-demo"
+            VALUE "ProductVersion",   "@APP_VERSION_MAJOR@.@APP_VERSION_MINOR@.@APP_VERSION_PATCH@.@APP_VERSION_TWEAK@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 1200
+    END
+END

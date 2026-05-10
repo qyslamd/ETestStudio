@@ -1,4 +1,16 @@
 #=======================================
+# 版本管理
+include(${CMAKE_SOURCE_DIR}/cmake/version_manage.cmake)
+manage_version(
+    VERSION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/version.txt"
+    OUTPUT_PREFIX "APP"
+)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.h
+    @ONLY)
+
+#=======================================
 # 添加可执行文件
 set(TARGET_NAME ${PROJECT_NAME})
 add_executable(${TARGET_NAME}
@@ -35,10 +47,13 @@ add_executable(${TARGET_NAME}
     SearchWidget.cpp
     WelcomeWidget.h
     WelcomeWidget.cpp
+    dialogs/AnimationDialog.h
+    dialogs/AnimationDialog.cpp
     dialogs/NewProjectDialog.h
     dialogs/NewProjectDialog.cpp
+    utils/window_mover.h
+    utils/window_mover.cpp
     resource.qrc
-    app.rc
 )
 
 #=======================================
@@ -53,10 +68,22 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 # 添加第三方依赖头文件路径
 target_include_directories(${TARGET_NAME}
     PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_SOURCE_DIR}/3rdparty/libharu-2.4.6/include
     ${CMAKE_BINARY_DIR}/3rdparty/libharu-2.4.6/include
     ${CMAKE_SOURCE_DIR}/3rdparty/Qt-Advanced-Docking-System-3.8.3/src
 )
+
+#=======================================
+# 生成 Windows .rc 文件（版本信息嵌入 exe）
+if(WIN32 AND MSVC)
+    set(OUT_RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/app.rc.in
+        ${OUT_RC_FILE}
+        @ONLY)
+    target_sources(${TARGET_NAME} PRIVATE ${OUT_RC_FILE})
+endif()
 
 #=======================================
 # 链接Qt库

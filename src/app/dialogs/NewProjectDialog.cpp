@@ -15,7 +15,7 @@ using namespace etest::core::config;
 
 namespace etest::app {
 
-NewProjectDialog::NewProjectDialog(QWidget* parent) : QDialog(parent) {
+NewProjectDialog::NewProjectDialog(QWidget* parent) : AnimationDialog(parent) {
   initUi();
   initSignals();
 }
@@ -38,35 +38,41 @@ QString NewProjectDialog::fullProjectPath() const {
 
 void NewProjectDialog::initUi() {
   setWindowTitle(QStringLiteral("新建项目"));
-  setMinimumWidth(420);
 
-  auto* mainLayout = new QVBoxLayout(this);
+  auto* contentWidget = new QWidget(this);
+  contentWidget->setObjectName("dlg_contentWidget");
+  contentWidget->setStyleSheet(
+      "QWidget#dlg_contentWidget { background-color: white;border: 1px solid "
+      "#ccc; border-radius: 8px; }");
+  contentWidget->setMinimumWidth(420);
+
+  auto* mainLayout = new QVBoxLayout(contentWidget);
 
   // 项目名称
-  auto* nameLabel = new QLabel(QStringLiteral("项目名称："), this);
-  name_edit_ = new QLineEdit(this);
+  auto* nameLabel = new QLabel(QStringLiteral("项目名称："), contentWidget);
+  name_edit_ = new QLineEdit(contentWidget);
   name_edit_->setPlaceholderText(QStringLiteral("输入项目名称"));
   mainLayout->addWidget(nameLabel);
   mainLayout->addWidget(name_edit_);
 
   // 项目位置
-  auto* locationLabel = new QLabel(QStringLiteral("项目位置："), this);
+  auto* locationLabel = new QLabel(QStringLiteral("项目位置："), contentWidget);
   auto* locationLayout = new QHBoxLayout();
-  location_edit_ = new QLineEdit(this);
+  location_edit_ = new QLineEdit(contentWidget);
   location_edit_->setPlaceholderText(QStringLiteral("选择项目存储位置"));
-  browse_button_ = new QPushButton(QStringLiteral("浏览..."), this);
+  browse_button_ = new QPushButton(QStringLiteral("浏览..."), contentWidget);
   locationLayout->addWidget(location_edit_);
   locationLayout->addWidget(browse_button_);
   mainLayout->addWidget(locationLabel);
   mainLayout->addLayout(locationLayout);
 
   // 路径预览
-  preview_label_ = new QLabel(this);
+  preview_label_ = new QLabel(contentWidget);
   preview_label_->setObjectName("previewLabel");
   mainLayout->addWidget(preview_label_);
 
   // 错误提示
-  error_label_ = new QLabel(this);
+  error_label_ = new QLabel(contentWidget);
   error_label_->setObjectName("errorLabel");
   error_label_->setWordWrap(true);
   mainLayout->addWidget(error_label_);
@@ -74,13 +80,15 @@ void NewProjectDialog::initUi() {
   // 按钮
   auto* buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
-  cancel_button_ = new QPushButton(QStringLiteral("取消"), this);
-  create_button_ = new QPushButton(QStringLiteral("创建"), this);
+  cancel_button_ = new QPushButton(QStringLiteral("取消"), contentWidget);
+  create_button_ = new QPushButton(QStringLiteral("创建"), contentWidget);
   create_button_->setEnabled(false);
   create_button_->setDefault(true);
   buttonLayout->addWidget(cancel_button_);
   buttonLayout->addWidget(create_button_);
   mainLayout->addLayout(buttonLayout);
+
+  setWidget(contentWidget);
 
   // 默认位置
   auto& cfg = ConfigManager::instance();
@@ -145,7 +153,7 @@ void NewProjectDialog::validateInputs() {
   }
 
   // 使用绝对路径进行验证
-  QString absLocation = projectLocation(); // 已经是绝对路径
+  QString absLocation = projectLocation();  // 已经是绝对路径
 
   QDir dir(absLocation);
   if (!dir.exists()) {
@@ -162,7 +170,7 @@ void NewProjectDialog::validateInputs() {
     return;
   }
 
-  QString fullPath = fullProjectPath(); // 使用绝对路径
+  QString fullPath = fullProjectPath();  // 使用绝对路径
   if (QDir(fullPath).exists()) {
     error_label_->setText(QStringLiteral("目标目录已存在：%1").arg(fullPath));
     create_button_->setEnabled(false);
