@@ -4,8 +4,10 @@
 #include <QCloseEvent>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QSplitter>
 #include <QStatusBar>
 #include <QStyle>
@@ -95,6 +97,23 @@ void MainWindow::setupDebugPanels() {
   callStack_ = new QListWidget(this);
   debugTabs_->addTab(callStack_, "调用栈");
 
+  auto *watchTab = new QWidget(this);
+  auto *watchLayout = new QVBoxLayout(watchTab);
+  auto *watchHeader = new QHBoxLayout();
+  watchInput_ = new QLineEdit(this);
+  watchInput_->setPlaceholderText("输入 Lua 表达式，如: target_temp + 5");
+  watchBtn_ = new QPushButton("求值", this);
+  watchBtn_->setEnabled(false);
+  watchHeader->addWidget(watchInput_);
+  watchHeader->addWidget(watchBtn_);
+  watchLayout->addLayout(watchHeader);
+  watchResult_ = new QLabel("在此输入表达式并点击求值（仅暂停时可用）", this);
+  watchResult_->setWordWrap(true);
+  watchResult_->setTextFormat(Qt::PlainText);
+  watchLayout->addWidget(watchResult_);
+  watchLayout->addStretch();
+  debugTabs_->addTab(watchTab, "监视");
+
   debugTabs_->setMinimumWidth(350);
   horiSplitter_->addWidget(debugTabs_);
   horiSplitter_->setStretchFactor(0, 3);
@@ -133,6 +152,10 @@ void MainWindow::setupConnections() {
   connect(debugger_, &LuaDebugger::finished, this, &MainWindow::onFinished);
   connect(debugger_, &LuaDebugger::error, this, &MainWindow::onError);
   connect(debugger_, &LuaDebugger::output, this, &MainWindow::onOutput);
+
+  connect(watchBtn_, &QPushButton::clicked, this, &MainWindow::onEvalRequested);
+  connect(watchInput_, &QLineEdit::returnPressed, this, &MainWindow::onEvalRequested);
+  connect(debugger_, &LuaDebugger::evalResultReady, this, &MainWindow::onEvalResult);
 }
 
 void MainWindow::updateButtonStates() {
@@ -149,6 +172,9 @@ void MainWindow::updateButtonStates() {
   actStepOver_->setEnabled(paused);
   actStepOut_->setEnabled(paused);
   actReset_->setEnabled(finished || paused);
+
+  watchBtn_->setEnabled(paused);
+  watchInput_->setEnabled(paused);
 }
 
 void MainWindow::setDefaultScript() {
@@ -335,4 +361,24 @@ void MainWindow::onStackFrameClicked(int index) {
   if (debugger_->state() != LuaDebugger::Paused)
     return;
   editor_->setExecutionLine(index);
+}
+
+void MainWindow::onEvalRequested() {
+  if (debugger_->state() != LuaDebugger::Paused) {
+    output_->append("[监视] 仅可在暂停时求值");
+    return;
+  }
+  QString expr = watchInput_->text().trimmed();
+  if (expr.isEmpty())
+    return;
+  watchResult_->setText("求值中...");
+  watchBtn_->setEnabled(false);
+  watchInput_->setEnabled(false);
+  debugger_->requestEval(expr);
+}
+
+void MainWindow::onEvalResult(const QString &result) {
+  watchResult_->setText(result);
+  watchBtn_->setEnabled(true);
+  watchInput_->setEnabled(true);
 }

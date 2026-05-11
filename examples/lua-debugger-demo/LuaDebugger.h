@@ -54,6 +54,7 @@ signals:
     void finished();
     void error(const QString &message);
     void output(const QString &text);
+    void evalResultReady(const QString &result);
 
 public slots:
     void run();
@@ -63,6 +64,7 @@ public slots:
     void stepInto();
     void stepOver();
     void stepOut();
+    void requestEval(const QString &expr);
 
 private:
     void executeScript();
@@ -70,6 +72,7 @@ private:
     DebugSnapshot captureSnapshot(lua_State *L, lua_Debug *ar);
     QMap<QString, QVariant> captureLocals(lua_State *L, int level);
     QVariant luaToQVariant(lua_State *L, int idx, int depth = 0);
+    void evalInPausedContext(lua_State *L, const QString &expr);
 
     std::thread workerThread_;
     std::atomic<bool> stopRequested_{false};
@@ -84,6 +87,9 @@ private:
 
     QMutex waitMutex_;
     QWaitCondition resumeCond_;
+
+    QString pendingExpr_;
+    QMutex evalMutex_;
 
     friend void luaDebugHook(lua_State *L, lua_Debug *ar);
 };

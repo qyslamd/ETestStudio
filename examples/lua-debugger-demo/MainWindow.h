@@ -15,6 +15,8 @@ class QTextEdit;
 class QSplitter;
 class QTabWidget;
 class QLabel;
+class QLineEdit;
+class QPushButton;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
@@ -41,6 +43,8 @@ private slots:
     void onError(const QString &message);
     void onOutput(const QString &text);
     void onStackFrameClicked(int index);
+    void onEvalRequested();
+    void onEvalResult(const QString &result);
 
 private:
     void setupUi();
@@ -70,6 +74,10 @@ private:
     QListWidget *callStack_;
     QTextEdit *output_;
     QLabel *statusLabel_;
+
+    QLineEdit *watchInput_;
+    QPushButton *watchBtn_;
+    QLabel *watchResult_;
 };
 
 #endif

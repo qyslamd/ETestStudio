@@ -204,8 +204,20 @@ void LuaDebugger::handleLine(lua_State *L, lua_Debug *ar) {
         emit paused(snapshot);
 
         waitMutex_.lock();
-        while (pauseRequested_ && !stopRequested_)
+        while (pauseRequested_ && !stopRequested_) {
             resumeCond_.wait(&waitMutex_);
+
+            QString expr;
+            evalMutex_.lock();
+            if (!pendingExpr_.isEmpty()) {
+                expr = pendingExpr_;
+                pendingExpr_.clear();
+            }
+            evalMutex_.unlock();
+
+            if (!expr.isEmpty())
+                evalInPausedContext(L, expr);
+        }
         waitMutex_.unlock();
 
         if (stopRequested_)
@@ -368,4 +380,39 @@ void LuaDebugger::stepOut() {
     depthAtPause_ = currentDepth_;
     pauseRequested_ = false;
     resumeCond_.wakeAll();
+}
+
+void LuaDebugger::requestEval(const QString &expr) {
+    evalMutex_.lock();
+    pendingExpr_ = expr;
+    evalMutex_.unlock();
+    resumeCond_.wakeAll();
+}
+
+void LuaDebugger::evalInPausedContext(lua_State *L, const QString &expr) {
+    int ret = luaL_loadstring(L, expr.toUtf8().constData());
+    if (ret != LUA_OK) {
+        QString err = QString::fromUtf8(lua_tostring(L, -1));
+        lua_pop(L, 1);
+        emit evalResultReady("错误: " + err);
+        return;
+    }
+
+    ret = lua_pcall(L, 0, 1, 0);
+    if (ret != LUA_OK) {
+        QString err = QString::fromUtf8(lua_tostring(L, -1));
+        lua_pop(L, 1);
+        emit evalResultReady("错误: " + err);
+        return;
+    }
+
+    QVariant result = luaToQVariant(L, -1, 0);
+    lua_pop(L, 1);
+
+    if (result.isNull())
+        emit evalResultReady("nil");
+    else if (result.type() == QVariant::Map)
+        emit evalResultReady(QString("{...} (table with %1 entries)").arg(result.toMap().size()));
+    else
+        emit evalResultReady(result.toString());
 }
