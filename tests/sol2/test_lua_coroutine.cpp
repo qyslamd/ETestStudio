@@ -7,6 +7,17 @@
 // 实验4: Lua协程实现执行控制
 // ============================================================
 
+// 辅助函数：从全局变量创建 sol::coroutine
+// sol3 的 lua_type_of<basic_coroutine> 映射到 type::function，
+// 但 coroutine.create 返回 thread，Debug 构建下 SAFE_REFERENCES 检查不通过。
+// 直接用 lua_getglobal + int 构造函数（仅 #ifdef SOL_SAFE_REFERENCES 做检查，用户未定义时跳过）。
+static sol::coroutine make_coroutine(sol::state& lua, const char* name) {
+    lua_getglobal(lua.lua_state(), name);
+    sol::coroutine co(lua.lua_state(), lua_gettop(lua.lua_state()));
+    lua_pop(lua.lua_state(), 1);
+    return co;
+}
+
 // ============================================================
 // 实验4-1: 基础协程创建与恢复
 // ============================================================
@@ -59,7 +70,7 @@ TEST(LuaCoroutineTest, YieldResume) {
     )");
 
     // C++端逐步resume
-    sol::coroutine co = lua["co"];
+    sol::coroutine co = make_coroutine(lua, "co");
 
     auto r1 = co();
     EXPECT_TRUE(r1.valid());
@@ -107,7 +118,7 @@ TEST(LuaCoroutineTest, PassValueOnResume) {
         end)
     )");
 
-    sol::coroutine co = lua["co"];
+    sol::coroutine co = make_coroutine(lua, "co");
 
     // 第一次resume启动协程（没有传值）
     auto r1 = co();
@@ -168,7 +179,7 @@ TEST(LuaCoroutineTest, StepByStepExecution) {
         end)
     )");
 
-    sol::coroutine co = lua["co"];
+    sol::coroutine co = make_coroutine(lua, "co");
 
     // 步骤1
     co();
@@ -205,7 +216,7 @@ TEST(LuaCoroutineTest, CoroutineErrorHandling) {
         end)
     )");
 
-    sol::coroutine co = lua["co"];
+    sol::coroutine co = make_coroutine(lua, "co");
     auto result = co();
 
     // 协程中的错误不会导致C++崩溃
@@ -348,8 +359,11 @@ TEST(LuaCoroutineTest, Sol2CoroutineFromCpp) {
         end
     )");
 
-    // 从C++端创建协程并驱动执行
-    sol::coroutine co = lua["coroutine"]["create"](lua["test_workflow"]);
+    // 先在Lua端创建协程，再由C++端接管驱动
+    lua.script(R"(
+        co = coroutine.create(test_workflow)
+    )");
+    sol::coroutine co = make_coroutine(lua, "co");
 
     // resume 1
     auto r1 = co();

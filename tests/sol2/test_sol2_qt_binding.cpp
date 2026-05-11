@@ -4,6 +4,8 @@
 #include <QVariant>
 #include <QVariantMap>
 #include <string>
+#include <thread>
+#include <chrono>
 
 // ============================================================
 // IATP测试引擎需要的数据结构（模拟阶段5的真实定义）
@@ -436,7 +438,7 @@ class Sol2ErrorRecoveryTest : public ::testing::Test {
 protected:
     sol::state lua;
     void SetUp() override {
-        lua.open_libraries(sol::lib::base);
+        lua.open_libraries(sol::lib::base, sol::lib::os);
     }
 };
 
@@ -492,14 +494,19 @@ TEST_F(Sol2ErrorRecoveryTest, WhileTimeoutErrorSimulation) {
     lua["Delay"] = [](int) {};
 
     // 模拟WHILE超时错误
+    // Delay设为真实等待使os.clock()能检测到时间流逝
+    lua["Delay"] = [](int ms) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+    };
+
     auto result = lua.safe_script(R"(
         local _start = os.clock()
         while GetDevice("温度") < 30.0 do
-            if (os.clock() - _start) * 1000 >= 1 then
+            if (os.clock() - _start) * 1000 >= 50 then
                 error("WHILE超时: 温度 < 30.0")
             end
             SetDevice("加热器", 1)
-            Delay(1)
+            Delay(10)
         end
     )", sol::script_pass_on_error);
 

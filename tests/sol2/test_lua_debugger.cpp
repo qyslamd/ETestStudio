@@ -4,10 +4,10 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 #include <atomic>
-#include <mutex>
-#include <condition_variable>
 #include <thread>
+#include <chrono>
 
 // ============================================================
 // 实验2: Lua Debug Library — 调试器原型
@@ -24,49 +24,16 @@ TEST(LuaDebuggerTest, LineHook) {
     std::vector<int> executed_lines;
     lua_State* L = lua.lua_state();
 
-    // 注册行钩子
-    lua_sethook(L, [](lua_State* L, lua_Debug* ar) {
-        if (ar->event == LUA_HOOKLINE) {
-            auto* lines = static_cast<std::vector<int>*>(
-                lua_touserdata(L, lua_upvalueindex(1)));
-            lines->push_back(ar->currentline);
-        }
-    }, LUA_MASKLINE, 0);
-
-    // 用upvalue传递executed_lines指针
-    // 注意：sol2的lua_sethook不直接支持upvalue，需要用原生API
-    // 先取消上面的注册，改用正确方式
-    lua_sethook(L, nullptr, 0, 0);  // 清除
-
-    // 使用全局lightuserdata传递
-    lua["__line_recorder"] = static_cast<void*>(&executed_lines);
-
-    lua_sethook(L, [](lua_State* L, lua_Debug* ar) {
-        if (ar->event == LUA_HOOKLINE) {
-            auto* lines = static_cast<std::vector<int>*>(
-                lua_touserdata(L, lua_upvalueindex(1)));
-            if (lines) {
-                lines->push_back(ar->currentline);
-            }
-        }
-    }, LUA_MASKLINE, 0);
-
-    // 设置upvalue
-    lua_pushlightuserdata(L, &executed_lines);
-    // lua_sethook的upvalue需要通过debug.sethook在Lua端设置
-    // 或者直接用C API的方式重新设置
-    // 实际上C API的lua_sethook不支持upvalue，需要用全局变量方案
-
-    lua_sethook(L, nullptr, 0, 0);  // 清除，重新用全局方案
-
-    // 方案：通过全局lightuserdata传递记录器
+    // 使用全局lightuserdata传递上下文到hook回调
     lua["__debug_data"] = static_cast<void*>(&executed_lines);
 
+    // 重要：hook回调中使用原始C API（lua_getglobal + lua_touserdata），
+    // 不使用sol2 API，因为sol2的类型转换可能在hook上下文中抛出异常
     lua_sethook(L, [](lua_State* L, lua_Debug* ar) {
         if (ar->event == LUA_HOOKLINE) {
-            // 通过sol2 state获取全局变量
-            sol::state_view sv(L);
-            auto* lines = sv["__debug_data"].get<std::vector<int>*>();
+            lua_getglobal(L, "__debug_data");
+            auto* lines = static_cast<std::vector<int>*>(lua_touserdata(L, -1));
+            lua_pop(L, 1);
             if (lines) {
                 lines->push_back(ar->currentline);
             }
@@ -91,53 +58,47 @@ TEST(LuaDebuggerTest, LineHook) {
 
 class LuaBreakpointTest : public ::testing::Test {
 protected:
+    struct DebugContext {
+        std::vector<int>* hits;
+        std::set<int>* bps;
+        bool* paused;
+    };
+
     sol::state lua;
     std::vector<int> breakpoint_hits;
     std::set<int> breakpoints;
     bool paused = false;
+    DebugContext ctx_{&breakpoint_hits, &breakpoints, &paused};
 
     void SetUp() override {
         lua.open_libraries(sol::lib::base);
 
         // 传递调试上下文给hook
-        struct DebugContext {
-            std::vector<int>* hits;
-            std::set<int>* bps;
-            bool* paused;
-        };
-
-        auto ctx = new DebugContext{&breakpoint_hits, &breakpoints, &paused};
-        lua["__debug_ctx"] = static_cast<void*>(ctx);
+        lua["__debug_ctx"] = static_cast<void*>(&ctx_);
 
         lua_sethook(lua.lua_state(), [](lua_State* L, lua_Debug* ar) {
             if (ar->event != LUA_HOOKLINE) return;
 
-            sol::state_view sv(L);
-            auto* ctx = sv["__debug_ctx"].get<DebugContext*>();
+            lua_getglobal(L, "__debug_ctx");
+            auto* ctx = static_cast<DebugContext*>(lua_touserdata(L, -1));
+            lua_pop(L, 1);
             if (!ctx) return;
 
-            // 更新debug info以获取更多信息
             lua_getinfo(L, "Sl", ar);
 
             if (ctx->bps->count(ar->currentline)) {
                 ctx->hits->push_back(ar->currentline);
                 *ctx->paused = true;
-                // 注意：在hook中不能真正暂停执行（会阻塞），
-                // 实际的暂停需要通过lua_yield或协程实现
-                // 这里只记录断点命中
             }
         }, LUA_MASKLINE, 0);
     }
 
     void TearDown() override {
         lua_sethook(lua.lua_state(), nullptr, 0, 0);
-        auto* ctx = lua["__debug_ctx"].get<void*>();
-        // 注意：这里不delete，因为测试结束进程也结束
     }
 };
 
 TEST_F(LuaBreakpointTest, HitBreakpointAtLine) {
-    // 设置断点：在脚本的第3行
     breakpoints.insert(3);
 
     lua.script(R"(
@@ -180,13 +141,13 @@ TEST(LuaDebuggerTest, VariableWatch) {
     lua_sethook(lua.lua_state(), [](lua_State* L, lua_Debug* ar) {
         if (ar->event != LUA_HOOKLINE) return;
 
-        // 只在第3行捕获变量
+        // 在第4行捕获变量（此时所有变量都存活）
         lua_getinfo(L, "l", ar);
-        if (ar->currentline != 3) return;
+        if (ar->currentline != 4) return;
 
-        auto* vars = static_cast<std::map<std::string, std::string>*>(
-            sol::state_view(L)["__captured_vars"].get<void*>());
-
+        lua_getglobal(L, "__captured_vars");
+        auto* vars = static_cast<std::map<std::string, std::string>*>(lua_touserdata(L, -1));
+        lua_pop(L, 1);
         if (!vars) return;
 
         // 遍历当前函数的局部变量
@@ -211,18 +172,26 @@ TEST(LuaDebuggerTest, VariableWatch) {
         }
     }, LUA_MASKLINE, 0);
 
+    // 注意：Lua 5.4的字节码编译器会优化掉不再使用的局部变量。
+    // 必须在所有变量都存活的代码行捕获。
     lua.script(R"(
         local x = 42       -- line 1
         local y = 3.14     -- line 2
-        local z = "hello"  -- line 3 (在此行捕获变量)
+        local z = "hello"  -- line 3
+        local w = x + y + #z  -- line 4
+        -- 注意：Lua 5.4编译器可能优化掉z，添加print引用让它逃逸
+        if w then end      -- line 6: 引用所有变量阻止优化
+        if x then end      -- line 7
+        if y then end      -- line 8
+        if z then end      -- line 9
     )");
 
     lua_sethook(lua.lua_state(), nullptr, 0, 0);
 
-    // 验证捕获到的变量
-    // 注意：在line 3时，x和y已定义，z正在被赋值
+    // 验证所有三个变量都被捕获
     EXPECT_NE(captured_vars.find("x"), captured_vars.end());
     EXPECT_NE(captured_vars.find("y"), captured_vars.end());
+    EXPECT_NE(captured_vars.find("z"), captured_vars.end());
 }
 
 // ============================================================
@@ -240,8 +209,9 @@ TEST(LuaDebuggerTest, CallStack) {
     lua_sethook(lua.lua_state(), [](lua_State* L, lua_Debug* ar) {
         if (ar->event != LUA_HOOKLINE) return;
 
-        auto* stack = static_cast<std::vector<std::string>*>(
-            sol::state_view(L)["__call_stack"].get<void*>());
+        lua_getglobal(L, "__call_stack");
+        auto* stack = static_cast<std::vector<std::string>*>(lua_touserdata(L, -1));
+        lua_pop(L, 1);
         if (!stack) return;
 
         // 只在特定行获取调用栈
@@ -313,15 +283,13 @@ TEST(LuaDebuggerTest, StepOver) {
     lua_sethook(lua.lua_state(), [](lua_State* L, lua_Debug* ar) {
         if (ar->event != LUA_HOOKLINE) return;
 
-        auto* ctx = static_cast<StepContext*>(
-            sol::state_view(L)["__step_ctx"].get<void*>());
+        lua_getglobal(L, "__step_ctx");
+        auto* ctx = static_cast<StepContext*>(lua_touserdata(L, -1));
+        lua_pop(L, 1);
         if (!ctx || !ctx->stepping) return;
 
         lua_getinfo(L, "l", ar);
         ctx->stepped_lines.push_back(ar->currentline);
-
-        // Step Over: 记录当前层级，只在同层级内步进
-        // 简化实现：步进N行后停止（真实实现需要跟踪调用层级）
     }, LUA_MASKLINE | LUA_MASKCALL | LUA_MASKRET, 0);
 
     lua.script(R"(
@@ -353,16 +321,9 @@ TEST(LuaDebuggerTest, PauseResumeWithYield) {
     lua["__was_paused"] = static_cast<void*>(&was_paused);
     lua["__exec_lines"] = static_cast<void*>(&executed_lines);
 
-    // 创建协程
-    sol::coroutine co = lua["coroutine"]["create"];
-
     // lua_yield需要在hook中被调用
     // 注意：lua_yield只能在协程中被调用
-    // 设置hook，使用LUA_MASKLINE
-    lua_State* coL = lua.lua_state();
-
     // 使用协程执行脚本
-    // 在Lua端创建协程并执行
     lua.script(R"(
         function test_pause()
             local sum = 0
@@ -372,10 +333,6 @@ TEST(LuaDebuggerTest, PauseResumeWithYield) {
             return sum
         end
     )");
-
-    // 测试lua_yield在hook中的行为
-    // 关键发现：lua_yield只能在C函数或协程中被调用，
-    // 在hook回调中调用lua_yield可以暂停协程执行
 
     // 简化验证：直接在Lua端用coroutine.yield
     lua.script(R"(
@@ -393,7 +350,6 @@ TEST(LuaDebuggerTest, PauseResumeWithYield) {
         assert(val == "done")
     )");
 
-    // 验证协程暂停/恢复基本机制可行
     SUCCEED();
 }
 
@@ -422,8 +378,9 @@ TEST(LuaDebuggerTest, ConditionalBreakpoint) {
     lua_sethook(lua.lua_state(), [](lua_State* L, lua_Debug* ar) {
         if (ar->event != LUA_HOOKLINE) return;
 
-        auto* ctx = static_cast<CondBreakpointCtx*>(
-            sol::state_view(L)["__cond_bp_ctx"].get<void*>());
+        lua_getglobal(L, "__cond_bp_ctx");
+        auto* ctx = static_cast<CondBreakpointCtx*>(lua_touserdata(L, -1));
+        lua_pop(L, 1);
         if (!ctx) return;
 
         // 获取条件变量值
@@ -475,8 +432,9 @@ TEST(LuaDebuggerTest, Sol2StateCompatibleWithSetHook) {
     // 在sol2::state上设置hook
     lua_sethook(lua.lua_state(), [](lua_State* L, lua_Debug* ar) {
         if (ar->event == LUA_HOOKLINE) {
-            auto* count = static_cast<int*>(
-                sol::state_view(L)["__line_count"].get<void*>());
+            lua_getglobal(L, "__line_count");
+            auto* count = static_cast<int*>(lua_touserdata(L, -1));
+            lua_pop(L, 1);
             if (count) (*count)++;
         }
     }, LUA_MASKLINE, 0);
@@ -513,10 +471,12 @@ TEST(LuaDebuggerTest, HookDoesNotAffectCppFunctions) {
     lua_sethook(lua.lua_state(), [](lua_State* L, lua_Debug* ar) {
         if (ar->event == LUA_HOOKLINE) {
             lua_getinfo(L, "S", ar);
-            // C++函数的source为"C"，Lua函数的source为文件名或"=..."
-            if (ar->source[0] == '=') {  // Lua脚本
-                auto* lines = static_cast<std::vector<int>*>(
-                    sol::state_view(L)["__lua_lines"].get<void*>());
+            // C函数的source为"C"，Lua函数的source为其他值(="script"等)
+            // 使用 ar->source[0] != 'C' 可以过滤掉C函数
+            if (ar->source[0] != 'C') {  // Lua脚本
+                lua_getglobal(L, "__lua_lines");
+                auto* lines = static_cast<std::vector<int>*>(lua_touserdata(L, -1));
+                lua_pop(L, 1);
                 if (lines) lines->push_back(ar->currentline);
             }
         }
