@@ -218,5 +218,10 @@ if(WIN32)
             "${CMAKE_SOURCE_DIR}/code_stats.bat"
             @ONLY
         )
+        configure_file(
+            "${CMAKE_SOURCE_DIR}/cmake/code_stats.ps1.in"
+            "${CMAKE_SOURCE_DIR}/code_stats.ps1"
+            @ONLY
+        )
     endif()
 endif()

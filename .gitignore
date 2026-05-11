@@ -1,28 +1,32 @@
-# 常见的Qt使用CMake构建的必须要被忽略的文件和目录
+# ========== CMake 构建中间产物 ==========
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+*.ninja
+
+# ========== 编译输出文件 ==========
 *.o
 *.obj
 *.so
 *.dll
 *.exe
+!3rdparty/cloc-2.06/cloc-2.06.exe   # cloc 工具需要被 git 管理
+
+# ========== 日志和 IDE 用户配置 ==========
 *.log
 *.user
 *.pro.user
 *.pro.user.*
 
-# 一些在文档中需要忽略的文件或目录
-Schema/
-
-# 其他可能的构建文件和目录
+# ========== IDE / 编辑器目录 ==========
 .vs/
 .opencode/
 .claude/
 *.vcxproj*
 *.sln
-*.ninja
+
+# ========== 构建输出目录 ==========
 dist/
 out/
 bin/ 
@@ -33,19 +37,21 @@ install/
 temp/
 enpht/
 
-# 一些测试生成的执行脚本
+# ========== 文档/模式相关 ==========
+Schema/
+
+# ========== CMake 生成的可执行脚本 ==========
 run_app.bat
 run_test.bat
 run_qscintilla-demo.bat
 run_guidance-demo.bat
-
-# cmake生成的代码统计脚本
 code_stats.bat
+code_stats.ps1
 
-# 一些cmake生成的文件或会被修改的文件
+# ========== 版本/配置生成文件 ==========
 version.txt
 
-# 第三方依赖缓存目录
+# ========== 第三方依赖源码目录（CMake 解压缓存）==========
 3rdparty/spdlog-1.17.0/
 3rdparty/googletest-1.17.0/
 3rdparty/libharu-2.4.6/
