@@ -1,0 +1,34 @@
+﻿<ICDData>
+  <Name>FrameA</Name>
+  <Data>
+    <Item>
+      <Offset>0</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>8</BitWidth>
+      <Type>byte</Type>
+      <Name>Root</Name>
+      <Description>Root node</Description>
+      <GroupName>Main</GroupName>
+      <IsScaled>0</IsScaled>
+      <SystemName>SystemA</SystemName>
+      <Unit>V</Unit>
+      <Tag>0</Tag>
+      <ValueTextList></ValueTextList>
+      <ScaleFormula></ScaleFormula>
+      <ScaleConveror></ScaleConveror>
+      <LinkTo></LinkTo>
+      <Childs>
+        <Item>
+          <Offset>1</Offset>
+          <StartBit>0</StartBit>
+          <BitWidth>8</BitWidth>
+          <Type>byte</Type>
+          <Name>Child</Name>
+          <Description>Child node</Description>
+          <IsScaled>0</IsScaled>
+          <Tag>0</Tag>
+        </Item>
+      </Childs>
+    </Item>
+  </Data>
+</ICDData>

@@ -1,0 +1,34 @@
+﻿{
+  "name": "FrameA",
+  "data": [
+    {
+      "offset": 0,
+      "startBit": 0,
+      "bitWidth": 8,
+      "type": "byte",
+      "name": "Root",
+      "description": "Root node",
+      "groupName": "Main",
+      "isScaled": 0,
+      "systemName": "SystemA",
+      "unit": "V",
+      "tag": 0,
+      "valueTextList": "",
+      "scaleFormula": "",
+      "scaleConveror": "",
+      "linkTo": "",
+      "childs": [
+        {
+          "offset": 1,
+          "startBit": 0,
+          "bitWidth": 8,
+          "type": "byte",
+          "name": "Child",
+          "description": "Child node",
+          "isScaled": 0,
+          "tag": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="E:\work_enpht\Projects\EphAutoTest\Source\EphAutoTest.ICD\Schema\IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>64</BitWidth>
+			<Type>double</Type>
+			<Name>K1</Name>
+			<Description>K1</Description>
+			<IsScaled>0</IsScaled>
+			<LinkTo>\DA0\ch0</LinkTo>
+			<ValueTextList>A,B,C</ValueTextList>
+			<SystemName>模拟输出</SystemName>
+		</Item>
+		<Item>
+			<Offset>8</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>64</BitWidth>
+			<Type>double</Type>
+			<Name>K2</Name>
+			<Description>K2</Description>
+			<IsScaled>0</IsScaled>
+			<LinkTo>\DA0\ch1</LinkTo>
+			<ValueTextList>A,B,C</ValueTextList>
+			<SystemName>模拟输出</SystemName>
+		</Item>
+		<Item>
+			<Offset>16</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>64</BitWidth>
+			<Type>double</Type>
+			<Name>100mv_ACQ</Name>
+			<Description>100mv_ACQ</Description>
+			<IsScaled>0</IsScaled>
+			<LinkTo>\DA0\ch2</LinkTo>
+			<ValueTextList>A,B,C</ValueTextList>
+			<SystemName>模拟输出</SystemName>
+		</Item>
+		<Item>
+			<Offset>24</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>64</BitWidth>
+			<Type>double</Type>
+			<Name>100mv</Name>
+			<Description>100mv</Description>
+			<IsScaled>0</IsScaled>
+			<LinkTo>\DA0\ch3</LinkTo>
+			<ValueTextList>A,B,C</ValueTextList>
+			<SystemName>模拟输出</SystemName>
+		</Item>
+		<Item>
+			<Offset>32</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>8</BitWidth>
+			<Type>byte</Type>
+			<Name>100mv1</Name>
+			<Description>100mv1</Description>
+			<IsScaled>0</IsScaled>
+			<LinkTo/>
+			<ValueTextList>A=0,B=3,C=4;D=5</ValueTextList>
+			<SystemName>模拟输出</SystemName>
+		</Item>
+		<Item>
+			<Offset>40</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>1</BitWidth>
+			<Type>bool</Type>
+			<Name>阀门1</Name>
+			<Description>阀门1</Description>
+			<IsScaled>0</IsScaled>
+			<LinkTo>\DA0\ch5</LinkTo>
+			<ValueTextList/>
+			<SystemName>模拟输出</SystemName>
+		</Item>
+		<Item>
+			<Offset>42</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>程控电源控制</Name>
+			<Description>程控电源控制</Description>
+			<IsScaled>0</IsScaled>
+			<LinkTo>\DA0\ch4</LinkTo>
+			<ValueTextList/>
+			<Childs>
+				<Item>
+					<Offset>42</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>程控电源4</Name>
+					<Description/>
+					<IsScaled>0</IsScaled>
+					<ValueTextList>闭合=3,断开=0</ValueTextList>
+					<SystemName>模拟输出</SystemName>
+				</Item>
+				<Item>
+					<Offset>42</Offset>
+					<StartBit>2</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>程控电源5</Name>
+					<Description/>
+					<IsScaled>0</IsScaled>
+					<ValueTextList>闭合=3,断开=0</ValueTextList>
+					<SystemName>模拟输出</SystemName>
+				</Item>
+			</Childs>
+		</Item>
+	</Data>
+</ICDData>

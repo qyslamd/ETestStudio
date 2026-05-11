@@ -1,0 +1,13 @@
+﻿{
+  "name": "Broken",
+  "data": [
+    {
+      "offset": 0,
+      "startBit": 0,
+      "type": "byte",
+      "name": "MissingBitWidth",
+      "description": "Broken node",
+      "isScaled": 0
+    }
+  ]
+}

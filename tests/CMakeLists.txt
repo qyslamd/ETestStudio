@@ -119,4 +119,5 @@ if(BUILD_TESTS_THIRD_PARTY)
     add_subdirectory(sol2)
 endif()
 
+add_subdirectory(icd_utility)
 add_subdirectory(core)

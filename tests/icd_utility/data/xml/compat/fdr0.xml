@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="E:\work_enpht\Projects\EphAutoTest\Source\EphAutoTest.ICD\Schema\IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>16</BitWidth>
+			<Type>word</Type>
+			<Name>帧头</Name>
+			<Description>帧头</Description>
+			<IsScaled>0</IsScaled>
+			<Tag>1</Tag>
+			<ValueTextList>50</ValueTextList>
+		</Item>
+		<Item>
+			<Offset>2</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>1</BitWidth>
+			<Type>bool</Type>
+			<Name>燃油阀门1</Name>
+			<Description>燃油阀门1</Description>
+			<IsScaled>0</IsScaled>
+			<SystemName>飞参</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList/>
+		</Item>
+		<Item>
+			<Offset>3</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>16</BitWidth>
+			<Type>short</Type>
+			<Name>阀门温度1</Name>
+			<Description>阀门温度1</Description>
+			<IsScaled>1</IsScaled>
+			<ScaleA>0.001</ScaleA>
+			<ScaleB>2.1</ScaleB>
+			<SystemName/>
+			<Unit>度</Unit>
+			<Tag>0</Tag>
+			<ValueTextList/>
+		</Item>
+	</Data>
+</ICDData>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="E:\work_enpht\Projects\EphAutoTest\Source\EphAutoTest.ICD\Schema\IcdConfig.xsd">
+	<Files>
+		<FileInfo>
+			<Name>FDR0</Name>
+			<ID>0</ID>
+			<Type>1</Type>
+			<Description>FDR0</Description>
+			<Enable>1</Enable>
+			<WordType>0</WordType>
+			<ByteOrder>0</ByteOrder>
+			<Path>fdr0.xml</Path>
+		</FileInfo>
+		<FileInfo>
+			<Name>DA0_1</Name>
+			<ID>1</ID>
+			<Type>2</Type>
+			<Description>模拟输出</Description>
+			<Enable>1</Enable>
+			<WordType>0</WordType>
+			<ByteOrder>0</ByteOrder>
+			<Path>io.xml</Path>
+		</FileInfo>
+		<FileInfo>
+			<Name>AD0</Name>
+			<ID>2</ID>
+			<Type>1</Type>
+			<Description>采集</Description>
+			<Enable>1</Enable>
+			<WordType>0</WordType>
+			<ByteOrder>0</ByteOrder>
+			<Path>io2.xml</Path>
+		</FileInfo>
+		<FileInfo>
+			<Name>FDR1</Name>
+			<ID>3</ID>
+			<Type>1</Type>
+			<Description>FDR1</Description>
+			<Enable>1</Enable>
+			<WordType>0</WordType>
+			<ByteOrder>0</ByteOrder>
+			<Path>fdr1.xml</Path>
+		</FileInfo>
+		<FileInfo>
+			<Name>DA0_2</Name>
+			<ID>4</ID>
+			<Type>2</Type>
+			<Description>10AIO2</Description>
+			<Enable>1</Enable>
+			<WordType>0</WordType>
+			<ByteOrder>0</ByteOrder>
+			<Path>10AIO2.xml</Path>
+		</FileInfo>
+		<FileInfo>
+			<Name>FDR0S</Name>
+			<ID>5</ID>
+			<Type>2</Type>
+			<Description>FDRSender</Description>
+			<Enable>1</Enable>
+			<WordType>0</WordType>
+			<ByteOrder>0</ByteOrder>
+			<Path>fdr0_s.xml</Path>
+		</FileInfo>
+		<FileInfo>
+			<Name>FDR0_config</Name>
+			<ID>6</ID>
+			<Type>4</Type>
+			<Description>FDR0_config</Description>
+			<Enable>1</Enable>
+			<WordType>0</WordType>
+			<ByteOrder>0</ByteOrder>
+			<Path>fdr0_config.xml</Path>
+		</FileInfo>
+	</Files>
+</ICDConfig>

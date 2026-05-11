@@ -1,0 +1,15 @@
+﻿<ICDConfig>
+  <Files>
+    <FileInfo>
+      <Name>FrameA</Name>
+      <ID>1</ID>
+      <Type>0</Type>
+      <Description>Test frame</Description>
+      <Enable>1</Enable>
+      <WordType>0</WordType>
+      <ByteOrder>0</ByteOrder>
+      <Path>frame-valid.xml</Path>
+      <Options></Options>
+    </FileInfo>
+  </Files>
+</ICDConfig>

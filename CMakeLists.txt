@@ -144,6 +144,21 @@ target_include_directories(sol2 INTERFACE ${CMAKE_SOURCE_DIR}/3rdparty/sol2-3.3.
 target_link_libraries(sol2 INTERFACE liblua)
 add_library(sol2::sol2 ALIAS sol2)
 
+# =======================================
+# icd_utility 三方依赖
+# =======================================
+
+# pugixml XML 解析库
+add_subdirectory(3rdparty/pugixml-1.15)
+
+# nlohmann/json (header-only) — code includes <nlohmann/json.hpp>, need ./3rdparty/ as root
+add_library(nlohmann INTERFACE)
+target_include_directories(nlohmann INTERFACE ${CMAKE_SOURCE_DIR}/3rdparty)
+
+# tl/expected (header-only) — code includes <tl/expected.hpp>, need ./3rdparty/ as root
+add_library(tl INTERFACE)
+target_include_directories(tl INTERFACE ${CMAKE_SOURCE_DIR}/3rdparty)
+
 #=======================================
 # 设置编译选项，特别是Windows平台下的Unicode支持
 # 对于MSVC编译器，启用UTF-8编码支持，并定义Unicode相关的宏，以确保应用程序能够正确处理Unicode字符。

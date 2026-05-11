@@ -1,0 +1,13 @@
+﻿<ICDData>
+  <Name>Broken</Name>
+  <Data>
+    <Item>
+      <Offset>0</Offset>
+      <StartBit>0</StartBit>
+      <Type>byte</Type>
+      <Name>MissingBitWidth</Name>
+      <Description>Broken node</Description>
+      <IsScaled>0</IsScaled>
+    </Item>
+  </Data>
+</ICDData>
