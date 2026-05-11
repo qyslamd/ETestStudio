@@ -1,9 +1,13 @@
-set(TARGET_NAME "qscintilla-demo")
+set(TARGET_NAME "lua-debugger-demo")
 
-add_executable(${TARGET_NAME} 
+add_executable(${TARGET_NAME}
     main.cpp
-    mainwindow.h
-    mainwindow.cpp
+    LuaDebugger.h
+    LuaDebugger.cpp
+    LuaEditor.h
+    LuaEditor.cpp
+    MainWindow.h
+    MainWindow.cpp
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
@@ -11,6 +15,12 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     Qt5::Core
     Qt5::Gui
     QScintilla
+    sol2::sol2
+    liblua
+)
+
+target_include_directories(${TARGET_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/3rdparty/lua-5.4.4/src
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES
@@ -19,10 +29,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-#=======================================
-# 生成运行脚本，自动设置Qt运行时环境变量
 if(WIN32)
-    # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
     configure_file(
         "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
         "${CMAKE_SOURCE_DIR}/run_${TARGET_NAME}.bat"

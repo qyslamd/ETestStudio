@@ -181,8 +181,8 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/plugins/mock_serial_device)
     add_subdirectory(examples/plugins/mock_a429_device)
     add_subdirectory(examples/plugins/mock_can_device)
-    add_subdirectory(examples/qscintlla-demo)
     add_subdirectory(examples/guidance-demo)
+    add_subdirectory(examples/lua-debugger-demo)
 endif()
 
 

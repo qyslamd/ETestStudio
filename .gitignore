@@ -44,7 +44,7 @@ Schema/
 run_app.bat
 run_test.bat
 run_qscintilla-demo.bat
-run_guidance-demo.bat
+run_lua-debugger-demo.bat
 code_stats.bat
 code_stats.ps1
 

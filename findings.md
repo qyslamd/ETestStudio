@@ -1,4 +1,49 @@
-# ETest Demo — 研究发现
+# IATP — 研究发现
+
+## Lua + sol2 技术调研（2026-05-11）
+
+### sol2绑定Qt类型
+- **QString不原生支持**：sol2不直接识别QString，需要通过`.toStdString()`和`QString::fromStdString()`转换。在Lua侧统一使用Lua string，C++端做转换
+- **QVariant不原生支持**：sol2不直接识别QVariant。建议在Lua侧使用table，C++端做QVariant ↔ sol::table的双向转换
+- **自定义Struct绑定**：通过`new_usertype`绑定，对QString字段需要用`sol::property`包装getter/setter做std::string转换，对QVariant字段同理转换为基础类型
+- **枚举绑定**：两种方案——(1)全局常量`DeviceStatus_Online`(简单但Lua不友好) (2)table方式`DeviceStatus.Online`(推荐，符合Lua习惯)
+- **safe_script**：可以捕获运行时错误和语法错误，错误后VM仍然可用。`sol::protected_function`也可单独包装某个函数做保护调用
+
+### Lua Debug Library
+- **lua_sethook + sol2**：兼容。通过`lua.lua_state()`获取底层`lua_State*`后设置hook，sol2 API正常工作
+- **LUA_MASKLINE**：每行Lua代码触发一次，C++注册的函数内部不触发（source为"C"）
+- **断点实现**：在hook回调中检查`ar->currentline`是否在断点集合中，命中则记录/暂停
+- **变量监视**：`lua_getlocal(L, ar, index)`可读取当前函数的所有局部变量，返回变量名和值。以`(`开头的name是内部临时变量，跳过
+- **调用栈**：`lua_getstack(L, level, &stackEntry)` + `lua_getinfo(L, "nSl", &stackEntry)`逐层获取调用信息
+- **暂停机制**：在hook中不能直接暂停（会阻塞），需要配合协程的`lua_yield`或在协程中手动`coroutine.yield()`
+- **条件断点**：在hook中通过`lua_getlocal`读取条件变量值，与阈值比较后决定是否命中
+- **hook上下文传递**：C API的`lua_sethook`不支持upvalue，需要通过全局lightuserdata传递调试上下文指针
+
+### VM隔离
+- **多个sol::state实例**：完全隔离，各自的全局变量、注册函数、标准库打开状态互不影响
+- **沙箱化**：通过只打开`base/math/string/table/coroutine`库，不打开`io/os/debug`，防止脚本执行危险操作
+- **销毁重建**：sol::state析构后所有状态清除，新建的VM是完全干净的环境
+- **IATP应用**：每个测试用例在独立VM中执行，用例间状态完全隔离
+
+### 协程执行控制
+- **coroutine.yield/resume**：C++端通过`sol::coroutine`的`operator()`驱动resume，Lua端用`coroutine.yield()`暂停
+- **逐步骤执行**：每个测试步骤后yield，C++端逐步resume，实现暂停/恢复/单步
+- **resume传值**：`co(value)`传值到协程内部，作为`coroutine.yield()`的返回值，可用于从C++端向脚本传递信号值
+- **协程错误处理**：协程内`error()`不会导致C++崩溃，`result.valid()`为false，协程状态变为dead
+- **协程内hook**：Lua 5.4中子协程继承主线程的hook设置，`lua_sethook`在协程内也生效
+- **lua_yield在hook中**：理论上可以在hook回调中调用`lua_yield`暂停协程，但必须确保当前在协程上下文中，否则会crash。IATP推荐方案：**在协程中执行脚本，每步yield，C++端控制节奏**
+
+### IATP引擎层实现策略（基于调研结论）
+1. 每个用例创建独立的`sol::state`，只打开安全库
+2. 用例脚本在`sol::coroutine`中执行，每个步骤后yield
+3. C++端逐步骤resume，实现暂停/恢复/终止
+4. 用`lua_sethook(LUA_MASKLINE)`实现断点和变量监视
+5. 用`lua_getlocal`在断点处读取变量值
+6. 用`safe_script`或`protected_function`确保错误不崩溃
+7. 枚举用table方式绑定（`DeviceStatus.Online`），Struct用`new_usertype`
+8. QString/QVariant在C++/Lua边界做转换，Lua侧只用基础类型
+
+---
 
 ## 代码架构现状
 
