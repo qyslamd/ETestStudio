@@ -49,8 +49,11 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 }
 
 void MainWindow::setupUi() {
-  mainSplitter_ = new QSplitter(Qt::Horizontal, this);
-  setCentralWidget(mainSplitter_);
+  vertSplitter_ = new QSplitter(Qt::Vertical, this);
+  setCentralWidget(vertSplitter_);
+
+  horiSplitter_ = new QSplitter(Qt::Horizontal);
+  vertSplitter_->addWidget(horiSplitter_);
 
   statusLabel_ = new QLabel("就绪");
   statusBar()->addWidget(statusLabel_);
@@ -77,7 +80,7 @@ void MainWindow::setupToolbar() {
 void MainWindow::setupEditorPanel() {
   editor_ = new LuaEditor(this);
   editor_->setMinimumWidth(500);
-  mainSplitter_->addWidget(editor_);
+  horiSplitter_->addWidget(editor_);
 }
 
 void MainWindow::setupDebugPanels() {
@@ -92,15 +95,18 @@ void MainWindow::setupDebugPanels() {
   callStack_ = new QListWidget(this);
   debugTabs_->addTab(callStack_, "调用栈");
 
+  debugTabs_->setMinimumWidth(350);
+  horiSplitter_->addWidget(debugTabs_);
+  horiSplitter_->setStretchFactor(0, 3);
+  horiSplitter_->setStretchFactor(1, 2);
+
   output_ = new QTextEdit(this);
   output_->setReadOnly(true);
   output_->setFont(QFont("Consolas", 10));
-  debugTabs_->addTab(output_, "输出");
-
-  debugTabs_->setMinimumWidth(350);
-  mainSplitter_->addWidget(debugTabs_);
-  mainSplitter_->setStretchFactor(0, 3);
-  mainSplitter_->setStretchFactor(1, 2);
+  output_->setMinimumHeight(100);
+  vertSplitter_->addWidget(output_);
+  vertSplitter_->setStretchFactor(0, 4);
+  vertSplitter_->setStretchFactor(1, 1);
 }
 
 void MainWindow::setupConnections() {

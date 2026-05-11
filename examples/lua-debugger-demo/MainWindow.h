@@ -63,7 +63,8 @@ private:
     QAction *actStepOut_;
     QAction *actReset_;
 
-    QSplitter *mainSplitter_;
+    QSplitter *vertSplitter_;
+    QSplitter *horiSplitter_;
     QTabWidget *debugTabs_;
     QTreeWidget *varTree_;
     QListWidget *callStack_;

@@ -27,7 +27,10 @@ void luaDebugHook(lua_State *L, lua_Debug *ar) {
     }
 }
 
-LuaDebugger::LuaDebugger(QObject *parent) : QObject(parent) {}
+LuaDebugger::LuaDebugger(QObject *parent) : QObject(parent) {
+    qRegisterMetaType<StackFrame>("StackFrame");
+    qRegisterMetaType<DebugSnapshot>("DebugSnapshot");
+}
 
 LuaDebugger::~LuaDebugger() {
     stop();

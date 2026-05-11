@@ -30,6 +30,9 @@ struct DebugSnapshot {
     QMap<QString, QVariant> globals;
 };
 
+Q_DECLARE_METATYPE(StackFrame)
+Q_DECLARE_METATYPE(DebugSnapshot)
+
 class LuaDebugger : public QObject {
     Q_OBJECT
 public:
