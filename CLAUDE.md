@@ -69,6 +69,12 @@ format_code.bat
    - 当你生成 git commit 信息时：
    - 使用 Co-Authored-By 信息（如果需要）：Co-Authored-By: claude code 助手 <zhouyohu@163.com>
    - 不使用默认的 Claude 署名
+   - 如果我的工作目录中出现了 nul 名称的文件之后。
+     - 请使用cmd，这样删除它:`del \\.\D:\path\to\nul`
+     - 它是由于`opencode-cli`在windows上的BUG导致的
+     - 其中 path to要替换为真实的路径
+     - 执行删除之前必须经过我的确认！
+     - 如果删除失败，请不要提交，向我报告
 10.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
 
 ## 第三方依赖
