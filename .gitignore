@@ -52,6 +52,15 @@ docs/*.js
 docs/*.ts
 
 # ========== CMake 生成的可执行脚本 ==========
+# 新位置（CMake 生成到 scripts/）
+scripts/run_app.bat
+scripts/run_test.bat
+scripts/run_qscintilla-demo.bat
+scripts/run_lua-debugger-demo.bat
+scripts/run_guidance-demo.bat
+scripts/code_stats.bat
+scripts/code_stats.ps1
+# 旧位置遗留文件（仍可能存在于磁盘）
 run_app.bat
 run_test.bat
 run_qscintilla-demo.bat

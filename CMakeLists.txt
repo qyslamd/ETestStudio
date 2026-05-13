@@ -215,7 +215,7 @@ if(WIN32)
     else()
         configure_file(
             "${CMAKE_SOURCE_DIR}/cmake/format_code.bat.in"
-            "${CMAKE_SOURCE_DIR}/format_code.bat"
+            "${CMAKE_SOURCE_DIR}/scripts/format_code.bat"
             @ONLY
         )
     endif()
@@ -230,12 +230,12 @@ if(WIN32)
     else()
         configure_file(
             "${CMAKE_SOURCE_DIR}/cmake/code_stats.bat.in"
-            "${CMAKE_SOURCE_DIR}/code_stats.bat"
+            "${CMAKE_SOURCE_DIR}/scripts/code_stats.bat"
             @ONLY
         )
         configure_file(
             "${CMAKE_SOURCE_DIR}/cmake/code_stats.ps1.in"
-            "${CMAKE_SOURCE_DIR}/code_stats.ps1"
+            "${CMAKE_SOURCE_DIR}/scripts/code_stats.ps1"
             @ONLY
         )
     endif()

@@ -109,7 +109,7 @@ if(WIN32)
     # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
     configure_file(
         "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
-        "${CMAKE_SOURCE_DIR}/run_app.bat"
+        "${CMAKE_SOURCE_DIR}/scripts/run_app.bat"
         @ONLY
     )
 endif()
