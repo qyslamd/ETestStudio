@@ -1,3 +1,11 @@
+# ========== nodejs ==========
+node_modules/
+package-lock.json
+package.json
+yarn.lock
+
+
+
 # ========== CMake 构建中间产物 ==========
 CMakeFiles/
 CMakeCache.txt
@@ -39,6 +47,9 @@ enpht/
 
 # ========== 文档/模式相关 ==========
 Schema/
+_unpacked/
+docs/*.js
+docs/*.ts
 
 # ========== CMake 生成的可执行脚本 ==========
 run_app.bat

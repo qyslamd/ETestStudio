@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IATP 综合性自动化测试平台 设计方案</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",system-ui,-apple-system,sans-serif;
+  background:#f0f2f5;color:#1e293b;line-height:1.75
+}
+.wrapper{display:flex;max-width:1440px;margin:0 auto;min-height:100vh}
+
+/* ───── Sidebar ───── */
+.toc-sidebar{
+  position:sticky;top:0;width:268px;height:100vh;overflow-y:auto;
+  background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);
+  padding:28px 16px 40px;flex-shrink:0;z-index:10
+}
+.toc-sidebar h2{
+  font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;
+  color:#64748b;margin-bottom:20px;padding:0 12px 10px;
+  border-bottom:1px solid rgba(148,163,184,.15);font-weight:500
+}
+.toc-sidebar nav a{
+  display:block;padding:5px 12px;font-size:.8rem;color:#94a3b8;
+  text-decoration:none;border-left:2px solid transparent;
+  transition:all .15s;line-height:1.5;border-radius:0 4px 4px 0
+}
+.toc-sidebar nav a:hover{color:#e2e8f0;background:rgba(255,255,255,.04)}
+.toc-sidebar nav a.active{color:#60a5fa;border-left-color:#60a5fa;background:rgba(96,165,250,.08)}
+.toc-sidebar nav a.l2{padding-left:24px;font-size:.76rem}
+.toc-sidebar nav a.l3{padding-left:36px;font-size:.73rem}
+
+/* ───── Main ───── */
+.main-content{flex:1;min-width:0;padding:0;background:#fff}
+
+/* ───── Hero ───── */
+.hero{
+  background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f172a 100%);
+  padding:60px 64px 48px;color:#fff;position:relative;overflow:hidden
+}
+.hero::after{
+  content:'';position:absolute;top:-60%;right:-20%;width:600px;height:600px;
+  background:radial-gradient(circle,rgba(59,130,246,.12) 0%,transparent 70%);
+  pointer-events:none
+}
+.hero h1{font-size:2.4rem;font-weight:700;letter-spacing:-.03em;position:relative;z-index:1}
+.hero .meta{color:#94a3b8;font-size:.9rem;margin-top:8px;position:relative;z-index:1}
+.hero .badge{
+  display:inline-block;background:rgba(59,130,246,.2);color:#93c5fd;
+  border:1px solid rgba(59,130,246,.3);border-radius:20px;
+  padding:2px 14px;font-size:.75rem;margin-top:16px
+}
+
+/* ───── Content Body ───── */
+.body{padding:40px 64px 80px}
+
+.body h2{
+  font-size:1.55rem;font-weight:700;color:#0f172a;
+  margin:48px 0 18px;padding-bottom:10px;
+  border-bottom:2px solid #e2e8f0;letter-spacing:-.01em
+}
+.body h3{font-size:1.15rem;font-weight:600;color:#1e293b;margin:32px 0 14px}
+.body h4{font-size:1rem;font-weight:600;color:#334155;margin:22px 0 10px}
+.body p{margin:0 0 14px;color:#334155}
+.body strong{color:#0f172a}
+.body hr{border:none;border-top:1px solid #e2e8f0;margin:40px 0}
+
+.body pre{
+  background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
+  padding:18px 22px;margin:18px 0;overflow-x:auto;font-size:.81rem;line-height:1.55
+}
+.body code:not(pre code){
+  background:#eef2ff;color:#4f46e5;padding:1px 7px;border-radius:5px;
+  font-size:.82rem;font-family:"JetBrains Mono","Fira Code",monospace
+}
+.body pre code{background:none;padding:0;color:inherit}
+
+pre code.hljs{display:block;overflow-x:auto;padding:1em}
+code.hljs{padding:3px 5px}
+.hljs{color:#24292e;background:#fff}
+.hljs-doctag,.hljs-keyword,.hljs-meta .hljs-keyword,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language_{color:#d73a49}
+.hljs-title,.hljs-title.class_,.hljs-title.class_.inherited__,.hljs-title.function_{color:#6f42c1}
+.hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable{color:#005cc5}
+.hljs-meta .hljs-string,.hljs-regexp,.hljs-string{color:#032f62}
+.hljs-built_in,.hljs-symbol{color:#e36209}
+.hljs-code,.hljs-comment,.hljs-formula{color:#6a737d}
+.hljs-name,.hljs-quote,.hljs-selector-pseudo,.hljs-selector-tag{color:#22863a}
+.hljs-subst{color:#24292e}
+.hljs-section{color:#005cc5;font-weight:700}
+.hljs-bullet{color:#735c0f}
+.hljs-emphasis{color:#24292e;font-style:italic}
+.hljs-strong{color:#24292e;font-weight:700}
+.hljs-addition{color:#22863a;background-color:#f0fff4}
+.hljs-deletion{color:#b31d28;background-color:#ffeef0}
+
+.body blockquote{
+  border-left:4px solid #3b82f6;background:#eff6ff;
+  padding:14px 22px;margin:18px 0;border-radius:0 8px 8px 0
+}
+.body blockquote p{margin:0;color:#1d4ed8}
+.body ul,.body ol{margin:8px 0 18px;padding-left:24px}
+.body li{margin-bottom:5px;color:#334155}
+.body li>ul,.body li>ol{margin:4px 0 4px 16px}
+
+.table-wrap{overflow-x:auto;margin:18px 0;border-radius:10px;border:1px solid #e2e8f0}
+.body table{width:100%;border-collapse:collapse;font-size:.84rem}
+.body th{
+  background:#f8fafc;color:#475569;font-weight:600;
+  padding:10px 16px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap
+}
+.body td{padding:9px 16px;border-bottom:1px solid #f1f5f9;color:#334155}
+.body tr:last-child td{border-bottom:none}
+.body tr:hover td{background:#f8fafc}
+
+/* ───── Architecture layers ───── */
+.arch{display:flex;flex-direction:column;gap:0;margin:24px 0}
+.arch .layer{
+  border-radius:0;padding:16px 20px;color:#fff;
+  position:relative;overflow:hidden
+}
+.arch .layer:first-child{border-radius:10px 10px 0 0}
+.arch .layer:last-child{border-radius:0 0 10px 10px}
+.arch .layer .label{font-weight:600;font-size:.88rem;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.arch .layer .label .arrow{font-size:.7rem;opacity:.6}
+.arch .layer .mods{display:flex;flex-wrap:wrap;gap:4px}
+.arch .layer .mod{
+  display:inline-block;font-size:.72rem;padding:3px 10px;
+  border-radius:5px;background:rgba(255,255,255,.15);
+  color:#fff;line-height:1.5;white-space:nowrap
+}
+.arch .layer .mod.cat{background:rgba(255,255,255,.08);font-weight:500}
+.arch .l-conn{height:20px;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.arch .l-conn .dot{width:8px;height:8px;border-radius:50%;border:2px solid #94a3b8;background:#fff}
+.arch .l-app{background:linear-gradient(135deg,#6366f1,#818cf8)}
+.arch .l-case{background:linear-gradient(135deg,#8b5cf6,#a78bfa)}
+.arch .l-engine{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+.arch .l-icd{background:linear-gradient(135deg,#0891b2,#22d3ee);color:#0f172a}
+.arch .l-icd .mod{color:#0f172a;background:rgba(15,23,42,.12)}
+.arch .l-icd .mod.cat{background:rgba(15,23,42,.08)}
+.arch .l-icd .label{color:#0f172a}
+.arch .l-hal{background:linear-gradient(135deg,#059669,#34d399);color:#0f172a}
+.arch .l-hal .mod{color:#0f172a;background:rgba(15,23,42,.12)}
+.arch .l-hal .mod.cat{background:rgba(15,23,42,.08)}
+.arch .l-hal .label{color:#0f172a}
+
+/* ───── Flow diagram ───── */
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:16px 0;font-size:.82rem}
+.flow .node{
+  background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;
+  padding:8px 14px;text-align:center;color:#1e293b;font-weight:500;flex-shrink:0
+}
+.flow .node.highlight{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}
+.flow .arrow{color:#94a3b8;font-size:1.1rem;flex-shrink:0}
+
+/* ───── Arch Box (dark terminal style) ───── */
+.arch-box{
+  background:#1e293b;border-radius:10px;padding:20px 24px;
+  margin:18px 0;font-family:"JetBrains Mono","Fira Code",monospace;
+  font-size:.8rem;line-height:1.5;color:#e2e8f0;overflow-x:auto
+}
+.arch-box .hl{color:#facc15}
+.arch-box .dim{color:#64748b}
+.arch-box .cyan{color:#22d3ee}
+.arch-box .green{color:#34d399}
+
+/* ───── ICD module tree ───── */
+.icd-tree{
+  background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
+  padding:18px 22px;margin:18px 0;font-size:.82rem;line-height:1.7
+}
+.icd-tree .branch{font-weight:600;color:#0f172a}
+.icd-tree .leaf{padding-left:24px;color:#475569}
+.icd-tree .leaf em{color:#0891b2;font-style:normal}
+
+/* ───── Card Grid ───── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:16px 0}
+.card-grid .card{
+  background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
+  padding:14px 16px;transition:all .15s
+}
+.card-grid .card:hover{border-color:#93c5fd;box-shadow:0 2px 8px rgba(59,130,246,.08)}
+.card-grid .card .title{font-weight:600;font-size:.85rem;color:#0f172a;margin-bottom:2px}
+.card-grid .card .desc{font-size:.78rem;color:#64748b}
+
+/* ───── Tags ───── */
+.tag{
+  display:inline-block;border-radius:4px;padding:0 8px;
+  font-size:.72rem;font-weight:500;margin-right:4px
+}
+.tag.green{background:#dcfce7;color:#166534}
+.tag.blue{background:#dbeafe;color:#1e40af}
+.tag.yellow{background:#fef9c3;color:#854d0e}
+.tag.gray{background:#f1f5f9;color:#475569}
+
+/* ───── Responsive ───── */
+@media(max-width:960px){
+  .toc-sidebar{display:none}
+  .hero{padding:36px 24px 32px}
+  .hero h1{font-size:1.6rem}
+  .body{padding:24px 20px 60px}
+}
+.body h2[id]::before,.body h3[id]::before{
+  content:'';display:block;height:80px;margin:-80px 0 0;visibility:hidden
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<aside class="toc-sidebar"><h2>目录</h2><nav id="toc"></nav></aside>
+
+<main class="main-content">
+
+<div class="hero">
+  <h1>综合性自动化测试平台<br>IATP 设计方案</h1>
+  <p class="meta"><strong>版本</strong> V1.0 &nbsp;·&nbsp; 2026年5月 &nbsp;·&nbsp; 研发团队</p>
+  <span class="badge">架构设计文档</span>
+</div>
+
+<div class="body">
+
+<!-- ============================================================ -->
+<h2 id="1-项目概述">1 项目概述</h2>
+
+<h3 id="11-建设目标">1.1 建设目标</h3>
+<p>IATP（Integrated Automated Test Platform，综合性自动化测试平台）旨在打造一套<strong>全硬件兼容、高可靠、易扩展</strong>的统一自动化测试平台，覆盖工业控制、航空航天、车载总线三大领域。平台通过硬件抽象层屏蔽设备差异，通过ICD信号层实现工程值与硬件原始数据的双向转换，通过脚本引擎驱动自动化测试流程，使测试人员能够专注于测试业务逻辑而非硬件操作细节。</p>
+
+<h3 id="12-项目背景与行业痛点">1.2 项目背景与行业痛点</h3>
+<p>在工业控制自动化、航空航天、车载总线等测控领域，测试工作面临以下核心痛点：</p>
+
+<div class="card-grid">
+  <div class="card"><div class="title">硬件种类多、SDK各异</div><div class="desc">AD/DA/CAN/429/1553B/VISA等各有不同API，学习成本高，无法统一调度</div></div>
+  <div class="card"><div class="title">人工操作效率低</div><div class="desc">手动设参、读数据、判结果，易漏测、误读、误判</div></div>
+  <div class="card"><div class="title">数据散落不可追溯</div><div class="desc">测试数据分散在Excel/各设备，无法回溯某次步骤的输入与输出</div></div>
+  <div class="card"><div class="title">用例与硬件强耦合</div><div class="desc">换硬件需重写用例，无法在不同配置间复用</div></div>
+  <div class="card"><div class="title">无仿真能力</div><div class="desc">无硬件时无法开发和调试用例</div></div>
+  <div class="card"><div class="title">用例维护困难</div><div class="desc">格式不统一，无法互相引用或参数化复用</div></div>
+  <div class="card"><div class="title">报告靠手工整理</div><div class="desc">缺乏自动化记录，无法生成标准化报告</div></div>
+</div>
+
+<h3 id="13-平台定位">1.3 平台定位</h3>
+<p>IATP定位为面向工业控制自动化、航空航天、车载总线三大领域的综合性自动化测试平台：</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>领域</th><th>典型硬件</th><th>典型测试场景</th></tr></thead>
+<tbody>
+<tr><td>工业控制自动化</td><td>AD/DA采集卡、IO板卡、脉冲信号卡、串口设备</td><td>传感器校准、执行器控制、系统联调测试</td></tr>
+<tr><td>航空航天</td><td>ARINC 429、MIL-STD-1553B、VISA程控仪器</td><td>航电系统总线测试、程控仪器自动化验证</td></tr>
+<tr><td>车载总线</td><td>CAN/CAN FD、LIN、FlexRay</td><td>ECU通信测试、诊断协议验证、网关路由测试</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="2-需求分析">2 需求分析</h2>
+
+<h3 id="21-硬件支持范围">2.1 硬件支持范围</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>硬件类别</th><th>具体支持范围</th><th>接入方式</th></tr></thead>
+<tbody>
+<tr><td>模拟量采集（AD）</td><td>低速采集卡（多通道、多量程、多触发模式）</td><td>厂商SDK</td></tr>
+<tr><td>模拟量输出（DA）</td><td>低速输出卡（含任意波输出）</td><td>厂商SDK</td></tr>
+<tr><td>开关量IO（DIO）</td><td>数字量输入/输出板卡</td><td>厂商SDK</td></tr>
+<tr><td>脉冲信号</td><td>频率输出/脉冲输出/计数输出/正交编码输入</td><td>厂商SDK</td></tr>
+<tr><td>串行总线</td><td>RS232、RS422、RS485</td><td>厂商SDK</td></tr>
+<tr><td>航空总线</td><td>ARINC 429、MIL-STD-1553B</td><td>厂商SDK</td></tr>
+<tr><td>车载总线</td><td>CAN、CAN FD</td><td>厂商SDK</td></tr>
+<tr><td>网络通信</td><td>TCP、UDP</td><td>Qt网络模块</td></tr>
+<tr><td>程控仪器</td><td>VISA SCPI标准仪器</td><td>VISA库</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="22-测试流程需求">2.2 测试流程需求</h3>
+
+<div class="flow">
+  <span class="node highlight">硬件接入与自检</span>
+  <span class="arrow">→</span>
+  <span class="node">ICD信号映射配置</span>
+  <span class="arrow">→</span>
+  <span class="node">帧协议定义</span>
+  <span class="arrow">→</span>
+  <span class="node">测试用例编制</span>
+  <span class="arrow">→</span>
+  <span class="node highlight">测试执行与监控</span>
+  <span class="arrow">→</span>
+  <span class="node">报告生成</span>
+</div>
+
+<ol>
+<li><strong>硬件接入与自检</strong>：加载所有硬件设备插件，自检验证，设备树展示硬件列表及状态</li>
+<li><strong>ICD信号映射配置</strong>：定义"工程值信号"与"硬件通道/协议字段"之间映射关系</li>
+<li><strong>帧协议定义</strong>：定义数据帧字段结构（起始位、长度、字节序、编码方式等）</li>
+<li><strong>测试用例编制</strong>：以JSON/Excel/YML格式编写步骤，或直接编写Lua脚本</li>
+<li><strong>测试执行与监控</strong>：脚本引擎驱动执行，实时监控信号值和执行状态，支持断点调试</li>
+<li><strong>报告生成</strong>：自动记录全流程数据，生成测试报告</li>
+</ol>
+
+<h3 id="23-功能需求清单">2.3 功能需求清单</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>编号</th><th>功能需求</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>FR1</td><td>设备管理与自检</td><td>插件化加载、设备树展示、自检、Dry Run仿真</td></tr>
+<tr><td>FR2</td><td>ICD信号映射</td><td>信号定义、工程值↔原始值转换、UUID标识、线性/多项式/枚举/脚本规则</td></tr>
+<tr><td>FR3</td><td>协议管理</td><td>帧协议可视化编辑、pack/unpack、协议仓库</td></tr>
+<tr><td>FR4</td><td>拓扑编辑</td><td>硬件通道与被测设备接口的可视化连线</td></tr>
+<tr><td>FR5</td><td>用例管理</td><td>JSON/Excel/YML多格式、CRUD、Schema校验、格式转换、版本管理</td></tr>
+<tr><td>FR6</td><td>测试执行</td><td>Lua脚本引擎、暂停/恢复/终止、断点/单步/变量监视</td></tr>
+<tr><td>FR7</td><td>故障注入</td><td>信号值篡改、CRC错误、延迟/丢包、故障清除与恢复</td></tr>
+<tr><td>FR8</td><td>监控与报告</td><td>实时监控面板、步骤执行记录、报告生成（文本/HTML）</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="24-非功能需求">2.4 非功能需求</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>需求类别</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>稳定性</td><td>单插件异常不导致系统崩溃；执行过程支持断点恢复</td></tr>
+<tr><td>可扩展性</td><td>新增硬件仅需开发插件；脚本API可扩展</td></tr>
+<tr><td>实时性</td><td>满足1-10ms级信号采集控制需求</td></tr>
+<tr><td>可维护性</td><td>层间松耦合，接口参数序列化，支持远期Web迁移</td></tr>
+<tr><td>可移植性</td><td>基于Qt，支持Windows/Linux/QNX/VxWorks</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="3-总体架构设计">3 总体架构设计</h2>
+
+<h3 id="31-六层架构总览">3.1 六层架构总览</h3>
+<p>IATP采用六层松耦合架构，自上而下依次为：</p>
+
+<div class="arch">
+  <div class="layer l-app">
+    <div class="label"><span>应用层 (UI)</span><span class="arrow">▾</span></div>
+    <div class="mods">
+      <span class="mod">设备管理器</span>
+      <span class="mod">帧编辑器</span>
+      <span class="mod">ICD编辑器</span>
+      <span class="mod">拓扑编辑器</span>
+      <span class="mod">用例编辑器</span>
+      <span class="mod">监控面板</span>
+      <span class="mod">报告查看器</span>
+    </div>
+  </div>
+  <div class="l-conn"><span class="dot"></span></div>
+  <div class="layer l-case">
+    <div class="label"><span>用例管理层 (TestCase)</span><span class="arrow">▾</span></div>
+    <div class="mods">
+      <span class="mod cat">CRUD</span>
+      <span class="mod">格式转换</span>
+      <span class="mod">JSON→Lua</span>
+      <span class="mod">Excel→JSON</span>
+      <span class="mod">YML→JSON</span>
+      <span class="mod">Schema校验</span>
+      <span class="mod">版本管理</span>
+    </div>
+  </div>
+  <div class="l-conn"><span class="dot"></span></div>
+  <div class="layer l-engine">
+    <div class="label"><span>测试引擎层 (Engine)</span><span class="arrow">▾</span></div>
+    <div class="mods">
+      <span class="mod">Lua VM</span>
+      <span class="mod cat">执行控制</span>
+      <span class="mod">暂停/恢复</span>
+      <span class="mod">断点</span>
+      <span class="mod">单步</span>
+      <span class="mod">变量监视</span>
+      <span class="mod">断言验证</span>
+      <span class="mod">数据记录</span>
+      <span class="mod">报告生成</span>
+    </div>
+  </div>
+  <div class="l-conn"><span class="dot"></span></div>
+  <div class="layer l-icd">
+    <div class="label"><span>ICD信号层 (ICD)</span><span class="arrow">▾</span></div>
+    <div class="mods">
+      <span class="mod">SignalMapper</span>
+      <span class="mod">ProtocolRegistry</span>
+      <span class="mod">pack/unpack</span>
+      <span class="mod">FaultManager</span>
+      <span class="mod">SignalValueCache</span>
+      <span class="mod">DataPool</span>
+      <span class="mod cat">传输通道</span>
+      <span class="mod">串口</span>
+      <span class="mod">TCP</span>
+      <span class="mod">UDP</span>
+    </div>
+  </div>
+  <div class="l-conn"><span class="dot"></span></div>
+  <div class="layer l-hal">
+    <div class="label"><span>硬件抽象层 (HAL)</span><span class="arrow">▾</span></div>
+    <div class="mods">
+      <span class="mod cat">设备插件</span>
+      <span class="mod">AD</span>
+      <span class="mod">DA</span>
+      <span class="mod">DIO</span>
+      <span class="mod">Pulse</span>
+      <span class="mod">CAN</span>
+      <span class="mod">1553B</span>
+      <span class="mod">A429</span>
+      <span class="mod">串口</span>
+      <span class="mod">VISA</span>
+      <span class="mod cat">虚拟设备</span>
+      <span class="mod">Simulate</span>
+      <span class="mod">SDK封装</span>
+    </div>
+  </div>
+</div>
+
+<div class="table-wrap"><table>
+<thead><tr><th>层级</th><th>职责</th></tr></thead>
+<tbody>
+<tr><td>应用层</td><td>提供可视化操作界面</td></tr>
+<tr><td>用例管理层</td><td>负责用例CRUD、多格式转换、校验与版本管理</td></tr>
+<tr><td>测试引擎层</td><td>嵌入Lua虚拟机执行脚本，提供执行控制和数据记录</td></tr>
+<tr><td>ICD信号层</td><td>工程值↔硬件原始数据双向转换、信号路由、协议封包解包、故障注入</td></tr>
+<tr><td>硬件抽象层</td><td>通过插件机制封装各类硬件设备</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="32-与凯云etest对比">3.2 与凯云ETest对比</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>对比维度</th><th>凯云ETest</th><th>IATP</th></tr></thead>
+<tbody>
+<tr><td>架构层次</td><td>五层架构</td><td>六层架构（新增用例管理层）</td></tr>
+<tr><td>信号标识</td><td>信号名称</td><td>UUID标识，改名不失效</td></tr>
+<tr><td>传输通道</td><td>TCP/UDP在HAL层</td><td>TCP/UDP作为ICD传输通道选项</td></tr>
+<tr><td>数据池</td><td>独立DataPool层</td><td>融入ICD，MVP仅离散型Pub/Sub</td></tr>
+<tr><td>用例格式</td><td>表格编辑为主</td><td>JSON中间格式 + Excel/YML多源输入</td></tr>
+<tr><td>脚本引擎</td><td>多语言支持</td><td>MVP仅Lua (sol2 + Debug Library)</td></tr>
+<tr><td>插件隔离</td><td>未明确</td><td>MVP同进程，远期独立进程</td></tr>
+<tr><td>源码</td><td>商业闭源</td><td>自主开发，完全可控</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="33-层间依赖原则">3.3 层间依赖原则</h3>
+<ol>
+<li><strong>单向依赖</strong>：上层调用下层接口，下层不反向依赖上层</li>
+<li><strong>接口参数序列化</strong>：只使用基本类型和QVariant，为远期Web迁移保留序列化能力</li>
+<li><strong>MVP渐进策略</strong>：每个决策区分MVP和远期方向，接口保持抽象</li>
+</ol>
+
+<h3 id="34-关键架构决策">3.4 关键架构决策</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>编号</th><th>决策</th><th>原因</th></tr></thead>
+<tbody>
+<tr><td>AD1</td><td>五层→六层（新增用例管理层）</td><td>用例CRUD/校验不应塞进Engine</td></tr>
+<tr><td>AD2</td><td>DataPool融入ICD</td><td>MVP信号量少，独立层增加复杂度</td></tr>
+<tr><td>AD3</td><td>TCP/UDP作为ICD传输通道</td><td>非硬件设备，放HAL导致插件膨胀</td></tr>
+<tr><td>AD4</td><td>新增IVisaPlugin/IPulsePlugin</td><td>VISA无通道概念，脉冲独立</td></tr>
+<tr><td>AD5</td><td>信号用UUID标识</td><td>改名不失效，全部基于UUID关联</td></tr>
+<tr><td>AD6</td><td>三编辑器共享SignalMapper</td><td>同一份数据，元数据与映射分开存储</td></tr>
+<tr><td>AD7</td><td>JSON用例：10+3指令</td><td>嵌套控制流用Lua脚本</td></tr>
+<tr><td>AD8</td><td>WHILE必填timeout</td><td>防死循环，interval防CPU空转</td></tr>
+<tr><td>AD9</td><td>MVP仅Lua</td><td>直接利用Lua Debug Library调试</td></tr>
+<tr><td>AD10</td><td>同进程QPluginLoader</td><td>简单低延迟，后续可切换</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="4-技术选型与论证">4 技术选型与论证</h2>
+
+<h3 id="41-开发框架qt-51212-c">4.1 开发框架：Qt 5.12.12 / C++</h3>
+<p>测控平台需要直接调用厂商C/C++ SDK，Qt/C++是最自然的绑定方式。QPluginLoader提供成熟动态库加载机制，GraphicsView为拓扑编辑器提供现成架构。满足工控领域实时性要求（1-10ms级）。</p>
+
+<h3 id="42-脚本引擎lua-54-sol2">4.2 脚本引擎：Lua 5.4 + sol2</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>对比维度</th><th>Lua 5.4 + sol2</th><th>Python 3</th><th>JavaScript</th></tr></thead>
+<tbody>
+<tr><td>嵌入体积</td><td>~300KB</td><td>~30MB</td><td>~1-50MB</td></tr>
+<tr><td>实时性</td><td>无GC停顿</td><td>GIL+GC不可控</td><td>GC停顿</td></tr>
+<tr><td>调试能力</td><td>Debug Library原生断点/单步</td><td>pdb需额外嵌入</td><td>需自建协议</td></tr>
+<tr><td>C++绑定</td><td>sol2，类型安全零开销</td><td>pybind11</td><td>QJSEngine</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="43-其他选型">4.3 其他选型</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>选型项</th><th>方案</th><th>选用理由</th></tr></thead>
+<tbody>
+<tr><td>构建系统</td><td>CMake + Ninja</td><td>比Make/MSBuild快2-3倍</td></tr>
+<tr><td>插件机制</td><td>QPluginLoader</td><td>简单低延迟，同进程</td></tr>
+<tr><td>数据序列化</td><td>JSON (QJsonDocument)</td><td>Qt原生、可读性好</td></tr>
+<tr><td>日志</td><td>spdlog 1.17.0</td><td>异步高性能、多sink</td></tr>
+<tr><td>编辑器组件</td><td>QScintilla 2.11.3</td><td>语法高亮、代码折叠</td></tr>
+<tr><td>Excel读写</td><td>QXlsx 1.5.0</td><td>纯Qt、无Office依赖</td></tr>
+<tr><td>PDF生成</td><td>libharu 2.4.6</td><td>轻量级C库</td></tr>
+<tr><td>单元测试</td><td>Google Test 1.17.0</td><td>业界标准</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="5-各层详细设计">5 各层详细设计</h2>
+
+<h3 id="51-hal硬件抽象层">5.1 HAL硬件抽象层</h3>
+
+<h4 id="511-插件接口体系">5.1.1 插件接口体系</h4>
+<p>HAL层采用两级接口设计：通用基类 + 类型特化派生类。</p>
+
+<pre><code class="language-cpp">// IPlugin — 所有插件的基础接口
+class IPlugin {
+public:
+    virtual ~IPlugin() = default;
+    virtual bool initialize() = 0;
+    virtual bool start() = 0;
+    virtual void stop() = 0;
+    virtual void uninitialize() = 0;
+    virtual PluginMetaData metaData() const = 0;
+    virtual bool isRunning() const = 0;
+};
+
+// IDevicePlugin — 设备管理能力
+class IDevicePlugin : public IPlugin {
+public:
+    virtual bool openDevice() = 0;
+    virtual void closeDevice() = 0;
+    virtual DeviceInfo deviceInfo() const = 0;
+    virtual DeviceStatus deviceStatus() const = 0;
+    virtual bool selfTest() = 0;
+    virtual bool simulate(bool enable) = 0;
+    virtual QVariantMap configMetaData() const = 0;
+};</code></pre>
+
+<h4>设备类型特化接口一览</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>接口</th><th>类型</th><th>核心方法</th></tr></thead>
+<tbody>
+<tr><td>IADevicePlugin</td><td>模拟量采集 (v3.0)</td><td>setSampleRate / setChannelConfig / startAcquisition / readChannel / setScanList</td></tr>
+<tr><td>IDADevicePlugin</td><td>模拟量输出</td><td>writeChannel / readbackChannel</td></tr>
+<tr><td>IDioPlugin</td><td>开关量IO</td><td>setDirection / readInput / setOutput</td></tr>
+<tr><td>IPulsePlugin</td><td>脉冲信号</td><td>setPulseConfig / startOutput / readFrequency</td></tr>
+<tr><td>ISerialPlugin</td><td>串口族 (232/422/485)</td><td>setSerialMode / setBaudRate / asyncWrite / readData</td></tr>
+<tr><td>ICanPlugin</td><td>CAN/CAN FD</td><td>setBitrate / setCanMode / setIdFilter / sendFrame</td></tr>
+<tr><td>IArinc429Plugin</td><td>ARINC 429</td><td>setSpeed / sendLabel / receiveLabel</td></tr>
+<tr><td>IMil1553Plugin</td><td>MIL-STD-1553B</td><td>setMode (BC/RT/MT) / bcSchedule / rtSetResponse</td></tr>
+<tr><td>IVisaPlugin</td><td>VISA SCPI</td><td>openResource / sendCommand / query</td></tr>
+</tbody>
+</table></div>
+
+<pre><code class="language-cpp">// IADevicePlugin — AD采集（最复杂类型）
+class IADevicePlugin : public IDevicePlugin {
+public:
+    virtual bool setSampleRate(double rate) = 0;
+    virtual bool setChannelConfig(int ch, const ADChannelConfig&amp; cfg) = 0;
+    virtual bool setTriggerConfig(const ADTriggerConfig&amp; cfg) = 0;
+    virtual bool startAcquisition() = 0;
+    virtual bool setReadMode(ADReadMode mode) = 0;
+    virtual bool setScanList(const QVector&lt;int&gt;&amp; list) = 0;
+    virtual double readChannel(int ch) = 0;
+    virtual QVector&lt;double&gt; readChannelData(int ch, int count) = 0;
+};
+
+// 其他设备接口（DA / DIO / Pulse / Serial / CAN / A429 / 1553B / VISA）
+class IDADevicePlugin : public IDevicePlugin {
+    virtual bool writeChannel(int ch, double val) = 0;
+    virtual double readbackChannel(int ch) const = 0;
+};
+
+class IDioPlugin : public IDevicePlugin {
+    virtual bool setDirection(int ch, DioDirection dir) = 0;
+    virtual bool readInput(int ch) = 0;
+    virtual bool setOutput(int ch, bool val) = 0;
+};
+
+class IPulsePlugin : public IDevicePlugin {
+    virtual bool setPulseConfig(int ch, const PulseConfig&amp; cfg) = 0;
+    virtual bool startOutput(int ch) = 0;
+    virtual double readFrequency(int ch) = 0;
+};
+
+class ISerialPlugin : public IDevicePlugin {
+    virtual bool setSerialMode(SerialMode mode) = 0;
+    virtual bool setBaudRate(int rate) = 0;
+    virtual qint64 asyncWrite(const QByteArray&amp; data) = 0;
+    virtual QByteArray readData(int maxBytes = -1) = 0;
+};
+
+class ICanPlugin : public IDevicePlugin {
+    virtual bool setBitrate(int rate) = 0;
+    virtual bool setCanMode(CanMode mode) = 0;
+    virtual bool setIdFilter(quint32 start, quint32 end, bool accept = true) = 0;
+    virtual bool sendFrame(const CanFrame&amp; frame) = 0;
+    virtual CanFrame receiveFrame(int timeoutMs = 0) = 0;
+};
+
+class IArinc429Plugin : public IDevicePlugin {
+    virtual bool setSpeed(Arinc429Speed speed) = 0;
+    virtual bool sendLabel(const Arinc429Word&amp; word) = 0;
+    virtual Arinc429Word receiveLabel(int label, int timeoutMs = 0) = 0;
+};
+
+class IMil1553Plugin : public IDevicePlugin {
+    virtual bool setMode(Mil1553Mode mode) = 0;
+    virtual bool bcSchedule(const QVector&lt;Mil1553Message&gt;&amp; msgs) = 0;
+    virtual bool rtSetResponse(int subAddr, const QByteArray&amp; data) = 0;
+    virtual bool mtStartMonitor() = 0;
+};
+
+class IVisaPlugin : public IDevicePlugin {
+    virtual bool openResource(const QString&amp; addr) = 0;
+    virtual bool sendCommand(const QString&amp; cmd) = 0;
+    virtual QString query(const QString&amp; cmd) = 0;
+    bool selfTest() override;
+};</code></pre>
+
+<h4 id="512-设备树结构">5.1.2 设备树结构</h4>
+<p>层级：<strong>厂家 → 分类 → 设备 → 通道</strong>（VISA类无通道层级）</p>
+
+<div class="arch-box">
+  <span class="cyan">厂家A</span><br>
+  ├── <span class="hl">AD采集</span> <span class="dim">(板卡类)</span><br>
+  │&nbsp;&nbsp;&nbsp;└── EPH5022 → CH0 / CH1<br>
+  ├── <span class="hl">CAN通信</span> <span class="dim">(板卡类)</span><br>
+  │&nbsp;&nbsp;&nbsp;└── CPC-Card → CAN0 / CAN1<br>
+  ├── <span class="hl">脉冲信号</span> <span class="dim">(板卡类)</span><br>
+  │&nbsp;&nbsp;&nbsp;└── Pulse-Card → CH0 / CH1<br>
+  └── <span class="hl">程控仪器</span> <span class="dim">(VISA类，无通道)</span><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── Agilent电源<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── Tektronix示波器
+</div>
+
+<h4 id="513-设备自检流程">5.1.3 设备自检流程</h4>
+<div class="flow">
+  <span class="node highlight">系统启动</span>
+  <span class="arrow">→</span>
+  <span class="node">PluginManager<br>loadAll()</span>
+  <span class="arrow">→</span>
+  <span class="node">遍历每个<br>IDevicePlugin</span>
+  <span class="arrow">→</span>
+  <span class="node">openDevice()<br>selfTest()</span>
+</div>
+<p>VISA设备自检特殊处理：发送<code>*IDN?</code>验证设备身份。</p>
+
+<h4 id="514-dry-run">5.1.4 Dry Run (simulate模式)</h4>
+<p>每个插件提供<code>simulate(bool)</code>方法切换虚拟/真实数据源。全局或单设备开关，HAL层内部处理，Engine和ICD无感知。</p>
+
+<h3 id="52-icd信号层">5.2 ICD信号层</h3>
+
+<h4 id="521-内部结构">5.2.1 内部结构</h4>
+<p>ICD层由5个子模块组成：</p>
+
+<div class="icd-tree">
+  <span class="branch">ICD Manager</span><br>
+  ├── <span class="branch">SignalMapper</span> <span class="leaf"><em>信号路由: UUID → deviceId + channelId + protocolId</em><br>
+  │&nbsp;&nbsp; ├── 转换规则（线性/多项式/枚举/脚本）<br>
+  │&nbsp;&nbsp; └── 传输通道选择（串口/TCP/UDP）</span><br>
+  ├── <span class="branch">ProtocolRegistry</span> <span class="leaf"><em>协议定义仓库</em><br>
+  │&nbsp;&nbsp; └── Protocol {字段列表 + 字节序 + 校验 + pack/unpack}</span><br>
+  ├── <span class="branch">FaultManager</span> <span class="leaf"><em>故障注入管理</em> {signalId, type, params, active}</span><br>
+  ├── <span class="branch">SignalValueCache</span> <span class="leaf"><em>CVT: 信号最新值缓存</em></span><br>
+  └── <span class="branch">DataPool</span> <span class="leaf"><em>离散事件型Pub/Sub（融入ICD）</em></span>
+</div>
+
+<h4 id="522-信号数据结构">5.2.2 信号数据结构</h4>
+<pre><code class="language-cpp">struct RawData {
+    QString deviceId;       // 设备唯一ID
+    QString channelId;      // 通道ID
+    QByteArray data;        // 原始字节
+    qint64 timestamp;       // 采集/收发时间(微秒)
+    QString protocolId;     // 关联协议ID
+};
+
+struct SignalValue {
+    QString signalId;       // 信号UUID
+    QVariant value;         // 工程值
+    qint64 timestamp;       // 微秒级时间戳
+    bool isValid;           // 有效性
+    int quality;            // 数据质量(0=正常, 1=可疑, 2=无效, 3=模拟)
+    QString sourceInfo;     // 来源描述
+};</code></pre>
+
+<h4 id="523-传输通道分层">5.2.3 传输通道分层</h4>
+<div class="arch" style="gap:2px;max-width:520px">
+  <div class="layer l-icd" style="padding:10px 16px;text-align:center">
+    <div class="items">ICD协议转换 (pack/unpack)</div>
+  </div>
+  <div style="display:flex;gap:10px;padding-left:20px">
+    <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:.78rem;flex:1;text-align:center">
+      串口 RS232/422/485<br><span style="color:#64748b;font-size:.72rem">→ HAL串口插件 → 硬件</span>
+    </div>
+    <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:.78rem;flex:1;text-align:center">
+      TCP<br><span style="color:#64748b;font-size:.72rem">→ Qt网络 → LAN</span>
+    </div>
+    <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:.78rem;flex:1;text-align:center">
+      UDP<br><span style="color:#64748b;font-size:.72rem">→ Qt网络 → LAN</span>
+    </div>
+  </div>
+</div>
+<p>串口在HAL层（物理硬件），TCP/UDP在ICD层（通信方式），MQTT/WebSocket/HTTP在ICD pack/unpack内处理。</p>
+
+<h4 id="524-engine-icd交互接口">5.2.4 Engine-ICD交互接口</h4>
+<pre><code class="language-cpp">class IICDEngineInterface {
+public:
+    virtual ~IICDEngineInterface() = default;
+    virtual bool setSignal(const QString&amp; id, const QVariant&amp; val, QString* e=0) = 0;
+    virtual SignalValue getSignal(const QString&amp; id, bool* ok=0) = 0;
+    virtual bool verifySignal(const QString&amp; id, const QVariant&amp; exp,
+                              const Tolerance&amp; tol, QString* e=0) = 0;
+    virtual bool waitForSignal(const QString&amp; id, const QString&amp; op,
+                               const QVariant&amp; val, int ms, QString* e=0) = 0;
+    virtual bool injectFault(const QString&amp; id, const FaultConfig&amp; f, QString* e=0) = 0;
+    virtual void clearFault(const QString&amp; id) = 0;
+    virtual void clearAllFaults() = 0;
+};</code></pre>
+
+<h3 id="53-用例管理层">5.3 用例管理层</h3>
+
+<h4 id="531-json核心格式">5.3.1 JSON核心格式（10基本指令+3控制流）</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>cmd</th><th>必填字段</th><th>可选字段</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>SET</td><td>target, value</td><td></td><td>设置信号值</td></tr>
+<tr><td>VERIFY</td><td>target, value</td><td>tolerance</td><td>验证信号值</td></tr>
+<tr><td>WAIT</td><td>target, op, value</td><td>timeout(ms)</td><td>等待信号满足条件</td></tr>
+<tr><td>DELAY</td><td>value</td><td>unit</td><td>延时等待</td></tr>
+<tr><td>ACTION</td><td></td><td>desc</td><td>暂停等待用户确认</td></tr>
+<tr><td>PHOTO</td><td></td><td></td><td>拍照</td></tr>
+<tr><td>RECORD</td><td>value(bool)</td><td></td><td>开始/停止录像</td></tr>
+<tr><td>INJECT_FAULT</td><td>target, fault_type</td><td>fault_value</td><td>注入故障</td></tr>
+<tr><td>CLEAR_FAULT</td><td>target</td><td></td><td>清除故障</td></tr>
+<tr><td>LOG</td><td>desc</td><td></td><td>输出日志</td></tr>
+</tbody>
+</table></div>
+
+<div class="table-wrap"><table>
+<thead><tr><th>cmd</th><th>必填字段</th><th>可选字段</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>LOOP</td><td>count, steps</td><td></td><td>固定次数循环</td></tr>
+<tr><td>WHILE</td><td>condition, timeout, steps</td><td>interval</td><td>条件循环（必填timeout防死循环）</td></tr>
+<tr><td>IF</td><td>condition, then_steps</td><td>else_steps</td><td>条件分支</td></tr>
+</tbody>
+</table></div>
+
+<p>IF、WHILE、WAIT共用条件格式：<code>{"target":"温度","op":">=","value":30.0}</code>，op支持==/!=/>/</>=/&lt;=</p>
+
+<h4 id="532-格式转换流程">5.3.2 格式转换流程</h4>
+<div class="flow">
+  <span class="node">Excel</span>
+  <span class="arrow">→</span>
+  <span class="node highlight">JSON</span>
+  <span class="arrow">←</span>
+  <span class="node">YML</span>
+  <span class="arrow" style="margin-left:12px">→</span>
+  <span class="node">JSON Schema 校验</span>
+  <span class="arrow">→</span>
+  <span class="node">Lua 脚本</span>
+  <span class="arrow">→</span>
+  <span class="node" style="background:#2563eb;color:#fff;border-color:#2563eb">Engine.execute()</span>
+</div>
+<p>嵌套约束：steps内不允许再出现LOOP/WHILE/IF，需要嵌套控制流时编写Lua脚本。</p>
+
+<h3 id="54-测试引擎层">5.4 测试引擎层</h3>
+
+<h4 id="541-lua-api绑定">5.4.1 Lua API绑定</h4>
+<pre><code class="language-lua">SetDevice("温度", 37.5)                          -- SET
+VerifyDevice("温度", 37.5, {min=-0.1, max=0.1})  -- VERIFY
+WaitFor("温度", "&gt;=", 30.0, 5000)                -- WAIT
+Delay(1000)                                       -- DELAY
+UserAction("请观察指示灯是否亮起")                  -- ACTION
+TakePhoto()                                       -- PHOTO
+SetRecord(true)                                   -- RECORD
+InjectFault("温度", {type="stuck_at", value=999}) -- INJECT_FAULT
+ClearFault("温度")                                -- CLEAR_FAULT
+Log("当前温度正常")                                -- LOG</code></pre>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Lua API</th><th>ICD接口方法</th></tr></thead>
+<tbody>
+<tr><td>SetDevice(signalId, value)</td><td>setSignal()</td></tr>
+<tr><td>VerifyDevice(signalId, expected, tolerance)</td><td>verifySignal()</td></tr>
+<tr><td>WaitFor(signalId, op, value, timeout)</td><td>waitForSignal()</td></tr>
+<tr><td>Delay(ms)</td><td>QThread::msleep()</td></tr>
+<tr><td>UserAction(desc)</td><td>弹窗等待确认</td></tr>
+<tr><td>TakePhoto()</td><td>VISA摄像头控制</td></tr>
+<tr><td>SetRecord(bool)</td><td>VISA录像控制</td></tr>
+<tr><td>InjectFault(signalId, config)</td><td>injectFault()</td></tr>
+<tr><td>ClearFault(signalId)</td><td>clearFault()</td></tr>
+<tr><td>Log(msg)</td><td>日志输出</td></tr>
+</tbody>
+</table></div>
+
+<h4 id="542-执行控制功能">5.4.2 执行控制功能</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>特性</th><th>说明</th><th>优先级</th></tr></thead>
+<tbody>
+<tr><td>暂停/恢复</td><td>当前步骤执行完后挂起</td><td><span class="tag green">高</span></td></tr>
+<tr><td>终止</td><td>立即停止，标记为"已终止"</td><td><span class="tag green">高</span></td></tr>
+<tr><td>行断点</td><td>停在脚本某一行</td><td><span class="tag green">高</span></td></tr>
+<tr><td>条件断点</td><td>信号值满足条件时停</td><td><span class="tag yellow">中</span></td></tr>
+<tr><td>单步执行</td><td>Step Over / Into / Out</td><td><span class="tag green">高</span></td></tr>
+<tr><td>变量监视</td><td>查看脚本变量和ICD信号值</td><td><span class="tag green">高</span></td></tr>
+<tr><td>调用栈</td><td>当前执行位置</td><td><span class="tag yellow">中</span></td></tr>
+<tr><td>并行执行</td><td>多用例同时执行</td><td><span class="tag gray">低（远期）</span></td></tr>
+</tbody>
+</table></div>
+
+<h3 id="55-应用层">5.5 应用层（UI）</h3>
+
+<h4 id="551-主窗口布局">5.5.1 主窗口布局</h4>
+<p>基于Qt Advanced Docking System实现停靠式界面布局：</p>
+
+<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin:20px 0;font-size:.9rem;box-shadow:0 1px 4px rgba(0,0,0,.04)">
+  <div style="display:flex;min-height:120px">
+    <div style="width:64px;background:linear-gradient(180deg,#f1f5f9,#e2e8f0);padding:16px 4px;text-align:center;font-size:.75rem;font-weight:600;color:#475569;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center;letter-spacing:.05em">
+      活动栏
+    </div>
+    <div style="flex:1;padding:28px 24px;text-align:center;background:#fff;color:#475569;display:flex;flex-direction:column;justify-content:center">
+      <strong style="color:#0f172a;font-size:1rem">中央编辑区</strong>
+      <span style="font-size:.82rem;color:#64748b;margin-top:6px">帧编辑器 · ICD编辑器 · 用例编辑器 · 拓扑编辑器 · 代码编辑器</span>
+      <div style="margin-top:14px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+        <span style="background:#eef2ff;color:#4f46e5;border-radius:4px;padding:2px 10px;font-size:.72rem">多标签页</span>
+        <span style="background:#f0fdf4;color:#166534;border-radius:4px;padding:2px 10px;font-size:.72rem">QScintilla</span>
+        <span style="background:#fef2f2;color:#991b1b;border-radius:4px;padding:2px 10px;font-size:.72rem">拖拽分屏</span>
+      </div>
+    </div>
+    <div style="width:96px;background:#f8fafc;padding:16px 8px;text-align:center;border-left:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center">
+      <strong style="font-size:.78rem;color:#334155">属性面板</strong>
+      <span style="font-size:.65rem;color:#94a3b8;margin-top:4px">当前选中<br>对象属性</span>
+    </div>
+  </div>
+  <div style="border-top:1px solid #e2e8f0;padding:16px 24px;text-align:center;background:#f8fafc;color:#475569">
+    <strong style="color:#0f172a">底部面板</strong>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:6px;flex-wrap:wrap">
+      <span style="background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:2px 12px;font-size:.75rem;color:#64748b">输出（日志）</span>
+      <span style="background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:2px 12px;font-size:.75rem;color:#64748b">问题（警告/错误）</span>
+      <span style="background:#1e293b;color:#e2e8f0;border-radius:4px;padding:2px 12px;font-size:.75rem">终端</span>
+    </div>
+  </div>
+  <div style="border-top:1px solid #e2e8f0;padding:8px 24px;text-align:center;background:#f1f5f9;display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
+    <span style="font-size:.7rem;color:#94a3b8">就绪</span>
+    <span style="font-size:.7rem;color:#94a3b8">设备: 在线</span>
+    <span style="font-size:.7rem;color:#94a3b8">行: 1  列: 1</span>
+  </div>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="6-数据流设计">6 数据流设计</h2>
+
+<h3 id="61-写路径">6.1 写路径（Engine → 硬件）</h3>
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin:18px 0;font-size:.82rem">
+  <div style="background:#eef2ff;border:1px solid #a5b4fc;border-radius:8px;padding:8px 18px;color:#4338ca;font-weight:500;font-family:monospace">
+    Lua: SetDevice("温度", 37.5)
+  </div>
+  <div style="color:#94a3b8">↓</div>
+  <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:8px 18px">
+    Engine → ICD.setSignal(signalId, 37.5)
+  </div>
+  <div style="color:#94a3b8">↓</div>
+  <div style="background:#1e293b;border-radius:8px;padding:12px 20px;font-size:.78rem;color:#e2e8f0;min-width:380px">
+    <div>1. 查UUID映射 → <span style="color:#facc15">deviceId + channelId + protocolId</span></div>
+    <div>2. 查故障注入 → <span style="color:#34d399">FaultManager</span>（无故障放行）</div>
+    <div>3. 协议封包 → <span style="color:#22d3ee">pack(工程值→原始字节)</span></div>
+    <div>4. 选择传输通道 → <span style="color:#f472b6">串口 / TCP / UDP</span></div>
+  </div>
+  <div style="color:#94a3b8">↓</div>
+  <div style="background:#059669;color:#fff;border-radius:8px;padding:8px 18px;font-weight:500">
+    HAL.Send(原始字节) → 硬件
+  </div>
+</div>
+
+<h3 id="62-读路径">6.2 读路径（硬件 → Engine）</h3>
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin:18px 0;font-size:.82rem">
+  <div style="background:#059669;color:#fff;border-radius:8px;padding:8px 18px;font-weight:500">
+    HAL（收硬件数据）
+  </div>
+  <div style="color:#94a3b8">↓ Pub</div>
+  <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:8px 18px">
+    ICD DataPool（原始字节 + 元数据）
+  </div>
+  <div style="color:#94a3b8">↓ Subscribe → unpack</div>
+  <div style="background:#1e293b;border-radius:8px;padding:12px 20px;font-size:.78rem;color:#e2e8f0">
+    ICD.Subscribe() → 协议解包 unpack → <span style="color:#22d3ee">SignalValue</span>
+  </div>
+  <div style="color:#94a3b8">↓</div>
+  <div style="display:flex;gap:12px">
+    <div style="background:#eef2ff;border:1px solid #a5b4fc;border-radius:8px;padding:8px 14px;color:#4338ca">
+      SignalValueCache (CVT)<br>
+      <span style="font-size:.72rem">→ Engine.getSignal()</span>
+    </div>
+    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:8px 14px;color:#92400e">
+      SignalValue通道 Publish<br>
+      <span style="font-size:.72rem">→ UI监控订阅</span>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="7-关键技术方案">7 关键技术方案</h2>
+
+<h3 id="71-uuid信号标识">7.1 UUID信号标识</h3>
+<p>信号内部使用UUID（格式<code>sig-550e8400-e29b-41d4-a716-446655440000</code>），显示名可随意修改。帧编辑器、ICD映射、拓扑连线全部基于UUID关联，改名不失效。</p>
+
+<h3 id="72-dry-run">7.2 Dry Run影子运行</h3>
+<div class="flow">
+  <span class="node highlight">Engine</span>
+  <span class="arrow">→</span>
+  <span class="node">ICD</span>
+  <span class="arrow">→</span>
+  <span class="node">DataPool</span>
+  <span class="arrow">→</span>
+  <span class="node" style="background:#1e293b;color:#fff;border-color:#1e293b">HAL (Simulate)</span>
+</div>
+<p>Engine和ICD无感知，HAL层切换虚拟数据源。支持全局/单设备开关。</p>
+
+<h3 id="73-故障注入">7.3 故障注入</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>类型</th><th>位置</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>信号值死滞 (Stuck-at)</td><td>ICD转换</td><td>信号值固定为某值</td></tr>
+<tr><td>偏置/噪声</td><td>ICD转换</td><td>在原值上叠加偏移</td></tr>
+<tr><td>CRC错误</td><td>ICD封包</td><td>篡改CRC字段</td></tr>
+<tr><td>校验位错误</td><td>ICD封包</td><td>校验位取反</td></tr>
+<tr><td>通信延迟</td><td>DataPool</td><td>数据延迟N ms</td></tr>
+<tr><td>通信丢包</td><td>DataPool</td><td>按概率丢弃字节</td></tr>
+<tr><td>采样率异常</td><td>DataPool</td><td>频率突变</td></tr>
+</tbody>
+</table></div>
+<p>用例结束时自动清除所有活跃故障，防止泄漏。</p>
+
+<h3 id="74-传输通道分层">7.4 传输通道分层</h3>
+<p>TCP/UDP作为ICD传输通道选项而非HAL设备。串口在HAL层（物理硬件），应用层协议在ICD pack/unpack内处理。</p>
+
+<h3 id="75-插件进程隔离">7.5 插件进程隔离</h3>
+<p>MVP同进程QPluginLoader（简单低延迟），接口保持抽象，后续可切独立进程。</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="8-可视化编辑器设计">8 可视化编辑器设计</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>编辑器</th><th>数据</th><th>交互方式</th></tr></thead>
+<tbody>
+<tr><td>帧协议编辑器</td><td>ProtocolRegistry</td><td>表格编辑帧字段，位图预览，引用检查防误删</td></tr>
+<tr><td>ICD编辑器</td><td>SignalMapper</td><td>信号列表表格，展开配置，转换规则可视化</td></tr>
+<tr><td>拓扑编辑器</td><td>SignalMapper + 元数据</td><td>GraphicsView图形化连线，节点自由移动</td></tr>
+<tr><td>用例编辑器</td><td>JSON用例文件</td><td>步骤卡片列表，折叠控制流，内嵌代码视图</td></tr>
+<tr><td>监控面板</td><td>Engine + ICD</td><td>实时仪表盘、步骤进度、变量监视</td></tr>
+</tbody>
+</table></div>
+<p>三编辑器（帧协议/ICD/拓扑）共享同一份SignalMapper数据，可视化元数据与映射数据分开存储。</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="9-远期展望">9 远期展望</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>项目</th><th>当前策略</th><th>远期方向</th></tr></thead>
+<tbody>
+<tr><td>Web迁移</td><td>接口序列化</td><td>JSON/gRPC通信层</td></tr>
+<tr><td>脚本语言</td><td>仅Lua</td><td>IScriptEngine → Python/JS</td></tr>
+<tr><td>并行执行</td><td>顺序执行</td><td>多用例/步骤并行</td></tr>
+<tr><td>DataPool</td><td>融入ICD</td><td>独立层 + 时序数据库</td></tr>
+<tr><td>报告生成</td><td>文本/HTML</td><td>PDF/Excel/图表</td></tr>
+<tr><td>插件隔离</td><td>同进程</td><td>独立进程 (QLocalSocket)</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="10-开发计划">10 开发计划</h2>
+
+<h3 id="101-阶段概览">10.1 阶段概览</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>阶段</th><th>名称</th><th>状态</th><th>时间</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>基础框架搭建</td><td><span class="tag green">✅ 已完成</span></td><td>3周</td></tr>
+<tr><td>2</td><td>设备管理（HAL层）</td><td><span class="tag blue">待开发</span></td><td>3周</td></tr>
+<tr><td>3</td><td>ICD信号层</td><td><span class="tag blue">待开发</span></td><td>4周</td></tr>
+<tr><td>4</td><td>用例管理层</td><td><span class="tag blue">待开发</span></td><td>2.5周</td></tr>
+<tr><td>5</td><td>测试引擎层</td><td><span class="tag blue">待开发</span></td><td>3周</td></tr>
+<tr><td>6</td><td>测试与优化</td><td><span class="tag blue">待开发</span></td><td>2周</td></tr>
+</tbody>
+</table></div>
+<p><strong>总计</strong>：约17.5周（含阶段1）</p>
+
+<h3 id="102-阶段1已完成">10.2 阶段1：基础框架（已完成）</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>交付物</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td>CMake + Ninja构建，VS2019 x64</td><td><span class="tag green">✅</span></td></tr>
+<tr><td>核心设施（Logger/ConfigManager/CrashHandler）</td><td><span class="tag green">✅</span></td></tr>
+<tr><td>插件框架（IPlugin/IDevicePlugin/PluginManager）</td><td><span class="tag green">✅</span></td></tr>
+<tr><td>项目管理系统（.etproj格式）</td><td><span class="tag green">✅</span></td></tr>
+<tr><td>主窗口6区布局（QADS）</td><td><span class="tag green">✅</span></td></tr>
+<tr><td>QScintilla编辑器、全局搜索</td><td><span class="tag green">✅</span></td></tr>
+<tr><td>底部面板（输出/问题/终端）</td><td><span class="tag green">✅</span></td></tr>
+<tr><td>设置、会话持久化、单实例检测</td><td><span class="tag green">✅</span></td></tr>
+<tr><td>单元测试框架（10+文件）</td><td><span class="tag green">✅</span></td></tr>
+</tbody>
+</table></div>
+
+<h3 id="103-里程碑">10.3 里程碑</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>里程碑</th><th>完成标志</th><th>阶段</th></tr></thead>
+<tbody>
+<tr><td>M1：框架就绪</td><td>主窗口可运行，插件可加载</td><td><span class="tag green">阶段1 ✅</span></td></tr>
+<tr><td>M2：设备就绪</td><td>所有插件接口定义完成，Mock可运行</td><td>阶段2</td></tr>
+<tr><td>M3：信号就绪</td><td>ICD映射可用，协议转换正确</td><td>阶段3</td></tr>
+<tr><td>M4：用例就绪</td><td>JSON用例可编辑、校验、转Lua</td><td>阶段4</td></tr>
+<tr><td>M5：引擎就绪</td><td>Lua脚本可执行、调试、生成报告</td><td>阶段5</td></tr>
+<tr><td>M6：产品发布</td><td>全链路闭环测试通过</td><td>阶段6</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="11-验证方案">11 验证方案</h2>
+<ul>
+<li><strong>单元测试</strong>：Google Test，核心模块覆盖率≥80%</li>
+<li><strong>集成测试</strong>：全链路闭环、多格式一致性、故障注入验证、Dry Run验证</li>
+<li><strong>性能测试</strong>：端到端延迟&lt;10ms，Lua切换&lt;1ms，CVT读取&lt;0.1ms</li>
+<li><strong>兼容性测试</strong>：Windows 10/11，MSVC2019，Qt 5.12.12</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="附录">附录</h2>
+
+<h3 id="附录a-术语表">A 术语表</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>术语</th><th>全称</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>IATP</td><td>Integrated Automated Test Platform</td><td>综合性自动化测试平台</td></tr>
+<tr><td>HAL</td><td>Hardware Abstraction Layer</td><td>硬件抽象层</td></tr>
+<tr><td>ICD</td><td>Interface Control Document</td><td>接口控制文档/信号映射层</td></tr>
+<tr><td>CVT</td><td>Current Value Table</td><td>当前值表，信号最新值缓存</td></tr>
+<tr><td>UUID</td><td>Universally Unique Identifier</td><td>通用唯一标识符</td></tr>
+<tr><td>UUT</td><td>Unit Under Test</td><td>被测设备</td></tr>
+<tr><td>VISA</td><td>Virtual Instrument Software Architecture</td><td>虚拟仪器软件架构</td></tr>
+<tr><td>SCPI</td><td>Standard Commands for Programmable Instruments</td><td>可编程仪器标准命令</td></tr>
+<tr><td>MVP</td><td>Minimum Viable Product</td><td>最小可行性产品</td></tr>
+<tr><td>QADS</td><td>Qt Advanced Docking System</td><td>Qt高级停靠系统</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="附录b-参考文档">B 参考文档</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>文档</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>构思.md</td><td>项目原始需求愿景</td></tr>
+<tr><td>架构梳理.md</td><td>V1.0正式架构文档</td></tr>
+<tr><td>IATP_Comprehensive_Design_Spec.md</td><td>早期五层架构设计规格</td></tr>
+<tr><td>IATP_Core_Technical_Points.md</td><td>早期核心技术白皮书</td></tr>
+</tbody>
+</table></div>
+
+</div><!-- /body -->
+</main>
+</div><!-- /wrapper -->
+
+<script>
+/* Highlight.js v11.9.0 - embedded offline */
+var hljs=function(){"use strict";function e(n){
+return n instanceof Map?n.clear=n.delete=n.set=()=>{
+throw Error("map is read-only")}:n instanceof Set&&(n.add=n.clear=n.delete=()=>{
+throw Error("set is read-only")
+}),Object.freeze(n),Object.getOwnPropertyNames(n).forEach((t=>{
+const a=n[t],i=typeof a;"object"!==i&&"function"!==i||Object.isFrozen(a)||e(a)
+})),n}class n{constructor(e){
+void 0===e.data&&(e.data={}),this.data=e.data,this.isMatchIgnored=!1}
+ignoreMatch(){this.isMatchIgnored=!0}}function t(e){
+return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#x27;")
+}function a(e,...n){const t=Object.create(null);for(const n in e)t[n]=e[n]
+;return n.forEach((e=>{for(const n in e)t[n]=e[n]})),t}const i=e=>!!e.scope
+;class r{constructor(e,n){
+this.buffer="",this.classPrefix=n.classPrefix,e.walk(this)}addText(e){
+this.buffer+=t(e)}openNode(e){if(!i(e))return;const n=((e,{prefix:n})=>{
+if(e.startsWith("language:"))return e.replace("language:","language-")
+;if(e.includes(".")){const t=e.split(".")
+;return[`${n}${t.shift()}`,...t.map(((e,n)=>`${e}${"_".repeat(n+1)}`))].join(" ")
+}return`${n}${e}`})(e.scope,{prefix:this.classPrefix});this.span(n)}
+closeNode(e){i(e)&&(this.buffer+="</span>")}value(){return this.buffer}span(e){
+this.buffer+=`<span class="${e}">`}}const s=(e={})=>{const n={children:[]}
+;return Object.assign(n,e),n};class o{constructor(){
+this.rootNode=s(),this.stack=[this.rootNode]}get top(){
+return this.stack[this.stack.length-1]}get root(){return this.rootNode}add(e){
+this.top.children.push(e)}openNode(e){const n=s({scope:e})
+;this.add(n),this.stack.push(n)}closeNode(){
+if(this.stack.length>1)return this.stack.pop()}closeAllNodes(){
+for(;this.closeNode(););}toJSON(){return JSON.stringify(this.rootNode,null,4)}
+walk(e){return this.constructor._walk(e,this.rootNode)}static _walk(e,n){
+return"string"==typeof n?e.addText(n):n.children&&(e.openNode(n),
+n.children.forEach((n=>this._walk(e,n))),e.closeNode(n)),e}static _collapse(e){
+"string"!=typeof e&&e.children&&(e.children.every((e=>"string"==typeof e))?e.children=[e.children.join("")]:e.children.forEach((e=>{
+o._collapse(e)})))}}class l extends o{constructor(e){super(),this.options=e}
+addText(e){""!==e&&this.add(e)}startScope(e){this.openNode(e)}endScope(){
+this.closeNode()}__addSublanguage(e,n){const t=e.root
+;n&&(t.scope="language:"+n),this.add(t)}toHTML(){
+return new r(this,this.options).value()}finalize(){
+return this.closeAllNodes(),!0}}function c(e){
+return e?"string"==typeof e?e:e.source:null}function d(e){return b("(?=",e,")")}
+function g(e){return b("(?:",e,")*")}function u(e){return b("(?:",e,")?")}
+function b(...e){return e.map((e=>c(e))).join("")}function m(...e){const n=(e=>{
+const n=e[e.length-1]
+;return"object"==typeof n&&n.constructor===Object?(e.splice(e.length-1,1),n):{}
+})(e);return"("+(n.capture?"":"?:")+e.map((e=>c(e))).join("|")+")"}
+function p(e){return RegExp(e.toString()+"|").exec("").length-1}
+const _=/\[(?:[^\\\]]|\\.)*\]|\(\??|\\([1-9][0-9]*)|\\./
+;function h(e,{joinWith:n}){let t=0;return e.map((e=>{t+=1;const n=t
+;let a=c(e),i="";for(;a.length>0;){const e=_.exec(a);if(!e){i+=a;break}
+i+=a.substring(0,e.index),
+a=a.substring(e.index+e[0].length),"\\"===e[0][0]&&e[1]?i+="\\"+(Number(e[1])+n):(i+=e[0],
+"("===e[0]&&t++)}return i})).map((e=>`(${e})`)).join(n)}
+const f="[a-zA-Z]\\w*",E="[a-zA-Z_]\\w*",y="\\b\\d+(\\.\\d+)?",N="(-?)(\\b0[xX][a-fA-F0-9]+|(\\b\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)",w="\\b(0b[01]+)",v={
+begin:"\\\\[\\s\\S]",relevance:0},O={scope:"string",begin:"'",end:"'",
+illegal:"\\n",contains:[v]},k={scope:"string",begin:'"',end:'"',illegal:"\\n",
+contains:[v]},x=(e,n,t={})=>{const i=a({scope:"comment",begin:e,end:n,
+contains:[]},t);i.contains.push({scope:"doctag",
+begin:"[ ]*(?=(TODO|FIXME|NOTE|BUG|OPTIMIZE|HACK|XXX):)",
+end:/(TODO|FIXME|NOTE|BUG|OPTIMIZE|HACK|XXX):/,excludeBegin:!0,relevance:0})
+;const r=m("I","a","is","so","us","to","at","if","in","it","on",/[A-Za-z]+['](d|ve|re|ll|t|s|n)/,/[A-Za-z]+[-][a-z]+/,/[A-Za-z][a-z]{2,}/)
+;return i.contains.push({begin:b(/[ ]+/,"(",r,/[.]?[:]?([.][ ]|[ ])/,"){3}")}),i
+},M=x("//","$"),S=x("/\\*","\\*/"),A=x("#","$");var C=Object.freeze({
+__proto__:null,APOS_STRING_MODE:O,BACKSLASH_ESCAPE:v,BINARY_NUMBER_MODE:{
+scope:"number",begin:w,relevance:0},BINARY_NUMBER_RE:w,COMMENT:x,
+C_BLOCK_COMMENT_MODE:S,C_LINE_COMMENT_MODE:M,C_NUMBER_MODE:{scope:"number",
+begin:N,relevance:0},C_NUMBER_RE:N,END_SAME_AS_BEGIN:e=>Object.assign(e,{
+"on:begin":(e,n)=>{n.data._beginMatch=e[1]},"on:end":(e,n)=>{
+n.data._beginMatch!==e[1]&&n.ignoreMatch()}}),HASH_COMMENT_MODE:A,IDENT_RE:f,
+MATCH_NOTHING_RE:/\b\B/,METHOD_GUARD:{begin:"\\.\\s*"+E,relevance:0},
+NUMBER_MODE:{scope:"number",begin:y,relevance:0},NUMBER_RE:y,
+PHRASAL_WORDS_MODE:{
+begin:/\b(a|an|the|are|I'm|isn't|don't|doesn't|won't|but|just|should|pretty|simply|enough|gonna|going|wtf|so|such|will|you|your|they|like|more)\b/
+},QUOTE_STRING_MODE:k,REGEXP_MODE:{scope:"regexp",begin:/\/(?=[^/\n]*\/)/,
+end:/\/[gimuy]*/,contains:[v,{begin:/\[/,end:/\]/,relevance:0,contains:[v]}]},
+RE_STARTERS_RE:"!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|-|-=|/=|/|:|;|<<|<<=|<=|<|===|==|=|>>>=|>>=|>=|>>>|>>|>|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~",
+SHEBANG:(e={})=>{const n=/^#![ ]*\//
+;return e.binary&&(e.begin=b(n,/.*\b/,e.binary,/\b.*/)),a({scope:"meta",begin:n,
+end:/$/,relevance:0,"on:begin":(e,n)=>{0!==e.index&&n.ignoreMatch()}},e)},
+TITLE_MODE:{scope:"title",begin:f,relevance:0},UNDERSCORE_IDENT_RE:E,
+UNDERSCORE_TITLE_MODE:{scope:"title",begin:E,relevance:0}});function T(e,n){
+"."===e.input[e.index-1]&&n.ignoreMatch()}function R(e,n){
+void 0!==e.className&&(e.scope=e.className,delete e.className)}function D(e,n){
+n&&e.beginKeywords&&(e.begin="\\b("+e.beginKeywords.split(" ").join("|")+")(?!\\.)(?=\\b|\\s)",
+e.__beforeBegin=T,e.keywords=e.keywords||e.beginKeywords,delete e.beginKeywords,
+void 0===e.relevance&&(e.relevance=0))}function I(e,n){
+Array.isArray(e.illegal)&&(e.illegal=m(...e.illegal))}function L(e,n){
+if(e.match){
+if(e.begin||e.end)throw Error("begin & end are not supported with match")
+;e.begin=e.match,delete e.match}}function B(e,n){
+void 0===e.relevance&&(e.relevance=1)}const $=(e,n)=>{if(!e.beforeMatch)return
+;if(e.starts)throw Error("beforeMatch cannot be used with starts")
+;const t=Object.assign({},e);Object.keys(e).forEach((n=>{delete e[n]
+})),e.keywords=t.keywords,e.begin=b(t.beforeMatch,d(t.begin)),e.starts={
+relevance:0,contains:[Object.assign(t,{endsParent:!0})]
+},e.relevance=0,delete t.beforeMatch
+},z=["of","and","for","in","not","or","if","then","parent","list","value"],F="keyword"
+;function U(e,n,t=F){const a=Object.create(null)
+;return"string"==typeof e?i(t,e.split(" ")):Array.isArray(e)?i(t,e):Object.keys(e).forEach((t=>{
+Object.assign(a,U(e[t],n,t))})),a;function i(e,t){
+n&&(t=t.map((e=>e.toLowerCase()))),t.forEach((n=>{const t=n.split("|")
+;a[t[0]]=[e,j(t[0],t[1])]}))}}function j(e,n){
+return n?Number(n):(e=>z.includes(e.toLowerCase()))(e)?0:1}const P={},K=e=>{
+console.error(e)},H=(e,...n)=>{console.log("WARN: "+e,...n)},q=(e,n)=>{
+P[`${e}/${n}`]||(console.log(`Deprecated as of ${e}. ${n}`),P[`${e}/${n}`]=!0)
+},G=Error();function Z(e,n,{key:t}){let a=0;const i=e[t],r={},s={}
+;for(let e=1;e<=n.length;e++)s[e+a]=i[e],r[e+a]=!0,a+=p(n[e-1])
+;e[t]=s,e[t]._emit=r,e[t]._multi=!0}function W(e){(e=>{
+e.scope&&"object"==typeof e.scope&&null!==e.scope&&(e.beginScope=e.scope,
+delete e.scope)})(e),"string"==typeof e.beginScope&&(e.beginScope={
+_wrap:e.beginScope}),"string"==typeof e.endScope&&(e.endScope={_wrap:e.endScope
+}),(e=>{if(Array.isArray(e.begin)){
+if(e.skip||e.excludeBegin||e.returnBegin)throw K("skip, excludeBegin, returnBegin not compatible with beginScope: {}"),
+G
+;if("object"!=typeof e.beginScope||null===e.beginScope)throw K("beginScope must be object"),
+G;Z(e,e.begin,{key:"beginScope"}),e.begin=h(e.begin,{joinWith:""})}})(e),(e=>{
+if(Array.isArray(e.end)){
+if(e.skip||e.excludeEnd||e.returnEnd)throw K("skip, excludeEnd, returnEnd not compatible with endScope: {}"),
+G
+;if("object"!=typeof e.endScope||null===e.endScope)throw K("endScope must be object"),
+G;Z(e,e.end,{key:"endScope"}),e.end=h(e.end,{joinWith:""})}})(e)}function Q(e){
+function n(n,t){
+return RegExp(c(n),"m"+(e.case_insensitive?"i":"")+(e.unicodeRegex?"u":"")+(t?"g":""))
+}class t{constructor(){
+this.matchIndexes={},this.regexes=[],this.matchAt=1,this.position=0}
+addRule(e,n){
+n.position=this.position++,this.matchIndexes[this.matchAt]=n,this.regexes.push([n,e]),
+this.matchAt+=p(e)+1}compile(){0===this.regexes.length&&(this.exec=()=>null)
+;const e=this.regexes.map((e=>e[1]));this.matcherRe=n(h(e,{joinWith:"|"
+}),!0),this.lastIndex=0}exec(e){this.matcherRe.lastIndex=this.lastIndex
+;const n=this.matcherRe.exec(e);if(!n)return null
+;const t=n.findIndex(((e,n)=>n>0&&void 0!==e)),a=this.matchIndexes[t]
+;return n.splice(0,t),Object.assign(n,a)}}class i{constructor(){
+this.rules=[],this.multiRegexes=[],
+this.count=0,this.lastIndex=0,this.regexIndex=0}getMatcher(e){
+if(this.multiRegexes[e])return this.multiRegexes[e];const n=new t
+;return this.rules.slice(e).forEach((([e,t])=>n.addRule(e,t))),
+n.compile(),this.multiRegexes[e]=n,n}resumingScanAtSamePosition(){
+return 0!==this.regexIndex}considerAll(){this.regexIndex=0}addRule(e,n){
+this.rules.push([e,n]),"begin"===n.type&&this.count++}exec(e){
+const n=this.getMatcher(this.regexIndex);n.lastIndex=this.lastIndex
+;let t=n.exec(e)
+;if(this.resumingScanAtSamePosition())if(t&&t.index===this.lastIndex);else{
+const n=this.getMatcher(0);n.lastIndex=this.lastIndex+1,t=n.exec(e)}
+return t&&(this.regexIndex+=t.position+1,
+this.regexIndex===this.count&&this.considerAll()),t}}
+if(e.compilerExtensions||(e.compilerExtensions=[]),
+e.contains&&e.contains.includes("self"))throw Error("ERR: contains `self` is not supported at the top-level of a language.  See documentation.")
+;return e.classNameAliases=a(e.classNameAliases||{}),function t(r,s){const o=r
+;if(r.isCompiled)return o
+;[R,L,W,$].forEach((e=>e(r,s))),e.compilerExtensions.forEach((e=>e(r,s))),
+r.__beforeBegin=null,[D,I,B].forEach((e=>e(r,s))),r.isCompiled=!0;let l=null
+;return"object"==typeof r.keywords&&r.keywords.$pattern&&(r.keywords=Object.assign({},r.keywords),
+l=r.keywords.$pattern,
+delete r.keywords.$pattern),l=l||/\w+/,r.keywords&&(r.keywords=U(r.keywords,e.case_insensitive)),
+o.keywordPatternRe=n(l,!0),
+s&&(r.begin||(r.begin=/\B|\b/),o.beginRe=n(o.begin),r.end||r.endsWithParent||(r.end=/\B|\b/),
+r.end&&(o.endRe=n(o.end)),
+o.terminatorEnd=c(o.end)||"",r.endsWithParent&&s.terminatorEnd&&(o.terminatorEnd+=(r.end?"|":"")+s.terminatorEnd)),
+r.illegal&&(o.illegalRe=n(r.illegal)),
+r.contains||(r.contains=[]),r.contains=[].concat(...r.contains.map((e=>(e=>(e.variants&&!e.cachedVariants&&(e.cachedVariants=e.variants.map((n=>a(e,{
+variants:null},n)))),e.cachedVariants?e.cachedVariants:X(e)?a(e,{
+starts:e.starts?a(e.starts):null
+}):Object.isFrozen(e)?a(e):e))("self"===e?r:e)))),r.contains.forEach((e=>{t(e,o)
+})),r.starts&&t(r.starts,s),o.matcher=(e=>{const n=new i
+;return e.contains.forEach((e=>n.addRule(e.begin,{rule:e,type:"begin"
+}))),e.terminatorEnd&&n.addRule(e.terminatorEnd,{type:"end"
+}),e.illegal&&n.addRule(e.illegal,{type:"illegal"}),n})(o),o}(e)}function X(e){
+return!!e&&(e.endsWithParent||X(e.starts))}class V extends Error{
+constructor(e,n){super(e),this.name="HTMLInjectionError",this.html=n}}
+const J=t,Y=a,ee=Symbol("nomatch"),ne=t=>{
+const a=Object.create(null),i=Object.create(null),r=[];let s=!0
+;const o="Could not find the language '{}', did you forget to load/include a language module?",c={
+disableAutodetect:!0,name:"Plain text",contains:[]};let p={
+ignoreUnescapedHTML:!1,throwUnescapedHTML:!1,noHighlightRe:/^(no-?highlight)$/i,
+languageDetectRe:/\blang(?:uage)?-([\w-]+)\b/i,classPrefix:"hljs-",
+cssSelector:"pre code",languages:null,__emitter:l};function _(e){
+return p.noHighlightRe.test(e)}function h(e,n,t){let a="",i=""
+;"object"==typeof n?(a=e,
+t=n.ignoreIllegals,i=n.language):(q("10.7.0","highlight(lang, code, ...args) has been deprecated."),
+q("10.7.0","Please use highlight(code, options) instead.\nhttps://github.com/highlightjs/highlight.js/issues/2277"),
+i=e,a=n),void 0===t&&(t=!0);const r={code:a,language:i};x("before:highlight",r)
+;const s=r.result?r.result:f(r.language,r.code,t)
+;return s.code=r.code,x("after:highlight",s),s}function f(e,t,i,r){
+const l=Object.create(null);function c(){if(!x.keywords)return void S.addText(A)
+;let e=0;x.keywordPatternRe.lastIndex=0;let n=x.keywordPatternRe.exec(A),t=""
+;for(;n;){t+=A.substring(e,n.index)
+;const i=w.case_insensitive?n[0].toLowerCase():n[0],r=(a=i,x.keywords[a]);if(r){
+const[e,a]=r
+;if(S.addText(t),t="",l[i]=(l[i]||0)+1,l[i]<=7&&(C+=a),e.startsWith("_"))t+=n[0];else{
+const t=w.classNameAliases[e]||e;g(n[0],t)}}else t+=n[0]
+;e=x.keywordPatternRe.lastIndex,n=x.keywordPatternRe.exec(A)}var a
+;t+=A.substring(e),S.addText(t)}function d(){null!=x.subLanguage?(()=>{
+if(""===A)return;let e=null;if("string"==typeof x.subLanguage){
+if(!a[x.subLanguage])return void S.addText(A)
+;e=f(x.subLanguage,A,!0,M[x.subLanguage]),M[x.subLanguage]=e._top
+}else e=E(A,x.subLanguage.length?x.subLanguage:null)
+;x.relevance>0&&(C+=e.relevance),S.__addSublanguage(e._emitter,e.language)
+})():c(),A=""}function g(e,n){
+""!==e&&(S.startScope(n),S.addText(e),S.endScope())}function u(e,n){let t=1
+;const a=n.length-1;for(;t<=a;){if(!e._emit[t]){t++;continue}
+const a=w.classNameAliases[e[t]]||e[t],i=n[t];a?g(i,a):(A=i,c(),A=""),t++}}
+function b(e,n){
+return e.scope&&"string"==typeof e.scope&&S.openNode(w.classNameAliases[e.scope]||e.scope),
+e.beginScope&&(e.beginScope._wrap?(g(A,w.classNameAliases[e.beginScope._wrap]||e.beginScope._wrap),
+A=""):e.beginScope._multi&&(u(e.beginScope,n),A="")),x=Object.create(e,{parent:{
+value:x}}),x}function m(e,t,a){let i=((e,n)=>{const t=e&&e.exec(n)
+;return t&&0===t.index})(e.endRe,a);if(i){if(e["on:end"]){const a=new n(e)
+;e["on:end"](t,a),a.isMatchIgnored&&(i=!1)}if(i){
+for(;e.endsParent&&e.parent;)e=e.parent;return e}}
+if(e.endsWithParent)return m(e.parent,t,a)}function _(e){
+return 0===x.matcher.regexIndex?(A+=e[0],1):(D=!0,0)}function h(e){
+const n=e[0],a=t.substring(e.index),i=m(x,e,a);if(!i)return ee;const r=x
+;x.endScope&&x.endScope._wrap?(d(),
+g(n,x.endScope._wrap)):x.endScope&&x.endScope._multi?(d(),
+u(x.endScope,e)):r.skip?A+=n:(r.returnEnd||r.excludeEnd||(A+=n),
+d(),r.excludeEnd&&(A=n));do{
+x.scope&&S.closeNode(),x.skip||x.subLanguage||(C+=x.relevance),x=x.parent
+}while(x!==i.parent);return i.starts&&b(i.starts,e),r.returnEnd?0:n.length}
+let y={};function N(a,r){const o=r&&r[0];if(A+=a,null==o)return d(),0
+;if("begin"===y.type&&"end"===r.type&&y.index===r.index&&""===o){
+if(A+=t.slice(r.index,r.index+1),!s){const n=Error(`0 width match regex (${e})`)
+;throw n.languageName=e,n.badRule=y.rule,n}return 1}
+if(y=r,"begin"===r.type)return(e=>{
+const t=e[0],a=e.rule,i=new n(a),r=[a.__beforeBegin,a["on:begin"]]
+;for(const n of r)if(n&&(n(e,i),i.isMatchIgnored))return _(t)
+;return a.skip?A+=t:(a.excludeBegin&&(A+=t),
+d(),a.returnBegin||a.excludeBegin||(A=t)),b(a,e),a.returnBegin?0:t.length})(r)
+;if("illegal"===r.type&&!i){
+const e=Error('Illegal lexeme "'+o+'" for mode "'+(x.scope||"<unnamed>")+'"')
+;throw e.mode=x,e}if("end"===r.type){const e=h(r);if(e!==ee)return e}
+if("illegal"===r.type&&""===o)return 1
+;if(R>1e5&&R>3*r.index)throw Error("potential infinite loop, way more iterations than matches")
+;return A+=o,o.length}const w=v(e)
+;if(!w)throw K(o.replace("{}",e)),Error('Unknown language: "'+e+'"')
+;const O=Q(w);let k="",x=r||O;const M={},S=new p.__emitter(p);(()=>{const e=[]
+;for(let n=x;n!==w;n=n.parent)n.scope&&e.unshift(n.scope)
+;e.forEach((e=>S.openNode(e)))})();let A="",C=0,T=0,R=0,D=!1;try{
+if(w.__emitTokens)w.__emitTokens(t,S);else{for(x.matcher.considerAll();;){
+R++,D?D=!1:x.matcher.considerAll(),x.matcher.lastIndex=T
+;const e=x.matcher.exec(t);if(!e)break;const n=N(t.substring(T,e.index),e)
+;T=e.index+n}N(t.substring(T))}return S.finalize(),k=S.toHTML(),{language:e,
+value:k,relevance:C,illegal:!1,_emitter:S,_top:x}}catch(n){
+if(n.message&&n.message.includes("Illegal"))return{language:e,value:J(t),
+illegal:!0,relevance:0,_illegalBy:{message:n.message,index:T,
+context:t.slice(T-100,T+100),mode:n.mode,resultSoFar:k},_emitter:S};if(s)return{
+language:e,value:J(t),illegal:!1,relevance:0,errorRaised:n,_emitter:S,_top:x}
+;throw n}}function E(e,n){n=n||p.languages||Object.keys(a);const t=(e=>{
+const n={value:J(e),illegal:!1,relevance:0,_top:c,_emitter:new p.__emitter(p)}
+;return n._emitter.addText(e),n})(e),i=n.filter(v).filter(k).map((n=>f(n,e,!1)))
+;i.unshift(t);const r=i.sort(((e,n)=>{
+if(e.relevance!==n.relevance)return n.relevance-e.relevance
+;if(e.language&&n.language){if(v(e.language).supersetOf===n.language)return 1
+;if(v(n.language).supersetOf===e.language)return-1}return 0})),[s,o]=r,l=s
+;return l.secondBest=o,l}function y(e){let n=null;const t=(e=>{
+let n=e.className+" ";n+=e.parentNode?e.parentNode.className:""
+;const t=p.languageDetectRe.exec(n);if(t){const n=v(t[1])
+;return n||(H(o.replace("{}",t[1])),
+H("Falling back to no-highlight mode for this block.",e)),n?t[1]:"no-highlight"}
+return n.split(/\s+/).find((e=>_(e)||v(e)))})(e);if(_(t))return
+;if(x("before:highlightElement",{el:e,language:t
+}),e.dataset.highlighted)return void console.log("Element previously highlighted. To highlight again, first unset `dataset.highlighted`.",e)
+;if(e.children.length>0&&(p.ignoreUnescapedHTML||(console.warn("One of your code blocks includes unescaped HTML. This is a potentially serious security risk."),
+console.warn("https://github.com/highlightjs/highlight.js/wiki/security"),
+console.warn("The element with unescaped HTML:"),
+console.warn(e)),p.throwUnescapedHTML))throw new V("One of your code blocks includes unescaped HTML.",e.innerHTML)
+;n=e;const a=n.textContent,r=t?h(a,{language:t,ignoreIllegals:!0}):E(a)
+;e.innerHTML=r.value,e.dataset.highlighted="yes",((e,n,t)=>{const a=n&&i[n]||t
+;e.classList.add("hljs"),e.classList.add("language-"+a)
+})(e,t,r.language),e.result={language:r.language,re:r.relevance,
+relevance:r.relevance},r.secondBest&&(e.secondBest={
+language:r.secondBest.language,relevance:r.secondBest.relevance
+}),x("after:highlightElement",{el:e,result:r,text:a})}let N=!1;function w(){
+"loading"!==document.readyState?document.querySelectorAll(p.cssSelector).forEach(y):N=!0
+}function v(e){return e=(e||"").toLowerCase(),a[e]||a[i[e]]}
+function O(e,{languageName:n}){"string"==typeof e&&(e=[e]),e.forEach((e=>{
+i[e.toLowerCase()]=n}))}function k(e){const n=v(e)
+;return n&&!n.disableAutodetect}function x(e,n){const t=e;r.forEach((e=>{
+e[t]&&e[t](n)}))}
+"undefined"!=typeof window&&window.addEventListener&&window.addEventListener("DOMContentLoaded",(()=>{
+N&&w()}),!1),Object.assign(t,{highlight:h,highlightAuto:E,highlightAll:w,
+highlightElement:y,
+highlightBlock:e=>(q("10.7.0","highlightBlock will be removed entirely in v12.0"),
+q("10.7.0","Please use highlightElement now."),y(e)),configure:e=>{p=Y(p,e)},
+initHighlighting:()=>{
+w(),q("10.6.0","initHighlighting() deprecated.  Use highlightAll() now.")},
+initHighlightingOnLoad:()=>{
+w(),q("10.6.0","initHighlightingOnLoad() deprecated.  Use highlightAll() now.")
+},registerLanguage:(e,n)=>{let i=null;try{i=n(t)}catch(n){
+if(K("Language definition for '{}' could not be registered.".replace("{}",e)),
+!s)throw n;K(n),i=c}
+i.name||(i.name=e),a[e]=i,i.rawDefinition=n.bind(null,t),i.aliases&&O(i.aliases,{
+languageName:e})},unregisterLanguage:e=>{delete a[e]
+;for(const n of Object.keys(i))i[n]===e&&delete i[n]},
+listLanguages:()=>Object.keys(a),getLanguage:v,registerAliases:O,
+autoDetection:k,inherit:Y,addPlugin:e=>{(e=>{
+e["before:highlightBlock"]&&!e["before:highlightElement"]&&(e["before:highlightElement"]=n=>{
+e["before:highlightBlock"](Object.assign({block:n.el},n))
+}),e["after:highlightBlock"]&&!e["after:highlightElement"]&&(e["after:highlightElement"]=n=>{
+e["after:highlightBlock"](Object.assign({block:n.el},n))})})(e),r.push(e)},
+removePlugin:e=>{const n=r.indexOf(e);-1!==n&&r.splice(n,1)}}),t.debugMode=()=>{
+s=!1},t.safeMode=()=>{s=!0},t.versionString="11.9.0",t.regex={concat:b,
+lookahead:d,either:m,optional:u,anyNumberOfTimes:g}
+;for(const n in C)"object"==typeof C[n]&&e(C[n]);return Object.assign(t,C),t}());
+var ae = hljs;
+/* ── register languages ── */
+ae.registerLanguage("cpp",(function(){"use strict";return e=>{const t=e.regex,a=e.COMMENT("//","$",{contains:[{begin:/\\\n/}]}),n="decltype\\(auto\\)",r="[a-zA-Z_]\\w*::",i="(?!struct)("+n+"|"+t.optional(r)+"[a-zA-Z_]\\w*"+t.optional("<[^<>]+>")+")",s={className:"type",begin:"\\b[a-z\\d_]*_t\\b"},c={className:"string",variants:[{begin:'(u8?|U|L)?"',end:'"',illegal:"\\n",contains:[e.BACKSLASH_ESCAPE]},{begin:"(u8?|U|L)?'(\\\\(x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4,8}|[0-7]{3}|\\S)|.)",end:"'",illegal:"."},e.END_SAME_AS_BEGIN({begin:/(?:u8?|U|L)?R"([^()\\ ]{0,16})\(/,end:/\)([^()\\ ]{0,16})"/})]},o={className:"number",variants:[{begin:"\\b(0b[01']+)"},{begin:"(-?)\\b([\\d']+(\\.[\\d']*)?|\\.[\\d']+)((ll|LL|l|L)(u|U)?|(u|U)(ll|LL|l|L)?|f|F|b|B)"},{begin:"(-?)(\\b0[xX][a-fA-F0-9']+|(\\b[\\d']+(\\.[\\d']*)?|\\.[\\d']+)([eE][-+]?[\\d']+)?)"}],relevance:0},l={className:"meta",begin:/#\s*[a-z]+\b/,end:/$/,keywords:{keyword:"if else elif endif define undef warning error line pragma _Pragma ifdef ifndef include"},contains:[{begin:/\\\n/,relevance:0},e.inherit(c,{className:"string"}),{className:"string",begin:/<.*?>/},a,e.C_BLOCK_COMMENT_MODE]},d={className:"title",begin:t.optional(r)+e.IDENT_RE,relevance:0},u=t.optional(r)+e.IDENT_RE+"\\s*\\(",p={type:["bool","char","char16_t","char32_t","char8_t","double","float","int","long","short","void","wchar_t","unsigned","signed","const","static"],keyword:["alignas","alignof","and","and_eq","asm","atomic_cancel","atomic_commit","atomic_noexcept","auto","bitand","bitor","break","case","catch","class","co_await","co_return","co_yield","compl","concept","const_cast|10","consteval","constexpr","constinit","continue","decltype","default","delete","do","dynamic_cast|10","else","enum","explicit","export","extern","false","final","for","friend","goto","if","import","inline","module","mutable","namespace","new","noexcept","not","not_eq","nullptr","operator","or","or_eq","override","private","protected","public","reflexpr","register","reinterpret_cast|10","requires","return","sizeof","static_assert","static_cast|10","struct","switch","synchronized","template","this","thread_local","throw","transaction_safe","transaction_safe_dynamic","true","try","typedef","typeid","typename","union","using","virtual","volatile","while","xor","xor_eq"],literal:["NULL","false","nullopt","nullptr","true"],built_in:["_Pragma"]},_={className:"function.dispatch",relevance:0,keywords:{_hint:["abort","abs","acos","apply","as_const","asin","atan","atan2","calloc","ceil","cerr","cin","clog","cos","cosh","cout","declval","endl","exchange","exit","exp","fabs","floor","fmod","forward","fprintf","fputs","free","frexp","fscanf","future","invoke","isalnum","isalpha","iscntrl","isdigit","isgraph","islower","isprint","ispunct","isspace","isupper","isxdigit","labs","launder","ldexp","log","log10","make_pair","make_shared","make_shared_for_overwrite","make_tuple","make_unique","malloc","memchr","memcmp","memcpy","memset","modf","move","pow","printf","putchar","puts","realloc","scanf","sin","sinh","snprintf","sprintf","sqrt","sscanf","std","stderr","stdin","stdout","strcat","strchr","strcmp","strcpy","strcspn","strlen","strncat","strncmp","strncpy","strpbrk","strrchr","strspn","strstr","swap","tan","tanh","terminate","to_underlying","tolower","toupper","vfprintf","visit","vprintf","vsprintf"]},begin:t.concat(/\b/,/(?!decltype)/,/(?!if)/,/(?!for)/,/(?!switch)/,/(?!while)/,e.IDENT_RE,t.lookahead(/(<[^<>]+>|)\s*\(/))},m=[_,l,s,a,e.C_BLOCK_COMMENT_MODE,o,c],g={variants:[{begin:/=/,end:/;/},{begin:/\(/,end:/\)/},{beginKeywords:"new throw return else",end:/;/}],keywords:p,contains:m.concat([{begin:/\(/,end:/\)/,keywords:p,contains:m.concat(["self"]),relevance:0}]),relevance:0},f={className:"function",begin:"("+i+"[\\*&\\s]+)+"+u,returnBegin:!0,end:/[{;=]/,excludeEnd:!0,keywords:p,illegal:/[^\w\s\*&:<>.]/,contains:[{begin:n,keywords:p,relevance:0},{begin:u,returnBegin:!0,contains:[d],relevance:0},{begin:/::/,relevance:0},{begin:/:/,endsWithParent:!0,contains:[c,o]},{relevance:0,match:/,/},{className:"params",begin:/\(/,end:/\)/,keywords:p,relevance:0,contains:[a,e.C_BLOCK_COMMENT_MODE,c,o,s,{begin:/\(/,end:/\)/,keywords:p,relevance:0,contains:["self",a,e.C_BLOCK_COMMENT_MODE,c,o,s]}]},s,a,e.C_BLOCK_COMMENT_MODE,l]};return{name:"C++",aliases:["cc","c++","h++","hpp","hh","hxx","cxx"],keywords:p,illegal:"</",classNameAliases:{"function.dispatch":"built_in"},contains:[].concat(g,f,_,m,[l,{begin:"\\b(deque|list|queue|priority_queue|pair|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array|tuple|optional|variant|function)\\s*<(?!<)",end:">",keywords:p,contains:["self",s]},{begin:e.IDENT_RE+"::",keywords:p},{match:[/\b(?:enum(?:\s+(?:class|struct))?|class|struct|union)/,/\s+/,/\w+/],className:{1:"keyword",3:"title.class"}}])}}})());
+ae.registerLanguage("json",(function(){"use strict";return e=>{const a=["true","false","null"],n={scope:"literal",beginKeywords:a.join(" ")};return{name:"JSON",keywords:{literal:a},contains:[{className:"attr",begin:/"(\\.|[^\\"\r\n])*"(?=\s*:)/,relevance:1.01},{match:/[{}[\],:]/,className:"punctuation",relevance:0},e.QUOTE_STRING_MODE,n,e.C_NUMBER_MODE,e.C_LINE_COMMENT_MODE,e.C_BLOCK_COMMENT_MODE],illegal:"\\S"}}})());
+ae.registerLanguage("lua",(function(){"use strict";return e=>{const t="\\[=*\\[",a="\\]=*\\]",n={begin:t,end:a,contains:["self"]},o=[e.COMMENT("--(?!"+t+")","$"),e.COMMENT("--"+t,a,{contains:[n],relevance:10})];return{name:"Lua",keywords:{$pattern:e.UNDERSCORE_IDENT_RE,literal:"true false nil",keyword:"and break do else elseif end for goto if in local not or repeat return then until while",built_in:"_G _ENV _VERSION __index __newindex __mode __call __metatable __tostring __len __gc __add __sub __mul __div __mod __pow __concat __unm __eq __lt __le assert collectgarbage dofile error getfenv getmetatable ipairs load loadfile loadstring module next pairs pcall print rawequal rawget rawset require select setfenv setmetatable tonumber tostring type unpack xpcall arg self coroutine resume yield status wrap create running debug getupvalue debug sethook getmetatable gethook setmetatable setlocal traceback setfenv getinfo setupvalue getlocal getregistry getfenv io lines write close flush open output type read stderr stdin input stdout popen tmpfile math log max acos huge ldexp pi cos tanh pow deg tan cosh sinh random randomseed frexp ceil floor rad abs sqrt modf asin min mod fmod log10 atan2 exp sin atan os exit setlocale date getenv difftime remove time clock tmpname rename execute package preload loadlib loaded loaders cpath config path seeall string sub upper len gfind rep find match char dump gmatch reverse byte format gsub lower table setn insert getn foreachi maxn foreach concat sort remove"},contains:o.concat([{className:"function",beginKeywords:"function",end:"\\)",contains:[e.inherit(e.TITLE_MODE,{begin:"([_a-zA-Z]\\w*\\.)*([_a-zA-Z]\\w*:)?[_a-zA-Z]\\w*"}),{className:"params",begin:"\\(",endsWithParent:!0,contains:o}].concat(o)},e.C_NUMBER_MODE,e.APOS_STRING_MODE,e.QUOTE_STRING_MODE,{className:"string",begin:t,end:a,contains:[n],relevance:5}])}}})());
+
+/* ── TOC + scroll highlight (runs first, no deps) ── */
+(function(){
+  var nav = document.getElementById('toc');
+  if (!nav) return;
+  var headings = document.querySelectorAll('.body h2[id], .body h3[id]');
+  var html = '';
+  headings.forEach(function(h) {
+    var level = h.tagName === 'H2' ? 'l2' : 'l3';
+    html += '<a class="' + level + '" href="#' + h.id + '">' + h.textContent + '</a>';
+  });
+  nav.innerHTML = html;
+
+  var links = nav.querySelectorAll('a');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        links.forEach(function(l) { l.classList.remove('active'); });
+        var el = nav.querySelector('a[href="#' + e.target.id + '"]');
+        if (el) el.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-80px 0px -80% 0px' });
+  headings.forEach(function(h) { observer.observe(h); });
+})();
+
+/* ── syntax highlight (runs after TOC, errors isolated) ── */
+try {
+  document.querySelectorAll('.body pre code').forEach(function(block) {
+    ae.highlightElement(block);
+  });
+} catch(e) {}
+</script>
+</body>
+</html>
