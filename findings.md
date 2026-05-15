@@ -107,6 +107,34 @@
 - flushToDisplay()合并scrollback+screen显示，检查用户滚动位置决定是否自动滚底
 - setMaximumBlockCount()与手动scrollback管理冲突，必须移除
 
+## IATP设计方案设计盘问（2026-05-14）
+
+### 发现1：ICD层SignalMapper缺少多字段映射支持
+- 用户实际A429项目经验：设置迎角50° → 需同时填充data字段、设置SSM=3、计算并填充parity
+- 当前设计方案`IICDEngineInterface::setSignal(signalId, value)`是一对一语义
+- `SignalMapper`转换规则（线性/多项式/枚举/脚本）只覆盖一对一转换
+- **缺口**：缺少"信号→字段组"的复合映射机制，可能是方案A（一对一映射，SSM/parity另寻机制）或方案B（多字段级联，信号触发多个字段修改）
+- 需要在SignalMapper或ProtocolRegistry的pack()中引入多字段映射支持
+
+### 发现2：Engine同步阻塞与调试功能冲突
+- 设计方案5.4.3节将暂停/恢复/单步列为高优先级
+- 但IICDEngineInterface的所有调用都是同步阻塞的：setSignal()走完"UUID映射 → 故障检查 → 协议封包 → 传输通道发送 → 等待响应"整个链路后才返回
+- 慢速硬件响应可能数十到数百毫秒，期间Lua VM阻塞
+- 用户点"暂停"按钮的信号必须经过Engine才能到达Lua，但Engine在等硬件返回
+- 简言之：**Engine、ICD、HAL_Hardware在一个线程内同步调用，无法在等待硬件时响应用户暂停命令**
+
+### 发现3：三领域差异与统一可行性
+- **工控（AD/DA/DIO/串口）**：信号级测试，连续采集或单点读写，验证模拟/数字信号值
+- **航空（A429/1553B/AFDX）**：协议级测试，离散消息收发+总线调度(BC/RT/MT)，验证协议字段
+- **车载（CAN/LIN/FlexRay）**：通信级测试，事件驱动，需UDS/CCP/XCP协议栈支持
+- **统一路径**：共用Lua API（`SetDevice`/`VerifyDevice`）+ 领域特化ICD映射 + 领域特化HAL插件。A429项目已验证此路径可行
+
+### 发现4：插件进程隔离的渐进策略
+- QPluginLoader同进程加载厂商SDK风险高（全局变量冲突、符号冲突、段错误导致全线崩溃）
+- 接口层面已做IPC预留：IDevicePlugin参数和返回值使用基本类型/QVariant/QByteArray，不传递C++对象指针
+- 设计文档3.3节"接口参数序列化"原则正确
+- 远期从QPluginLoader切换到QLocalSocket进程通信时，只需底层加proxy/stub层
+
 ## ETest参考功能（来自docs/02-研究）
 
 ### 核心功能模块

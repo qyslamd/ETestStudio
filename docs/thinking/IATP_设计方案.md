@@ -64,11 +64,11 @@ IATP（Integrated Automated Test Platform，综合性自动化测试平台）旨
 
 IATP定位为面向工业控制自动化、航空航天、车载总线三大领域的综合性自动化测试平台，核心能力包括：
 
-| 领域 | 典型硬件 | 典型测试场景 |
-|------|---------|-------------|
-| 工业控制自动化 | AD/DA采集卡、IO板卡、脉冲信号卡、串口设备 | 传感器校准、执行器控制、系统联调测试 |
-| 航空航天 | ARINC 429、MIL-STD-1553B、VISA程控仪器 | 航电系统总线测试、程控仪器自动化验证 |
-| 车载总线 | CAN/CAN FD、LIN、FlexRay | ECU通信测试、诊断协议验证、网关路由测试 |
+| 领域           | 典型硬件                                  | 典型测试场景                            |
+| -------------- | ----------------------------------------- | --------------------------------------- |
+| 工业控制自动化 | AD/DA采集卡、IO板卡、脉冲信号卡、串口设备 | 传感器校准、执行器控制、系统联调测试    |
+| 航空航天       | ARINC 429、MIL-STD-1553B、VISA程控仪器    | 航电系统总线测试、程控仪器自动化验证    |
+| 车载总线       | CAN/CAN FD、LIN、FlexRay                  | ECU通信测试、诊断协议验证、网关路由测试 |
 
 平台通过统一的插件化架构和ICD信号抽象，使同一套测试用例能够在不同硬件配置上运行，实现"一次编写、多环境执行"。
 
@@ -78,17 +78,17 @@ IATP定位为面向工业控制自动化、航空航天、车载总线三大领�
 
 ### 2.1 硬件支持范围
 
-| 硬件类别 | 具体支持范围 | 接入方式 |
-|---------|-------------|---------|
-| 模拟量采集（AD） | 低速采集卡（支持多通道、多量程、多触发模式） | 厂商SDK |
-| 模拟量输出（DA） | 低速输出卡（含任意波输出） | 厂商SDK |
-| 开关量IO（DIO） | 数字量输入/输出板卡 | 厂商SDK |
-| 脉冲信号 | 频率输出/脉冲输出/计数输出/正交编码输入 | 厂商SDK |
-| 串行总线 | RS232、RS422、RS485 | 厂商SDK |
-| 航空总线 | ARINC 429、MIL-STD-1553B | 厂商SDK |
-| 车载总线 | CAN、CAN FD | 厂商SDK |
-| 网络通信 | TCP、UDP | Qt网络模块 |
-| 程控仪器 | VISA SCPI标准仪器（电源、示波器、万用表、摄像头） | VISA库 |
+| 硬件类别         | 具体支持范围                                      | 接入方式   |
+| ---------------- | ------------------------------------------------- | ---------- |
+| 模拟量采集（AD） | 低速采集卡（支持多通道、多量程、多触发模式）      | 厂商SDK    |
+| 模拟量输出（DA） | 低速输出卡（含任意波输出）                        | 厂商SDK    |
+| 开关量IO（DIO）  | 数字量输入/输出板卡                               | 厂商SDK    |
+| 脉冲信号         | 频率输出/脉冲输出/计数输出/正交编码输入           | 厂商SDK    |
+| 串行总线         | RS232、RS422、RS485                               | 厂商SDK    |
+| 航空总线         | ARINC 429、MIL-STD-1553B                          | 厂商SDK    |
+| 车载总线         | CAN、CAN FD                                       | 厂商SDK    |
+| 网络通信         | TCP、UDP                                          | Qt网络模块 |
+| 程控仪器         | VISA SCPI标准仪器（电源、示波器、万用表、摄像头） | VISA库     |
 
 硬件通过PCI/cPCI/PXI/PCIe/USB/LAN/串口等接口接入工控计算机。
 
@@ -109,26 +109,26 @@ IATP定位为面向工业控制自动化、航空航天、车载总线三大领�
 
 ### 2.3 功能需求清单
 
-| 编号 | 功能需求 | 说明 |
-|------|---------|------|
-| FR1 | 设备管理与自检 | 插件化加载硬件设备、设备树展示、自检流程、Dry Run仿真模式 |
-| FR2 | ICD信号映射 | 信号定义、工程值与原始值双向转换、UUID标识、转换规则（线性/多项式/枚举/脚本） |
-| FR3 | 协议管理 | 帧协议可视化编辑、协议pack/unpack、协议定义仓库 |
-| FR4 | 拓扑编辑 | 硬件通道与被测设备接口的可视化连线、拓扑关系定义 |
-| FR5 | 用例管理 | JSON/Excel/YML多格式支持、CRUD操作、JSON Schema校验、格式转换、版本管理 |
-| FR6 | 测试执行 | Lua脚本引擎、暂停/恢复/终止、断点/单步/变量监视、Lua API绑定 |
-| FR7 | 故障注入 | 信号值篡改、CRC校验错误、通信延迟/丢包、故障清除与自动恢复 |
-| FR8 | 监控与报告 | 实时信号监控面板、步骤执行记录、数据记录、报告生成（文本/HTML） |
+| 编号 | 功能需求       | 说明                                                                          |
+| ---- | -------------- | ----------------------------------------------------------------------------- |
+| FR1  | 设备管理与自检 | 插件化加载硬件设备、设备树展示、自检流程、Dry Run仿真模式                     |
+| FR2  | ICD信号映射    | 信号定义、工程值与原始值双向转换、UUID标识、转换规则（线性/多项式/枚举/脚本） |
+| FR3  | 协议管理       | 帧协议可视化编辑、协议pack/unpack、协议定义仓库                               |
+| FR4  | 拓扑编辑       | 硬件通道与被测设备接口的可视化连线、拓扑关系定义                              |
+| FR5  | 用例管理       | JSON/Excel/YML多格式支持、CRUD操作、JSON Schema校验、格式转换、版本管理       |
+| FR6  | 测试执行       | Lua脚本引擎、暂停/恢复/终止、断点/单步/变量监视、Lua API绑定                  |
+| FR7  | 故障注入       | 信号值篡改、CRC校验错误、通信延迟/丢包、故障清除与自动恢复                    |
+| FR8  | 监控与报告     | 实时信号监控面板、步骤执行记录、数据记录、报告生成（文本/HTML）               |
 
 ### 2.4 非功能需求
 
-| 需求类别 | 说明 |
-|---------|------|
-| 稳定性 | 单个硬件插件异常不应导致整个系统崩溃；测试执行过程支持断点恢复 |
-| 可扩展性 | 新增硬件类型仅需开发对应插件，不修改核心代码；脚本API可扩展 |
-| 实时性 | 满足1-10ms级信号采集控制需求；信号值缓存支持快速读取最新值 |
+| 需求类别 | 说明                                                              |
+| -------- | ----------------------------------------------------------------- |
+| 稳定性   | 单个硬件插件异常不应导致整个系统崩溃；测试执行过程支持断点恢复    |
+| 可扩展性 | 新增硬件类型仅需开发对应插件，不修改核心代码；脚本API可扩展       |
+| 实时性   | 满足1-10ms级信号采集控制需求；信号值缓存支持快速读取最新值        |
 | 可维护性 | 层间松耦合，模块可独立开发和测试；接口参数序列化，支持远期Web迁移 |
-| 可移植性 | 基于Qt跨平台框架，支持Windows/Linux/QNX/VxWorks |
+| 可移植性 | 基于Qt跨平台框架，支持Windows/Linux/QNX/VxWorks                   |
 
 ---
 
@@ -169,29 +169,29 @@ IATP采用六层松耦合架构，自上而下依次为：
 
 各层职责：
 
-| 层级 | 职责 |
-|------|------|
-| 应用层 | 提供可视化操作界面，包括设备管理、协议编辑、用例编辑、测试监控等 |
-| 用例管理层 | 负责测试用例的CRUD、多格式转换（JSON/Excel/YML→Lua）、校验与版本管理 |
-| 测试引擎层 | 嵌入Lua虚拟机执行测试脚本，提供执行控制（暂停/恢复/终止/断点/单步）和数据记录 |
-| ICD信号层 | 实现工程值与硬件原始数据的双向转换、信号路由、协议封包解包、故障注入、信号值缓存 |
-| 硬件抽象层 | 通过插件机制封装各类硬件设备，提供统一的设备管理和虚拟设备支持 |
+| 层级       | 职责                                                                             |
+| ---------- | -------------------------------------------------------------------------------- |
+| 应用层     | 提供可视化操作界面，包括设备管理、协议编辑、用例编辑、测试监控等                 |
+| 用例管理层 | 负责测试用例的CRUD、多格式转换（JSON/Excel/YML→Lua）、校验与版本管理             |
+| 测试引擎层 | 嵌入Lua虚拟机执行测试脚本，提供执行控制（暂停/恢复/终止/断点/单步）和数据记录    |
+| ICD信号层  | 实现工程值与硬件原始数据的双向转换、信号路由、协议封包解包、故障注入、信号值缓存 |
+| 硬件抽象层 | 通过插件机制封装各类硬件设备，提供统一的设备管理和虚拟设备支持                   |
 
 ### 3.2 与凯云ETest对比
 
 IATP的设计参考了凯云ETest测试系统，但在架构和实现上存在以下关键差异：
 
-| 对比维度 | 凯云ETest | IATP |
-|---------|----------|------|
-| 架构层次 | 五层架构 | 六层架构（新增用例管理层，将用例CRUD/格式转换与引擎执行解耦） |
-| 信号标识 | 信号名称 | UUID标识，显示名可随意修改，改名不导致引用失效 |
-| 传输通道 | TCP/UDP在HAL层作为设备插件 | TCP/UDP作为ICD传输通道选项，与串口并列选择 |
-| 数据池 | 独立DataPool层 | 融入ICD层，MVP阶段仅支持离散事件型Pub/Sub，减少层级复杂度 |
-| 用例格式 | 表格编辑为主 | JSON核心中间格式 + Excel/YML多源输入，支持10基本指令+3控制流指令 |
-| 脚本引擎 | 多语言支持 | MVP仅Lua（sol2 + Lua Debug Library），降低初期开发成本 |
-| 插件隔离 | 未明确 | MVP同进程QPluginLoader，远期评估独立进程隔离 |
-| 源码 | 商业闭源 | 自主开发，完全可控 |
-| 扩展性 | 固定功能集 | 插件化架构，新增硬件类型仅需开发对应插件 |
+| 对比维度 | 凯云ETest                  | IATP                                                             |
+| -------- | -------------------------- | ---------------------------------------------------------------- |
+| 架构层次 | 五层架构                   | 六层架构（新增用例管理层，将用例CRUD/格式转换与引擎执行解耦）    |
+| 信号标识 | 信号名称                   | UUID标识，显示名可随意修改，改名不导致引用失效                   |
+| 传输通道 | TCP/UDP在HAL层作为设备插件 | TCP/UDP作为ICD传输通道选项，与串口并列选择                       |
+| 数据池   | 独立DataPool层             | 融入ICD层，MVP阶段仅支持离散事件型Pub/Sub，减少层级复杂度        |
+| 用例格式 | 表格编辑为主               | JSON核心中间格式 + Excel/YML多源输入，支持10基本指令+3控制流指令 |
+| 脚本引擎 | 多语言支持                 | MVP仅Lua（sol2 + Lua Debug Library），降低初期开发成本           |
+| 插件隔离 | 未明确                     | MVP同进程QPluginLoader，远期评估独立进程隔离                     |
+| 源码     | 商业闭源                   | 自主开发，完全可控                                               |
+| 扩展性   | 固定功能集                 | 插件化架构，新增硬件类型仅需开发对应插件                         |
 
 IATP的核心差异化价值：
 
@@ -208,18 +208,18 @@ IATP的核心差异化价值：
 
 ### 3.4 关键架构决策
 
-| 编号 | 决策 | 原因 |
-|------|------|------|
-| AD1 | 五层架构→六层架构（新增用例管理层） | 用例CRUD/校验/格式转换不应塞进Engine，Engine只负责执行 |
-| AD2 | DataPool融入ICD，仅离散事件型Pub/Sub | MVP阶段信号量<100，ICD内SignalValueCache已够用，独立DataPool增加复杂度 |
-| AD3 | TCP/UDP作为ICD传输通道选项，不在HAL层 | TCP/UDP不是硬件设备，是通信协议/传输方式，放HAL导致插件膨胀 |
-| AD4 | 新增IVisaPlugin和IPulsePlugin | VISA设备在设备树上分类显示（无通道），脉冲是独立于DA/DIO的信号类型 |
-| AD5 | 信号用UUID标识 | 改名不导致引用失效，帧编辑器/ICD/拓扑/用例全部基于UUID关联 |
-| AD6 | 帧编辑器/ICD编辑器/拓扑编辑器共享SignalMapper数据 | 三种编辑方式操作同一份数据，可视化元数据与映射数据分开存储 |
-| AD7 | JSON用例格式：10基本指令+3控制流指令 | JSON核心中间格式，LOOP/WHILE/IF支持简单控制流，嵌套控制流用Lua脚本 |
-| AD8 | WHILE必填timeout防止死循环 | 条件循环必须有超时保护，interval防止CPU空转 |
-| AD9 | MVP仅Lua脚本引擎 | 直接用Lua Debug Library实现调试，不做多语言抽象 |
-| AD10 | MVP同进程插件隔离(QPluginLoader) | 简单、延迟低，后续评估独立进程隔离 |
+| 编号 | 决策                                              | 原因                                                                   |
+| ---- | ------------------------------------------------- | ---------------------------------------------------------------------- |
+| AD1  | 五层架构→六层架构（新增用例管理层）               | 用例CRUD/校验/格式转换不应塞进Engine，Engine只负责执行                 |
+| AD2  | DataPool融入ICD，仅离散事件型Pub/Sub              | MVP阶段信号量<100，ICD内SignalValueCache已够用，独立DataPool增加复杂度 |
+| AD3  | TCP/UDP作为ICD传输通道选项，不在HAL层             | TCP/UDP不是硬件设备，是通信协议/传输方式，放HAL导致插件膨胀            |
+| AD4  | 新增IVisaPlugin和IPulsePlugin                     | VISA设备在设备树上分类显示（无通道），脉冲是独立于DA/DIO的信号类型     |
+| AD5  | 信号用UUID标识                                    | 改名不导致引用失效，帧编辑器/ICD/拓扑/用例全部基于UUID关联             |
+| AD6  | 帧编辑器/ICD编辑器/拓扑编辑器共享SignalMapper数据 | 三种编辑方式操作同一份数据，可视化元数据与映射数据分开存储             |
+| AD7  | JSON用例格式：10基本指令+3控制流指令              | JSON核心中间格式，LOOP/WHILE/IF支持简单控制流，嵌套控制流用Lua脚本     |
+| AD8  | WHILE必填timeout防止死循环                        | 条件循环必须有超时保护，interval防止CPU空转                            |
+| AD9  | MVP仅Lua脚本引擎                                  | 直接用Lua Debug Library实现调试，不做多语言抽象                        |
+| AD10 | MVP同进程插件隔离(QPluginLoader)                  | 简单、延迟低，后续评估独立进程隔离                                     |
 
 ---
 
@@ -231,15 +231,15 @@ IATP的核心差异化价值：
 
 **论证要点**：
 
-| 对比维度 | Qt/C++ | Electron/Node.js | 纯C++/Win32 |
-|---------|--------|-----------------|-------------|
-| 跨平台 | Windows/Linux/QNX/VxWorks | Windows/Linux/macOS | 仅Windows |
-| 插件机制 | QPluginLoader原生支持 | 需自建插件框架 | 需自建插件框架 |
-| 图形编辑 | GraphicsView框架 | Canvas/SVG | 需自绘或用第三方库 |
-| 硬件交互 | 直接调用厂商C SDK | 需FFI/N-API桥接，性能损失 | 直接调用 |
-| 实时性 | C++原生性能，满足1-10ms级需求 | V8 GC停顿，不适合实时控制 | C++原生性能 |
-| 工业生态 | Qt在工控/医疗/汽车领域广泛使用 | Web应用为主 | 遗留系统为主 |
-| 开发效率 | 信号槽机制、MVC框架 | 前端生态丰富 | 纯手工 |
+| 对比维度 | Qt/C++                         | Electron/Node.js          | 纯C++/Win32        |
+| -------- | ------------------------------ | ------------------------- | ------------------ |
+| 跨平台   | Windows/Linux/QNX/VxWorks      | Windows/Linux/macOS       | 仅Windows          |
+| 插件机制 | QPluginLoader原生支持          | 需自建插件框架            | 需自建插件框架     |
+| 图形编辑 | GraphicsView框架               | Canvas/SVG                | 需自绘或用第三方库 |
+| 硬件交互 | 直接调用厂商C SDK              | 需FFI/N-API桥接，性能损失 | 直接调用           |
+| 实时性   | C++原生性能，满足1-10ms级需求  | V8 GC停顿，不适合实时控制 | C++原生性能        |
+| 工业生态 | Qt在工控/医疗/汽车领域广泛使用 | Web应用为主               | 遗留系统为主       |
+| 开发效率 | 信号槽机制、MVC框架            | 前端生态丰富              | 纯手工             |
 
 **选择Qt/C++的核心原因**：
 - 测控平台需要直接调用厂商提供的C/C++ SDK（如板卡驱动、VISA库），Qt/C++是最自然的绑定方式，无需FFI桥接
@@ -254,14 +254,14 @@ IATP的核心差异化价值：
 
 **论证要点**：
 
-| 对比维度 | Lua 5.4 + sol2 | Python 3 | JavaScript (V8/QJSEngine) |
-|---------|---------------|----------|--------------------------|
-| 嵌入体积 | ~300KB，极轻量 | ~30MB，需Python运行时 | ~1MB(QJSEngine) / ~50MB(V8) |
-| 启动速度 | 毫秒级 | 秒级 | 毫秒级(QJSEngine) / 秒级(V8) |
-| 实时性 | 无GC停顿，可预测 | GIL限制，GC不可控 | GC停顿不可控 |
-| 调试能力 | Lua Debug Library原生支持断点/单步/变量监视 | pdb，需额外嵌入 | 需自建调试协议 |
-| C++绑定 | sol2，类型安全，零开销 | pybind11，需处理引用计数 | QJSEngine/QV4Engine API |
-| 学习门槛 | 语法简洁，2天可上手 | 广泛认知 | 广泛认知 |
+| 对比维度 | Lua 5.4 + sol2                              | Python 3                 | JavaScript (V8/QJSEngine)    |
+| -------- | ------------------------------------------- | ------------------------ | ---------------------------- |
+| 嵌入体积 | ~300KB，极轻量                              | ~30MB，需Python运行时    | ~1MB(QJSEngine) / ~50MB(V8)  |
+| 启动速度 | 毫秒级                                      | 秒级                     | 毫秒级(QJSEngine) / 秒级(V8) |
+| 实时性   | 无GC停顿，可预测                            | GIL限制，GC不可控        | GC停顿不可控                 |
+| 调试能力 | Lua Debug Library原生支持断点/单步/变量监视 | pdb，需额外嵌入          | 需自建调试协议               |
+| C++绑定  | sol2，类型安全，零开销                      | pybind11，需处理引用计数 | QJSEngine/QV4Engine API      |
+| 学习门槛 | 语法简洁，2天可上手                         | 广泛认知                 | 广泛认知                     |
 
 **选择Lua的核心原因**：
 - 嵌入式体积极小（~300KB），不增加发布包体积，适合工控设备的资源约束
@@ -288,10 +288,10 @@ IATP的核心差异化价值：
 
 **论证要点**：
 
-| 方案 | 优点 | 缺点 |
-|------|------|------|
-| QPluginLoader（同进程） | 简单、低延迟、开发成本低 | 单个插件崩溃可能影响整个进程 |
-| QProcess（独立进程） | 插件隔离，崩溃不影响主进程 | IPC通信延迟、开发复杂度高、数据序列化开销 |
+| 方案                    | 优点                       | 缺点                                      |
+| ----------------------- | -------------------------- | ----------------------------------------- |
+| QPluginLoader（同进程） | 简单、低延迟、开发成本低   | 单个插件崩溃可能影响整个进程              |
+| QProcess（独立进程）    | 插件隔离，崩溃不影响主进程 | IPC通信延迟、开发复杂度高、数据序列化开销 |
 
 MVP阶段选择QPluginLoader，理由：
 - 开发初期硬件插件数量少、稳定性风险可控
@@ -300,15 +300,15 @@ MVP阶段选择QPluginLoader，理由：
 
 ### 4.5 其他技术选型
 
-| 选型项 | 方案 | 选用理由 |
-|--------|------|---------|
-| 数据序列化 | JSON（QJsonDocument） | Qt原生支持、可读性好、与Excel/YML互转方便 |
-| 日志 | spdlog 1.17.0 | 异步高性能、多sink（控制台/文件/QtUI）、运行时级别切换 |
-| 编辑器组件 | QScintilla 2.11.3 | 语法高亮、代码折叠、多语言Lexer、类IDE编辑体验 |
-| Excel读写 | QXlsx 1.5.0 | 纯Qt实现、无Office依赖、支持用例Excel模板读写 |
-| PDF生成 | libharu 2.4.6 | 轻量级C库、无外部依赖、用于报告生成 |
-| 单元测试 | Google Test 1.17.0 | 业界标准、与CMake集成良好、支持DISABLED_前缀崩溃测试 |
-| 压缩 | zlib 1.3.2 | 通用压缩库、QXlsx/libpng依赖 |
+| 选型项     | 方案                  | 选用理由                                               |
+| ---------- | --------------------- | ------------------------------------------------------ |
+| 数据序列化 | JSON（QJsonDocument） | Qt原生支持、可读性好、与Excel/YML互转方便              |
+| 日志       | spdlog 1.17.0         | 异步高性能、多sink（控制台/文件/QtUI）、运行时级别切换 |
+| 编辑器组件 | QScintilla 2.11.3     | 语法高亮、代码折叠、多语言Lexer、类IDE编辑体验         |
+| Excel读写  | QXlsx 1.5.0           | 纯Qt实现、无Office依赖、支持用例Excel模板读写          |
+| PDF生成    | libharu 2.4.6         | 轻量级C库、无外部依赖、用于报告生成                    |
+| 单元测试   | Google Test 1.17.0    | 业界标准、与CMake集成良好、支持DISABLED_前缀崩溃测试   |
+| 压缩       | zlib 1.3.2            | 通用压缩库、QXlsx/libpng依赖                           |
 
 ---
 
@@ -319,6 +319,193 @@ MVP阶段选择QPluginLoader，理由：
 #### 5.1.1 插件接口体系
 
 HAL层采用两级插件接口设计：通用基类 + 类型特化派生类。
+
+**基类体系**
+
+```mermaid
+classDiagram
+    class IPlugin {
+        <<interface>>
+        +initialize() bool
+        +start() bool
+        +stop() void
+        +uninitialize() void
+        +metaData() PluginMetaData
+        +isRunning() bool
+    }
+
+    class IDevicePlugin {
+        <<interface>>
+        +openDevice() bool
+        +closeDevice() void
+        +deviceInfo() DeviceInfo
+        +deviceStatus() DeviceStatus
+        +selfTest() bool
+        +simulate(bool) bool
+        +configMetaData() QVariantMap
+    }
+
+    IPlugin <|-- IDevicePlugin
+```
+
+**模拟量采集与输出**
+
+```mermaid
+classDiagram
+    class IADevicePlugin {
+        <<interface>>
+        +setConfig(ADConfigParam, ADConfigValue) bool
+        +getConfig(ADConfigParam) ADConfigValue
+        +setChannelConfig(int, ADChannelConfig) bool
+        +channelConfig(int) ADChannelConfig
+        +setTriggerConfig(ADTriggerConfig) bool
+        +triggerConfig() ADTriggerConfig
+        +softwareTrigger() bool
+        +setScanList(int[]) bool
+        +scanList() int[]
+        +maxScanDepth() int
+        +startAcquisition() bool
+        +stopAcquisition() void
+        +isAcquiring() bool
+        +sampleStatus() ADSampleStatus
+        +readChannel(int) double
+        +readAllChannels() double[]
+        +readChannelData(int, int) double[]
+        +readAllChannelsData(int) double[]
+        +readChannelRaw(int, int) int16[]
+        +readAllChannelsRaw(int) int16[]
+    }
+
+    class IDADevicePlugin {
+        <<interface>>
+        +writeChannel(int, double) bool
+        +readbackChannel(int) double
+    }
+
+    class IDevicePlugin {
+        <<interface>>
+    }
+
+    IDevicePlugin <|-- IADevicePlugin : 模拟量采集
+    IDevicePlugin <|-- IDADevicePlugin : 模拟量输出
+```
+
+**开关量IO与脉冲信号**
+
+```mermaid
+classDiagram
+    class IDioPlugin {
+        <<interface>>
+        +setDirection(int, DioDirection) bool
+        +direction(int) DioDirection
+        +readInput(int) bool
+        +readAllInputs() bool[]
+        +setOutput(int, bool) bool
+        +setAllOutputs(bool[]) bool
+    }
+
+    class IPulsePlugin {
+        <<interface>>
+        +setPulseConfig(int, PulseConfig) bool
+        +pulseConfig(int) PulseConfig
+        +startOutput(int) bool
+        +stopOutput(int) bool
+        +readFrequency(int) double
+        +readCount(int) int64
+    }
+
+    class IDevicePlugin {
+        <<interface>>
+    }
+
+    IDevicePlugin <|-- IDioPlugin : 开关量IO
+    IDevicePlugin <|-- IPulsePlugin : 脉冲信号
+```
+
+**通信总线（串口/CAN/429/1553B）**
+
+```mermaid
+classDiagram
+    class ISerialPlugin {
+        <<interface>>
+        +setSerialMode(SerialMode) bool
+        +serialMode() SerialMode
+        +setBaudRate(int) bool
+        +baudRate() int
+        +setDataBits(int) bool
+        +dataBits() int
+        +setParity(SerialParity) bool
+        +parity() SerialParity
+        +setStopBits(SerialStopBits) bool
+        +stopBits() SerialStopBits
+        +asyncWrite(QByteArray) int64
+        +readData(int) QByteArray
+        +setPortName(QString) bool
+        +portName() QString
+    }
+
+    class ICanPlugin {
+        <<interface>>
+        +setBitrate(int) bool
+        +bitrate() int
+        +setCanMode(CanMode) bool
+        +canMode() CanMode
+        +setIdFilter(uint32, uint32, bool) bool
+        +clearIdFilters() void
+        +sendFrame(CanFrame) bool
+        +receiveFrame(int) CanFrame
+    }
+
+    class IArinc429Plugin {
+        <<interface>>
+        +setSpeed(Arinc429Speed) bool
+        +speed() Arinc429Speed
+        +sendLabel(Arinc429Word) bool
+        +receiveLabel(int, int) Arinc429Word
+    }
+
+    class IMil1553Plugin {
+        <<interface>>
+        +setMode(Mil1553Mode) bool
+        +mode() Mil1553Mode
+        +bcSchedule(Mil1553Message[]) bool
+        +bcSendMessage(int, int, QByteArray) bool
+        +rtSetResponse(int, QByteArray) bool
+        +rtReadReceived(int) QByteArray
+        +mtStartMonitor() bool
+        +mtStopMonitor() void
+        +mtReadMessages() Mil1553Message[]
+    }
+
+    class IDevicePlugin {
+        <<interface>>
+    }
+
+    IDevicePlugin <|-- ISerialPlugin : 串口族
+    IDevicePlugin <|-- ICanPlugin : CAN/CAN FD
+    IDevicePlugin <|-- IArinc429Plugin : ARINC 429
+    IDevicePlugin <|-- IMil1553Plugin : MIL-STD-1553B
+```
+
+**程控仪器（VISA）**
+
+```mermaid
+classDiagram
+    class IVisaPlugin {
+        <<interface>>
+        +openResource(QString) bool
+        +closeResource() void
+        +resourceAddress() QString
+        +sendCommand(QString) bool
+        +query(QString) QString
+    }
+
+    class IDevicePlugin {
+        <<interface>>
+    }
+
+    IDevicePlugin <|-- IVisaPlugin : VISA程控仪器
+```
 
 **通用基类 IPlugin**
 
@@ -381,7 +568,7 @@ public:
 
 **IADevicePlugin — 模拟量采集（v3.0）**
 
-AD采集是最复杂的设备类型，接口覆盖耦合方式、触发模式、读取模式、扫描表等：
+AD采集是最复杂的设备类型，接口按**配置**与**数据采集**两类职责分离设计。配置参数通过 `std::variant` 统一入口聚合，降低虚函数膨胀：
 
 ```cpp
 enum class ADCoupling { DC, AC, ICP_DC, ICP_AC, GND_DC, GND_AC };
@@ -409,53 +596,42 @@ struct ADTriggerConfig {
     int trigger_length = 1024;              // 触发后采样点数
 };
 
+enum class ADConfigParam {
+    SampleRate,          // → double (Hz)
+    SampleLength,        // → int (采样点数)
+    ReadMode,            // → ADReadMode
+    MemoryMode,          // → ADMemoryMode
+};
+
+using ADConfigValue = std::variant<double, int, ADReadMode, ADMemoryMode>;
+
 class IADevicePlugin : public IDevicePlugin {
 public:
-    // 采样率
-    virtual bool setSampleRate(double rate) = 0;
-    virtual double sampleRate() const = 0;
+    // ── 统一配置入口 ──
+    virtual bool setConfig(ADConfigParam param, const ADConfigValue& value) = 0;
+    virtual ADConfigValue getConfig(ADConfigParam param) const = 0;
 
-    // 存储深度
-    virtual bool setSampleLength(int length) = 0;
-    virtual int sampleLength() const = 0;
-
-    // 通道配置
+    // ── 复合参数（结构体语义复杂，保留独立接口） ──
     virtual bool setChannelConfig(int channel, const ADChannelConfig& config) = 0;
     virtual ADChannelConfig channelConfig(int channel) const = 0;
-
-    // 触发配置
     virtual bool setTriggerConfig(const ADTriggerConfig& config) = 0;
     virtual ADTriggerConfig triggerConfig() const = 0;
     virtual bool softwareTrigger() = 0;
+    virtual bool setScanList(const QVector<int>& scanList) = 0;
+    virtual QVector<int> scanList() const = 0;
+    virtual int maxScanDepth() const = 0;
 
-    // 采集控制
+    // ── 采集控制（非配置，保持独立） ──
     virtual bool startAcquisition() = 0;
     virtual void stopAcquisition() = 0;
     virtual bool isAcquiring() const = 0;
     virtual ADSampleStatus sampleStatus() const = 0;
 
-    // 数据传输模式
-    virtual bool setReadMode(ADReadMode mode) = 0;
-    virtual ADReadMode readMode() const = 0;
-
-    // 存储模式
-    virtual bool setMemoryMode(ADMemoryMode mode) = 0;
-    virtual ADMemoryMode memoryMode() const = 0;
-
-    // 扫描表
-    virtual bool setScanList(const QVector<int>& scanList) = 0;
-    virtual QVector<int> scanList() const = 0;
-    virtual int maxScanDepth() const = 0;
-
-    // 单点读取（CVT模式）
+    // ── 数据读取（非配置，保持独立） ──
     virtual double readChannel(int channel) = 0;
     virtual QVector<double> readAllChannels() = 0;
-
-    // 批量读取
     virtual QVector<double> readChannelData(int channel, int count) = 0;
     virtual QVector<double> readAllChannelsData(int count) = 0;
-
-    // 原始AD码读取
     virtual QVector<qint16> readChannelRaw(int channel, int count) = 0;
     virtual QVector<qint16> readAllChannelsRaw(int count) = 0;
 };
@@ -678,24 +854,22 @@ VISA类设备在设备树上无通道概念，以命令接口为主要交互方�
 
 ```
 厂家A
-├── AD采集              (板卡类，有通道)
-│   └── EPH5022
-│       ├── CH0
-│       └── CH1
-├── CAN通信             (板卡类，有通道)
-│   └── CPC-Card
-│       ├── CAN0
-│       └── CAN1
-├── 脉冲信号            (板卡类，有通道)
-│   └── Pulse-Card
-│       ├── CH0
-│       └── CH1
-└── 程控仪器            (VISA类，无通道，命令接口)
+├── AD采集           (模拟量输入)  → EPH5022
+├── DA输出           (模拟量输出)  → AO-Card
+├── 开关量IO         (数字量)      → DIO-Card
+├── 脉冲信号         (脉冲)        → Pulse-Card
+├── 串口通信         (RS232/422/485) → SerialBoard
+├── CAN/CAN FD       (车载总线)    → CPC-Card
+├── LIN              (车载总线)    → LIN-Card
+├── FlexRay          (车载总线)    → FR-Card
+├── ARINC 429        (航空总线)    → A429-Card
+├── MIL-STD-1553B    (航空总线)    → 1553-Card
+└── 程控仪器         (VISA SCPI)
     ├── Agilent电源
     └── Tektronix示波器
 ```
 
-树形层级：**厂家 → 分类 → 设备 → 通道**（VISA类无通道层级）
+树形层级：**厂家 → 分类 → 设备**（VISA类分类下有多个设备无通道）
 
 每个节点显示：设备名称、连接状态（在线/离线/异常/模拟）、自检结果。
 
@@ -862,26 +1036,26 @@ public:
 
 **10种基本指令**
 
-| cmd | 必填字段 | 可选字段 | 说明 |
-|-----|---------|---------|------|
-| SET | target, value | | 设置信号值 |
-| VERIFY | target, value | tolerance | 验证信号值 |
-| WAIT | target, op, value | timeout(ms) | 等待信号满足条件 |
-| DELAY | value | unit(ms/s) | 延时等待 |
-| ACTION | | desc | 暂停等待用户确认 |
-| PHOTO | | | 拍照 |
-| RECORD | value(bool) | | 开始/停止录像 |
-| INJECT_FAULT | target, fault_type | fault_value | 注入故障 |
-| CLEAR_FAULT | target | | 清除故障(target="*"清除全部) |
-| LOG | desc | | 输出日志 |
+| cmd          | 必填字段           | 可选字段    | 说明                         |
+| ------------ | ------------------ | ----------- | ---------------------------- |
+| SET          | target, value      |             | 设置信号值                   |
+| VERIFY       | target, value      | tolerance   | 验证信号值                   |
+| WAIT         | target, op, value  | timeout(ms) | 等待信号满足条件             |
+| DELAY        | value              | unit(ms/s)  | 延时等待                     |
+| ACTION       |                    | desc        | 暂停等待用户确认             |
+| PHOTO        |                    |             | 拍照                         |
+| RECORD       | value(bool)        |             | 开始/停止录像                |
+| INJECT_FAULT | target, fault_type | fault_value | 注入故障                     |
+| CLEAR_FAULT  | target             |             | 清除故障(target="*"清除全部) |
+| LOG          | desc               |             | 输出日志                     |
 
 **3种控制流指令**
 
-| cmd | 必填字段 | 可选字段 | 说明 |
-|-----|---------|---------|------|
-| LOOP | count, steps | | 固定次数循环 |
-| WHILE | condition, timeout, steps | interval(ms) | 条件循环 |
-| IF | condition, then_steps | else_steps | 条件分支 |
+| cmd   | 必填字段                  | 可选字段     | 说明         |
+| ----- | ------------------------- | ------------ | ------------ |
+| LOOP  | count, steps              |              | 固定次数循环 |
+| WHILE | condition, timeout, steps | interval(ms) | 条件循环     |
+| IF    | condition, then_steps     | else_steps   | 条件分支     |
 
 #### 5.3.2 条件表达式统一结构
 
@@ -1037,31 +1211,31 @@ Log("当前温度正常")                                -- LOG
 
 每个Lua API内部调用IICDEngineInterface的对应方法：
 
-| Lua API | IICDEngineInterface方法 |
-|---------|------------------------|
-| SetDevice(signalId, value) | setSignal() |
-| VerifyDevice(signalId, expected, tolerance) | verifySignal() |
-| WaitFor(signalId, op, value, timeout) | waitForSignal() |
-| Delay(ms) | QThread::msleep() |
-| UserAction(desc) | 弹窗等待用户确认 |
-| TakePhoto() | VISA插件摄像头控制 |
-| SetRecord(enable) | VISA插件录像控制 |
-| InjectFault(signalId, config) | injectFault() |
-| ClearFault(signalId) | clearFault() |
-| Log(msg) | 日志输出 |
+| Lua API                                     | IICDEngineInterface方法 |
+| ------------------------------------------- | ----------------------- |
+| SetDevice(signalId, value)                  | setSignal()             |
+| VerifyDevice(signalId, expected, tolerance) | verifySignal()          |
+| WaitFor(signalId, op, value, timeout)       | waitForSignal()         |
+| Delay(ms)                                   | QThread::msleep()       |
+| UserAction(desc)                            | 弹窗等待用户确认        |
+| TakePhoto()                                 | VISA插件摄像头控制      |
+| SetRecord(enable)                           | VISA插件录像控制        |
+| InjectFault(signalId, config)               | injectFault()           |
+| ClearFault(signalId)                        | clearFault()            |
+| Log(msg)                                    | 日志输出                |
 
 #### 5.4.3 执行控制
 
-| 特性 | 说明 | MVP优先级 |
-|------|------|----------|
-| 暂停/恢复 | 当前步骤执行完后挂起，用户恢复后继续 | 高 |
-| 终止 | 立即停止，标记用例为"已终止" | 高 |
-| 行断点 | 停在脚本某一行 | 高 |
-| 条件断点 | 信号值满足条件时停 | 中 |
-| 单步执行 | Step Over / Step Into / Step Out | 高 |
-| 变量监视 | 实时查看脚本变量值和ICD信号值 | 高 |
-| 调用栈 | 当前执行位置 | 中 |
-| 并行执行 | 多用例同时执行 | 低（远期） |
+| 特性      | 说明                                 | MVP优先级  |
+| --------- | ------------------------------------ | ---------- |
+| 暂停/恢复 | 当前步骤执行完后挂起，用户恢复后继续 | 高         |
+| 终止      | 立即停止，标记用例为"已终止"         | 高         |
+| 行断点    | 停在脚本某一行                       | 高         |
+| 条件断点  | 信号值满足条件时停                   | 中         |
+| 单步执行  | Step Over / Step Into / Step Out     | 高         |
+| 变量监视  | 实时查看脚本变量值和ICD信号值        | 高         |
+| 调用栈    | 当前执行位置                         | 中         |
+| 并行执行  | 多用例同时执行                       | 低（远期） |
 
 调试能力基于Lua Debug Library实现：通过`lua_sethook()`注册行级hook，在每行执行前检查断点和暂停标志，实现断点/单步/变量监视。
 
@@ -1113,25 +1287,25 @@ MVP阶段支持简单文本/HTML格式报告，包含：
 
 #### 5.5.2 核心功能模块
 
-| 模块 | 对应架构层 | 说明 |
-|------|-----------|------|
-| 设备管理器 | HAL | 设备树视图，展示厂家→分类→设备→通道，显示状态和自检结果 |
-| 帧协议编辑器 | ICD | ProtocolRegistry的可视化编辑前端，定义帧字段结构 |
-| ICD编辑器 | ICD | SignalMapper的表单/表格编辑方式，定义信号映射关系 |
-| 拓扑编辑器 | ICD | SignalMapper的图形化连线编辑，基于GraphicsView |
-| 用例编辑器 | 用例管理层 | 可视化编辑测试用例，支持JSON/Excel/YML格式 |
-| 监控面板 | Engine/ICD | 实时信号值监控、步骤执行进度、变量监视 |
-| 报告查看器 | Engine | 查看测试执行报告 |
+| 模块         | 对应架构层 | 说明                                                    |
+| ------------ | ---------- | ------------------------------------------------------- |
+| 设备管理器   | HAL        | 设备树视图，展示厂家→分类→设备→通道，显示状态和自检结果 |
+| 帧协议编辑器 | ICD        | ProtocolRegistry的可视化编辑前端，定义帧字段结构        |
+| ICD编辑器    | ICD        | SignalMapper的表单/表格编辑方式，定义信号映射关系       |
+| 拓扑编辑器   | ICD        | SignalMapper的图形化连线编辑，基于GraphicsView          |
+| 用例编辑器   | 用例管理层 | 可视化编辑测试用例，支持JSON/Excel/YML格式              |
+| 监控面板     | Engine/ICD | 实时信号值监控、步骤执行进度、变量监视                  |
+| 报告查看器   | Engine     | 查看测试执行报告                                        |
 
 #### 5.5.3 三编辑器共享数据模型
 
 帧协议编辑器、ICD编辑器、拓扑编辑器操作**同一份数据**（SignalMapper + ProtocolRegistry），只是交互方式不同：
 
-| 编辑器 | 操作的数据 | 交互方式 |
-|--------|-----------|---------|
-| 帧协议编辑器 | ProtocolRegistry | 表格编辑帧字段结构 |
-| ICD编辑器 | SignalMapper | 表单/表格编辑信号映射 |
-| 拓扑编辑器 | SignalMapper | 图形化拖拽连线 |
+| 编辑器       | 操作的数据       | 交互方式              |
+| ------------ | ---------------- | --------------------- |
+| 帧协议编辑器 | ProtocolRegistry | 表格编辑帧字段结构    |
+| ICD编辑器    | SignalMapper     | 表单/表格编辑信号映射 |
+| 拓扑编辑器   | SignalMapper     | 图形化拖拽连线        |
 
 拓扑编辑器的可视化元数据（节点位置、连线样式、节点颜色等）与映射数据分开存储，修改节点位置不影响信号映射关系。
 
@@ -1238,11 +1412,11 @@ Engine ──ICD API──▶ ICD ──▶ DataPool ──▶ HAL(Simulate模�
 
 **触发方式**：
 
-| 方式 | 说明 |
-|------|------|
-| 全局开关 | 整个系统进入Dry Run，所有设备走虚拟 |
+| 方式       | 说明                                   |
+| ---------- | -------------------------------------- |
+| 全局开关   | 整个系统进入Dry Run，所有设备走虚拟    |
 | 单设备开关 | 部分设备真实、部分设备虚拟（混合模式） |
-| 开关位置 | HAL层插件级别，不向上透传 |
+| 开关位置   | HAL层插件级别，不向上透传              |
 
 ### 7.3 故障注入
 
@@ -1252,15 +1426,15 @@ Engine ──ICD API──▶ ICD ──▶ DataPool ──▶ HAL(Simulate模�
 
 **7种故障类型**
 
-| 类型 | 实现位置 | 说明 | 示例 |
-|------|---------|------|------|
-| 信号值死滞(Stuck-at) | ICD转换 | 信号值固定为某值 | 温度固定读999 |
-| 信号值加偏置/噪声 | ICD转换 | 在原值上叠加偏移量 | AD值多加5% |
-| 协议CRC错误 | ICD封包 | 封包时篡改CRC字段 | CAN帧CRC字段写反 |
-| 校验位错误 | ICD封包 | 封包时篡改校验位 | 429 label校验位取反 |
-| 通信延迟 | DataPool | 数据延迟N ms到达 | 延迟100ms |
-| 通信丢包 | DataPool | 按概率丢弃原始字节 | 10%丢包率 |
-| 采样率异常 | DataPool | 数据频率突然变化 | 采样率突变 |
+| 类型                 | 实现位置 | 说明               | 示例                |
+| -------------------- | -------- | ------------------ | ------------------- |
+| 信号值死滞(Stuck-at) | ICD转换  | 信号值固定为某值   | 温度固定读999       |
+| 信号值加偏置/噪声    | ICD转换  | 在原值上叠加偏移量 | AD值多加5%          |
+| 协议CRC错误          | ICD封包  | 封包时篡改CRC字段  | CAN帧CRC字段写反    |
+| 校验位错误           | ICD封包  | 封包时篡改校验位   | 429 label校验位取反 |
+| 通信延迟             | DataPool | 数据延迟N ms到达   | 延迟100ms           |
+| 通信丢包             | DataPool | 按概率丢弃原始字节 | 10%丢包率           |
+| 采样率异常           | DataPool | 数据频率突然变化   | 采样率突变          |
 
 **故障清除机制**
 
@@ -1289,10 +1463,10 @@ Engine ──ICD API──▶ ICD ──▶ DataPool ──▶ HAL(Simulate模�
 
 **MVP策略**：同进程QPluginLoader
 
-| 阶段 | 方案 | 优点 | 缺点 |
-|------|------|------|------|
-| MVP | QPluginLoader同进程 | 简单、低延迟、开发成本低 | 单插件崩溃可能影响整个进程 |
-| 远期 | 评估独立进程隔离 | 插件崩溃不影响主进程 | IPC通信延迟、开发复杂度高 |
+| 阶段 | 方案                | 优点                     | 缺点                       |
+| ---- | ------------------- | ------------------------ | -------------------------- |
+| MVP  | QPluginLoader同进程 | 简单、低延迟、开发成本低 | 单插件崩溃可能影响整个进程 |
+| 远期 | 评估独立进程隔离    | 插件崩溃不影响主进程     | IPC通信延迟、开发复杂度高  |
 
 接口层面保持抽象（IDevicePlugin），不暴露IPC细节，后续切换到独立进程方案不影响上层代码。
 
@@ -1396,17 +1570,17 @@ Engine ──ICD API──▶ ICD ──▶ DataPool ──▶ HAL(Simulate模�
 
 以下为MVP阶段之后的中长期方向，不做详细设计，仅记录方向性思考：
 
-| 项目 | 当前策略 | 远期方向 | 触发条件 |
-|------|---------|---------|---------|
-| Web迁移 | 接口参数只用基本类型和QVariant | Engine-UI间加JSON/gRPC通信层 | 需要远程执行或云端化 |
-| 脚本语言 | 仅Lua(sol2 + Lua Debug Library) | IScriptEngine抽象支持Python/JS | 用户需求驱动 |
-| 并行执行 | 顺序执行 | 多用例并行/步骤并行 | 大规模用例集性能瓶颈 |
-| DataPool | 融入ICD，离散事件型Pub/Sub | 信号量>10000时拆分为独立层，支持时序数据库 | 信号规模增长 |
-| AD流式数据 | 不考虑连续流式 | 高速采集场景可能需要直推路径 | 高速AD需求 |
-| 数据记录与回放 | MVP记录执行日志 | 离线回放、波形回放、HDF5/时序数据库 | 数据分析需求 |
-| 报告生成 | MVP简单文本/HTML | PDF(libharu)/Excel(QXlsx)/图表嵌入 | 报告合规性要求 |
-| 插件进程隔离 | MVP同进程QPluginLoader | 独立进程隔离(QLocalSocket/QProcess) | 第三方插件稳定性问题 |
-| 车载总线扩展 | MVP仅CAN/CAN FD | LIN、FlexRay支持 | 车载测试场景需求 |
+| 项目           | 当前策略                        | 远期方向                                   | 触发条件             |
+| -------------- | ------------------------------- | ------------------------------------------ | -------------------- |
+| Web迁移        | 接口参数只用基本类型和QVariant  | Engine-UI间加JSON/gRPC通信层               | 需要远程执行或云端化 |
+| 脚本语言       | 仅Lua(sol2 + Lua Debug Library) | IScriptEngine抽象支持Python/JS             | 用户需求驱动         |
+| 并行执行       | 顺序执行                        | 多用例并行/步骤并行                        | 大规模用例集性能瓶颈 |
+| DataPool       | 融入ICD，离散事件型Pub/Sub      | 信号量>10000时拆分为独立层，支持时序数据库 | 信号规模增长         |
+| AD流式数据     | 不考虑连续流式                  | 高速采集场景可能需要直推路径               | 高速AD需求           |
+| 数据记录与回放 | MVP记录执行日志                 | 离线回放、波形回放、HDF5/时序数据库        | 数据分析需求         |
+| 报告生成       | MVP简单文本/HTML                | PDF(libharu)/Excel(QXlsx)/图表嵌入         | 报告合规性要求       |
+| 插件进程隔离   | MVP同进程QPluginLoader          | 独立进程隔离(QLocalSocket/QProcess)        | 第三方插件稳定性问题 |
+| 车载总线扩展   | MVP仅CAN/CAN FD                 | LIN、FlexRay支持                           | 车载测试场景需求     |
 
 ---
 
@@ -1414,125 +1588,125 @@ Engine ──ICD API──▶ ICD ──▶ DataPool ──▶ HAL(Simulate模�
 
 ### 10.1 阶段概览
 
-| 阶段 | 名称 | 状态 | 核心交付物 | 预估工期 |
-|------|------|------|-----------|---------|
-| 1 | 基础框架搭建 | ✅ 已完成 | 开发环境、核心基础设施、主窗口框架 | 3周 |
-| 2 | 设备管理（HAL层） | 待开发 | 设备插件接口定义、Mock插件、设备树UI、自检流程 | 3周 |
-| 3 | ICD信号层 | 待开发 | SignalMapper、ProtocolRegistry、传输通道、故障注入 | 4周 |
-| 4 | 用例管理层 | 待开发 | JSON用例格式、格式转换器、Schema校验、用例编辑器 | 2.5周 |
-| 5 | 测试引擎层 | 待开发 | Lua引擎集成、Lua API、执行控制、调试器、报告生成 | 3周 |
-| 6 | 测试与优化 | 待开发 | 全模块回归测试、集成测试、兼容性测试、用户体验优化 | 2周 |
+| 阶段 | 名称              | 状态     | 核心交付物                                         | 预估工期 |
+| ---- | ----------------- | -------- | -------------------------------------------------- | -------- |
+| 1    | 基础框架搭建      | ✅ 已完成 | 开发环境、核心基础设施、主窗口框架                 | 3周      |
+| 2    | 设备管理（HAL层） | 待开发   | 设备插件接口定义、Mock插件、设备树UI、自检流程     | 3周      |
+| 3    | ICD信号层         | 待开发   | SignalMapper、ProtocolRegistry、传输通道、故障注入 | 4周      |
+| 4    | 用例管理层        | 待开发   | JSON用例格式、格式转换器、Schema校验、用例编辑器   | 2.5周    |
+| 5    | 测试引擎层        | 待开发   | Lua引擎集成、Lua API、执行控制、调试器、报告生成   | 3周      |
+| 6    | 测试与优化        | 待开发   | 全模块回归测试、集成测试、兼容性测试、用户体验优化 | 2周      |
 
 **总预估工期**：约17.5周（含已完成的阶段1）
 
 ### 10.2 阶段1：基础框架搭建（已完成）
 
-| 交付物 | 状态 |
-|--------|------|
-| CMake + Ninja构建环境，VS2019 x64编译 | ✅ |
-| 核心基础设施（Logger/ConfigManager/CrashHandler/异常框架/工具类） | ✅ |
-| 插件框架（IPlugin/IDevicePlugin/PluginManager） | ✅ |
-| 项目管理系统（.etproj格式、创建/打开/关闭/最近项目） | ✅ |
-| 主窗口6区布局（QADS停靠式界面） | ✅ |
-| 文件浏览器、多标签编辑器（QScintilla）、全局搜索 | ✅ |
-| 底部面板（输出/问题/终端） | ✅ |
-| 设置页面、会话持久化、单实例检测 | ✅ |
-| 单元测试框架（10+测试文件） | ✅ |
+| 交付物                                                            | 状态 |
+| ----------------------------------------------------------------- | ---- |
+| CMake + Ninja构建环境，VS2019 x64编译                             | ✅    |
+| 核心基础设施（Logger/ConfigManager/CrashHandler/异常框架/工具类） | ✅    |
+| 插件框架（IPlugin/IDevicePlugin/PluginManager）                   | ✅    |
+| 项目管理系统（.etproj格式、创建/打开/关闭/最近项目）              | ✅    |
+| 主窗口6区布局（QADS停靠式界面）                                   | ✅    |
+| 文件浏览器、多标签编辑器（QScintilla）、全局搜索                  | ✅    |
+| 底部面板（输出/问题/终端）                                        | ✅    |
+| 设置页面、会话持久化、单实例检测                                  | ✅    |
+| 单元测试框架（10+测试文件）                                       | ✅    |
 
 ### 10.3 阶段2：设备管理（HAL层）
 
 **核心任务**：
 
-| 编号 | 任务 | 说明 |
-|------|------|------|
-| 2.1 | IDevicePlugin基类增强 | 添加selfTest()/simulate()/deviceStatus()/configMetaData()通用接口 |
-| 2.2 | IADevicePlugin v3.0补充 | 已有头文件，需补充剩余Mock插件实现 |
-| 2.3 | IDADevicePlugin | DA输出插件接口定义 + Mock实现 |
-| 2.4 | IDioPlugin | 开关量IO插件接口定义 + Mock实现 |
-| 2.5 | IPulsePlugin | 脉冲信号插件接口定义 + Mock实现 |
-| 2.6 | ISerialPlugin | 串口族插件接口定义 + Mock实现（RS232/422/485） |
-| 2.7 | ICanPlugin增强 | CAN/CAN FD插件接口增强 + Mock实现 |
-| 2.8 | IArinc429Plugin增强 | A429插件接口增强 + Mock实现 |
-| 2.9 | IMil1553Plugin | 1553B插件接口定义 + Mock实现（BC/RT/MT模式） |
-| 2.10 | IVisaPlugin | VISA SCPI程控仪器插件接口定义 + Mock实现 |
-| 2.11 | 设备管理器UI | 设备树侧边栏视图（厂家→分类→设备→通道） |
-| 2.12 | 设备自检流程 | 启动时统一自检，VISA发*IDN?验证 |
-| 2.13 | Dry Run支持 | 每个插件simulate()模式切换 |
-| 2.14 | DeviceInfo增强 | bus_number/slot_number/card_serial字段 |
+| 编号 | 任务                    | 说明                                                              |
+| ---- | ----------------------- | ----------------------------------------------------------------- |
+| 2.1  | IDevicePlugin基类增强   | 添加selfTest()/simulate()/deviceStatus()/configMetaData()通用接口 |
+| 2.2  | IADevicePlugin v3.0补充 | 已有头文件，需补充剩余Mock插件实现                                |
+| 2.3  | IDADevicePlugin         | DA输出插件接口定义 + Mock实现                                     |
+| 2.4  | IDioPlugin              | 开关量IO插件接口定义 + Mock实现                                   |
+| 2.5  | IPulsePlugin            | 脉冲信号插件接口定义 + Mock实现                                   |
+| 2.6  | ISerialPlugin           | 串口族插件接口定义 + Mock实现（RS232/422/485）                    |
+| 2.7  | ICanPlugin增强          | CAN/CAN FD插件接口增强 + Mock实现                                 |
+| 2.8  | IArinc429Plugin增强     | A429插件接口增强 + Mock实现                                       |
+| 2.9  | IMil1553Plugin          | 1553B插件接口定义 + Mock实现（BC/RT/MT模式）                      |
+| 2.10 | IVisaPlugin             | VISA SCPI程控仪器插件接口定义 + Mock实现                          |
+| 2.11 | 设备管理器UI            | 设备树侧边栏视图（厂家→分类→设备→通道）                           |
+| 2.12 | 设备自检流程            | 启动时统一自检，VISA发*IDN?验证                                   |
+| 2.13 | Dry Run支持             | 每个插件simulate()模式切换                                        |
+| 2.14 | DeviceInfo增强          | bus_number/slot_number/card_serial字段                            |
 
 ### 10.4 阶段3：ICD信号层
 
 **核心任务**：
 
-| 编号 | 任务 | 说明 |
-|------|------|------|
-| 3.1 | SignalMapper | UUID→deviceId+channelId+protocolId映射，转换规则 |
-| 3.2 | ProtocolRegistry | 协议定义仓库，Protocol{字段列表+字节序+校验+pack/unpack} |
-| 3.3 | 协议转换引擎 | pack(工程值→原始字节)/unpack(原始字节→工程值) |
-| 3.4 | 传输通道层 | 串口/TCP/UDP通道抽象，ICD选择通道发送原始字节 |
-| 3.5 | FaultManager | 故障注入管理（7种故障类型） |
-| 3.6 | SignalValueCache (CVT) | 信号最新值缓存 |
-| 3.7 | DataPool (Pub/Sub) | 离散事件型发布订阅 |
-| 3.8 | 帧协议编辑器UI | ProtocolRegistry的可视化编辑前端 |
-| 3.9 | ICD编辑器UI | SignalMapper的表单/表格编辑方式 |
-| 3.10 | 拓扑编辑器UI | SignalMapper的图形化连线编辑（Qt GraphicsView） |
-| 3.11 | 导入导出 | XML/JSON/YAML/Excel导入导出 |
+| 编号 | 任务                   | 说明                                                     |
+| ---- | ---------------------- | -------------------------------------------------------- |
+| 3.1  | SignalMapper           | UUID→deviceId+channelId+protocolId映射，转换规则         |
+| 3.2  | ProtocolRegistry       | 协议定义仓库，Protocol{字段列表+字节序+校验+pack/unpack} |
+| 3.3  | 协议转换引擎           | pack(工程值→原始字节)/unpack(原始字节→工程值)            |
+| 3.4  | 传输通道层             | 串口/TCP/UDP通道抽象，ICD选择通道发送原始字节            |
+| 3.5  | FaultManager           | 故障注入管理（7种故障类型）                              |
+| 3.6  | SignalValueCache (CVT) | 信号最新值缓存                                           |
+| 3.7  | DataPool (Pub/Sub)     | 离散事件型发布订阅                                       |
+| 3.8  | 帧协议编辑器UI         | ProtocolRegistry的可视化编辑前端                         |
+| 3.9  | ICD编辑器UI            | SignalMapper的表单/表格编辑方式                          |
+| 3.10 | 拓扑编辑器UI           | SignalMapper的图形化连线编辑（Qt GraphicsView）          |
+| 3.11 | 导入导出               | XML/JSON/YAML/Excel导入导出                              |
 
 ### 10.5 阶段4：用例管理层
 
 **核心任务**：
 
-| 编号 | 任务 | 说明 |
-|------|------|------|
-| 4.1 | JSON用例格式v1.0 | 完整Schema定义，10基本指令+3控制流指令 |
-| 4.2 | 条件表达式统一 | target+op+value结构，IF/WHILE/WAIT复用 |
-| 4.3 | 控制流指令 | LOOP(固定次数)、WHILE(条件循环+interval+timeout)、IF(条件分支) |
-| 4.4 | 嵌套约束 | steps/then_steps/else_steps内不允许嵌套控制流 |
-| 4.5 | JSON→Lua转换器 | 所有指令类型到Lua脚本的转换 |
-| 4.6 | Excel→JSON转换器 | 标准模板列映射，Sheet=用例 |
-| 4.7 | YML→JSON转换器 | 结构完全对应，天然互换 |
-| 4.8 | JSON Schema校验 | 语法校验+嵌套约束检查 |
-| 4.9 | 用例CRUD | 创建/读取/更新/删除 |
-| 4.10 | 版本管理 | 作者、修订记录 |
-| 4.11 | 用例编辑器UI | 可视化编辑界面 |
+| 编号 | 任务             | 说明                                                           |
+| ---- | ---------------- | -------------------------------------------------------------- |
+| 4.1  | JSON用例格式v1.0 | 完整Schema定义，10基本指令+3控制流指令                         |
+| 4.2  | 条件表达式统一   | target+op+value结构，IF/WHILE/WAIT复用                         |
+| 4.3  | 控制流指令       | LOOP(固定次数)、WHILE(条件循环+interval+timeout)、IF(条件分支) |
+| 4.4  | 嵌套约束         | steps/then_steps/else_steps内不允许嵌套控制流                  |
+| 4.5  | JSON→Lua转换器   | 所有指令类型到Lua脚本的转换                                    |
+| 4.6  | Excel→JSON转换器 | 标准模板列映射，Sheet=用例                                     |
+| 4.7  | YML→JSON转换器   | 结构完全对应，天然互换                                         |
+| 4.8  | JSON Schema校验  | 语法校验+嵌套约束检查                                          |
+| 4.9  | 用例CRUD         | 创建/读取/更新/删除                                            |
+| 4.10 | 版本管理         | 作者、修订记录                                                 |
+| 4.11 | 用例编辑器UI     | 可视化编辑界面                                                 |
 
 ### 10.6 阶段5：测试引擎层
 
 **核心任务**：
 
-| 编号 | 任务 | 说明 |
-|------|------|------|
-| 5.1 | Lua引擎集成 | sol2嵌入，隔离VM，C++端封装硬件控制供脚本调用 |
-| 5.2 | IICDEngineInterface | setSignal/getSignal/verifySignal/waitForSignal/injectFault/clearFault |
-| 5.3 | Lua API绑定 | 10个API函数对应10种基本指令 |
-| 5.4 | 执行控制 | 暂停/恢复/终止 |
-| 5.5 | 调试器 | 断点(行断点+条件断点)/单步(Over/Into/Out)/变量监视/调用栈 |
-| 5.6 | 数据记录 | 步骤执行记录、断言结果、故障注入记录 |
-| 5.7 | 监控面板UI | 实时日志/通道数据/变量值/执行进度 |
-| 5.8 | 报告生成 | MVP简单文本/HTML |
-| 5.9 | 故障自动清除 | 用例结束时自动清除所有活跃故障 |
+| 编号 | 任务                | 说明                                                                  |
+| ---- | ------------------- | --------------------------------------------------------------------- |
+| 5.1  | Lua引擎集成         | sol2嵌入，隔离VM，C++端封装硬件控制供脚本调用                         |
+| 5.2  | IICDEngineInterface | setSignal/getSignal/verifySignal/waitForSignal/injectFault/clearFault |
+| 5.3  | Lua API绑定         | 10个API函数对应10种基本指令                                           |
+| 5.4  | 执行控制            | 暂停/恢复/终止                                                        |
+| 5.5  | 调试器              | 断点(行断点+条件断点)/单步(Over/Into/Out)/变量监视/调用栈             |
+| 5.6  | 数据记录            | 步骤执行记录、断言结果、故障注入记录                                  |
+| 5.7  | 监控面板UI          | 实时日志/通道数据/变量值/执行进度                                     |
+| 5.8  | 报告生成            | MVP简单文本/HTML                                                      |
+| 5.9  | 故障自动清除        | 用例结束时自动清除所有活跃故障                                        |
 
 ### 10.7 阶段6：测试与优化
 
-| 编号 | 任务 | 说明 |
-|------|------|------|
-| 6.1 | 全模块回归测试 | 各模块独立单元测试 |
-| 6.2 | 全链路集成测试 | HAL→ICD→用例→引擎→报告闭环验证 |
-| 6.3 | 兼容性测试 | Windows 10/11兼容性验证 |
-| 6.4 | 压力/稳定性测试 | 长时间运行、大量信号、大量用例 |
-| 6.5 | 用户体验优化 | 界面交互优化、性能优化 |
-| 6.6 | 打包与文档 | 安装包、用户手册、开发文档 |
+| 编号 | 任务            | 说明                           |
+| ---- | --------------- | ------------------------------ |
+| 6.1  | 全模块回归测试  | 各模块独立单元测试             |
+| 6.2  | 全链路集成测试  | HAL→ICD→用例→引擎→报告闭环验证 |
+| 6.3  | 兼容性测试      | Windows 10/11兼容性验证        |
+| 6.4  | 压力/稳定性测试 | 长时间运行、大量信号、大量用例 |
+| 6.5  | 用户体验优化    | 界面交互优化、性能优化         |
+| 6.6  | 打包与文档      | 安装包、用户手册、开发文档     |
 
 ### 10.8 里程碑
 
-| 里程碑 | 完成标志 | 对应阶段 |
-|--------|---------|---------|
-| M1：框架就绪 | 主窗口可运行，插件可加载，编辑器可使用 | 阶段1 ✅ |
-| M2：设备就绪 | 所有插件接口定义完成，Mock插件可运行，设备树可展示，自检通过 | 阶段2 |
-| M3：信号就绪 | ICD信号映射可用，协议转换正确，拓扑编辑器可连线 | 阶段3 |
-| M4：用例就绪 | JSON用例可编辑、校验、转换为Lua脚本 | 阶段4 |
-| M5：引擎就绪 | Lua脚本可执行、调试、生成报告 | 阶段5 |
-| M6：产品发布 | 全链路闭环测试通过，安装包可交付 | 阶段6 |
+| 里程碑       | 完成标志                                                     | 对应阶段 |
+| ------------ | ------------------------------------------------------------ | -------- |
+| M1：框架就绪 | 主窗口可运行，插件可加载，编辑器可使用                       | 阶段1 ✅  |
+| M2：设备就绪 | 所有插件接口定义完成，Mock插件可运行，设备树可展示，自检通过 | 阶段2    |
+| M3：信号就绪 | ICD信号映射可用，协议转换正确，拓扑编辑器可连线              | 阶段3    |
+| M4：用例就绪 | JSON用例可编辑、校验、转换为Lua脚本                          | 阶段4    |
+| M5：引擎就绪 | Lua脚本可执行、调试、生成报告                                | 阶段5    |
+| M6：产品发布 | 全链路闭环测试通过，安装包可交付                             | 阶段6    |
 
 ---
 
@@ -1571,25 +1745,25 @@ Engine ──ICD API──▶ ICD ──▶ DataPool ──▶ HAL(Simulate模�
 
 ### A 术语表
 
-| 术语 | 全称 | 说明 |
-|------|------|------|
-| IATP | Integrated Automated Test Platform | 综合性自动化测试平台 |
-| HAL | Hardware Abstraction Layer | 硬件抽象层 |
-| ICD | Interface Control Document | 接口控制文档，此处指信号映射层 |
-| CVT | Current Value Table | 当前值表，信号最新值缓存 |
-| UUID | Universally Unique Identifier | 通用唯一标识符 |
-| UUT | Unit Under Test | 被测设备 |
-| VISA | Virtual Instrument Software Architecture | 虚拟仪器软件架构 |
-| SCPI | Standard Commands for Programmable Instruments | 可编程仪器标准命令 |
-| Pub/Sub | Publish/Subscribe | 发布/订阅模式 |
-| MVP | Minimum Viable Product | 最小可行性产品 |
-| QADS | Qt Advanced Docking System | Qt高级停靠系统 |
+| 术语    | 全称                                           | 说明                           |
+| ------- | ---------------------------------------------- | ------------------------------ |
+| IATP    | Integrated Automated Test Platform             | 综合性自动化测试平台           |
+| HAL     | Hardware Abstraction Layer                     | 硬件抽象层                     |
+| ICD     | Interface Control Document                     | 接口控制文档，此处指信号映射层 |
+| CVT     | Current Value Table                            | 当前值表，信号最新值缓存       |
+| UUID    | Universally Unique Identifier                  | 通用唯一标识符                 |
+| UUT     | Unit Under Test                                | 被测设备                       |
+| VISA    | Virtual Instrument Software Architecture       | 虚拟仪器软件架构               |
+| SCPI    | Standard Commands for Programmable Instruments | 可编程仪器标准命令             |
+| Pub/Sub | Publish/Subscribe                              | 发布/订阅模式                  |
+| MVP     | Minimum Viable Product                         | 最小可行性产品                 |
+| QADS    | Qt Advanced Docking System                     | Qt高级停靠系统                 |
 
 ### B 参考文档
 
-| 文档 | 说明 |
-|------|------|
-| 构思.md | 项目原始需求愿景 |
-| 架构梳理.md | V1.0正式架构文档 |
+| 文档                              | 说明                             |
+| --------------------------------- | -------------------------------- |
+| 构思.md                           | 项目原始需求愿景                 |
+| 架构梳理.md                       | V1.0正式架构文档                 |
 | IATP_Comprehensive_Design_Spec.md | 早期IATP设计规格（五层架构版本） |
-| IATP_Core_Technical_Points.md | 早期IATP核心技术白皮书 |
+| IATP_Core_Technical_Points.md     | 早期IATP核心技术白皮书           |

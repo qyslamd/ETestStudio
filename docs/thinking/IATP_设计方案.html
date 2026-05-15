@@ -167,6 +167,57 @@ code.hljs{padding:3px 5px}
 .arch-box .cyan{color:#22d3ee}
 .arch-box .green{color:#34d399}
 
+/* ───── Device Tree Block ───── */
+.block-tree{
+  background:#1e293b;border-radius:12px;padding:24px;margin:18px 0;
+  font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",system-ui,sans-serif;
+  color:#e2e8f0;overflow-x:auto
+}
+.block-tree .bt-mnf{
+  background:linear-gradient(135deg,#155e75,#0891b2);border-radius:8px;
+  padding:10px 20px;font-size:.85rem;font-weight:700;color:#fff;
+  letter-spacing:.5px;margin-bottom:16px
+}
+.block-tree .bt-mnf::before{content:'■ ';opacity:.5}
+.block-tree .bt-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:12px
+}
+.block-tree .bt-card{
+  background:#0f172a;border:1px solid #334155;border-radius:10px;
+  overflow:hidden;transition:border-color .15s
+}
+.block-tree .bt-card:hover{border-color:#475569}
+.block-tree .bt-card-header{
+  background:linear-gradient(135deg,#1e293b,#0f172a);
+  padding:8px 14px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid #334155
+}
+.block-tree .bt-card-name{color:#facc15;font-weight:600;font-size:.82rem}
+.block-tree .bt-card-type{
+  font-size:.68rem;color:#64748b;background:#1e293b;
+  padding:1px 8px;border-radius:4px;border:1px solid #334155;
+  margin-left:auto
+}
+.block-tree .bt-card-body{padding:10px 14px}
+.block-tree .bt-device{
+  background:#1e293b;border:1px solid #2a3a4e;border-radius:6px;
+  padding:8px 12px
+}
+.block-tree .bt-device:not(:last-child){margin-bottom:6px}
+.block-tree .bt-dev-name{font-size:.8rem;font-weight:500;color:#e2e8f0}
+.block-tree .bt-dev-name::before{content:'▶ ';font-size:.65rem;color:#475569}
+.block-tree .bt-channels{margin-top:4px;display:flex;gap:4px;flex-wrap:wrap}
+.block-tree .bt-channels .ch{
+  font-family:"JetBrains Mono","Fira Code",monospace;
+  font-size:.72rem;background:#2a3a4e;color:#94a3b8;
+  padding:2px 8px;border-radius:4px
+}
+.block-tree .bt-channels .ch::before{content:'#';color:#475569;margin-right:2px}
+.block-tree .bt-visa .bt-device{background:transparent;border-color:transparent;padding-left:4px}
+.block-tree .bt-visa .bt-dev-name{color:#34d399}
+.block-tree .bt-visa .bt-dev-name::before{content:'◉ ';color:#34d399;font-size:.7rem}
+
 /* ───── ICD module tree ───── */
 .icd-tree{
   background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
@@ -616,17 +667,110 @@ class IVisaPlugin : public IDevicePlugin {
 <h4 id="512-设备树结构">5.1.2 设备树结构</h4>
 <p>层级：<strong>厂家 → 分类 → 设备 → 通道</strong>（VISA类无通道层级）</p>
 
-<div class="arch-box">
-  <span class="cyan">厂家A</span><br>
-  ├── <span class="hl">AD采集</span> <span class="dim">(板卡类)</span><br>
-  │&nbsp;&nbsp;&nbsp;└── EPH5022 → CH0 / CH1<br>
-  ├── <span class="hl">CAN通信</span> <span class="dim">(板卡类)</span><br>
-  │&nbsp;&nbsp;&nbsp;└── CPC-Card → CAN0 / CAN1<br>
-  ├── <span class="hl">脉冲信号</span> <span class="dim">(板卡类)</span><br>
-  │&nbsp;&nbsp;&nbsp;└── Pulse-Card → CH0 / CH1<br>
-  └── <span class="hl">程控仪器</span> <span class="dim">(VISA类，无通道)</span><br>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── Agilent电源<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── Tektronix示波器
+<div class="block-tree">
+  <div class="bt-mnf">厂家A</div>
+  <div class="bt-grid">
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">AD采集</span>
+        <span class="bt-card-type">模拟量输入</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">EPH5022</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">DA输出</span>
+        <span class="bt-card-type">模拟量输出</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">AO-Card</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">开关量IO</span>
+        <span class="bt-card-type">数字量</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">DIO-Card</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">脉冲信号</span>
+        <span class="bt-card-type">脉冲</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">Pulse-Card</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">串口通信</span>
+        <span class="bt-card-type">RS232/422/485</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">SerialBoard</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">CAN/CAN FD</span>
+        <span class="bt-card-type">车载总线</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">CPC-Card</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">LIN</span>
+        <span class="bt-card-type">车载总线</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">LIN-Card</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">FlexRay</span>
+        <span class="bt-card-type">车载总线</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">FR-Card</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">ARINC 429</span>
+        <span class="bt-card-type">航空总线</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">A429-Card</div></div>
+      </div>
+    </div>
+    <div class="bt-card">
+      <div class="bt-card-header">
+        <span class="bt-card-name">MIL-STD-1553B</span>
+        <span class="bt-card-type">航空总线</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">1553-Card</div></div>
+      </div>
+    </div>
+    <div class="bt-card bt-visa">
+      <div class="bt-card-header">
+        <span class="bt-card-name">程控仪器</span>
+        <span class="bt-card-type">VISA SCPI</span>
+      </div>
+      <div class="bt-card-body">
+        <div class="bt-device"><div class="bt-dev-name">Agilent电源</div></div>
+        <div class="bt-device"><div class="bt-dev-name">Tektronix示波器</div></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <h4 id="513-设备自检流程">5.1.3 设备自检流程</h4>
