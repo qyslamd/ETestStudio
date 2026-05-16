@@ -341,6 +341,7 @@ void PropertyPanelWidget::onUutNameChanged() {
     auto* prod = doc_->product(editing_uut_index_);
     if (prod) {
         prod->name = uut_name_edit_->text();
+        emit documentChanged();
     }
 }
 
@@ -348,6 +349,7 @@ void PropertyPanelWidget::onPortNameChanged() {
     auto* prod = doc_->product(editing_port_product_);
     if (prod && editing_port_index_ < prod->ports.size()) {
         prod->ports[editing_port_index_].name = port_name_edit_->text();
+        emit documentChanged();
     }
 }
 
@@ -357,6 +359,7 @@ void PropertyPanelWidget::onPortDirectionChanged() {
         prod->ports[editing_port_index_].direction =
             static_cast<TopologyPort::Direction>(
                 port_direction_combo_->currentIndex());
+        emit documentChanged();
     }
 }
 
@@ -364,6 +367,7 @@ void PropertyPanelWidget::onDeviceNameChanged() {
     auto* dev = doc_->device(editing_device_index_);
     if (dev) {
         dev->name = device_name_edit_->text();
+        emit documentChanged();
     }
 }
 
@@ -470,6 +474,7 @@ void PropertyPanelWidget::onDevicePortNameChanged() {
     auto* dev = doc_->device(editing_device_port_device_);
     if (dev && editing_device_port_index_ < dev->ports.size()) {
         dev->ports[editing_device_port_index_].name = devport_name_edit_->text();
+        emit documentChanged();
     }
 }
 
@@ -478,6 +483,7 @@ void PropertyPanelWidget::onDevicePortFunctionTypeChanged() {
     if (dev && editing_device_port_index_ < dev->ports.size()) {
         dev->ports[editing_device_port_index_].functionType =
             static_cast<FunctionType>(devport_function_combo_->currentIndex());
+        emit documentChanged();
     }
 }
 
@@ -487,6 +493,7 @@ void PropertyPanelWidget::onDevicePortDirectionChanged() {
         dev->ports[editing_device_port_index_].direction =
             static_cast<TopologyPort::Direction>(
                 devport_direction_combo_->currentIndex());
+        emit documentChanged();
     }
 }
 

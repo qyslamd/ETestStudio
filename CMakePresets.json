@@ -13,7 +13,9 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_C_STANDARD": "11",
-                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL"
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
+                "Qt5_DIR": "D:\\Qt\\Qt5.12.12\\5.12.12\\msvc2017_64\\lib\\cmake\\Qt5",
+                "QT_DIR": "D:\\Qt\\Qt5.12.12\\5.12.12\\msvc2017_64\\lib\\cmake\\Qt5"
             },
             "environment": {}
         },

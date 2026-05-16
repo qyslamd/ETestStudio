@@ -30,10 +30,13 @@ public:
 
     int productIndex() const { return product_index_; }
     int portIndex() const { return port_index_; }
+    bool isHovered() const { return hovered_; }
 
     QPointF sceneCenter() const;
 
 protected:
+    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
@@ -43,6 +46,7 @@ private:
     int port_index_;
     TopologyDocument* doc_;
     QPointF press_pos_;
+    bool hovered_ = false;
     static constexpr qreal kRadius = 6.0;
 };
 
@@ -57,6 +61,8 @@ public:
             QGraphicsItem* parent = nullptr);
 
     QRectF boundingRect() const override;
+    QPainterPath shape() const override;
+    bool contains(const QPointF& point) const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
                QWidget* widget) override;
 
@@ -68,16 +74,23 @@ public:
     QPointF portScenePos(int portIndex) const;
 
 protected:
+    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
 private:
     int product_index_;
     TopologyDocument* doc_;
     QVector<PortItem*> ports_;
+    bool body_hovered_ = false;
+
+    bool isOverChildPort(const QPointF& point) const;
 
     static constexpr qreal kWidth = 140.0;
     static constexpr qreal kBaseHeight = 60.0;
     static constexpr qreal kPortMargin = 8.0;
+    static constexpr qreal kCornerRadius = 8.0;
 
     qreal contentHeight() const;
 
@@ -100,10 +113,13 @@ public:
 
     int deviceIndex() const { return device_index_; }
     int portIndex() const { return port_index_; }
+    bool isHovered() const { return hovered_; }
     DeviceItem* parentDeviceItem() const;
     QPointF sceneCenter() const;
 
 protected:
+    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
@@ -113,6 +129,7 @@ private:
     int port_index_;
     TopologyDocument* doc_;
     QPointF press_pos_;
+    bool hovered_ = false;
     static constexpr qreal kRadius = 6.0;
 };
 
@@ -127,6 +144,8 @@ public:
                QGraphicsItem* parent = nullptr);
 
     QRectF boundingRect() const override;
+    QPainterPath shape() const override;
+    bool contains(const QPointF& point) const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
                QWidget* widget) override;
 
@@ -141,16 +160,23 @@ public:
     qreal contentHeight() const;
 
 protected:
+    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
 private:
     int device_index_;
     TopologyDocument* doc_;
     QVector<DevicePortItem*> device_port_items_;
+    bool body_hovered_ = false;
+
+    bool isOverChildPort(const QPointF& point) const;
 
     static constexpr qreal kWidth = 120.0;
     static constexpr qreal kBaseHeight = 50.0;
     static constexpr qreal kPortMargin = 10.0;
+    static constexpr qreal kCornerRadius = 10.0;
 };
 
 // ── ConnectionItem ── bezier line from UUT port to device port ──

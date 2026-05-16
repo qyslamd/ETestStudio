@@ -279,7 +279,8 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
                     const auto* c = doc_->connection(i);
                     if (c->productName == prod->name &&
                         c->portName == prod->ports[src->portIndex()].name &&
-                        c->deviceName == dev->name) {
+                        c->deviceName == dev->name &&
+                        c->devicePort == conn->devicePort()) {
                         doc_->removeConnection(i);
                         break;
                     }
@@ -403,8 +404,52 @@ void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
 }
 
 void TopologyEditorWidget::onDocumentChanged() {
+    // Save selection identity before reload
+    int selType = -1, selIdx1 = -1, selIdx2 = -1;
+    auto selItems = scene_->selectedItems();
+    if (!selItems.isEmpty()) {
+        auto* item = selItems.first();
+        if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
+            selType = 0; selIdx1 = uut->productIndex();
+        } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
+            selType = 1; selIdx1 = dev->deviceIndex();
+        } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+            selType = 2; selIdx1 = p->productIndex(); selIdx2 = p->portIndex();
+        } else if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(item)) {
+            selType = 3; selIdx1 = dp->deviceIndex(); selIdx2 = dp->portIndex();
+        }
+    }
+
     scene_->syncPositionsToDocument();
     scene_->loadFromDocument();
+
+    // Restore selection on newly created items
+    QGraphicsItem* newItem = nullptr;
+    if (selType == 0) {
+        auto* uut = scene_->findUutItem(selIdx1);
+        if (uut) { uut->setSelected(true); newItem = uut; }
+    } else if (selType == 1) {
+        auto* dev = scene_->findDeviceItem(selIdx1);
+        if (dev) { dev->setSelected(true); newItem = dev; }
+    } else if (selType == 2) {
+        auto* uut = scene_->findUutItem(selIdx1);
+        if (uut) {
+            auto* port = uut->portItem(selIdx2);
+            if (port) { port->setSelected(true); newItem = port; }
+        }
+    } else if (selType == 3) {
+        auto* dev = scene_->findDeviceItem(selIdx1);
+        if (dev) {
+            auto* dp = dev->devicePortItem(selIdx2);
+            if (dp) { dp->setSelected(true); newItem = dp; }
+        }
+    }
+
+    if (newItem) {
+        property_panel_->showPropertiesFor(newItem);
+    } else {
+        property_panel_->clearPanel();
+    }
 }
 
 }  // namespace topology

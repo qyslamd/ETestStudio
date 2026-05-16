@@ -39,6 +39,10 @@ public:
     // Called when an item moves (from itemChange)
     void onItemMoved();
 
+    // Find items by index
+    UutItem* findUutItem(int productIndex) const;
+    DeviceItem* findDeviceItem(int deviceIndex) const;
+
     // Find items at scene position by type
     DeviceItem* deviceItemAt(QPointF scenePos) const;
     DevicePortItem* devicePortItemAt(QPointF scenePos) const;

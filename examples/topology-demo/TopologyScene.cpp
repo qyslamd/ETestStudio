@@ -26,9 +26,6 @@ void TopologyScene::loadFromDocument() {
         addConnectionItem(i);
     }
 
-    auto* legend = new LegendItem();
-    legend->setPos(10, 10);
-    addItem(legend);
 }
 
 void TopologyScene::syncPositionsToDocument() {
@@ -221,6 +218,22 @@ PortItem* TopologyScene::portItemAt(QPointF scenePos) const {
     return nullptr;
 }
 
+UutItem* TopologyScene::findUutItem(int productIndex) const {
+    for (auto* uut : uut_items_) {
+        if (uut && uut->productIndex() == productIndex)
+            return uut;
+    }
+    return nullptr;
+}
+
+DeviceItem* TopologyScene::findDeviceItem(int deviceIndex) const {
+    for (auto* dev : device_items_) {
+        if (dev && dev->deviceIndex() == deviceIndex)
+            return dev;
+    }
+    return nullptr;
+}
+
 ConnectionItem* TopologyScene::connectionItemAt(QPointF scenePos) const {
     auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
                              Qt::DescendingOrder);
@@ -244,10 +257,12 @@ UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
 }
 
 void TopologyScene::clearScene() {
+    drag_source_ = nullptr;
+    drag_line_ = nullptr;
+    clear();
     uut_items_.clear();
     device_items_.clear();
     connection_items_.clear();
-    clear();
 }
 
 void TopologyScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {

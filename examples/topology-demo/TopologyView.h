@@ -22,6 +22,7 @@ signals:
     void saveTemplateRequested(QGraphicsItem* item);
 
 protected:
+    void drawForeground(QPainter* painter, const QRectF& rect) override;
     void wheelEvent(QWheelEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;

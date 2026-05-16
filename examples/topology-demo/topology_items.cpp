@@ -9,6 +9,7 @@
 #include <QPainter>
 #include <QPainterPathStroker>
 #include <QGraphicsScene>
+#include <QGraphicsSceneHoverEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QStyleOptionGraphicsItem>
 
@@ -16,6 +17,7 @@ namespace topology {
 
 constexpr qreal kLineLength = 28.0;
 constexpr qreal kEndRadius = 3.0;
+constexpr qreal kPortRadius = 6.0;
 
 // ═══════════════════════════════════════════════════════════════
 //  PortItem
@@ -38,6 +40,14 @@ QRectF PortItem::boundingRect() const {
 QPainterPath PortItem::shape() const {
     QPainterPath p;
     p.addEllipse(-kRadius, -kRadius, kRadius * 2, kRadius * 2);
+    p.addEllipse(-kLineLength - kEndRadius, -kEndRadius,
+                 kEndRadius * 2, kEndRadius * 2);
+    QPainterPath line;
+    line.moveTo(0, 0);
+    line.lineTo(-kLineLength, 0);
+    QPainterPathStroker stroker;
+    stroker.setWidth(8.0);
+    p.addPath(stroker.createStroke(line));
     return p;
 }
 
@@ -50,6 +60,16 @@ static QColor directionColor(TopologyPort::Direction d) {
     return QColor(128, 128, 128);
 }
 
+void PortItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
+    hovered_ = true;
+    update();
+}
+
+void PortItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
+    hovered_ = false;
+    update();
+}
+
 void PortItem::paint(QPainter* painter,
                      const QStyleOptionGraphicsItem* option, QWidget*) {
     painter->setRenderHint(QPainter::Antialiasing);
@@ -59,27 +79,38 @@ void PortItem::paint(QPainter* painter,
     const auto& port = prod->ports[port_index_];
 
     QColor color = directionColor(port.direction);
+    qreal penWidth = 1.5;
+    qreal dotRadius = kRadius;
+
+    if (hovered_) {
+        color = color.darker(115);
+        penWidth = 2.0;
+        dotRadius = 7.0;
+    }
     if (option->state & QStyle::State_Selected) {
-        color = color.lighter(130);
+        color = color.lighter(150);
+        penWidth = 2.5;
+        dotRadius = 8.0;
     }
 
     qreal lineEndX = -kLineLength;
 
-    painter->setPen(QPen(color.darker(130), 1.5));
+    painter->setPen(QPen(color, penWidth));
     painter->drawLine(QPointF(0, 0), QPointF(lineEndX, 0));
 
     painter->setBrush(color);
-    painter->drawEllipse(QPointF(lineEndX, 0), kEndRadius, kEndRadius);
+    painter->setPen(Qt::NoPen);
+    painter->drawEllipse(QPointF(lineEndX, 0), kEndRadius + 0.5, kEndRadius + 0.5);
 
     painter->setBrush(color);
-    painter->setPen(QPen(color.darker(130), 1.5));
-    painter->drawEllipse(QPointF(0, 0), kRadius, kRadius);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
 
     if (port.direction == TopologyPort::Bidirectional) {
         qreal as = 4.0;
         qreal gap = 3.0;
         qreal ex = lineEndX;
-        painter->setPen(QPen(color.darker(130), 1.5));
+        painter->setPen(QPen(color, penWidth));
         painter->drawLine(QPointF(ex - gap - as, 0), QPointF(ex - gap, -as));
         painter->drawLine(QPointF(ex - gap - as, 0), QPointF(ex - gap, as));
         painter->drawLine(QPointF(ex + gap + as, 0), QPointF(ex + gap, -as));
@@ -142,9 +173,24 @@ UutItem::UutItem(int productIndex, TopologyDocument* doc,
 }
 
 QRectF UutItem::boundingRect() const {
-    qreal m = 2.0;
+    qreal m = 6.0;
     qreal h = contentHeight();
     return QRectF(-m, -m, kWidth + m * 2, h + m * 2);
+}
+
+QPainterPath UutItem::shape() const {
+    QPainterPath p;
+    p.addRoundedRect(0, 0, kWidth, contentHeight(), kCornerRadius, kCornerRadius);
+    return p;
+}
+
+bool UutItem::contains(const QPointF& point) const {
+    if (!QGraphicsItem::contains(point)) return false;
+    for (auto* port : ports_) {
+        if (port->isVisible() && port->shape().contains(port->mapFromParent(point)))
+            return false;
+    }
+    return true;
 }
 
 void UutItem::paint(QPainter* painter,
@@ -155,9 +201,18 @@ void UutItem::paint(QPainter* painter,
     QColor border(66, 133, 244);
     qreal penWidth = 1.5;
 
-    if (option->state & QStyle::State_MouseOver) {
-        fill = fill.darker(115);
-        border = border.darker(120);
+    if (body_hovered_) {
+        bool childHovered = false;
+        for (auto* port : ports_) {
+            if (port->isVisible() && port->isHovered()) {
+                childHovered = true;
+                break;
+            }
+        }
+        if (!childHovered) {
+            fill = fill.darker(115);
+            border = border.darker(120);
+        }
     }
     if (option->state & QStyle::State_Selected) {
         fill = fill.lighter(130);
@@ -165,10 +220,18 @@ void UutItem::paint(QPainter* painter,
         penWidth = 2.5;
     }
 
+    qreal h = contentHeight();
+
+    // Shadow
+    painter->setBrush(QColor(0, 0, 0, 40));
+    painter->setPen(Qt::NoPen);
+    painter->drawRoundedRect(QRectF(4, 4, kWidth, h), kCornerRadius, kCornerRadius);
+    painter->setBrush(QColor(0, 0, 0, 20));
+    painter->drawRoundedRect(QRectF(2, 2, kWidth, h), kCornerRadius, kCornerRadius);
+
     painter->setBrush(fill);
     painter->setPen(QPen(border, penWidth));
-    qreal h = contentHeight();
-    painter->drawRect(QRectF(0, 0, kWidth, h));
+    painter->drawRoundedRect(QRectF(0, 0, kWidth, h), kCornerRadius, kCornerRadius);
 
     const auto* prod = doc_->product(product_index_);
     if (!prod) return;
@@ -199,7 +262,7 @@ void UutItem::layoutPorts() {
         } else {
             y = kPortMargin + i * (h - 2 * kPortMargin) / (n - 1);
         }
-        portItem->setPos(0, y);
+        portItem->setPos(-kPortRadius, y);
     }
 }
 
@@ -230,6 +293,38 @@ QVariant UutItem::itemChange(GraphicsItemChange change,
     return QGraphicsItem::itemChange(change, value);
 }
 
+void UutItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
+    if (isOverChildPort(event->pos())) return;
+    body_hovered_ = true;
+    update();
+}
+
+void UutItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
+    bool overPort = isOverChildPort(event->pos());
+    if (overPort && body_hovered_) {
+        body_hovered_ = false;
+        update();
+    } else if (!overPort && !body_hovered_) {
+        body_hovered_ = true;
+        update();
+    }
+}
+
+void UutItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
+    if (body_hovered_) {
+        body_hovered_ = false;
+        update();
+    }
+}
+
+bool UutItem::isOverChildPort(const QPointF& point) const {
+    for (auto* port : ports_) {
+        if (port->isVisible() && port->shape().contains(port->mapFromParent(point)))
+            return true;
+    }
+    return false;
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  DeviceItem
 // ═══════════════════════════════════════════════════════════════
@@ -246,7 +341,24 @@ DeviceItem::DeviceItem(int deviceIndex, TopologyDocument* doc,
 }
 
 QRectF DeviceItem::boundingRect() const {
-    return QRectF(0, 0, kWidth, contentHeight());
+    qreal m = 6.0;
+    qreal h = contentHeight();
+    return QRectF(-4, -2, kWidth + m, h + m);
+}
+
+QPainterPath DeviceItem::shape() const {
+    QPainterPath p;
+    p.addRoundedRect(0, 0, kWidth, contentHeight(), kCornerRadius, kCornerRadius);
+    return p;
+}
+
+bool DeviceItem::contains(const QPointF& point) const {
+    if (!QGraphicsItem::contains(point)) return false;
+    for (auto* port : device_port_items_) {
+        if (port->isVisible() && port->shape().contains(port->mapFromParent(point)))
+            return false;
+    }
+    return true;
 }
 
 void DeviceItem::paint(QPainter* painter,
@@ -258,9 +370,18 @@ void DeviceItem::paint(QPainter* painter,
     QColor border(230, 145, 56);
     qreal penWidth = 1.5;
 
-    if (option->state & QStyle::State_MouseOver) {
-        fill = fill.darker(115);
-        border = border.darker(120);
+    if (body_hovered_) {
+        bool childHovered = false;
+        for (auto* port : device_port_items_) {
+            if (port->isVisible() && port->isHovered()) {
+                childHovered = true;
+                break;
+            }
+        }
+        if (!childHovered) {
+            fill = fill.darker(115);
+            border = border.darker(120);
+        }
     }
     if (option->state & QStyle::State_Selected) {
         fill = fill.lighter(130);
@@ -268,9 +389,16 @@ void DeviceItem::paint(QPainter* painter,
         penWidth = 2.5;
     }
 
+    // Shadow
+    painter->setBrush(QColor(0, 0, 0, 40));
+    painter->setPen(Qt::NoPen);
+    painter->drawRoundedRect(QRectF(4, 4, kWidth, h), kCornerRadius, kCornerRadius);
+    painter->setBrush(QColor(0, 0, 0, 20));
+    painter->drawRoundedRect(QRectF(2, 2, kWidth, h), kCornerRadius, kCornerRadius);
+
     painter->setBrush(fill);
     painter->setPen(QPen(border, penWidth));
-    painter->drawRoundedRect(QRectF(0, 0, kWidth, h), 6, 6);
+    painter->drawRoundedRect(QRectF(0, 0, kWidth, h), kCornerRadius, kCornerRadius);
 
     const auto* dev = doc_->device(device_index_);
     if (!dev) return;
@@ -328,7 +456,7 @@ void DeviceItem::layoutDevicePorts() {
         } else {
             y = kPortMargin + i * (h - 2 * kPortMargin) / (n - 1);
         }
-        portItem->setPos(kWidth, y);
+        portItem->setPos(kWidth + kPortRadius, y);
     }
 }
 
@@ -348,6 +476,38 @@ QVariant DeviceItem::itemChange(GraphicsItemChange change,
     return QGraphicsItem::itemChange(change, value);
 }
 
+void DeviceItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
+    if (isOverChildPort(event->pos())) return;
+    body_hovered_ = true;
+    update();
+}
+
+void DeviceItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
+    bool overPort = isOverChildPort(event->pos());
+    if (overPort && body_hovered_) {
+        body_hovered_ = false;
+        update();
+    } else if (!overPort && !body_hovered_) {
+        body_hovered_ = true;
+        update();
+    }
+}
+
+void DeviceItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
+    if (body_hovered_) {
+        body_hovered_ = false;
+        update();
+    }
+}
+
+bool DeviceItem::isOverChildPort(const QPointF& point) const {
+    for (auto* port : device_port_items_) {
+        if (port->isVisible() && port->shape().contains(port->mapFromParent(point)))
+            return true;
+    }
+    return false;
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  DevicePortItem
 // ═══════════════════════════════════════════════════════════════
@@ -357,6 +517,7 @@ DevicePortItem::DevicePortItem(int deviceIndex, int portIndex,
     : QGraphicsItem(parent), device_index_(deviceIndex),
       port_index_(portIndex), doc_(doc) {
     setFlag(ItemIsSelectable);
+    setAcceptHoverEvents(true);
     setCursor(Qt::CrossCursor);
 }
 
@@ -368,7 +529,25 @@ QRectF DevicePortItem::boundingRect() const {
 QPainterPath DevicePortItem::shape() const {
     QPainterPath p;
     p.addEllipse(-kRadius, -kRadius, kRadius * 2, kRadius * 2);
+    p.addEllipse(kLineLength - kEndRadius, -kEndRadius,
+                 kEndRadius * 2, kEndRadius * 2);
+    QPainterPath line;
+    line.moveTo(0, 0);
+    line.lineTo(kLineLength, 0);
+    QPainterPathStroker stroker;
+    stroker.setWidth(8.0);
+    p.addPath(stroker.createStroke(line));
     return p;
+}
+
+void DevicePortItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
+    hovered_ = true;
+    update();
+}
+
+void DevicePortItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
+    hovered_ = false;
+    update();
 }
 
 void DevicePortItem::paint(QPainter* painter,
@@ -380,27 +559,38 @@ void DevicePortItem::paint(QPainter* painter,
     const auto& port = dev->ports[port_index_];
 
     QColor color = directionColor(port.direction);
+    qreal penWidth = 1.5;
+    qreal dotRadius = kRadius;
+
+    if (hovered_) {
+        color = color.darker(115);
+        penWidth = 2.0;
+        dotRadius = 7.0;
+    }
     if (option->state & QStyle::State_Selected) {
-        color = color.lighter(130);
+        color = color.lighter(150);
+        penWidth = 2.5;
+        dotRadius = 8.0;
     }
 
     qreal lineEndX = kLineLength;
 
-    painter->setPen(QPen(color.darker(130), 1.5));
+    painter->setPen(QPen(color, penWidth));
     painter->drawLine(QPointF(0, 0), QPointF(lineEndX, 0));
 
     painter->setBrush(color);
-    painter->drawEllipse(QPointF(lineEndX, 0), kEndRadius, kEndRadius);
+    painter->setPen(Qt::NoPen);
+    painter->drawEllipse(QPointF(lineEndX, 0), kEndRadius + 0.5, kEndRadius + 0.5);
 
     painter->setBrush(color);
-    painter->setPen(QPen(color.darker(130), 1.5));
-    painter->drawEllipse(QPointF(0, 0), kRadius, kRadius);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
 
     if (port.direction == TopologyPort::Bidirectional) {
         qreal as = 4.0;
         qreal gap = 3.0;
         qreal ex = lineEndX;
-        painter->setPen(QPen(color.darker(130), 1.5));
+        painter->setPen(QPen(color, penWidth));
         painter->drawLine(QPointF(ex - gap - as, 0), QPointF(ex - gap, -as));
         painter->drawLine(QPointF(ex - gap - as, 0), QPointF(ex - gap, as));
         painter->drawLine(QPointF(ex + gap + as, 0), QPointF(ex + gap, -as));
@@ -474,9 +664,15 @@ QRectF ConnectionItem::boundingRect() const {
 }
 
 QPainterPath ConnectionItem::shape() const {
+    QPainterPath p = path();
+    if (p.isEmpty()) {
+        QPainterPath empty;
+        empty.addEllipse(QPointF(), 1, 1);
+        return empty;
+    }
     QPainterPathStroker stroker;
     stroker.setWidth(12.0);
-    QPainterPath s = stroker.createStroke(path());
+    QPainterPath s = stroker.createStroke(p);
     s.addPath(arrow_path_);
     return s;
 }
