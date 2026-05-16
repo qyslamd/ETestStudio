@@ -69,7 +69,7 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
             port_name_edit_->blockSignals(false);
             port_direction_combo_->blockSignals(true);
             port_direction_combo_->setCurrentIndex(
-                p.direction == TopologyPort::Input ? 0 : 1);
+                static_cast<int>(p.direction));
             port_direction_combo_->blockSignals(false);
             port_allowed_types_edit_->setText(p.allowedDeviceTypes.join(", "));
         }
@@ -211,6 +211,7 @@ void PropertyPanelWidget::buildPortPage() {
     port_direction_combo_ = new QComboBox(w);
     port_direction_combo_->addItem(QStringLiteral("Input"));
     port_direction_combo_->addItem(QStringLiteral("Output"));
+    port_direction_combo_->addItem(QStringLiteral("Bidirectional"));
     connect(port_direction_combo_, &QComboBox::currentTextChanged, this,
             [this](const QString&) { onPortDirectionChanged(); });
     lay->addRow(QStringLiteral("方向"), port_direction_combo_);
@@ -354,9 +355,8 @@ void PropertyPanelWidget::onPortDirectionChanged() {
     auto* prod = doc_->product(editing_port_product_);
     if (prod && editing_port_index_ < prod->ports.size()) {
         prod->ports[editing_port_index_].direction =
-            (port_direction_combo_->currentIndex() == 0)
-                ? TopologyPort::Input
-                : TopologyPort::Output;
+            static_cast<TopologyPort::Direction>(
+                port_direction_combo_->currentIndex());
     }
 }
 

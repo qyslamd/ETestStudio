@@ -7,6 +7,7 @@
 
 #include <QCursor>
 #include <QPainter>
+#include <QPainterPathStroker>
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include <QStyleOptionGraphicsItem>
@@ -134,6 +135,7 @@ UutItem::UutItem(int productIndex, TopologyDocument* doc,
     setFlag(ItemIsMovable);
     setFlag(ItemIsSelectable);
     setFlag(ItemSendsGeometryChanges);
+    setAcceptHoverEvents(true);
     setCursor(Qt::SizeAllCursor);
 
     layoutPorts();
@@ -150,9 +152,21 @@ void UutItem::paint(QPainter* painter,
     painter->setRenderHint(QPainter::Antialiasing);
 
     QColor fill(189, 215, 238);
-    if (option->state & QStyle::State_Selected) fill = fill.lighter(120);
+    QColor border(66, 133, 244);
+    qreal penWidth = 1.5;
+
+    if (option->state & QStyle::State_MouseOver) {
+        fill = fill.darker(115);
+        border = border.darker(120);
+    }
+    if (option->state & QStyle::State_Selected) {
+        fill = fill.lighter(130);
+        border = QColor(20, 80, 200);
+        penWidth = 2.5;
+    }
+
     painter->setBrush(fill);
-    painter->setPen(QPen(QColor(66, 133, 244), 1.5));
+    painter->setPen(QPen(border, penWidth));
     qreal h = contentHeight();
     painter->drawRect(QRectF(0, 0, kWidth, h));
 
@@ -226,6 +240,7 @@ DeviceItem::DeviceItem(int deviceIndex, TopologyDocument* doc,
     setFlag(ItemIsMovable);
     setFlag(ItemIsSelectable);
     setFlag(ItemSendsGeometryChanges);
+    setAcceptHoverEvents(true);
     setCursor(Qt::SizeAllCursor);
     layoutDevicePorts();
 }
@@ -240,9 +255,21 @@ void DeviceItem::paint(QPainter* painter,
 
     qreal h = contentHeight();
     QColor fill(255, 228, 181);
-    if (option->state & QStyle::State_Selected) fill = fill.lighter(120);
+    QColor border(230, 145, 56);
+    qreal penWidth = 1.5;
+
+    if (option->state & QStyle::State_MouseOver) {
+        fill = fill.darker(115);
+        border = border.darker(120);
+    }
+    if (option->state & QStyle::State_Selected) {
+        fill = fill.lighter(130);
+        border = QColor(180, 100, 20);
+        penWidth = 2.5;
+    }
+
     painter->setBrush(fill);
-    painter->setPen(QPen(QColor(230, 145, 56), 1.5));
+    painter->setPen(QPen(border, penWidth));
     painter->drawRoundedRect(QRectF(0, 0, kWidth, h), 6, 6);
 
     const auto* dev = doc_->device(device_index_);
@@ -434,10 +461,25 @@ ConnectionItem::ConnectionItem(PortItem* source, DevicePortItem* target,
     : QGraphicsPathItem(parent), source_(source), target_port_(target),
       device_port_(devicePort), doc_(doc) {
     setFlag(ItemIsSelectable);
+    setAcceptHoverEvents(true);
     setZValue(-1);
 }
 
 ConnectionItem::~ConnectionItem() {}
+
+QRectF ConnectionItem::boundingRect() const {
+    constexpr qreal kArrowMargin = 12.0;
+    return QGraphicsPathItem::boundingRect().adjusted(
+        -kArrowMargin, -kArrowMargin, kArrowMargin, kArrowMargin);
+}
+
+QPainterPath ConnectionItem::shape() const {
+    QPainterPathStroker stroker;
+    stroker.setWidth(12.0);
+    QPainterPath s = stroker.createStroke(path());
+    s.addPath(arrow_path_);
+    return s;
+}
 
 void ConnectionItem::updatePath() {
     if (!source_ || !target_port_) return;
@@ -500,17 +542,41 @@ void ConnectionItem::updatePath() {
 void ConnectionItem::paint(QPainter* painter,
                            const QStyleOptionGraphicsItem* option,
                            QWidget* widget) {
-    QGraphicsPathItem::paint(painter, option, widget);
+    Q_UNUSED(widget);
+    painter->setRenderHint(QPainter::Antialiasing);
+
+    QColor lineColor(80, 80, 80);
+    qreal penWidth = 1.5;
+
+    if (option->state & QStyle::State_MouseOver) {
+        lineColor = QColor(41, 98, 255);
+        penWidth = 2.0;
+    }
+    if (option->state & QStyle::State_Selected) {
+        lineColor = QColor(220, 80, 0);
+        penWidth = 2.5;
+    }
+
+    painter->setPen(QPen(lineColor, penWidth));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawPath(path());
+
     if (arrow_path_.isEmpty()) return;
     const auto* prod = doc_->product(source_->productIndex());
     if (!prod || source_->portIndex() >= prod->ports.size()) return;
     auto dir = prod->ports[source_->portIndex()].direction;
+
+    QColor arrowColor = directionColor(dir);
+    if (option->state & (QStyle::State_MouseOver | QStyle::State_Selected)) {
+        arrowColor = lineColor;
+    }
+
     if (dir == TopologyPort::Bidirectional) {
-        painter->setPen(QPen(directionColor(dir), 1.5));
+        painter->setPen(QPen(arrowColor, penWidth));
         painter->setBrush(Qt::NoBrush);
     } else {
         painter->setPen(Qt::NoPen);
-        painter->setBrush(directionColor(dir));
+        painter->setBrush(arrowColor);
     }
     painter->drawPath(arrow_path_);
 }

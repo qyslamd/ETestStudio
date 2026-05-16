@@ -17,6 +17,7 @@
 #include <QFile>
 #include <QApplication>
 #include <QStatusBar>
+#include <QShortcut>
 
 namespace topology {
 
@@ -122,6 +123,15 @@ void TopologyEditorWidget::initSignals() {
     // Document change → refresh scene
     connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
             &TopologyEditorWidget::onDocumentChanged);
+
+    // Delete key → delete selected item
+    auto* delShortcut = new QShortcut(QKeySequence::Delete, this);
+    connect(delShortcut, &QShortcut::activated, this, [this]() {
+        auto selected = scene_->selectedItems();
+        if (!selected.isEmpty()) {
+            onDeleteItem(selected.first());
+        }
+    });
 }
 
 void TopologyEditorWidget::buildDefaultDocument() {
@@ -231,10 +241,26 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
     bool removed = false;
 
     if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
+        const auto* prod = doc_->product(uut->productIndex());
+        if (prod) {
+            for (int i = doc_->connectionCount() - 1; i >= 0; --i) {
+                if (doc_->connection(i)->productName == prod->name) {
+                    doc_->removeConnection(i);
+                }
+            }
+        }
         doc_->removeProduct(uut->productIndex());
         removed = true;
         statusBar()->showMessage(QStringLiteral("已删除 UUT"), 3000);
     } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
+        const auto* d = doc_->device(dev->deviceIndex());
+        if (d) {
+            for (int i = doc_->connectionCount() - 1; i >= 0; --i) {
+                if (doc_->connection(i)->deviceName == d->name) {
+                    doc_->removeConnection(i);
+                }
+            }
+        }
         doc_->removeDevice(dev->deviceIndex());
         removed = true;
         statusBar()->showMessage(QStringLiteral("已删除设备"), 3000);

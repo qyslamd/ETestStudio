@@ -44,6 +44,7 @@ public:
     DevicePortItem* devicePortItemAt(QPointF scenePos) const;
     PortItem* portItemAt(QPointF scenePos) const;
     UutItem* uutItemAt(QPointF scenePos) const;
+    ConnectionItem* connectionItemAt(QPointF scenePos) const;
 
 signals:
     void itemSelected(QGraphicsItem* item);

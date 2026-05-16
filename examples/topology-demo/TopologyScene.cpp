@@ -221,6 +221,17 @@ PortItem* TopologyScene::portItemAt(QPointF scenePos) const {
     return nullptr;
 }
 
+ConnectionItem* TopologyScene::connectionItemAt(QPointF scenePos) const {
+    auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+                             Qt::DescendingOrder);
+    for (auto* item : items) {
+        if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
+            return conn;
+        }
+    }
+    return nullptr;
+}
+
 UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
     auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
                              Qt::DescendingOrder);

@@ -28,12 +28,21 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
 }
 
 void TopologyView::zoomIn() {
-    zoomReset();
-    // will be handled by wheel
+    qreal factor = 1.15;
+    qreal newZoom = current_zoom_ * factor;
+    if (newZoom >= 0.1 && newZoom <= 10.0) {
+        current_zoom_ = newZoom;
+        scale(factor, factor);
+    }
 }
 
 void TopologyView::zoomOut() {
-    // will be handled by wheel
+    qreal factor = 1.0 / 1.15;
+    qreal newZoom = current_zoom_ * factor;
+    if (newZoom >= 0.1 && newZoom <= 10.0) {
+        current_zoom_ = newZoom;
+        scale(factor, factor);
+    }
 }
 
 void TopologyView::zoomReset() {
@@ -100,6 +109,7 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     auto* devPort = s->devicePortItemAt(scenePos);
     auto* uut = s->uutItemAt(scenePos);
     auto* dev = s->deviceItemAt(scenePos);
+    auto* conn = s->connectionItemAt(scenePos);
 
     if (devPort) {
         auto* delAct = menu.addAction(QStringLiteral("删除端口"));
@@ -119,6 +129,11 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
         auto* saveAct = menu.addAction(QStringLiteral("另存为模板..."));
         connect(saveAct, &QAction::triggered, this, [this, dev]() {
             emit saveTemplateRequested(dev);
+        });
+    } else if (conn) {
+        auto* delAct = menu.addAction(QStringLiteral("删除连线"));
+        connect(delAct, &QAction::triggered, this, [this, conn]() {
+            emit deleteItemRequested(conn);
         });
     } else {
         auto* addUutAct = menu.addAction(QStringLiteral("添加 UUT"));

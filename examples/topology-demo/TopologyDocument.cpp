@@ -41,8 +41,9 @@ QString directionToString(TopologyPort::Direction d) {
 }
 
 TopologyPort::Direction stringToDirection(const QString& s) {
-    if (s == QStringLiteral("Input")) return TopologyPort::Input;
-    if (s == QStringLiteral("Bidirectional")) return TopologyPort::Bidirectional;
+    QString lower = s.toLower();
+    if (lower == QStringLiteral("input")) return TopologyPort::Input;
+    if (lower == QStringLiteral("bidirectional")) return TopologyPort::Bidirectional;
     return TopologyPort::Output;
 }
 
