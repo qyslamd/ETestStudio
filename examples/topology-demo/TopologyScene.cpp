@@ -25,6 +25,10 @@ void TopologyScene::loadFromDocument() {
     for (int i = 0; i < doc_->connectionCount(); ++i) {
         addConnectionItem(i);
     }
+
+    auto* legend = new LegendItem();
+    legend->setPos(10, 10);
+    addItem(legend);
 }
 
 void TopologyScene::syncPositionsToDocument() {
@@ -93,7 +97,7 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
 
     if (!sourcePort || !targetPort) return nullptr;
 
-    auto* item = new ConnectionItem(sourcePort, targetPort, conn->devicePort);
+    auto* item = new ConnectionItem(sourcePort, targetPort, conn->devicePort, doc_);
     addItem(item);
     item->updatePath();
     connection_items_.append(item);

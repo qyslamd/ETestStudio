@@ -31,6 +31,21 @@ FunctionType stringToFunctionType(const QString& s) {
     return FunctionType::CUSTOM;
 }
 
+QString directionToString(TopologyPort::Direction d) {
+    switch (d) {
+        case TopologyPort::Input: return QStringLiteral("Input");
+        case TopologyPort::Output: return QStringLiteral("Output");
+        case TopologyPort::Bidirectional: return QStringLiteral("Bidirectional");
+    }
+    return QStringLiteral("Output");
+}
+
+TopologyPort::Direction stringToDirection(const QString& s) {
+    if (s == QStringLiteral("Input")) return TopologyPort::Input;
+    if (s == QStringLiteral("Bidirectional")) return TopologyPort::Bidirectional;
+    return TopologyPort::Output;
+}
+
 TopologyDocument::TopologyDocument(QObject* parent)
     : QObject(parent) {}
 

@@ -45,9 +45,11 @@ private:
     void onAddDevicePortRow();
     void onRemoveDevicePortRow();
     void onDevicePortFunctionTypeChanged(int row);
+    void onDevicePortDirectionChanged(int row);
 
     void onDevicePortNameChanged();
     void onDevicePortFunctionTypeChanged();
+    void onDevicePortDirectionChanged();
 
     void applyDeviceProperties(int deviceIndex);
     void applyDevicePorts(int deviceIndex);
@@ -87,6 +89,7 @@ private:
 
     // DevicePort page widgets
     QLineEdit* devport_name_edit_ = nullptr;
+    QComboBox* devport_direction_combo_ = nullptr;
     QComboBox* devport_function_combo_ = nullptr;
     int editing_device_port_device_ = -1;
     int editing_device_port_index_ = -1;

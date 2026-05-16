@@ -1,3 +1,6 @@
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "topology_items.h"
 #include "TopologyDocument.h"
 #include "TopologyScene.h"
@@ -37,6 +40,15 @@ QPainterPath PortItem::shape() const {
     return p;
 }
 
+static QColor directionColor(TopologyPort::Direction d) {
+    switch (d) {
+        case TopologyPort::Input: return QColor(66, 133, 244);
+        case TopologyPort::Output: return QColor(52, 168, 83);
+        case TopologyPort::Bidirectional: return QColor(255, 0, 255);
+    }
+    return QColor(128, 128, 128);
+}
+
 void PortItem::paint(QPainter* painter,
                      const QStyleOptionGraphicsItem* option, QWidget*) {
     painter->setRenderHint(QPainter::Antialiasing);
@@ -45,17 +57,12 @@ void PortItem::paint(QPainter* painter,
     if (!prod || port_index_ >= prod->ports.size()) return;
     const auto& port = prod->ports[port_index_];
 
-    QColor color = (port.direction == TopologyPort::Input)
-                       ? QColor(66, 133, 244)
-                       : QColor(52, 168, 83);
-
+    QColor color = directionColor(port.direction);
     if (option->state & QStyle::State_Selected) {
         color = color.lighter(130);
     }
 
-    bool isInput = (port.direction == TopologyPort::Input);
-    int sign = isInput ? -1 : 1;
-    qreal lineEndX = sign * kLineLength;
+    qreal lineEndX = -kLineLength;
 
     painter->setPen(QPen(color.darker(130), 1.5));
     painter->drawLine(QPointF(0, 0), QPointF(lineEndX, 0));
@@ -66,6 +73,16 @@ void PortItem::paint(QPainter* painter,
     painter->setBrush(color);
     painter->setPen(QPen(color.darker(130), 1.5));
     painter->drawEllipse(QPointF(0, 0), kRadius, kRadius);
+
+    if (port.direction == TopologyPort::Bidirectional) {
+        qreal as = 4.0;
+        qreal ex = lineEndX;
+        painter->setPen(QPen(color.darker(130), 1.5));
+        painter->drawLine(QPointF(ex, 0), QPointF(ex + as, -as));
+        painter->drawLine(QPointF(ex, 0), QPointF(ex + as, as));
+        painter->drawLine(QPointF(ex, 0), QPointF(ex - as, -as));
+        painter->drawLine(QPointF(ex, 0), QPointF(ex - as, as));
+    }
 
     painter->setPen(Qt::black);
     QFont f = painter->font();
@@ -79,12 +96,7 @@ void PortItem::paint(QPainter* painter,
 }
 
 QPointF PortItem::sceneCenter() const {
-    const auto* prod = doc_->product(product_index_);
-    if (!prod || port_index_ >= prod->ports.size())
-        return mapToScene(QPointF(0, 0));
-    bool isInput = (prod->ports[port_index_].direction == TopologyPort::Input);
-    int sign = isInput ? -1 : 1;
-    return mapToScene(QPointF(sign * kLineLength, 0));
+    return mapToScene(QPointF(-kLineLength, 0));
 }
 
 void PortItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
@@ -157,41 +169,20 @@ void UutItem::layoutPorts() {
     const auto* prod = doc_->product(product_index_);
     if (!prod) return;
 
-    int inputCount = 0, outputCount = 0;
-    for (const auto& p : prod->ports) {
-        if (p.direction == TopologyPort::Input)
-            ++inputCount;
-        else
-            ++outputCount;
-    }
-
-    int inputIdx = 0, outputIdx = 0;
+    int n = prod->ports.size();
     qreal topMargin = 10.0;
     qreal bottomMargin = 10.0;
-
-    for (int i = 0; i < prod->ports.size(); ++i) {
+    for (int i = 0; i < n; ++i) {
         auto* portItem = new PortItem(product_index_, i, doc_, this);
         ports_.append(portItem);
 
-        const auto& p = prod->ports[i];
         qreal y;
-        bool isInput = (p.direction == TopologyPort::Input);
-        int count = isInput ? inputCount : outputCount;
-        int& idx = isInput ? inputIdx : outputIdx;
-
-        if (count <= 1) {
+        if (n <= 1) {
             y = kHeight / 2.0;
         } else {
-            qreal spacing = (kHeight - topMargin - bottomMargin) / (count - 1);
-            y = topMargin + idx * spacing;
+            y = topMargin + i * (kHeight - topMargin - bottomMargin) / (n - 1);
         }
-
-        if (isInput) {
-            portItem->setPos(0, y);
-        } else {
-            portItem->setPos(kWidth, y);
-        }
-        ++idx;
+        portItem->setPos(0, y);
     }
 }
 
@@ -351,7 +342,7 @@ void DevicePortItem::paint(QPainter* painter,
     if (!dev || port_index_ >= dev->ports.size()) return;
     const auto& port = dev->ports[port_index_];
 
-    QColor color(180, 180, 180);
+    QColor color = directionColor(port.direction);
     if (option->state & QStyle::State_Selected) {
         color = color.lighter(130);
     }
@@ -367,6 +358,16 @@ void DevicePortItem::paint(QPainter* painter,
     painter->setBrush(color);
     painter->setPen(QPen(color.darker(130), 1.5));
     painter->drawEllipse(QPointF(0, 0), kRadius, kRadius);
+
+    if (port.direction == TopologyPort::Bidirectional) {
+        qreal as = 4.0;
+        qreal ex = lineEndX;
+        painter->setPen(QPen(color.darker(130), 1.5));
+        painter->drawLine(QPointF(ex, 0), QPointF(ex + as, -as));
+        painter->drawLine(QPointF(ex, 0), QPointF(ex + as, as));
+        painter->drawLine(QPointF(ex, 0), QPointF(ex - as, -as));
+        painter->drawLine(QPointF(ex, 0), QPointF(ex - as, as));
+    }
 
     painter->setPen(Qt::black);
     QFont f = painter->font();
@@ -416,9 +417,10 @@ QPointF DevicePortItem::sceneCenter() const {
 
 ConnectionItem::ConnectionItem(PortItem* source, DevicePortItem* target,
                                const QString& devicePort,
+                               TopologyDocument* doc,
                                QGraphicsItem* parent)
     : QGraphicsPathItem(parent), source_(source), target_port_(target),
-      device_port_(devicePort) {
+      device_port_(devicePort), doc_(doc) {
     setFlag(ItemIsSelectable);
     setZValue(-1);
 }
@@ -446,10 +448,106 @@ void ConnectionItem::updatePath() {
     }
     p.cubicTo(cp1, cp2, end);
     setPath(p);
+
+    // Compute direction arrow at midpoint
+    qreal t = 0.5;
+    QPointF mid = p.pointAtPercent(t);
+    QPointF tang = p.pointAtPercent(t + 0.01) - p.pointAtPercent(t - 0.01);
+    qreal angle = atan2(tang.y(), tang.x());
+
+    const auto* prod = doc_->product(source_->productIndex());
+    arrow_path_ = QPainterPath();
+    if (!prod || source_->portIndex() >= prod->ports.size()) return;
+    auto dir = prod->ports[source_->portIndex()].direction;
+
+    qreal as = 8.0;
+    if (dir == TopologyPort::Bidirectional) {
+        arrow_path_.moveTo(mid + QPointF(cos(angle) * as, sin(angle) * as));
+        arrow_path_.lineTo(mid + QPointF(cos(angle + 2.5) * as, sin(angle + 2.5) * as));
+        arrow_path_.lineTo(mid + QPointF(cos(angle - 2.5) * as, sin(angle - 2.5) * as));
+        arrow_path_.closeSubpath();
+        qreal ra = angle + M_PI;
+        arrow_path_.moveTo(mid + QPointF(cos(ra) * as, sin(ra) * as));
+        arrow_path_.lineTo(mid + QPointF(cos(ra + 2.5) * as, sin(ra + 2.5) * as));
+        arrow_path_.lineTo(mid + QPointF(cos(ra - 2.5) * as, sin(ra - 2.5) * as));
+        arrow_path_.closeSubpath();
+    } else {
+        bool forward = (dir == TopologyPort::Input);
+        qreal a = forward ? angle : angle + M_PI;
+        arrow_path_.moveTo(mid + QPointF(cos(a) * as, sin(a) * as));
+        arrow_path_.lineTo(mid + QPointF(cos(a + 2.5) * as, sin(a + 2.5) * as));
+        arrow_path_.lineTo(mid + QPointF(cos(a - 2.5) * as, sin(a - 2.5) * as));
+        arrow_path_.closeSubpath();
+    }
+}
+
+void ConnectionItem::paint(QPainter* painter,
+                           const QStyleOptionGraphicsItem* option,
+                           QWidget* widget) {
+    QGraphicsPathItem::paint(painter, option, widget);
+    if (arrow_path_.isEmpty()) return;
+    const auto* prod = doc_->product(source_->productIndex());
+    if (!prod || source_->portIndex() >= prod->ports.size()) return;
+    auto dir = prod->ports[source_->portIndex()].direction;
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(directionColor(dir));
+    painter->drawPath(arrow_path_);
 }
 
 DeviceItem* ConnectionItem::targetDevice() const {
     return target_port_ ? target_port_->parentDeviceItem() : nullptr;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LegendItem
+// ═══════════════════════════════════════════════════════════════
+
+LegendItem::LegendItem(QGraphicsItem* parent)
+    : QGraphicsItem(parent) {
+    setFlag(ItemIsSelectable, false);
+    setZValue(100);
+}
+
+QRectF LegendItem::boundingRect() const {
+    return QRectF(0, 0, 100, 70);
+}
+
+void LegendItem::paint(QPainter* painter,
+                       const QStyleOptionGraphicsItem*, QWidget*) {
+    painter->setRenderHint(QPainter::Antialiasing);
+
+    // Background
+    painter->setBrush(QColor(255, 255, 255, 200));
+    painter->setPen(QPen(Qt::gray, 0.5));
+    painter->drawRoundedRect(boundingRect().adjusted(1, 1, -1, -1), 4, 4);
+
+    QFont f = painter->font();
+    f.setPointSize(8);
+    f.setBold(true);
+    painter->setFont(f);
+    painter->setPen(Qt::black);
+    painter->drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft, QStringLiteral("图例"));
+
+    f.setBold(false);
+    f.setPointSize(7);
+    painter->setFont(f);
+
+    struct Entry { QColor color; QString label; };
+    Entry entries[] = {
+        {QColor(66, 133, 244), QStringLiteral("输入")},
+        {QColor(52, 168, 83),  QStringLiteral("输出")},
+        {QColor(255, 0, 255),  QStringLiteral("双向")},
+    };
+
+    for (int i = 0; i < 3; ++i) {
+        qreal y = 24 + i * 16;
+        painter->setBrush(entries[i].color);
+        painter->setPen(Qt::NoPen);
+        painter->drawEllipse(QPointF(14, y + 4), 4, 4);
+        painter->setPen(Qt::black);
+        painter->drawText(QRectF(24, y, 70, 14), Qt::AlignLeft,
+                          entries[i].label);
+    }
 }
 
 }  // namespace topology

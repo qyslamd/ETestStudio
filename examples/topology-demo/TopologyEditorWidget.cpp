@@ -159,8 +159,10 @@ void TopologyEditorWidget::buildDefaultDocument() {
     dev1.position = QPointF(50, 80);
     dev1.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("2")}};
-    dev1.ports.append({QStringLiteral("ch0"), FunctionType::A429});
-    dev1.ports.append({QStringLiteral("ch1"), FunctionType::A429});
+    dev1.ports.append(
+        {QStringLiteral("ch0"), TopologyPort::Bidirectional, FunctionType::A429});
+    dev1.ports.append(
+        {QStringLiteral("ch1"), TopologyPort::Bidirectional, FunctionType::A429});
     doc_->addDevice(dev1);
 
     // Device 2
@@ -170,8 +172,10 @@ void TopologyEditorWidget::buildDefaultDocument() {
     dev2.position = QPointF(50, 200);
     dev2.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("3")}};
-    dev2.ports.append({QStringLiteral("ch0"), FunctionType::A429});
-    dev2.ports.append({QStringLiteral("ch1"), FunctionType::A429});
+    dev2.ports.append(
+        {QStringLiteral("ch0"), TopologyPort::Bidirectional, FunctionType::A429});
+    dev2.ports.append(
+        {QStringLiteral("ch1"), TopologyPort::Bidirectional, FunctionType::A429});
     doc_->addDevice(dev2);
 
     // Device 3
@@ -181,7 +185,8 @@ void TopologyEditorWidget::buildDefaultDocument() {
     dev3.position = QPointF(50, 350);
     dev3.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("5")}};
-    dev3.ports.append({QStringLiteral("ch0"), FunctionType::DISCRETE});
+    dev3.ports.append(
+        {QStringLiteral("ch0"), TopologyPort::Bidirectional, FunctionType::DISCRETE});
     doc_->addDevice(dev3);
 
     scene_->loadFromDocument();

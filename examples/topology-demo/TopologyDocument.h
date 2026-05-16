@@ -27,13 +27,17 @@ FunctionType stringToFunctionType(const QString& s);
 
 struct TopologyPort {
     QString name;
-    enum Direction { Input, Output } direction = Input;
+    enum Direction { Input, Output, Bidirectional } direction = Input;
     QStringList allowedDeviceTypes;
     int positionHint = -1;
 };
 
+QString directionToString(TopologyPort::Direction d);
+TopologyPort::Direction stringToDirection(const QString& s);
+
 struct TopologyDevicePort {
     QString name;
+    TopologyPort::Direction direction = TopologyPort::Output;
     FunctionType functionType = FunctionType::CUSTOM;
     int positionHint = -1;
 };

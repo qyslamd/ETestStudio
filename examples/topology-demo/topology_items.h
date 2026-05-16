@@ -158,11 +158,14 @@ public:
     int type() const override { return Type; }
 
     ConnectionItem(PortItem* source, DevicePortItem* target,
-                   const QString& devicePort,
+                   const QString& devicePort, TopologyDocument* doc,
                    QGraphicsItem* parent = nullptr);
     ~ConnectionItem() override;
 
     void updatePath();
+
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+               QWidget* widget) override;
 
     PortItem* sourcePort() const { return source_; }
     DevicePortItem* targetDevicePort() const { return target_port_; }
@@ -173,6 +176,18 @@ private:
     PortItem* source_;
     DevicePortItem* target_port_;
     QString device_port_;
+    TopologyDocument* doc_;
+    QPainterPath arrow_path_;
+};
+
+// ── LegendItem ── color legend overlay ───────────────────────────
+
+class LegendItem : public QGraphicsItem {
+public:
+    LegendItem(QGraphicsItem* parent = nullptr);
+    QRectF boundingRect() const override;
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+               QWidget* widget) override;
 };
 
 }  // namespace topology

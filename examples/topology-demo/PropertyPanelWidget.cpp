@@ -99,15 +99,25 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
             for (int r = 0; r < d->ports.size(); ++r) {
                 device_port_table_->setItem(r, 0,
                     new QTableWidgetItem(d->ports[r].name));
-                auto* combo = new QComboBox();
+                auto* dirCombo = new QComboBox();
+                dirCombo->addItem(QStringLiteral("Input"));
+                dirCombo->addItem(QStringLiteral("Output"));
+                dirCombo->addItem(QStringLiteral("Bidirectional"));
+                dirCombo->setCurrentIndex(
+                    static_cast<int>(d->ports[r].direction));
+                connect(dirCombo, &QComboBox::currentTextChanged, this,
+                        [this, r](const QString&) { onDevicePortDirectionChanged(r); });
+                device_port_table_->setCellWidget(r, 1, dirCombo);
+                auto* funcCombo = new QComboBox();
                 for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
-                    combo->addItem(functionTypeToString(static_cast<FunctionType>(ft)));
+                    funcCombo->addItem(
+                        functionTypeToString(static_cast<FunctionType>(ft)));
                 }
-                combo->setCurrentIndex(
+                funcCombo->setCurrentIndex(
                     static_cast<int>(d->ports[r].functionType));
-                connect(combo, &QComboBox::currentTextChanged, this,
+                connect(funcCombo, &QComboBox::currentTextChanged, this,
                         [this, r](const QString&) { onDevicePortFunctionTypeChanged(r); });
-                device_port_table_->setCellWidget(r, 1, combo);
+                device_port_table_->setCellWidget(r, 2, funcCombo);
             }
         }
         stack_->setCurrentIndex(PageDevice);
@@ -123,6 +133,10 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
             devport_name_edit_->blockSignals(true);
             devport_name_edit_->setText(dp.name);
             devport_name_edit_->blockSignals(false);
+            devport_direction_combo_->blockSignals(true);
+            devport_direction_combo_->setCurrentIndex(
+                static_cast<int>(dp.direction));
+            devport_direction_combo_->blockSignals(false);
             devport_function_combo_->blockSignals(true);
             devport_function_combo_->setCurrentIndex(
                 static_cast<int>(dp.functionType));
@@ -252,9 +266,9 @@ void PropertyPanelWidget::buildDevicePage() {
     auto* portGroup = new QGroupBox(QStringLiteral("设备端口"), w);
     auto* portLay = new QVBoxLayout(portGroup);
 
-    device_port_table_ = new QTableWidget(0, 2, w);
+    device_port_table_ = new QTableWidget(0, 3, w);
     device_port_table_->setHorizontalHeaderLabels(
-        {QStringLiteral("名称"), QStringLiteral("功能类型")});
+        {QStringLiteral("名称"), QStringLiteral("方向"), QStringLiteral("功能类型")});
     device_port_table_->horizontalHeader()->setStretchLastSection(true);
     device_port_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
     portLay->addWidget(device_port_table_);
@@ -299,6 +313,14 @@ void PropertyPanelWidget::buildDevicePortPage() {
     connect(devport_name_edit_, &QLineEdit::editingFinished, this,
             &PropertyPanelWidget::onDevicePortNameChanged);
     lay->addRow(QStringLiteral("端口名称"), devport_name_edit_);
+
+    devport_direction_combo_ = new QComboBox(w);
+    devport_direction_combo_->addItem(QStringLiteral("Input"));
+    devport_direction_combo_->addItem(QStringLiteral("Output"));
+    devport_direction_combo_->addItem(QStringLiteral("Bidirectional"));
+    connect(devport_direction_combo_, &QComboBox::currentTextChanged, this,
+            [this](const QString&) { onDevicePortDirectionChanged(); });
+    lay->addRow(QStringLiteral("方向"), devport_direction_combo_);
 
     devport_function_combo_ = new QComboBox(w);
     for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
@@ -388,12 +410,16 @@ void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
     for (int r = 0; r < device_port_table_->rowCount(); ++r) {
         auto* nameItem = device_port_table_->item(r, 0);
         if (!nameItem || nameItem->text().isEmpty()) continue;
-        auto* combo = qobject_cast<QComboBox*>(
+        auto* dirCombo = qobject_cast<QComboBox*>(
             device_port_table_->cellWidget(r, 1));
+        auto* funcCombo = qobject_cast<QComboBox*>(
+            device_port_table_->cellWidget(r, 2));
         TopologyDevicePort dp;
         dp.name = nameItem->text();
+        dp.direction = static_cast<TopologyPort::Direction>(
+            dirCombo ? dirCombo->currentIndex() : 1);
         dp.functionType = static_cast<FunctionType>(
-            combo ? combo->currentIndex() : 0);
+            funcCombo ? funcCombo->currentIndex() : 0);
         dev->ports.append(dp);
     }
 }
@@ -404,13 +430,21 @@ void PropertyPanelWidget::onAddDevicePortRow() {
     int row = device_port_table_->rowCount();
     device_port_table_->insertRow(row);
     device_port_table_->setItem(row, 0, new QTableWidgetItem(QString()));
-    auto* combo = new QComboBox();
+    auto* dirCombo = new QComboBox();
+    dirCombo->addItem(QStringLiteral("Input"));
+    dirCombo->addItem(QStringLiteral("Output"));
+    dirCombo->addItem(QStringLiteral("Bidirectional"));
+    connect(dirCombo, &QComboBox::currentTextChanged, this,
+            [this, row](const QString&) { onDevicePortDirectionChanged(row); });
+    device_port_table_->setCellWidget(row, 1, dirCombo);
+    auto* funcCombo = new QComboBox();
     for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
-        combo->addItem(functionTypeToString(static_cast<FunctionType>(ft)));
+        funcCombo->addItem(
+            functionTypeToString(static_cast<FunctionType>(ft)));
     }
-    connect(combo, &QComboBox::currentTextChanged, this,
+    connect(funcCombo, &QComboBox::currentTextChanged, this,
             [this, row](const QString&) { onDevicePortFunctionTypeChanged(row); });
-    device_port_table_->setCellWidget(row, 1, combo);
+    device_port_table_->setCellWidget(row, 2, funcCombo);
 }
 
 void PropertyPanelWidget::onRemoveDevicePortRow() {
@@ -421,6 +455,12 @@ void PropertyPanelWidget::onRemoveDevicePortRow() {
 }
 
 void PropertyPanelWidget::onDevicePortFunctionTypeChanged(int row) {
+    if (editing_device_index_ < 0) return;
+    Q_UNUSED(row);
+    emit documentChanged();
+}
+
+void PropertyPanelWidget::onDevicePortDirectionChanged(int row) {
     if (editing_device_index_ < 0) return;
     Q_UNUSED(row);
     emit documentChanged();
@@ -438,6 +478,15 @@ void PropertyPanelWidget::onDevicePortFunctionTypeChanged() {
     if (dev && editing_device_port_index_ < dev->ports.size()) {
         dev->ports[editing_device_port_index_].functionType =
             static_cast<FunctionType>(devport_function_combo_->currentIndex());
+    }
+}
+
+void PropertyPanelWidget::onDevicePortDirectionChanged() {
+    auto* dev = doc_->device(editing_device_port_device_);
+    if (dev && editing_device_port_index_ < dev->ports.size()) {
+        dev->ports[editing_device_port_index_].direction =
+            static_cast<TopologyPort::Direction>(
+                devport_direction_combo_->currentIndex());
     }
 }
 

@@ -64,6 +64,7 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
         for (const auto& dp : d->ports) {
             QJsonObject dpObj;
             dpObj["name"] = dp.name;
+            dpObj["direction"] = directionToString(dp.direction);
             dpObj["functionType"] = functionTypeToString(dp.functionType);
             dpObj["positionHint"] = dp.positionHint;
             portsArr.append(dpObj);
@@ -147,6 +148,8 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
             QJsonObject portObj = portVal.toObject();
             TopologyDevicePort dp;
             dp.name = portObj["name"].toString();
+            dp.direction = stringToDirection(
+                portObj["direction"].toString(QStringLiteral("output")));
             dp.functionType = stringToFunctionType(
                 portObj["functionType"].toString());
             dp.positionHint = portObj["positionHint"].toInt(-1);
