@@ -77,7 +77,7 @@ private:
 
     static constexpr qreal kWidth = 140.0;
     static constexpr qreal kHeight = 60.0;
-    static constexpr qreal kPortLabelOffset = 16.0;
+
 };
 
 // ── DevicePortItem ── connection point on device left edge ───────

@@ -122,9 +122,7 @@ UutItem::UutItem(int productIndex, TopologyDocument* doc,
 
 QRectF UutItem::boundingRect() const {
     qreal m = 2.0;
-    return QRectF(-kPortLabelOffset - 80 - m, -m,
-                  kWidth + kPortLabelOffset * 2 + 80 + m * 2,
-                  kHeight + m * 2);
+    return QRectF(-m, -m, kWidth + m * 2, kHeight + m * 2);
 }
 
 void UutItem::paint(QPainter* painter,
@@ -297,7 +295,7 @@ void DeviceItem::layoutDevicePorts() {
         } else {
             y = kPortMargin + i * (h - 2 * kPortMargin) / (n - 1);
         }
-        portItem->setPos(0, y);
+        portItem->setPos(kWidth, y);
     }
 }
 
@@ -330,7 +328,7 @@ DevicePortItem::DevicePortItem(int deviceIndex, int portIndex,
 }
 
 QRectF DevicePortItem::boundingRect() const {
-    return QRectF(-kLineLength - kEndRadius - 80, -16,
+    return QRectF(-kRadius - 4, -16,
                   kLineLength + kEndRadius + kRadius + 80 + 4, 30);
 }
 
@@ -353,7 +351,7 @@ void DevicePortItem::paint(QPainter* painter,
         color = color.lighter(130);
     }
 
-    qreal lineEndX = -kLineLength;
+    qreal lineEndX = kLineLength;
 
     painter->setPen(QPen(color.darker(130), 1.5));
     painter->drawLine(QPointF(0, 0), QPointF(lineEndX, 0));
