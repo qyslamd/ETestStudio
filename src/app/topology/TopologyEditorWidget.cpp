@@ -38,9 +38,6 @@ TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QWidget(parent) {
 TopologyEditorWidget::~TopologyEditorWidget() {}
 
 void TopologyEditorWidget::initUi() {
-  setWindowTitle(QStringLiteral("拓扑编辑器 - topology-demo"));
-  resize(1200, 800);
-
   auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
@@ -360,7 +357,7 @@ void TopologyEditorWidget::onNewFile() {
   doc_->clear();
   scene_->loadFromDocument();
   current_file_.clear();
-  setWindowTitle(QStringLiteral("拓扑编辑器 - [未命名]"));
+  emit editorTitleChanged(QStringLiteral("拓扑编辑器 - [未命名]"));
   status_label_->setText(QStringLiteral("新建文件"));
 }
 
@@ -395,7 +392,7 @@ void TopologyEditorWidget::onOpenFile() {
 
   scene_->loadFromDocument();
   current_file_ = path;
-  setWindowTitle(QStringLiteral("拓扑编辑器 - %1").arg(path));
+  emit editorTitleChanged(QStringLiteral("拓扑编辑器 - %1").arg(path));
   status_label_->setText(QStringLiteral("已打开: %1").arg(path));
 }
 
@@ -435,7 +432,7 @@ void TopologyEditorWidget::onSaveAsFile() {
 
   current_file_ = path;
   onSaveFile();
-  setWindowTitle(QStringLiteral("拓扑编辑器 - %1").arg(path));
+  emit editorTitleChanged(QStringLiteral("拓扑编辑器 - %1").arg(path));
 }
 
 void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {

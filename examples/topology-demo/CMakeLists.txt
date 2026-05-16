@@ -2,25 +2,10 @@ set(TARGET_NAME "topology-demo")
 
 add_executable(${TARGET_NAME}
     main.cpp
-    TopologyDocument.h
-    TopologyDocument.cpp
-    TopologyJsonSerializer.h
-    TopologyJsonSerializer.cpp
-    topology_items.h
-    topology_items.cpp
-    TopologyScene.h
-    TopologyScene.cpp
-    TopologyView.h
-    TopologyView.cpp
-    TopologyEditorWidget.h
-    TopologyEditorWidget.cpp
-    PropertyPanelWidget.h
-    PropertyPanelWidget.cpp
-    DeviceTemplateManager.h
-    DeviceTemplateManager.cpp
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
+    etest_topology
     Qt5::Widgets
     Qt5::Core
     Qt5::Gui

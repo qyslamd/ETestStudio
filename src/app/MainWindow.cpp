@@ -37,6 +37,7 @@
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
 #include "WelcomeWidget.h"
+#include "topology/TopologyEditorWidget.h"
 
 #include <DockAreaTitleBar.h>
 #include <DockAreaWidget.h>
@@ -534,6 +535,32 @@ void MainWindow::initSignals() {
     connect(qtSink, &QtConsoleSink::logMessage, output_panel_,
             &OutputPanel::appendLog);
   }
+
+  // 拓扑编辑器
+  connect(sidebar_, &SidebarWidget::openTopologyEditorRequested, this, [this]() {
+    if (!topology_dock_) {
+      auto* editor = new etest::topology::TopologyEditorWidget();
+      topology_dock_ = new ads::CDockWidget(QStringLiteral("硬件拓扑"));
+      topology_dock_->setWidget(editor);
+      topology_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);
+      topology_dock_->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
+      topology_dock_->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
+      dock_manager_->addDockWidget(ads::CenterDockWidgetArea, topology_dock_);
+
+      connect(editor, &etest::topology::TopologyEditorWidget::editorTitleChanged,
+              this, [this](const QString& title) {
+        if (topology_dock_)
+          topology_dock_->setWindowTitle(title);
+      });
+
+      connect(topology_dock_, &QObject::destroyed, this, [this]() {
+        topology_dock_ = nullptr;
+      });
+    } else {
+      topology_dock_->toggleView(true);
+      topology_dock_->raise();
+    }
+  });
 
   // 设置对话框
   connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {

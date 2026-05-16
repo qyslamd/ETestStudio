@@ -20,6 +20,9 @@ class TopologyEditorWidget : public QWidget {
   explicit TopologyEditorWidget(QWidget* parent = nullptr);
   ~TopologyEditorWidget() override;
 
+ Q_SIGNALS:
+  void editorTitleChanged(const QString& title);
+
  private slots:
   void onAddUut(const QPointF& scenePos = QPointF());
   void onAddDevice(const QPointF& scenePos = QPointF());

@@ -67,6 +67,10 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 )
 
 #=======================================
+# 添加拓扑编辑器库
+add_subdirectory(topology)
+
+#=======================================
 # 添加第三方依赖头文件路径
 target_include_directories(${TARGET_NAME}
     PRIVATE
@@ -95,6 +99,7 @@ target_link_libraries(${TARGET_NAME}
     Qt5::Gui
     Qt5::Widgets
     core
+    etest_topology
     # 已配置第三方依赖
     spdlog::spdlog
     hpdf
