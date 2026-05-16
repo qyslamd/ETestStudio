@@ -7,8 +7,6 @@
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
 
-#include <QMenuBar>
-#include <QToolBar>
 #include <QSplitter>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -16,13 +14,18 @@
 #include <QJsonObject>
 #include <QFile>
 #include <QApplication>
-#include <QStatusBar>
 #include <QShortcut>
+#include <QToolButton>
+#include <QFrame>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QMenu>
 
 namespace topology {
 
 TopologyEditorWidget::TopologyEditorWidget(QWidget* parent)
-    : QMainWindow(parent) {
+    : QWidget(parent) {
     doc_ = new TopologyDocument(this);
     scene_ = new TopologyScene(doc_, this);
     view_ = new TopologyView(scene_, this);
@@ -39,8 +42,20 @@ void TopologyEditorWidget::initUi() {
     setWindowTitle(QStringLiteral("拓扑编辑器 - topology-demo"));
     resize(1200, 800);
 
-    // Menu bar
-    auto* fileMenu = menuBar()->addMenu(QStringLiteral("文件(&F)"));
+    auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
+
+    // ── Toolbar frame ──
+    auto* toolbarFrame = new QFrame(this);
+    auto* toolbarLayout = new QHBoxLayout(toolbarFrame);
+    toolbarLayout->setContentsMargins(4, 4, 4, 4);
+
+    // File menu button
+    auto* fileBtn = new QToolButton(toolbarFrame);
+    fileBtn->setText(QStringLiteral("文件"));
+    fileBtn->setPopupMode(QToolButton::InstantPopup);
+    auto* fileMenu = new QMenu(fileBtn);
 
     auto* newAct = fileMenu->addAction(QStringLiteral("新建(&N)"));
     newAct->setShortcut(QKeySequence::New);
@@ -65,32 +80,61 @@ void TopologyEditorWidget::initUi() {
     exitAct->setShortcut(QKeySequence::Quit);
     connect(exitAct, &QAction::triggered, this, &QWidget::close);
 
-    // Toolbar
-    auto* toolbar = addToolBar(QStringLiteral("编辑"));
-    toolbar->setMovable(false);
+    fileBtn->setMenu(fileMenu);
+    toolbarLayout->addWidget(fileBtn);
 
-    add_uut_action_ = toolbar->addAction(QStringLiteral("+ UUT"));
+    toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
+
+    // Edit buttons
+    add_uut_action_ = new QAction(QStringLiteral("+ UUT"), this);
     add_uut_action_->setToolTip(QStringLiteral("添加被测产品"));
+    auto* addUutBtn = new QToolButton(toolbarFrame);
+    addUutBtn->setDefaultAction(add_uut_action_);
+    toolbarLayout->addWidget(addUutBtn);
 
-    add_device_action_ = toolbar->addAction(QStringLiteral("+ 设备"));
+    add_device_action_ = new QAction(QStringLiteral("+ 设备"), this);
     add_device_action_->setToolTip(QStringLiteral("添加激励设备"));
+    auto* addDeviceBtn = new QToolButton(toolbarFrame);
+    addDeviceBtn->setDefaultAction(add_device_action_);
+    toolbarLayout->addWidget(addDeviceBtn);
 
-    toolbar->addSeparator();
+    toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
 
-    zoom_in_action_ = toolbar->addAction(QStringLiteral("放大"));
-    zoom_out_action_ = toolbar->addAction(QStringLiteral("缩小"));
-    zoom_reset_action_ = toolbar->addAction(QStringLiteral("重置"));
+    zoom_in_action_ = new QAction(QStringLiteral("放大"), this);
+    auto* zoomInBtn = new QToolButton(toolbarFrame);
+    zoomInBtn->setDefaultAction(zoom_in_action_);
+    toolbarLayout->addWidget(zoomInBtn);
 
-    // Central area: View + Property panel
+    zoom_out_action_ = new QAction(QStringLiteral("缩小"), this);
+    auto* zoomOutBtn = new QToolButton(toolbarFrame);
+    zoomOutBtn->setDefaultAction(zoom_out_action_);
+    toolbarLayout->addWidget(zoomOutBtn);
+
+    zoom_reset_action_ = new QAction(QStringLiteral("重置"), this);
+    auto* zoomResetBtn = new QToolButton(toolbarFrame);
+    zoomResetBtn->setDefaultAction(zoom_reset_action_);
+    toolbarLayout->addWidget(zoomResetBtn);
+
+    toolbarLayout->addStretch();
+    mainLayout->addWidget(toolbarFrame);
+
+    // ── Central splitter ──
     splitter_ = new QSplitter(Qt::Horizontal, this);
     splitter_->addWidget(view_);
     splitter_->addWidget(property_panel_);
     splitter_->setStretchFactor(0, 4);
     splitter_->setStretchFactor(1, 1);
+    mainLayout->addWidget(splitter_, 1);
 
-    setCentralWidget(splitter_);
-
-    statusBar()->showMessage(QStringLiteral("就绪"));
+    // ── Status frame ──
+    auto* statusFrame = new QFrame(this);
+    statusFrame->setFrameShape(QFrame::StyledPanel);
+    auto* statusLayout = new QHBoxLayout(statusFrame);
+    statusLayout->setContentsMargins(8, 2, 8, 2);
+    status_label_ = new QLabel(QStringLiteral("就绪"), statusFrame);
+    statusLayout->addWidget(status_label_);
+    statusLayout->addStretch();
+    mainLayout->addWidget(statusFrame);
 }
 
 void TopologyEditorWidget::initSignals() {
@@ -218,8 +262,8 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
 
     int idx = doc_->addProduct(prod);
     scene_->addProductItem(idx, prod.position);
-    statusBar()->showMessage(
-        QStringLiteral("已添加 UUT: %1").arg(prod.name), 3000);
+    status_label_->setText(
+        QStringLiteral("已添加 UUT: %1").arg(prod.name));
 }
 
 void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
@@ -231,8 +275,8 @@ void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
 
     int idx = doc_->addDevice(dev);
     scene_->addDeviceItem(idx, dev.position);
-    statusBar()->showMessage(
-        QStringLiteral("已添加设备: %1").arg(dev.name), 3000);
+    status_label_->setText(
+        QStringLiteral("已添加设备: %1").arg(dev.name));
 }
 
 void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
@@ -251,7 +295,7 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
         }
         doc_->removeProduct(uut->productIndex());
         removed = true;
-        statusBar()->showMessage(QStringLiteral("已删除 UUT"), 3000);
+        status_label_->setText(QStringLiteral("已删除 UUT"));
     } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
         const auto* d = doc_->device(dev->deviceIndex());
         if (d) {
@@ -263,11 +307,11 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
         }
         doc_->removeDevice(dev->deviceIndex());
         removed = true;
-        statusBar()->showMessage(QStringLiteral("已删除设备"), 3000);
+        status_label_->setText(QStringLiteral("已删除设备"));
     } else if (auto* devPort = qgraphicsitem_cast<DevicePortItem*>(item)) {
         doc_->removeDevicePort(devPort->deviceIndex(), devPort->portIndex());
         removed = true;
-        statusBar()->showMessage(QStringLiteral("已删除设备端口"), 3000);
+        status_label_->setText(QStringLiteral("已删除设备端口"));
     } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
         auto* src = conn->sourcePort();
         auto* tgt = conn->targetDevice();
@@ -288,7 +332,7 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
             }
         }
         removed = true;
-        statusBar()->showMessage(QStringLiteral("已删除连线"), 3000);
+        status_label_->setText(QStringLiteral("已删除连线"));
     }
 
     if (removed) {
@@ -306,8 +350,7 @@ void TopologyEditorWidget::onSaveTemplate(QGraphicsItem* item) {
     if (path.isEmpty()) return;
 
     if (DeviceTemplateManager::saveTemplate(doc_, dev->deviceIndex(), path)) {
-        statusBar()->showMessage(QStringLiteral("模板已保存: %1").arg(path),
-                                 3000);
+        status_label_->setText(QStringLiteral("模板已保存: %1").arg(path));
     } else {
         QMessageBox::warning(this, QStringLiteral("错误"),
                              QStringLiteral("保存模板失败"));
@@ -319,7 +362,7 @@ void TopologyEditorWidget::onNewFile() {
     scene_->loadFromDocument();
     current_file_.clear();
     setWindowTitle(QStringLiteral("拓扑编辑器 - [未命名]"));
-    statusBar()->showMessage(QStringLiteral("新建文件"), 3000);
+    status_label_->setText(QStringLiteral("新建文件"));
 }
 
 void TopologyEditorWidget::onOpenFile() {
@@ -353,7 +396,7 @@ void TopologyEditorWidget::onOpenFile() {
     scene_->loadFromDocument();
     current_file_ = path;
     setWindowTitle(QStringLiteral("拓扑编辑器 - %1").arg(path));
-    statusBar()->showMessage(QStringLiteral("已打开: %1").arg(path), 3000);
+    status_label_->setText(QStringLiteral("已打开: %1").arg(path));
 }
 
 void TopologyEditorWidget::onSaveFile() {
@@ -375,8 +418,8 @@ void TopologyEditorWidget::onSaveFile() {
     file.write(jdoc.toJson(QJsonDocument::Indented));
     file.close();
 
-    statusBar()->showMessage(
-        QStringLiteral("已保存: %1").arg(current_file_), 3000);
+    status_label_->setText(
+        QStringLiteral("已保存: %1").arg(current_file_));
 }
 
 void TopologyEditorWidget::onSaveAsFile() {

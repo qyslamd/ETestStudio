@@ -29,6 +29,7 @@ struct TopologyPort {
     QString name;
     enum Direction { Input, Output, Bidirectional } direction = Input;
     QStringList allowedDeviceTypes;
+    FunctionType functionType = FunctionType::CUSTOM;
     int positionHint = -1;
 };
 

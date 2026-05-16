@@ -64,6 +64,22 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
         auto* prod = doc_->product(editing_port_product_);
         if (prod && editing_port_index_ < prod->ports.size()) {
             const auto& p = prod->ports[editing_port_index_];
+
+            // Refresh device types from document
+            port_allowed_types_edit_->blockSignals(true);
+            port_allowed_types_edit_->clear();
+            QStringList knownTypes;
+            for (int i = 0; i < doc_->deviceCount(); ++i) {
+                auto* d = doc_->device(i);
+                if (d && !d->deviceType.isEmpty())
+                    knownTypes.append(d->deviceType);
+            }
+            knownTypes.removeDuplicates();
+            port_allowed_types_edit_->addItems(knownTypes);
+            port_allowed_types_edit_->setCurrentText(
+                p.allowedDeviceTypes.join(QStringLiteral(", ")));
+            port_allowed_types_edit_->blockSignals(false);
+
             port_name_edit_->blockSignals(true);
             port_name_edit_->setText(p.name);
             port_name_edit_->blockSignals(false);
@@ -71,7 +87,10 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
             port_direction_combo_->setCurrentIndex(
                 static_cast<int>(p.direction));
             port_direction_combo_->blockSignals(false);
-            port_allowed_types_edit_->setText(p.allowedDeviceTypes.join(", "));
+            port_function_combo_->blockSignals(true);
+            port_function_combo_->setCurrentIndex(
+                static_cast<int>(p.functionType));
+            port_function_combo_->blockSignals(false);
         }
         stack_->setCurrentIndex(PagePort);
         return;
@@ -216,11 +235,25 @@ void PropertyPanelWidget::buildPortPage() {
             [this](const QString&) { onPortDirectionChanged(); });
     lay->addRow(QStringLiteral("方向"), port_direction_combo_);
 
-    port_allowed_types_edit_ = new QLineEdit(w);
-    port_allowed_types_edit_->setReadOnly(true);
-    port_allowed_types_edit_->setPlaceholderText(
+    port_allowed_types_edit_ = new QComboBox(w);
+    port_allowed_types_edit_->setEditable(true);
+    port_allowed_types_edit_->setInsertPolicy(QComboBox::NoInsert);
+    port_allowed_types_edit_->lineEdit()->setPlaceholderText(
         QStringLiteral("如: EPH6272T, EPH5272"));
+    connect(port_allowed_types_edit_, QOverload<int>::of(&QComboBox::activated),
+            this, [this](int) { onPortAllowedTypesChanged(); });
+    connect(port_allowed_types_edit_->lineEdit(), &QLineEdit::editingFinished,
+            this, &PropertyPanelWidget::onPortAllowedTypesChanged);
     lay->addRow(QStringLiteral("允许设备类型"), port_allowed_types_edit_);
+
+    port_function_combo_ = new QComboBox(w);
+    for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
+        port_function_combo_->addItem(
+            functionTypeToString(static_cast<FunctionType>(ft)));
+    }
+    connect(port_function_combo_, &QComboBox::currentTextChanged, this,
+            [this](const QString&) { onPortFunctionTypeChanged(); });
+    lay->addRow(QStringLiteral("功能类型"), port_function_combo_);
 
     stack_->addWidget(w);
 }
@@ -359,6 +392,28 @@ void PropertyPanelWidget::onPortDirectionChanged() {
         prod->ports[editing_port_index_].direction =
             static_cast<TopologyPort::Direction>(
                 port_direction_combo_->currentIndex());
+        emit documentChanged();
+    }
+}
+
+void PropertyPanelWidget::onPortAllowedTypesChanged() {
+    auto* prod = doc_->product(editing_port_product_);
+    if (prod && editing_port_index_ < prod->ports.size()) {
+        QString text = port_allowed_types_edit_->currentText().trimmed();
+        prod->ports[editing_port_index_].allowedDeviceTypes =
+            text.isEmpty() ? QStringList()
+                           : text.split(QStringLiteral(", "),
+                                        QString::SkipEmptyParts);
+        emit documentChanged();
+    }
+}
+
+void PropertyPanelWidget::onPortFunctionTypeChanged() {
+    auto* prod = doc_->product(editing_port_product_);
+    if (prod && editing_port_index_ < prod->ports.size()) {
+        prod->ports[editing_port_index_].functionType =
+            static_cast<FunctionType>(
+                port_function_combo_->currentIndex());
         emit documentChanged();
     }
 }

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <QMainWindow>
+#include <QWidget>
 
 class QAction;
 class QSplitter;
 class QGraphicsItem;
+class QLabel;
 
 namespace topology {
 
@@ -13,7 +14,7 @@ class TopologyScene;
 class TopologyView;
 class PropertyPanelWidget;
 
-class TopologyEditorWidget : public QMainWindow {
+class TopologyEditorWidget : public QWidget {
     Q_OBJECT
 public:
     explicit TopologyEditorWidget(QWidget* parent = nullptr);
@@ -41,6 +42,7 @@ private:
     TopologyView* view_;
     PropertyPanelWidget* property_panel_;
     QSplitter* splitter_;
+    QLabel* status_label_ = nullptr;
 
     // Toolbar actions
     QAction* add_uut_action_ = nullptr;

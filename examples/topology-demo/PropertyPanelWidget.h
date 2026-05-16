@@ -37,6 +37,8 @@ private:
     void onUutNameChanged();
     void onPortNameChanged();
     void onPortDirectionChanged();
+    void onPortAllowedTypesChanged();
+    void onPortFunctionTypeChanged();
     void onDeviceNameChanged();
     void onDeviceTypeChanged();
     void onAddPropertyRow();
@@ -67,7 +69,8 @@ private:
     // Port page widgets
     QLineEdit* port_name_edit_ = nullptr;
     QComboBox* port_direction_combo_ = nullptr;
-    QLineEdit* port_allowed_types_edit_ = nullptr;
+    QComboBox* port_allowed_types_edit_ = nullptr;
+    QComboBox* port_function_combo_ = nullptr;
     int editing_port_product_ = -1;
     int editing_port_index_ = -1;
 
