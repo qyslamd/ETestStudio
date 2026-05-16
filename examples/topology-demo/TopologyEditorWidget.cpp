@@ -130,13 +130,13 @@ void TopologyEditorWidget::buildDefaultDocument() {
     prod1.name = QStringLiteral("ISI-01");
     prod1.position = QPointF(450, 120);
     prod1.ports.append(
-        {QStringLiteral("A429_IN1"), TopologyPort::Input,
+        {QStringLiteral("A429_CH1"), TopologyPort::Bidirectional,
          {QStringLiteral("A429")}});
     prod1.ports.append(
-        {QStringLiteral("A429_IN2"), TopologyPort::Input,
+        {QStringLiteral("A429_CH2"), TopologyPort::Bidirectional,
          {QStringLiteral("A429")}});
     prod1.ports.append(
-        {QStringLiteral("A429_OUT"), TopologyPort::Output,
+        {QStringLiteral("A429_CH3"), TopologyPort::Bidirectional,
          {QStringLiteral("A429")}});
     prod1.ports.append(
         {QStringLiteral("离散量"), TopologyPort::Input,
@@ -148,7 +148,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
     prod2.name = QStringLiteral("ISI-02");
     prod2.position = QPointF(450, 320);
     prod2.ports.append(
-        {QStringLiteral("A429_IN1"), TopologyPort::Input,
+        {QStringLiteral("A429_CH1"), TopologyPort::Bidirectional,
          {QStringLiteral("A429")}});
     doc_->addProduct(prod2);
 
