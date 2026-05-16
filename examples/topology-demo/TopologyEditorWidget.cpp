@@ -128,7 +128,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
     // Product 1
     TopologyProduct prod1;
     prod1.name = QStringLiteral("ISI-01");
-    prod1.position = QPointF(50, 120);
+    prod1.position = QPointF(450, 120);
     prod1.ports.append(
         {QStringLiteral("A429_IN1"), TopologyPort::Input,
          {QStringLiteral("A429")}});
@@ -146,7 +146,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
     // Product 2
     TopologyProduct prod2;
     prod2.name = QStringLiteral("ISI-02");
-    prod2.position = QPointF(50, 320);
+    prod2.position = QPointF(450, 320);
     prod2.ports.append(
         {QStringLiteral("A429_IN1"), TopologyPort::Input,
          {QStringLiteral("A429")}});
@@ -156,7 +156,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
     TopologyDevice dev1;
     dev1.name = QStringLiteral("6272T_00");
     dev1.deviceType = QStringLiteral("EPH6272T");
-    dev1.position = QPointF(450, 80);
+    dev1.position = QPointF(50, 80);
     dev1.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("2")}};
     dev1.ports.append({QStringLiteral("ch0"), FunctionType::A429});
@@ -167,7 +167,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
     TopologyDevice dev2;
     dev2.name = QStringLiteral("6272T_01");
     dev2.deviceType = QStringLiteral("EPH6272T");
-    dev2.position = QPointF(450, 200);
+    dev2.position = QPointF(50, 200);
     dev2.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("3")}};
     dev2.ports.append({QStringLiteral("ch0"), FunctionType::A429});
@@ -178,7 +178,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
     TopologyDevice dev3;
     dev3.name = QStringLiteral("EPH5121A_00");
     dev3.deviceType = QStringLiteral("EPH5121A");
-    dev3.position = QPointF(450, 350);
+    dev3.position = QPointF(50, 350);
     dev3.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("5")}};
     dev3.ports.append({QStringLiteral("ch0"), FunctionType::DISCRETE});
@@ -193,7 +193,7 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
     int n = doc_->productCount() + 1;
     TopologyProduct prod;
     prod.name = QStringLiteral("UUT-%1").arg(n, 2, 10, QChar('0'));
-    prod.position = (scenePos.isNull()) ? QPointF(50, 100 + n * 80) : scenePos;
+    prod.position = (scenePos.isNull()) ? QPointF(450, 100 + n * 80) : scenePos;
     prod.ports.append(
         {QStringLiteral("Port_IN1"), TopologyPort::Input,
          {QStringLiteral("A429")}});
@@ -212,7 +212,7 @@ void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
     TopologyDevice dev;
     dev.name = QStringLiteral("Device-%1").arg(n, 2, 10, QChar('0'));
     dev.deviceType = QStringLiteral("EPH6272T");
-    dev.position = (scenePos.isNull()) ? QPointF(400, 100 + n * 80) : scenePos;
+    dev.position = (scenePos.isNull()) ? QPointF(50, 100 + n * 80) : scenePos;
 
     int idx = doc_->addDevice(dev);
     scene_->addDeviceItem(idx, dev.position);

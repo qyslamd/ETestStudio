@@ -79,7 +79,12 @@ void PortItem::paint(QPainter* painter,
 }
 
 QPointF PortItem::sceneCenter() const {
-    return mapToScene(QPointF(0, 0));
+    const auto* prod = doc_->product(product_index_);
+    if (!prod || port_index_ >= prod->ports.size())
+        return mapToScene(QPointF(0, 0));
+    bool isInput = (prod->ports[port_index_].direction == TopologyPort::Input);
+    int sign = isInput ? -1 : 1;
+    return mapToScene(QPointF(sign * kLineLength, 0));
 }
 
 void PortItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
@@ -379,7 +384,7 @@ DeviceItem* DevicePortItem::parentDeviceItem() const {
 }
 
 QPointF DevicePortItem::sceneCenter() const {
-    return mapToScene(QPointF(0, 0));
+    return mapToScene(QPointF(kLineLength, 0));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -413,7 +418,7 @@ void ConnectionItem::updatePath() {
         cp1 = start + QPointF(cpOffset, 0);
         cp2 = end - QPointF(cpOffset, 0);
     } else {
-        cp1 = start + QPointF(cpOffset, 0);
+        cp1 = start - QPointF(cpOffset, 0);
         cp2 = end + QPointF(cpOffset, 0);
     }
     p.cubicTo(cp1, cp2, end);
