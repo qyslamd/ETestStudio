@@ -9,7 +9,7 @@
 #include <QScrollBar>
 #include <QWheelEvent>
 
-namespace topology {
+namespace etest::topology {
 
 TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
     : QGraphicsView(scene, parent) {
@@ -193,4 +193,4 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
   menu.exec(event->globalPos());
 }
 
-}  // namespace topology
+}  // namespace etest::topology

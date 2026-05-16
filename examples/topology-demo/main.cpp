@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
     app.setApplicationName(QStringLiteral("topology-demo"));
     app.setApplicationVersion(QStringLiteral("1.0.0"));
 
-    topology::TopologyEditorWidget w;
+    etest::topology::TopologyEditorWidget w;
     w.show();
 
     return app.exec();
