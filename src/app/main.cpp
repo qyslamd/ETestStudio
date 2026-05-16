@@ -2,9 +2,9 @@
 #include <QFont>
 
 #include "MainWindow.h"
+#include "common/GlobalExceptionHandler.h"
 #include "common/SingleInstance.h"
 #include "config/ConfigManager.h"
-#include "common/GlobalExceptionHandler.h"
 #include "crashhandler/CrashHandler.h"
 #include "logger/Logger.h"
 
@@ -21,8 +21,7 @@ int main(int argc, char* argv[]) {
   // 单实例检测
   SingleInstance singleInstance("etest_demo");
   if (singleInstance.isAppAlreadyRunning()) {
-    singleInstance.connectToExistingInstance(
-        QCoreApplication::arguments());
+    singleInstance.connectToExistingInstance(QCoreApplication::arguments());
     return 0;
   }
   singleInstance.startListening();
