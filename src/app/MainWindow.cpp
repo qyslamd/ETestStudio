@@ -246,9 +246,12 @@ void MainWindow::initSignals() {
     });
   }
 
-  // 活动栏切换侧边栏
-  connect(activity_bar_, &ActivityBarWidget::activityClicked, sidebar_,
-          &SidebarWidget::switchPage);
+  // 活动栏切换侧边栏（跳过硬件拓扑按钮索引1）
+  connect(activity_bar_, &ActivityBarWidget::activityClicked, this,
+          [this](int idx) {
+    if (idx > 1) --idx;
+    sidebar_->switchPage(idx);
+  });
   // 活动栏再次点击已选中按钮时切换侧边栏显隐
   connect(activity_bar_, &ActivityBarWidget::sidebarToggleRequested, this,
           [this]() {
@@ -505,7 +508,7 @@ void MainWindow::initSignals() {
       QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F), this);
   connect(globalSearchShortcut, &QShortcut::activated, this, [this]() {
     sidebar_->switchPage(1);
-    activity_bar_->setActiveIndex(1);
+    activity_bar_->setActiveIndex(2);  // activityBar 索引1是硬件拓扑
     if (sidebar_dock_ && sidebar_dock_->isClosed()) {
       sidebar_dock_->toggleView(true);
       if (sidebar_dock_->dockAreaWidget()) {
@@ -537,7 +540,7 @@ void MainWindow::initSignals() {
   }
 
   // 拓扑编辑器
-  connect(sidebar_, &SidebarWidget::openTopologyEditorRequested, this, [this]() {
+  connect(activity_bar_, &ActivityBarWidget::topologyClicked, this, [this]() {
     if (!topology_dock_) {
       auto* editor = new etest::topology::TopologyEditorWidget();
       topology_dock_ = new ads::CDockWidget(QStringLiteral("硬件拓扑"));
@@ -1290,13 +1293,18 @@ QJsonObject MainWindow::captureSessionData() {
   editorsObj["openFiles"] = filesArray;
   root["editors"] = editorsObj;
 
-  // 侧边栏状态（只保存 sidebar 有效页，排除设置按钮 index 6）
+  // 侧边栏状态（排除硬件拓扑按钮 index 1 和设置按钮）
   QJsonObject sidebarObj;
   int barIdx = activity_bar_->activeIndex();
-  if (barIdx >= 0 && barIdx < sidebar_->pageCount()) {
-    sidebarObj["activeTab"] = barIdx;
+  if (barIdx == 1) {
+    sidebarObj["activeTab"] = 0;  // 硬件拓扑无对应 sidebar 页面，fallback
   } else {
-    sidebarObj["activeTab"] = 0;  // fallback 到资源管理器
+    int tab = (barIdx > 1) ? barIdx - 1 : barIdx;
+    if (tab >= 0 && tab < sidebar_->pageCount()) {
+      sidebarObj["activeTab"] = tab;
+    } else {
+      sidebarObj["activeTab"] = 0;
+    }
   }
   sidebarObj["visible"] =
       sidebar_dock_ && !sidebar_dock_->isClosed();
@@ -1345,12 +1353,13 @@ void MainWindow::restoreSession() {
   QJsonObject root = doc.object();
   if (root["version"].toInt() != 1) return;
 
-  // 恢复侧边栏
+  // 恢复侧边栏（activityBar 索引比 sidebar 多一个硬件拓扑按钮）
   QJsonObject sidebarObj = root["sidebar"].toObject();
   if (!sidebarObj.isEmpty()) {
     int tab = sidebarObj["activeTab"].toInt();
     if (tab >= 0 && tab < sidebar_->pageCount()) {
-      activity_bar_->setActiveIndex(tab);
+      int barIdx = (tab >= 1) ? tab + 1 : tab;
+      activity_bar_->setActiveIndex(barIdx);
       sidebar_->switchPage(tab);
     } else {
       activity_bar_->setActiveIndex(0);

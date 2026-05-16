@@ -29,8 +29,7 @@ class SidebarWidget : public QWidget {
   SearchWidget* searchWidget() const;
   GitWidget* gitWidget() const;
 
- Q_SIGNALS:
-  void openTopologyEditorRequested();
+  Q_SIGNALS:
 
  private:
   void setupUi();
@@ -45,7 +44,7 @@ class SidebarWidget : public QWidget {
   // 视图名称列表
   QStringList view_titles_;
 
-  QPushButton* topology_btn_ = nullptr;
+
 };
 
 }  // namespace etest::app

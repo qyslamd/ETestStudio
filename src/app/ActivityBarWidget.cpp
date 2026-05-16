@@ -28,21 +28,31 @@ void ActivityBarWidget::setupUi() {
   top_layout_->setContentsMargins(0, 0, 0, 0);
 
   // 主功能按钮（顶部）
+  // 索引0：资源管理器
   buttons_.append(createButton(QStringLiteral("资源管理器"),
                                 ":/resources/icons/svg/project_dark.svg",
                                 ":/resources/icons/svg/project_light.svg"));
+  // 索引1：硬件拓扑（特殊处理，弹中央dock）
+  buttons_.append(createButton(QStringLiteral("硬件拓扑"),
+                                ":/resources/icons/svg/hardware_dark.svg",
+                                ":/resources/icons/svg/hardware_light.svg"));
+  // 索引2：搜索
   buttons_.append(createButton(QStringLiteral("搜索"),
                                 ":/resources/icons/svg/search_dark.svg",
                                 ":/resources/icons/svg/search_light.svg"));
+  // 索引3：源代码管理
   buttons_.append(createButton(QStringLiteral("源代码管理"),
                                 ":/resources/icons/svg/git_dark.svg",
                                 ":/resources/icons/svg/git_light.svg"));
+  // 索引4：调试
   buttons_.append(createButton(QStringLiteral("调试"),
                                 ":/resources/icons/svg/debug_dark.svg",
                                 ":/resources/icons/svg/debug_dark.svg"));
+  // 索引5：扩展
   buttons_.append(createButton(QStringLiteral("扩展"),
                                 ":/resources/icons/svg/extensions_dark.svg",
                                 ":/resources/icons/svg/extensions_light.svg"));
+  // 索引6：硬件
   buttons_.append(createButton(QStringLiteral("硬件"),
                                 ":/resources/icons/svg/hardware_dark.svg",
                                 ":/resources/icons/svg/hardware_light.svg"));
@@ -50,7 +60,11 @@ void ActivityBarWidget::setupUi() {
   for (int i = 0; i < buttons_.size(); ++i) {
     top_layout_->addWidget(buttons_[i]);
     connect(buttons_[i], &QPushButton::clicked, this, [this, i]() {
-      if (active_index_ == i) {
+      if (i == 1) {
+        // 硬件拓扑按钮：弹中央dock，不切换sidebar页面
+        setActiveIndex(i);
+        emit topologyClicked();
+      } else if (active_index_ == i) {
         emit sidebarToggleRequested();
       } else {
         setActiveIndex(i);

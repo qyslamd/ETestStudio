@@ -89,24 +89,6 @@ void SidebarWidget::setupUi() {
 
   layout->addWidget(stack_);
 
-  // 底部固定按钮：硬件拓扑
-  auto* btnLayout = new QHBoxLayout();
-  btnLayout->setContentsMargins(4, 4, 4, 4);
-  topology_btn_ = new QPushButton(QStringLiteral("  硬件拓扑"), this);
-  topology_btn_->setFixedHeight(36);
-  topology_btn_->setFlat(true);
-  topology_btn_->setFocusPolicy(Qt::NoFocus);
-  topology_btn_->setIcon(QIcon(":/resources/icons/svg/hardware_dark.svg"));
-  topology_btn_->setIconSize(QSize(20, 20));
-  topology_btn_->setStyleSheet(QStringLiteral(
-      "QPushButton { text-align: left; padding-left: 8px; color: #CCCCCC; background: transparent; }"
-      "QPushButton:hover { background: #2a2d2e; }"));
-  btnLayout->addWidget(topology_btn_);
-  layout->addLayout(btnLayout);
-
-  connect(topology_btn_, &QPushButton::clicked,
-          this, &SidebarWidget::openTopologyEditorRequested);
-
   setMinimumWidth(200);
 
   // 初始化标题
