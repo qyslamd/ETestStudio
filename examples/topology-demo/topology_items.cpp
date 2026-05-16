@@ -76,12 +76,14 @@ void PortItem::paint(QPainter* painter,
 
     if (port.direction == TopologyPort::Bidirectional) {
         qreal as = 4.0;
+        qreal gap = 3.0;
         qreal ex = lineEndX;
         painter->setPen(QPen(color.darker(130), 1.5));
-        painter->drawLine(QPointF(ex, 0), QPointF(ex + as, -as));
-        painter->drawLine(QPointF(ex, 0), QPointF(ex + as, as));
-        painter->drawLine(QPointF(ex, 0), QPointF(ex - as, -as));
-        painter->drawLine(QPointF(ex, 0), QPointF(ex - as, as));
+        painter->drawLine(QPointF(ex - gap - as, 0), QPointF(ex - gap, -as));
+        painter->drawLine(QPointF(ex - gap - as, 0), QPointF(ex - gap, as));
+        painter->drawLine(QPointF(ex + gap + as, 0), QPointF(ex + gap, -as));
+        painter->drawLine(QPointF(ex + gap + as, 0), QPointF(ex + gap, as));
+        painter->drawLine(QPointF(ex - gap, 0), QPointF(ex + gap, 0));
     }
 
     painter->setPen(Qt::black);
@@ -369,12 +371,14 @@ void DevicePortItem::paint(QPainter* painter,
 
     if (port.direction == TopologyPort::Bidirectional) {
         qreal as = 4.0;
+        qreal gap = 3.0;
         qreal ex = lineEndX;
         painter->setPen(QPen(color.darker(130), 1.5));
-        painter->drawLine(QPointF(ex, 0), QPointF(ex + as, -as));
-        painter->drawLine(QPointF(ex, 0), QPointF(ex + as, as));
-        painter->drawLine(QPointF(ex, 0), QPointF(ex - as, -as));
-        painter->drawLine(QPointF(ex, 0), QPointF(ex - as, as));
+        painter->drawLine(QPointF(ex - gap - as, 0), QPointF(ex - gap, -as));
+        painter->drawLine(QPointF(ex - gap - as, 0), QPointF(ex - gap, as));
+        painter->drawLine(QPointF(ex + gap + as, 0), QPointF(ex + gap, -as));
+        painter->drawLine(QPointF(ex + gap + as, 0), QPointF(ex + gap, as));
+        painter->drawLine(QPointF(ex - gap, 0), QPointF(ex + gap, 0));
     }
 
     painter->setPen(Qt::black);
@@ -470,15 +474,19 @@ void ConnectionItem::updatePath() {
 
     qreal as = 8.0;
     if (dir == TopologyPort::Bidirectional) {
-        arrow_path_.moveTo(mid + QPointF(cos(angle) * as, sin(angle) * as));
-        arrow_path_.lineTo(mid + QPointF(cos(angle + 2.5) * as, sin(angle + 2.5) * as));
-        arrow_path_.lineTo(mid + QPointF(cos(angle - 2.5) * as, sin(angle - 2.5) * as));
-        arrow_path_.closeSubpath();
-        qreal ra = angle + M_PI;
-        arrow_path_.moveTo(mid + QPointF(cos(ra) * as, sin(ra) * as));
-        arrow_path_.lineTo(mid + QPointF(cos(ra + 2.5) * as, sin(ra + 2.5) * as));
-        arrow_path_.lineTo(mid + QPointF(cos(ra - 2.5) * as, sin(ra - 2.5) * as));
-        arrow_path_.closeSubpath();
+        qreal gap = 4.0;
+        QPointF tang(cos(angle), sin(angle));
+        QPointF perp(-sin(angle), cos(angle));
+        arrow_path_.moveTo(mid - tang * (gap + as));
+        arrow_path_.lineTo(mid - tang * gap + perp * as);
+        arrow_path_.moveTo(mid - tang * (gap + as));
+        arrow_path_.lineTo(mid - tang * gap - perp * as);
+        arrow_path_.moveTo(mid + tang * (gap + as));
+        arrow_path_.lineTo(mid + tang * gap + perp * as);
+        arrow_path_.moveTo(mid + tang * (gap + as));
+        arrow_path_.lineTo(mid + tang * gap - perp * as);
+        arrow_path_.moveTo(mid - tang * gap);
+        arrow_path_.lineTo(mid + tang * gap);
     } else {
         bool forward = (dir == TopologyPort::Input);
         qreal a = forward ? angle : angle + M_PI;
@@ -497,8 +505,13 @@ void ConnectionItem::paint(QPainter* painter,
     const auto* prod = doc_->product(source_->productIndex());
     if (!prod || source_->portIndex() >= prod->ports.size()) return;
     auto dir = prod->ports[source_->portIndex()].direction;
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(directionColor(dir));
+    if (dir == TopologyPort::Bidirectional) {
+        painter->setPen(QPen(directionColor(dir), 1.5));
+        painter->setBrush(Qt::NoBrush);
+    } else {
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(directionColor(dir));
+    }
     painter->drawPath(arrow_path_);
 }
 
