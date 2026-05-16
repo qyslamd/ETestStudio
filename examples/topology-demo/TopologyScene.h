@@ -31,8 +31,8 @@ public:
     DeviceItem* addDeviceItem(int deviceIndex, const QPointF& pos);
     ConnectionItem* addConnectionItem(int connIndex);
 
-    // Connection drag interaction (called from PortItem)
-    void startConnectionDrag(PortItem* port, QPointF scenePos);
+    // Connection drag interaction (called from PortItem / DevicePortItem)
+    void startConnectionDrag(QGraphicsItem* port, QPointF scenePos);
     void continueConnectionDrag(QPointF scenePos);
     void finishConnectionDrag(QPointF scenePos);
 
@@ -42,6 +42,7 @@ public:
     // Find items at scene position by type
     DeviceItem* deviceItemAt(QPointF scenePos) const;
     DevicePortItem* devicePortItemAt(QPointF scenePos) const;
+    PortItem* portItemAt(QPointF scenePos) const;
     UutItem* uutItemAt(QPointF scenePos) const;
 
 signals:
@@ -58,8 +59,8 @@ private:
     QVector<DeviceItem*> device_items_;
     QVector<ConnectionItem*> connection_items_;
 
-    // Drag state
-    PortItem* drag_source_ = nullptr;
+    // Drag state (PortItem or DevicePortItem)
+    QGraphicsItem* drag_source_ = nullptr;
     QGraphicsLineItem* drag_line_ = nullptr;
 };
 

@@ -100,7 +100,7 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
     return item;
 }
 
-void TopologyScene::startConnectionDrag(PortItem* port, QPointF scenePos) {
+void TopologyScene::startConnectionDrag(QGraphicsItem* port, QPointF scenePos) {
     if (drag_source_) return;
     drag_source_ = port;
     drag_line_ = new QGraphicsLineItem();
@@ -112,7 +112,12 @@ void TopologyScene::startConnectionDrag(PortItem* port, QPointF scenePos) {
 
 void TopologyScene::continueConnectionDrag(QPointF scenePos) {
     if (drag_line_) {
-        QLineF line(drag_source_->sceneCenter(), scenePos);
+        QPointF center;
+        if (auto* p = qgraphicsitem_cast<PortItem*>(drag_source_))
+            center = p->sceneCenter();
+        else if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(drag_source_))
+            center = dp->sceneCenter();
+        QLineF line(center, scenePos);
         drag_line_->setLine(line);
     }
 }
@@ -127,18 +132,39 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
         drag_line_ = nullptr;
     }
 
-    // Hit test for DevicePortItem
-    auto* devPort = devicePortItemAt(scenePos);
-    if (devPort) {
-        const auto* prod = doc_->product(drag_source_->productIndex());
-        const auto* dev = doc_->device(devPort->deviceIndex());
-        if (prod && dev && devPort->portIndex() < dev->ports.size()) {
-            const auto& port = prod->ports[drag_source_->portIndex()];
-            const auto& dp = dev->ports[devPort->portIndex()];
-            if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
-                TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
-                int ci = doc_->addConnection(conn);
-                addConnectionItem(ci);
+    auto* srcPort = qgraphicsitem_cast<PortItem*>(drag_source_);
+    auto* srcDevPort = qgraphicsitem_cast<DevicePortItem*>(drag_source_);
+
+    if (srcPort) {
+        // UUT port → Device port
+        auto* devPort = devicePortItemAt(scenePos);
+        if (devPort) {
+            const auto* prod = doc_->product(srcPort->productIndex());
+            const auto* dev = doc_->device(devPort->deviceIndex());
+            if (prod && dev && devPort->portIndex() < dev->ports.size()) {
+                const auto& port = prod->ports[srcPort->portIndex()];
+                const auto& dp = dev->ports[devPort->portIndex()];
+                if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
+                    TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
+                    int ci = doc_->addConnection(conn);
+                    addConnectionItem(ci);
+                }
+            }
+        }
+    } else if (srcDevPort) {
+        // Device port → UUT port
+        auto* uutPort = portItemAt(scenePos);
+        if (uutPort) {
+            const auto* dev = doc_->device(srcDevPort->deviceIndex());
+            const auto* prod = doc_->product(uutPort->productIndex());
+            if (dev && prod && uutPort->portIndex() < prod->ports.size()) {
+                const auto& dp = dev->ports[srcDevPort->portIndex()];
+                const auto& port = prod->ports[uutPort->portIndex()];
+                if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
+                    TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
+                    int ci = doc_->addConnection(conn);
+                    addConnectionItem(ci);
+                }
             }
         }
     }
@@ -175,6 +201,17 @@ DevicePortItem* TopologyScene::devicePortItemAt(QPointF scenePos) const {
     for (auto* item : items) {
         if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(item)) {
             return dp;
+        }
+    }
+    return nullptr;
+}
+
+PortItem* TopologyScene::portItemAt(QPointF scenePos) const {
+    auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+                             Qt::DescendingOrder);
+    for (auto* item : items) {
+        if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+            return p;
         }
     }
     return nullptr;

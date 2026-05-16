@@ -100,10 +100,16 @@ public:
     DeviceItem* parentDeviceItem() const;
     QPointF sceneCenter() const;
 
+protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+
 private:
     int device_index_;
     int port_index_;
     TopologyDocument* doc_;
+    QPointF press_pos_;
     static constexpr qreal kRadius = 6.0;
 };
 

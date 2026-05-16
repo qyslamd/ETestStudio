@@ -329,7 +329,7 @@ DevicePortItem::DevicePortItem(int deviceIndex, int portIndex,
     : QGraphicsItem(parent), device_index_(deviceIndex),
       port_index_(portIndex), doc_(doc) {
     setFlag(ItemIsSelectable);
-    setCursor(Qt::PointingHandCursor);
+    setCursor(Qt::CrossCursor);
 }
 
 QRectF DevicePortItem::boundingRect() const {
@@ -377,6 +377,29 @@ void DevicePortItem::paint(QPainter* painter,
     qreal tw = painter->fontMetrics().horizontalAdvance(label);
     qreal midX = lineEndX / 2.0;
     painter->drawText(QPointF(midX - tw / 2.0, -8), label);
+}
+
+void DevicePortItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
+    QGraphicsItem::mousePressEvent(event);
+    press_pos_ = event->scenePos();
+    event->accept();
+}
+
+void DevicePortItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
+    if ((event->scenePos() - press_pos_).manhattanLength() > 5) {
+        if (auto* s = qobject_cast<TopologyScene*>(scene())) {
+            s->startConnectionDrag(this, press_pos_);
+            s->continueConnectionDrag(event->scenePos());
+        }
+    }
+    event->accept();
+}
+
+void DevicePortItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
+    if (auto* s = qobject_cast<TopologyScene*>(scene())) {
+        s->finishConnectionDrag(event->scenePos());
+    }
+    event->accept();
 }
 
 DeviceItem* DevicePortItem::parentDeviceItem() const {
