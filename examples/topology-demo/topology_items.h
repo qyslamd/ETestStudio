@@ -76,7 +76,10 @@ private:
     QVector<PortItem*> ports_;
 
     static constexpr qreal kWidth = 140.0;
-    static constexpr qreal kHeight = 60.0;
+    static constexpr qreal kBaseHeight = 60.0;
+    static constexpr qreal kPortMargin = 8.0;
+
+    qreal contentHeight() const;
 
 };
 

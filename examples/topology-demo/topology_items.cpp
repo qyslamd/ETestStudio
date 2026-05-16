@@ -139,7 +139,8 @@ UutItem::UutItem(int productIndex, TopologyDocument* doc,
 
 QRectF UutItem::boundingRect() const {
     qreal m = 2.0;
-    return QRectF(-m, -m, kWidth + m * 2, kHeight + m * 2);
+    qreal h = contentHeight();
+    return QRectF(-m, -m, kWidth + m * 2, h + m * 2);
 }
 
 void UutItem::paint(QPainter* painter,
@@ -150,7 +151,8 @@ void UutItem::paint(QPainter* painter,
     if (option->state & QStyle::State_Selected) fill = fill.lighter(120);
     painter->setBrush(fill);
     painter->setPen(QPen(QColor(66, 133, 244), 1.5));
-    painter->drawRect(QRectF(0, 0, kWidth, kHeight));
+    qreal h = contentHeight();
+    painter->drawRect(QRectF(0, 0, kWidth, h));
 
     const auto* prod = doc_->product(product_index_);
     if (!prod) return;
@@ -160,7 +162,7 @@ void UutItem::paint(QPainter* painter,
     f.setPointSize(10);
     f.setBold(true);
     painter->setFont(f);
-    painter->drawText(QRectF(0, 0, kWidth, kHeight), Qt::AlignCenter,
+    painter->drawText(QRectF(0, 0, kWidth, h), Qt::AlignCenter,
                       prod->name);
 }
 
@@ -169,21 +171,27 @@ void UutItem::layoutPorts() {
     const auto* prod = doc_->product(product_index_);
     if (!prod) return;
 
+    qreal h = contentHeight();
     int n = prod->ports.size();
-    qreal topMargin = 10.0;
-    qreal bottomMargin = 10.0;
     for (int i = 0; i < n; ++i) {
         auto* portItem = new PortItem(product_index_, i, doc_, this);
         ports_.append(portItem);
 
         qreal y;
         if (n <= 1) {
-            y = kHeight / 2.0;
+            y = h / 2.0;
         } else {
-            y = topMargin + i * (kHeight - topMargin - bottomMargin) / (n - 1);
+            y = kPortMargin + i * (h - 2 * kPortMargin) / (n - 1);
         }
         portItem->setPos(0, y);
     }
+}
+
+qreal UutItem::contentHeight() const {
+    const auto* prod = doc_->product(product_index_);
+    int portCount = prod ? prod->ports.size() : 0;
+    constexpr qreal kPortSpacing = 20.0;
+    return qMax(kBaseHeight, 2 * kPortMargin + portCount * kPortSpacing);
 }
 
 PortItem* UutItem::portItem(int portIndex) const {
