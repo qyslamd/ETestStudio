@@ -9,10 +9,32 @@
 
 namespace topology {
 
+enum class FunctionType {
+    A429,
+    AD,
+    DA,
+    DISCRETE,
+    SERIAL,
+    MIL1553,
+    POWER,
+    CAMERA,
+    OSCILLOSCOPE,
+    CUSTOM
+};
+
+QString functionTypeToString(FunctionType t);
+FunctionType stringToFunctionType(const QString& s);
+
 struct TopologyPort {
     QString name;
     enum Direction { Input, Output } direction = Input;
     QStringList allowedDeviceTypes;
+    int positionHint = -1;
+};
+
+struct TopologyDevicePort {
+    QString name;
+    FunctionType functionType = FunctionType::CUSTOM;
     int positionHint = -1;
 };
 
@@ -27,6 +49,7 @@ struct TopologyDevice {
     QString deviceType;
     QPointF position{0, 0};
     QVector<QPair<QString, QString>> properties;
+    QVector<TopologyDevicePort> ports;
 };
 
 struct TopologyConnection {
@@ -55,6 +78,10 @@ public:
     int deviceCount() const;
     int findDeviceIndex(const QString& name) const;
 
+    void addDevicePort(int deviceIndex, const TopologyDevicePort& port);
+    void removeDevicePort(int deviceIndex, int portIndex);
+    int findDevicePortIndex(int deviceIndex, const QString& name) const;
+
     int addConnection(const TopologyConnection& conn);
     void removeConnection(int index);
     TopologyConnection* connection(int index);
@@ -62,7 +89,8 @@ public:
     int connectionCount() const;
 
     bool canConnect(const QString& productName, const QString& portName,
-                    const QString& deviceName) const;
+                    const QString& deviceName,
+                    const QString& devicePortName) const;
 
     void clear();
 

@@ -10,6 +10,7 @@ namespace topology {
 class TopologyDocument;
 class UutItem;
 class DeviceItem;
+class DevicePortItem;
 class PortItem;
 class ConnectionItem;
 
@@ -40,6 +41,7 @@ public:
 
     // Find items at scene position by type
     DeviceItem* deviceItemAt(QPointF scenePos) const;
+    DevicePortItem* devicePortItemAt(QPointF scenePos) const;
     UutItem* uutItemAt(QPointF scenePos) const;
 
 signals:

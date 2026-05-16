@@ -32,6 +32,7 @@ private:
     void buildPortPage();
     void buildDevicePage();
     void buildConnectionPage();
+    void buildDevicePortPage();
 
     void onUutNameChanged();
     void onPortNameChanged();
@@ -41,13 +42,21 @@ private:
     void onAddPropertyRow();
     void onRemovePropertyRow();
 
+    void onAddDevicePortRow();
+    void onRemoveDevicePortRow();
+    void onDevicePortFunctionTypeChanged(int row);
+
+    void onDevicePortNameChanged();
+    void onDevicePortFunctionTypeChanged();
+
     void applyDeviceProperties(int deviceIndex);
+    void applyDevicePorts(int deviceIndex);
 
     TopologyDocument* doc_;
     QStackedWidget* stack_;
 
-    // Index mapping: 0=empty, 1=uut, 2=port, 3=device, 4=connection
-    enum Page { PageEmpty = 0, PageUut, PagePort, PageDevice, PageConnection };
+    // Index mapping: 0=empty, 1=uut, 2=port, 3=device, 4=connection, 5=deviceport
+    enum Page { PageEmpty = 0, PageUut, PagePort, PageDevice, PageConnection, PageDevicePort };
 
     // UUT page widgets
     QLineEdit* uut_name_edit_ = nullptr;
@@ -66,12 +75,21 @@ private:
     QTableWidget* device_props_table_ = nullptr;
     QPushButton* add_prop_btn_ = nullptr;
     QPushButton* remove_prop_btn_ = nullptr;
+    QTableWidget* device_port_table_ = nullptr;
+    QPushButton* add_port_btn_ = nullptr;
+    QPushButton* remove_port_btn_ = nullptr;
     int editing_device_index_ = -1;
 
     // Connection page widgets
     QLabel* conn_source_label_ = nullptr;
     QLabel* conn_target_label_ = nullptr;
     QLabel* conn_device_port_label_ = nullptr;
+
+    // DevicePort page widgets
+    QLineEdit* devport_name_edit_ = nullptr;
+    QComboBox* devport_function_combo_ = nullptr;
+    int editing_device_port_device_ = -1;
+    int editing_device_port_index_ = -1;
 };
 
 }  // namespace topology

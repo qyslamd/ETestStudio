@@ -61,7 +61,7 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
     if (!conn) return nullptr;
 
     PortItem* sourcePort = nullptr;
-    DeviceItem* targetDevice = nullptr;
+    DevicePortItem* targetPort = nullptr;
 
     // Find source port
     for (auto* uut : uut_items_) {
@@ -77,18 +77,23 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
         }
     }
 
-    // Find target device
+    // Find target device port
     for (auto* dev : device_items_) {
         const auto* d = doc_->device(dev->deviceIndex());
         if (d && d->name == conn->deviceName) {
-            targetDevice = dev;
+            for (int pi = 0; pi < d->ports.size(); ++pi) {
+                if (d->ports[pi].name == conn->devicePort) {
+                    targetPort = dev->devicePortItem(pi);
+                    break;
+                }
+            }
             break;
         }
     }
 
-    if (!sourcePort || !targetDevice) return nullptr;
+    if (!sourcePort || !targetPort) return nullptr;
 
-    auto* item = new ConnectionItem(sourcePort, targetDevice, conn->devicePort);
+    auto* item = new ConnectionItem(sourcePort, targetPort, conn->devicePort);
     addItem(item);
     item->updatePath();
     connection_items_.append(item);
@@ -122,19 +127,19 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
         drag_line_ = nullptr;
     }
 
-    // Hit test for DeviceItem
-    auto* device = deviceItemAt(scenePos);
-    if (device) {
+    // Hit test for DevicePortItem
+    auto* devPort = devicePortItemAt(scenePos);
+    if (devPort) {
         const auto* prod = doc_->product(drag_source_->productIndex());
-        const auto* dev = doc_->device(device->deviceIndex());
-        if (prod && dev && doc_->canConnect(prod->name,
-                                            prod->ports[drag_source_->portIndex()].name,
-                                            dev->name)) {
-            QString portName = prod->ports[drag_source_->portIndex()].name;
-            TopologyConnection conn{prod->name, portName, dev->name,
-                                    QStringLiteral("ch%1").arg(device->deviceIndex())};
-            int ci = doc_->addConnection(conn);
-            addConnectionItem(ci);
+        const auto* dev = doc_->device(devPort->deviceIndex());
+        if (prod && dev && devPort->portIndex() < dev->ports.size()) {
+            const auto& port = prod->ports[drag_source_->portIndex()];
+            const auto& dp = dev->ports[devPort->portIndex()];
+            if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
+                TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
+                int ci = doc_->addConnection(conn);
+                addConnectionItem(ci);
+            }
         }
     }
 
@@ -159,6 +164,17 @@ DeviceItem* TopologyScene::deviceItemAt(QPointF scenePos) const {
                 ? qgraphicsitem_cast<DeviceItem*>(item->parentItem())
                 : nullptr) {
             return dev;
+        }
+    }
+    return nullptr;
+}
+
+DevicePortItem* TopologyScene::devicePortItemAt(QPointF scenePos) const {
+    auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+                             Qt::DescendingOrder);
+    for (auto* item : items) {
+        if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(item)) {
+            return dp;
         }
     }
     return nullptr;

@@ -81,10 +81,10 @@ void TopologyEditorWidget::initUi() {
     zoom_reset_action_ = toolbar->addAction(QStringLiteral("重置"));
 
     // Central area: View + Property panel
-    splitter_ = new QSplitter(Qt::Vertical, this);
+    splitter_ = new QSplitter(Qt::Horizontal, this);
     splitter_->addWidget(view_);
     splitter_->addWidget(property_panel_);
-    splitter_->setStretchFactor(0, 3);
+    splitter_->setStretchFactor(0, 4);
     splitter_->setStretchFactor(1, 1);
 
     setCentralWidget(splitter_);
@@ -131,16 +131,16 @@ void TopologyEditorWidget::buildDefaultDocument() {
     prod1.position = QPointF(50, 120);
     prod1.ports.append(
         {QStringLiteral("A429_IN1"), TopologyPort::Input,
-         {QStringLiteral("EPH6272T"), QStringLiteral("EPH5272")}});
+         {QStringLiteral("A429")}});
     prod1.ports.append(
         {QStringLiteral("A429_IN2"), TopologyPort::Input,
-         {QStringLiteral("EPH6272T"), QStringLiteral("EPH5272")}});
+         {QStringLiteral("A429")}});
     prod1.ports.append(
         {QStringLiteral("A429_OUT"), TopologyPort::Output,
-         {QStringLiteral("EPH6272T")}});
+         {QStringLiteral("A429")}});
     prod1.ports.append(
         {QStringLiteral("离散量"), TopologyPort::Input,
-         {QStringLiteral("EPH5121A")}});
+         {QStringLiteral("DISCRETE")}});
     doc_->addProduct(prod1);
 
     // Product 2
@@ -149,7 +149,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
     prod2.position = QPointF(50, 320);
     prod2.ports.append(
         {QStringLiteral("A429_IN1"), TopologyPort::Input,
-         {QStringLiteral("EPH6272T"), QStringLiteral("EPH5272")}});
+         {QStringLiteral("A429")}});
     doc_->addProduct(prod2);
 
     // Device 1
@@ -159,6 +159,8 @@ void TopologyEditorWidget::buildDefaultDocument() {
     dev1.position = QPointF(450, 80);
     dev1.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("2")}};
+    dev1.ports.append({QStringLiteral("ch0"), FunctionType::A429});
+    dev1.ports.append({QStringLiteral("ch1"), FunctionType::A429});
     doc_->addDevice(dev1);
 
     // Device 2
@@ -168,6 +170,8 @@ void TopologyEditorWidget::buildDefaultDocument() {
     dev2.position = QPointF(450, 200);
     dev2.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("3")}};
+    dev2.ports.append({QStringLiteral("ch0"), FunctionType::A429});
+    dev2.ports.append({QStringLiteral("ch1"), FunctionType::A429});
     doc_->addDevice(dev2);
 
     // Device 3
@@ -177,6 +181,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
     dev3.position = QPointF(450, 350);
     dev3.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                        {QStringLiteral("slot"), QStringLiteral("5")}};
+    dev3.ports.append({QStringLiteral("ch0"), FunctionType::DISCRETE});
     doc_->addDevice(dev3);
 
     scene_->loadFromDocument();
@@ -191,10 +196,10 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
     prod.position = (scenePos.isNull()) ? QPointF(50, 100 + n * 80) : scenePos;
     prod.ports.append(
         {QStringLiteral("Port_IN1"), TopologyPort::Input,
-         {QStringLiteral("EPH6272T")}});
+         {QStringLiteral("A429")}});
     prod.ports.append(
         {QStringLiteral("Port_OUT1"), TopologyPort::Output,
-         {QStringLiteral("EPH6272T")}});
+         {QStringLiteral("A429")}});
 
     int idx = doc_->addProduct(prod);
     scene_->addProductItem(idx, prod.position);
@@ -228,6 +233,10 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
         doc_->removeDevice(dev->deviceIndex());
         removed = true;
         statusBar()->showMessage(QStringLiteral("已删除设备"), 3000);
+    } else if (auto* devPort = qgraphicsitem_cast<DevicePortItem*>(item)) {
+        doc_->removeDevicePort(devPort->deviceIndex(), devPort->portIndex());
+        removed = true;
+        statusBar()->showMessage(QStringLiteral("已删除设备端口"), 3000);
     } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
         auto* src = conn->sourcePort();
         auto* tgt = conn->targetDevice();

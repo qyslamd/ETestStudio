@@ -80,6 +80,33 @@ private:
     static constexpr qreal kPortLabelOffset = 16.0;
 };
 
+// ── DevicePortItem ── connection point on device left edge ───────
+
+class DevicePortItem : public QGraphicsItem {
+public:
+    enum { Type = UserType + 5 };
+    int type() const override { return Type; }
+
+    DevicePortItem(int deviceIndex, int portIndex, TopologyDocument* doc,
+                   DeviceItem* parent);
+
+    QRectF boundingRect() const override;
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+               QWidget* widget) override;
+    QPainterPath shape() const override;
+
+    int deviceIndex() const { return device_index_; }
+    int portIndex() const { return port_index_; }
+    DeviceItem* parentDeviceItem() const;
+    QPointF sceneCenter() const;
+
+private:
+    int device_index_;
+    int port_index_;
+    TopologyDocument* doc_;
+    static constexpr qreal kRadius = 6.0;
+};
+
 // ── DeviceItem ── device block ───────────────────────────────────
 
 class DeviceItem : public QGraphicsItem {
@@ -100,25 +127,31 @@ public:
 
     QPointF connectionPoint() const;
 
+    void layoutDevicePorts();
+    DevicePortItem* devicePortItem(int portIndex) const;
+    qreal contentHeight() const;
+
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
 private:
     int device_index_;
     TopologyDocument* doc_;
+    QVector<DevicePortItem*> device_port_items_;
 
     static constexpr qreal kWidth = 120.0;
-    static constexpr qreal kHeight = 50.0;
+    static constexpr qreal kBaseHeight = 50.0;
+    static constexpr qreal kPortMargin = 10.0;
 };
 
-// ── ConnectionItem ── arrow line from port to device ─────────────
+// ── ConnectionItem ── bezier line from UUT port to device port ──
 
 class ConnectionItem : public QGraphicsPathItem {
 public:
     enum { Type = UserType + 4 };
     int type() const override { return Type; }
 
-    ConnectionItem(PortItem* source, DeviceItem* target,
+    ConnectionItem(PortItem* source, DevicePortItem* target,
                    const QString& devicePort,
                    QGraphicsItem* parent = nullptr);
     ~ConnectionItem() override;
@@ -126,12 +159,13 @@ public:
     void updatePath();
 
     PortItem* sourcePort() const { return source_; }
-    DeviceItem* targetDevice() const { return target_; }
+    DevicePortItem* targetDevicePort() const { return target_port_; }
+    DeviceItem* targetDevice() const;
     QString devicePort() const { return device_port_; }
 
 private:
     PortItem* source_;
-    DeviceItem* target_;
+    DevicePortItem* target_port_;
     QString device_port_;
 };
 

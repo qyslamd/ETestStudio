@@ -22,15 +22,24 @@ PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc,
     buildPortPage();
     buildDevicePage();
     buildConnectionPage();
+    buildDevicePortPage();
 
     stack_->setCurrentIndex(PageEmpty);
 }
 
 void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
+    // Save pending device edits when leaving device page
+    if (editing_device_index_ >= 0) {
+        applyDeviceProperties(editing_device_index_);
+        applyDevicePorts(editing_device_index_);
+    }
+
     editing_uut_index_ = -1;
     editing_port_product_ = -1;
     editing_port_index_ = -1;
     editing_device_index_ = -1;
+    editing_device_port_device_ = -1;
+    editing_device_port_index_ = -1;
 
     if (!item) {
         stack_->setCurrentIndex(PageEmpty);
@@ -84,8 +93,42 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
                 device_props_table_->setItem(r, 1,
                     new QTableWidgetItem(d->properties[r].second));
             }
+
+            // Load device ports into table
+            device_port_table_->setRowCount(d->ports.size());
+            for (int r = 0; r < d->ports.size(); ++r) {
+                device_port_table_->setItem(r, 0,
+                    new QTableWidgetItem(d->ports[r].name));
+                auto* combo = new QComboBox();
+                for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
+                    combo->addItem(functionTypeToString(static_cast<FunctionType>(ft)));
+                }
+                combo->setCurrentIndex(
+                    static_cast<int>(d->ports[r].functionType));
+                connect(combo, &QComboBox::currentTextChanged, this,
+                        [this, r](const QString&) { onDevicePortFunctionTypeChanged(r); });
+                device_port_table_->setCellWidget(r, 1, combo);
+            }
         }
         stack_->setCurrentIndex(PageDevice);
+        return;
+    }
+
+    if (auto* devPort = qgraphicsitem_cast<DevicePortItem*>(item)) {
+        editing_device_port_device_ = devPort->deviceIndex();
+        editing_device_port_index_ = devPort->portIndex();
+        auto* dev = doc_->device(editing_device_port_device_);
+        if (dev && editing_device_port_index_ < dev->ports.size()) {
+            const auto& dp = dev->ports[editing_device_port_index_];
+            devport_name_edit_->blockSignals(true);
+            devport_name_edit_->setText(dp.name);
+            devport_name_edit_->blockSignals(false);
+            devport_function_combo_->blockSignals(true);
+            devport_function_combo_->setCurrentIndex(
+                static_cast<int>(dp.functionType));
+            devport_function_combo_->blockSignals(false);
+        }
+        stack_->setCurrentIndex(PageDevicePort);
         return;
     }
 
@@ -154,9 +197,8 @@ void PropertyPanelWidget::buildPortPage() {
     port_direction_combo_ = new QComboBox(w);
     port_direction_combo_->addItem(QStringLiteral("Input"));
     port_direction_combo_->addItem(QStringLiteral("Output"));
-    connect(port_direction_combo_,
-            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &PropertyPanelWidget::onPortDirectionChanged);
+    connect(port_direction_combo_, &QComboBox::currentTextChanged, this,
+            [this](const QString&) { onPortDirectionChanged(); });
     lay->addRow(QStringLiteral("方向"), port_direction_combo_);
 
     port_allowed_types_edit_ = new QLineEdit(w);
@@ -206,6 +248,30 @@ void PropertyPanelWidget::buildDevicePage() {
     propsLay->addLayout(btnLay);
 
     lay->addWidget(propsGroup);
+
+    auto* portGroup = new QGroupBox(QStringLiteral("设备端口"), w);
+    auto* portLay = new QVBoxLayout(portGroup);
+
+    device_port_table_ = new QTableWidget(0, 2, w);
+    device_port_table_->setHorizontalHeaderLabels(
+        {QStringLiteral("名称"), QStringLiteral("功能类型")});
+    device_port_table_->horizontalHeader()->setStretchLastSection(true);
+    device_port_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    portLay->addWidget(device_port_table_);
+
+    auto* portBtnLay = new QHBoxLayout();
+    add_port_btn_ = new QPushButton(QStringLiteral("+"), w);
+    connect(add_port_btn_, &QPushButton::clicked, this,
+            &PropertyPanelWidget::onAddDevicePortRow);
+    remove_port_btn_ = new QPushButton(QStringLiteral("-"), w);
+    connect(remove_port_btn_, &QPushButton::clicked, this,
+            &PropertyPanelWidget::onRemoveDevicePortRow);
+    portBtnLay->addWidget(add_port_btn_);
+    portBtnLay->addWidget(remove_port_btn_);
+    portBtnLay->addStretch();
+    portLay->addLayout(portBtnLay);
+
+    lay->addWidget(portGroup);
     stack_->addWidget(w);
 }
 
@@ -221,6 +287,27 @@ void PropertyPanelWidget::buildConnectionPage() {
 
     conn_device_port_label_ = new QLabel(QStringLiteral("-"), w);
     lay->addRow(QStringLiteral("设备端口"), conn_device_port_label_);
+
+    stack_->addWidget(w);
+}
+
+void PropertyPanelWidget::buildDevicePortPage() {
+    auto* w = new QWidget(this);
+    auto* lay = new QFormLayout(w);
+
+    devport_name_edit_ = new QLineEdit(w);
+    connect(devport_name_edit_, &QLineEdit::editingFinished, this,
+            &PropertyPanelWidget::onDevicePortNameChanged);
+    lay->addRow(QStringLiteral("端口名称"), devport_name_edit_);
+
+    devport_function_combo_ = new QComboBox(w);
+    for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
+        devport_function_combo_->addItem(
+            functionTypeToString(static_cast<FunctionType>(ft)));
+    }
+    connect(devport_function_combo_, &QComboBox::currentTextChanged, this,
+            [this](const QString&) { onDevicePortFunctionTypeChanged(); });
+    lay->addRow(QStringLiteral("功能类型"), devport_function_combo_);
 
     stack_->addWidget(w);
 }
@@ -290,6 +377,67 @@ void PropertyPanelWidget::applyDeviceProperties(int deviceIndex) {
         if (keyItem && valItem && !keyItem->text().isEmpty()) {
             dev->properties.append({keyItem->text(), valItem->text()});
         }
+    }
+}
+
+void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
+    auto* dev = doc_->device(deviceIndex);
+    if (!dev) return;
+
+    dev->ports.clear();
+    for (int r = 0; r < device_port_table_->rowCount(); ++r) {
+        auto* nameItem = device_port_table_->item(r, 0);
+        if (!nameItem || nameItem->text().isEmpty()) continue;
+        auto* combo = qobject_cast<QComboBox*>(
+            device_port_table_->cellWidget(r, 1));
+        TopologyDevicePort dp;
+        dp.name = nameItem->text();
+        dp.functionType = static_cast<FunctionType>(
+            combo ? combo->currentIndex() : 0);
+        dev->ports.append(dp);
+    }
+}
+
+// ── Device port slots ─────────────────────────────────────────
+
+void PropertyPanelWidget::onAddDevicePortRow() {
+    int row = device_port_table_->rowCount();
+    device_port_table_->insertRow(row);
+    device_port_table_->setItem(row, 0, new QTableWidgetItem(QString()));
+    auto* combo = new QComboBox();
+    for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
+        combo->addItem(functionTypeToString(static_cast<FunctionType>(ft)));
+    }
+    connect(combo, &QComboBox::currentTextChanged, this,
+            [this, row](const QString&) { onDevicePortFunctionTypeChanged(row); });
+    device_port_table_->setCellWidget(row, 1, combo);
+}
+
+void PropertyPanelWidget::onRemoveDevicePortRow() {
+    int row = device_port_table_->currentRow();
+    if (row >= 0) {
+        device_port_table_->removeRow(row);
+    }
+}
+
+void PropertyPanelWidget::onDevicePortFunctionTypeChanged(int row) {
+    if (editing_device_index_ < 0) return;
+    Q_UNUSED(row);
+    emit documentChanged();
+}
+
+void PropertyPanelWidget::onDevicePortNameChanged() {
+    auto* dev = doc_->device(editing_device_port_device_);
+    if (dev && editing_device_port_index_ < dev->ports.size()) {
+        dev->ports[editing_device_port_index_].name = devport_name_edit_->text();
+    }
+}
+
+void PropertyPanelWidget::onDevicePortFunctionTypeChanged() {
+    auto* dev = doc_->device(editing_device_port_device_);
+    if (dev && editing_device_port_index_ < dev->ports.size()) {
+        dev->ports[editing_device_port_index_].functionType =
+            static_cast<FunctionType>(devport_function_combo_->currentIndex());
     }
 }
 

@@ -97,10 +97,16 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     if (!s) return;
 
     QPointF scenePos = mapToScene(event->pos());
+    auto* devPort = s->devicePortItemAt(scenePos);
     auto* uut = s->uutItemAt(scenePos);
     auto* dev = s->deviceItemAt(scenePos);
 
-    if (uut) {
+    if (devPort) {
+        auto* delAct = menu.addAction(QStringLiteral("删除端口"));
+        connect(delAct, &QAction::triggered, this, [this, devPort]() {
+            emit deleteItemRequested(devPort);
+        });
+    } else if (uut) {
         auto* act = menu.addAction(QStringLiteral("删除 UUT"));
         connect(act, &QAction::triggered, this, [this, uut]() {
             emit deleteItemRequested(uut);

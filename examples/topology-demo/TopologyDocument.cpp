@@ -2,6 +2,35 @@
 
 namespace topology {
 
+QString functionTypeToString(FunctionType t) {
+    switch (t) {
+        case FunctionType::A429: return QStringLiteral("A429");
+        case FunctionType::AD: return QStringLiteral("AD");
+        case FunctionType::DA: return QStringLiteral("DA");
+        case FunctionType::DISCRETE: return QStringLiteral("DISCRETE");
+        case FunctionType::SERIAL: return QStringLiteral("SERIAL");
+        case FunctionType::MIL1553: return QStringLiteral("MIL1553");
+        case FunctionType::POWER: return QStringLiteral("POWER");
+        case FunctionType::CAMERA: return QStringLiteral("CAMERA");
+        case FunctionType::OSCILLOSCOPE: return QStringLiteral("OSCILLOSCOPE");
+        case FunctionType::CUSTOM: return QStringLiteral("CUSTOM");
+    }
+    return QStringLiteral("CUSTOM");
+}
+
+FunctionType stringToFunctionType(const QString& s) {
+    if (s == QStringLiteral("A429")) return FunctionType::A429;
+    if (s == QStringLiteral("AD")) return FunctionType::AD;
+    if (s == QStringLiteral("DA")) return FunctionType::DA;
+    if (s == QStringLiteral("DISCRETE")) return FunctionType::DISCRETE;
+    if (s == QStringLiteral("SERIAL")) return FunctionType::SERIAL;
+    if (s == QStringLiteral("MIL1553")) return FunctionType::MIL1553;
+    if (s == QStringLiteral("POWER")) return FunctionType::POWER;
+    if (s == QStringLiteral("CAMERA")) return FunctionType::CAMERA;
+    if (s == QStringLiteral("OSCILLOSCOPE")) return FunctionType::OSCILLOSCOPE;
+    return FunctionType::CUSTOM;
+}
+
 TopologyDocument::TopologyDocument(QObject* parent)
     : QObject(parent) {}
 
@@ -73,6 +102,31 @@ int TopologyDocument::findDeviceIndex(const QString& name) const {
     return -1;
 }
 
+void TopologyDocument::addDevicePort(int deviceIndex,
+                                     const TopologyDevicePort& port) {
+    if (deviceIndex < 0 || deviceIndex >= devices_.size()) return;
+    devices_[deviceIndex].ports.append(port);
+    emit deviceChanged(deviceIndex);
+}
+
+void TopologyDocument::removeDevicePort(int deviceIndex, int portIndex) {
+    if (deviceIndex < 0 || deviceIndex >= devices_.size()) return;
+    auto& dev = devices_[deviceIndex];
+    if (portIndex < 0 || portIndex >= dev.ports.size()) return;
+    dev.ports.removeAt(portIndex);
+    emit deviceChanged(deviceIndex);
+}
+
+int TopologyDocument::findDevicePortIndex(int deviceIndex,
+                                           const QString& name) const {
+    if (deviceIndex < 0 || deviceIndex >= devices_.size()) return -1;
+    const auto& dev = devices_[deviceIndex];
+    for (int i = 0; i < dev.ports.size(); ++i) {
+        if (dev.ports[i].name == name) return i;
+    }
+    return -1;
+}
+
 int TopologyDocument::addConnection(const TopologyConnection& conn) {
     int index = connections_.size();
     connections_.append(conn);
@@ -102,18 +156,23 @@ int TopologyDocument::connectionCount() const {
 
 bool TopologyDocument::canConnect(const QString& productName,
                                   const QString& portName,
-                                  const QString& deviceName) const {
+                                  const QString& deviceName,
+                                  const QString& devicePortName) const {
     int pi = findProductIndex(productName);
     if (pi < 0) return false;
     int di = findDeviceIndex(deviceName);
     if (di < 0) return false;
+    int dpi = findDevicePortIndex(di, devicePortName);
+    if (dpi < 0) return false;
 
     const auto& product = products_[pi];
     const auto& dev = devices_[di];
+    const auto& devPort = dev.ports[dpi];
 
     for (const auto& port : product.ports) {
         if (port.name == portName) {
-            return port.allowedDeviceTypes.contains(dev.deviceType);
+            return port.allowedDeviceTypes.contains(
+                functionTypeToString(devPort.functionType));
         }
     }
     return false;
