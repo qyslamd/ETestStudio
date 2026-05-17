@@ -64,6 +64,7 @@ int main(int argc, char* argv[]) {
           etest::topology::TopologyJsonSerializer::deserialize(jdoc.object(), editor->document());
           editor->document()->undoStack()->clear();
           editor->reloadScene();
+          editor->setEditorId(id);
         }
       }
     }

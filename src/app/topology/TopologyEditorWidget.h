@@ -36,6 +36,7 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   // Topology specific
   TopologyDocument* document() const;
   void reloadScene();
+  void setEditorId(const QString& newId);
 
  Q_SIGNALS:
   void editorTitleChanged(const QString& title);
@@ -56,7 +57,6 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   void initUi();
   void initSignals();
   void buildDefaultDocument();
-  void setEditorId(const QString& newId);
   void rebuildSceneAndRestoreSelection();
 
   TopologyDocument* doc_;
