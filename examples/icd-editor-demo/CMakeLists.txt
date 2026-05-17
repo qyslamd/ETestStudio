@@ -1,0 +1,33 @@
+set(TARGET_NAME "icd-editor-demo")
+
+add_executable(${TARGET_NAME}
+    ProtocalEditorWidget.h
+    ProtocalEditorWidget.cpp
+    IcdNodeTreeWidget.h
+    IcdNodeTreeWidget.cpp
+    IcdBitLayoutView.h
+    IcdBitLayoutView.cpp
+    IcdPropertyPanel.h
+    IcdPropertyPanel.cpp
+    main.cpp
+)
+
+target_link_libraries(${TARGET_NAME} PRIVATE
+    Qt5::Widgets
+    Qt5::Core
+    Qt5::Gui
+)
+
+set_target_properties(${TARGET_NAME} PROPERTIES
+    AUTOMOC ON
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+if(WIN32)
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
+        "${CMAKE_SOURCE_DIR}/scripts/run_${TARGET_NAME}.bat"
+        @ONLY
+    )
+endif()

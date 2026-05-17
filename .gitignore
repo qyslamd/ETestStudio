@@ -58,6 +58,7 @@ scripts/run_test.bat
 scripts/run_qscintilla-demo.bat
 scripts/run_lua-debugger-demo.bat
 scripts/run_guidance-demo.bat
+scripts/run_icd-editor-demo.bat
 scripts/code_stats.bat
 scripts/code_stats.ps1
 # 旧位置遗留文件（仍可能存在于磁盘）
