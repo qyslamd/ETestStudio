@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
   EditorFactoryRegistry::registerExtension("js", "text");
   EditorFactoryRegistry::registerExtension("cmake", "text");
   EditorFactoryRegistry::registerExtension("txt", "text");
+  EditorFactoryRegistry::registerExtension("etopo", "topology");
 
   EditorFactoryRegistry::registerFactory("text", [](const QString& path, QWidget* parent) {
     return new TextEditorWidget(path, parent);

@@ -35,7 +35,7 @@ echo.
 
 %CLOC% --exclude-dir=3rdparty,build,.git,cmake-build,out,Release,Debug ^
        --exclude-ext=md,txt,bat,ps1,json,ini,iss,svg ^
-       "%~dp0..\src" "%~dp0..\tests" "%~dp0..\examples" 2>&1
+       src/ tests/ examples/ 2>&1
 
 echo.
 echo Done!

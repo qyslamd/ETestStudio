@@ -41,10 +41,9 @@ Write-Host " etest-demo 代码行数统计"
 Write-Host "========================================"
 Write-Host ""
 
-$root = Join-Path $PSScriptRoot ".."
 & $cloc --exclude-dir=3rdparty,build,.git,cmake-build,out,Release,Debug `
        --exclude-ext=md,txt,bat,ps1,json,ini,iss,svg `
-       (Join-Path $root "src") (Join-Path $root "tests") (Join-Path $root "examples") 2>&1
+       src/ tests/ examples/ 2>&1
 
 Write-Host ""
 Write-Host "Done!"
