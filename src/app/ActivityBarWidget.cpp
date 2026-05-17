@@ -34,8 +34,8 @@ void ActivityBarWidget::setupUi() {
                                 ":/resources/icons/svg/project_light.svg"));
   // 索引1：硬件拓扑（特殊处理，弹中央dock）
   buttons_.append(createButton(QStringLiteral("硬件拓扑"),
-                                ":/resources/icons/svg/hardware_dark.svg",
-                                ":/resources/icons/svg/hardware_light.svg"));
+                                ":/resources/icons/svg/topology_dark.svg",
+                                ":/resources/icons/svg/topology_light.svg"));
   // 索引2：搜索
   buttons_.append(createButton(QStringLiteral("搜索"),
                                 ":/resources/icons/svg/search_dark.svg",

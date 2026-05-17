@@ -16,6 +16,8 @@
         <file>resources/icons/svg/debug_light.svg</file>
         <file>resources/icons/svg/hardware_dark.svg</file>
         <file>resources/icons/svg/hardware_light.svg</file>
+        <file>resources/icons/svg/topology_dark.svg</file>
+        <file>resources/icons/svg/topology_light.svg</file>
         <file>resources/icons/svg/search_dark.svg</file>
         <file>resources/icons/svg/search_light.svg</file>
         <file>resources/icons/svg/git_dark.svg</file>
