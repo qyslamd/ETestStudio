@@ -72,6 +72,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 #=======================================
 # 添加拓扑编辑器库
 add_subdirectory(topology)
+add_subdirectory(protocal)
 
 #=======================================
 # 添加第三方依赖头文件路径

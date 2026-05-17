@@ -17,6 +17,8 @@ class EditorManager : public QObject {
   explicit EditorManager(ads::CDockManager* dockManager,
                          QObject* parent = nullptr);
 
+  static void registerEditorTypes();
+
   void openFile(const QString& filePath);
   void openFileAtLine(const QString& filePath, int line);
   bool closeFile(const QString& editorId);
@@ -39,7 +41,8 @@ class EditorManager : public QObject {
   IEditor* currentEditor() const;
   QString currentFilePath() const;
 
-  void createEditor(const QString& editorType, const QString& id,
+  void createEditor(const QString& editorType,
+                    const QString& id,
                     const QString& title);
   void updateEditorId(IEditor* editor, const QString& newId);
 

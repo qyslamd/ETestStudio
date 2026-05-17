@@ -2,30 +2,84 @@
 #include "DockAreaWidget.h"
 #include "DockWidgetTab.h"
 
-#include <QFileInfo>
-#include <QMessageBox>
-#include <QDir>
 #include <QApplication>
-#include <QMenu>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
+#include <QMenu>
+#include <QMessageBox>
 
 #include "TextEditorWidget.h"
 #include "editor/EditorFactory.h"
 #include "logger/Logger.h"
+#include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
+#include "topology/TopologyJsonSerializer.h"
 
 using namespace etest::core::logger;
 
 namespace etest::app {
 
-EditorManager::EditorManager(ads::CDockManager* dockManager,
-                             QObject* parent)
+EditorManager::EditorManager(ads::CDockManager* dockManager, QObject* parent)
     : QObject(parent), dock_manager_(dockManager) {
   connect(dock_manager_, &ads::CDockManager::focusedDockWidgetChanged, this,
           [this](ads::CDockWidget* old, ads::CDockWidget* now) {
             onDockWidgetActivated(now);
           });
+}
+
+void EditorManager::registerEditorTypes() {
+  // 注册编辑器工厂
+  EditorFactoryRegistry::registerExtension("cpp", "text");
+  EditorFactoryRegistry::registerExtension("h", "text");
+  EditorFactoryRegistry::registerExtension("hpp", "text");
+  EditorFactoryRegistry::registerExtension("c", "text");
+  EditorFactoryRegistry::registerExtension("cc", "text");
+  EditorFactoryRegistry::registerExtension("cxx", "text");
+  EditorFactoryRegistry::registerExtension("py", "text");
+  EditorFactoryRegistry::registerExtension("lua", "text");
+  EditorFactoryRegistry::registerExtension("json", "text");
+  EditorFactoryRegistry::registerExtension("xml", "text");
+  EditorFactoryRegistry::registerExtension("html", "text");
+  EditorFactoryRegistry::registerExtension("yaml", "text");
+  EditorFactoryRegistry::registerExtension("yml", "text");
+  EditorFactoryRegistry::registerExtension("md", "text");
+  EditorFactoryRegistry::registerExtension("js", "text");
+  EditorFactoryRegistry::registerExtension("cmake", "text");
+  EditorFactoryRegistry::registerExtension("txt", "text");
+  EditorFactoryRegistry::registerExtension("etopo", "topology");
+  EditorFactoryRegistry::registerExtension("eprot", "protocal");
+
+  EditorFactoryRegistry::registerFactory(
+      "text", [](const QString& path, QWidget* parent) {
+        return new TextEditorWidget(path, parent);
+      });
+
+  EditorFactoryRegistry::registerFactory(
+      "topology", [](const QString& id, QWidget* parent) {
+        auto* editor = new etest::topology::TopologyEditorWidget(parent);
+        if (!id.startsWith("editor://") && QFileInfo::exists(id)) {
+          QFile file(id);
+          if (file.open(QIODevice::ReadOnly)) {
+            QJsonParseError err;
+            QJsonDocument jdoc = QJsonDocument::fromJson(file.readAll(), &err);
+            file.close();
+            if (err.error == QJsonParseError::NoError) {
+              etest::topology::TopologyJsonSerializer::deserialize(
+                  jdoc.object(), editor->document());
+              editor->document()->undoStack()->clear();
+              editor->reloadScene();
+              editor->setEditorId(id);
+            }
+          }
+        }
+        return editor;
+      });
 }
 
 void EditorManager::openFile(const QString& filePath) {
@@ -48,7 +102,8 @@ void EditorManager::openFile(const QString& filePath) {
     editorType = QStringLiteral("text");
   }
 
-  IEditor* editor = EditorFactoryRegistry::create(editorType, filePath, nullptr);
+  IEditor* editor =
+      EditorFactoryRegistry::create(editorType, filePath, nullptr);
   if (!editor) {
     LOG_WARN("EDITOR", "无法创建编辑器：{}", filePath.toStdString());
     return;
@@ -61,7 +116,8 @@ void EditorManager::openFile(const QString& filePath) {
   dock->tabWidget()->setElideMode(Qt::ElideNone);
 
   dock->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(dock, &ads::CDockWidget::customContextMenuRequested, this, &EditorManager::onDockCustomContextMenuRequested);
+  connect(dock, &ads::CDockWidget::customContextMenuRequested, this,
+          &EditorManager::onDockCustomContextMenuRequested);
 
   auto* obj = editor->signalObject();
   if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
@@ -75,8 +131,10 @@ void EditorManager::openFile(const QString& filePath) {
               emit unsavedChangesChanged();
               emit modificationChanged(modified);
             });
-  } else if (auto* topoEditor = dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
-    connect(topoEditor, &etest::topology::TopologyEditorWidget::modificationChanged, this,
+  } else if (auto* topoEditor =
+                 dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
+    connect(topoEditor,
+            &etest::topology::TopologyEditorWidget::modificationChanged, this,
             [this, editor, dock](bool modified) {
               QString title = editor->displayName();
               if (modified) {
@@ -98,14 +156,14 @@ void EditorManager::openFile(const QString& filePath) {
   if (dock_widgets_.isEmpty()) {
     ads::CDockWidget* centralDock = dock_manager_->centralWidget();
     if (centralDock) {
-        ads::CDockAreaWidget* centralArea = centralDock->dockAreaWidget();
-        if (centralArea) {
-            dock_manager_->addDockWidgetTabToArea(dock, centralArea);
-        } else {
-            dock_manager_->addDockWidget(ads::CenterDockWidgetArea, dock);
-        }
-    } else {
+      ads::CDockAreaWidget* centralArea = centralDock->dockAreaWidget();
+      if (centralArea) {
+        dock_manager_->addDockWidgetTabToArea(dock, centralArea);
+      } else {
         dock_manager_->addDockWidget(ads::CenterDockWidgetArea, dock);
+      }
+    } else {
+      dock_manager_->addDockWidget(ads::CenterDockWidgetArea, dock);
     }
   } else {
     auto* existingDock = *dock_widgets_.constBegin();
@@ -269,7 +327,9 @@ IEditor* EditorManager::editorById(const QString& id) const {
   return editors_.value(id, nullptr);
 }
 
-QStringList EditorManager::openFiles() const { return editors_.keys(); }
+QStringList EditorManager::openFiles() const {
+  return editors_.keys();
+}
 
 bool EditorManager::isOpen(const QString& editorId) const {
   return editors_.contains(editorId);
@@ -339,16 +399,20 @@ void EditorManager::createEditor(const QString& editorType,
     connect(textEditor, &TextEditorWidget::modificationChanged, this,
             [this, editor, dock](bool modified) {
               QString title = editor->displayName();
-              if (modified) title.prepend("* ");
+              if (modified)
+                title.prepend("* ");
               dock->setWindowTitle(title);
               emit unsavedChangesChanged();
               emit modificationChanged(modified);
             });
-  } else if (auto* topoEditor = dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
-    connect(topoEditor, &etest::topology::TopologyEditorWidget::modificationChanged, this,
+  } else if (auto* topoEditor =
+                 dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
+    connect(topoEditor,
+            &etest::topology::TopologyEditorWidget::modificationChanged, this,
             [this, editor, dock](bool modified) {
               QString title = editor->displayName();
-              if (modified) title.prepend("* ");
+              if (modified)
+                title.prepend("* ");
               dock->setWindowTitle(title);
               emit unsavedChangesChanged();
               emit modificationChanged(modified);
@@ -431,8 +495,7 @@ void EditorManager::onDockWidgetActivated(ads::CDockWidget* dock) {
   emit currentEditorChanged(editor);
 }
 
-void EditorManager::updateDockTitle(IEditor* editor,
-                                    ads::CDockWidget* dock) {
+void EditorManager::updateDockTitle(IEditor* editor, ads::CDockWidget* dock) {
   QString title = editor->displayName();
   if (editor->isModified()) {
     title.prepend("* ");
@@ -476,7 +539,8 @@ void EditorManager::onFileDeleted(const QString& filePath) {
   closeFile(filePath);
 }
 
-void EditorManager::onFileRenamed(const QString& oldPath, const QString& newPath) {
+void EditorManager::onFileRenamed(const QString& oldPath,
+                                  const QString& newPath) {
   auto it = editors_.find(oldPath);
   if (it == editors_.end()) {
     return;
@@ -500,7 +564,8 @@ void EditorManager::onFileRenamed(const QString& oldPath, const QString& newPath
 
   updateDockTitle(editor, dock);
 
-  LOG_INFO("EDITOR", "文件已重命名：{} -> {}", oldPath.toStdString(), newPath.toStdString());
+  LOG_INFO("EDITOR", "文件已重命名：{} -> {}", oldPath.toStdString(),
+           newPath.toStdString());
 }
 
 bool EditorManager::closeFilesInDirectory(const QString& dirPath) {
@@ -534,23 +599,25 @@ bool EditorManager::closeFilesInDirectory(const QString& dirPath) {
 
 void EditorManager::onDockCustomContextMenuRequested(const QPoint& pos) {
   auto* dock = qobject_cast<ads::CDockWidget*>(sender());
-  if (!dock) return;
+  if (!dock)
+    return;
 
   QString editorId;
-  for (auto it = dock_widgets_.constBegin(); it != dock_widgets_.constEnd(); ++it) {
+  for (auto it = dock_widgets_.constBegin(); it != dock_widgets_.constEnd();
+       ++it) {
     if (it.value() == dock) {
       editorId = it.key();
       break;
     }
   }
-  if (editorId.isEmpty()) return;
+  if (editorId.isEmpty())
+    return;
 
   QMenu menu(dock);
 
   QAction* closeAction = menu.addAction(QStringLiteral("关闭"));
-  connect(closeAction, &QAction::triggered, this, [this, editorId]() {
-    closeFile(editorId);
-  });
+  connect(closeAction, &QAction::triggered, this,
+          [this, editorId]() { closeFile(editorId); });
 
   QAction* closeOthersAction = menu.addAction(QStringLiteral("关闭其他"));
   connect(closeOthersAction, &QAction::triggered, this, [this, editorId]() {
@@ -563,34 +630,37 @@ void EditorManager::onDockCustomContextMenuRequested(const QPoint& pos) {
   });
 
   QAction* closeRightAction = menu.addAction(QStringLiteral("关闭右侧所有"));
-  connect(closeRightAction, &QAction::triggered, this, [this, dock, editorId]() {
-    auto* area = dock->dockAreaWidget();
-    if (!area) return;
+  connect(closeRightAction, &QAction::triggered, this,
+          [this, dock, editorId]() {
+            auto* area = dock->dockAreaWidget();
+            if (!area)
+              return;
 
-    auto docks = area->dockWidgets();
-    int currentIndex = docks.indexOf(dock);
-    if (currentIndex == -1) return;
+            auto docks = area->dockWidgets();
+            int currentIndex = docks.indexOf(dock);
+            if (currentIndex == -1)
+              return;
 
-    for (int i = currentIndex + 1; i < docks.size(); ++i) {
-      QString id;
-      for (auto it = dock_widgets_.constBegin(); it != dock_widgets_.constEnd(); ++it) {
-        if (it.value() == docks[i]) {
-          id = it.key();
-          break;
-        }
-      }
-      if (!id.isEmpty()) {
-        closeFile(id);
-      }
-    }
-  });
+            for (int i = currentIndex + 1; i < docks.size(); ++i) {
+              QString id;
+              for (auto it = dock_widgets_.constBegin();
+                   it != dock_widgets_.constEnd(); ++it) {
+                if (it.value() == docks[i]) {
+                  id = it.key();
+                  break;
+                }
+              }
+              if (!id.isEmpty()) {
+                closeFile(id);
+              }
+            }
+          });
 
   menu.addSeparator();
 
   QAction* copyPathAction = menu.addAction(QStringLiteral("复制文件路径"));
-  connect(copyPathAction, &QAction::triggered, this, [editorId]() {
-    QApplication::clipboard()->setText(editorId);
-  });
+  connect(copyPathAction, &QAction::triggered, this,
+          [editorId]() { QApplication::clipboard()->setText(editorId); });
 
   QAction* openFolderAction = menu.addAction(QStringLiteral("打开所在文件夹"));
   connect(openFolderAction, &QAction::triggered, this, [editorId]() {
