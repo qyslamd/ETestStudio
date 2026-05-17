@@ -8,11 +8,11 @@
 #include <QTableWidget>
 #include <QWidget>
 
+#include "TopologyDocument.h"
+
 class QGraphicsItem;
 
 namespace etest::topology {
-
-class TopologyDocument;
 
 class PropertyPanelWidget : public QWidget {
   Q_OBJECT
@@ -58,6 +58,10 @@ class PropertyPanelWidget : public QWidget {
 
   TopologyDocument* doc_;
   QStackedWidget* stack_;
+
+  // Saved state for undo support (device page table edits)
+  QVector<QPair<QString, QString>> saved_device_properties_;
+  QVector<TopologyDevicePort> saved_device_ports_;
 
   // Index mapping: 0=empty, 1=uut, 2=port, 3=device, 4=connection, 5=deviceport
   enum Page {

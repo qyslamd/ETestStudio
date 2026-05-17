@@ -55,6 +55,7 @@ class TopologyScene : public QGraphicsScene {
 
  protected:
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
  private:
   void clearScene();
@@ -67,6 +68,10 @@ class TopologyScene : public QGraphicsScene {
   // Drag state (PortItem or DevicePortItem)
   QGraphicsItem* drag_source_ = nullptr;
   QGraphicsLineItem* drag_line_ = nullptr;
+
+  // Move tracking
+  QGraphicsItem* moving_item_ = nullptr;
+  QPointF move_start_pos_;
 };
 
 }  // namespace etest::topology

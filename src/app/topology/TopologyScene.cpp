@@ -1,5 +1,6 @@
 #include "TopologyScene.h"
 #include "TopologyDocument.h"
+#include "UndoCommands.h"
 #include "topology_items.h"
 
 #include <QGraphicsLineItem>
@@ -141,7 +142,6 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
   auto* srcDevPort = qgraphicsitem_cast<DevicePortItem*>(drag_source_);
 
   if (srcPort) {
-    // UUT port → Device port
     auto* devPort = devicePortItemAt(scenePos);
     if (devPort) {
       const auto* prod = doc_->product(srcPort->productIndex());
@@ -151,13 +151,11 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
         const auto& dp = dev->ports[devPort->portIndex()];
         if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
           TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
-          int ci = doc_->addConnection(conn);
-          addConnectionItem(ci);
+          doc_->undoStack()->push(new AddConnectionCommand(doc_, conn));
         }
       }
     }
   } else if (srcDevPort) {
-    // Device port → UUT port
     auto* uutPort = portItemAt(scenePos);
     if (uutPort) {
       const auto* dev = doc_->device(srcDevPort->deviceIndex());
@@ -167,8 +165,7 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
         const auto& port = prod->ports[uutPort->portIndex()];
         if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
           TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
-          int ci = doc_->addConnection(conn);
-          addConnectionItem(ci);
+          doc_->undoStack()->push(new AddConnectionCommand(doc_, conn));
         }
       }
     }
@@ -264,6 +261,7 @@ UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
 void TopologyScene::clearScene() {
   drag_source_ = nullptr;
   drag_line_ = nullptr;
+  moving_item_ = nullptr;
   clear();
   uut_items_.clear();
   device_items_.clear();
@@ -274,14 +272,39 @@ void TopologyScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
   QGraphicsScene::mousePressEvent(event);
 
   if (event->button() == Qt::LeftButton) {
-    // Notify property panel of selection change
     auto selected = selectedItems();
     if (!selected.isEmpty()) {
       emit itemSelected(selected.first());
     } else {
       emit itemSelected(nullptr);
     }
+
+    // Track moving item for undo support
+    for (auto* item : selected) {
+      if (item->flags() & QGraphicsItem::ItemIsMovable) {
+        moving_item_ = item;
+        move_start_pos_ = item->pos();
+        break;
+      }
+    }
   }
+}
+
+void TopologyScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
+  QGraphicsScene::mouseReleaseEvent(event);
+
+  if (moving_item_ && moving_item_->pos() != move_start_pos_) {
+    if (auto* uut = qgraphicsitem_cast<UutItem*>(moving_item_)) {
+      auto* cmd = new MoveProductCommand(doc_, uut->productIndex(),
+                                         move_start_pos_, moving_item_->pos());
+      doc_->undoStack()->push(cmd);
+    } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(moving_item_)) {
+      auto* cmd = new MoveDeviceCommand(doc_, dev->deviceIndex(),
+                                        move_start_pos_, moving_item_->pos());
+      doc_->undoStack()->push(cmd);
+    }
+  }
+  moving_item_ = nullptr;
 }
 
 }  // namespace etest::topology

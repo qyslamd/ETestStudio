@@ -5,6 +5,7 @@
 #include <QPointF>
 #include <QString>
 #include <QStringList>
+#include <QUndoStack>
 #include <QVector>
 
 namespace etest::topology {
@@ -98,8 +99,9 @@ class TopologyDocument : public QObject {
                   const QString& deviceName,
                   const QString& devicePortName) const;
 
-  void setModified(bool modified);
   bool isModified() const;
+
+  QUndoStack* undoStack() const { return undo_stack_; }
 
   void clear();
 
@@ -115,7 +117,7 @@ class TopologyDocument : public QObject {
   void documentCleared();
 
  private:
-  bool modified_ = false;
+  QUndoStack* undo_stack_;
   QVector<TopologyProduct> products_;
   QVector<TopologyDevice> devices_;
   QVector<TopologyConnection> connections_;

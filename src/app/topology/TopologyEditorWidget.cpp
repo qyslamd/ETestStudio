@@ -1,7 +1,6 @@
 #include "TopologyEditorWidget.h"
 #include <QAction>
 #include <QApplication>
-#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFrame>
@@ -20,6 +19,7 @@
 #include "TopologyJsonSerializer.h"
 #include "TopologyScene.h"
 #include "TopologyView.h"
+#include "UndoCommands.h"
 #include "topology_items.h"
 
 namespace etest::topology {
@@ -65,8 +65,7 @@ bool TopologyEditorWidget::save() {
   file.write(jdoc.toJson(QJsonDocument::Indented));
   file.close();
 
-  doc_->setModified(false);
-  emit modificationChanged(false);
+  doc_->undoStack()->setClean();
   return true;
 }
 
@@ -176,6 +175,22 @@ void TopologyEditorWidget::initUi() {
   zoomResetBtn->setDefaultAction(zoom_reset_action_);
   toolbarLayout->addWidget(zoomResetBtn);
 
+  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
+
+  undo_action_ = new QAction(QStringLiteral("撤销"), this);
+  undo_action_->setShortcut(QKeySequence::Undo);
+  undo_action_->setEnabled(false);
+  auto* undoBtn = new QToolButton(toolbarFrame);
+  undoBtn->setDefaultAction(undo_action_);
+  toolbarLayout->addWidget(undoBtn);
+
+  redo_action_ = new QAction(QStringLiteral("重做"), this);
+  redo_action_->setShortcut(QKeySequence::Redo);
+  redo_action_->setEnabled(false);
+  auto* redoBtn = new QToolButton(toolbarFrame);
+  redoBtn->setDefaultAction(redo_action_);
+  toolbarLayout->addWidget(redoBtn);
+
   toolbarLayout->addStretch();
   mainLayout->addWidget(toolbarFrame);
 
@@ -206,6 +221,11 @@ void TopologyEditorWidget::initSignals() {
   connect(zoom_reset_action_, &QAction::triggered, view_,
           &TopologyView::zoomReset);
 
+  connect(undo_action_, &QAction::triggered, this,
+          &TopologyEditorWidget::onUndo);
+  connect(redo_action_, &QAction::triggered, this,
+          &TopologyEditorWidget::onRedo);
+
   connect(view_, &TopologyView::addUutRequested, this,
           &TopologyEditorWidget::onAddUut);
   connect(view_, &TopologyView::addDeviceRequested, this,
@@ -220,6 +240,17 @@ void TopologyEditorWidget::initSignals() {
 
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
           &TopologyEditorWidget::onDocumentChanged);
+
+  auto* undoStack = doc_->undoStack();
+  connect(undoStack, &QUndoStack::indexChanged, this, [this]() {
+    rebuildSceneAndRestoreSelection();
+  });
+  connect(undoStack, &QUndoStack::canUndoChanged, undo_action_,
+          &QAction::setEnabled);
+  connect(undoStack, &QUndoStack::canRedoChanged, redo_action_,
+          &QAction::setEnabled);
+  connect(undoStack, &QUndoStack::cleanChanged, this,
+          [this](bool clean) { emit modificationChanged(!clean); });
 
   auto* delShortcut = new QShortcut(QKeySequence::Delete, this);
   connect(delShortcut, &QShortcut::activated, this, [this]() {
@@ -291,6 +322,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
   doc_->addDevice(dev3);
 
   scene_->loadFromDocument();
+  doc_->undoStack()->clear();
 }
 
 // ── Slots ──────────────────────────────────────────────────────
@@ -307,8 +339,8 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
                      TopologyPort::Output,
                      {QStringLiteral("A429")}});
 
-  int idx = doc_->addProduct(prod);
-  scene_->addProductItem(idx, prod.position);
+  auto* cmd = new AddProductCommand(doc_, prod);
+  doc_->undoStack()->push(cmd);
   status_label_->setText(QStringLiteral("已添加 UUT: %1").arg(prod.name));
 }
 
@@ -319,8 +351,8 @@ void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
   dev.deviceType = QStringLiteral("EPH6272T");
   dev.position = (scenePos.isNull()) ? QPointF(50, 100 + n * 80) : scenePos;
 
-  int idx = doc_->addDevice(dev);
-  scene_->addDeviceItem(idx, dev.position);
+  auto* cmd = new AddDeviceCommand(doc_, dev);
+  doc_->undoStack()->push(cmd);
   status_label_->setText(QStringLiteral("已添加设备: %1").arg(dev.name));
 }
 
@@ -328,35 +360,17 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
   if (!item)
     return;
 
-  bool removed = false;
-
   if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
-    const auto* prod = doc_->product(uut->productIndex());
-    if (prod) {
-      for (int i = doc_->connectionCount() - 1; i >= 0; --i) {
-        if (doc_->connection(i)->productName == prod->name) {
-          doc_->removeConnection(i);
-        }
-      }
-    }
-    doc_->removeProduct(uut->productIndex());
-    removed = true;
+    auto* cmd = new RemoveProductCommand(doc_, uut->productIndex());
+    doc_->undoStack()->push(cmd);
     status_label_->setText(QStringLiteral("已删除 UUT"));
   } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
-    const auto* d = doc_->device(dev->deviceIndex());
-    if (d) {
-      for (int i = doc_->connectionCount() - 1; i >= 0; --i) {
-        if (doc_->connection(i)->deviceName == d->name) {
-          doc_->removeConnection(i);
-        }
-      }
-    }
-    doc_->removeDevice(dev->deviceIndex());
-    removed = true;
+    auto* cmd = new RemoveDeviceCommand(doc_, dev->deviceIndex());
+    doc_->undoStack()->push(cmd);
     status_label_->setText(QStringLiteral("已删除设备"));
   } else if (auto* devPort = qgraphicsitem_cast<DevicePortItem*>(item)) {
     doc_->removeDevicePort(devPort->deviceIndex(), devPort->portIndex());
-    removed = true;
+    onDocumentChanged();
     status_label_->setText(QStringLiteral("已删除设备端口"));
   } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
     auto* src = conn->sourcePort();
@@ -371,18 +385,14 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
               c->portName == prod->ports[src->portIndex()].name &&
               c->deviceName == dev->name &&
               c->devicePort == conn->devicePort()) {
-            doc_->removeConnection(i);
+            doc_->undoStack()->push(
+                new RemoveConnectionCommand(doc_, i));
             break;
           }
         }
       }
     }
-    removed = true;
     status_label_->setText(QStringLiteral("已删除连线"));
-  }
-
-  if (removed) {
-    scene_->loadFromDocument();
   }
 }
 
@@ -413,10 +423,7 @@ void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
   }
 }
 
-void TopologyEditorWidget::onDocumentChanged() {
-  doc_->setModified(true);
-  emit modificationChanged(true);
-
+void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
   int selType = -1, selIdx1 = -1, selIdx2 = -1;
   auto selItems = scene_->selectedItems();
   if (!selItems.isEmpty()) {
@@ -479,6 +486,18 @@ void TopologyEditorWidget::onDocumentChanged() {
   } else {
     property_panel_->clearPanel();
   }
+}
+
+void TopologyEditorWidget::onDocumentChanged() {
+  rebuildSceneAndRestoreSelection();
+}
+
+void TopologyEditorWidget::onUndo() {
+  doc_->undoStack()->undo();
+}
+
+void TopologyEditorWidget::onRedo() {
+  doc_->undoStack()->redo();
 }
 
 }  // namespace etest::topology

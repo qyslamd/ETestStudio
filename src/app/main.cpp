@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
         file.close();
         if (err.error == QJsonParseError::NoError) {
           etest::topology::TopologyJsonSerializer::deserialize(jdoc.object(), editor->document());
-          editor->document()->setModified(false);
+          editor->document()->undoStack()->clear();
           editor->reloadScene();
         }
       }

@@ -49,12 +49,15 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   void onSaveTemplate(QGraphicsItem* item);
   void onSelectionChanged(QGraphicsItem* item);
   void onDocumentChanged();
+  void onUndo();
+  void onRedo();
 
  private:
   void initUi();
   void initSignals();
   void buildDefaultDocument();
   void setEditorId(const QString& newId);
+  void rebuildSceneAndRestoreSelection();
 
   TopologyDocument* doc_;
   TopologyScene* scene_;
@@ -65,6 +68,8 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
 
   QAction* add_uut_action_ = nullptr;
   QAction* add_device_action_ = nullptr;
+  QAction* undo_action_ = nullptr;
+  QAction* redo_action_ = nullptr;
   QAction* zoom_in_action_ = nullptr;
   QAction* zoom_out_action_ = nullptr;
   QAction* zoom_reset_action_ = nullptr;
