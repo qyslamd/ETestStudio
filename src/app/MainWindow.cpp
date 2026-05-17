@@ -37,8 +37,6 @@
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
 #include "WelcomeWidget.h"
-#include "topology/TopologyEditorWidget.h"
-
 #include <DockAreaTitleBar.h>
 #include <DockAreaWidget.h>
 #include <DockWidgetTab.h>
@@ -246,10 +244,9 @@ void MainWindow::initSignals() {
     });
   }
 
-  // 活动栏切换侧边栏（跳过硬件拓扑按钮索引1）
+  // 活动栏切换侧边栏
   connect(activity_bar_, &ActivityBarWidget::activityClicked, this,
           [this](int idx) {
-    if (idx > 1) --idx;
     sidebar_->switchPage(idx);
   });
   // 活动栏再次点击已选中按钮时切换侧边栏显隐
@@ -508,7 +505,7 @@ void MainWindow::initSignals() {
       QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F), this);
   connect(globalSearchShortcut, &QShortcut::activated, this, [this]() {
     sidebar_->switchPage(1);
-    activity_bar_->setActiveIndex(2);  // activityBar 索引1是硬件拓扑
+    activity_bar_->setActiveIndex(1);
     if (sidebar_dock_ && sidebar_dock_->isClosed()) {
       sidebar_dock_->toggleView(true);
       if (sidebar_dock_->dockAreaWidget()) {
@@ -538,32 +535,6 @@ void MainWindow::initSignals() {
     connect(qtSink, &QtConsoleSink::logMessage, output_panel_,
             &OutputPanel::appendLog);
   }
-
-  // 拓扑编辑器
-  connect(activity_bar_, &ActivityBarWidget::topologyClicked, this, [this]() {
-    if (!topology_dock_) {
-      auto* editor = new etest::topology::TopologyEditorWidget();
-      topology_dock_ = new ads::CDockWidget(QStringLiteral("硬件拓扑"));
-      topology_dock_->setWidget(editor);
-      topology_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);
-      topology_dock_->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
-      topology_dock_->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
-      dock_manager_->addDockWidget(ads::CenterDockWidgetArea, topology_dock_);
-
-      connect(editor, &etest::topology::TopologyEditorWidget::editorTitleChanged,
-              this, [this](const QString& title) {
-        if (topology_dock_)
-          topology_dock_->setWindowTitle(title);
-      });
-
-      connect(topology_dock_, &QObject::destroyed, this, [this]() {
-        topology_dock_ = nullptr;
-      });
-    } else {
-      topology_dock_->toggleView(true);
-      topology_dock_->raise();
-    }
-  });
 
   // 设置对话框
   connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
@@ -1293,18 +1264,13 @@ QJsonObject MainWindow::captureSessionData() {
   editorsObj["openFiles"] = filesArray;
   root["editors"] = editorsObj;
 
-  // 侧边栏状态（排除硬件拓扑按钮 index 1 和设置按钮）
+  // 侧边栏状态
   QJsonObject sidebarObj;
-  int barIdx = activity_bar_->activeIndex();
-  if (barIdx == 1) {
-    sidebarObj["activeTab"] = 0;  // 硬件拓扑无对应 sidebar 页面，fallback
+  int tab = activity_bar_->activeIndex();
+  if (tab >= 0 && tab < sidebar_->pageCount()) {
+    sidebarObj["activeTab"] = tab;
   } else {
-    int tab = (barIdx > 1) ? barIdx - 1 : barIdx;
-    if (tab >= 0 && tab < sidebar_->pageCount()) {
-      sidebarObj["activeTab"] = tab;
-    } else {
-      sidebarObj["activeTab"] = 0;
-    }
+    sidebarObj["activeTab"] = 0;
   }
   sidebarObj["visible"] =
       sidebar_dock_ && !sidebar_dock_->isClosed();
@@ -1353,13 +1319,12 @@ void MainWindow::restoreSession() {
   QJsonObject root = doc.object();
   if (root["version"].toInt() != 1) return;
 
-  // 恢复侧边栏（activityBar 索引比 sidebar 多一个硬件拓扑按钮）
+  // 恢复侧边栏
   QJsonObject sidebarObj = root["sidebar"].toObject();
   if (!sidebarObj.isEmpty()) {
     int tab = sidebarObj["activeTab"].toInt();
     if (tab >= 0 && tab < sidebar_->pageCount()) {
-      int barIdx = (tab >= 1) ? tab + 1 : tab;
-      activity_bar_->setActiveIndex(barIdx);
+      activity_bar_->setActiveIndex(tab);
       sidebar_->switchPage(tab);
     } else {
       activity_bar_->setActiveIndex(0);

@@ -10,10 +10,6 @@ class QMenu;
 class QAction;
 class QLabel;
 
-namespace etest::topology {
-class TopologyEditorWidget;
-}
-
 namespace etest::app {
 
 class ActivityBarWidget;
@@ -96,9 +92,6 @@ class MainWindow : public QMainWindow {
 
   // 欢迎页
   WelcomeWidget* welcome_widget_ = nullptr;
-
-  // 拓扑编辑器
-  ads::CDockWidget* topology_dock_ = nullptr;
 
   // 底部面板
   OutputPanel* output_panel_;

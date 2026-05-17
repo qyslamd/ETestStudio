@@ -21,7 +21,6 @@ class ActivityBarWidget : public QWidget {
 
   Q_SIGNALS:
   void activityClicked(int index);
-  void topologyClicked();
   void sidebarToggleRequested();
   void settingsTriggered();
 

@@ -32,11 +32,7 @@ void ActivityBarWidget::setupUi() {
   buttons_.append(createButton(QStringLiteral("资源管理器"),
                                 ":/resources/icons/svg/project_dark.svg",
                                 ":/resources/icons/svg/project_light.svg"));
-  // 索引1：硬件拓扑（特殊处理，弹中央dock）
-  buttons_.append(createButton(QStringLiteral("硬件拓扑"),
-                                ":/resources/icons/svg/topology_dark.svg",
-                                ":/resources/icons/svg/topology_light.svg"));
-  // 索引2：搜索
+  // 索引1：搜索
   buttons_.append(createButton(QStringLiteral("搜索"),
                                 ":/resources/icons/svg/search_dark.svg",
                                 ":/resources/icons/svg/search_light.svg"));
@@ -60,11 +56,7 @@ void ActivityBarWidget::setupUi() {
   for (int i = 0; i < buttons_.size(); ++i) {
     top_layout_->addWidget(buttons_[i]);
     connect(buttons_[i], &QPushButton::clicked, this, [this, i]() {
-      if (i == 1) {
-        // 硬件拓扑按钮：弹中央dock，不切换sidebar页面
-        setActiveIndex(i);
-        emit topologyClicked();
-      } else if (active_index_ == i) {
+      if (active_index_ == i) {
         emit sidebarToggleRequested();
       } else {
         setActiveIndex(i);
