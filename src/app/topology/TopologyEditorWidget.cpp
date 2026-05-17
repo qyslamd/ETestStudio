@@ -1,12 +1,5 @@
 #include "TopologyEditorWidget.h"
-#include "DeviceTemplateManager.h"
-#include "PropertyPanelWidget.h"
-#include "TopologyDocument.h"
-#include "TopologyJsonSerializer.h"
-#include "TopologyScene.h"
-#include "TopologyView.h"
-#include "topology_items.h"
-
+#include <QAction>
 #include <QApplication>
 #include <QFile>
 #include <QFileDialog>
@@ -16,12 +9,18 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
-#include <QMenu>
 #include <QMessageBox>
 #include <QShortcut>
 #include <QSplitter>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include "DeviceTemplateManager.h"
+#include "PropertyPanelWidget.h"
+#include "TopologyDocument.h"
+#include "TopologyJsonSerializer.h"
+#include "TopologyScene.h"
+#include "TopologyView.h"
+#include "topology_items.h"
 
 namespace etest::topology {
 
@@ -76,11 +75,11 @@ bool TopologyEditorWidget::saveAs(const QString& path) {
   if (savePath.isEmpty()) {
     savePath = QFileDialog::getSaveFileName(
         this, QStringLiteral("保存拓扑文件"), QString(),
-        QStringLiteral("拓扑文件 (*.json);;所有文件 (*)"));
+        QStringLiteral("拓扑文件 (*.etopo);;所有文件 (*)"));
     if (savePath.isEmpty())
       return false;
-    if (!savePath.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive)) {
-      savePath += QStringLiteral(".json");
+    if (!savePath.endsWith(QStringLiteral(".etopo"), Qt::CaseInsensitive)) {
+      savePath += QStringLiteral(".etopo");
     }
   }
 
@@ -147,41 +146,6 @@ void TopologyEditorWidget::initUi() {
   auto* toolbarFrame = new QFrame(this);
   auto* toolbarLayout = new QHBoxLayout(toolbarFrame);
   toolbarLayout->setContentsMargins(4, 4, 4, 4);
-
-  auto* fileBtn = new QToolButton(toolbarFrame);
-  fileBtn->setText(QStringLiteral("文件"));
-  fileBtn->setPopupMode(QToolButton::InstantPopup);
-  auto* fileMenu = new QMenu(fileBtn);
-
-  auto* newAct = fileMenu->addAction(QStringLiteral("新建(&N)"));
-  newAct->setShortcut(QKeySequence::New);
-  connect(newAct, &QAction::triggered, this, &TopologyEditorWidget::onNewFile);
-
-  auto* openAct = fileMenu->addAction(QStringLiteral("打开(&O)..."));
-  openAct->setShortcut(QKeySequence::Open);
-  connect(openAct, &QAction::triggered, this,
-          &TopologyEditorWidget::onOpenFile);
-
-  auto* saveAct = fileMenu->addAction(QStringLiteral("保存(&S)"));
-  saveAct->setShortcut(QKeySequence::Save);
-  connect(saveAct, &QAction::triggered, this,
-          &TopologyEditorWidget::onSaveFile);
-
-  auto* saveAsAct = fileMenu->addAction(QStringLiteral("另存为(&A)..."));
-  saveAsAct->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_S));
-  connect(saveAsAct, &QAction::triggered, this,
-          &TopologyEditorWidget::onSaveAsFile);
-
-  fileMenu->addSeparator();
-
-  auto* exitAct = fileMenu->addAction(QStringLiteral("退出(&X)"));
-  exitAct->setShortcut(QKeySequence::Quit);
-  connect(exitAct, &QAction::triggered, this, &QWidget::close);
-
-  fileBtn->setMenu(fileMenu);
-  toolbarLayout->addWidget(fileBtn);
-
-  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
 
   add_uut_action_ = new QAction(QStringLiteral("+ UUT"), this);
   add_uut_action_->setToolTip(QStringLiteral("添加被测产品"));
@@ -439,71 +403,6 @@ void TopologyEditorWidget::onSaveTemplate(QGraphicsItem* item) {
     QMessageBox::warning(this, QStringLiteral("错误"),
                          QStringLiteral("保存模板失败"));
   }
-}
-
-void TopologyEditorWidget::onNewFile() {
-  doc_->clear();
-  doc_->setModified(false);
-  scene_->loadFromDocument();
-  QString oldId = editorId();
-  current_file_.clear();
-  emit editorTitleChanged(QStringLiteral("拓扑编辑器 - [未命名]"));
-  emit editorIdChanged(oldId, editorId());
-  emit modificationChanged(false);
-  status_label_->setText(QStringLiteral("新建文件"));
-}
-
-void TopologyEditorWidget::onOpenFile() {
-  QString path = QFileDialog::getOpenFileName(
-      this, QStringLiteral("打开拓扑文件"), QString(),
-      QStringLiteral("拓扑文件 (*.json);;所有文件 (*)"));
-  if (path.isEmpty())
-    return;
-
-  QFile file(path);
-  if (!file.open(QIODevice::ReadOnly)) {
-    QMessageBox::warning(this, QStringLiteral("错误"),
-                         QStringLiteral("无法打开文件"));
-    return;
-  }
-
-  QJsonParseError err;
-  QJsonDocument jdoc = QJsonDocument::fromJson(file.readAll(), &err);
-  file.close();
-
-  if (err.error != QJsonParseError::NoError) {
-    QMessageBox::warning(this, QStringLiteral("解析错误"), err.errorString());
-    return;
-  }
-
-  if (!TopologyJsonSerializer::deserialize(jdoc.object(), doc_)) {
-    QMessageBox::warning(this, QStringLiteral("错误"),
-                         QStringLiteral("数据格式错误"));
-    return;
-  }
-
-  doc_->setModified(false);
-  scene_->loadFromDocument();
-  QString oldId = editorId();
-  current_file_ = path;
-  emit editorTitleChanged(QStringLiteral("拓扑编辑器 - %1").arg(path));
-  emit editorIdChanged(oldId, editorId());
-  emit modificationChanged(false);
-  status_label_->setText(QStringLiteral("已打开: %1").arg(path));
-}
-
-void TopologyEditorWidget::onSaveFile() {
-  bool ok = save();
-  if (ok) {
-    status_label_->setText(QStringLiteral("已保存: %1").arg(current_file_));
-  } else {
-    QMessageBox::warning(this, QStringLiteral("错误"),
-                         QStringLiteral("无法写入文件"));
-  }
-}
-
-void TopologyEditorWidget::onSaveAsFile() {
-  saveAs(QString());
 }
 
 void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {

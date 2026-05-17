@@ -47,10 +47,6 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   void onAddDevice(const QPointF& scenePos = QPointF());
   void onDeleteItem(QGraphicsItem* item);
   void onSaveTemplate(QGraphicsItem* item);
-  void onNewFile();
-  void onOpenFile();
-  void onSaveFile();
-  void onSaveAsFile();
   void onSelectionChanged(QGraphicsItem* item);
   void onDocumentChanged();
 
