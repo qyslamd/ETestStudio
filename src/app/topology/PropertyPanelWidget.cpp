@@ -28,10 +28,20 @@ PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc, QWidget* parent)
 }
 
 void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
-  // Save pending device edits when leaving device page
+  // Save pending device edits when leaving device page.
+  // Must reset index first and block undo signals to prevent recursive scene
+  // rebuild from making 'item' a dangling pointer.
   if (editing_device_index_ >= 0) {
-    applyDeviceProperties(editing_device_index_);
-    applyDevicePorts(editing_device_index_);
+    int savedIdx = editing_device_index_;
+    editing_device_index_ = -1;
+
+    bool wasBlocked = doc_->undoStack()->blockSignals(true);
+    applyDeviceProperties(savedIdx);
+    applyDevicePorts(savedIdx);
+    doc_->undoStack()->blockSignals(wasBlocked);
+
+    emit documentChanged();  // triggers rebuildSceneAndRestoreSelection
+    return;  // item may be dangling now; rebuild will refresh the panel
   }
 
   editing_uut_index_ = -1;

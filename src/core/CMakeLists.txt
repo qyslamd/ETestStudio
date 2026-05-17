@@ -105,3 +105,10 @@ if(MSVC)
 else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -pedantic)
 endif()
+
+# WindowsCrashHandler.cpp uses try/catch(...) to catch SEH (access violation
+# in StackWalk64). /EHa enables catch(...) to trap structured exceptions.
+if(WIN32)
+    set_source_files_properties(crashhandler/WindowsCrashHandler.cpp
+                                PROPERTIES COMPILE_FLAGS "/EHa")
+endif()

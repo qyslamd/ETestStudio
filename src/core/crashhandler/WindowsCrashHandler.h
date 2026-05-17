@@ -28,6 +28,13 @@ private:
     static QString getCallStack(CONTEXT* context);
     static QString getRegisterContext(CONTEXT* context);
 
+    // SEH-safe helpers — their local variables must be POD only (no C++ dtors).
+    static void doCrashHandler(PEXCEPTION_POINTERS pExceptionInfo);
+    static void doCrashFallback(PEXCEPTION_POINTERS pExceptionInfo);
+    static void appendStackWalk(QString& out, HANDLE process, HANDLE thread,
+                                CONTEXT* ctxCopy, STACKFRAME64& stackFrame,
+                                DWORD machineType);
+
     static WindowsCrashHandler* s_instance;
     QString m_dumpPath;
     std::function<void(const QString&)> m_crashCallback;

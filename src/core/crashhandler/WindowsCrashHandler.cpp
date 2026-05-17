@@ -75,11 +75,8 @@ LONG WINAPI WindowsCrashHandler::vectoredHandler(PEXCEPTION_POINTERS pExceptionI
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
-LONG WINAPI WindowsCrashHandler::exceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
-    if (!s_instance) {
-        return EXCEPTION_CONTINUE_SEARCH;
-    }
-
+// ── Helper: crash handler body ──
+void WindowsCrashHandler::doCrashHandler(PEXCEPTION_POINTERS pExceptionInfo) {
     // 收集崩溃信息
     QString crashLog;
     crashLog += "=== 崩溃信息 ===\n";
@@ -150,6 +147,99 @@ LONG WINAPI WindowsCrashHandler::exceptionHandler(PEXCEPTION_POINTERS pException
                 QMessageBox::Ok);
         }
     }
+}
+
+// ── Helper: fallback handler (no heap allocation, only stack buffers) ──
+void WindowsCrashHandler::doCrashFallback(PEXCEPTION_POINTERS pExceptionInfo) {
+    wchar_t fallbackWide[MAX_PATH] = {0};
+    if (s_instance) {
+        ::wcsncpy_s(fallbackWide, MAX_PATH,
+                    reinterpret_cast<const wchar_t*>(
+                        s_instance->m_dumpPath.utf16()),
+                    _TRUNCATE);
+    }
+    if (fallbackWide[0] == L'\0') {
+        ::wcsncpy_s(fallbackWide, MAX_PATH, L".\\crash\\", _TRUNCATE);
+    }
+    ::CreateDirectoryW(fallbackWide, nullptr);
+
+    wchar_t logPathW[MAX_PATH];
+    ::swprintf_s(logPathW, MAX_PATH, L"%scrash_fallback_%llu.log",
+                 fallbackWide, (unsigned long long)::GetTickCount64());
+
+    HANDLE hLog = ::CreateFileW(logPathW, GENERIC_WRITE, 0, nullptr,
+                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (hLog != INVALID_HANDLE_VALUE) {
+        const char msg[] = "[嵌套异常] 崩溃处理程序内部发生异常，可能是堆损坏\n";
+        DWORD written = 0;
+        ::WriteFile(hLog, msg, (DWORD)strlen(msg), &written, nullptr);
+
+        char addrStr[128];
+        ::snprintf(addrStr, sizeof(addrStr),
+                   "原始异常地址: 0x%p\n",
+                   pExceptionInfo->ExceptionRecord->ExceptionAddress);
+        ::WriteFile(hLog, addrStr, (DWORD)strlen(addrStr), &written, nullptr);
+        ::CloseHandle(hLog);
+    }
+}
+
+// ── Helper: stack walk loop (try/catch with /EHa traps SEH) ──
+void WindowsCrashHandler::appendStackWalk(QString& out, HANDLE process,
+                                          HANDLE thread, CONTEXT* ctxCopy,
+                                          STACKFRAME64& stackFrame,
+                                          DWORD machineType) {
+    char symbolBuffer[sizeof(SYMBOL_INFO) + 256] = {0};
+    PSYMBOL_INFO pSymbol = reinterpret_cast<PSYMBOL_INFO>(symbolBuffer);
+    pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+    pSymbol->MaxNameLen = 255;
+
+    IMAGEHLP_LINE64 lineInfo = {0};
+    lineInfo.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+
+    try {
+        for (int i = 0; i < 64; ++i) {
+            if (!StackWalk64(machineType, process, thread, &stackFrame, ctxCopy,
+                            nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr)) {
+                break;
+            }
+
+            if (stackFrame.AddrPC.Offset == 0) {
+                break;
+            }
+
+            DWORD64 displacement = 0;
+            if (SymFromAddr(process, stackFrame.AddrPC.Offset, &displacement, pSymbol)) {
+                out += QString("%1: 0x%2 %3()")
+                    .arg(i, 2)
+                    .arg(stackFrame.AddrPC.Offset, QT_POINTER_SIZE * 2, 16, QChar('0'))
+                    .arg(pSymbol->Name);
+
+                DWORD lineDisplacement = 0;
+                if (SymGetLineFromAddr64(process, stackFrame.AddrPC.Offset, &lineDisplacement, &lineInfo)) {
+                    out += QString(" %1:%2").arg(lineInfo.FileName).arg(lineInfo.LineNumber);
+                }
+                out += "\n";
+            } else {
+                out += QString("%1: 0x%2 [未知函数]\n")
+                    .arg(i, 2)
+                    .arg(stackFrame.AddrPC.Offset, QT_POINTER_SIZE * 2, 16, QChar('0'));
+            }
+        }
+    } catch (...) {
+        out += QString("[栈回溯因栈帧损坏而中断]\n");
+    }
+}
+
+LONG WINAPI WindowsCrashHandler::exceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
+    if (!s_instance) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    try {
+        doCrashHandler(pExceptionInfo);
+    } catch (...) {
+        doCrashFallback(pExceptionInfo);
+    }
 
     // 终止程序
     TerminateProcess(GetCurrentProcess(), pExceptionInfo->ExceptionRecord->ExceptionCode);
@@ -209,6 +299,12 @@ QString WindowsCrashHandler::getRegisterContext(CONTEXT* context) {
 }
 
 QString WindowsCrashHandler::getCallStack(CONTEXT* context) {
+    // StackWalk64 modifies the CONTEXT in-place. When the stack is corrupted
+    // (common in AV crashes), it may trigger another AV. Work on a copy and
+    // delegate the walk to appendStackWalk which has SEH protection.
+    CONTEXT ctxCopy;
+    memcpy(&ctxCopy, context, sizeof(ctxCopy));
+
     QString stack;
     HANDLE process = GetCurrentProcess();
     HANDLE thread = GetCurrentThread();
@@ -218,59 +314,24 @@ QString WindowsCrashHandler::getCallStack(CONTEXT* context) {
 
     STACKFRAME64 stackFrame = {0};
 #ifdef _WIN64
-    stackFrame.AddrPC.Offset = context->Rip;
+    stackFrame.AddrPC.Offset = ctxCopy.Rip;
     stackFrame.AddrPC.Mode = AddrModeFlat;
-    stackFrame.AddrFrame.Offset = context->Rbp;
+    stackFrame.AddrFrame.Offset = ctxCopy.Rbp;
     stackFrame.AddrFrame.Mode = AddrModeFlat;
-    stackFrame.AddrStack.Offset = context->Rsp;
+    stackFrame.AddrStack.Offset = ctxCopy.Rsp;
     stackFrame.AddrStack.Mode = AddrModeFlat;
     DWORD machineType = IMAGE_FILE_MACHINE_AMD64;
 #else
-    stackFrame.AddrPC.Offset = context->Eip;
+    stackFrame.AddrPC.Offset = ctxCopy.Eip;
     stackFrame.AddrPC.Mode = AddrModeFlat;
-    stackFrame.AddrFrame.Offset = context->Ebp;
+    stackFrame.AddrFrame.Offset = ctxCopy.Ebp;
     stackFrame.AddrFrame.Mode = AddrModeFlat;
-    stackFrame.AddrStack.Offset = context->Esp;
+    stackFrame.AddrStack.Offset = ctxCopy.Esp;
     stackFrame.AddrStack.Mode = AddrModeFlat;
     DWORD machineType = IMAGE_FILE_MACHINE_I386;
 #endif
 
-    char symbolBuffer[sizeof(SYMBOL_INFO) + 256] = {0};
-    PSYMBOL_INFO pSymbol = reinterpret_cast<PSYMBOL_INFO>(symbolBuffer);
-    pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-    pSymbol->MaxNameLen = 255;
-
-    IMAGEHLP_LINE64 lineInfo = {0};
-    lineInfo.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-
-    for (int i = 0; i < 64; ++i) {
-        if (!StackWalk64(machineType, process, thread, &stackFrame, context, 
-                        nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr)) {
-            break;
-        }
-
-        if (stackFrame.AddrPC.Offset == 0) {
-            break;
-        }
-
-        DWORD64 displacement = 0;
-        if (SymFromAddr(process, stackFrame.AddrPC.Offset, &displacement, pSymbol)) {
-            stack += QString("%1: 0x%2 %3()")
-                .arg(i, 2)
-                .arg(stackFrame.AddrPC.Offset, QT_POINTER_SIZE * 2, 16, QChar('0'))
-                .arg(pSymbol->Name);
-            
-            DWORD lineDisplacement = 0;
-            if (SymGetLineFromAddr64(process, stackFrame.AddrPC.Offset, &lineDisplacement, &lineInfo)) {
-                stack += QString(" %1:%2").arg(lineInfo.FileName).arg(lineInfo.LineNumber);
-            }
-            stack += "\n";
-        } else {
-            stack += QString("%1: 0x%2 [未知函数]\n")
-                .arg(i, 2)
-                .arg(stackFrame.AddrPC.Offset, QT_POINTER_SIZE * 2, 16, QChar('0'));
-        }
-    }
+    appendStackWalk(stack, process, thread, &ctxCopy, stackFrame, machineType);
 
     SymCleanup(process);
     return stack;
