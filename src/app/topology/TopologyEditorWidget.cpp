@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QJsonDocument>
@@ -37,17 +38,116 @@ TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QWidget(parent) {
 
 TopologyEditorWidget::~TopologyEditorWidget() {}
 
+// ── IEditor interface ──────────────────────────────────────────
+
+QString TopologyEditorWidget::displayName() const {
+  if (current_file_.isEmpty()) {
+    return QStringLiteral("硬件拓扑(未保存)");
+  }
+  return QFileInfo(current_file_).fileName();
+}
+
+bool TopologyEditorWidget::isModified() const {
+  return doc_->isModified();
+}
+
+bool TopologyEditorWidget::save() {
+  if (current_file_.isEmpty()) {
+    return saveAs(QString());
+  }
+  scene_->syncPositionsToDocument();
+  QJsonObject json = TopologyJsonSerializer::serialize(*doc_);
+  QJsonDocument jdoc(json);
+
+  QFile file(current_file_);
+  if (!file.open(QIODevice::WriteOnly)) {
+    return false;
+  }
+  file.write(jdoc.toJson(QJsonDocument::Indented));
+  file.close();
+
+  doc_->setModified(false);
+  emit modificationChanged(false);
+  return true;
+}
+
+bool TopologyEditorWidget::saveAs(const QString& path) {
+  QString savePath = path;
+  if (savePath.isEmpty()) {
+    savePath = QFileDialog::getSaveFileName(
+        this, QStringLiteral("保存拓扑文件"), QString(),
+        QStringLiteral("拓扑文件 (*.json);;所有文件 (*)"));
+    if (savePath.isEmpty())
+      return false;
+    if (!savePath.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive)) {
+      savePath += QStringLiteral(".json");
+    }
+  }
+
+  QString oldId = editorId();
+  current_file_ = savePath;
+  bool ok = save();
+  if (ok) {
+    emit editorTitleChanged(QStringLiteral("拓扑编辑器 - %1").arg(savePath));
+    emit editorIdChanged(oldId, editorId());
+  } else {
+    current_file_.clear();
+  }
+  return ok;
+}
+
+QString TopologyEditorWidget::filePath() const {
+  return current_file_;
+}
+
+QString TopologyEditorWidget::editorId() const {
+  if (current_file_.isEmpty()) {
+    return QStringLiteral("editor://topology/new");
+  }
+  return current_file_;
+}
+
+QWidget* TopologyEditorWidget::widget() {
+  return this;
+}
+
+QString TopologyEditorWidget::editorType() const {
+  return QStringLiteral("topology");
+}
+
+QObject* TopologyEditorWidget::signalObject() {
+  return this;
+}
+
+// ── Topology specific ──────────────────────────────────────────
+
+TopologyDocument* TopologyEditorWidget::document() const {
+  return doc_;
+}
+
+void TopologyEditorWidget::reloadScene() {
+  scene_->loadFromDocument();
+}
+
+void TopologyEditorWidget::setEditorId(const QString& newId) {
+  QString oldId = editorId();
+  current_file_ = newId;
+  if (oldId != editorId()) {
+    emit editorIdChanged(oldId, editorId());
+  }
+}
+
+// ── Constructor helpers ────────────────────────────────────────
+
 void TopologyEditorWidget::initUi() {
   auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
-  // ── Toolbar frame ──
   auto* toolbarFrame = new QFrame(this);
   auto* toolbarLayout = new QHBoxLayout(toolbarFrame);
   toolbarLayout->setContentsMargins(4, 4, 4, 4);
 
-  // File menu button
   auto* fileBtn = new QToolButton(toolbarFrame);
   fileBtn->setText(QStringLiteral("文件"));
   fileBtn->setPopupMode(QToolButton::InstantPopup);
@@ -83,7 +183,6 @@ void TopologyEditorWidget::initUi() {
 
   toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
 
-  // Edit buttons
   add_uut_action_ = new QAction(QStringLiteral("+ UUT"), this);
   add_uut_action_->setToolTip(QStringLiteral("添加被测产品"));
   auto* addUutBtn = new QToolButton(toolbarFrame);
@@ -116,7 +215,6 @@ void TopologyEditorWidget::initUi() {
   toolbarLayout->addStretch();
   mainLayout->addWidget(toolbarFrame);
 
-  // ── Central splitter ──
   splitter_ = new QSplitter(Qt::Horizontal, this);
   splitter_->addWidget(view_);
   splitter_->addWidget(property_panel_);
@@ -124,7 +222,6 @@ void TopologyEditorWidget::initUi() {
   splitter_->setStretchFactor(1, 1);
   mainLayout->addWidget(splitter_, 1);
 
-  // ── Status frame ──
   auto* statusFrame = new QFrame(this);
   statusFrame->setFrameShape(QFrame::StyledPanel);
   auto* statusLayout = new QHBoxLayout(statusFrame);
@@ -145,7 +242,6 @@ void TopologyEditorWidget::initSignals() {
   connect(zoom_reset_action_, &QAction::triggered, view_,
           &TopologyView::zoomReset);
 
-  // Context menu from view
   connect(view_, &TopologyView::addUutRequested, this,
           &TopologyEditorWidget::onAddUut);
   connect(view_, &TopologyView::addDeviceRequested, this,
@@ -155,15 +251,12 @@ void TopologyEditorWidget::initSignals() {
   connect(view_, &TopologyView::saveTemplateRequested, this,
           &TopologyEditorWidget::onSaveTemplate);
 
-  // Selection change → property panel
   connect(scene_, &TopologyScene::itemSelected, this,
           &TopologyEditorWidget::onSelectionChanged);
 
-  // Document change → refresh scene
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
           &TopologyEditorWidget::onDocumentChanged);
 
-  // Delete key → delete selected item
   auto* delShortcut = new QShortcut(QKeySequence::Delete, this);
   connect(delShortcut, &QShortcut::activated, this, [this]() {
     auto selected = scene_->selectedItems();
@@ -174,7 +267,6 @@ void TopologyEditorWidget::initSignals() {
 }
 
 void TopologyEditorWidget::buildDefaultDocument() {
-  // Product 1
   TopologyProduct prod1;
   prod1.name = QStringLiteral("ISI-01");
   prod1.position = QPointF(450, 120);
@@ -192,7 +284,6 @@ void TopologyEditorWidget::buildDefaultDocument() {
                       {QStringLiteral("DISCRETE")}});
   doc_->addProduct(prod1);
 
-  // Product 2
   TopologyProduct prod2;
   prod2.name = QStringLiteral("ISI-02");
   prod2.position = QPointF(450, 320);
@@ -201,7 +292,6 @@ void TopologyEditorWidget::buildDefaultDocument() {
                       {QStringLiteral("A429")}});
   doc_->addProduct(prod2);
 
-  // Device 1
   TopologyDevice dev1;
   dev1.name = QStringLiteral("6272T_00");
   dev1.deviceType = QStringLiteral("EPH6272T");
@@ -214,7 +304,6 @@ void TopologyEditorWidget::buildDefaultDocument() {
       {QStringLiteral("ch1"), TopologyPort::Bidirectional, FunctionType::A429});
   doc_->addDevice(dev1);
 
-  // Device 2
   TopologyDevice dev2;
   dev2.name = QStringLiteral("6272T_01");
   dev2.deviceType = QStringLiteral("EPH6272T");
@@ -227,7 +316,6 @@ void TopologyEditorWidget::buildDefaultDocument() {
       {QStringLiteral("ch1"), TopologyPort::Bidirectional, FunctionType::A429});
   doc_->addDevice(dev2);
 
-  // Device 3
   TopologyDevice dev3;
   dev3.name = QStringLiteral("EPH5121A_00");
   dev3.deviceType = QStringLiteral("EPH5121A");
@@ -355,9 +443,13 @@ void TopologyEditorWidget::onSaveTemplate(QGraphicsItem* item) {
 
 void TopologyEditorWidget::onNewFile() {
   doc_->clear();
+  doc_->setModified(false);
   scene_->loadFromDocument();
+  QString oldId = editorId();
   current_file_.clear();
   emit editorTitleChanged(QStringLiteral("拓扑编辑器 - [未命名]"));
+  emit editorIdChanged(oldId, editorId());
+  emit modificationChanged(false);
   status_label_->setText(QStringLiteral("新建文件"));
 }
 
@@ -390,49 +482,28 @@ void TopologyEditorWidget::onOpenFile() {
     return;
   }
 
+  doc_->setModified(false);
   scene_->loadFromDocument();
+  QString oldId = editorId();
   current_file_ = path;
   emit editorTitleChanged(QStringLiteral("拓扑编辑器 - %1").arg(path));
+  emit editorIdChanged(oldId, editorId());
+  emit modificationChanged(false);
   status_label_->setText(QStringLiteral("已打开: %1").arg(path));
 }
 
 void TopologyEditorWidget::onSaveFile() {
-  if (current_file_.isEmpty()) {
-    onSaveAsFile();
-    return;
-  }
-
-  scene_->syncPositionsToDocument();
-  QJsonObject json = TopologyJsonSerializer::serialize(*doc_);
-  QJsonDocument jdoc(json);
-
-  QFile file(current_file_);
-  if (!file.open(QIODevice::WriteOnly)) {
+  bool ok = save();
+  if (ok) {
+    status_label_->setText(QStringLiteral("已保存: %1").arg(current_file_));
+  } else {
     QMessageBox::warning(this, QStringLiteral("错误"),
                          QStringLiteral("无法写入文件"));
-    return;
   }
-  file.write(jdoc.toJson(QJsonDocument::Indented));
-  file.close();
-
-  status_label_->setText(QStringLiteral("已保存: %1").arg(current_file_));
 }
 
 void TopologyEditorWidget::onSaveAsFile() {
-  QString path = QFileDialog::getSaveFileName(
-      this, QStringLiteral("保存拓扑文件"), QString(),
-      QStringLiteral("拓扑文件 (*.json);;所有文件 (*)"));
-  if (path.isEmpty())
-    return;
-
-  // Ensure .json extension
-  if (!path.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive)) {
-    path += QStringLiteral(".json");
-  }
-
-  current_file_ = path;
-  onSaveFile();
-  emit editorTitleChanged(QStringLiteral("拓扑编辑器 - %1").arg(path));
+  saveAs(QString());
 }
 
 void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
@@ -444,7 +515,9 @@ void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
 }
 
 void TopologyEditorWidget::onDocumentChanged() {
-  // Save selection identity before reload
+  doc_->setModified(true);
+  emit modificationChanged(true);
+
   int selType = -1, selIdx1 = -1, selIdx2 = -1;
   auto selItems = scene_->selectedItems();
   if (!selItems.isEmpty()) {
@@ -469,7 +542,6 @@ void TopologyEditorWidget::onDocumentChanged() {
   scene_->syncPositionsToDocument();
   scene_->loadFromDocument();
 
-  // Restore selection on newly created items
   QGraphicsItem* newItem = nullptr;
   if (selType == 0) {
     auto* uut = scene_->findUutItem(selIdx1);

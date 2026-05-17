@@ -73,9 +73,18 @@ TopologyPort::Direction stringToDirection(const QString& s) {
 
 TopologyDocument::TopologyDocument(QObject* parent) : QObject(parent) {}
 
+void TopologyDocument::setModified(bool modified) {
+  modified_ = modified;
+}
+
+bool TopologyDocument::isModified() const {
+  return modified_;
+}
+
 int TopologyDocument::addProduct(const TopologyProduct& product) {
   int index = products_.size();
   products_.append(product);
+  setModified(true);
   emit productAdded(index);
   return index;
 }
@@ -84,6 +93,7 @@ void TopologyDocument::removeProduct(int index) {
   if (index < 0 || index >= products_.size())
     return;
   products_.removeAt(index);
+  setModified(true);
   emit productRemoved(index);
 }
 
@@ -114,6 +124,7 @@ int TopologyDocument::findProductIndex(const QString& name) const {
 int TopologyDocument::addDevice(const TopologyDevice& device) {
   int index = devices_.size();
   devices_.append(device);
+  setModified(true);
   emit deviceAdded(index);
   return index;
 }
@@ -122,6 +133,7 @@ void TopologyDocument::removeDevice(int index) {
   if (index < 0 || index >= devices_.size())
     return;
   devices_.removeAt(index);
+  setModified(true);
   emit deviceRemoved(index);
 }
 
@@ -154,6 +166,7 @@ void TopologyDocument::addDevicePort(int deviceIndex,
   if (deviceIndex < 0 || deviceIndex >= devices_.size())
     return;
   devices_[deviceIndex].ports.append(port);
+  setModified(true);
   emit deviceChanged(deviceIndex);
 }
 
@@ -164,6 +177,7 @@ void TopologyDocument::removeDevicePort(int deviceIndex, int portIndex) {
   if (portIndex < 0 || portIndex >= dev.ports.size())
     return;
   dev.ports.removeAt(portIndex);
+  setModified(true);
   emit deviceChanged(deviceIndex);
 }
 
@@ -182,6 +196,7 @@ int TopologyDocument::findDevicePortIndex(int deviceIndex,
 int TopologyDocument::addConnection(const TopologyConnection& conn) {
   int index = connections_.size();
   connections_.append(conn);
+  setModified(true);
   emit connectionAdded(index);
   return index;
 }
@@ -190,6 +205,7 @@ void TopologyDocument::removeConnection(int index) {
   if (index < 0 || index >= connections_.size())
     return;
   connections_.removeAt(index);
+  setModified(true);
   emit connectionRemoved(index);
 }
 
@@ -240,6 +256,7 @@ void TopologyDocument::clear() {
   products_.clear();
   devices_.clear();
   connections_.clear();
+  setModified(true);
   emit documentCleared();
 }
 

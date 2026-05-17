@@ -98,6 +98,9 @@ class TopologyDocument : public QObject {
                   const QString& deviceName,
                   const QString& devicePortName) const;
 
+  void setModified(bool modified);
+  bool isModified() const;
+
   void clear();
 
  signals:
@@ -112,6 +115,7 @@ class TopologyDocument : public QObject {
   void documentCleared();
 
  private:
+  bool modified_ = false;
   QVector<TopologyProduct> products_;
   QVector<TopologyDevice> devices_;
   QVector<TopologyConnection> connections_;

@@ -29,10 +29,13 @@ add_executable(${TARGET_NAME}
     GitWidget.cpp
     HardwareTreeWidget.h
     HardwareTreeWidget.cpp
-    EditorWidget.h
-    EditorWidget.cpp
+    TextEditorWidget.h
+    TextEditorWidget.cpp
     EditorManager.h
     EditorManager.cpp
+    editor/EditorFactory.h
+    editor/EditorFactory.cpp
+    editor/IEditor.h
     OutputPanel.h
     OutputPanel.cpp
     PanelContainerWidget.h

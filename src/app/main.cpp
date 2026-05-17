@@ -1,12 +1,22 @@
 #include <QApplication>
+#include <QFile>
+#include <QFileInfo>
 #include <QFont>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
 
 #include "MainWindow.h"
+#include "TextEditorWidget.h"
 #include "common/GlobalExceptionHandler.h"
 #include "common/SingleInstance.h"
 #include "config/ConfigManager.h"
 #include "crashhandler/CrashHandler.h"
+#include "editor/EditorFactory.h"
 #include "logger/Logger.h"
+#include "topology/TopologyDocument.h"
+#include "topology/TopologyEditorWidget.h"
+#include "topology/TopologyJsonSerializer.h"
 
 using namespace etest::core::config;
 using namespace etest::core::logger;
@@ -17,6 +27,47 @@ using namespace etest::app;
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   app.setFont(QFont("Microsoft YaHei", 10));
+
+  // 注册编辑器工厂
+  EditorFactoryRegistry::registerExtension("cpp", "text");
+  EditorFactoryRegistry::registerExtension("h", "text");
+  EditorFactoryRegistry::registerExtension("hpp", "text");
+  EditorFactoryRegistry::registerExtension("c", "text");
+  EditorFactoryRegistry::registerExtension("cc", "text");
+  EditorFactoryRegistry::registerExtension("cxx", "text");
+  EditorFactoryRegistry::registerExtension("py", "text");
+  EditorFactoryRegistry::registerExtension("lua", "text");
+  EditorFactoryRegistry::registerExtension("json", "text");
+  EditorFactoryRegistry::registerExtension("xml", "text");
+  EditorFactoryRegistry::registerExtension("html", "text");
+  EditorFactoryRegistry::registerExtension("yaml", "text");
+  EditorFactoryRegistry::registerExtension("yml", "text");
+  EditorFactoryRegistry::registerExtension("md", "text");
+  EditorFactoryRegistry::registerExtension("js", "text");
+  EditorFactoryRegistry::registerExtension("cmake", "text");
+  EditorFactoryRegistry::registerExtension("txt", "text");
+
+  EditorFactoryRegistry::registerFactory("text", [](const QString& path, QWidget* parent) {
+    return new TextEditorWidget(path, parent);
+  });
+
+  EditorFactoryRegistry::registerFactory("topology", [](const QString& id, QWidget* parent) {
+    auto* editor = new etest::topology::TopologyEditorWidget(parent);
+    if (!id.startsWith("editor://") && QFileInfo::exists(id)) {
+      QFile file(id);
+      if (file.open(QIODevice::ReadOnly)) {
+        QJsonParseError err;
+        QJsonDocument jdoc = QJsonDocument::fromJson(file.readAll(), &err);
+        file.close();
+        if (err.error == QJsonParseError::NoError) {
+          etest::topology::TopologyJsonSerializer::deserialize(jdoc.object(), editor->document());
+          editor->document()->setModified(false);
+          editor->reloadScene();
+        }
+      }
+    }
+    return editor;
+  });
 
   // 单实例检测
   SingleInstance singleInstance("etest_demo");

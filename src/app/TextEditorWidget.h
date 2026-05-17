@@ -1,33 +1,41 @@
-#ifndef ETEST_APP_EDITOR_WIDGET_H_
-#define ETEST_APP_EDITOR_WIDGET_H_
+#ifndef ETEST_APP_TEXT_EDITOR_WIDGET_H_
+#define ETEST_APP_TEXT_EDITOR_WIDGET_H_
 
 #include <Qsci/qsciscintilla.h>
 #include <QWidget>
 #include "config/ConfigManager.h"
+#include "editor/IEditor.h"
 
 namespace etest::app {
 
-class EditorWidget : public QWidget {
+class TextEditorWidget : public QWidget, public IEditor {
   Q_OBJECT
 
  public:
-  explicit EditorWidget(const QString& filePath, QWidget* parent = nullptr);
+  explicit TextEditorWidget(const QString& filePath, QWidget* parent = nullptr);
 
-  QString filePath() const;
+  // IEditor interface
+  QString displayName() const override;
+  bool isModified() const override;
+  bool save() override;
+  bool saveAs(const QString& path) override;
+  QString filePath() const override;
+  QString editorId() const override;
+  QWidget* widget() override;
+  QString editorType() const override;
+  QObject* signalObject() override;
+
+  // Text editor specific
   QString fileName() const;
-  bool isModified() const;
-
   void setFilePath(const QString& newPath);
-
   bool loadFile();
   bool saveFile();
   bool saveFileAs(const QString& newPath);
-
   QsciScintilla* editor() const;
 
  Q_SIGNALS:
   void modificationChanged(bool modified);
-  void editorStateChanged(); // 编辑器状态变化（文本修改、撤销栈变化等）
+  void editorStateChanged();
 
  private slots:
   void onConfigChanged(const QString& key);
@@ -46,4 +54,4 @@ class EditorWidget : public QWidget {
 
 }  // namespace etest::app
 
-#endif  // ETEST_APP_EDITOR_WIDGET_H_
+#endif  // ETEST_APP_TEXT_EDITOR_WIDGET_H_

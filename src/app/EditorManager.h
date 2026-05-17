@@ -6,10 +6,10 @@
 #include <QString>
 
 #include "DockManager.h"
+#include "editor/IEditor.h"
 
 namespace etest::app {
 
-class EditorWidget;
 class EditorManager : public QObject {
   Q_OBJECT
 
@@ -19,45 +19,46 @@ class EditorManager : public QObject {
 
   void openFile(const QString& filePath);
   void openFileAtLine(const QString& filePath, int line);
-  bool closeFile(const QString& filePath);
+  bool closeFile(const QString& editorId);
   bool closeAllFiles();
   bool saveAllFiles();
   bool saveModifiedFiles(const QStringList& filePaths = QStringList());
 
-  // 文件变更同步
   void onFileDeleted(const QString& filePath);
   void onFileRenamed(const QString& oldPath, const QString& newPath);
 
-  // 关闭指定目录下的所有文件（用于项目关闭时保留项目外的文件）
   bool closeFilesInDirectory(const QString& dirPath);
 
-  EditorWidget* editorForFile(const QString& filePath) const;
-  bool isOpen(const QString& filePath) const;
+  IEditor* editorById(const QString& id) const;
+  bool isOpen(const QString& editorId) const;
   bool hasUnsavedChanges() const;
   bool hasUnsavedChangesInDirectory(const QString& dirPath) const;
   bool saveModifiedFilesInDirectory(const QString& dirPath);
 
   QStringList openFiles() const;
-  EditorWidget* currentEditor() const;
+  IEditor* currentEditor() const;
   QString currentFilePath() const;
+
+  void createEditor(const QString& editorType, const QString& id,
+                    const QString& title);
+  void updateEditorId(IEditor* editor, const QString& newId);
 
  Q_SIGNALS:
   void fileOpened(const QString& filePath);
   void fileClosed(const QString& filePath);
-  void currentEditorChanged(EditorWidget* editor);
+  void currentEditorChanged(IEditor* editor);
   void unsavedChangesChanged();
-  void modificationChanged(bool modified);  // 新增：转发单个编辑器的脏标记变化
+  void modificationChanged(bool modified);
 
  private slots:
   void onDockWidgetActivated(ads::CDockWidget* dock);
-  void updateDockTitle(EditorWidget* editor, ads::CDockWidget* dock);
+  void updateDockTitle(IEditor* editor, ads::CDockWidget* dock);
   void onDockCustomContextMenuRequested(const QPoint& pos);
 
  private:
-
   ads::CDockManager* dock_manager_;
   QMap<QString, ads::CDockWidget*> dock_widgets_;
-  QMap<QString, EditorWidget*> editors_;
+  QMap<QString, IEditor*> editors_;
   QString current_file_path_;
 };
 

@@ -25,7 +25,8 @@
 
 #include "ActivityBarWidget.h"
 #include "EditorManager.h"
-#include "EditorWidget.h"
+#include "TextEditorWidget.h"
+#include "editor/IEditor.h"
 #include "FileExplorerWidget.h"
 #include "HardwareTreeWidget.h"
 #include "OutputPanel.h"
@@ -351,7 +352,7 @@ void MainWindow::initSignals() {
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
   connect(
       editor_manager_, &EditorManager::currentEditorChanged, this,
-      [this](EditorWidget* editor) {
+      [this](IEditor* editor) {
         bool hasEditor = (editor != nullptr);
         bool hasSelection = false;
 
@@ -359,60 +360,59 @@ void MainWindow::initSignals() {
         close_file_action_->setEnabled(hasEditor);
         close_all_files_action_->setEnabled(hasEditor);
 
-        // 保存按钮仅在当前文件有修改时启用
         bool isModified = hasEditor && editor->isModified();
         save_action_->setEnabled(isModified);
 
-        if (hasEditor) {
-          QsciScintilla* sci_editor = editor->editor();
-          hasSelection = sci_editor->hasSelectedText();
+        // 断开之前编辑器的所有信号连接
+        QObject::disconnect(current_editor_selection_connection_);
+        QObject::disconnect(current_editor_state_connection_);
 
+        if (hasEditor) {
           status_message_label_->setText(editor->filePath());
 
-          // 更新状态栏光标位置
-          int line, col;
-          sci_editor->getCursorPosition(&line, &col);
-          status_cursor_label_->setText(
-              QStringLiteral("行 %1, 列 %2").arg(line + 1).arg(col + 1));
-          // 更新状态栏语言模式
-          status_language_label_->setText(QStringLiteral("纯文本"));
-          // 更新EOL格式
-          status_eol_label_->setText(QStringLiteral("CRLF"));
-          status_encoding_label_->setText(QStringLiteral("UTF-8"));
+          if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
+            QsciScintilla* sci_editor = textEditor->editor();
+            hasSelection = sci_editor->hasSelectedText();
 
-          // 断开之前编辑器的所有信号连接
-          QObject::disconnect(current_editor_selection_connection_);
-          QObject::disconnect(current_editor_state_connection_);
+            int line, col;
+            sci_editor->getCursorPosition(&line, &col);
+            status_cursor_label_->setText(
+                QStringLiteral("行 %1, 列 %2").arg(line + 1).arg(col + 1));
+            status_language_label_->setText(QStringLiteral("纯文本"));
+            status_eol_label_->setText(QStringLiteral("CRLF"));
+            status_encoding_label_->setText(QStringLiteral("UTF-8"));
 
-          // 连接新编辑器的选择变化信号
-          current_editor_selection_connection_ =
-              connect(sci_editor, &QsciScintilla::selectionChanged, this,
-                      [this, sci_editor]() {
-                        bool hasSelection = sci_editor->hasSelectedText();
-                        edit_cut_action_->setEnabled(hasSelection);
-                        edit_copy_action_->setEnabled(hasSelection);
-                      });
+            current_editor_selection_connection_ =
+                connect(sci_editor, &QsciScintilla::selectionChanged, this,
+                        [this, sci_editor]() {
+                          bool hasSelection = sci_editor->hasSelectedText();
+                          edit_cut_action_->setEnabled(hasSelection);
+                          edit_copy_action_->setEnabled(hasSelection);
+                        });
 
-          // 连接编辑器状态变化信号，更新撤销/重做按钮状态
-          current_editor_state_connection_ = connect(
-              editor, &EditorWidget::editorStateChanged, this,
-              [this, sci_editor]() {
-                edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
-                edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
-              });
+            current_editor_state_connection_ = connect(
+                textEditor, &TextEditorWidget::editorStateChanged, this,
+                [this, sci_editor]() {
+                  edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
+                  edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
+                });
 
-          // 初始化撤销/重做按钮状态
-          edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
-          edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
+            edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
+            edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
+          } else {
+            status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
+            status_language_label_->setText(QStringLiteral("纯文本"));
+            status_eol_label_->setText(QStringLiteral("CRLF"));
+            status_encoding_label_->setText(QStringLiteral("UTF-8"));
+            edit_undo_action_->setEnabled(false);
+            edit_redo_action_->setEnabled(false);
+          }
         } else {
           status_message_label_->setText(QStringLiteral("就绪"));
           status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
           status_language_label_->setText(QStringLiteral("纯文本"));
           status_eol_label_->setText(QStringLiteral("CRLF"));
           status_encoding_label_->setText(QStringLiteral("UTF-8"));
-          // 没有编辑器时，断开旧连接并禁用相关按钮
-          QObject::disconnect(current_editor_selection_connection_);
-          QObject::disconnect(current_editor_state_connection_);
           edit_cut_action_->setEnabled(false);
           edit_copy_action_->setEnabled(false);
           edit_undo_action_->setEnabled(false);
@@ -423,7 +423,6 @@ void MainWindow::initSignals() {
         }
         updateWindowTitle();
 
-        // 更新编辑菜单按钮状态（工具栏会自动同步）
         edit_undo_action_->setEnabled(hasEditor);
         edit_redo_action_->setEnabled(hasEditor);
         edit_cut_action_->setEnabled(hasSelection);
@@ -455,13 +454,15 @@ void MainWindow::initSignals() {
           });
 
   // 手动初始化按钮状态，处理程序启动时已经有打开的编辑器的情况
-  EditorWidget* current_editor = editor_manager_->currentEditor();
+  IEditor* current_editor = editor_manager_->currentEditor();
   bool hasEditor = (current_editor != nullptr);
   bool hasSelection = false;
 
   if (hasEditor) {
-    QsciScintilla* sci_editor = current_editor->editor();
-    hasSelection = sci_editor->hasSelectedText();
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(current_editor)) {
+      QsciScintilla* sci_editor = textEditor->editor();
+      hasSelection = sci_editor->hasSelectedText();
+    }
   }
 
   bool isModified = hasEditor && current_editor->isModified();
@@ -972,7 +973,7 @@ void MainWindow::onSaveFile() {
   auto* editor = editor_manager_->currentEditor();
   if (!editor)
     return;
-  if (!editor->saveFile()) {
+  if (!editor->save()) {
     QMessageBox::warning(
         this, QStringLiteral("保存失败"),
         QStringLiteral("无法保存文件：%1").arg(editor->filePath()));
@@ -988,7 +989,7 @@ void MainWindow::onSaveFileAs() {
       this, QStringLiteral("另存为"), editor->filePath(),
       QStringLiteral("所有文件 (*)"));
   if (!newPath.isEmpty()) {
-    if (!editor->saveFileAs(newPath)) {
+    if (!editor->saveAs(newPath)) {
       QMessageBox::warning(this, QStringLiteral("保存失败"),
                            QStringLiteral("无法保存文件：%1").arg(newPath));
     }
@@ -1003,7 +1004,7 @@ void MainWindow::onCloseCurrentFile() {
   auto* editor = editor_manager_->currentEditor();
   if (!editor)
     return;
-  editor_manager_->closeFile(editor->filePath());
+  editor_manager_->closeFile(editor->editorId());
 }
 
 void MainWindow::onCloseAllFiles() {
@@ -1012,37 +1013,48 @@ void MainWindow::onCloseAllFiles() {
 
 void MainWindow::onUndo() {
   if (auto* editor = editor_manager_->currentEditor()) {
-    editor->editor()->undo();
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
+      textEditor->editor()->undo();
+    }
   }
 }
 
 void MainWindow::onRedo() {
   if (auto* editor = editor_manager_->currentEditor()) {
-    editor->editor()->redo();
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
+      textEditor->editor()->redo();
+    }
   }
 }
 
 void MainWindow::onCut() {
   if (auto* editor = editor_manager_->currentEditor()) {
-    editor->editor()->cut();
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
+      textEditor->editor()->cut();
+    }
   }
 }
 
 void MainWindow::onCopy() {
   if (auto* editor = editor_manager_->currentEditor()) {
-    editor->editor()->copy();
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
+      textEditor->editor()->copy();
+    }
   }
 }
 
 void MainWindow::onPaste() {
   if (auto* editor = editor_manager_->currentEditor()) {
-    editor->editor()->paste();
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
+      textEditor->editor()->paste();
+    }
   }
 }
 
 void MainWindow::onFind() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor)
+  auto* textEditor = dynamic_cast<TextEditorWidget*>(editor);
+  if (!textEditor)
     return;
 
   bool ok;
@@ -1050,12 +1062,10 @@ void MainWindow::onFind() {
                                              QStringLiteral("查找内容:"),
                                              QLineEdit::Normal, QString(), &ok);
   if (ok && !searchText.isEmpty()) {
-    // 获取当前光标位置
     int line, column;
-    editor->editor()->getCursorPosition(&line, &column);
+    textEditor->editor()->getCursorPosition(&line, &column);
 
-    // 查找第一个匹配项
-    bool found = editor->editor()->findFirst(searchText, false, false, false,
+    bool found = textEditor->editor()->findFirst(searchText, false, false, false,
                                              true, true, line, column, true);
     if (!found) {
       QMessageBox::information(this, QStringLiteral("查找"),
@@ -1066,7 +1076,8 @@ void MainWindow::onFind() {
 
 void MainWindow::onReplace() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor)
+  auto* textEditor = dynamic_cast<TextEditorWidget*>(editor);
+  if (!textEditor)
     return;
 
   bool ok;
@@ -1082,12 +1093,10 @@ void MainWindow::onReplace() {
   if (!ok)
     return;
 
-  // 获取当前光标位置
   int line, column;
-  editor->editor()->getCursorPosition(&line, &column);
+  textEditor->editor()->getCursorPosition(&line, &column);
 
-  // 查找第一个匹配项
-  bool found = editor->editor()->findFirst(searchText, false, false, false,
+  bool found = textEditor->editor()->findFirst(searchText, false, false, false,
                                            true, true, line, column, true);
   if (found) {
     int ret = QMessageBox::question(
@@ -1096,18 +1105,17 @@ void MainWindow::onReplace() {
     if (ret == QMessageBox::Cancel) {
       return;
     } else if (ret == QMessageBox::Yes) {
-      editor->editor()->replace(replaceText);
+      textEditor->editor()->replace(replaceText);
     }
 
-    // 继续查找下一个
-    while (editor->editor()->findNext()) {
+    while (textEditor->editor()->findNext()) {
       ret = QMessageBox::question(
           this, QStringLiteral("替换"), QStringLiteral("替换当前匹配项吗？"),
           QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
       if (ret == QMessageBox::Cancel) {
         break;
       } else if (ret == QMessageBox::Yes) {
-        editor->editor()->replace(replaceText);
+        textEditor->editor()->replace(replaceText);
       }
     }
 
@@ -1121,24 +1129,24 @@ void MainWindow::onReplace() {
 
 void MainWindow::onGoToLine() {
   auto* editor = editor_manager_->currentEditor();
-  if (!editor)
+  auto* textEditor = dynamic_cast<TextEditorWidget*>(editor);
+  if (!textEditor)
     return;
 
-  int lineCount = editor->editor()->lines();
+  int lineCount = textEditor->editor()->lines();
   bool ok;
 
-  // 获取当前行号
   int currentLine, currentColumn;
-  editor->editor()->getCursorPosition(&currentLine, &currentColumn);
+  textEditor->editor()->getCursorPosition(&currentLine, &currentColumn);
 
   int lineNumber =
       QInputDialog::getInt(this, QStringLiteral("跳转到行"),
                            QStringLiteral("行号 (1-%1):").arg(lineCount),
-                           currentLine + 1,  // 当前行号
+                           currentLine + 1,
                            1, lineCount, 1, &ok);
   if (ok) {
-    editor->editor()->setCursorPosition(lineNumber - 1, 0);
-    editor->editor()->ensureLineVisible(lineNumber - 1);
+    textEditor->editor()->setCursorPosition(lineNumber - 1, 0);
+    textEditor->editor()->ensureLineVisible(lineNumber - 1);
   }
 }
 
@@ -1250,14 +1258,14 @@ QJsonObject MainWindow::captureSessionData() {
   for (const QString& path : editor_manager_->openFiles()) {
     QJsonObject fileObj;
     fileObj["path"] = path;
-    auto* editor = editor_manager_->editorForFile(path);
-    if (editor) {
+    auto* editor = editor_manager_->editorById(path);
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
       int line, col;
-      editor->editor()->getCursorPosition(&line, &col);
+      textEditor->editor()->getCursorPosition(&line, &col);
       fileObj["cursorLine"] = line;
       fileObj["cursorColumn"] = col;
       fileObj["scrollPos"] =
-          editor->editor()->verticalScrollBar()->value();
+          textEditor->editor()->verticalScrollBar()->value();
     }
     filesArray.append(fileObj);
   }
@@ -1391,27 +1399,26 @@ void MainWindow::restoreSession() {
 
     editor_manager_->openFile(path);
 
-    // 光标/滚动位置 clamp 到文件实际范围
-    auto* editor = editor_manager_->editorForFile(path);
-    if (editor) {
+    auto* editor = editor_manager_->editorById(path);
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
       int line = fileObj["cursorLine"].toInt();
       int col = fileObj["cursorColumn"].toInt();
       int scrollPos = fileObj["scrollPos"].toInt();
 
-      int maxLine = editor->editor()->lines() - 1;
+      int maxLine = textEditor->editor()->lines() - 1;
       if (line > maxLine) line = maxLine;
       if (line < 0) line = 0;
 
-      int maxCol = editor->editor()->text(line).length();
+      int maxCol = textEditor->editor()->text(line).length();
       if (col > maxCol) col = maxCol;
       if (col < 0) col = 0;
 
-      editor->editor()->setCursorPosition(line, col);
+      textEditor->editor()->setCursorPosition(line, col);
 
-      int maxScroll = editor->editor()->verticalScrollBar()->maximum();
+      int maxScroll = textEditor->editor()->verticalScrollBar()->maximum();
       if (scrollPos > maxScroll) scrollPos = maxScroll;
       if (scrollPos < 0) scrollPos = 0;
-      editor->editor()->verticalScrollBar()->setValue(scrollPos);
+      textEditor->editor()->verticalScrollBar()->setValue(scrollPos);
     }
   }
 

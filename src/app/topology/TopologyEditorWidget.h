@@ -2,6 +2,8 @@
 
 #include <QWidget>
 
+#include "editor/IEditor.h"
+
 class QAction;
 class QSplitter;
 class QGraphicsItem;
@@ -14,14 +16,31 @@ class TopologyScene;
 class TopologyView;
 class PropertyPanelWidget;
 
-class TopologyEditorWidget : public QWidget {
+class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   Q_OBJECT
  public:
   explicit TopologyEditorWidget(QWidget* parent = nullptr);
   ~TopologyEditorWidget() override;
 
+  // IEditor interface
+  QString displayName() const override;
+  bool isModified() const override;
+  bool save() override;
+  bool saveAs(const QString& path) override;
+  QString filePath() const override;
+  QString editorId() const override;
+  QWidget* widget() override;
+  QString editorType() const override;
+  QObject* signalObject() override;
+
+  // Topology specific
+  TopologyDocument* document() const;
+  void reloadScene();
+
  Q_SIGNALS:
   void editorTitleChanged(const QString& title);
+  void modificationChanged(bool modified);
+  void editorIdChanged(const QString& oldId, const QString& newId);
 
  private slots:
   void onAddUut(const QPointF& scenePos = QPointF());
@@ -39,6 +58,7 @@ class TopologyEditorWidget : public QWidget {
   void initUi();
   void initSignals();
   void buildDefaultDocument();
+  void setEditorId(const QString& newId);
 
   TopologyDocument* doc_;
   TopologyScene* scene_;
@@ -47,7 +67,6 @@ class TopologyEditorWidget : public QWidget {
   QSplitter* splitter_;
   QLabel* status_label_ = nullptr;
 
-  // Toolbar actions
   QAction* add_uut_action_ = nullptr;
   QAction* add_device_action_ = nullptr;
   QAction* zoom_in_action_ = nullptr;
