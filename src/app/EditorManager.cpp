@@ -17,6 +17,7 @@
 #include "TextEditorWidget.h"
 #include "editor/EditorFactory.h"
 #include "logger/Logger.h"
+#include "protocal/ProtocalEditorWidget.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
 #include "topology/TopologyJsonSerializer.h"
@@ -77,6 +78,15 @@ void EditorManager::registerEditorTypes() {
               editor->setEditorId(id);
             }
           }
+        }
+        return editor;
+      });
+
+  EditorFactoryRegistry::registerFactory(
+      "protocal", [](const QString& id, QWidget* parent) {
+        auto* editor = new etest::protocal::ProtocalEditorWidget(parent);
+        if (!id.startsWith("editor://") && QFileInfo::exists(id)) {
+          editor->setEditorId(id);
         }
         return editor;
       });
@@ -146,6 +156,24 @@ void EditorManager::openFile(const QString& filePath) {
             });
     connect(topoEditor, &etest::topology::TopologyEditorWidget::editorIdChanged,
             this, [this, editor](const QString&, const QString& newId) {
+              updateEditorId(editor, newId);
+            });
+  } else if (auto* protocalEditor =
+                 dynamic_cast<etest::protocal::ProtocalEditorWidget*>(editor)) {
+    connect(protocalEditor,
+            &etest::protocal::ProtocalEditorWidget::modificationChanged, this,
+            [this, editor, dock](bool modified) {
+              QString title = editor->displayName();
+              if (modified) {
+                title.prepend("* ");
+              }
+              dock->setWindowTitle(title);
+              emit unsavedChangesChanged();
+              emit modificationChanged(modified);
+            });
+    connect(protocalEditor,
+            &etest::protocal::ProtocalEditorWidget::editorIdChanged, this,
+            [this, editor](const QString&, const QString& newId) {
               updateEditorId(editor, newId);
             });
   }
@@ -419,6 +447,23 @@ void EditorManager::createEditor(const QString& editorType,
             });
     connect(topoEditor, &etest::topology::TopologyEditorWidget::editorIdChanged,
             this, [this, editor](const QString&, const QString& newId) {
+              updateEditorId(editor, newId);
+            });
+  } else if (auto* protocalEditor =
+                 dynamic_cast<etest::protocal::ProtocalEditorWidget*>(editor)) {
+    connect(protocalEditor,
+            &etest::protocal::ProtocalEditorWidget::modificationChanged, this,
+            [this, editor, dock](bool modified) {
+              QString title = editor->displayName();
+              if (modified)
+                title.prepend("* ");
+              dock->setWindowTitle(title);
+              emit unsavedChangesChanged();
+              emit modificationChanged(modified);
+            });
+    connect(protocalEditor,
+            &etest::protocal::ProtocalEditorWidget::editorIdChanged, this,
+            [this, editor](const QString&, const QString& newId) {
               updateEditorId(editor, newId);
             });
   }

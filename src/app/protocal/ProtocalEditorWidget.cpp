@@ -1,6 +1,7 @@
 #include "ProtocalEditorWidget.h"
 
 #include <QComboBox>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QSplitter>
@@ -16,6 +17,40 @@ ProtocalEditorWidget::ProtocalEditorWidget(QWidget* parent)
     : QWidget(parent) {
   initUi();
   initSignals();
+}
+
+QString ProtocalEditorWidget::displayName() const {
+  if (current_file_.isEmpty()) {
+    return QStringLiteral("未命名协议");
+  }
+  return QFileInfo(current_file_).fileName();
+}
+
+bool ProtocalEditorWidget::isModified() const { return modified_; }
+
+bool ProtocalEditorWidget::save() { return false; }
+
+bool ProtocalEditorWidget::saveAs(const QString& path) { return false; }
+
+QString ProtocalEditorWidget::filePath() const { return current_file_; }
+
+QString ProtocalEditorWidget::editorId() const {
+  if (current_file_.isEmpty()) {
+    return QStringLiteral("editor://protocal/new");
+  }
+  return current_file_;
+}
+
+QWidget* ProtocalEditorWidget::widget() { return this; }
+
+QString ProtocalEditorWidget::editorType() const {
+  return QStringLiteral("protocal");
+}
+
+QObject* ProtocalEditorWidget::signalObject() { return this; }
+
+void ProtocalEditorWidget::setEditorId(const QString& id) {
+  current_file_ = id;
 }
 
 void ProtocalEditorWidget::initUi() {

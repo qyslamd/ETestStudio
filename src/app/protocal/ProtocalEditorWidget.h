@@ -2,6 +2,8 @@
 
 #include <QWidget>
 
+#include "editor/IEditor.h"
+
 class QComboBox;
 class QLabel;
 class QSplitter;
@@ -12,10 +14,27 @@ class IcdNodeTreeWidget;
 class IcdBitLayoutView;
 class IcdPropertyPanel;
 
-class ProtocalEditorWidget : public QWidget {
+class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   Q_OBJECT
  public:
   explicit ProtocalEditorWidget(QWidget* parent = nullptr);
+
+  // IEditor interface
+  QString displayName() const override;
+  bool isModified() const override;
+  bool save() override;
+  bool saveAs(const QString& path) override;
+  QString filePath() const override;
+  QString editorId() const override;
+  QWidget* widget() override;
+  QString editorType() const override;
+  QObject* signalObject() override;
+
+  void setEditorId(const QString& id);
+
+ Q_SIGNALS:
+  void modificationChanged(bool modified);
+  void editorIdChanged(const QString& oldId, const QString& newId);
 
  private:
   void initUi();
@@ -29,6 +48,9 @@ class ProtocalEditorWidget : public QWidget {
   QLabel* frame_name_label_ = nullptr;
   QComboBox* frame_type_combo_ = nullptr;
   QComboBox* byte_order_combo_ = nullptr;
+
+  QString current_file_;
+  bool modified_ = false;
 };
 
 }  // namespace etest::protocal

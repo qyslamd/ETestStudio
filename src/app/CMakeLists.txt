@@ -104,6 +104,7 @@ target_link_libraries(${TARGET_NAME}
     Qt5::Widgets
     core
     etest_topology
+    etest_protocal
     # 已配置第三方依赖
     spdlog::spdlog
     hpdf
