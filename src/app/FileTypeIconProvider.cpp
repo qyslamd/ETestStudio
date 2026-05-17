@@ -11,7 +11,8 @@ namespace etest::app {
 
 FileTypeIconProvider::FileTypeIconProvider() : QFileIconProvider() {
   loadIcons();
-  LOG_INFO("UI", "FileTypeIconProvider loaded, {} extensions mapped, folder null={}",
+  LOG_INFO("UI",
+           "FileTypeIconProvider loaded, {} extensions mapped, folder null={}",
            extension_icons_.size(), folder_icon_.isNull());
 }
 
@@ -45,10 +46,13 @@ void FileTypeIconProvider::loadIcons() {
   extension_icons_["md"] = loadDualThemeIcon("file_markdown");
   extension_icons_["cmake"] = loadDualThemeIcon("file_cmake");
   extension_icons_["js"] = loadDualThemeIcon("file_js");
+  extension_icons_["eproto"] = loadDualThemeIcon("file_eproto");
+  extension_icons_["etopo"] = loadDualThemeIcon("file_etopo");
 }
 
 QIcon FileTypeIconProvider::loadDualThemeIcon(const QString& baseName) const {
-  QString lightPath = QStringLiteral(":/resources/icons/svg/%1_light.svg").arg(baseName);
+  QString lightPath =
+      QStringLiteral(":/resources/icons/svg/%1_light.svg").arg(baseName);
   QIcon icon(lightPath);
   if (icon.isNull()) {
     LOG_WARN("UI", "Failed to load icon: {}", lightPath.toStdString());
