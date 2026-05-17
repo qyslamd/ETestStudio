@@ -54,7 +54,7 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerExtension("cmake", "text");
   EditorFactoryRegistry::registerExtension("txt", "text");
   EditorFactoryRegistry::registerExtension("etopo", "topology");
-  EditorFactoryRegistry::registerExtension("eprot", "protocal");
+  EditorFactoryRegistry::registerExtension("eproto", "protocal");
 
   EditorFactoryRegistry::registerFactory(
       "text", [](const QString& path, QWidget* parent) {
