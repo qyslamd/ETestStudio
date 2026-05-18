@@ -86,6 +86,7 @@ void TopologyView::zoomIn() {
   if (newZoom >= 0.1 && newZoom <= 10.0) {
     current_zoom_ = newZoom;
     scale(factor, factor);
+    emit zoomChanged(current_zoom_);
   }
 }
 
@@ -95,12 +96,14 @@ void TopologyView::zoomOut() {
   if (newZoom >= 0.1 && newZoom <= 10.0) {
     current_zoom_ = newZoom;
     scale(factor, factor);
+    emit zoomChanged(current_zoom_);
   }
 }
 
 void TopologyView::zoomReset() {
   current_zoom_ = 1.0;
   resetTransform();
+  emit zoomChanged(current_zoom_);
 }
 
 void TopologyView::wheelEvent(QWheelEvent* event) {
@@ -115,6 +118,7 @@ void TopologyView::wheelEvent(QWheelEvent* event) {
   if (newZoom >= 0.1 && newZoom <= 10.0) {
     current_zoom_ = newZoom;
     scale(factor, factor);
+    emit zoomChanged(current_zoom_);
   }
   event->accept();
 }
@@ -191,6 +195,9 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     auto* addDevAct = menu.addAction(QStringLiteral("添加设备"));
     connect(addDevAct, &QAction::triggered, this,
             [this, scenePos]() { emit addDeviceRequested(scenePos); });
+    auto* addTmplAct = menu.addAction(QStringLiteral("从模板添加设备..."));
+    connect(addTmplAct, &QAction::triggered, this,
+            [this, scenePos]() { emit addDeviceFromTemplateRequested(scenePos); });
   }
 
   menu.exec(event->globalPos());

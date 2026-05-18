@@ -74,6 +74,16 @@ TopologyPort::Direction stringToDirection(const QString& s) {
 TopologyDocument::TopologyDocument(QObject* parent)
     : QObject(parent), undo_stack_(new QUndoStack(this)) {}
 
+static bool isDirectionCompatible(TopologyPort::Direction portDir,
+                                   TopologyPort::Direction devPortDir) {
+  // Bidirectional is compatible with any direction
+  if (portDir == TopologyPort::Bidirectional ||
+      devPortDir == TopologyPort::Bidirectional)
+    return true;
+  // Opposites connect: Input ↔ Output
+  return portDir != devPortDir;
+}
+
 bool TopologyDocument::isModified() const {
   return !undo_stack_->isClean();
 }
@@ -234,6 +244,11 @@ bool TopologyDocument::canConnect(const QString& productName,
 
   for (const auto& port : product.ports) {
     if (port.name == portName) {
+      // Direction compatibility: UUT Input ↔ Device Output, UUT Output ↔ Device Input,
+      // Bidirectional ↔ anything.
+      if (!isDirectionCompatible(port.direction, devPort.direction))
+        return false;
+
       return port.allowedDeviceTypes.contains(
           functionTypeToString(devPort.functionType));
     }

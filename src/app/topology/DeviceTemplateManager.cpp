@@ -31,6 +31,16 @@ bool DeviceTemplateManager::saveTemplate(const TopologyDocument* doc,
   }
   root["properties"] = propsArr;
 
+  QJsonArray portsArr;
+  for (const auto& dp : dev->ports) {
+    QJsonObject pObj;
+    pObj["name"] = dp.name;
+    pObj["direction"] = directionToString(dp.direction);
+    pObj["functionType"] = functionTypeToString(dp.functionType);
+    portsArr.append(pObj);
+  }
+  root["ports"] = portsArr;
+
   QJsonDocument jdoc(root);
   QFile file(filePath);
   if (!file.open(QIODevice::WriteOnly)) {
@@ -44,7 +54,8 @@ bool DeviceTemplateManager::saveTemplate(const TopologyDocument* doc,
 
 bool DeviceTemplateManager::loadTemplate(const QString& filePath,
                                          QJsonObject& outDeviceType,
-                                         QJsonArray& outProperties) {
+                                         QJsonArray& outProperties,
+                                         QJsonArray& outPorts) {
   QFile file(filePath);
   if (!file.open(QIODevice::ReadOnly)) {
     last_error_ = QStringLiteral("无法打开文件");
@@ -63,6 +74,7 @@ bool DeviceTemplateManager::loadTemplate(const QString& filePath,
   QJsonObject root = jdoc.object();
   outDeviceType = root;
   outProperties = root["properties"].toArray();
+  outPorts = root["ports"].toArray();
   return true;
 }
 

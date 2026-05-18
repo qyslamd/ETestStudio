@@ -52,6 +52,10 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   void onDocumentChanged();
   void onUndo();
   void onRedo();
+  void onCopy();
+  void onPaste();
+  void onExportImage();
+  void onAddDeviceFromTemplate(const QPointF& scenePos);
 
  private:
   void initUi();
@@ -73,6 +77,7 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   QAction* zoom_in_action_ = nullptr;
   QAction* zoom_out_action_ = nullptr;
   QAction* zoom_reset_action_ = nullptr;
+  QAction* export_image_action_ = nullptr;
 
   QString current_file_;
 };

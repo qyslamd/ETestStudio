@@ -1,20 +1,26 @@
 #include "TopologyEditorWidget.h"
 #include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QImage>
+#include <QJsonArray>
+#include <QPainter>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QShortcut>
 #include <QSplitter>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
+#include "TopologyTheme.h"
 #include "TopologyDocument.h"
 #include "TopologyJsonSerializer.h"
 #include "TopologyScene.h"
@@ -25,10 +31,17 @@
 namespace etest::topology {
 
 TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QWidget(parent) {
+  // Match QADS dock background for the entire editor area
+  QPalette pal = palette();
+  pal.setColor(QPalette::Window, QColor("#1E1E1E"));
+  setPalette(pal);
+  setAutoFillBackground(true);
+
   doc_ = new TopologyDocument(this);
   scene_ = new TopologyScene(doc_, this);
   view_ = new TopologyView(scene_, this);
   property_panel_ = new PropertyPanelWidget(doc_, this);
+  property_panel_->setAutoFillBackground(true);
 
   initUi();
   initSignals();
@@ -143,6 +156,10 @@ void TopologyEditorWidget::initUi() {
   mainLayout->setSpacing(0);
 
   auto* toolbarFrame = new QFrame(this);
+  toolbarFrame->setObjectName(QStringLiteral("topologyToolbar"));
+  toolbarFrame->setStyleSheet(
+      QStringLiteral("#topologyToolbar { background-color: #2D2D2D;"
+                     " border-bottom: 1px solid #252526; }"));
   auto* toolbarLayout = new QHBoxLayout(toolbarFrame);
   toolbarLayout->setContentsMargins(4, 4, 4, 4);
 
@@ -177,6 +194,14 @@ void TopologyEditorWidget::initUi() {
 
   toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
 
+  export_image_action_ = new QAction(QStringLiteral("导出图片"), this);
+  export_image_action_->setToolTip(QStringLiteral("导出拓扑图为 PNG"));
+  auto* exportBtn = new QToolButton(toolbarFrame);
+  exportBtn->setDefaultAction(export_image_action_);
+  toolbarLayout->addWidget(exportBtn);
+
+  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
+
   undo_action_ = new QAction(QStringLiteral("撤销"), this);
   undo_action_->setShortcut(QKeySequence::Undo);
   undo_action_->setEnabled(false);
@@ -202,10 +227,13 @@ void TopologyEditorWidget::initUi() {
   mainLayout->addWidget(splitter_, 1);
 
   auto* statusFrame = new QFrame(this);
-  statusFrame->setFrameShape(QFrame::StyledPanel);
+  statusFrame->setObjectName(QStringLiteral("topologyStatusBar"));
+  statusFrame->setStyleSheet(
+      QStringLiteral("#topologyStatusBar { background-color: #252526;"
+                     " border-top: 1px solid #3C3C3C; }"));
   auto* statusLayout = new QHBoxLayout(statusFrame);
   statusLayout->setContentsMargins(8, 2, 8, 2);
-  status_label_ = new QLabel(QStringLiteral("就绪"), statusFrame);
+  status_label_ = new QLabel(QStringLiteral("缩放: 100%"), statusFrame);
   statusLayout->addWidget(status_label_);
   statusLayout->addStretch();
   mainLayout->addWidget(statusFrame);
@@ -221,6 +249,15 @@ void TopologyEditorWidget::initSignals() {
   connect(zoom_reset_action_, &QAction::triggered, view_,
           &TopologyView::zoomReset);
 
+  connect(export_image_action_, &QAction::triggered, this,
+          &TopologyEditorWidget::onExportImage);
+
+  connect(view_, &TopologyView::zoomChanged, this,
+          [this](qreal zoom) {
+            status_label_->setText(
+                QStringLiteral("缩放: %1%").arg(static_cast<int>(zoom * 100)));
+          });
+
   connect(undo_action_, &QAction::triggered, this,
           &TopologyEditorWidget::onUndo);
   connect(redo_action_, &QAction::triggered, this,
@@ -234,6 +271,8 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onDeleteItem);
   connect(view_, &TopologyView::saveTemplateRequested, this,
           &TopologyEditorWidget::onSaveTemplate);
+  connect(view_, &TopologyView::addDeviceFromTemplateRequested, this,
+          &TopologyEditorWidget::onAddDeviceFromTemplate);
 
   connect(scene_, &TopologyScene::itemSelected, this,
           &TopologyEditorWidget::onSelectionChanged);
@@ -242,9 +281,8 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onDocumentChanged);
 
   auto* undoStack = doc_->undoStack();
-  connect(undoStack, &QUndoStack::indexChanged, this, [this]() {
-    rebuildSceneAndRestoreSelection();
-  });
+  connect(undoStack, &QUndoStack::indexChanged, this,
+          [this]() { rebuildSceneAndRestoreSelection(); });
   connect(undoStack, &QUndoStack::canUndoChanged, undo_action_,
           &QAction::setEnabled);
   connect(undoStack, &QUndoStack::canRedoChanged, redo_action_,
@@ -259,6 +297,14 @@ void TopologyEditorWidget::initSignals() {
       onDeleteItem(selected.first());
     }
   });
+
+  auto* copyShortcut = new QShortcut(QKeySequence::Copy, this);
+  connect(copyShortcut, &QShortcut::activated, this,
+          &TopologyEditorWidget::onCopy);
+
+  auto* pasteShortcut = new QShortcut(QKeySequence::Paste, this);
+  connect(pasteShortcut, &QShortcut::activated, this,
+          &TopologyEditorWidget::onPaste);
 }
 
 void TopologyEditorWidget::buildDefaultDocument() {
@@ -385,8 +431,7 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
               c->portName == prod->ports[src->portIndex()].name &&
               c->deviceName == dev->name &&
               c->devicePort == conn->devicePort()) {
-            doc_->undoStack()->push(
-                new RemoveConnectionCommand(doc_, i));
+            doc_->undoStack()->push(new RemoveConnectionCommand(doc_, i));
             break;
           }
         }
@@ -498,6 +543,271 @@ void TopologyEditorWidget::onUndo() {
 
 void TopologyEditorWidget::onRedo() {
   doc_->undoStack()->redo();
+}
+
+// ── Copy / Paste ────────────────────────────────────────────
+
+static const char kClipboardMime[] = "application/x-ietopology-items";
+
+void TopologyEditorWidget::onCopy() {
+  QJsonObject root;
+  QJsonArray prodsArr, devsArr;
+  auto selected = scene_->selectedItems();
+
+  for (auto* item : selected) {
+    if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
+      const auto* prod = doc_->product(uut->productIndex());
+      if (!prod)
+        continue;
+      QJsonObject obj;
+      obj["name"] = prod->name;
+      obj["positionX"] = prod->position.x();
+      obj["positionY"] = prod->position.y();
+      QJsonArray portsArr;
+      for (const auto& port : prod->ports) {
+        QJsonObject pObj;
+        pObj["name"] = port.name;
+        pObj["direction"] = directionToString(port.direction);
+        QJsonArray typesArr;
+        for (const auto& t : port.allowedDeviceTypes)
+          typesArr.append(t);
+        pObj["allowedDeviceTypes"] = typesArr;
+        pObj["functionType"] = functionTypeToString(port.functionType);
+        portsArr.append(pObj);
+      }
+      obj["ports"] = portsArr;
+      prodsArr.append(obj);
+    } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
+      const auto* d = doc_->device(dev->deviceIndex());
+      if (!d)
+        continue;
+      QJsonObject obj;
+      obj["name"] = d->name;
+      obj["deviceType"] = d->deviceType;
+      obj["positionX"] = d->position.x();
+      obj["positionY"] = d->position.y();
+      QJsonArray propsArr;
+      for (const auto& prop : d->properties) {
+        QJsonObject propObj;
+        propObj["key"] = prop.first;
+        propObj["value"] = prop.second;
+        propsArr.append(propObj);
+      }
+      obj["properties"] = propsArr;
+      QJsonArray portsArr;
+      for (const auto& dp : d->ports) {
+        QJsonObject dpObj;
+        dpObj["name"] = dp.name;
+        dpObj["direction"] = directionToString(dp.direction);
+        dpObj["functionType"] = functionTypeToString(dp.functionType);
+        portsArr.append(dpObj);
+      }
+      obj["ports"] = portsArr;
+      devsArr.append(obj);
+    }
+  }
+
+  if (prodsArr.isEmpty() && devsArr.isEmpty())
+    return;
+
+  root["products"] = prodsArr;
+  root["devices"] = devsArr;
+  QByteArray data = QJsonDocument(root).toJson(QJsonDocument::Compact);
+
+  auto* clip = QApplication::clipboard();
+  auto* mime = new QMimeData();
+  mime->setData(QLatin1String(kClipboardMime), data);
+  clip->setMimeData(mime);
+  status_label_->setText(QStringLiteral("已复制 %1 个 UUT, %2 个设备")
+                             .arg(prodsArr.size())
+                             .arg(devsArr.size()));
+}
+
+void TopologyEditorWidget::onPaste() {
+  auto* clip = QApplication::clipboard();
+  auto* mimeData = clip->mimeData();
+  if (!mimeData || !mimeData->hasFormat(QLatin1String(kClipboardMime)))
+    return;
+
+  QJsonDocument jdoc =
+      QJsonDocument::fromJson(mimeData->data(QLatin1String(kClipboardMime)));
+  if (!jdoc.isObject())
+    return;
+
+  QJsonObject root = jdoc.object();
+  QJsonArray prodsArr = root["products"].toArray();
+  QJsonArray devsArr = root["devices"].toArray();
+
+  scene_->clearSelection();
+
+  // Paste products with offset and unique names
+  for (const auto& val : prodsArr) {
+    QJsonObject obj = val.toObject();
+    TopologyProduct prod;
+    prod.name = obj["name"].toString();
+    prod.position = QPointF(obj["positionX"].toDouble() + 30,
+                            obj["positionY"].toDouble() + 30);
+
+    // Generate unique name if conflict
+    if (doc_->findProductIndex(prod.name) >= 0) {
+      int suffix = 1;
+      QString base = prod.name;
+      while (doc_->findProductIndex(
+                 QStringLiteral("%1_copy%2").arg(base).arg(suffix)) >= 0)
+        ++suffix;
+      prod.name = QStringLiteral("%1_copy%2").arg(base).arg(suffix);
+    }
+
+    QJsonArray portsArr = obj["ports"].toArray();
+    for (const auto& pVal : portsArr) {
+      QJsonObject pObj = pVal.toObject();
+      TopologyPort port;
+      port.name = pObj["name"].toString();
+      port.direction = stringToDirection(
+          pObj["direction"].toString(QStringLiteral("output")));
+      for (const auto& t : pObj["allowedDeviceTypes"].toArray())
+        port.allowedDeviceTypes.append(t.toString());
+      port.functionType = stringToFunctionType(pObj["functionType"].toString());
+      prod.ports.append(port);
+    }
+
+    auto* cmd = new AddProductCommand(doc_, prod);
+    doc_->undoStack()->push(cmd);
+  }
+
+  // Paste devices with offset and unique names
+  for (const auto& val : devsArr) {
+    QJsonObject obj = val.toObject();
+    TopologyDevice dev;
+    dev.name = obj["name"].toString();
+    dev.deviceType = obj["deviceType"].toString();
+    dev.position = QPointF(obj["positionX"].toDouble() + 30,
+                           obj["positionY"].toDouble() + 30);
+
+    // Generate unique name if conflict
+    if (doc_->findDeviceIndex(dev.name) >= 0) {
+      int suffix = 1;
+      QString base = dev.name;
+      while (doc_->findDeviceIndex(
+                 QStringLiteral("%1_copy%2").arg(base).arg(suffix)) >= 0)
+        ++suffix;
+      dev.name = QStringLiteral("%1_copy%2").arg(base).arg(suffix);
+    }
+
+    QJsonArray propsArr = obj["properties"].toArray();
+    for (const auto& propVal : propsArr) {
+      QJsonObject propObj = propVal.toObject();
+      dev.properties.append(
+          {propObj["key"].toString(), propObj["value"].toString()});
+    }
+
+    QJsonArray portsArr = obj["ports"].toArray();
+    for (const auto& dpVal : portsArr) {
+      QJsonObject dpObj = dpVal.toObject();
+      TopologyDevicePort dp;
+      dp.name = dpObj["name"].toString();
+      dp.direction = stringToDirection(
+          dpObj["direction"].toString(QStringLiteral("output")));
+      dp.functionType = stringToFunctionType(dpObj["functionType"].toString());
+      dev.ports.append(dp);
+    }
+
+    auto* cmd = new AddDeviceCommand(doc_, dev);
+    doc_->undoStack()->push(cmd);
+  }
+
+  status_label_->setText(QStringLiteral("已粘贴 %1 个 UUT, %2 个设备")
+                             .arg(prodsArr.size())
+                             .arg(devsArr.size()));
+}
+
+// ── Export Image ──────────────────────────────────────────────
+
+void TopologyEditorWidget::onExportImage() {
+  QString path = QFileDialog::getSaveFileName(
+      this, QStringLiteral("导出拓扑图"), QString(),
+      QStringLiteral("PNG 图片 (*.png);;所有文件 (*)"));
+  if (path.isEmpty())
+    return;
+
+  if (!path.endsWith(QStringLiteral(".png"), Qt::CaseInsensitive))
+    path += QStringLiteral(".png");
+
+  QRectF sceneRect = scene_->sceneRect();
+  if (sceneRect.isEmpty())
+    return;
+
+  // Add padding
+  sceneRect.adjust(-30, -30, 30, 30);
+
+  QImage image(sceneRect.size().toSize(), QImage::Format_ARGB32_Premultiplied);
+  image.fill(topologyColors().sceneBackground);
+
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing);
+  scene_->render(&painter, QRectF(), sceneRect);
+  painter.end();
+
+  if (image.save(path, "PNG")) {
+    status_label_->setText(QStringLiteral("拓扑图已导出: %1").arg(path));
+  } else {
+    QMessageBox::warning(this, QStringLiteral("错误"),
+                         QStringLiteral("导出图片失败"));
+  }
+}
+
+// ── Add Device From Template ──────────────────────────────────
+
+void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
+  QString path = QFileDialog::getOpenFileName(
+      this, QStringLiteral("从模板添加设备"), QString(),
+      QStringLiteral("设备模板 (*.dvt);;所有文件 (*)"));
+  if (path.isEmpty())
+    return;
+
+  QJsonObject deviceType;
+  QJsonArray properties, portsArr;
+  if (!DeviceTemplateManager::loadTemplate(path, deviceType, properties,
+                                           portsArr)) {
+    QMessageBox::warning(
+        this, QStringLiteral("错误"),
+        QStringLiteral("加载模板失败: %1").arg(DeviceTemplateManager::lastError()));
+    return;
+  }
+
+  int n = doc_->deviceCount() + 1;
+  TopologyDevice dev;
+  dev.deviceType = deviceType["deviceType"].toString();
+  dev.name = QStringLiteral("%1_%2").arg(dev.deviceType).arg(n, 2, 10, QChar('0'));
+  dev.position = scenePos;
+
+  // Load properties
+  for (const auto& propVal : properties) {
+    QJsonObject propObj = propVal.toObject();
+    dev.properties.append(
+        {propObj["key"].toString(), propObj["value"].toString()});
+  }
+
+  // Load ports if the template has them; otherwise add a default port
+  if (!portsArr.isEmpty()) {
+    for (const auto& pv : portsArr) {
+      QJsonObject pObj = pv.toObject();
+      TopologyDevicePort dp;
+      dp.name = pObj["name"].toString();
+      dp.direction =
+          stringToDirection(pObj["direction"].toString(QStringLiteral("output")));
+      dp.functionType =
+          stringToFunctionType(pObj["functionType"].toString());
+      dev.ports.append(dp);
+    }
+  } else {
+    dev.ports.append({QStringLiteral("default"), TopologyPort::Bidirectional,
+                      FunctionType::CUSTOM});
+  }
+
+  auto* cmd = new AddDeviceCommand(doc_, dev);
+  doc_->undoStack()->push(cmd);
+  status_label_->setText(QStringLiteral("已从模板添加设备: %1").arg(dev.name));
 }
 
 }  // namespace etest::topology

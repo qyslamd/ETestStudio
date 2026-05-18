@@ -20,6 +20,8 @@ class TopologyView : public QGraphicsView {
   void addDeviceRequested(QPointF scenePos);
   void deleteItemRequested(QGraphicsItem* item);
   void saveTemplateRequested(QGraphicsItem* item);
+  void addDeviceFromTemplateRequested(QPointF scenePos);
+  void zoomChanged(qreal zoomFactor);
 
  protected:
   void drawForeground(QPainter* painter, const QRectF& rect) override;

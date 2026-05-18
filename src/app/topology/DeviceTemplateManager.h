@@ -14,7 +14,8 @@ class DeviceTemplateManager {
                            const QString& filePath);
   static bool loadTemplate(const QString& filePath,
                            QJsonObject& outDeviceType,
-                           QJsonArray& outProperties);
+                           QJsonArray& outProperties,
+                           QJsonArray& outPorts);
 
   static QString lastError() { return last_error_; }
 
