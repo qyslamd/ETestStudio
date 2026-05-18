@@ -1,5 +1,6 @@
 #include "TopologyView.h"
 #include "TopologyScene.h"
+#include "TopologyTheme.h"
 #include "topology_items.h"
 
 #include <QAction>
@@ -23,8 +24,8 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
   // Allow zooming into empty areas
   setInteractive(true);
 
-  // Style
-  setBackgroundBrush(QColor(250, 250, 250));
+  // Style — adapt to current theme
+  setBackgroundBrush(topologyColors().sceneBackground);
   setFrameShape(QFrame::NoFrame);
 }
 
@@ -38,8 +39,10 @@ void TopologyView::drawForeground(QPainter* painter, const QRectF& rect) {
   int y = viewport()->height() - lh - 10;
 
   painter->setRenderHint(QPainter::Antialiasing);
-  painter->setBrush(QColor(255, 255, 255, 200));
-  painter->setPen(QPen(Qt::gray, 0.5));
+  const auto& tc = topologyColors();
+
+  painter->setBrush(tc.legendBackground);
+  painter->setPen(QPen(tc.legendBorder, 0.5));
   painter->translate(x, y);
   painter->drawRoundedRect(0, 0, lw, lh, 4, 4);
 
@@ -47,7 +50,7 @@ void TopologyView::drawForeground(QPainter* painter, const QRectF& rect) {
   f.setPointSize(9);
   f.setBold(true);
   painter->setFont(f);
-  painter->setPen(Qt::black);
+  painter->setPen(tc.legendText);
   painter->drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft,
                     QStringLiteral("图例"));
 
@@ -60,9 +63,9 @@ void TopologyView::drawForeground(QPainter* painter, const QRectF& rect) {
     QString label;
   };
   Entry entries[] = {
-      {QColor(66, 133, 244), QStringLiteral("输入")},
-      {QColor(52, 168, 83), QStringLiteral("输出")},
-      {QColor(255, 0, 255), QStringLiteral("双向")},
+      {tc.directionInput, QStringLiteral("输入")},
+      {tc.directionOutput, QStringLiteral("输出")},
+      {tc.directionBidirectional, QStringLiteral("双向")},
   };
 
   for (int i = 0; i < 3; ++i) {
@@ -70,7 +73,7 @@ void TopologyView::drawForeground(QPainter* painter, const QRectF& rect) {
     painter->setBrush(entries[i].color);
     painter->setPen(Qt::NoPen);
     painter->drawEllipse(QPointF(14, ey + 4), 4, 4);
-    painter->setPen(Qt::black);
+    painter->setPen(tc.legendText);
     painter->drawText(QRectF(24, ey, 70, 14), Qt::AlignLeft, entries[i].label);
   }
 

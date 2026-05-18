@@ -1,5 +1,6 @@
 #include "TopologyScene.h"
 #include "TopologyDocument.h"
+#include "TopologyTheme.h"
 #include "UndoCommands.h"
 #include "topology_items.h"
 
@@ -109,7 +110,7 @@ void TopologyScene::startConnectionDrag(QGraphicsItem* port, QPointF scenePos) {
     return;
   drag_source_ = port;
   drag_line_ = new QGraphicsLineItem();
-  drag_line_->setPen(QPen(QColor(100, 100, 100), 2, Qt::DashLine));
+  drag_line_->setPen(QPen(topologyColors().connectionLine, 2, Qt::DashLine));
   drag_line_->setZValue(10);
   addItem(drag_line_);
   drag_line_->setLine(QLineF(scenePos, scenePos));
@@ -273,19 +274,28 @@ void TopologyScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
 
   if (event->button() == Qt::LeftButton) {
     auto selected = selectedItems();
-    if (!selected.isEmpty()) {
-      emit itemSelected(selected.first());
-    } else {
-      emit itemSelected(nullptr);
-    }
 
-    // Track moving item for undo support
+    // Track moving item BEFORE signal emission — handlers may trigger scene
+    // rebuild (e.g. PropertyPanelWidget saving device edits), which would
+    // delete items and invalidate pointers in `selected`.
     for (auto* item : selected) {
       if (item->flags() & QGraphicsItem::ItemIsMovable) {
         moving_item_ = item;
         move_start_pos_ = item->pos();
         break;
       }
+    }
+
+    if (!selected.isEmpty()) {
+      emit itemSelected(selected.first());
+    } else {
+      emit itemSelected(nullptr);
+    }
+
+    // If a signal handler rebuilt the scene, the tracked pointer is now
+    // dangling — reset so mouseReleaseEvent won't use it.
+    if (moving_item_ && !moving_item_->scene()) {
+      moving_item_ = nullptr;
     }
   }
 }

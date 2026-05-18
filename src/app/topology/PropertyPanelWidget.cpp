@@ -29,19 +29,25 @@ PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc, QWidget* parent)
 
 void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
   // Save pending device edits when leaving device page.
-  // Must reset index first and block undo signals to prevent recursive scene
-  // rebuild from making 'item' a dangling pointer.
+  // IMPORTANT: skip rebuild if clicking on the same device — this allows
+  // drag-to-move to work without the scene being cleared mid-press.
   if (editing_device_index_ >= 0) {
-    int savedIdx = editing_device_index_;
-    editing_device_index_ = -1;
+    bool sameDevice = false;
+    if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
+      sameDevice = (dev->deviceIndex() == editing_device_index_);
+    }
+    if (!sameDevice) {
+      int savedIdx = editing_device_index_;
+      editing_device_index_ = -1;
 
-    bool wasBlocked = doc_->undoStack()->blockSignals(true);
-    applyDeviceProperties(savedIdx);
-    applyDevicePorts(savedIdx);
-    doc_->undoStack()->blockSignals(wasBlocked);
+      bool wasBlocked = doc_->undoStack()->blockSignals(true);
+      applyDeviceProperties(savedIdx);
+      applyDevicePorts(savedIdx);
+      doc_->undoStack()->blockSignals(wasBlocked);
 
-    emit documentChanged();  // triggers rebuildSceneAndRestoreSelection
-    return;  // item may be dangling now; rebuild will refresh the panel
+      emit documentChanged();  // triggers rebuildSceneAndRestoreSelection
+      return;  // item may be dangling now; rebuild will refresh the panel
+    }
   }
 
   editing_uut_index_ = -1;

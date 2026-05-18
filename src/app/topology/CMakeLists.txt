@@ -9,6 +9,7 @@ add_library(${TARGET_NAME} STATIC
     PropertyPanelWidget.h PropertyPanelWidget.cpp
     DeviceTemplateManager.h DeviceTemplateManager.cpp
     UndoCommands.h UndoCommands.cpp
+    TopologyTheme.h TopologyTheme.cpp
 )
 target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

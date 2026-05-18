@@ -3,6 +3,7 @@
 
 #include "TopologyDocument.h"
 #include "TopologyScene.h"
+#include "TopologyTheme.h"
 #include "topology_items.h"
 
 #include <QCursor>
@@ -56,13 +57,14 @@ QPainterPath PortItem::shape() const {
 }
 
 static QColor directionColor(TopologyPort::Direction d) {
+  const auto& tc = topologyColors();
   switch (d) {
     case TopologyPort::Input:
-      return QColor(66, 133, 244);
+      return tc.directionInput;
     case TopologyPort::Output:
-      return QColor(52, 168, 83);
+      return tc.directionOutput;
     case TopologyPort::Bidirectional:
-      return QColor(255, 0, 255);
+      return tc.directionBidirectional;
   }
   return QColor(128, 128, 128);
 }
@@ -128,7 +130,7 @@ void PortItem::paint(QPainter* painter,
     painter->drawLine(QPointF(ex - gap, 0), QPointF(ex + gap, 0));
   }
 
-  painter->setPen(Qt::black);
+  painter->setPen(topologyColors().textPrimary);
   QFont f = painter->font();
   f.setPointSize(7);
   painter->setFont(f);
@@ -208,8 +210,9 @@ void UutItem::paint(QPainter* painter,
                     QWidget*) {
   painter->setRenderHint(QPainter::Antialiasing);
 
-  QColor fill(189, 215, 238);
-  QColor border(66, 133, 244);
+  const auto& tc = topologyColors();
+  QColor fill = tc.uutFill;
+  QColor border = tc.uutBorder;
   qreal penWidth = 1.5;
 
   if (body_hovered_) {
@@ -227,18 +230,17 @@ void UutItem::paint(QPainter* painter,
   }
   if (option->state & QStyle::State_Selected) {
     fill = fill.lighter(130);
-    border = QColor(20, 80, 200);
     penWidth = 2.5;
   }
 
   qreal h = contentHeight();
 
   // Shadow
-  painter->setBrush(QColor(0, 0, 0, 40));
+  painter->setBrush(tc.shadowDark);
   painter->setPen(Qt::NoPen);
   painter->drawRoundedRect(QRectF(4, 4, kWidth, h), kCornerRadius,
                            kCornerRadius);
-  painter->setBrush(QColor(0, 0, 0, 20));
+  painter->setBrush(tc.shadowLight);
   painter->drawRoundedRect(QRectF(2, 2, kWidth, h), kCornerRadius,
                            kCornerRadius);
 
@@ -251,7 +253,7 @@ void UutItem::paint(QPainter* painter,
   if (!prod)
     return;
 
-  painter->setPen(Qt::black);
+  painter->setPen(tc.textPrimary);
   QFont f = painter->font();
   f.setPointSize(10);
   f.setBold(true);
@@ -385,8 +387,9 @@ void DeviceItem::paint(QPainter* painter,
   painter->setRenderHint(QPainter::Antialiasing);
 
   qreal h = contentHeight();
-  QColor fill(255, 228, 181);
-  QColor border(230, 145, 56);
+  const auto& tc = topologyColors();
+  QColor fill = tc.deviceFill;
+  QColor border = tc.deviceBorder;
   qreal penWidth = 1.5;
 
   if (body_hovered_) {
@@ -404,16 +407,15 @@ void DeviceItem::paint(QPainter* painter,
   }
   if (option->state & QStyle::State_Selected) {
     fill = fill.lighter(130);
-    border = QColor(180, 100, 20);
     penWidth = 2.5;
   }
 
   // Shadow
-  painter->setBrush(QColor(0, 0, 0, 40));
+  painter->setBrush(tc.shadowDark);
   painter->setPen(Qt::NoPen);
   painter->drawRoundedRect(QRectF(4, 4, kWidth, h), kCornerRadius,
                            kCornerRadius);
-  painter->setBrush(QColor(0, 0, 0, 20));
+  painter->setBrush(tc.shadowLight);
   painter->drawRoundedRect(QRectF(2, 2, kWidth, h), kCornerRadius,
                            kCornerRadius);
 
@@ -426,7 +428,7 @@ void DeviceItem::paint(QPainter* painter,
   if (!dev)
     return;
 
-  painter->setPen(Qt::black);
+  painter->setPen(tc.textPrimary);
   QFont f = painter->font();
   f.setPointSize(9);
   f.setBold(true);
@@ -436,7 +438,7 @@ void DeviceItem::paint(QPainter* painter,
   f.setPointSize(7);
   f.setBold(false);
   painter->setFont(f);
-  painter->setPen(QColor(100, 100, 100));
+  painter->setPen(tc.textSecondary);
   painter->drawText(QRectF(0, 26, kWidth, 18), Qt::AlignCenter,
                     QStringLiteral("[%1]").arg(dev->deviceType));
 }
@@ -631,7 +633,7 @@ void DevicePortItem::paint(QPainter* painter,
     painter->drawLine(QPointF(ex - gap, 0), QPointF(ex + gap, 0));
   }
 
-  painter->setPen(Qt::black);
+  painter->setPen(topologyColors().textPrimary);
   QFont f = painter->font();
   f.setPointSize(7);
   painter->setFont(f);
@@ -780,15 +782,16 @@ void ConnectionItem::paint(QPainter* painter,
   Q_UNUSED(widget);
   painter->setRenderHint(QPainter::Antialiasing);
 
-  QColor lineColor(80, 80, 80);
+  const auto& tc = topologyColors();
+  QColor lineColor = tc.connectionLine;
   qreal penWidth = 1.5;
 
   if (option->state & QStyle::State_MouseOver) {
-    lineColor = QColor(41, 98, 255);
+    lineColor = tc.connectionHover;
     penWidth = 2.0;
   }
   if (option->state & QStyle::State_Selected) {
-    lineColor = QColor(220, 80, 0);
+    lineColor = tc.connectionSelected;
     penWidth = 2.5;
   }
 
@@ -839,17 +842,18 @@ void LegendItem::paint(QPainter* painter,
                        const QStyleOptionGraphicsItem*,
                        QWidget*) {
   painter->setRenderHint(QPainter::Antialiasing);
+  const auto& tc = topologyColors();
 
   // Background
-  painter->setBrush(QColor(255, 255, 255, 200));
-  painter->setPen(QPen(Qt::gray, 0.5));
+  painter->setBrush(tc.legendBackground);
+  painter->setPen(QPen(tc.legendBorder, 0.5));
   painter->drawRoundedRect(boundingRect().adjusted(1, 1, -1, -1), 4, 4);
 
   QFont f = painter->font();
   f.setPointSize(8);
   f.setBold(true);
   painter->setFont(f);
-  painter->setPen(Qt::black);
+  painter->setPen(tc.legendText);
   painter->drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft,
                     QStringLiteral("图例"));
 
@@ -862,9 +866,9 @@ void LegendItem::paint(QPainter* painter,
     QString label;
   };
   Entry entries[] = {
-      {QColor(66, 133, 244), QStringLiteral("输入")},
-      {QColor(52, 168, 83), QStringLiteral("输出")},
-      {QColor(255, 0, 255), QStringLiteral("双向")},
+      {tc.directionInput, QStringLiteral("输入")},
+      {tc.directionOutput, QStringLiteral("输出")},
+      {tc.directionBidirectional, QStringLiteral("双向")},
   };
 
   for (int i = 0; i < 3; ++i) {
@@ -872,7 +876,7 @@ void LegendItem::paint(QPainter* painter,
     painter->setBrush(entries[i].color);
     painter->setPen(Qt::NoPen);
     painter->drawEllipse(QPointF(14, y + 4), 4, 4);
-    painter->setPen(Qt::black);
+    painter->setPen(tc.legendText);
     painter->drawText(QRectF(24, y, 70, 14), Qt::AlignLeft, entries[i].label);
   }
 }
