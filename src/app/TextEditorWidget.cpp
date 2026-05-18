@@ -1,15 +1,15 @@
 #include "TextEditorWidget.h"
 #include "config/ConfigDefs.h"
 
+#include <QClipboard>
+#include <QContextMenuEvent>
 #include <QFile>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QTextStream>
 #include <QVBoxLayout>
-#include <QMenu>
-#include <QContextMenuEvent>
-#include <QGuiApplication>
-#include <QClipboard>
 
 #include <Qsci/qscilexercmake.h>
 #include <Qsci/qscilexercpp.h>
@@ -50,7 +50,8 @@ TextEditorWidget::TextEditorWidget(const QString& filePath, QWidget* parent)
     }
   });
 
-  connect(editor_, &QsciScintilla::textChanged, this, &TextEditorWidget::editorStateChanged);
+  connect(editor_, &QsciScintilla::textChanged, this,
+          &TextEditorWidget::editorStateChanged);
 }
 
 // ── IEditor interface ──────────────────────────────────────────
@@ -152,23 +153,27 @@ void TextEditorWidget::setupEditor() {
 
   ConfigManager& config = ConfigManager::instance();
 
-  bool showLineNumber = config.get<bool>(CONFIG_EDITOR_SHOW_LINE_NUMBER, CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
+  bool showLineNumber = config.get<bool>(
+      CONFIG_EDITOR_SHOW_LINE_NUMBER, CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
   editor_->setMarginType(0, QsciScintilla::NumberMargin);
   editor_->setMarginWidth(0, "0000");
   editor_->setMarginLineNumbers(0, showLineNumber);
 
   editor_->setFolding(QsciScintilla::PlainFoldStyle);
 
-  bool autoIndent = config.get<bool>(CONFIG_EDITOR_AUTO_INDENT, CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
+  bool autoIndent = config.get<bool>(CONFIG_EDITOR_AUTO_INDENT,
+                                     CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
   editor_->setAutoIndent(autoIndent);
   editor_->setIndentationGuides(true);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-      QsciScintilla::STYLE_INDENTGUIDE, QColor(67, 67, 67));
+                         QsciScintilla::STYLE_INDENTGUIDE, QColor(67, 67, 67));
 
-  int tabWidth = config.get<int>(CONFIG_EDITOR_TAB_WIDTH, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
+  int tabWidth =
+      config.get<int>(CONFIG_EDITOR_TAB_WIDTH, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
   editor_->setTabWidth(tabWidth);
 
-  bool spacesForTab = config.get<bool>(CONFIG_EDITOR_SPACES_FOR_TAB, CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
+  bool spacesForTab = config.get<bool>(CONFIG_EDITOR_SPACES_FOR_TAB,
+                                       CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
   editor_->setIndentationsUseTabs(!spacesForTab);
 
   editor_->setWrapMode(QsciScintilla::WrapNone);
@@ -184,9 +189,10 @@ void TextEditorWidget::setupEditor() {
 
   editor_->setMarginBackgroundColor(0, QColor(37, 37, 37));
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-      QsciScintilla::STYLE_LINENUMBER, QColor(37, 37, 37));
+                         QsciScintilla::STYLE_LINENUMBER, QColor(37, 37, 37));
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-      QsciScintilla::STYLE_LINENUMBER, QColor(133, 133, 133));
+                         QsciScintilla::STYLE_LINENUMBER,
+                         QColor(133, 133, 133));
   editor_->setMarginType(1, QsciScintilla::SymbolMargin);
   editor_->setMarginWidth(1, 16);
   editor_->setMarginBackgroundColor(1, QColor(37, 37, 37));
@@ -196,24 +202,27 @@ void TextEditorWidget::setupEditor() {
 
   editor_->setBraceMatching(QsciScintilla::SloppyBraceMatch);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-      QsciScintilla::STYLE_BRACELIGHT, QColor(38, 79, 120));
+                         QsciScintilla::STYLE_BRACELIGHT, QColor(38, 79, 120));
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-      QsciScintilla::STYLE_BRACELIGHT, QColor(255, 255, 255));
+                         QsciScintilla::STYLE_BRACELIGHT,
+                         QColor(255, 255, 255));
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-      QsciScintilla::STYLE_BRACEBAD, QColor(139, 0, 0));
+                         QsciScintilla::STYLE_BRACEBAD, QColor(139, 0, 0));
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-      QsciScintilla::STYLE_BRACEBAD, QColor(255, 255, 255));
+                         QsciScintilla::STYLE_BRACEBAD, QColor(255, 255, 255));
 
   editor_->setUtf8(true);
 
-  int fontSize = config.get<int>(CONFIG_EDITOR_FONT_SIZE, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
+  int fontSize =
+      config.get<int>(CONFIG_EDITOR_FONT_SIZE, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
   QFont font = editor_->font();
   font.setFamily("Consolas");
   font.setPointSize(fontSize);
   editor_->setFont(font);
   editor_->setMarginsFont(font);
 
-  connect(&config, &ConfigManager::configChanged, this, &TextEditorWidget::onConfigChanged);
+  connect(&config, &ConfigManager::configChanged, this,
+          &TextEditorWidget::onConfigChanged);
 }
 
 void TextEditorWidget::applyLexer(const QString& suffix) {
@@ -224,7 +233,7 @@ void TextEditorWidget::applyLexer(const QString& suffix) {
     lexer = new QsciLexerCPP(this);
   } else if (suffix == "lua") {
     lexer = new QsciLexerLua(this);
-  } else if (suffix == "json") {
+  } else if (suffix == "json" || suffix == "etproj") {
     lexer = new QsciLexerJSON(this);
   } else if (suffix == "xml" || suffix == "html" || suffix == "htm" ||
              suffix == "svg") {
@@ -334,34 +343,41 @@ void TextEditorWidget::applyColorScheme(QsciLexer* lexer) {
 void TextEditorWidget::contextMenuEvent(QContextMenuEvent* event) {
   QMenu menu(this);
 
-  QAction* undoAction = menu.addAction(QStringLiteral("撤销"), editor_, &QsciScintilla::undo);
+  QAction* undoAction =
+      menu.addAction(QStringLiteral("撤销"), editor_, &QsciScintilla::undo);
   undoAction->setEnabled(editor_->isUndoAvailable());
   undoAction->setShortcut(QKeySequence::Undo);
 
-  QAction* redoAction = menu.addAction(QStringLiteral("重做"), editor_, &QsciScintilla::redo);
+  QAction* redoAction =
+      menu.addAction(QStringLiteral("重做"), editor_, &QsciScintilla::redo);
   redoAction->setEnabled(editor_->isRedoAvailable());
   redoAction->setShortcut(QKeySequence::Redo);
 
   menu.addSeparator();
 
-  QAction* cutAction = menu.addAction(QStringLiteral("剪切"), editor_, &QsciScintilla::cut);
+  QAction* cutAction =
+      menu.addAction(QStringLiteral("剪切"), editor_, &QsciScintilla::cut);
   cutAction->setEnabled(editor_->hasSelectedText());
   cutAction->setShortcut(QKeySequence::Cut);
 
-  QAction* copyAction = menu.addAction(QStringLiteral("复制"), editor_, &QsciScintilla::copy);
+  QAction* copyAction =
+      menu.addAction(QStringLiteral("复制"), editor_, &QsciScintilla::copy);
   copyAction->setEnabled(editor_->hasSelectedText());
   copyAction->setShortcut(QKeySequence::Copy);
 
-  QAction* pasteAction = menu.addAction(QStringLiteral("粘贴"), editor_, &QsciScintilla::paste);
+  QAction* pasteAction =
+      menu.addAction(QStringLiteral("粘贴"), editor_, &QsciScintilla::paste);
   pasteAction->setEnabled(!QGuiApplication::clipboard()->text().isEmpty());
   pasteAction->setShortcut(QKeySequence::Paste);
 
-  QAction* deleteAction = menu.addAction(QStringLiteral("删除"), editor_, &QsciScintilla::removeSelectedText);
+  QAction* deleteAction = menu.addAction(QStringLiteral("删除"), editor_,
+                                         &QsciScintilla::removeSelectedText);
   deleteAction->setEnabled(editor_->hasSelectedText());
 
   menu.addSeparator();
 
-  QAction* selectAllAction = menu.addAction(QStringLiteral("全选"), editor_, &QsciScintilla::selectAll);
+  QAction* selectAllAction = menu.addAction(QStringLiteral("全选"), editor_,
+                                            &QsciScintilla::selectAll);
   selectAllAction->setShortcut(QKeySequence::SelectAll);
 
   menu.exec(event->globalPos());
@@ -371,19 +387,24 @@ void TextEditorWidget::onConfigChanged(const QString& key) {
   using namespace etest::core::config;
 
   if (key == CONFIG_EDITOR_SHOW_LINE_NUMBER) {
-    bool show = ConfigManager::instance().get<bool>(key, CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
+    bool show = ConfigManager::instance().get<bool>(
+        key, CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
     editor_->setMarginLineNumbers(0, show);
   } else if (key == CONFIG_EDITOR_AUTO_INDENT) {
-    bool autoIndent = ConfigManager::instance().get<bool>(key, CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
+    bool autoIndent = ConfigManager::instance().get<bool>(
+        key, CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
     editor_->setAutoIndent(autoIndent);
   } else if (key == CONFIG_EDITOR_TAB_WIDTH) {
-    int tabWidth = ConfigManager::instance().get<int>(key, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
+    int tabWidth = ConfigManager::instance().get<int>(
+        key, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
     editor_->setTabWidth(tabWidth);
   } else if (key == CONFIG_EDITOR_SPACES_FOR_TAB) {
-    bool spacesForTab = ConfigManager::instance().get<bool>(key, CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
+    bool spacesForTab = ConfigManager::instance().get<bool>(
+        key, CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
     editor_->setIndentationsUseTabs(!spacesForTab);
   } else if (key == CONFIG_EDITOR_FONT_SIZE) {
-    int fontSize = ConfigManager::instance().get<int>(key, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
+    int fontSize = ConfigManager::instance().get<int>(
+        key, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
     QFont font = editor_->font();
     font.setPointSize(fontSize);
     editor_->setFont(font);

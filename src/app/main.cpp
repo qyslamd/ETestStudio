@@ -21,6 +21,7 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   app.setFont(QFont("Microsoft YaHei", 10));
 
+  // 注册编辑器类型
   EditorManager::registerEditorTypes();
 
   // 单实例检测
