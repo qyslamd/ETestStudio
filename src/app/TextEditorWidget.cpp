@@ -92,6 +92,22 @@ QObject* TextEditorWidget::signalObject() {
   return this;
 }
 
+bool TextEditorWidget::canUndo() const {
+  return editor_->isUndoAvailable();
+}
+
+bool TextEditorWidget::canRedo() const {
+  return editor_->isRedoAvailable();
+}
+
+void TextEditorWidget::undo() {
+  editor_->undo();
+}
+
+void TextEditorWidget::redo() {
+  editor_->redo();
+}
+
 // ── Text editor specific ───────────────────────────────────────
 
 QString TextEditorWidget::fileName() const {

@@ -49,6 +49,11 @@ QString ProtocalEditorWidget::editorType() const {
 
 QObject* ProtocalEditorWidget::signalObject() { return this; }
 
+bool ProtocalEditorWidget::canUndo() const { return false; }
+bool ProtocalEditorWidget::canRedo() const { return false; }
+void ProtocalEditorWidget::undo() {}
+void ProtocalEditorWidget::redo() {}
+
 void ProtocalEditorWidget::setEditorId(const QString& id) {
   current_file_ = id;
 }

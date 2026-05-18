@@ -48,6 +48,8 @@
 #include "logger/QtConsoleSink.h"
 #include "plugin/PluginManager.h"
 #include "project/ProjectManager.h"
+#include "topology/TopologyDocument.h"
+#include "topology/TopologyEditorWidget.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -391,15 +393,26 @@ void MainWindow::initSignals() {
                           edit_copy_action_->setEnabled(hasSelection);
                         });
 
-            current_editor_state_connection_ = connect(
-                textEditor, &TextEditorWidget::editorStateChanged, this,
-                [this, sci_editor]() {
-                  edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
-                  edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
-                });
+            current_editor_state_connection_ =
+                connect(textEditor, &TextEditorWidget::editorStateChanged, this,
+                        [this, editor]() {
+                          edit_undo_action_->setEnabled(editor->canUndo());
+                          edit_redo_action_->setEnabled(editor->canRedo());
+                        });
 
-            edit_undo_action_->setEnabled(sci_editor->isUndoAvailable());
-            edit_redo_action_->setEnabled(sci_editor->isRedoAvailable());
+            edit_undo_action_->setEnabled(editor->canUndo());
+            edit_redo_action_->setEnabled(editor->canRedo());
+          } else if (auto* topoEditor =
+                         dynamic_cast<etest::topology::TopologyEditorWidget*>(
+                             editor)) {
+            auto* stack = topoEditor->document()->undoStack();
+            current_editor_state_connection_ = connect(
+                stack, &QUndoStack::indexChanged, this, [this, editor]() {
+                  edit_undo_action_->setEnabled(editor->canUndo());
+                  edit_redo_action_->setEnabled(editor->canRedo());
+                });
+            edit_undo_action_->setEnabled(editor->canUndo());
+            edit_redo_action_->setEnabled(editor->canRedo());
           } else {
             status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
             status_language_label_->setText(QStringLiteral("纯文本"));
@@ -424,8 +437,6 @@ void MainWindow::initSignals() {
         }
         updateWindowTitle();
 
-        edit_undo_action_->setEnabled(hasEditor);
-        edit_redo_action_->setEnabled(hasEditor);
         edit_cut_action_->setEnabled(hasSelection);
         edit_copy_action_->setEnabled(hasSelection);
         edit_paste_action_->setEnabled(hasEditor);
@@ -1017,17 +1028,13 @@ void MainWindow::onCloseAllFiles() {
 
 void MainWindow::onUndo() {
   if (auto* editor = editor_manager_->currentEditor()) {
-    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-      textEditor->editor()->undo();
-    }
+    editor->undo();
   }
 }
 
 void MainWindow::onRedo() {
   if (auto* editor = editor_manager_->currentEditor()) {
-    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-      textEditor->editor()->redo();
-    }
+    editor->redo();
   }
 }
 

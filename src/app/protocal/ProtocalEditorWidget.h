@@ -30,6 +30,12 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   QString editorType() const override;
   QObject* signalObject() override;
 
+  // Undo/Redo
+  bool canUndo() const override;
+  bool canRedo() const override;
+  void undo() override;
+  void redo() override;
+
   void setEditorId(const QString& id);
 
  Q_SIGNALS:

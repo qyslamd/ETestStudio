@@ -18,6 +18,12 @@ class IEditor {
   virtual QWidget* widget() = 0;
   virtual QString editorType() const = 0;
   virtual QObject* signalObject() = 0;
+
+  // Undo/Redo
+  virtual bool canUndo() const = 0;
+  virtual bool canRedo() const = 0;
+  virtual void undo() = 0;
+  virtual void redo() = 0;
 };
 
 }  // namespace etest::app

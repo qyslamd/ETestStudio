@@ -33,6 +33,12 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   QString editorType() const override;
   QObject* signalObject() override;
 
+  // Undo/Redo
+  bool canUndo() const override;
+  bool canRedo() const override;
+  void undo() override;
+  void redo() override;
+
   // Topology specific
   TopologyDocument* document() const;
   void reloadScene();

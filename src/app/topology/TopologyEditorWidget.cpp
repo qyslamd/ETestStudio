@@ -203,14 +203,13 @@ void TopologyEditorWidget::initUi() {
   toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
 
   undo_action_ = new QAction(QStringLiteral("撤销"), this);
-  undo_action_->setShortcut(QKeySequence::Undo);
+  // 主窗口通过 IEditor 接口统一管理撤销/重做快捷键
   undo_action_->setEnabled(false);
   auto* undoBtn = new QToolButton(toolbarFrame);
   undoBtn->setDefaultAction(undo_action_);
   toolbarLayout->addWidget(undoBtn);
 
   redo_action_ = new QAction(QStringLiteral("重做"), this);
-  redo_action_->setShortcut(QKeySequence::Redo);
   redo_action_->setEnabled(false);
   auto* redoBtn = new QToolButton(toolbarFrame);
   redoBtn->setDefaultAction(redo_action_);
@@ -542,6 +541,24 @@ void TopologyEditorWidget::onUndo() {
 }
 
 void TopologyEditorWidget::onRedo() {
+  doc_->undoStack()->redo();
+}
+
+// ── IEditor undo/redo ───────────────────────────────────────
+
+bool TopologyEditorWidget::canUndo() const {
+  return doc_->undoStack()->canUndo();
+}
+
+bool TopologyEditorWidget::canRedo() const {
+  return doc_->undoStack()->canRedo();
+}
+
+void TopologyEditorWidget::undo() {
+  doc_->undoStack()->undo();
+}
+
+void TopologyEditorWidget::redo() {
   doc_->undoStack()->redo();
 }
 

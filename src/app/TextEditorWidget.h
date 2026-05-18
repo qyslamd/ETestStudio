@@ -25,6 +25,12 @@ class TextEditorWidget : public QWidget, public IEditor {
   QString editorType() const override;
   QObject* signalObject() override;
 
+  // Undo/Redo
+  bool canUndo() const override;
+  bool canRedo() const override;
+  void undo() override;
+  void redo() override;
+
   // Text editor specific
   QString fileName() const;
   void setFilePath(const QString& newPath);
