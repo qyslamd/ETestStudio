@@ -85,6 +85,20 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   QAction* zoom_reset_action_ = nullptr;
   QAction* export_image_action_ = nullptr;
 
+  // Align / Distribute
+  void doAlign(int alignType);
+  void doDistribute(int distType);
+  void updateAlignDistributeActions();
+
+  QAction* align_left_action_ = nullptr;
+  QAction* align_hcenter_action_ = nullptr;
+  QAction* align_right_action_ = nullptr;
+  QAction* align_top_action_ = nullptr;
+  QAction* align_vcenter_action_ = nullptr;
+  QAction* align_bottom_action_ = nullptr;
+  QAction* distribute_horizontal_action_ = nullptr;
+  QAction* distribute_vertical_action_ = nullptr;
+
   QString current_file_;
 };
 

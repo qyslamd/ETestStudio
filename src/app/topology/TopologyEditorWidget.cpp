@@ -1,4 +1,5 @@
 #include "TopologyEditorWidget.h"
+#include <algorithm>
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
@@ -16,6 +17,7 @@
 #include <QMimeData>
 #include <QShortcut>
 #include <QSplitter>
+#include <QMenu>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include "DeviceTemplateManager.h"
@@ -75,10 +77,15 @@ bool TopologyEditorWidget::save() {
   if (!file.open(QIODevice::WriteOnly)) {
     return false;
   }
-  file.write(jdoc.toJson(QJsonDocument::Indented));
+  if (file.write(jdoc.toJson(QJsonDocument::Indented)) == -1) {
+    file.close();
+    return false;
+  }
   file.close();
 
   doc_->undoStack()->setClean();
+  // 显式通知修改状态更新，确保信号链可靠传递
+  emit modificationChanged(false);
   return true;
 }
 
@@ -175,6 +182,31 @@ void TopologyEditorWidget::initUi() {
   addDeviceBtn->setDefaultAction(add_device_action_);
   toolbarLayout->addWidget(addDeviceBtn);
 
+  // ── 排列 (Align) ──
+  auto* alignBtn = new QToolButton(toolbarFrame);
+  alignBtn->setText(QStringLiteral("排列"));
+  alignBtn->setPopupMode(QToolButton::InstantPopup);
+  auto* alignMenu = new QMenu(alignBtn);
+  align_left_action_ = alignMenu->addAction(QStringLiteral("左对齐"));
+  align_hcenter_action_ = alignMenu->addAction(QStringLiteral("水平居中"));
+  align_right_action_ = alignMenu->addAction(QStringLiteral("右对齐"));
+  alignMenu->addSeparator();
+  align_top_action_ = alignMenu->addAction(QStringLiteral("顶端对齐"));
+  align_vcenter_action_ = alignMenu->addAction(QStringLiteral("垂直居中"));
+  align_bottom_action_ = alignMenu->addAction(QStringLiteral("底端对齐"));
+  alignBtn->setMenu(alignMenu);
+  toolbarLayout->addWidget(alignBtn);
+
+  // ── 位置 (Distribute) ──
+  auto* distributeBtn = new QToolButton(toolbarFrame);
+  distributeBtn->setText(QStringLiteral("位置"));
+  distributeBtn->setPopupMode(QToolButton::InstantPopup);
+  auto* distributeMenu = new QMenu(distributeBtn);
+  distribute_horizontal_action_ = distributeMenu->addAction(QStringLiteral("横向分布"));
+  distribute_vertical_action_ = distributeMenu->addAction(QStringLiteral("纵向分布"));
+  distributeBtn->setMenu(distributeMenu);
+  toolbarLayout->addWidget(distributeBtn);
+
   toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
 
   zoom_in_action_ = new QAction(QStringLiteral("放大"), this);
@@ -262,6 +294,20 @@ void TopologyEditorWidget::initSignals() {
   connect(redo_action_, &QAction::triggered, this,
           &TopologyEditorWidget::onRedo);
 
+  // ── Align / Distribute ──
+  connect(align_left_action_, &QAction::triggered, this, [this]() { doAlign(0); });
+  connect(align_hcenter_action_, &QAction::triggered, this, [this]() { doAlign(1); });
+  connect(align_right_action_, &QAction::triggered, this, [this]() { doAlign(2); });
+  connect(align_top_action_, &QAction::triggered, this, [this]() { doAlign(3); });
+  connect(align_vcenter_action_, &QAction::triggered, this, [this]() { doAlign(4); });
+  connect(align_bottom_action_, &QAction::triggered, this, [this]() { doAlign(5); });
+  connect(distribute_horizontal_action_, &QAction::triggered, this,
+          [this]() { doDistribute(0); });
+  connect(distribute_vertical_action_, &QAction::triggered, this,
+          [this]() { doDistribute(1); });
+  connect(scene_, &QGraphicsScene::selectionChanged, this,
+          &TopologyEditorWidget::updateAlignDistributeActions);
+
   connect(view_, &TopologyView::addUutRequested, this,
           &TopologyEditorWidget::onAddUut);
   connect(view_, &TopologyView::addDeviceRequested, this,
@@ -304,6 +350,8 @@ void TopologyEditorWidget::initSignals() {
   auto* pasteShortcut = new QShortcut(QKeySequence::Paste, this);
   connect(pasteShortcut, &QShortcut::activated, this,
           &TopologyEditorWidget::onPaste);
+
+  updateAlignDistributeActions();
 }
 
 void TopologyEditorWidget::buildDefaultDocument() {
@@ -534,6 +582,8 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
 
 void TopologyEditorWidget::onDocumentChanged() {
   rebuildSceneAndRestoreSelection();
+  // 属性面板可能blockSignals导致cleanChanged丢失，此处显式同步修改状态
+  emit modificationChanged(!doc_->undoStack()->isClean());
 }
 
 void TopologyEditorWidget::onUndo() {
@@ -825,6 +875,177 @@ void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
   auto* cmd = new AddDeviceCommand(doc_, dev);
   doc_->undoStack()->push(cmd);
   status_label_->setText(QStringLiteral("已从模板添加设备: %1").arg(dev.name));
+}
+
+// ── Align / Distribute ──────────────────────────────────────────
+
+void TopologyEditorWidget::updateAlignDistributeActions() {
+  int movable = 0;
+  for (auto* sel : scene_->selectedItems()) {
+    if (qgraphicsitem_cast<UutItem*>(sel) ||
+        qgraphicsitem_cast<DeviceItem*>(sel)) {
+      ++movable;
+    }
+  }
+  bool en = (movable >= 2);
+  align_left_action_->setEnabled(en);
+  align_hcenter_action_->setEnabled(en);
+  align_right_action_->setEnabled(en);
+  align_top_action_->setEnabled(en);
+  align_vcenter_action_->setEnabled(en);
+  align_bottom_action_->setEnabled(en);
+  distribute_horizontal_action_->setEnabled(en);
+  distribute_vertical_action_->setEnabled(en);
+}
+
+void TopologyEditorWidget::doAlign(int alignType) {
+  // Collect selected UUT/Device items
+  struct Entry {
+    QGraphicsItem* item;
+    int index;
+    bool isProduct;
+    QPointF oldPos;
+  };
+  QVector<Entry> entries;
+  for (auto* sel : scene_->selectedItems()) {
+    if (auto* uut = qgraphicsitem_cast<UutItem*>(sel))
+      entries.append({sel, uut->productIndex(), true, sel->pos()});
+    else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(sel))
+      entries.append({sel, dev->deviceIndex(), false, sel->pos()});
+  }
+  if (entries.size() < 2)
+    return;
+
+  // Compute union scene bounding rect of all selected items
+  QRectF total = entries[0].item->sceneBoundingRect();
+  for (int i = 1; i < entries.size(); ++i)
+    total = total.united(entries[i].item->sceneBoundingRect());
+
+  // Move items on scene first, then create undo commands
+  for (const auto& e : entries) {
+    QRectF r = e.item->sceneBoundingRect();
+    qreal dx = 0, dy = 0;
+    switch (alignType) {
+      case 0: dx = total.left() - r.left(); break;                 // 左对齐
+      case 1: dx = total.center().x() - r.center().x(); break;     // 水平居中
+      case 2: dx = total.right() - r.right(); break;               // 右对齐
+      case 3: dy = total.top() - r.top(); break;                   // 顶端对齐
+      case 4: dy = total.center().y() - r.center().y(); break;     // 垂直居中
+      case 5: dy = total.bottom() - r.bottom(); break;             // 底端对齐
+    }
+    if (dx != 0 || dy != 0)
+      e.item->moveBy(dx, dy);
+  }
+  scene_->onItemMoved();
+
+  // Create macro command
+  auto* macro = new QUndoCommand;
+  switch (alignType) {
+    case 0: macro->setText(QStringLiteral("左对齐")); break;
+    case 1: macro->setText(QStringLiteral("水平居中")); break;
+    case 2: macro->setText(QStringLiteral("右对齐")); break;
+    case 3: macro->setText(QStringLiteral("顶端对齐")); break;
+    case 4: macro->setText(QStringLiteral("垂直居中")); break;
+    case 5: macro->setText(QStringLiteral("底端对齐")); break;
+  }
+
+  for (const auto& e : entries) {
+    QPointF newPos = e.item->pos();
+    if (newPos != e.oldPos) {
+      if (e.isProduct)
+        new MoveProductCommand(doc_, e.index, e.oldPos, newPos, macro);
+      else
+        new MoveDeviceCommand(doc_, e.index, e.oldPos, newPos, macro);
+    }
+  }
+
+  if (macro->childCount() > 0) {
+    doc_->undoStack()->push(macro);
+    status_label_->setText(
+        QStringLiteral("排列: %1").arg(macro->text()));
+  } else {
+    delete macro;
+  }
+}
+
+void TopologyEditorWidget::doDistribute(int distType) {
+  // Collect selected UUT/Device items
+  struct Entry {
+    QGraphicsItem* item;
+    int index;
+    bool isProduct;
+    QPointF oldPos;
+  };
+  QVector<Entry> entries;
+  for (auto* sel : scene_->selectedItems()) {
+    if (auto* uut = qgraphicsitem_cast<UutItem*>(sel))
+      entries.append({sel, uut->productIndex(), true, sel->pos()});
+    else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(sel))
+      entries.append({sel, dev->deviceIndex(), false, sel->pos()});
+  }
+  if (entries.size() < 2)
+    return;
+
+  if (distType == 0) {
+    // 横向分布: sort by horizontal center, space evenly
+    std::sort(entries.begin(), entries.end(),
+              [](const Entry& a, const Entry& b) {
+                return a.item->sceneBoundingRect().center().x() <
+                       b.item->sceneBoundingRect().center().x();
+              });
+    qreal first = entries[0].item->sceneBoundingRect().center().x();
+    qreal last = entries[entries.size() - 1].item->sceneBoundingRect().center().x();
+    qreal step = (last - first) / (entries.size() - 1);
+
+    for (int i = 0; i < entries.size(); ++i) {
+      qreal target = first + step * i;
+      qreal cur = entries[i].item->sceneBoundingRect().center().x();
+      if (!qFuzzyCompare(target, cur))
+        entries[i].item->moveBy(target - cur, 0);
+    }
+  } else {
+    // 纵向分布: sort by vertical center, space evenly
+    std::sort(entries.begin(), entries.end(),
+              [](const Entry& a, const Entry& b) {
+                return a.item->sceneBoundingRect().center().y() <
+                       b.item->sceneBoundingRect().center().y();
+              });
+    qreal first = entries[0].item->sceneBoundingRect().center().y();
+    qreal last = entries[entries.size() - 1].item->sceneBoundingRect().center().y();
+    qreal step = (last - first) / (entries.size() - 1);
+
+    for (int i = 0; i < entries.size(); ++i) {
+      qreal target = first + step * i;
+      qreal cur = entries[i].item->sceneBoundingRect().center().y();
+      if (!qFuzzyCompare(target, cur))
+        entries[i].item->moveBy(0, target - cur);
+    }
+  }
+
+  scene_->onItemMoved();
+
+  // Create macro command
+  auto* macro = new QUndoCommand;
+  macro->setText(distType == 0 ? QStringLiteral("横向分布")
+                               : QStringLiteral("纵向分布"));
+
+  for (const auto& e : entries) {
+    QPointF newPos = e.item->pos();
+    if (newPos != e.oldPos) {
+      if (e.isProduct)
+        new MoveProductCommand(doc_, e.index, e.oldPos, newPos, macro);
+      else
+        new MoveDeviceCommand(doc_, e.index, e.oldPos, newPos, macro);
+    }
+  }
+
+  if (macro->childCount() > 0) {
+    doc_->undoStack()->push(macro);
+    status_label_->setText(distType == 0 ? QStringLiteral("横向分布")
+                                         : QStringLiteral("纵向分布"));
+  } else {
+    delete macro;
+  }
 }
 
 }  // namespace etest::topology

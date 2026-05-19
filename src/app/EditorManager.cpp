@@ -28,9 +28,27 @@ namespace etest::app {
 
 EditorManager::EditorManager(ads::CDockManager* dockManager, QObject* parent)
     : QObject(parent), dock_manager_(dockManager) {
+  // QADS的focusedDockWidgetChanged在某些场景下不会触发
+  // （如QGraphicsView捕获焦点时dock收不到focus event），
+  // 因此额外使用QApplication::focusChanged做全局焦点追踪。
   connect(dock_manager_, &ads::CDockManager::focusedDockWidgetChanged, this,
-          [this](ads::CDockWidget* old, ads::CDockWidget* now) {
+          [this](ads::CDockWidget* /*old*/, ads::CDockWidget* now) {
             onDockWidgetActivated(now);
+          });
+
+  connect(qApp, &QApplication::focusChanged, this,
+          [this](QWidget* /*old*/, QWidget* now) {
+            if (!now)
+              return;
+            // 沿parent链向上查找所属的CDockWidget
+            QWidget* w = now;
+            while (w) {
+              if (auto* dock = qobject_cast<ads::CDockWidget*>(w)) {
+                onDockWidgetActivated(dock);
+                return;
+              }
+              w = w->parentWidget();
+            }
           });
 }
 

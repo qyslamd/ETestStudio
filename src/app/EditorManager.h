@@ -46,7 +46,7 @@ class EditorManager : public QObject {
                     const QString& title);
   void updateEditorId(IEditor* editor, const QString& newId);
 
- Q_SIGNALS:
+ signals:
   void fileOpened(const QString& filePath);
   void fileClosed(const QString& filePath);
   void currentEditorChanged(IEditor* editor);
