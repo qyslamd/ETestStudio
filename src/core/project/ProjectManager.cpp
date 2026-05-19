@@ -30,6 +30,14 @@ class ProjectManager::Impl {
       return false;
     if (!utils::FileUtil::createDirectory(QDir(projectDir).filePath("backup")))
       return false;
+    if (!utils::FileUtil::createDirectory(
+            QDir(projectDir).filePath("topology")))
+      return false;
+    if (!utils::FileUtil::createDirectory(
+            QDir(projectDir).filePath("reports")))
+      return false;
+    if (!utils::FileUtil::createDirectory(QDir(projectDir).filePath("cases")))
+      return false;
     return true;
   }
 
