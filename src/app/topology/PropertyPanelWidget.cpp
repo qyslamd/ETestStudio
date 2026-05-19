@@ -213,6 +213,8 @@ void PropertyPanelWidget::clearPanel() {
 
 void PropertyPanelWidget::buildEmptyPage() {
   auto* w = new QWidget(this);
+  w->setObjectName("emptyPage");
+  w->setStyleSheet(QStringLiteral("#emptyPage { background-color: #3C3C3C; }"));
   auto* lay = new QVBoxLayout(w);
   auto* lbl = new QLabel(QStringLiteral("未选中任何元素"), w);
   lbl->setAlignment(Qt::AlignCenter);
@@ -223,6 +225,8 @@ void PropertyPanelWidget::buildEmptyPage() {
 
 void PropertyPanelWidget::buildUutPage() {
   auto* w = new QWidget(this);
+  w->setObjectName("uutPage");
+  w->setStyleSheet(QStringLiteral("#uutPage { background-color: #3C3C3C; }"));
   auto* lay = new QFormLayout(w);
 
   uut_name_edit_ = new QLineEdit(w);
@@ -235,6 +239,8 @@ void PropertyPanelWidget::buildUutPage() {
 
 void PropertyPanelWidget::buildPortPage() {
   auto* w = new QWidget(this);
+  w->setObjectName("portPage");
+  w->setStyleSheet(QStringLiteral("#portPage { background-color: #3C3C3C; }"));
   auto* lay = new QFormLayout(w);
 
   port_name_edit_ = new QLineEdit(w);
@@ -275,6 +281,9 @@ void PropertyPanelWidget::buildPortPage() {
 
 void PropertyPanelWidget::buildDevicePage() {
   auto* w = new QWidget(this);
+  w->setObjectName("devicePage");
+  w->setStyleSheet(
+      QStringLiteral("#devicePage { background-color: #3C3C3C; }"));
   auto* lay = new QVBoxLayout(w);
 
   auto* form = new QFormLayout();
@@ -341,6 +350,9 @@ void PropertyPanelWidget::buildDevicePage() {
 
 void PropertyPanelWidget::buildConnectionPage() {
   auto* w = new QWidget(this);
+  w->setObjectName("connectionPage");
+  w->setStyleSheet(
+      QStringLiteral("#connectionPage { background-color: #3C3C3C; }"));
   auto* lay = new QFormLayout(w);
 
   conn_source_label_ = new QLabel(QStringLiteral("-"), w);
@@ -357,6 +369,9 @@ void PropertyPanelWidget::buildConnectionPage() {
 
 void PropertyPanelWidget::buildDevicePortPage() {
   auto* w = new QWidget(this);
+  w->setObjectName("devicePortPage");
+  w->setStyleSheet(
+      QStringLiteral("#devicePortPage { background-color: #3C3C3C; }"));
   auto* lay = new QFormLayout(w);
 
   devport_name_edit_ = new QLineEdit(w);
@@ -395,10 +410,12 @@ void PropertyPanelWidget::onUutNameChanged() {
     auto* cmd = new PropertyCommand(
         doc_,
         [doc = doc_, idx, oldName]() {
-          if (auto* p = doc->product(idx)) p->name = oldName;
+          if (auto* p = doc->product(idx))
+            p->name = oldName;
         },
         [doc = doc_, idx, newName]() {
-          if (auto* p = doc->product(idx)) p->name = newName;
+          if (auto* p = doc->product(idx))
+            p->name = newName;
         },
         QStringLiteral("修改 UUT 名称"));
     doc_->undoStack()->push(cmd);
@@ -415,11 +432,13 @@ void PropertyPanelWidget::onPortNameChanged() {
         doc_,
         [doc = doc_, pIdx, poIdx, oldName]() {
           if (auto* p = doc->product(pIdx))
-            if (poIdx < p->ports.size()) p->ports[poIdx].name = oldName;
+            if (poIdx < p->ports.size())
+              p->ports[poIdx].name = oldName;
         },
         [doc = doc_, pIdx, poIdx, newName]() {
           if (auto* p = doc->product(pIdx))
-            if (poIdx < p->ports.size()) p->ports[poIdx].name = newName;
+            if (poIdx < p->ports.size())
+              p->ports[poIdx].name = newName;
         },
         QStringLiteral("修改端口名称"));
     doc_->undoStack()->push(cmd);
@@ -437,11 +456,13 @@ void PropertyPanelWidget::onPortDirectionChanged() {
         doc_,
         [doc = doc_, pIdx, poIdx, oldDir]() {
           if (auto* p = doc->product(pIdx))
-            if (poIdx < p->ports.size()) p->ports[poIdx].direction = oldDir;
+            if (poIdx < p->ports.size())
+              p->ports[poIdx].direction = oldDir;
         },
         [doc = doc_, pIdx, poIdx, newDir]() {
           if (auto* p = doc->product(pIdx))
-            if (poIdx < p->ports.size()) p->ports[poIdx].direction = newDir;
+            if (poIdx < p->ports.size())
+              p->ports[poIdx].direction = newDir;
         },
         QStringLiteral("修改端口方向"));
     doc_->undoStack()->push(cmd);
@@ -453,9 +474,9 @@ void PropertyPanelWidget::onPortAllowedTypesChanged() {
   if (prod && editing_port_index_ < prod->ports.size()) {
     auto oldTypes = prod->ports[editing_port_index_].allowedDeviceTypes;
     QString text = port_allowed_types_edit_->currentText().trimmed();
-    auto newTypes = text.isEmpty()
-                        ? QStringList()
-                        : text.split(QStringLiteral(", "), QString::SkipEmptyParts);
+    auto newTypes = text.isEmpty() ? QStringList()
+                                   : text.split(QStringLiteral(", "),
+                                                QString::SkipEmptyParts);
     int pIdx = editing_port_product_, poIdx = editing_port_index_;
     auto* cmd = new PropertyCommand(
         doc_,
@@ -478,7 +499,8 @@ void PropertyPanelWidget::onPortFunctionTypeChanged() {
   auto* prod = doc_->product(editing_port_product_);
   if (prod && editing_port_index_ < prod->ports.size()) {
     auto oldFt = prod->ports[editing_port_index_].functionType;
-    auto newFt = static_cast<FunctionType>(port_function_combo_->currentIndex());
+    auto newFt =
+        static_cast<FunctionType>(port_function_combo_->currentIndex());
     int pIdx = editing_port_product_, poIdx = editing_port_index_;
     auto* cmd = new PropertyCommand(
         doc_,
@@ -506,10 +528,12 @@ void PropertyPanelWidget::onDeviceNameChanged() {
     auto* cmd = new PropertyCommand(
         doc_,
         [doc = doc_, idx, oldName]() {
-          if (auto* d = doc->device(idx)) d->name = oldName;
+          if (auto* d = doc->device(idx))
+            d->name = oldName;
         },
         [doc = doc_, idx, newName]() {
-          if (auto* d = doc->device(idx)) d->name = newName;
+          if (auto* d = doc->device(idx))
+            d->name = newName;
         },
         QStringLiteral("修改设备名称"));
     doc_->undoStack()->push(cmd);
@@ -558,10 +582,12 @@ void PropertyPanelWidget::applyDeviceProperties(int deviceIndex) {
     auto* cmd = new PropertyCommand(
         doc_,
         [doc = doc_, idx, oldProps]() {
-          if (auto* d = doc->device(idx)) d->properties = oldProps;
+          if (auto* d = doc->device(idx))
+            d->properties = oldProps;
         },
         [doc = doc_, idx, newProps]() {
-          if (auto* d = doc->device(idx)) d->properties = newProps;
+          if (auto* d = doc->device(idx))
+            d->properties = newProps;
         },
         QStringLiteral("修改设备属性"));
     doc_->undoStack()->push(cmd);
@@ -598,10 +624,12 @@ void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
   auto* cmd = new PropertyCommand(
       doc_,
       [doc = doc_, idx, oldPorts]() {
-        if (auto* d = doc->device(idx)) d->ports = oldPorts;
+        if (auto* d = doc->device(idx))
+          d->ports = oldPorts;
       },
       [doc = doc_, idx, newPorts]() {
-        if (auto* d = doc->device(idx)) d->ports = newPorts;
+        if (auto* d = doc->device(idx))
+          d->ports = newPorts;
       },
       QStringLiteral("修改设备端口"));
   doc_->undoStack()->push(cmd);
@@ -657,11 +685,13 @@ void PropertyPanelWidget::onDevicePortNameChanged() {
         doc_,
         [doc = doc_, dIdx, pIdx, oldName]() {
           if (auto* d = doc->device(dIdx))
-            if (pIdx < d->ports.size()) d->ports[pIdx].name = oldName;
+            if (pIdx < d->ports.size())
+              d->ports[pIdx].name = oldName;
         },
         [doc = doc_, dIdx, pIdx, newName]() {
           if (auto* d = doc->device(dIdx))
-            if (pIdx < d->ports.size()) d->ports[pIdx].name = newName;
+            if (pIdx < d->ports.size())
+              d->ports[pIdx].name = newName;
         },
         QStringLiteral("修改设备端口名称"));
     doc_->undoStack()->push(cmd);
@@ -672,17 +702,20 @@ void PropertyPanelWidget::onDevicePortFunctionTypeChanged() {
   auto* dev = doc_->device(editing_device_port_device_);
   if (dev && editing_device_port_index_ < dev->ports.size()) {
     auto oldFt = dev->ports[editing_device_port_index_].functionType;
-    auto newFt = static_cast<FunctionType>(devport_function_combo_->currentIndex());
+    auto newFt =
+        static_cast<FunctionType>(devport_function_combo_->currentIndex());
     int dIdx = editing_device_port_device_, pIdx = editing_device_port_index_;
     auto* cmd = new PropertyCommand(
         doc_,
         [doc = doc_, dIdx, pIdx, oldFt]() {
           if (auto* d = doc->device(dIdx))
-            if (pIdx < d->ports.size()) d->ports[pIdx].functionType = oldFt;
+            if (pIdx < d->ports.size())
+              d->ports[pIdx].functionType = oldFt;
         },
         [doc = doc_, dIdx, pIdx, newFt]() {
           if (auto* d = doc->device(dIdx))
-            if (pIdx < d->ports.size()) d->ports[pIdx].functionType = newFt;
+            if (pIdx < d->ports.size())
+              d->ports[pIdx].functionType = newFt;
         },
         QStringLiteral("修改设备端口功能类型"));
     doc_->undoStack()->push(cmd);
@@ -700,11 +733,13 @@ void PropertyPanelWidget::onDevicePortDirectionChanged() {
         doc_,
         [doc = doc_, dIdx, pIdx, oldDir]() {
           if (auto* d = doc->device(dIdx))
-            if (pIdx < d->ports.size()) d->ports[pIdx].direction = oldDir;
+            if (pIdx < d->ports.size())
+              d->ports[pIdx].direction = oldDir;
         },
         [doc = doc_, dIdx, pIdx, newDir]() {
           if (auto* d = doc->device(dIdx))
-            if (pIdx < d->ports.size()) d->ports[pIdx].direction = newDir;
+            if (pIdx < d->ports.size())
+              d->ports[pIdx].direction = newDir;
         },
         QStringLiteral("修改设备端口方向"));
     doc_->undoStack()->push(cmd);
