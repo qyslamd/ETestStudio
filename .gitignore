@@ -50,6 +50,7 @@ Schema/
 _unpacked/
 docs/*.js
 docs/*.ts
+通用综合测试系统设计方案_V1.0.pdf
 
 # ========== CMake 生成的可执行脚本 ==========
 # 新位置（CMake 生成到 scripts/）
