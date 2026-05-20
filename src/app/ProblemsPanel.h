@@ -5,8 +5,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 class ProblemsPanel : public QWidget {
   Q_OBJECT
@@ -20,7 +19,6 @@ class ProblemsPanel : public QWidget {
   QTableWidget* table_;
 };
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
 
 #endif  // ETEST_APP_PROBLEMS_PANEL_H_

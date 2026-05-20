@@ -12,8 +12,7 @@
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 using namespace core::config;
 using namespace core::terminal;
@@ -75,22 +74,26 @@ void TerminalPanel::loadAnsiColors() {
   };
 
   ansi_colors_.resize(18);
-  ansi_colors_[0]  = load(CONFIG_TERMINAL_COLOR_BLACK,     QColor("#1E1E1E"));
-  ansi_colors_[1]  = load(CONFIG_TERMINAL_COLOR_RED,       QColor("#CD3131"));
-  ansi_colors_[2]  = load(CONFIG_TERMINAL_COLOR_GREEN,     QColor("#0DBC79"));
-  ansi_colors_[3]  = load(CONFIG_TERMINAL_COLOR_YELLOW,    QColor("#E5E510"));
-  ansi_colors_[4]  = load(CONFIG_TERMINAL_COLOR_BLUE,      QColor("#2472C8"));
-  ansi_colors_[5]  = load(CONFIG_TERMINAL_COLOR_MAGENTA,   QColor("#BC3FBC"));
-  ansi_colors_[6]  = load(CONFIG_TERMINAL_COLOR_CYAN,      QColor("#11A8CD"));
-  ansi_colors_[7]  = load(CONFIG_TERMINAL_COLOR_WHITE,     QColor("#CCCCCC"));
-  ansi_colors_[8]  = load(CONFIG_TERMINAL_COLOR_BRIGHT_BLACK,   QColor("#666666"));
-  ansi_colors_[9]  = load(CONFIG_TERMINAL_COLOR_BRIGHT_RED,     QColor("#F14C4C"));
-  ansi_colors_[10] = load(CONFIG_TERMINAL_COLOR_BRIGHT_GREEN,   QColor("#23D18B"));
-  ansi_colors_[11] = load(CONFIG_TERMINAL_COLOR_BRIGHT_YELLOW,  QColor("#F5F543"));
-  ansi_colors_[12] = load(CONFIG_TERMINAL_COLOR_BRIGHT_BLUE,    QColor("#3B8EEA"));
-  ansi_colors_[13] = load(CONFIG_TERMINAL_COLOR_BRIGHT_MAGENTA, QColor("#D670D6"));
-  ansi_colors_[14] = load(CONFIG_TERMINAL_COLOR_BRIGHT_CYAN,    QColor("#29B8DB"));
-  ansi_colors_[15] = load(CONFIG_TERMINAL_COLOR_BRIGHT_WHITE,   QColor("#E5E5E5"));
+  ansi_colors_[0] = load(CONFIG_TERMINAL_COLOR_BLACK, QColor("#1E1E1E"));
+  ansi_colors_[1] = load(CONFIG_TERMINAL_COLOR_RED, QColor("#CD3131"));
+  ansi_colors_[2] = load(CONFIG_TERMINAL_COLOR_GREEN, QColor("#0DBC79"));
+  ansi_colors_[3] = load(CONFIG_TERMINAL_COLOR_YELLOW, QColor("#E5E510"));
+  ansi_colors_[4] = load(CONFIG_TERMINAL_COLOR_BLUE, QColor("#2472C8"));
+  ansi_colors_[5] = load(CONFIG_TERMINAL_COLOR_MAGENTA, QColor("#BC3FBC"));
+  ansi_colors_[6] = load(CONFIG_TERMINAL_COLOR_CYAN, QColor("#11A8CD"));
+  ansi_colors_[7] = load(CONFIG_TERMINAL_COLOR_WHITE, QColor("#CCCCCC"));
+  ansi_colors_[8] = load(CONFIG_TERMINAL_COLOR_BRIGHT_BLACK, QColor("#666666"));
+  ansi_colors_[9] = load(CONFIG_TERMINAL_COLOR_BRIGHT_RED, QColor("#F14C4C"));
+  ansi_colors_[10] =
+      load(CONFIG_TERMINAL_COLOR_BRIGHT_GREEN, QColor("#23D18B"));
+  ansi_colors_[11] =
+      load(CONFIG_TERMINAL_COLOR_BRIGHT_YELLOW, QColor("#F5F543"));
+  ansi_colors_[12] = load(CONFIG_TERMINAL_COLOR_BRIGHT_BLUE, QColor("#3B8EEA"));
+  ansi_colors_[13] =
+      load(CONFIG_TERMINAL_COLOR_BRIGHT_MAGENTA, QColor("#D670D6"));
+  ansi_colors_[14] = load(CONFIG_TERMINAL_COLOR_BRIGHT_CYAN, QColor("#29B8DB"));
+  ansi_colors_[15] =
+      load(CONFIG_TERMINAL_COLOR_BRIGHT_WHITE, QColor("#E5E5E5"));
   ansi_colors_[16] = load(CONFIG_TERMINAL_COLOR_FG, QColor("#CCCCCC"));
   ansi_colors_[17] = load(CONFIG_TERMINAL_COLOR_BG, QColor("#1E1E1E"));
 }
@@ -111,17 +114,21 @@ void TerminalPanel::connectConfig() {
 
 void TerminalPanel::initSignals() {
   connect(resize_timer_, &QTimer::timeout, this, [this]() {
-    if (!process_ || !process_->isRunning()) return;
+    if (!process_ || !process_->isRunning())
+      return;
 
     QFontMetrics fm(display_->font());
     int charWidth = fm.horizontalAdvance('M');
     int charHeight = fm.lineSpacing();
-    if (charWidth <= 0 || charHeight <= 0) return;
+    if (charWidth <= 0 || charHeight <= 0)
+      return;
 
     int cols = display_->viewport()->width() / charWidth;
     int rows = display_->viewport()->height() / charHeight;
-    if (cols < 1) cols = 1;
-    if (rows < 1) rows = 1;
+    if (cols < 1)
+      cols = 1;
+    if (rows < 1)
+      rows = 1;
 
     if (cols != state_.cols || rows != state_.rows) {
       state_.cols = cols;
@@ -194,8 +201,10 @@ void TerminalPanel::startShell(const QString& command) {
   int charHeight = fm.lineSpacing();
   int cols = display_->viewport()->width() / qMax(charWidth, 1);
   int rows = display_->viewport()->height() / qMax(charHeight, 1);
-  if (cols < 1) cols = 80;
-  if (rows < 1) rows = 24;
+  if (cols < 1)
+    cols = 80;
+  if (rows < 1)
+    rows = 24;
   state_.cols = cols;
   state_.rows = rows;
   state_.scrollRegionTop = 0;
@@ -212,7 +221,8 @@ void TerminalPanel::startShell(const QString& command) {
   parser_ = new VtParser(this);
 
   connect(process_, &PtyProcess::readyRead, this, [this]() {
-    if (!process_) return;
+    if (!process_)
+      return;
     QByteArray data = process_->readAll();
     if (!data.isEmpty() && parser_) {
       parser_->parse(data);
@@ -243,11 +253,10 @@ void TerminalPanel::startShell(const QString& command) {
   connect(process_, &PtyProcess::processFinished, this,
           &TerminalPanel::onProcessFinished);
 
-  QString cmd =
-      command.isEmpty()
-          ? ConfigManager::instance().get<QString>(CONFIG_TERMINAL_SHELL,
-                                                    CONFIG_TERMINAL_DEFAULT_SHELL)
-          : command;
+  QString cmd = command.isEmpty()
+                    ? ConfigManager::instance().get<QString>(
+                          CONFIG_TERMINAL_SHELL, CONFIG_TERMINAL_DEFAULT_SHELL)
+                    : command;
 
   if (!process_->start(cmd, cols, rows)) {
     display_->setPlainText(QStringLiteral("Failed to start terminal."));
@@ -385,9 +394,11 @@ void TerminalPanel::onText(const QString& str) {
 
     if (ch == '\t') {
       int nextTab = ((state_.cursorCol / 8) + 1) * 8;
-      if (nextTab >= state_.cols) nextTab = state_.cols - 1;
+      if (nextTab >= state_.cols)
+        nextTab = state_.cols - 1;
       for (int c = state_.cursorCol; c < nextTab; ++c) {
-        if (state_.cursorRow < screen_.size() && c < screen_[state_.cursorRow].length()) {
+        if (state_.cursorRow < screen_.size() &&
+            c < screen_[state_.cursorRow].length()) {
           auto& cell = screen_[state_.cursorRow].cells[c];
           cell.ch = QChar::Space;
           cell.fg = state_.currentFg;
@@ -400,7 +411,8 @@ void TerminalPanel::onText(const QString& str) {
     }
 
     // Regular character (including Unicode/multi-byte)
-    if (state_.cursorRow < screen_.size() && state_.cursorCol < screen_[state_.cursorRow].length()) {
+    if (state_.cursorRow < screen_.size() &&
+        state_.cursorCol < screen_[state_.cursorRow].length()) {
       auto& cell = screen_[state_.cursorRow].cells[state_.cursorCol];
       cell.ch = ch;
       cell.fg = state_.currentFg;
@@ -439,7 +451,8 @@ void TerminalPanel::onSgr(const QVector<int>& params) {
     } else if (p == 38) {
       if (i + 1 < params.size() && params[i + 1] == 2) {
         if (i + 4 < params.size()) {
-          state_.currentFg = QColor(params[i + 2], params[i + 3], params[i + 4]);
+          state_.currentFg =
+              QColor(params[i + 2], params[i + 3], params[i + 4]);
           i += 4;
         }
       } else if (i + 1 < params.size() && params[i + 1] == 5) {
@@ -449,7 +462,8 @@ void TerminalPanel::onSgr(const QVector<int>& params) {
             state_.currentFg = ac[idx];
           else if (idx >= 16 && idx < 232) {
             int v = idx - 16;
-            state_.currentFg = QColor((v / 36) * 51, ((v % 36) / 6) * 51, (v % 6) * 51);
+            state_.currentFg =
+                QColor((v / 36) * 51, ((v % 36) / 6) * 51, (v % 6) * 51);
           } else if (idx >= 232 && idx < 256) {
             int gray = 8 + (idx - 232) * 10;
             state_.currentFg = QColor(gray, gray, gray);
@@ -464,7 +478,8 @@ void TerminalPanel::onSgr(const QVector<int>& params) {
     } else if (p == 48) {
       if (i + 1 < params.size() && params[i + 1] == 2) {
         if (i + 4 < params.size()) {
-          state_.currentBg = QColor(params[i + 2], params[i + 3], params[i + 4]);
+          state_.currentBg =
+              QColor(params[i + 2], params[i + 3], params[i + 4]);
           i += 4;
         }
       } else if (i + 1 < params.size() && params[i + 1] == 5) {
@@ -512,7 +527,8 @@ void TerminalPanel::onEraseDisplay(int mode) {
     case 0:  // From cursor to end
       // Clear rest of current line
       for (int c = state_.cursorCol; c < state_.cols; ++c) {
-        if (state_.cursorRow < screen_.size() && c < screen_[state_.cursorRow].length()) {
+        if (state_.cursorRow < screen_.size() &&
+            c < screen_[state_.cursorRow].length()) {
           screen_[state_.cursorRow].cells[c] = Cell();
         }
       }
@@ -523,7 +539,8 @@ void TerminalPanel::onEraseDisplay(int mode) {
       break;
     case 1:  // From start to cursor
       for (int c = 0; c <= state_.cursorCol; ++c) {
-        if (state_.cursorRow < screen_.size() && c < screen_[state_.cursorRow].length()) {
+        if (state_.cursorRow < screen_.size() &&
+            c < screen_[state_.cursorRow].length()) {
           screen_[state_.cursorRow].cells[c] = Cell();
         }
       }
@@ -541,7 +558,8 @@ void TerminalPanel::onEraseDisplay(int mode) {
 
 void TerminalPanel::onEraseLine(int mode) {
   state_.dirty = true;
-  if (state_.cursorRow >= screen_.size()) return;
+  if (state_.cursorRow >= screen_.size())
+    return;
 
   switch (mode) {
     case 0:  // From cursor to end of line
@@ -585,8 +603,10 @@ void TerminalPanel::onProcessFinished(int exitCode) {
   lastExitCode_ = exitCode;
 
   // Display exit message in terminal
-  QString msg = QStringLiteral("\r\n[进程已退出，代码为 %1]\r\n按 Enter 键或点击此处重启终端...")
-                    .arg(exitCode);
+  QString msg =
+      QStringLiteral(
+          "\r\n[进程已退出，代码为 %1]\r\n按 Enter 键或点击此处重启终端...")
+          .arg(exitCode);
 
   // Write exit message directly to screen buffer
   for (int i = 0; i < msg.size(); ++i) {
@@ -603,7 +623,8 @@ void TerminalPanel::onProcessFinished(int exitCode) {
       }
       continue;
     }
-    if (state_.cursorRow < screen_.size() && state_.cursorCol < screen_[state_.cursorRow].length()) {
+    if (state_.cursorRow < screen_.size() &&
+        state_.cursorCol < screen_[state_.cursorRow].length()) {
       auto& cell = screen_[state_.cursorRow].cells[state_.cursorCol];
       cell.ch = ch;
       cell.fg = QColor("#569CD6");  // blue hint color
@@ -786,5 +807,4 @@ void TerminalPanel::resizeEvent(QResizeEvent* event) {
   }
 }
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app

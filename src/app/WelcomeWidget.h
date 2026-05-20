@@ -1,13 +1,12 @@
 #ifndef ETEST_APP_WELCOME_WIDGET_H_
 #define ETEST_APP_WELCOME_WIDGET_H_
 
-#include <QPushButton>
 #include <QLabel>
 #include <QListWidget>
+#include <QPushButton>
 #include <QWidget>
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 class WelcomeWidget : public QWidget {
   Q_OBJECT
@@ -31,7 +30,6 @@ class WelcomeWidget : public QWidget {
   QListWidget* recent_list_ = nullptr;
 };
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
 
 #endif  // ETEST_APP_WELCOME_WIDGET_H_

@@ -7,8 +7,7 @@
 #include <QWidget>
 #include "IDevicePlugin.h"
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 class HardwareTreeWidget : public QWidget {
   Q_OBJECT
@@ -37,7 +36,6 @@ class HardwareTreeWidget : public QWidget {
   QMap<QString, QTreeWidgetItem*> device_items_;
 };
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
 
 #endif  // ETEST_APP_HARDWARE_TREE_WIDGET_H_

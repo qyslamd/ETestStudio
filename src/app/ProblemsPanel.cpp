@@ -1,8 +1,7 @@
 #include "ProblemsPanel.h"
 #include <QHeaderView>
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 ProblemsPanel::ProblemsPanel(QWidget* parent) : QWidget(parent) {
   setupUi();
@@ -23,5 +22,4 @@ void ProblemsPanel::setupUi() {
   layout->addWidget(table_);
 }
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app

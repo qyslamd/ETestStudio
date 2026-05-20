@@ -8,8 +8,7 @@
 class QPushButton;
 class QToolButton;
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 class PanelContainerWidget : public QWidget {
   Q_OBJECT
@@ -38,7 +37,6 @@ class PanelContainerWidget : public QWidget {
   bool maximized_ = false;
 };
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
 
 #endif  // ETEST_APP_PANEL_CONTAINER_WIDGET_H_

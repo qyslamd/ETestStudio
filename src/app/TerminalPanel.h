@@ -12,8 +12,7 @@
 #include "terminal/PtyProcess.h"
 #include "terminal/VtParser.h"
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 class TerminalPanel : public QWidget {
   Q_OBJECT
@@ -105,7 +104,6 @@ class TerminalPanel : public QWidget {
   QTimer* resize_timer_ = nullptr;
 };
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
 
 #endif  // ETEST_APP_TERMINAL_PANEL_H_

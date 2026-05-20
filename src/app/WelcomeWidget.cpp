@@ -1,8 +1,8 @@
 #include "WelcomeWidget.h"
 
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
-#include <QFileInfo>
 #include <QMenu>
 #include <QScrollBar>
 #include <QVBoxLayout>
@@ -11,13 +11,12 @@
 #include <QPainterPath>
 #include <QPixmap>
 
-#include "version.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "project/ProjectManager.h"
+#include "version.h"
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 using namespace core::config;
 using namespace core::project;
@@ -57,7 +56,8 @@ void WelcomeWidget::initUi() {
 
   QPixmap source(":/resources/icons/app_icon.svg");
   if (!source.isNull()) {
-    source = source.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    source =
+        source.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     QPixmap rounded(48, 48);
     rounded.fill(Qt::transparent);
     QPainter painter(&rounded);
@@ -182,53 +182,51 @@ void WelcomeWidget::initSignals() {
           });
 
   // 右键菜单：从列表移除
-  connect(recent_list_, &QListWidget::customContextMenuRequested, this,
-          [this](const QPoint& pos) {
-            auto* item = recent_list_->itemAt(pos);
-            if (!item) return;
+  connect(
+      recent_list_, &QListWidget::customContextMenuRequested, this,
+      [this](const QPoint& pos) {
+        auto* item = recent_list_->itemAt(pos);
+        if (!item)
+          return;
 
-            auto* menu = new QMenu(this);
-            menu->setObjectName("WelcomeContextMenu");
-            auto* removeAction =
-                menu->addAction(QStringLiteral("从列表中移除"));
-            connect(removeAction, &QAction::triggered, this, [item, this]() {
-              QString path = item->data(Qt::UserRole).toString();
-              QStringList recentList = ConfigManager::instance()
-                                           .get<QStringList>(
-                                               CONFIG_RECENT_PROJECT_LIST);
-              recentList.removeAll(path);
-              ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST,
-                                            recentList);
-              refreshRecentProjects();
-            });
-            menu->exec(recent_list_->mapToGlobal(pos));
-          });
+        auto* menu = new QMenu(this);
+        menu->setObjectName("WelcomeContextMenu");
+        auto* removeAction = menu->addAction(QStringLiteral("从列表中移除"));
+        connect(removeAction, &QAction::triggered, this, [item, this]() {
+          QString path = item->data(Qt::UserRole).toString();
+          QStringList recentList = ConfigManager::instance().get<QStringList>(
+              CONFIG_RECENT_PROJECT_LIST);
+          recentList.removeAll(path);
+          ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST, recentList);
+          refreshRecentProjects();
+        });
+        menu->exec(recent_list_->mapToGlobal(pos));
+      });
 }
 
 void WelcomeWidget::refreshRecentProjects() {
   recent_list_->clear();
 
-  QStringList recentList = ConfigManager::instance().get<QStringList>(
-      CONFIG_RECENT_PROJECT_LIST);
+  QStringList recentList =
+      ConfigManager::instance().get<QStringList>(CONFIG_RECENT_PROJECT_LIST);
 
   for (const QString& path : recentList) {
     QFileInfo fi(path);
     QString displayName = fi.completeBaseName();
-    if (displayName.isEmpty()) continue;
+    if (displayName.isEmpty())
+      continue;
 
     auto* item = new QListWidgetItem(
-        QString("%1  —  %2").arg(displayName, fi.absolutePath()),
-        recent_list_);
+        QString("%1  —  %2").arg(displayName, fi.absolutePath()), recent_list_);
     item->setData(Qt::UserRole, path);
     item->setToolTip(path);
   }
 
   if (recent_list_->count() == 0) {
-    auto* emptyItem = new QListWidgetItem(
-        QStringLiteral("暂无最近项目"), recent_list_);
+    auto* emptyItem =
+        new QListWidgetItem(QStringLiteral("暂无最近项目"), recent_list_);
     emptyItem->setFlags(emptyItem->flags() & ~Qt::ItemIsEnabled);
   }
 }
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app

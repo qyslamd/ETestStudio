@@ -5,12 +5,11 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
+#include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "backup/BackupManager.h"
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 using namespace core::config;
 
@@ -54,11 +53,11 @@ void SettingsWidget::initUi() {
   // === Right: scroll area with pages ===
   pages_ = new QStackedWidget(this);
 
-  pages_->addWidget(createGeneralPage());    // index 0
-  pages_->addWidget(createEditorPage());     // index 1
-  pages_->addWidget(createTerminalPage());   // index 2
-  pages_->addWidget(createAppearancePage()); // index 3
-  pages_->addWidget(createBackupPage());     // index 4
+  pages_->addWidget(createGeneralPage());     // index 0
+  pages_->addWidget(createEditorPage());      // index 1
+  pages_->addWidget(createTerminalPage());    // index 2
+  pages_->addWidget(createAppearancePage());  // index 3
+  pages_->addWidget(createBackupPage());      // index 4
 
   scroll_area_ = new QScrollArea(this);
   scroll_area_->setWidgetResizable(true);
@@ -80,7 +79,8 @@ void SettingsWidget::initSignals() {
   // Tree item selection → switch page
   connect(tree_, &QTreeWidget::currentItemChanged, this,
           [this](QTreeWidgetItem* current, QTreeWidgetItem* /*previous*/) {
-            if (!current) return;
+            if (!current)
+              return;
             int idx = current->data(0, Qt::UserRole).toInt();
             pages_->setCurrentIndex(idx);
           });
@@ -102,9 +102,10 @@ QWidget* SettingsWidget::createGeneralPage() {
 
   // --- 编辑器 section ---
   layout->addWidget(createSectionHeader(QStringLiteral("编辑器")));
-  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_EDITOR_FONT_SIZE, 8, 72,
-                1, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
-  addCheckBoxRow(page, QStringLiteral("显示行号"), CONFIG_EDITOR_SHOW_LINE_NUMBER,
+  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_EDITOR_FONT_SIZE, 8,
+                72, 1, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
+  addCheckBoxRow(page, QStringLiteral("显示行号"),
+                 CONFIG_EDITOR_SHOW_LINE_NUMBER,
                  CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
   addCheckBoxRow(page, QStringLiteral("自动缩进"), CONFIG_EDITOR_AUTO_INDENT,
                  CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
@@ -117,23 +118,22 @@ QWidget* SettingsWidget::createGeneralPage() {
 
   // --- 终端 section ---
   layout->addWidget(createSectionHeader(QStringLiteral("终端")));
-  addComboBoxRow(
-      page, QStringLiteral("Shell"), CONFIG_TERMINAL_SHELL,
-      {QStringLiteral("cmd.exe"), QStringLiteral("powershell.exe"),
-       QStringLiteral("bash.exe")},
-      QString::fromLatin1(CONFIG_TERMINAL_DEFAULT_SHELL));
-  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_TERMINAL_FONT_SIZE, 8, 24,
-                1, CONFIG_TERMINAL_DEFAULT_FONT_SIZE);
-  addSpinBoxRow(page, QStringLiteral("滚动缓冲行数"), CONFIG_TERMINAL_SCROLLBACK,
-                100, 100000, 1000, CONFIG_TERMINAL_DEFAULT_SCROLLBACK);
+  addComboBoxRow(page, QStringLiteral("Shell"), CONFIG_TERMINAL_SHELL,
+                 {QStringLiteral("cmd.exe"), QStringLiteral("powershell.exe"),
+                  QStringLiteral("bash.exe")},
+                 QString::fromLatin1(CONFIG_TERMINAL_DEFAULT_SHELL));
+  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_TERMINAL_FONT_SIZE, 8,
+                24, 1, CONFIG_TERMINAL_DEFAULT_FONT_SIZE);
+  addSpinBoxRow(page, QStringLiteral("滚动缓冲行数"),
+                CONFIG_TERMINAL_SCROLLBACK, 100, 100000, 1000,
+                CONFIG_TERMINAL_DEFAULT_SCROLLBACK);
   layout->addSpacing(12);
 
   // --- 外观 section ---
   layout->addWidget(createSectionHeader(QStringLiteral("外观")));
   addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,
                  CONFIG_TOOLBAR_DEFAULT_VISIBLE);
-  addButtonRow(page, QStringLiteral("窗口布局"),
-               QStringLiteral("恢复默认"));
+  addButtonRow(page, QStringLiteral("窗口布局"), QStringLiteral("恢复默认"));
   layout->addStretch();
 
   return page;
@@ -145,9 +145,10 @@ QWidget* SettingsWidget::createEditorPage() {
   layout->setContentsMargins(20, 16, 20, 16);
   layout->setSpacing(8);
 
-  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_EDITOR_FONT_SIZE, 8, 72,
-                1, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
-  addCheckBoxRow(page, QStringLiteral("显示行号"), CONFIG_EDITOR_SHOW_LINE_NUMBER,
+  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_EDITOR_FONT_SIZE, 8,
+                72, 1, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
+  addCheckBoxRow(page, QStringLiteral("显示行号"),
+                 CONFIG_EDITOR_SHOW_LINE_NUMBER,
                  CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
   addCheckBoxRow(page, QStringLiteral("自动缩进"), CONFIG_EDITOR_AUTO_INDENT,
                  CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
@@ -166,15 +167,15 @@ QWidget* SettingsWidget::createTerminalPage() {
   layout->setContentsMargins(20, 16, 20, 16);
   layout->setSpacing(8);
 
-  addComboBoxRow(
-      page, QStringLiteral("Shell"), CONFIG_TERMINAL_SHELL,
-      {QStringLiteral("cmd.exe"), QStringLiteral("powershell.exe"),
-       QStringLiteral("bash.exe")},
-      QString::fromLatin1(CONFIG_TERMINAL_DEFAULT_SHELL));
-  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_TERMINAL_FONT_SIZE, 8, 24,
-                1, CONFIG_TERMINAL_DEFAULT_FONT_SIZE);
-  addSpinBoxRow(page, QStringLiteral("滚动缓冲行数"), CONFIG_TERMINAL_SCROLLBACK,
-                100, 100000, 1000, CONFIG_TERMINAL_DEFAULT_SCROLLBACK);
+  addComboBoxRow(page, QStringLiteral("Shell"), CONFIG_TERMINAL_SHELL,
+                 {QStringLiteral("cmd.exe"), QStringLiteral("powershell.exe"),
+                  QStringLiteral("bash.exe")},
+                 QString::fromLatin1(CONFIG_TERMINAL_DEFAULT_SHELL));
+  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_TERMINAL_FONT_SIZE, 8,
+                24, 1, CONFIG_TERMINAL_DEFAULT_FONT_SIZE);
+  addSpinBoxRow(page, QStringLiteral("滚动缓冲行数"),
+                CONFIG_TERMINAL_SCROLLBACK, 100, 100000, 1000,
+                CONFIG_TERMINAL_DEFAULT_SCROLLBACK);
   layout->addStretch();
   return page;
 }
@@ -187,8 +188,7 @@ QWidget* SettingsWidget::createAppearancePage() {
 
   addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,
                  CONFIG_TOOLBAR_DEFAULT_VISIBLE);
-  addButtonRow(page, QStringLiteral("窗口布局"),
-               QStringLiteral("恢复默认"));
+  addButtonRow(page, QStringLiteral("窗口布局"), QStringLiteral("恢复默认"));
   layout->addStretch();
   return page;
 }
@@ -202,15 +202,16 @@ QWidget* SettingsWidget::createBackupPage() {
   layout->addWidget(createSectionHeader(QStringLiteral("自动备份")));
   addCheckBoxRow(page, QStringLiteral("启用自动备份"), CONFIG_BACKUP_ENABLED,
                  CONFIG_BACKUP_DEFAULT_ENABLED);
-  addSpinBoxRow(page, QStringLiteral("备份间隔(分钟)"), CONFIG_BACKUP_INTERVAL_MIN,
-                1, 60, 1, CONFIG_BACKUP_DEFAULT_INTERVAL_MIN);
-  addSpinBoxRow(page, QStringLiteral("最大备份数"), CONFIG_BACKUP_MAX_COUNT,
-                1, 50, 1, CONFIG_BACKUP_DEFAULT_MAX_COUNT);
+  addSpinBoxRow(page, QStringLiteral("备份间隔(分钟)"),
+                CONFIG_BACKUP_INTERVAL_MIN, 1, 60, 1,
+                CONFIG_BACKUP_DEFAULT_INTERVAL_MIN);
+  addSpinBoxRow(page, QStringLiteral("最大备份数"), CONFIG_BACKUP_MAX_COUNT, 1,
+                50, 1, CONFIG_BACKUP_DEFAULT_MAX_COUNT);
 
   layout->addSpacing(16);
   layout->addWidget(createSectionHeader(QStringLiteral("手动操作")));
-  auto* manualBtn = addButtonRow(page, QStringLiteral("立即备份"),
-                                  QStringLiteral("备份"));
+  auto* manualBtn =
+      addButtonRow(page, QStringLiteral("立即备份"), QStringLiteral("备份"));
   connect(manualBtn, &QPushButton::clicked, this, []() {
     etest::core::backup::BackupManager::instance().manualBackup();
   });
@@ -236,7 +237,9 @@ QWidget* SettingsWidget::createSectionHeader(const QString& title) {
 QSpinBox* SettingsWidget::addSpinBoxRow(QWidget* parent,
                                         const QString& label,
                                         const QString& configKey,
-                                        int min, int max, int step,
+                                        int min,
+                                        int max,
+                                        int step,
                                         int defaultVal) {
   auto* row = new QWidget(parent);
   auto* rowLayout = new QHBoxLayout(row);
@@ -309,10 +312,10 @@ QComboBox* SettingsWidget::addComboBoxRow(QWidget* parent,
   combo->addItems(items);
   combo->setFixedWidth(160);
 
-  QString val =
-      ConfigManager::instance().get<QString>(configKey, defaultVal);
+  QString val = ConfigManager::instance().get<QString>(configKey, defaultVal);
   int idx = combo->findText(val);
-  if (idx >= 0) combo->setCurrentIndex(idx);
+  if (idx >= 0)
+    combo->setCurrentIndex(idx);
 
   rowLayout->addWidget(lbl);
   rowLayout->addWidget(combo);
@@ -343,9 +346,8 @@ QPushButton* SettingsWidget::addButtonRow(QWidget* parent,
   rowLayout->addStretch();
   parent->layout()->addWidget(row);
 
-  connect(btn, &QPushButton::clicked, this, [this]() {
-    ConfigManager::instance().resetAllToDefault();
-  });
+  connect(btn, &QPushButton::clicked, this,
+          [this]() { ConfigManager::instance().resetAllToDefault(); });
 
   return btn;
 }
@@ -360,8 +362,9 @@ void SettingsWidget::spinBoxToConfig(const QString& key, QSpinBox* spin) {
 }
 
 void SettingsWidget::checkBoxToConfig(const QString& key, QCheckBox* cb) {
-  connect(cb, &QCheckBox::toggled, this,
-          [key](bool checked) { ConfigManager::instance().set<bool>(key, checked); });
+  connect(cb, &QCheckBox::toggled, this, [key](bool checked) {
+    ConfigManager::instance().set<bool>(key, checked);
+  });
 }
 
 void SettingsWidget::comboBoxToConfig(const QString& key, QComboBox* combo) {
@@ -396,11 +399,11 @@ void SettingsWidget::onConfigChanged(const QString& key) {
     if (combo->currentText() != val) {
       combo->blockSignals(true);
       int idx = combo->findText(val);
-      if (idx >= 0) combo->setCurrentIndex(idx);
+      if (idx >= 0)
+        combo->setCurrentIndex(idx);
       combo->blockSignals(false);
     }
   }
 }
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app

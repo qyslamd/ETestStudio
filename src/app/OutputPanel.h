@@ -5,8 +5,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 class OutputPanel : public QWidget {
   Q_OBJECT
@@ -26,7 +25,6 @@ class OutputPanel : public QWidget {
   static constexpr int kMaxLines = 5000;
 };
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
 
 #endif  // ETEST_APP_OUTPUT_PANEL_H_

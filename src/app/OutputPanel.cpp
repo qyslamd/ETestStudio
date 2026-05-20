@@ -1,10 +1,9 @@
 #include "OutputPanel.h"
 
-#include <QScrollBar>
 #include <spdlog/spdlog.h>
+#include <QScrollBar>
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 OutputPanel::OutputPanel(QWidget* parent) : QWidget(parent) {
   setupUi();
@@ -23,7 +22,8 @@ void OutputPanel::setupUi() {
 void OutputPanel::appendLog(int level, const QString& text) {
   QString color = levelColor(level);
   QString escaped = text.toHtmlEscaped();
-  QString html = QStringLiteral("<span style=\"color:%1\">%2</span>").arg(color, escaped);
+  QString html =
+      QStringLiteral("<span style=\"color:%1\">%2</span>").arg(color, escaped);
   text_edit_->append(html);
 
   // 行数限制
@@ -64,14 +64,19 @@ QString OutputPanel::levelColor(int level) const {
 
 QString OutputPanel::levelName(int level) const {
   switch (level) {
-    case spdlog::level::debug:     return QStringLiteral("DEBUG");
-    case spdlog::level::info:      return QStringLiteral("INFO");
-    case spdlog::level::warn:      return QStringLiteral("WARN");
-    case spdlog::level::err:       return QStringLiteral("ERROR");
-    case spdlog::level::critical:  return QStringLiteral("FATAL");
-    default:                       return QStringLiteral("UNKNOWN");
+    case spdlog::level::debug:
+      return QStringLiteral("DEBUG");
+    case spdlog::level::info:
+      return QStringLiteral("INFO");
+    case spdlog::level::warn:
+      return QStringLiteral("WARN");
+    case spdlog::level::err:
+      return QStringLiteral("ERROR");
+    case spdlog::level::critical:
+      return QStringLiteral("FATAL");
+    default:
+      return QStringLiteral("UNKNOWN");
   }
 }
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app

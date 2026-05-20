@@ -3,16 +3,15 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDialog>
 #include <QMap>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QStackedWidget>
 #include <QTreeWidget>
-#include <QDialog>
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 class SettingsWidget : public QDialog {
   Q_OBJECT
@@ -32,16 +31,24 @@ class SettingsWidget : public QDialog {
   QWidget* createBackupPage();
 
   // Form row creators — return the control widget for signal wiring
-  QSpinBox* addSpinBoxRow(QWidget* parent, const QString& label,
-                          const QString& configKey, int min, int max, int step,
+  QSpinBox* addSpinBoxRow(QWidget* parent,
+                          const QString& label,
+                          const QString& configKey,
+                          int min,
+                          int max,
+                          int step,
                           int defaultVal);
-  QCheckBox* addCheckBoxRow(QWidget* parent, const QString& label,
-                            const QString& configKey, bool defaultVal);
-  QComboBox* addComboBoxRow(QWidget* parent, const QString& label,
+  QCheckBox* addCheckBoxRow(QWidget* parent,
+                            const QString& label,
+                            const QString& configKey,
+                            bool defaultVal);
+  QComboBox* addComboBoxRow(QWidget* parent,
+                            const QString& label,
                             const QString& configKey,
                             const QStringList& items,
                             const QString& defaultVal);
-  QPushButton* addButtonRow(QWidget* parent, const QString& label,
+  QPushButton* addButtonRow(QWidget* parent,
+                            const QString& label,
                             const QString& text);
 
   // Section header label
@@ -63,7 +70,6 @@ class SettingsWidget : public QDialog {
   QMap<QString, QComboBox*> combo_map_;
 };
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
 
 #endif  // ETEST_APP_SETTINGS_WIDGET_H_

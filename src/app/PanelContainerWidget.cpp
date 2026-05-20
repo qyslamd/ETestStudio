@@ -5,8 +5,7 @@
 #include <QTabBar>
 #include <QToolButton>
 
-namespace etest {
-namespace app {
+namespace etest::app {
 
 PanelContainerWidget::PanelContainerWidget(QWidget* parent) : QWidget(parent) {
   setupUi();
@@ -101,5 +100,4 @@ void PanelContainerWidget::setMaximized(bool maximized) {
   }
 }
 
-}  // namespace app
-}  // namespace etest
+}  // namespace etest::app
