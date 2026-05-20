@@ -135,6 +135,39 @@
 - 设计文档3.3节"接口参数序列化"原则正确
 - 远期从QPluginLoader切换到QLocalSocket进程通信时，只需底层加proxy/stub层
 
+## FlowGraph 项目设计借鉴分析（2026-05-20）
+
+> 来源项目：`D:\workspace\self\works\workspace\flow-graph\FlowGraph`
+> 目标模块：`src/topology/` 硬件拓扑编辑器
+> 详细文档：`docs/02-研究/FlowGraph拓扑设计借鉴.md`
+
+### 发现：7 个可借鉴的设计点
+
+| # | 功能 | 复杂度 | 效果 | 当前拓扑现状 |
+|---|------|--------|------|--------------|
+| 1 | NicePathMaker 智能路由 | 中 | 连线避障，3种风格切换 | 仅贝塞尔曲线，不避障 |
+| 2 | TopologyBlockItem 公共基类 | 中 | 消除重复代码~40% | UutItem/DeviceItem 各自独立实现 |
+| 3 | 端口连接约束增强 | 低 | 防止误操作 | canConnect() 较宽松 |
+| 4 | 端口风格多样化 | 低 | 视觉提升（三角形方向指示） | 仅圆形风格 |
+| 5 | 拖放创建 Item | 中 | 交互体验提升 | 仅按钮点击添加 |
+| 6 | 连线风格右键切换 | 低 | 用户体验增强 | 右键仅可删除 |
+| 7 | Item Resize 手柄 | 高 | 灵活性提升 | 固定大小自动计算 |
+
+### 关键设计差异
+
+1. **路径路由引擎**：FlowGraph 的 NicePathMaker 能根据源/目标相对位置自动选择上绕/下绕路径，避免连线穿块。拓扑模块应引入类似 `TopologyPathRouter` 类
+
+2. **Item 体系**：FlowGraph 通过 `IRunnableItem` 基类统一了 hover/select/drag/resize/context-menu 等交互。拓扑模块的 UutItem 和 DeviceItem 各自实现这些逻辑，代码重复明显
+
+3. **连线交互**：FlowGraph 的 LinkItem 在 mouseReleaseEvent 中做三层约束检查（自连接/同类型/输入端单连线），而拓扑模块的约束检查较简单
+
+4. **引入路径引擎算法的核心逻辑**：当目标在源左侧时，检测源/目标包围盒的顶部和底部，选择距离更短的方向绕行。同时通过 Turning 常量（15px）控制拐角偏移，避免路径紧贴块边缘
+
+### 实施决定
+- 新建 `阶段2.5-拓扑编辑器增强计划.md`，按优先级排列7项任务
+- 阶段2.5插入在阶段1.5和阶段2之间，预估8.5天
+- 步骤2（基类提取）和步骤3（路径路由）互不依赖，可并行推进
+
 ## ETest参考功能（来自docs/02-研究）
 
 ### 核心功能模块
