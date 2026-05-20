@@ -199,6 +199,7 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/guidance-demo)
     add_subdirectory(examples/lua-debugger-demo)
     add_subdirectory(examples/topology-demo)
+    add_subdirectory(examples/protocal-demo)
 endif()
 
 
