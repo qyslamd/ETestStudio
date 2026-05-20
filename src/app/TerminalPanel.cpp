@@ -42,6 +42,9 @@ void TerminalPanel::initUi() {
   display_->setCenterOnScroll(false);
 
   // Set visible cursor color
+  loadAnsiColors();
+
+  // Set visible cursor color
   display_->setCursorWidth(8);  // block-like cursor width
   QTextCursor cur = display_->textCursor();
   cur.setVisualNavigation(true);
@@ -61,6 +64,49 @@ void TerminalPanel::initUi() {
   for (auto& line : screen_) {
     line = Line(state_.cols);
   }
+}
+
+void TerminalPanel::loadAnsiColors() {
+  using namespace core::config;
+  auto& cfg = ConfigManager::instance();
+  auto load = [&](const char* key, const QColor& fallback) {
+    QString val = cfg.get<QString>(key, QString());
+    return val.isEmpty() ? fallback : QColor(val);
+  };
+
+  ansi_colors_.resize(18);
+  ansi_colors_[0]  = load(CONFIG_TERMINAL_COLOR_BLACK,     QColor("#1E1E1E"));
+  ansi_colors_[1]  = load(CONFIG_TERMINAL_COLOR_RED,       QColor("#CD3131"));
+  ansi_colors_[2]  = load(CONFIG_TERMINAL_COLOR_GREEN,     QColor("#0DBC79"));
+  ansi_colors_[3]  = load(CONFIG_TERMINAL_COLOR_YELLOW,    QColor("#E5E510"));
+  ansi_colors_[4]  = load(CONFIG_TERMINAL_COLOR_BLUE,      QColor("#2472C8"));
+  ansi_colors_[5]  = load(CONFIG_TERMINAL_COLOR_MAGENTA,   QColor("#BC3FBC"));
+  ansi_colors_[6]  = load(CONFIG_TERMINAL_COLOR_CYAN,      QColor("#11A8CD"));
+  ansi_colors_[7]  = load(CONFIG_TERMINAL_COLOR_WHITE,     QColor("#CCCCCC"));
+  ansi_colors_[8]  = load(CONFIG_TERMINAL_COLOR_BRIGHT_BLACK,   QColor("#666666"));
+  ansi_colors_[9]  = load(CONFIG_TERMINAL_COLOR_BRIGHT_RED,     QColor("#F14C4C"));
+  ansi_colors_[10] = load(CONFIG_TERMINAL_COLOR_BRIGHT_GREEN,   QColor("#23D18B"));
+  ansi_colors_[11] = load(CONFIG_TERMINAL_COLOR_BRIGHT_YELLOW,  QColor("#F5F543"));
+  ansi_colors_[12] = load(CONFIG_TERMINAL_COLOR_BRIGHT_BLUE,    QColor("#3B8EEA"));
+  ansi_colors_[13] = load(CONFIG_TERMINAL_COLOR_BRIGHT_MAGENTA, QColor("#D670D6"));
+  ansi_colors_[14] = load(CONFIG_TERMINAL_COLOR_BRIGHT_CYAN,    QColor("#29B8DB"));
+  ansi_colors_[15] = load(CONFIG_TERMINAL_COLOR_BRIGHT_WHITE,   QColor("#E5E5E5"));
+  ansi_colors_[16] = load(CONFIG_TERMINAL_COLOR_FG, QColor("#CCCCCC"));
+  ansi_colors_[17] = load(CONFIG_TERMINAL_COLOR_BG, QColor("#1E1E1E"));
+}
+
+void TerminalPanel::connectConfig() {
+  connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
+          [this](const QString& key) {
+            if (key.startsWith("terminal/color/")) {
+              loadAnsiColors();
+              // Reset current colors to defaults
+              state_.currentFg = ansi_colors_[16];
+              state_.currentBg = ansi_colors_[17];
+              state_.dirty = true;
+              flushToDisplay();
+            }
+          });
 }
 
 void TerminalPanel::initSignals() {
@@ -118,6 +164,7 @@ void TerminalPanel::initSignals() {
       flushToDisplay();
     }
   });
+  connectConfig();
 }
 
 void TerminalPanel::startShell(const QString& command) {
@@ -133,8 +180,8 @@ void TerminalPanel::startShell(const QString& command) {
   // Reset state
   state_.cursorRow = 0;
   state_.cursorCol = 0;
-  state_.currentFg = QColor("#CCCCCC");
-  state_.currentBg = QColor("#1E1E1E");
+  state_.currentFg = ansi_colors_[16];
+  state_.currentBg = ansi_colors_[17];
   state_.currentBold = false;
   state_.dirty = false;
   scrollback_.clear();
@@ -374,28 +421,21 @@ void TerminalPanel::onText(const QString& str) {
 }
 
 void TerminalPanel::onSgr(const QVector<int>& params) {
-  static const QColor kAnsiColors[] = {
-      QColor("#1E1E1E"), QColor("#CD3131"), QColor("#0DBC79"),
-      QColor("#E5E510"), QColor("#2472C8"), QColor("#BC3FBC"),
-      QColor("#11A8CD"), QColor("#CCCCCC"), QColor("#666666"),
-      QColor("#F14C4C"), QColor("#23D18B"), QColor("#F5F543"),
-      QColor("#3B8EEA"), QColor("#D670D6"), QColor("#29B8DB"),
-      QColor("#E5E5E5"),
-  };
+  const auto& ac = ansi_colors_;
 
   for (int i = 0; i < params.size(); ++i) {
     int p = params[i];
 
     if (p == 0) {
-      state_.currentFg = QColor("#CCCCCC");
-      state_.currentBg = QColor("#1E1E1E");
+      state_.currentFg = ac[16];
+      state_.currentBg = ac[17];
       state_.currentBold = false;
     } else if (p == 1) {
       state_.currentBold = true;
     } else if (p == 22) {
       state_.currentBold = false;
     } else if (p >= 30 && p <= 37) {
-      state_.currentFg = kAnsiColors[p - 30];
+      state_.currentFg = ac[p - 30];
     } else if (p == 38) {
       if (i + 1 < params.size() && params[i + 1] == 2) {
         if (i + 4 < params.size()) {
@@ -406,7 +446,7 @@ void TerminalPanel::onSgr(const QVector<int>& params) {
         if (i + 2 < params.size()) {
           int idx = params[i + 2];
           if (idx >= 0 && idx < 16)
-            state_.currentFg = kAnsiColors[idx];
+            state_.currentFg = ac[idx];
           else if (idx >= 16 && idx < 232) {
             int v = idx - 16;
             state_.currentFg = QColor((v / 36) * 51, ((v % 36) / 6) * 51, (v % 6) * 51);
@@ -418,9 +458,9 @@ void TerminalPanel::onSgr(const QVector<int>& params) {
         }
       }
     } else if (p == 39) {
-      state_.currentFg = QColor("#CCCCCC");
+      state_.currentFg = ac[16];
     } else if (p >= 40 && p <= 47) {
-      state_.currentBg = kAnsiColors[p - 40];
+      state_.currentBg = ac[p - 40];
     } else if (p == 48) {
       if (i + 1 < params.size() && params[i + 1] == 2) {
         if (i + 4 < params.size()) {
@@ -431,7 +471,7 @@ void TerminalPanel::onSgr(const QVector<int>& params) {
         if (i + 2 < params.size()) {
           int idx = params[i + 2];
           if (idx >= 0 && idx < 16)
-            state_.currentBg = kAnsiColors[idx];
+            state_.currentBg = ac[idx];
           else if (idx >= 232 && idx < 256) {
             int gray = 8 + (idx - 232) * 10;
             state_.currentBg = QColor(gray, gray, gray);
@@ -440,7 +480,7 @@ void TerminalPanel::onSgr(const QVector<int>& params) {
         }
       }
     } else if (p == 49) {
-      state_.currentBg = QColor("#1E1E1E");
+      state_.currentBg = ac[17];
     }
   }
 }

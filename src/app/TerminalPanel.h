@@ -4,8 +4,11 @@
 #include <QPlainTextEdit>
 #include <QTextCharFormat>
 #include <QVBoxLayout>
+#include <QVector>
 #include <QWidget>
 
+#include "config/ConfigDefs.h"
+#include "config/ConfigManager.h"
 #include "terminal/PtyProcess.h"
 #include "terminal/VtParser.h"
 
@@ -45,6 +48,10 @@ class TerminalPanel : public QWidget {
   void onScrollDown(int n);
   void onSetScrollRegion(int top, int bottom);
 
+  // Load ANSI color palette from ConfigManager
+  void loadAnsiColors();
+  void connectConfig();
+
   // Process lifecycle
   void onProcessFinished(int exitCode);
   void restartShell();
@@ -61,9 +68,10 @@ class TerminalPanel : public QWidget {
 
   struct Cell {
     QChar ch = QChar::Space;
-    QColor fg = QColor("#CCCCCC");
-    QColor bg = QColor("#1E1E1E");
+    QColor fg;
+    QColor bg;
     bool bold = false;
+    Cell() : fg(QColor("#CCCCCC")), bg(QColor("#1E1E1E")) {}
   };
 
   struct Line {
@@ -90,6 +98,7 @@ class TerminalPanel : public QWidget {
   QVector<Line> screen_;
   QVector<Line> scrollback_;  // lines scrolled off the top
   static const int kMaxScrollback = 10000;
+  QVector<QColor> ansi_colors_;  // 16 ANSI colors + fg/bg
   bool shellExited_ = false;
   bool shell_started_ = false;
   int lastExitCode_ = 0;

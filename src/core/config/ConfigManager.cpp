@@ -53,6 +53,55 @@ class ConfigManager::Impl {
     m_defaultValues[CONFIG_DEFAULT_PROJECT_PATH] =
         QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     m_defaultValues[CONFIG_DEFAULT_PROTOCOL_PATH] = "";
+
+    // 终端ANSI 16色调色板
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BLACK]     = QStringLiteral("#1E1E1E");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_RED]       = QStringLiteral("#CD3131");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_GREEN]     = QStringLiteral("#0DBC79");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_YELLOW]    = QStringLiteral("#E5E510");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BLUE]      = QStringLiteral("#2472C8");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_MAGENTA]   = QStringLiteral("#BC3FBC");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_CYAN]      = QStringLiteral("#11A8CD");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_WHITE]     = QStringLiteral("#CCCCCC");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BRIGHT_BLACK]   = QStringLiteral("#666666");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BRIGHT_RED]     = QStringLiteral("#F14C4C");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BRIGHT_GREEN]   = QStringLiteral("#23D18B");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BRIGHT_YELLOW]  = QStringLiteral("#F5F543");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BRIGHT_BLUE]    = QStringLiteral("#3B8EEA");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BRIGHT_MAGENTA] = QStringLiteral("#D670D6");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BRIGHT_CYAN]    = QStringLiteral("#29B8DB");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BRIGHT_WHITE]   = QStringLiteral("#E5E5E5");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_FG]       = QStringLiteral("#CCCCCC");
+    m_defaultValues[CONFIG_TERMINAL_COLOR_BG]       = QStringLiteral("#1E1E1E");
+
+    // 编辑器主题色
+    m_defaultValues[CONFIG_EDITOR_THEME_PAPER]         = QStringLiteral("#1E1E1E");
+    m_defaultValues[CONFIG_EDITOR_THEME_TEXT]          = QStringLiteral("#CCCCCC");
+    m_defaultValues[CONFIG_EDITOR_THEME_CARET_LINE]    = QStringLiteral("#2E2E2E");
+    m_defaultValues[CONFIG_EDITOR_THEME_CARET]         = QStringLiteral("#CCCCCC");
+    m_defaultValues[CONFIG_EDITOR_THEME_SELECTION_BG]  = QStringLiteral("#264F78");
+    m_defaultValues[CONFIG_EDITOR_THEME_SELECTION_FG]  = QStringLiteral("#FFFFFF");
+    m_defaultValues[CONFIG_EDITOR_THEME_MARGIN_BG]     = QStringLiteral("#252525");
+    m_defaultValues[CONFIG_EDITOR_THEME_LINE_NUMBER]   = QStringLiteral("#858585");
+    m_defaultValues[CONFIG_EDITOR_THEME_INDENT_GUIDE]  = QStringLiteral("#434343");
+    m_defaultValues[CONFIG_EDITOR_THEME_BRACE_LIGHT_BG] = QStringLiteral("#264F78");
+    m_defaultValues[CONFIG_EDITOR_THEME_BRACE_LIGHT_FG] = QStringLiteral("#FFFFFF");
+    m_defaultValues[CONFIG_EDITOR_THEME_BRACE_BAD_BG]   = QStringLiteral("#8B0000");
+    m_defaultValues[CONFIG_EDITOR_THEME_BRACE_BAD_FG]   = QStringLiteral("#FFFFFF");
+    m_defaultValues[CONFIG_EDITOR_THEME_FOLD_MARGIN]    = QStringLiteral("#858585");
+
+    // 编辑器语法色
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_KEYWORD]      = QStringLiteral("#569CD6");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_COMMENT]      = QStringLiteral("#6A9955");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_STRING]       = QStringLiteral("#CE9178");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_NUMBER]       = QStringLiteral("#B5CEA8");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_FUNCTION]     = QStringLiteral("#DCDCAA");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_TAG]          = QStringLiteral("#569CD6");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_PREPROCESSOR] = QStringLiteral("#9B9B9B");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS] = QStringLiteral("#4EC9B0");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ]    = QStringLiteral("#D7BA7D");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_PROPERTY]     = QStringLiteral("#DCDCAA");
+    m_defaultValues[CONFIG_EDITOR_SYNTAX_OPERATOR]     = QStringLiteral("#CCCCCC");
   }
 
   QVariant getDefaultValue(const QString& key) const {

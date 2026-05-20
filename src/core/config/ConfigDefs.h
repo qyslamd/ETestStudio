@@ -90,6 +90,55 @@ constexpr const char* CONFIG_TERMINAL_SHELL = "terminal/shell";
 constexpr const char* CONFIG_TERMINAL_FONT_SIZE = "terminal/font_size";
 constexpr const char* CONFIG_TERMINAL_SCROLLBACK = "terminal/scrollback";
 
+// 终端ANSI 16色调色板 (存储为#RRGGBB字符串)
+constexpr const char* CONFIG_TERMINAL_COLOR_BLACK     = "terminal/color/black";
+constexpr const char* CONFIG_TERMINAL_COLOR_RED       = "terminal/color/red";
+constexpr const char* CONFIG_TERMINAL_COLOR_GREEN     = "terminal/color/green";
+constexpr const char* CONFIG_TERMINAL_COLOR_YELLOW    = "terminal/color/yellow";
+constexpr const char* CONFIG_TERMINAL_COLOR_BLUE      = "terminal/color/blue";
+constexpr const char* CONFIG_TERMINAL_COLOR_MAGENTA   = "terminal/color/magenta";
+constexpr const char* CONFIG_TERMINAL_COLOR_CYAN      = "terminal/color/cyan";
+constexpr const char* CONFIG_TERMINAL_COLOR_WHITE     = "terminal/color/white";
+constexpr const char* CONFIG_TERMINAL_COLOR_BRIGHT_BLACK   = "terminal/color/bright_black";
+constexpr const char* CONFIG_TERMINAL_COLOR_BRIGHT_RED     = "terminal/color/bright_red";
+constexpr const char* CONFIG_TERMINAL_COLOR_BRIGHT_GREEN   = "terminal/color/bright_green";
+constexpr const char* CONFIG_TERMINAL_COLOR_BRIGHT_YELLOW  = "terminal/color/bright_yellow";
+constexpr const char* CONFIG_TERMINAL_COLOR_BRIGHT_BLUE    = "terminal/color/bright_blue";
+constexpr const char* CONFIG_TERMINAL_COLOR_BRIGHT_MAGENTA = "terminal/color/bright_magenta";
+constexpr const char* CONFIG_TERMINAL_COLOR_BRIGHT_CYAN    = "terminal/color/bright_cyan";
+constexpr const char* CONFIG_TERMINAL_COLOR_BRIGHT_WHITE   = "terminal/color/bright_white";
+constexpr const char* CONFIG_TERMINAL_COLOR_FG       = "terminal/color/fg";
+constexpr const char* CONFIG_TERMINAL_COLOR_BG       = "terminal/color/bg";
+
+// 编辑器主题色 (存储为#RRGGBB字符串)
+constexpr const char* CONFIG_EDITOR_THEME_PAPER         = "editor/theme/paper";
+constexpr const char* CONFIG_EDITOR_THEME_TEXT          = "editor/theme/text";
+constexpr const char* CONFIG_EDITOR_THEME_CARET_LINE    = "editor/theme/caret_line";
+constexpr const char* CONFIG_EDITOR_THEME_CARET         = "editor/theme/caret";
+constexpr const char* CONFIG_EDITOR_THEME_SELECTION_BG  = "editor/theme/selection_bg";
+constexpr const char* CONFIG_EDITOR_THEME_SELECTION_FG  = "editor/theme/selection_fg";
+constexpr const char* CONFIG_EDITOR_THEME_MARGIN_BG     = "editor/theme/margin_bg";
+constexpr const char* CONFIG_EDITOR_THEME_LINE_NUMBER   = "editor/theme/line_number";
+constexpr const char* CONFIG_EDITOR_THEME_INDENT_GUIDE  = "editor/theme/indent_guide";
+constexpr const char* CONFIG_EDITOR_THEME_BRACE_LIGHT_BG = "editor/theme/brace_light_bg";
+constexpr const char* CONFIG_EDITOR_THEME_BRACE_LIGHT_FG = "editor/theme/brace_light_fg";
+constexpr const char* CONFIG_EDITOR_THEME_BRACE_BAD_BG   = "editor/theme/brace_bad_bg";
+constexpr const char* CONFIG_EDITOR_THEME_BRACE_BAD_FG   = "editor/theme/brace_bad_fg";
+constexpr const char* CONFIG_EDITOR_THEME_FOLD_MARGIN    = "editor/theme/fold_margin";
+
+// 编辑器语法色 (存储为#RRGGBB字符串)
+constexpr const char* CONFIG_EDITOR_SYNTAX_KEYWORD      = "editor/syntax/keyword";
+constexpr const char* CONFIG_EDITOR_SYNTAX_COMMENT      = "editor/syntax/comment";
+constexpr const char* CONFIG_EDITOR_SYNTAX_STRING       = "editor/syntax/string";
+constexpr const char* CONFIG_EDITOR_SYNTAX_NUMBER       = "editor/syntax/number";
+constexpr const char* CONFIG_EDITOR_SYNTAX_FUNCTION     = "editor/syntax/function";
+constexpr const char* CONFIG_EDITOR_SYNTAX_TAG          = "editor/syntax/tag";
+constexpr const char* CONFIG_EDITOR_SYNTAX_PREPROCESSOR = "editor/syntax/preprocessor";
+constexpr const char* CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS = "editor/syntax/global_class";
+constexpr const char* CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ   = "editor/syntax/escape_seq";
+constexpr const char* CONFIG_EDITOR_SYNTAX_PROPERTY     = "editor/syntax/property";
+constexpr const char* CONFIG_EDITOR_SYNTAX_OPERATOR     = "editor/syntax/operator";
+
 // 终端默认值
 #ifdef Q_OS_WIN
 constexpr const char* CONFIG_TERMINAL_DEFAULT_SHELL = "cmd.exe";

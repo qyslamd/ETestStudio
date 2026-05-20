@@ -24,7 +24,7 @@
 namespace etest::app {
 
 TextEditorWidget::TextEditorWidget(const QString& filePath, QWidget* parent)
-    : QWidget(parent), file_path_(filePath) {
+    : QWidget(parent), file_path_(filePath), theme_(EditorTheme::loadFromConfig()) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
@@ -182,7 +182,7 @@ void TextEditorWidget::setupEditor() {
   editor_->setAutoIndent(autoIndent);
   editor_->setIndentationGuides(true);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-                         QsciScintilla::STYLE_INDENTGUIDE, QColor(67, 67, 67));
+                         QsciScintilla::STYLE_INDENTGUIDE, theme_.chrome.indentGuide);
 
   int tabWidth =
       config.get<int>(CONFIG_EDITOR_TAB_WIDTH, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
@@ -195,37 +195,37 @@ void TextEditorWidget::setupEditor() {
   editor_->setWrapMode(QsciScintilla::WrapNone);
 
   editor_->setCaretLineVisible(true);
-  editor_->setCaretLineBackgroundColor(QColor(46, 46, 46));
+  editor_->setCaretLineBackgroundColor(theme_.chrome.caretLine);
 
-  editor_->setPaper(QColor(30, 30, 30));
-  editor_->setColor(QColor(204, 204, 204));
-  editor_->setCaretForegroundColor(QColor(204, 204, 204));
-  editor_->setSelectionBackgroundColor(QColor(38, 79, 120));
-  editor_->setSelectionForegroundColor(QColor(255, 255, 255));
+  editor_->setPaper(theme_.chrome.paper);
+  editor_->setColor(theme_.chrome.text);
+  editor_->setCaretForegroundColor(theme_.chrome.caret);
+  editor_->setSelectionBackgroundColor(theme_.chrome.selectionBg);
+  editor_->setSelectionForegroundColor(theme_.chrome.selectionFg);
 
-  editor_->setMarginBackgroundColor(0, QColor(37, 37, 37));
+  editor_->setMarginBackgroundColor(0, theme_.chrome.marginBg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                         QsciScintilla::STYLE_LINENUMBER, QColor(37, 37, 37));
+                         QsciScintilla::STYLE_LINENUMBER, theme_.chrome.marginBg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
                          QsciScintilla::STYLE_LINENUMBER,
-                         QColor(133, 133, 133));
+                         theme_.chrome.lineNumber);
   editor_->setMarginType(1, QsciScintilla::SymbolMargin);
   editor_->setMarginWidth(1, 16);
-  editor_->setMarginBackgroundColor(1, QColor(37, 37, 37));
-  editor_->setMarginBackgroundColor(2, QColor(37, 37, 37));
-  editor_->setMarginsForegroundColor(QColor(133, 133, 133));
-  editor_->setFoldMarginColors(QColor(133, 133, 133), QColor(37, 37, 37));
+  editor_->setMarginBackgroundColor(1, theme_.chrome.marginBg);
+  editor_->setMarginBackgroundColor(2, theme_.chrome.marginBg);
+  editor_->setMarginsForegroundColor(theme_.chrome.lineNumber);
+  editor_->setFoldMarginColors(theme_.chrome.foldMargin, theme_.chrome.marginBg);
 
   editor_->setBraceMatching(QsciScintilla::SloppyBraceMatch);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                         QsciScintilla::STYLE_BRACELIGHT, QColor(38, 79, 120));
+                         QsciScintilla::STYLE_BRACELIGHT, theme_.chrome.braceLightBg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
                          QsciScintilla::STYLE_BRACELIGHT,
-                         QColor(255, 255, 255));
+                         theme_.chrome.braceLightFg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                         QsciScintilla::STYLE_BRACEBAD, QColor(139, 0, 0));
+                         QsciScintilla::STYLE_BRACEBAD, theme_.chrome.braceBadBg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-                         QsciScintilla::STYLE_BRACEBAD, QColor(255, 255, 255));
+                         QsciScintilla::STYLE_BRACEBAD, theme_.chrome.braceBadFg);
 
   editor_->setUtf8(true);
 
@@ -287,72 +287,67 @@ bool TextEditorWidget::eventFilter(QObject* obj, QEvent* event) {
 }
 
 void TextEditorWidget::applyColorScheme(QsciLexer* lexer) {
-  QColor keyword(86, 156, 214);
-  QColor comment(106, 153, 85);
-  QColor string(206, 145, 120);
-  QColor number(181, 206, 168);
-  QColor func(220, 220, 170);
-  QColor tag(86, 156, 214);
+  auto& s = theme_.syntax;
 
   if (lexer) {
-    lexer->setDefaultPaper(QColor(30, 30, 30));
-    lexer->setDefaultColor(QColor(204, 204, 204));
+    lexer->setDefaultPaper(theme_.chrome.paper);
+    lexer->setDefaultColor(theme_.chrome.text);
     for (int i = 0; i <= 127; ++i) {
-      lexer->setPaper(QColor(30, 30, 30), i);
+      lexer->setPaper(theme_.chrome.paper, i);
     }
   }
 
   if (auto* cpp = qobject_cast<QsciLexerCPP*>(lexer)) {
-    cpp->setColor(keyword, QsciLexerCPP::Keyword);
-    cpp->setColor(comment, QsciLexerCPP::Comment);
-    cpp->setColor(comment, QsciLexerCPP::CommentLine);
-    cpp->setColor(string, QsciLexerCPP::DoubleQuotedString);
-    cpp->setColor(string, QsciLexerCPP::SingleQuotedString);
-    cpp->setColor(number, QsciLexerCPP::Number);
-    cpp->setColor(QColor(204, 204, 204), QsciLexerCPP::Operator);
-    cpp->setColor(QColor(155, 155, 155), QsciLexerCPP::PreProcessor);
-    cpp->setColor(QColor(78, 201, 176), QsciLexerCPP::GlobalClass);
-    cpp->setColor(QColor(215, 186, 125), QsciLexerCPP::EscapeSequence);
-    cpp->setColor(comment, QsciLexerCPP::CommentDoc);
+    cpp->setColor(s.keyword, QsciLexerCPP::Keyword);
+    cpp->setColor(s.comment, QsciLexerCPP::Comment);
+    cpp->setColor(s.comment, QsciLexerCPP::CommentLine);
+    cpp->setColor(s.string, QsciLexerCPP::DoubleQuotedString);
+    cpp->setColor(s.string, QsciLexerCPP::SingleQuotedString);
+    cpp->setColor(s.number, QsciLexerCPP::Number);
+    cpp->setColor(s.oper, QsciLexerCPP::Operator);
+    cpp->setColor(s.preprocessor, QsciLexerCPP::PreProcessor);
+    cpp->setColor(s.globalClass, QsciLexerCPP::GlobalClass);
+    cpp->setColor(s.escapeSeq, QsciLexerCPP::EscapeSequence);
+    cpp->setColor(s.comment, QsciLexerCPP::CommentDoc);
   } else if (auto* lua = qobject_cast<QsciLexerLua*>(lexer)) {
-    lua->setColor(keyword, QsciLexerLua::Keyword);
-    lua->setColor(comment, QsciLexerLua::Comment);
-    lua->setColor(comment, QsciLexerLua::LineComment);
-    lua->setColor(string, QsciLexerLua::String);
-    lua->setColor(string, QsciLexerLua::Character);
-    lua->setColor(number, QsciLexerLua::Number);
-    lua->setColor(func, QsciLexerLua::Identifier);
+    lua->setColor(s.keyword, QsciLexerLua::Keyword);
+    lua->setColor(s.comment, QsciLexerLua::Comment);
+    lua->setColor(s.comment, QsciLexerLua::LineComment);
+    lua->setColor(s.string, QsciLexerLua::String);
+    lua->setColor(s.string, QsciLexerLua::Character);
+    lua->setColor(s.number, QsciLexerLua::Number);
+    lua->setColor(s.function, QsciLexerLua::Identifier);
   } else if (auto* json = qobject_cast<QsciLexerJSON*>(lexer)) {
-    json->setColor(keyword, QsciLexerJSON::Keyword);
-    json->setColor(comment, QsciLexerJSON::CommentLine);
-    json->setColor(comment, QsciLexerJSON::CommentBlock);
-    json->setColor(string, QsciLexerJSON::String);
-    json->setColor(number, QsciLexerJSON::Number);
-    json->setColor(QColor(204, 204, 204), QsciLexerJSON::Operator);
-    json->setColor(QColor(215, 186, 125), QsciLexerJSON::EscapeSequence);
-    json->setColor(QColor(220, 220, 170), QsciLexerJSON::Property);
+    json->setColor(s.keyword, QsciLexerJSON::Keyword);
+    json->setColor(s.comment, QsciLexerJSON::CommentLine);
+    json->setColor(s.comment, QsciLexerJSON::CommentBlock);
+    json->setColor(s.string, QsciLexerJSON::String);
+    json->setColor(s.number, QsciLexerJSON::Number);
+    json->setColor(s.oper, QsciLexerJSON::Operator);
+    json->setColor(s.escapeSeq, QsciLexerJSON::EscapeSequence);
+    json->setColor(s.property, QsciLexerJSON::Property);
   } else if (auto* xml = qobject_cast<QsciLexerXML*>(lexer)) {
-    xml->setColor(tag, QsciLexerXML::Tag);
-    xml->setColor(comment, QsciLexerXML::HTMLComment);
-    xml->setColor(string, QsciLexerXML::HTMLDoubleQuotedString);
-    xml->setColor(string, QsciLexerXML::HTMLSingleQuotedString);
-    xml->setColor(number, QsciLexerXML::HTMLNumber);
+    xml->setColor(s.tag, QsciLexerXML::Tag);
+    xml->setColor(s.comment, QsciLexerXML::HTMLComment);
+    xml->setColor(s.string, QsciLexerXML::HTMLDoubleQuotedString);
+    xml->setColor(s.string, QsciLexerXML::HTMLSingleQuotedString);
+    xml->setColor(s.number, QsciLexerXML::HTMLNumber);
   } else if (auto* py = qobject_cast<QsciLexerPython*>(lexer)) {
-    py->setColor(keyword, QsciLexerPython::Keyword);
-    py->setColor(comment, QsciLexerPython::Comment);
-    py->setColor(string, QsciLexerPython::DoubleQuotedString);
-    py->setColor(string, QsciLexerPython::SingleQuotedString);
-    py->setColor(number, QsciLexerPython::Number);
-    py->setColor(func, QsciLexerPython::FunctionMethodName);
+    py->setColor(s.keyword, QsciLexerPython::Keyword);
+    py->setColor(s.comment, QsciLexerPython::Comment);
+    py->setColor(s.string, QsciLexerPython::DoubleQuotedString);
+    py->setColor(s.string, QsciLexerPython::SingleQuotedString);
+    py->setColor(s.number, QsciLexerPython::Number);
+    py->setColor(s.function, QsciLexerPython::FunctionMethodName);
   } else if (auto* yaml = qobject_cast<QsciLexerYAML*>(lexer)) {
-    yaml->setColor(keyword, QsciLexerYAML::Keyword);
-    yaml->setColor(comment, QsciLexerYAML::Comment);
-    yaml->setColor(number, QsciLexerYAML::Number);
+    yaml->setColor(s.keyword, QsciLexerYAML::Keyword);
+    yaml->setColor(s.comment, QsciLexerYAML::Comment);
+    yaml->setColor(s.number, QsciLexerYAML::Number);
   } else if (auto* cmake = qobject_cast<QsciLexerCMake*>(lexer)) {
-    cmake->setColor(func, QsciLexerCMake::Function);
-    cmake->setColor(comment, QsciLexerCMake::Comment);
-    cmake->setColor(string, QsciLexerCMake::String);
-    cmake->setColor(number, QsciLexerCMake::Number);
+    cmake->setColor(s.function, QsciLexerCMake::Function);
+    cmake->setColor(s.comment, QsciLexerCMake::Comment);
+    cmake->setColor(s.string, QsciLexerCMake::String);
+    cmake->setColor(s.number, QsciLexerCMake::Number);
   }
 }
 
@@ -401,6 +396,42 @@ void TextEditorWidget::contextMenuEvent(QContextMenuEvent* event) {
 
 void TextEditorWidget::onConfigChanged(const QString& key) {
   using namespace etest::core::config;
+
+  // Reload full theme when any editor color config changes
+  if (key.startsWith("editor/theme/") || key.startsWith("editor/syntax/")) {
+    theme_ = EditorTheme::loadFromConfig();
+    // Re-apply all editor chrome colors
+    editor_->setCaretLineBackgroundColor(theme_.chrome.caretLine);
+    editor_->setPaper(theme_.chrome.paper);
+    editor_->setColor(theme_.chrome.text);
+    editor_->setCaretForegroundColor(theme_.chrome.caret);
+    editor_->setSelectionBackgroundColor(theme_.chrome.selectionBg);
+    editor_->setSelectionForegroundColor(theme_.chrome.selectionFg);
+    editor_->setMarginBackgroundColor(0, theme_.chrome.marginBg);
+    editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
+                           QsciScintilla::STYLE_LINENUMBER, theme_.chrome.marginBg);
+    editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
+                           QsciScintilla::STYLE_LINENUMBER, theme_.chrome.lineNumber);
+    editor_->setMarginBackgroundColor(1, theme_.chrome.marginBg);
+    editor_->setMarginBackgroundColor(2, theme_.chrome.marginBg);
+    editor_->setMarginsForegroundColor(theme_.chrome.lineNumber);
+    editor_->setFoldMarginColors(theme_.chrome.foldMargin, theme_.chrome.marginBg);
+    editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
+                           QsciScintilla::STYLE_INDENTGUIDE, theme_.chrome.indentGuide);
+    editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
+                           QsciScintilla::STYLE_BRACELIGHT, theme_.chrome.braceLightBg);
+    editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
+                           QsciScintilla::STYLE_BRACELIGHT, theme_.chrome.braceLightFg);
+    editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
+                           QsciScintilla::STYLE_BRACEBAD, theme_.chrome.braceBadBg);
+    editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
+                           QsciScintilla::STYLE_BRACEBAD, theme_.chrome.braceBadFg);
+    // Re-apply syntax colors if a lexer is active
+    if (editor_->lexer()) {
+      applyColorScheme(editor_->lexer());
+    }
+    return;
+  }
 
   if (key == CONFIG_EDITOR_SHOW_LINE_NUMBER) {
     bool show = ConfigManager::instance().get<bool>(
