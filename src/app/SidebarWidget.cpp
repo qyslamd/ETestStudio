@@ -59,12 +59,10 @@ void SidebarWidget::setupUi() {
     top_layout->addWidget(buttons_[i]);
     connect(buttons_[i], &QPushButton::clicked, this, [this, i]() {
       if (active_index_ != i) {
-        content_panel_->show();
         setActiveIndex(i);
         switchPage(i);
       } else {
-        // 重复点击已激活按钮：切换内容面板显隐
-        content_panel_->setVisible(!content_panel_->isVisible());
+        toggleContentPanel();
       }
     });
   }
@@ -153,7 +151,7 @@ void SidebarWidget::setupUi() {
 
   outer_layout->addWidget(content_panel_);
 
-  setMinimumWidth(200);
+  setMinimumWidth(48);
   setActiveIndex(0);
   switchPage(0);
 }
@@ -184,6 +182,10 @@ int SidebarWidget::pageCount() const {
 
 void SidebarWidget::switchPage(int index) {
   if (index >= 0 && index < stack_->count()) {
+    if (!content_panel_->isVisible()) {
+      content_panel_->show();
+      emit contentPanelToggled(true);
+    }
     stack_->setCurrentIndex(index);
     if (index < view_titles_.size()) {
       title_label_->setText(view_titles_[index]);
@@ -201,6 +203,12 @@ void SidebarWidget::setActiveIndex(int index) {
 
 int SidebarWidget::activeIndex() const {
   return active_index_;
+}
+
+void SidebarWidget::toggleContentPanel() {
+  bool visible = content_panel_->isVisible();
+  content_panel_->setVisible(!visible);
+  emit contentPanelToggled(!visible);
 }
 
 FileExplorerWidget* SidebarWidget::fileExplorer() const {

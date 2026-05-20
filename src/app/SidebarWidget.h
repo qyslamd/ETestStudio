@@ -28,6 +28,7 @@ class SidebarWidget : public QWidget {
   // Activity bar
   void setActiveIndex(int index);
   int activeIndex() const;
+  void toggleContentPanel();
 
   FileExplorerWidget* fileExplorer() const;
   HardwareTreeWidget* hardwareTree() const;
@@ -36,6 +37,7 @@ class SidebarWidget : public QWidget {
 
  signals:
   void settingsTriggered();
+  void contentPanelToggled(bool visible);
 
  private:
   void setupUi();

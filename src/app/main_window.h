@@ -84,6 +84,7 @@ class MainWindow : public QMainWindow {
 
   SidebarWidget* sidebar_;
   ads::CDockWidget* sidebar_dock_ = nullptr;
+  int sidebar_expanded_width_ = 280;
 
   // 编辑器管理
   EditorManager* editor_manager_;

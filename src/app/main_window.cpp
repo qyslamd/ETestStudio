@@ -24,6 +24,7 @@
 
 #include <DockAreaTitleBar.h>
 #include <DockAreaWidget.h>
+#include <DockSplitter.h>
 #include <DockWidgetTab.h>
 #include "EditorManager.h"
 #include "FileExplorerWidget.h"
@@ -450,13 +451,7 @@ void MainWindow::initSignals() {
   // Ctrl+B 切换侧边栏
   auto* toggleSidebar = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_B), this);
   connect(toggleSidebar, &QShortcut::activated, this, [this]() {
-    if (sidebar_dock_) {
-      sidebar_dock_->toggleView(sidebar_dock_->isClosed());
-      // toggleView会重建标题栏，需要重新隐藏
-      if (sidebar_dock_->dockAreaWidget()) {
-        sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-      }
-    }
+    sidebar_->toggleContentPanel();
   });
 
   // Ctrl+Shift+F 全局搜索
@@ -499,6 +494,35 @@ void MainWindow::initSignals() {
     settings_dialog_->show();
     settings_dialog_->raise();
     settings_dialog_->activateWindow();
+  });
+
+  // 内容面板显隐时调整 SidebarDock 宽度，让编辑器区域贴合
+  connect(sidebar_, &SidebarWidget::contentPanelToggled, this, [this](bool visible) {
+    auto* area = sidebar_dock_->dockAreaWidget();
+    auto* splitter = ads::internal::findParent<ads::CDockSplitter*>(area);
+    if (!visible) {
+      sidebar_expanded_width_ = area->width();
+      area->setFixedWidth(48);
+      if (splitter) {
+        auto sizes = splitter->sizes();
+        int idx = splitter->indexOf(area);
+        if (idx >= 0 && idx < sizes.size()) {
+          sizes[idx] = 48;
+          splitter->setSizes(sizes);
+        }
+      }
+    } else {
+      area->setMinimumWidth(0);
+      area->setMaximumWidth(QWIDGETSIZE_MAX);
+      if (splitter) {
+        auto sizes = splitter->sizes();
+        int idx = splitter->indexOf(area);
+        if (idx >= 0 && idx < sizes.size()) {
+          sizes[idx] = sidebar_expanded_width_;
+          splitter->setSizes(sizes);
+        }
+      }
+    }
   });
 }
 
