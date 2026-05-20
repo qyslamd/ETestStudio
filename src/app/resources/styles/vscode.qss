@@ -701,8 +701,9 @@ TerminalPanel QPlainTextEdit {
 }
 
 /* ==================== TopologyEditorWidget ==================== */
-TopologyEditorWidget {
+etest--topology--TopologyEditorWidget {
     background-color: #1E1E1E;
+    border: 1px solid #3C3C3C;
 }
 #topologyToolbar {
     background-color: #2D2D2D;

@@ -28,6 +28,9 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
   // Style — adapt to current theme
   setBackgroundBrush(topologyColors().sceneBackground);
   setFrameShape(QFrame::NoFrame);
+
+  // Accept drops for device palette drag-and-drop
+  setAcceptDrops(true);
 }
 
 void TopologyView::drawForeground(QPainter* painter, const QRectF& rect) {
