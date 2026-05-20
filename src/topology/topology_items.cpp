@@ -41,6 +41,15 @@ PortItem::PortItem(int productIndex,
   setFlag(ItemIsSelectable);
 }
 
+void PortItem::setPortStyle(PortStyle s) {
+  port_style_ = s;
+  if (auto* prod = doc_->product(product_index_)) {
+    if (port_index_ < prod->ports.size())
+      prod->ports[port_index_].portStyle = static_cast<int>(s);
+  }
+  update();
+}
+
 QRectF PortItem::boundingRect() const {
   return QRectF(-kLineLength - kEndRadius - 80, -16,
                 kLineLength * 2 + kEndRadius * 2 + 80 * 2, 30);
@@ -118,9 +127,33 @@ void PortItem::paint(QPainter* painter,
   painter->drawEllipse(QPointF(lineEndX, 0), kEndRadius + 0.5,
                        kEndRadius + 0.5);
 
-  painter->setBrush(color);
-  painter->setPen(QPen(color.darker(140), penWidth));
-  painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
+  // Port dot at block edge — circle or triangle
+  if (port_style_ == PortStyle::Circle) {
+    painter->setBrush(color);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
+  } else {
+    qreal hh = dotRadius * 0.85;
+    qreal hw = dotRadius * 1.1;
+    QPainterPath portPath;
+    if (port.direction == TopologyPort::Bidirectional) {
+      portPath.moveTo(hw, 0);
+      portPath.lineTo(0, -hh);
+      portPath.lineTo(-hw, 0);
+      portPath.lineTo(0, hh);
+      portPath.closeSubpath();
+    } else {
+      // Input: tip points into body (+x); Output: tip toward line (-x)
+      qreal tx = (port.direction == TopologyPort::Input) ? hw : -hw;
+      portPath.moveTo(tx, 0);
+      portPath.lineTo(-tx, -hh);
+      portPath.lineTo(-tx, hh);
+      portPath.closeSubpath();
+    }
+    painter->setBrush(color);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawPath(portPath);
+  }
 
   if (port.direction == TopologyPort::Bidirectional) {
     qreal as = 4.0;
@@ -229,6 +262,7 @@ void UutItem::layoutPorts() {
   int n = prod->ports.size();
   for (int i = 0; i < n; ++i) {
     auto* portItem = new PortItem(product_index_, i, doc_, this);
+    portItem->setPortStyle(static_cast<PortStyle>(prod->ports[i].portStyle));
     ports_.append(portItem);
     addChildPort(portItem);
 
@@ -338,6 +372,7 @@ void DeviceItem::layoutDevicePorts() {
   int n = dev->ports.size();
   for (int i = 0; i < n; ++i) {
     auto* portItem = new DevicePortItem(device_index_, i, doc_, this);
+    portItem->setPortStyle(static_cast<PortStyle>(dev->ports[i].portStyle));
     device_port_items_.append(portItem);
     addChildPort(portItem);
 
@@ -372,6 +407,15 @@ DevicePortItem::DevicePortItem(int deviceIndex,
   setFlag(ItemIsSelectable);
   setAcceptHoverEvents(true);
   setCursor(Qt::CrossCursor);
+}
+
+void DevicePortItem::setPortStyle(PortStyle s) {
+  port_style_ = s;
+  if (auto* dev = doc_->device(device_index_)) {
+    if (port_index_ < dev->ports.size())
+      dev->ports[port_index_].portStyle = static_cast<int>(s);
+  }
+  update();
 }
 
 QRectF DevicePortItem::boundingRect() const {
@@ -438,9 +482,33 @@ void DevicePortItem::paint(QPainter* painter,
   painter->drawEllipse(QPointF(lineEndX, 0), kEndRadius + 0.5,
                        kEndRadius + 0.5);
 
-  painter->setBrush(color);
-  painter->setPen(QPen(color.darker(140), penWidth));
-  painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
+  // Port dot at block edge — circle or triangle
+  if (port_style_ == PortStyle::Circle) {
+    painter->setBrush(color);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
+  } else {
+    qreal hh = dotRadius * 0.85;
+    qreal hw = dotRadius * 1.1;
+    QPainterPath portPath;
+    if (port.direction == TopologyPort::Bidirectional) {
+      portPath.moveTo(hw, 0);
+      portPath.lineTo(0, -hh);
+      portPath.lineTo(-hw, 0);
+      portPath.lineTo(0, hh);
+      portPath.closeSubpath();
+    } else {
+      // Input: tip points into body (-x); Output: tip toward line (+x)
+      qreal tx = (port.direction == TopologyPort::Input) ? -hw : hw;
+      portPath.moveTo(tx, 0);
+      portPath.lineTo(-tx, -hh);
+      portPath.lineTo(-tx, hh);
+      portPath.closeSubpath();
+    }
+    painter->setBrush(color);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawPath(portPath);
+  }
 
   if (port.direction == TopologyPort::Bidirectional) {
     qreal as = 4.0;

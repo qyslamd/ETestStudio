@@ -34,6 +34,7 @@ struct TopologyPort {
   QStringList allowedDeviceTypes;
   FunctionType functionType = FunctionType::CUSTOM;
   int positionHint = -1;
+  int portStyle = 0;  // PortStyle enum: 0=Circle, 1=Triangle
 };
 
 QString directionToString(TopologyPort::Direction d);
@@ -44,6 +45,7 @@ struct TopologyDevicePort {
   TopologyPort::Direction direction = TopologyPort::Output;
   FunctionType functionType = FunctionType::CUSTOM;
   int positionHint = -1;
+  int portStyle = 0;  // PortStyle enum: 0=Circle, 1=Triangle
 };
 
 struct TopologyProduct {

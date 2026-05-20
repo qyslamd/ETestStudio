@@ -73,6 +73,7 @@ format_code.bat
 7. 回答问题的语气禁止阿谀奉承，不用故意谄媚，只说问题的解决办法和思路
 8. 不要每次改动之后都给我说百分百没问题！
 9. git提交规则：
+   - 改动了代码编译成功后，不要直接提交，不然我都看不到改动是什么 
    - 能使用中文的描述必须使用中文
    - 当你生成 git commit 信息时：
    - 使用 Co-Authored-By 信息（如果需要）：Co-Authored-By: claude code 助手 <zhouyohu@163.com>

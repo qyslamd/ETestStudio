@@ -171,6 +171,7 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
 
   QPointF scenePos = mapToScene(event->pos());
   auto* devPort = s->devicePortItemAt(scenePos);
+  auto* uutPort = s->portItemAt(scenePos);
   auto* uut = s->uutItemAt(scenePos);
   auto* dev = s->deviceItemAt(scenePos);
   auto* conn = s->connectionItemAt(scenePos);
@@ -179,6 +180,39 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     auto* delAct = menu.addAction(QStringLiteral("删除端口"));
     connect(delAct, &QAction::triggered, this,
             [this, devPort]() { emit deleteItemRequested(devPort); });
+
+    menu.addSeparator();
+    auto* portStyleMenu = menu.addMenu(QStringLiteral("端口样式"));
+    auto* portGroup = new QActionGroup(portStyleMenu);
+    portGroup->setExclusive(true);
+    auto* circAct = portStyleMenu->addAction(QStringLiteral("圆形"));
+    circAct->setCheckable(true);
+    circAct->setChecked(devPort->portStyle() == PortStyle::Circle);
+    portGroup->addAction(circAct);
+    auto* triAct = portStyleMenu->addAction(QStringLiteral("三角形"));
+    triAct->setCheckable(true);
+    triAct->setChecked(devPort->portStyle() == PortStyle::Triangle);
+    portGroup->addAction(triAct);
+    connect(circAct, &QAction::triggered, this,
+            [devPort]() { devPort->setPortStyle(PortStyle::Circle); });
+    connect(triAct, &QAction::triggered, this,
+            [devPort]() { devPort->setPortStyle(PortStyle::Triangle); });
+  } else if (uutPort) {
+    auto* portStyleMenu = menu.addMenu(QStringLiteral("端口样式"));
+    auto* portGroup = new QActionGroup(portStyleMenu);
+    portGroup->setExclusive(true);
+    auto* circAct = portStyleMenu->addAction(QStringLiteral("圆形"));
+    circAct->setCheckable(true);
+    circAct->setChecked(uutPort->portStyle() == PortStyle::Circle);
+    portGroup->addAction(circAct);
+    auto* triAct = portStyleMenu->addAction(QStringLiteral("三角形"));
+    triAct->setCheckable(true);
+    triAct->setChecked(uutPort->portStyle() == PortStyle::Triangle);
+    portGroup->addAction(triAct);
+    connect(circAct, &QAction::triggered, this,
+            [uutPort]() { uutPort->setPortStyle(PortStyle::Circle); });
+    connect(triAct, &QAction::triggered, this,
+            [uutPort]() { uutPort->setPortStyle(PortStyle::Triangle); });
   } else if (uut) {
     auto* act = menu.addAction(QStringLiteral("删除 UUT"));
     connect(act, &QAction::triggered, this,

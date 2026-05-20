@@ -47,6 +47,7 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
         typesArr.append(t);
       portObj["allowedDeviceTypes"] = typesArr;
       portObj["positionHint"] = port.positionHint;
+      portObj["portStyle"] = port.portStyle;
       portsArr.append(portObj);
     }
     pObj["ports"] = portsArr;
@@ -80,6 +81,7 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
       dpObj["direction"] = directionToString(dp.direction);
       dpObj["functionType"] = functionTypeToString(dp.functionType);
       dpObj["positionHint"] = dp.positionHint;
+      dpObj["portStyle"] = dp.portStyle;
       portsArr.append(dpObj);
     }
     dObj["ports"] = portsArr;
@@ -133,6 +135,7 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
       for (const auto& t : portObj["allowedDeviceTypes"].toArray())
         port.allowedDeviceTypes.append(t.toString());
       port.positionHint = portObj["positionHint"].toInt(-1);
+      port.portStyle = portObj["portStyle"].toInt(0);
       product.ports.append(port);
     }
     doc->addProduct(product);
@@ -165,6 +168,7 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
       dp.functionType =
           stringToFunctionType(portObj["functionType"].toString());
       dp.positionHint = portObj["positionHint"].toInt(-1);
+      dp.portStyle = portObj["portStyle"].toInt(0);
       device.ports.append(dp);
     }
 
