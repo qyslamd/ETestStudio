@@ -753,19 +753,21 @@ void ConnectionItem::updatePath() {
 
   qreal as = 8.0;
   if (dir == TopologyPort::Bidirectional) {
-    qreal gap = 4.0;
-    QPointF tang(cos(angle), sin(angle));
-    QPointF perp(-sin(angle), cos(angle));
-    arrow_path_.moveTo(mid - tang * (gap + as));
-    arrow_path_.lineTo(mid - tang * gap + perp * as);
-    arrow_path_.moveTo(mid - tang * (gap + as));
-    arrow_path_.lineTo(mid - tang * gap - perp * as);
-    arrow_path_.moveTo(mid + tang * (gap + as));
-    arrow_path_.lineTo(mid + tang * gap + perp * as);
-    arrow_path_.moveTo(mid + tang * (gap + as));
-    arrow_path_.lineTo(mid + tang * gap - perp * as);
-    arrow_path_.moveTo(mid - tang * gap);
-    arrow_path_.lineTo(mid + tang * gap);
+    qreal gap = 8.0;
+    // Forward triangle (points in path direction)
+    qreal a = angle;
+    QPointF fwdCenter = mid + QPointF(cos(a) * gap, sin(a) * gap);
+    arrow_path_.moveTo(fwdCenter + QPointF(cos(a) * as, sin(a) * as));
+    arrow_path_.lineTo(fwdCenter + QPointF(cos(a + 2.5) * as, sin(a + 2.5) * as));
+    arrow_path_.lineTo(fwdCenter + QPointF(cos(a - 2.5) * as, sin(a - 2.5) * as));
+    arrow_path_.closeSubpath();
+    // Backward triangle (points opposite path direction)
+    a = angle + M_PI;
+    QPointF revCenter = mid + QPointF(cos(a) * gap, sin(a) * gap);
+    arrow_path_.moveTo(revCenter + QPointF(cos(a) * as, sin(a) * as));
+    arrow_path_.lineTo(revCenter + QPointF(cos(a + 2.5) * as, sin(a + 2.5) * as));
+    arrow_path_.lineTo(revCenter + QPointF(cos(a - 2.5) * as, sin(a - 2.5) * as));
+    arrow_path_.closeSubpath();
   } else {
     bool forward = (dir == TopologyPort::Input);
     qreal a = forward ? angle : angle + M_PI;
@@ -811,13 +813,8 @@ void ConnectionItem::paint(QPainter* painter,
     arrowColor = lineColor;
   }
 
-  if (dir == TopologyPort::Bidirectional) {
-    painter->setPen(QPen(arrowColor, penWidth));
-    painter->setBrush(Qt::NoBrush);
-  } else {
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(arrowColor);
-  }
+  painter->setPen(Qt::NoPen);
+  painter->setBrush(arrowColor);
   painter->drawPath(arrow_path_);
 }
 

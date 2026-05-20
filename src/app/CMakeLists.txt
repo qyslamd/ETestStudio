@@ -15,8 +15,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
 set(TARGET_NAME ${PROJECT_NAME})
 add_executable(${TARGET_NAME}
     main.cpp
-    MainWindow.h
-    MainWindow.cpp
+    main_window.h
+    main_window.cpp
     ActivityBarWidget.h
     ActivityBarWidget.cpp
     SidebarWidget.h

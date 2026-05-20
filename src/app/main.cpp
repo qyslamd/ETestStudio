@@ -2,7 +2,6 @@
 #include <QFont>
 
 #include "EditorManager.h"
-#include "MainWindow.h"
 #include "TextEditorWidget.h"
 #include "common/GlobalExceptionHandler.h"
 #include "common/SingleInstance.h"
@@ -10,6 +9,8 @@
 #include "crashhandler/CrashHandler.h"
 #include "editor/EditorFactory.h"
 #include "logger/Logger.h"
+#include "main_window.h"
+
 
 using namespace etest::core::config;
 using namespace etest::core::logger;
