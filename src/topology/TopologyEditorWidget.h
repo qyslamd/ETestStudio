@@ -44,7 +44,7 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   void reloadScene();
   void setEditorId(const QString& newId);
 
- Q_SIGNALS:
+ signals:
   void editorTitleChanged(const QString& title);
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);

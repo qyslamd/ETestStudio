@@ -12,8 +12,6 @@ ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
 void ActivityBarWidget::setupUi() {
   setFixedWidth(48);
 
-  setAutoFillBackground(true);
-
   layout_ = new QVBoxLayout(this);
   layout_->setContentsMargins(0, 4, 0, 4);
   layout_->setSpacing(0);

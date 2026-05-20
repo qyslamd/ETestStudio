@@ -21,7 +21,7 @@ class GitWidget : public QWidget {
   QString projectRoot() const;
   void refresh();
 
- Q_SIGNALS:
+ signals:
   void fileOpenRequested(const QString& filePath);
 
  private:

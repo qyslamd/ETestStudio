@@ -43,7 +43,7 @@ class PluginManager : public QObject {
   void addSearchPath(const QString& path);
   QStringList searchPaths() const;
 
- Q_SIGNALS:
+ signals:
   void pluginLoaded(const QString& pluginId);
   void pluginUnloaded(const QString& pluginId);
   void pluginLoadFailed(const QString& pluginId, const QString& error);

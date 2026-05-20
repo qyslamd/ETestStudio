@@ -20,7 +20,7 @@ class SearchWidget : public QWidget {
   QString searchRoot() const;
   void setFocusOnSearchInput();
 
- Q_SIGNALS:
+ signals:
   void fileOpenRequested(const QString& filePath, int line);
 
  private:

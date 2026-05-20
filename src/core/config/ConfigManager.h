@@ -33,7 +33,7 @@ class ConfigManager : public QObject {
   void resetAllToDefault();
   void resetKeyToDefault(const QString& key);
 
- Q_SIGNALS:
+ signals:
   void configChanged(const QString& key);  // 配置变更通知信号
 
  private:

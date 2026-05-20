@@ -8,7 +8,6 @@
 #include <QTreeView>
 #include <QWidget>
 
-
 class QAction;
 class QMenu;
 
@@ -24,7 +23,7 @@ class FileExplorerWidget : public QWidget {
   void setRootPath(const QString& path);
   QString rootPath() const;
 
- Q_SIGNALS:
+ signals:
   void fileOpenRequested(const QString& filePath);
   void fileDeleted(const QString& filePath);
   void fileRenamed(const QString& oldPath, const QString& newPath);

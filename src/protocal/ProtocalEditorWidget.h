@@ -38,7 +38,7 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
 
   void setEditorId(const QString& id);
 
- Q_SIGNALS:
+ signals:
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);
 

@@ -2,11 +2,12 @@
 #define ETEST_APP_SIDEBAR_WIDGET_H_
 
 #include <QLabel>
+#include <QPushButton>
 #include <QStackedWidget>
+#include <QVector>
 #include <QVBoxLayout>
 #include <QWidget>
 
-class QPushButton;
 class QToolButton;
 
 namespace etest::app {
@@ -24,15 +25,24 @@ class SidebarWidget : public QWidget {
   void switchPage(int index);
   int pageCount() const;
 
+  // Activity bar
+  void setActiveIndex(int index);
+  int activeIndex() const;
+
   FileExplorerWidget* fileExplorer() const;
   HardwareTreeWidget* hardwareTree() const;
   SearchWidget* searchWidget() const;
   GitWidget* gitWidget() const;
 
-  Q_SIGNALS:
+ signals:
+  void sidebarToggleRequested();
+  void settingsTriggered();
 
  private:
   void setupUi();
+  QPushButton* createButton(const QString& tooltip,
+                            const QString& darkIconPath,
+                            const QString& lightIconPath);
 
   QStackedWidget* stack_;
   QLabel* title_label_;
@@ -41,11 +51,11 @@ class SidebarWidget : public QWidget {
   SearchWidget* search_widget_ = nullptr;
   GitWidget* git_widget_ = nullptr;
 
-  // 视图名称列表
   QStringList view_titles_;
-
-
+  QVector<QPushButton*> buttons_;
+  int active_index_ = 0;
 };
 
 }  // namespace etest::app
+
 #endif  // ETEST_APP_SIDEBAR_WIDGET_H_

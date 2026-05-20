@@ -49,7 +49,7 @@ class ProjectManager : public QObject {
   void setDirtyCheckCallback(DirtyCheckCallback callback);
   bool hasUnsavedChanges() const;
 
- Q_SIGNALS:
+ signals:
   void projectCreated(const QString& projectPath);
   void projectOpened(const QString& projectPath);
   void projectAboutToClose(const QString& projectPath);

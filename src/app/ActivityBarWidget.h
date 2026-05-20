@@ -19,7 +19,7 @@ class ActivityBarWidget : public QWidget {
   void setActiveIndex(int index);
   int activeIndex() const;
 
-  Q_SIGNALS:
+ signals:
   void activityClicked(int index);
   void sidebarToggleRequested();
   void settingsTriggered();

@@ -12,7 +12,6 @@ class QLabel;
 
 namespace etest::app {
 
-class ActivityBarWidget;
 class SidebarWidget;
 class OutputPanel;
 class ProblemsPanel;
@@ -83,8 +82,6 @@ class MainWindow : public QMainWindow {
   static void hideDockTitleBarButtons(ads::CDockAreaWidget* area);
   ads::CDockManager* dock_manager_;
 
-  // 活动栏 + 侧边栏
-  ActivityBarWidget* activity_bar_;
   SidebarWidget* sidebar_;
   ads::CDockWidget* sidebar_dock_ = nullptr;
 
