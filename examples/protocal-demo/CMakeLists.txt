@@ -1,7 +1,7 @@
 set(TARGET_NAME "protocal-demo")
 
 if(NOT TARGET etest_protocal)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/app/protocal ${CMAKE_BINARY_DIR}/protocal_build)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/protocal ${CMAKE_BINARY_DIR}/protocal_build)
 endif()
 
 add_executable(${TARGET_NAME}
@@ -18,7 +18,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src/app  # for editor/IEditor.h
+    ${CMAKE_SOURCE_DIR}/src  # for api/IEditor.h
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES

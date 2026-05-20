@@ -43,7 +43,7 @@
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "dialogs/NewProjectDialog.h"
-#include "editor/IEditor.h"
+#include "api/IEditor.h"
 #include "logger/Logger.h"
 #include "logger/QtConsoleSink.h"
 #include "plugin/PluginManager.h"

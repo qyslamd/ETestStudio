@@ -2,7 +2,7 @@
 
 #include <QWidget>
 
-#include "editor/IEditor.h"
+#include "api/IEditor.h"
 
 class QAction;
 class QSplitter;

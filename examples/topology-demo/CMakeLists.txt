@@ -2,7 +2,7 @@ set(TARGET_NAME "topology-demo")
 
 # 如果主程序未构建 etest_topology，则独立构建
 if(NOT TARGET etest_topology)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/app/topology ${CMAKE_BINARY_DIR}/topology_build)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/topology ${CMAKE_BINARY_DIR}/topology_build)
 endif()
 
 add_executable(${TARGET_NAME}
@@ -19,7 +19,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src/app  # for editor/IEditor.h
+    ${CMAKE_SOURCE_DIR}/src  # for api/IEditor.h
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES

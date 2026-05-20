@@ -57,13 +57,13 @@
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         },
         {
-            "name": "moc_plugin",
+            "name": "topology-demo",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ninja-debug/bin/tests/test_core_ad_device_plugin.exe",
+            "program": "${workspaceFolder}/build/ninja-debug/bin/topology-demo.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build/ninja-debug/bin/tests",
+            "cwd": "${workspaceFolder}/build/ninja-debug/bin",
             "environment": [
                 {
                     "name": "PATH",
@@ -74,7 +74,8 @@
                     "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/plugins"
                 }
             ],
-            "console": "externalTerminal",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         }
     ]

@@ -8,7 +8,7 @@
 #include <QMetaObject>
 #include <QStatusBar>
 
-#include "editor/IEditor.h"
+#include "api/IEditor.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
 #include "topology/TopologyJsonSerializer.h"

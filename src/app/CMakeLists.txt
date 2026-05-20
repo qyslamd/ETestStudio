@@ -35,7 +35,6 @@ add_executable(${TARGET_NAME}
     EditorManager.cpp
     editor/EditorFactory.h
     editor/EditorFactory.cpp
-    editor/IEditor.h
     OutputPanel.h
     OutputPanel.cpp
     PanelContainerWidget.h
@@ -70,16 +69,12 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 )
 
 #=======================================
-# 添加拓扑编辑器库
-add_subdirectory(topology)
-add_subdirectory(protocal)
-
-#=======================================
 # 添加第三方依赖头文件路径
 target_include_directories(${TARGET_NAME}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/3rdparty/libharu-2.4.6/include
     ${CMAKE_BINARY_DIR}/3rdparty/libharu-2.4.6/include
     ${CMAKE_SOURCE_DIR}/3rdparty/Qt-Advanced-Docking-System-3.8.3/src
@@ -103,6 +98,7 @@ target_link_libraries(${TARGET_NAME}
     Qt5::Gui
     Qt5::Widgets
     core
+    etest_api
     etest_topology
     etest_protocal
     # 已配置第三方依赖

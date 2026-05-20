@@ -6,7 +6,7 @@
 #include <QString>
 
 #include "DockManager.h"
-#include "editor/IEditor.h"
+#include "api/IEditor.h"
 
 namespace etest::app {
 
