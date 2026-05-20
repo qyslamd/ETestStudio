@@ -41,14 +41,6 @@ void TerminalPanel::initUi() {
   display_->setLineWrapMode(QPlainTextEdit::NoWrap);
   display_->setCenterOnScroll(false);
 
-  QPalette pal = display_->palette();
-  pal.setColor(QPalette::Base, QColor("#1E1E1E"));
-  pal.setColor(QPalette::Text, QColor("#CCCCCC"));
-  pal.setColor(QPalette::Highlight, QColor("#264F78"));
-  pal.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
-  display_->setPalette(pal);
-  display_->viewport()->setPalette(pal);
-
   // Set visible cursor color
   display_->setCursorWidth(8);  // block-like cursor width
   QTextCursor cur = display_->textCursor();

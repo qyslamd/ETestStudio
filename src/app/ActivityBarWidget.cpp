@@ -12,11 +12,7 @@ ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
 void ActivityBarWidget::setupUi() {
   setFixedWidth(48);
 
-  // 强制设置背景色，防止被QADS的样式覆盖
   setAutoFillBackground(true);
-  QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor("#333333"));
-  setPalette(pal);
 
   layout_ = new QVBoxLayout(this);
   layout_->setContentsMargins(0, 4, 0, 4);

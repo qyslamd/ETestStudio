@@ -33,10 +33,6 @@
 namespace etest::topology {
 
 TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QWidget(parent) {
-  // Match QADS dock background for the entire editor area
-  QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor("#1E1E1E"));
-  setPalette(pal);
   setAutoFillBackground(true);
 
   doc_ = new TopologyDocument(this);

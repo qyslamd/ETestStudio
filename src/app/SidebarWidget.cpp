@@ -6,7 +6,6 @@
 
 #include <QHBoxLayout>
 #include <QIcon>
-#include <QPalette>
 #include <QPushButton>
 
 namespace etest::app {
@@ -17,11 +16,7 @@ SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
 
 void SidebarWidget::setupUi() {
 
-  // 强制设置背景色，防止被QADS的样式覆盖
   setAutoFillBackground(true);
-  QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor("#252526"));
-  setPalette(pal);
 
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
@@ -29,11 +24,9 @@ void SidebarWidget::setupUi() {
 
   // 视图标题栏
   auto* title_bar = new QWidget(this);
+  title_bar->setObjectName(QStringLiteral("sidebarTitleBar"));
   title_bar->setFixedHeight(35);
   title_bar->setAutoFillBackground(true);
-  QPalette titlePal = title_bar->palette();
-  titlePal.setColor(QPalette::Window, QColor("#252526"));
-  title_bar->setPalette(titlePal);
   auto* title_layout = new QHBoxLayout(title_bar);
   title_layout->setContentsMargins(12, 0, 8, 0);
   title_layout->setSpacing(4);

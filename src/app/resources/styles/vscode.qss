@@ -482,6 +482,9 @@ SidebarWidget QToolButton {
 SidebarWidget QToolButton:hover {
     color: #FFFFFF;
 }
+#sidebarTitleBar {
+    background-color: #252526;
+}
 
 /* ==================== SearchWidget ==================== */
 SearchWidget {
@@ -618,6 +621,9 @@ GitWidget QLabel#gitEmptyLabel {
 PanelContainerWidget {
     background-color: #1E1E1E;
 }
+PanelContainerWidget QTabWidget {
+    background-color: #1E1E1E;
+}
 PanelContainerWidget QTabWidget::pane {
     border: none;
     background-color: #1E1E1E;
@@ -695,6 +701,9 @@ TerminalPanel QPlainTextEdit {
 }
 
 /* ==================== TopologyEditorWidget ==================== */
+TopologyEditorWidget {
+    background-color: #1E1E1E;
+}
 #topologyToolbar {
     background-color: #2D2D2D;
     border-bottom: 1px solid #252526;

@@ -3,7 +3,6 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPalette>
 #include <QVBoxLayout>
 
 #include "config/ConfigDefs.h"
@@ -66,14 +65,9 @@ void SettingsWidget::initUi() {
   scroll_area_->setWidget(pages_);
   scroll_area_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-  // Force dark background on viewport + content area
-  QPalette darkPal;
-  darkPal.setColor(QPalette::Window, QColor("#1E1E1E"));
-  auto* vp = scroll_area_->viewport();
-  vp->setAutoFillBackground(true);
-  vp->setPalette(darkPal);
+  // Ensure dark background on scroll area viewport and page content
+  scroll_area_->viewport()->setAutoFillBackground(true);
   pages_->setAutoFillBackground(true);
-  pages_->setPalette(darkPal);
 
   layout->addWidget(scroll_area_, 1);  // stretch factor 1
 

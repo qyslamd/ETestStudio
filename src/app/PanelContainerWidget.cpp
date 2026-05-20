@@ -2,7 +2,6 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPalette>
 #include <QTabBar>
 #include <QToolButton>
 
@@ -14,11 +13,7 @@ PanelContainerWidget::PanelContainerWidget(QWidget* parent) : QWidget(parent) {
 }
 
 void PanelContainerWidget::setupUi() {
-  // 强制设置背景色，防止被QADS的样式覆盖
   setAutoFillBackground(true);
-  QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor("#1E1E1E"));
-  setPalette(pal);
 
   auto* main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -34,9 +29,6 @@ void PanelContainerWidget::setupUi() {
   tab_widget_->setDocumentMode(true);
   tab_widget_->tabBar()->setMovable(true);
   tab_widget_->setAutoFillBackground(true);
-  QPalette tabPal = tab_widget_->palette();
-  tabPal.setColor(QPalette::Window, QColor("#1E1E1E"));
-  tab_widget_->setPalette(tabPal);
 
   // 右侧控制按钮：最大化 + 关闭
   max_button_ = new QToolButton(this);
