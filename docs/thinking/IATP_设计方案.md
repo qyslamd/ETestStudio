@@ -142,7 +142,7 @@ IATP定位为面向工业控制自动化、航空航天、车载总线三大领�
 | FR5  | 用例管理       | JSON/Excel/YML多格式支持、CRUD操作、JSON Schema校验、格式转换、版本管理       |
 | FR6  | 测试执行       | Lua脚本引擎、暂停/恢复/终止、断点/单步/变量监视、Lua API绑定                  |
 | FR7  | 故障注入       | 信号值篡改、CRC校验错误、通信延迟/丢包、故障清除与自动恢复                    |
-| FR8  | 监控与报告     | 实时信号监控面板、步骤执行记录、数据记录、报告生成（文本/HTML）               |
+| FR8  | 监控与报告     | 实时信号监控面板、步骤执行记录、数据记录、报告生成与编辑导出（文本/HTML） |
 
 ### 2.4 非功能需求
 
@@ -368,7 +368,8 @@ classDiagram
         +openDevice() bool
         +closeDevice() void
         +deviceInfo() DeviceInfo
-        +deviceStatus() DeviceStatus
+        +deviceStatus() DeviceConnection
+        +deviceRunMode() DeviceRunMode
         +selfTest() bool
         +simulate(bool) bool
         +configMetaData() QVariantMap
@@ -564,7 +565,8 @@ public:
 在IPlugin基础上增加设备管理能力：
 
 ```cpp
-enum class DeviceStatus { Offline, Online, Error, Simulated };
+enum class DeviceConnection { Offline, Online, Error };
+enum class DeviceRunMode { Real, Simulated };
 
 struct DeviceInfo {
     int channel_count = 0;      // 通道数
@@ -586,7 +588,8 @@ public:
 
     // 设备信息与状态
     virtual DeviceInfo deviceInfo() const = 0;
-    virtual DeviceStatus deviceStatus() const = 0;
+    virtual DeviceConnection deviceStatus() const = 0;
+    virtual DeviceRunMode deviceRunMode() const = 0;
 
     // 通用能力（V1.0新增）
     virtual bool selfTest() = 0;
@@ -900,7 +903,7 @@ VISA类设备在设备树上无通道概念，以命令接口为主要交互方�
 
 树形层级：**厂家 → 分类 → 设备**（VISA类分类下有多个设备无通道）
 
-每个节点显示：设备名称、连接状态（在线/离线/异常/模拟）、自检结果。
+每个节点显示：设备名称、连接状态（在线/离线/异常）、运行模式（模拟/真实）、自检结果。
 
 #### 5.1.3 设备自检流程
 
@@ -1281,7 +1284,7 @@ Log("当前温度正常")                                -- LOG
 
 **报告生成**
 
-MVP阶段支持简单文本/HTML格式报告，包含：
+MVP阶段支持简单文本/HTML格式报告，报告生成后可编辑修改并导出保存。报告内容包含：
 - 用例基本信息（名称、描述、前置条件）
 - 各步骤执行结果表格
 - 总体通过率统计
@@ -1680,7 +1683,7 @@ Engine ──ICD API──▶ ICD ──▶ DataPool ──▶ HAL(Simulate模�
 | 2    | HAL接口定义 + Mock实现      | 待开发   | 设备插件接口定义、全部Mock插件、设备树UI、自检流程                | 2.5周    |
 | 3    | ICD信号层                   | 待开发   | SignalMapper、ProtocolRegistry、传输通道、故障注入                 | 4周      |
 | 4    | 用例管理层                  | 待开发   | JSON用例格式、格式转换器、Schema校验、用例编辑器                   | 2.5周    |
-| 5    | 测试引擎层                  | 待开发   | Lua引擎集成、Lua API、执行控制、调试器、报告生成                   | 3周      |
+| 5    | 测试引擎层                  | 待开发   | Lua引擎集成、Lua API、执行控制、调试器、报告生成与编辑导出           | 3周      |
 | 6    | 设备管理-真实硬件对接       | 待开发   | 真实硬件驱动封装、VISA真实通信、板卡驱动对接、Dry Run→Real切换     | 3周      |
 | 7    | 测试与优化                  | 待开发   | 全模块回归测试、集成测试、兼容性测试、用户体验优化                 | 2周      |
 
@@ -1770,8 +1773,9 @@ Engine ──ICD API──▶ ICD ──▶ DataPool ──▶ HAL(Simulate模�
 | 5.5  | 调试器              | 断点(行断点+条件断点)/单步(Over/Into/Out)/变量监视/调用栈             |
 | 5.6  | 数据记录            | 步骤执行记录、断言结果、故障注入记录                                  |
 | 5.7  | 监控面板UI          | 实时日志/通道数据/变量值/执行进度                                     |
-| 5.8  | 报告生成            | MVP简单文本/HTML                                                      |
-| 5.9  | 故障自动清除        | 用例结束时自动清除所有活跃故障                                        |
+| 5.8  | 报告生成            | MVP简单文本/HTML，可编辑报告内容                              |
+| 5.9  | 故障自动清除        | 用例结束时自动清除所有活跃故障                                |
+| 5.10 | 报告编辑与导出      | 报告生成后可编辑修改，导出为HTML/文本格式文件                |
 
 ### 10.7 阶段6：设备管理-真实硬件对接
 

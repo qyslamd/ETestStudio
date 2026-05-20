@@ -100,7 +100,7 @@
 - [ ] IDevicePlugin添加`selfTest()`通用自检接口
 - [ ] IDevicePlugin添加`simulate(bool enable)`虚拟设备切换
 - [ ] IDevicePlugin添加`configMetaData()`配置参数元数据
-- [ ] DeviceStatus枚举增加`Simulated`状态
+- [ ] DeviceStatus拆分为DeviceConnection(Offline/Online/Error) + DeviceRunMode(Real/Simulated)
 - [ ] DeviceInfo结构体已有bus_number/slot_number/card_serial字段
 
 ### 2.2 已有插件接口完善
@@ -129,7 +129,8 @@
 
 ### 2.5 设备管理UI与流程
 - [ ] HardwareTreeWidget增强：树形视图（厂家→分类→设备→通道），VISA类无通道
-- [ ] 设备状态图标（在线/离线/异常/模拟四种状态，不同颜色）
+- [ ] 设备状态图标（在线/离线/异常/模拟/真实，不同颜色）
+- [ ] 设备右键菜单：打开设备/关闭设备/查看详细信息
 - [ ] 设备自检流程：系统启动→PluginManager.loadAll()→遍历IDevicePlugin→openDevice()→selfTest()
 - [ ] VISA设备自检：发送*IDN?验证
 - [ ] Dry Run支持：全局开关+单设备开关，simulate()模式切换
@@ -214,7 +215,8 @@
 ### 5.3 记录与报告
 - [ ] 数据记录：步骤执行记录、断言结果、故障注入记录
 - [ ] 监控面板UI：实时日志/通道数据/变量值/执行进度
-- [ ] 报告生成：MVP简单文本/HTML
+- [ ] 报告生成：MVP简单文本/HTML，支持编辑修改
+- [ ] 报告导出保存
 
 ### 预估工期：3周
 
@@ -293,3 +295,6 @@
 | 2026-05-14 | QPluginLoader接口已预留IPC边界 | IDevicePlugin参数只用基本类型/QVariant，远期切换独立进程只需加proxy/stub层 |
 | 2026-05-19 | 新增阶段1.5：编辑器完善（拓扑+帧协议） | 用户决定先完善已迁移的编辑器，再进入HAL层；拓扑编辑器核心功能完整，6项改进已列入计划 |
 | 2026-05-19 | 6阶段→7阶段重组：阶段2拆分为接口+Mock(新阶段2)与真实硬件(新阶段6) | 用户希望先定义好所有接口、用Mock模拟数据源，让ICD/Engine在Dry Run模式下开发调试，最后再对接真实硬件 |
+| 2026-05-20 | DeviceStatus拆分为DeviceConnection+DeviceRunMode二维枚举 | 硬件树需展示"在线/离线/模拟/真实"四种状态，原单枚举不能区分连接状态和运行模式 |
+| 2026-05-20 | 硬件树右键菜单增加"打开/关闭/查看详情"操作 | 用户认为设备管理器应有基本的设备启停和信息查看功能 |
+| 2026-05-20 | 报告增加编辑+导出功能 | 用户希望在测试报告自动生成后能人工编辑修改再导出保存 |
