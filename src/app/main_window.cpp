@@ -25,7 +25,6 @@
 #include <DockAreaTitleBar.h>
 #include <DockAreaWidget.h>
 #include <DockWidgetTab.h>
-#include "ActivityBarWidget.h"
 #include "EditorManager.h"
 #include "FileExplorerWidget.h"
 #include "GitWidget.h"
@@ -60,7 +59,6 @@ namespace etest::app {
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       dock_manager_(nullptr),
-      activity_bar_(nullptr),
       sidebar_(nullptr),
       editor_manager_(nullptr),
       output_panel_(nullptr),
@@ -136,8 +134,7 @@ void MainWindow::initUi() {
   // 编辑器管理器
   editor_manager_ = new EditorManager(dock_manager_, this);
 
-  // ==================== 左侧：侧边栏（先添加，占据左侧区域）
-  // ====================
+  // 左侧：活动栏 + 侧边栏合并为一个 DockWidget
   sidebar_ = new SidebarWidget(this);
   sidebar_dock_ = new ads::CDockWidget(QStringLiteral("侧边栏"));
   sidebar_dock_->setObjectName("SidebarDock");
@@ -149,21 +146,6 @@ void MainWindow::initUi() {
   dock_manager_->addDockWidget(ads::LeftDockWidgetArea, sidebar_dock_);
   // 隐藏侧边栏标题栏
   sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-
-  // ==================== 左侧：活动栏（侧边栏左侧） ====================
-  activity_bar_ = new ActivityBarWidget(this);
-  auto* activityDock = new ads::CDockWidget(QStringLiteral("活动栏"));
-  activityDock->setObjectName("ActivityDock");
-  activityDock->setWidget(activity_bar_);
-  activityDock->setFeature(ads::CDockWidget::DockWidgetClosable, false);
-  activityDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
-  activityDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
-  activityDock->tabWidget()->setElideMode(Qt::ElideNone);
-  // 活动栏放置在侧边栏左侧
-  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, activityDock,
-                               sidebar_dock_->dockAreaWidget());
-  // 隐藏活动栏标题栏
-  activityDock->dockAreaWidget()->titleBar()->hide();
 
   // ==================== 底部：统一面板容器 ====================
   output_panel_ = new OutputPanel(this);
@@ -195,9 +177,6 @@ void MainWindow::initUi() {
           [this]() {
             if (sidebar_dock_)
               sidebar_dock_->closeDockWidget();
-            auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
-            if (activityDock)
-              activityDock->closeDockWidget();
           });
   connect(panel_container_, &PanelContainerWidget::panelRestored, this,
           [this]() {
@@ -205,13 +184,6 @@ void MainWindow::initUi() {
               sidebar_dock_->toggleView(true);
               if (sidebar_dock_->dockAreaWidget()) {
                 sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-              }
-            }
-            auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
-            if (activityDock) {
-              activityDock->toggleView(true);
-              if (activityDock->dockAreaWidget()) {
-                activityDock->dockAreaWidget()->titleBar()->hide();
               }
             }
           });
@@ -249,25 +221,6 @@ void MainWindow::initSignals() {
     });
   }
 
-  // 活动栏切换侧边栏
-  connect(activity_bar_, &ActivityBarWidget::activityClicked, this,
-          [this](int idx) { sidebar_->switchPage(idx); });
-  // 活动栏再次点击已选中按钮时切换侧边栏显隐
-  connect(activity_bar_, &ActivityBarWidget::sidebarToggleRequested, this,
-          [this]() {
-            if (sidebar_dock_) {
-              sidebar_dock_->toggleView(sidebar_dock_->isClosed());
-              // toggleView会重建标题栏，需要重新隐藏
-              if (sidebar_dock_->dockAreaWidget()) {
-                sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-              }
-              auto* activityDock =
-                  dock_manager_->findDockWidget("ActivityDock");
-              if (activityDock && activityDock->dockAreaWidget()) {
-                activityDock->dockAreaWidget()->titleBar()->hide();
-              }
-            }
-          });
 
   // 项目管理信号
   auto& projectMgr = etest::core::project::ProjectManager::instance();
@@ -503,10 +456,6 @@ void MainWindow::initSignals() {
       if (sidebar_dock_->dockAreaWidget()) {
         sidebar_dock_->dockAreaWidget()->titleBar()->hide();
       }
-      auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
-      if (activityDock && activityDock->dockAreaWidget()) {
-        activityDock->dockAreaWidget()->titleBar()->hide();
-      }
     }
   });
 
@@ -515,15 +464,11 @@ void MainWindow::initSignals() {
       new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F), this);
   connect(globalSearchShortcut, &QShortcut::activated, this, [this]() {
     sidebar_->switchPage(1);
-    activity_bar_->setActiveIndex(1);
+    sidebar_->setActiveIndex(1);
     if (sidebar_dock_ && sidebar_dock_->isClosed()) {
       sidebar_dock_->toggleView(true);
       if (sidebar_dock_->dockAreaWidget()) {
         sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-      }
-      auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
-      if (activityDock && activityDock->dockAreaWidget()) {
-        activityDock->dockAreaWidget()->titleBar()->hide();
       }
     }
     if (auto* sw = sidebar_->searchWidget()) {
@@ -547,7 +492,7 @@ void MainWindow::initSignals() {
   }
 
   // 设置对话框
-  connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
+  connect(sidebar_, &SidebarWidget::settingsTriggered, this, [this]() {
     if (!settings_dialog_) {
       settings_dialog_ = new SettingsWidget(this);
     }
@@ -1247,10 +1192,6 @@ void MainWindow::restoreWindowState() {
   if (panelDock && panelDock->dockAreaWidget()) {
     hideDockTitleBarButtons(panelDock->dockAreaWidget());
   }
-  auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
-  if (activityDock && activityDock->dockAreaWidget()) {
-    activityDock->dockAreaWidget()->titleBar()->hide();
-  };
   auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
   if (auxDock && auxDock->dockAreaWidget()) {
     hideDockTitleBarButtons(auxDock->dockAreaWidget());
@@ -1298,7 +1239,7 @@ QJsonObject MainWindow::captureSessionData() {
 
   // 侧边栏状态
   QJsonObject sidebarObj;
-  int tab = activity_bar_->activeIndex();
+  int tab = sidebar_->activeIndex();
   if (tab >= 0 && tab < sidebar_->pageCount()) {
     sidebarObj["activeTab"] = tab;
   } else {
@@ -1359,10 +1300,10 @@ void MainWindow::restoreSession() {
   if (!sidebarObj.isEmpty()) {
     int tab = sidebarObj["activeTab"].toInt();
     if (tab >= 0 && tab < sidebar_->pageCount()) {
-      activity_bar_->setActiveIndex(tab);
+      sidebar_->setActiveIndex(tab);
       sidebar_->switchPage(tab);
     } else {
-      activity_bar_->setActiveIndex(0);
+      sidebar_->setActiveIndex(0);
       sidebar_->switchPage(0);
     }
 
@@ -1398,9 +1339,6 @@ void MainWindow::restoreSession() {
       panel_container_->setMaximized(true);
       if (sidebar_dock_)
         sidebar_dock_->closeDockWidget();
-      auto* activityDock = dock_manager_->findDockWidget("ActivityDock");
-      if (activityDock)
-        activityDock->closeDockWidget();
     }
   }
 

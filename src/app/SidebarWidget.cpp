@@ -58,11 +58,13 @@ void SidebarWidget::setupUi() {
   for (int i = 0; i < buttons_.size(); ++i) {
     top_layout->addWidget(buttons_[i]);
     connect(buttons_[i], &QPushButton::clicked, this, [this, i]() {
-      if (active_index_ == i) {
-        emit sidebarToggleRequested();
-      } else {
+      if (active_index_ != i) {
+        content_panel_->show();
         setActiveIndex(i);
         switchPage(i);
+      } else {
+        // 重复点击已激活按钮：切换内容面板显隐
+        content_panel_->setVisible(!content_panel_->isVisible());
       }
     });
   }
@@ -84,8 +86,8 @@ void SidebarWidget::setupUi() {
   outer_layout->addWidget(activity_panel);
 
   // ===== 右侧：内容面板 =====
-  auto* content_panel = new QWidget(this);
-  auto* content_layout = new QVBoxLayout(content_panel);
+  content_panel_ = new QWidget(this);
+  auto* content_layout = new QVBoxLayout(content_panel_);
   content_layout->setContentsMargins(0, 0, 0, 0);
   content_layout->setSpacing(0);
 
@@ -149,7 +151,7 @@ void SidebarWidget::setupUi() {
 
   content_layout->addWidget(stack_);
 
-  outer_layout->addWidget(content_panel);
+  outer_layout->addWidget(content_panel_);
 
   setMinimumWidth(200);
   setActiveIndex(0);

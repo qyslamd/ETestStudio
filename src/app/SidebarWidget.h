@@ -35,7 +35,6 @@ class SidebarWidget : public QWidget {
   GitWidget* gitWidget() const;
 
  signals:
-  void sidebarToggleRequested();
   void settingsTriggered();
 
  private:
@@ -46,6 +45,7 @@ class SidebarWidget : public QWidget {
 
   QStackedWidget* stack_;
   QLabel* title_label_;
+  QWidget* content_panel_ = nullptr;
   FileExplorerWidget* file_explorer_ = nullptr;
   HardwareTreeWidget* hardware_tree_ = nullptr;
   SearchWidget* search_widget_ = nullptr;

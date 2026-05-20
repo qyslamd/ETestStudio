@@ -439,12 +439,12 @@ QScrollArea {
     border: none;
 }
 
-/* ==================== ActivityBarWidget ==================== */
-ActivityBarWidget {
+/* ==================== 侧边栏活动按钮栏 ==================== */
+QWidget#sidebarActivityBar {
     background-color: #333333;
     border-right: 1px solid #252526;
 }
-ActivityBarWidget QPushButton {
+QWidget#sidebarActivityBar QPushButton {
     background-color: transparent;
     border: none;
     border-left: 2px solid transparent;
@@ -453,11 +453,11 @@ ActivityBarWidget QPushButton {
     padding: 0px;
     margin: 0px;
 }
-ActivityBarWidget QPushButton:hover {
+QWidget#sidebarActivityBar QPushButton:hover {
     background-color: #2A2D2E;
     color: #FFFFFF;
 }
-ActivityBarWidget QPushButton:checked {
+QWidget#sidebarActivityBar QPushButton:checked {
     border-left: 2px solid #007ACC;
     color: #FFFFFF;
     background-color: #2A2D2E;
