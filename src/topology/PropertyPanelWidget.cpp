@@ -214,11 +214,9 @@ void PropertyPanelWidget::clearPanel() {
 void PropertyPanelWidget::buildEmptyPage() {
   auto* w = new QWidget(this);
   w->setObjectName("emptyPage");
-  w->setStyleSheet(QStringLiteral("#emptyPage { background-color: #3C3C3C; }"));
   auto* lay = new QVBoxLayout(w);
   auto* lbl = new QLabel(QStringLiteral("未选中任何元素"), w);
   lbl->setAlignment(Qt::AlignCenter);
-  lbl->setStyleSheet(QStringLiteral("color: #888;"));
   lay->addWidget(lbl);
   stack_->addWidget(w);
 }
@@ -226,7 +224,6 @@ void PropertyPanelWidget::buildEmptyPage() {
 void PropertyPanelWidget::buildUutPage() {
   auto* w = new QWidget(this);
   w->setObjectName("uutPage");
-  w->setStyleSheet(QStringLiteral("#uutPage { background-color: #3C3C3C; }"));
   auto* lay = new QFormLayout(w);
 
   uut_name_edit_ = new QLineEdit(w);
@@ -240,7 +237,6 @@ void PropertyPanelWidget::buildUutPage() {
 void PropertyPanelWidget::buildPortPage() {
   auto* w = new QWidget(this);
   w->setObjectName("portPage");
-  w->setStyleSheet(QStringLiteral("#portPage { background-color: #3C3C3C; }"));
   auto* lay = new QFormLayout(w);
 
   port_name_edit_ = new QLineEdit(w);
@@ -282,8 +278,6 @@ void PropertyPanelWidget::buildPortPage() {
 void PropertyPanelWidget::buildDevicePage() {
   auto* w = new QWidget(this);
   w->setObjectName("devicePage");
-  w->setStyleSheet(
-      QStringLiteral("#devicePage { background-color: #3C3C3C; }"));
   auto* lay = new QVBoxLayout(w);
 
   auto* form = new QFormLayout();
@@ -351,8 +345,6 @@ void PropertyPanelWidget::buildDevicePage() {
 void PropertyPanelWidget::buildConnectionPage() {
   auto* w = new QWidget(this);
   w->setObjectName("connectionPage");
-  w->setStyleSheet(
-      QStringLiteral("#connectionPage { background-color: #3C3C3C; }"));
   auto* lay = new QFormLayout(w);
 
   conn_source_label_ = new QLabel(QStringLiteral("-"), w);
@@ -370,8 +362,6 @@ void PropertyPanelWidget::buildConnectionPage() {
 void PropertyPanelWidget::buildDevicePortPage() {
   auto* w = new QWidget(this);
   w->setObjectName("devicePortPage");
-  w->setStyleSheet(
-      QStringLiteral("#devicePortPage { background-color: #3C3C3C; }"));
   auto* lay = new QFormLayout(w);
 
   devport_name_edit_ = new QLineEdit(w);

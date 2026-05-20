@@ -209,9 +209,7 @@ void GitWidget::initUi() {
   headerRow->setSpacing(4);
 
   auto* titleLabel = new QLabel(QStringLiteral("源代码管理"), this);
-  titleLabel->setStyleSheet(
-      "font-weight: bold; font-size: 11px; color: #BBBBBB; "
-      "background: transparent;");
+  titleLabel->setObjectName(QStringLiteral("gitTitleLabel"));
 
   refresh_button_ = new QPushButton(this);
   refresh_button_->setObjectName("refresh_button_");

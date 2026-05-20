@@ -47,6 +47,59 @@ class FileItemDelegate : public QStyledItemDelegate {
   }
 };
 
+// 项目默认目录映射：目录名 -> (中文显示名, 主题色)
+static const QMap<QString, QPair<QString, QColor>> kDefaultDirs = {
+    {QStringLiteral("backup"),   {QStringLiteral("备份"),     QColor("#E67E22")}},
+    {QStringLiteral("cases"),    {QStringLiteral("测试用例"), QColor("#2ECC71")}},
+    {QStringLiteral("config"),   {QStringLiteral("配置"),     QColor("#3498DB")}},
+    {QStringLiteral("scripts"),  {QStringLiteral("脚本"),     QColor("#9B59B6")}},
+    {QStringLiteral("protocol"), {QStringLiteral("协议"),     QColor("#1ABC9C")}},
+    {QStringLiteral("topology"), {QStringLiteral("拓扑"),     QColor("#E74C3C")}},
+    {QStringLiteral("reports"),  {QStringLiteral("报告"),     QColor("#F39C12")}},
+};
+
+// 代理模型：过滤 .etproj 文件，默认目录显示中文名
+class ProjectFileProxyModel : public QSortFilterProxyModel {
+ public:
+  explicit ProjectFileProxyModel(QObject* parent = nullptr)
+      : QSortFilterProxyModel(parent) {}
+
+ protected:
+  bool filterAcceptsRow(int sourceRow,
+                        const QModelIndex& sourceParent) const override {
+    auto* fsModel = qobject_cast<QFileSystemModel*>(sourceModel());
+    if (!fsModel)
+      return true;
+
+    QModelIndex idx = fsModel->index(sourceRow, 0, sourceParent);
+    QFileInfo fi = fsModel->fileInfo(idx);
+
+    // 隐藏 .etproj 项目文件
+    if (fi.isFile() &&
+        fi.suffix().toLower() == QStringLiteral("etproj"))
+      return false;
+
+    return true;
+  }
+
+  QVariant data(const QModelIndex& index, int role) const override {
+    if (role == Qt::DisplayRole && index.column() == 0) {
+      auto* fsModel = qobject_cast<QFileSystemModel*>(sourceModel());
+      if (fsModel) {
+        QFileInfo fi = fsModel->fileInfo(mapToSource(index));
+        if (fi.isDir()) {
+          auto it = kDefaultDirs.constFind(fi.fileName());
+          if (it != kDefaultDirs.constEnd()) {
+            return it.value().first;  // 返回中文显示名
+          }
+        }
+      }
+    }
+    // EditRole 等其它角色返回实际文件名
+    return QSortFilterProxyModel::data(index, role);
+  }
+};
+
 }  // namespace
 
 namespace etest::app {
@@ -72,29 +125,36 @@ void FileExplorerWidget::setRootPath(const QString& path) {
       icon_provider_ = new FileTypeIconProvider();
     }
     model_->setIconProvider(icon_provider_);
-    tree_view_->setModel(model_);
+
+    // 代理模型：过滤 .etproj 文件并提供中文显示名
+    proxy_model_ = new ProjectFileProxyModel(this);
+    proxy_model_->setSourceModel(model_);
+    tree_view_->setModel(proxy_model_);
+
     for (int i = 1; i < model_->columnCount(); ++i) {
       tree_view_->hideColumn(i);
     }
 
-    // 监听文件重命名信号
+    // 监听文件重命名信号（从 source model 接收）
     connect(model_, &QFileSystemModel::fileRenamed, this,
             [this](const QString& path, const QString& oldName, const QString& newName) {
               QFileInfo oldFi(QDir(path), oldName);
               QFileInfo newFi(QDir(path), newName);
               emit fileRenamed(oldFi.absoluteFilePath(), newFi.absoluteFilePath());
             });
+  } else {
+    // 确保 tree_view 使用的是代理模型（关闭项目时会被设为 nullptr）
+    if (tree_view_->model() != proxy_model_) {
+      proxy_model_->setSourceModel(model_);
+      tree_view_->setModel(proxy_model_);
+      for (int i = 1; i < model_->columnCount(); ++i) {
+        tree_view_->hideColumn(i);
+      }
+    }
   }
 
   model_->setRootPath(path);
-  // 确保tree_view的model是当前的model_（关闭项目时会被设为nullptr）
-  if (tree_view_->model() != model_) {
-    tree_view_->setModel(model_);
-    for (int i = 1; i < model_->columnCount(); ++i) {
-      tree_view_->hideColumn(i);
-    }
-  }
-  tree_view_->setRootIndex(model_->index(path));
+  tree_view_->setRootIndex(proxy_model_->mapFromSource(model_->index(path)));
   tree_view_->expandToDepth(0);
 }
 
@@ -125,7 +185,7 @@ void FileExplorerWidget::initSignals() {
           [this](const QModelIndex& index) {
             if (!model_)
               return;
-            QString path = model_->filePath(index);
+            QString path = sourceFilePath(index);
             QFileInfo fi(path);
             if (fi.isFile()) {
               LOG_INFO("EXPLORER", "双击打开文件：{}", path.toStdString());
@@ -142,24 +202,45 @@ void FileExplorerWidget::onCustomContextMenu(const QPoint& pos) {
 
   if (!context_menu_) {
     context_menu_ = new QMenu(this);
-    context_menu_->addAction(QStringLiteral("新建文件"), this,
-                             &FileExplorerWidget::onNewFile);
-    context_menu_->addAction(QStringLiteral("新建文件夹"), this,
-                             &FileExplorerWidget::onNewFolder);
+    ctx_new_file_ = context_menu_->addAction(QStringLiteral("新建文件"), this,
+                                             &FileExplorerWidget::onNewFile);
+    ctx_new_folder_ = context_menu_->addAction(QStringLiteral("新建文件夹"), this,
+                                               &FileExplorerWidget::onNewFolder);
     context_menu_->addSeparator();
-    context_menu_->addAction(QStringLiteral("重命名"), this,
-                             &FileExplorerWidget::onRename);
-    context_menu_->addAction(QStringLiteral("删除"), this,
-                             &FileExplorerWidget::onDelete);
+    ctx_rename_ = context_menu_->addAction(QStringLiteral("重命名"), this,
+                                           &FileExplorerWidget::onRename);
+    ctx_delete_ = context_menu_->addAction(QStringLiteral("删除"), this,
+                                           &FileExplorerWidget::onDelete);
     context_menu_->addSeparator();
-    context_menu_->addAction(QStringLiteral("复制路径"), this,
-                             &FileExplorerWidget::onCopyPath);
-    context_menu_->addAction(QStringLiteral("复制相对路径"), this,
-                             &FileExplorerWidget::onCopyRelativePath);
+    ctx_copy_path_ = context_menu_->addAction(QStringLiteral("复制路径"), this,
+                                              &FileExplorerWidget::onCopyPath);
+    ctx_copy_rel_path_ = context_menu_->addAction(QStringLiteral("复制相对路径"), this,
+                                                  &FileExplorerWidget::onCopyRelativePath);
     context_menu_->addSeparator();
-    context_menu_->addAction(QStringLiteral("在文件系统中打开"), this,
-                             &FileExplorerWidget::onOpenInFileSystem);
+    ctx_open_in_fs_ = context_menu_->addAction(QStringLiteral("在文件系统中打开"), this,
+                                               &FileExplorerWidget::onOpenInFileSystem);
   }
+
+  // 根据上下文状态启用/禁用菜单项
+  bool hasSelection = context_index_.isValid();
+  bool hasRoot = !root_path_.isEmpty();
+
+  ctx_new_file_->setEnabled(hasRoot);
+  ctx_new_folder_->setEnabled(hasRoot);
+
+  // 检查选中项是否为项目默认目录（不可重命名/删除）
+  bool isProtected = false;
+  if (hasSelection && model_) {
+    QString path = sourceFilePath(context_index_);
+    QFileInfo fi(path);
+    isProtected = fi.isDir() && isDefaultProjectDir(fi.fileName());
+  }
+
+  ctx_rename_->setEnabled(hasSelection && !isProtected);
+  ctx_delete_->setEnabled(hasSelection && !isProtected);
+  ctx_copy_path_->setEnabled(hasSelection);
+  ctx_copy_rel_path_->setEnabled(hasSelection);
+  ctx_open_in_fs_->setEnabled(hasRoot);
 
   context_menu_->popup(tree_view_->viewport()->mapToGlobal(pos));
 }
@@ -170,7 +251,7 @@ void FileExplorerWidget::onNewFile() {
 
   QString parentDir = root_path_;
   if (context_index_.isValid() && model_) {
-    QString path = model_->filePath(context_index_);
+    QString path = sourceFilePath(context_index_);
     QFileInfo fi(path);
     parentDir = fi.isDir() ? path : fi.absolutePath();
   }
@@ -190,14 +271,17 @@ void FileExplorerWidget::onNewFile() {
   // 展开父目录并进入重命名编辑状态
   if (model_) {
     QModelIndex parentIndex = model_->index(parentDir);
-    tree_view_->expand(parentIndex);
+    tree_view_->expand(
+        proxy_model_ ? proxy_model_->mapFromSource(parentIndex) : parentIndex);
     // QFileSystemModel 需要时间刷新，用延时等待新文件出现在模型中
     QTimer::singleShot(100, this, [this, filePath]() {
       QModelIndex idx = model_->index(filePath);
       if (idx.isValid()) {
-        tree_view_->scrollTo(idx);
-        tree_view_->setCurrentIndex(idx);
-        tree_view_->edit(idx);
+        QModelIndex proxyIdx =
+            proxy_model_ ? proxy_model_->mapFromSource(idx) : idx;
+        tree_view_->scrollTo(proxyIdx);
+        tree_view_->setCurrentIndex(proxyIdx);
+        tree_view_->edit(proxyIdx);
       }
     });
   }
@@ -209,7 +293,7 @@ void FileExplorerWidget::onNewFolder() {
 
   QString parentDir = root_path_;
   if (context_index_.isValid() && model_) {
-    QString path = model_->filePath(context_index_);
+    QString path = sourceFilePath(context_index_);
     QFileInfo fi(path);
     parentDir = fi.isDir() ? path : fi.absolutePath();
   }
@@ -229,31 +313,52 @@ void FileExplorerWidget::onNewFolder() {
   // 展开父目录并进入重命名编辑状态
   if (model_) {
     QModelIndex parentIndex = model_->index(parentDir);
-    tree_view_->expand(parentIndex);
+    tree_view_->expand(
+        proxy_model_ ? proxy_model_->mapFromSource(parentIndex) : parentIndex);
     QTimer::singleShot(100, this, [this, folderPath]() {
       QModelIndex idx = model_->index(folderPath);
       if (idx.isValid()) {
-        tree_view_->scrollTo(idx);
-        tree_view_->setCurrentIndex(idx);
-        tree_view_->edit(idx);
+        QModelIndex proxyIdx =
+            proxy_model_ ? proxy_model_->mapFromSource(idx) : idx;
+        tree_view_->scrollTo(proxyIdx);
+        tree_view_->setCurrentIndex(proxyIdx);
+        tree_view_->edit(proxyIdx);
       }
     });
   }
 }
 
 void FileExplorerWidget::onRename() {
-  if (context_index_.isValid()) {
-    tree_view_->setCurrentIndex(context_index_); // 先设置为当前index
-    tree_view_->edit(context_index_);
-  }
+  if (!context_index_.isValid() || !model_)
+    return;
+
+  // 项目默认目录不可重命名
+  QString path = sourceFilePath(context_index_);
+  QFileInfo fi(path);
+  if (fi.isDir() && isDefaultProjectDir(fi.fileName()))
+    return;
+
+  tree_view_->setCurrentIndex(context_index_);
+  tree_view_->edit(context_index_);
 }
 
 void FileExplorerWidget::onDelete() {
   if (!context_index_.isValid() || !model_)
     return;
 
-  QString path = model_->filePath(context_index_);
+  QString path = sourceFilePath(context_index_);
   QFileInfo fi(path);
+
+  // 项目默认目录不可删除
+  if (fi.isDir() && isDefaultProjectDir(fi.fileName())) {
+    auto it = kDefaultDirs.constFind(fi.fileName());
+    QString displayName =
+        it != kDefaultDirs.constEnd() ? it.value().first : fi.fileName();
+    QMessageBox::information(this, QStringLiteral("提示"),
+                             QStringLiteral("\"%1\" 是项目默认目录，无法删除。")
+                                 .arg(displayName));
+    return;
+  }
 
   int ret = QMessageBox::question(
       this, QStringLiteral("确认删除"),
@@ -281,7 +386,7 @@ void FileExplorerWidget::onDelete() {
 
 void FileExplorerWidget::onCopyPath() {
   if (context_index_.isValid() && model_) {
-    QApplication::clipboard()->setText(model_->filePath(context_index_));
+    QApplication::clipboard()->setText(sourceFilePath(context_index_));
   } else if (!root_path_.isEmpty()) {
     QApplication::clipboard()->setText(root_path_);
   }
@@ -289,7 +394,7 @@ void FileExplorerWidget::onCopyPath() {
 
 void FileExplorerWidget::onCopyRelativePath() {
   if (context_index_.isValid() && model_ && !root_path_.isEmpty()) {
-    QString absPath = model_->filePath(context_index_);
+    QString absPath = sourceFilePath(context_index_);
     QString relPath = QDir(root_path_).relativeFilePath(absPath);
     QApplication::clipboard()->setText(relPath);
   }
@@ -298,7 +403,7 @@ void FileExplorerWidget::onCopyRelativePath() {
 void FileExplorerWidget::onOpenInFileSystem() {
   QString path = root_path_;
   if (context_index_.isValid() && model_) {
-    QString filePath = model_->filePath(context_index_);
+    QString filePath = sourceFilePath(context_index_);
     QFileInfo fi(filePath);
     path = fi.isDir() ? filePath : fi.absolutePath();
   }
@@ -306,6 +411,18 @@ void FileExplorerWidget::onOpenInFileSystem() {
   if (!path.isEmpty()) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(path));
   }
+}
+
+QString FileExplorerWidget::sourceFilePath(const QModelIndex& proxyIndex) const {
+  if (!proxyIndex.isValid() || !model_)
+    return {};
+  QModelIndex sourceIndex =
+      proxy_model_ ? proxy_model_->mapToSource(proxyIndex) : proxyIndex;
+  return model_->filePath(sourceIndex);
+}
+
+bool FileExplorerWidget::isDefaultProjectDir(const QString& dirName) const {
+  return kDefaultDirs.contains(dirName);
 }
 
 }  // namespace etest::app

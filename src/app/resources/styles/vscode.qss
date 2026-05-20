@@ -183,6 +183,7 @@ QTableWidget::item {
 QHeaderView::section {
     background-color: #2D2D2D;
     color: #CCCCCC;
+    font-weight: bold;
     border: none;
     border-right: 1px solid #333333;
     border-bottom: 1px solid #333333;
@@ -210,6 +211,14 @@ QTreeView::item:selected {
 }
 QTreeView::branch {
     background-color: #252526;
+}
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+    image: url(:/resources/icons/svg/chevron_right_light.svg);
+}
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings {
+    image: url(:/resources/icons/svg/chevron_down_light.svg);
 }
 QTreeView QLineEdit {
     background-color: #3C3C3C;
@@ -240,6 +249,14 @@ QTreeWidget::item:selected {
 }
 QTreeWidget::branch {
     background-color: #252526;
+}
+QTreeWidget::branch:has-children:!has-siblings:closed,
+QTreeWidget::branch:closed:has-children:has-siblings {
+    image: url(:/resources/icons/svg/chevron_right_light.svg);
+}
+QTreeWidget::branch:open:has-children:!has-siblings,
+QTreeWidget::branch:open:has-children:has-siblings {
+    image: url(:/resources/icons/svg/chevron_down_light.svg);
 }
 
 /* 按钮 */
@@ -647,6 +664,73 @@ TerminalPanel QPlainTextEdit {
     font-size: 11px;
     selection-background-color: #264F78;
     selection-color: #FFFFFF;
+}
+
+/* ==================== ProtocalEditorWidget ==================== */
+#protocalToolbar {
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #3c3c3c;
+}
+#protocalTitleLabel {
+    font-weight: bold;
+    color: #cccccc;
+    padding-right: 12px;
+}
+#frameNameLabel {
+    color: #4ec9b0;
+    padding-right: 16px;
+}
+#idLabel {
+    color: #888888;
+    padding-left: 12px;
+}
+#lengthLabel {
+    color: #888888;
+    padding-right: 8px;
+}
+#protocalStatusBar {
+    background-color: #007acc;
+    color: white;
+    font-size: 12px;
+}
+
+/* ==================== TopologyEditorWidget ==================== */
+#topologyToolbar {
+    background-color: #2D2D2D;
+    border-bottom: 1px solid #252526;
+}
+#topologyStatusBar {
+    background-color: #252526;
+    border-top: 1px solid #3C3C3C;
+}
+
+/* ==================== PropertyPanelWidget ==================== */
+#emptyPage, #uutPage, #portPage, #devicePage, #connectionPage, #devicePortPage {
+    background-color: #3C3C3C;
+}
+#emptyPage QLabel {
+    color: #888888;
+}
+
+/* ==================== GitWidget ==================== */
+GitWidget QLabel#gitTitleLabel {
+    color: #BBBBBB;
+    font-weight: bold;
+    font-size: 11px;
+    background: transparent;
+}
+
+/* ==================== ProtocalEditor Section Header (IcdNodeTreeWidget / IcdPropertyPanel) ==================== */
+ProtocalEditorWidget #sectionHeader {
+    font-weight: bold;
+    padding: 4px 8px;
+}
+
+/* ==================== NewProjectDialog ==================== */
+#dlg_contentWidget {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
 }
 
 /* ==================== 欢迎页 ==================== */

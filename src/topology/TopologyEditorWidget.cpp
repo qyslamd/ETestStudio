@@ -164,9 +164,6 @@ void TopologyEditorWidget::initUi() {
 
   auto* toolbarFrame = new QFrame(this);
   toolbarFrame->setObjectName(QStringLiteral("topologyToolbar"));
-  toolbarFrame->setStyleSheet(
-      QStringLiteral("#topologyToolbar { background-color: #2D2D2D;"
-                     " border-bottom: 1px solid #252526; }"));
   auto* toolbarLayout = new QHBoxLayout(toolbarFrame);
   toolbarLayout->setContentsMargins(4, 4, 4, 4);
 
@@ -259,9 +256,6 @@ void TopologyEditorWidget::initUi() {
 
   auto* statusFrame = new QFrame(this);
   statusFrame->setObjectName(QStringLiteral("topologyStatusBar"));
-  statusFrame->setStyleSheet(
-      QStringLiteral("#topologyStatusBar { background-color: #252526;"
-                     " border-top: 1px solid #3C3C3C; }"));
   auto* statusLayout = new QHBoxLayout(statusFrame);
   statusLayout->setContentsMargins(8, 2, 8, 2);
   status_label_ = new QLabel(QStringLiteral("缩放: 100%"), statusFrame);

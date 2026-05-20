@@ -2,6 +2,8 @@
 
 #include <QFileInfo>
 #include <QIcon>
+#include <QPainter>
+#include <QPixmap>
 
 #include "logger/Logger.h"
 
@@ -60,6 +62,34 @@ QIcon FileTypeIconProvider::loadDualThemeIcon(const QString& baseName) const {
   return icon;
 }
 
+QIcon FileTypeIconProvider::coloredFolderIcon(const QColor& accentColor) const {
+  QString key = accentColor.name();
+  auto it = colored_folder_cache_.constFind(key);
+  if (it != colored_folder_cache_.constEnd())
+    return it.value();
+
+  // Render base folder icon to pixmap for QPainter manipulation
+  QPixmap base = folder_icon_.pixmap(24, 24);
+  if (base.isNull() || base.size().isEmpty()) {
+    colored_folder_cache_[key] = folder_icon_;
+    return folder_icon_;
+  }
+
+  QPixmap result(base.size());
+  result.fill(Qt::transparent);
+  QPainter p(&result);
+  p.setRenderHint(QPainter::Antialiasing);
+  p.drawPixmap(0, 0, base);
+
+  // Draw a colored vertical stripe on the left edge as a directory indicator
+  p.fillRect(2, 4, 3, base.height() - 8, accentColor);
+  p.end();
+
+  QIcon icon(result);
+  colored_folder_cache_[key] = icon;
+  return icon;
+}
+
 QIcon FileTypeIconProvider::icon(IconType type) const {
   if (type == Folder) {
     return folder_icon_;
@@ -69,6 +99,20 @@ QIcon FileTypeIconProvider::icon(IconType type) const {
 
 QIcon FileTypeIconProvider::icon(const QFileInfo& info) const {
   if (info.isDir()) {
+    // Return colored icon for known project directories
+    static const QMap<QString, QColor> dirColors = {
+        {QStringLiteral("backup"), QColor("#E67E22")},    // orange
+        {QStringLiteral("cases"), QColor("#2ECC71")},     // green
+        {QStringLiteral("config"), QColor("#3498DB")},     // blue
+        {QStringLiteral("scripts"), QColor("#9B59B6")},    // purple
+        {QStringLiteral("protocol"), QColor("#1ABC9C")},   // teal
+        {QStringLiteral("topology"), QColor("#E74C3C")},   // red
+        {QStringLiteral("reports"), QColor("#F39C12")},    // gold
+    };
+    auto it = dirColors.constFind(info.fileName());
+    if (it != dirColors.constEnd()) {
+      return coloredFolderIcon(it.value());
+    }
     return folder_icon_;
   }
 

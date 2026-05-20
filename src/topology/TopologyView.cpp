@@ -107,6 +107,11 @@ void TopologyView::zoomReset() {
 }
 
 void TopologyView::wheelEvent(QWheelEvent* event) {
+  if (!(event->modifiers() & Qt::ControlModifier)) {
+    QGraphicsView::wheelEvent(event);
+    return;
+  }
+
   qreal factor = 1.0;
   if (event->angleDelta().y() > 0) {
     factor = 1.15;

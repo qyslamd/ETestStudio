@@ -24,7 +24,7 @@ void IcdNodeTreeWidget::initUi() {
   filter_input_->setClearButtonEnabled(true);
 
   auto* header = new QLabel(QStringLiteral("信号列表"), this);
-  header->setStyleSheet("font-weight: bold; padding: 4px 8px;");
+  header->setObjectName(QStringLiteral("sectionHeader"));
 
   tree_view_ = new QTreeView(this);
   tree_view_->setHeaderHidden(true);

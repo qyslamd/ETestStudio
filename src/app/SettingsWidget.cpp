@@ -250,7 +250,6 @@ QSpinBox* SettingsWidget::addSpinBoxRow(QWidget* parent,
 
   auto* lbl = new QLabel(label, row);
   lbl->setFixedWidth(120);
-  lbl->setStyleSheet("color: #CCCCCC;");
 
   auto* spin = new QSpinBox(row);
   spin->setRange(min, max);
@@ -283,10 +282,8 @@ QCheckBox* SettingsWidget::addCheckBoxRow(QWidget* parent,
 
   auto* lbl = new QLabel(label, row);
   lbl->setFixedWidth(120);
-  lbl->setStyleSheet("color: #CCCCCC;");
 
   auto* cb = new QCheckBox(row);
-  cb->setStyleSheet("color: #CCCCCC;");
 
   bool val = ConfigManager::instance().get<bool>(configKey, defaultVal);
   cb->setChecked(val);
@@ -313,7 +310,6 @@ QComboBox* SettingsWidget::addComboBoxRow(QWidget* parent,
 
   auto* lbl = new QLabel(label, row);
   lbl->setFixedWidth(120);
-  lbl->setStyleSheet("color: #CCCCCC;");
 
   auto* combo = new QComboBox(row);
   combo->addItems(items);
@@ -344,7 +340,6 @@ QPushButton* SettingsWidget::addButtonRow(QWidget* parent,
 
   auto* lbl = new QLabel(label, row);
   lbl->setFixedWidth(120);
-  lbl->setStyleSheet("color: #CCCCCC;");
 
   auto* btn = new QPushButton(text, row);
   btn->setFixedWidth(100);

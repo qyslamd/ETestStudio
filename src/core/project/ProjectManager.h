@@ -38,6 +38,12 @@ class ProjectManager : public QObject {
   void removeFromRecentProjects(const QString& projectPath);
   void clearRecentProjects();
 
+  // 工件引用管理
+  void registerTopologyRef(const QString& filePath);
+  void removeTopologyRef(const QString& id);
+  void registerProtocolRef(const QString& filePath);
+  void removeProtocolRef(const QString& id);
+
   // 脏文件检查接口
   using DirtyCheckCallback = std::function<bool()>;
   void setDirtyCheckCallback(DirtyCheckCallback callback);

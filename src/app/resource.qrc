@@ -62,5 +62,7 @@
         <file>resources/icons/svg/file_etopo_light.svg</file>
         <file>resources/icons/svg/file_eproto_dark.svg</file>
         <file>resources/icons/svg/file_eproto_light.svg</file>
+        <file>resources/icons/svg/chevron_right_light.svg</file>
+        <file>resources/icons/svg/chevron_down_light.svg</file>
     </qresource>
 </RCC>

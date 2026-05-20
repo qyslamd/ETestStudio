@@ -22,6 +22,8 @@
 #include "topology/TopologyEditorWidget.h"
 #include "topology/TopologyJsonSerializer.h"
 
+#include "project/ProjectManager.h"
+
 using namespace etest::core::logger;
 
 namespace etest::app {
@@ -231,6 +233,15 @@ void EditorManager::openFile(const QString& filePath) {
 
   LOG_INFO("EDITOR", "打开文件：{}", filePath.toStdString());
   emit fileOpened(filePath);
+
+  // 注册项目工件引用
+  using etest::core::project::ProjectManager;
+  auto& pm = ProjectManager::instance();
+  if (suffix == QStringLiteral("etopo")) {
+    pm.registerTopologyRef(filePath);
+  } else if (suffix == QStringLiteral("eproto")) {
+    pm.registerProtocolRef(filePath);
+  }
 }
 
 void EditorManager::openFileAtLine(const QString& filePath, int line) {
@@ -295,6 +306,18 @@ bool EditorManager::closeFile(const QString& editorId) {
 
   LOG_INFO("EDITOR", "关闭编辑器：{}", editorId.toStdString());
   emit fileClosed(editorId);
+
+  // 注销项目工件引用
+  using etest::core::project::ProjectManager;
+  auto& pm = ProjectManager::instance();
+  QFileInfo fi(editorId);
+  QString suffix = fi.suffix().toLower();
+  if (suffix == QStringLiteral("etopo")) {
+    pm.removeTopologyRef(editorId);
+  } else if (suffix == QStringLiteral("eproto")) {
+    pm.removeProtocolRef(editorId);
+  }
+
   emit unsavedChangesChanged();
   return true;
 }
@@ -531,6 +554,26 @@ void EditorManager::updateEditorId(IEditor* editor, const QString& newId) {
   }
 
   updateDockTitle(editor, dock);
+
+  // 编辑器 ID 变化时同步更新工件引用（如另存为场景）
+  using etest::core::project::ProjectManager;
+  auto& pm = ProjectManager::instance();
+  QFileInfo oldFi(oldId);
+  QFileInfo newFi(newId);
+  QString oldSuffix = oldFi.suffix().toLower();
+  QString newSuffix = newFi.suffix().toLower();
+
+  if (oldSuffix == QStringLiteral("etopo")) {
+    pm.removeTopologyRef(oldId);
+  } else if (oldSuffix == QStringLiteral("eproto")) {
+    pm.removeProtocolRef(oldId);
+  }
+
+  if (newSuffix == QStringLiteral("etopo")) {
+    pm.registerTopologyRef(newId);
+  } else if (newSuffix == QStringLiteral("eproto")) {
+    pm.registerProtocolRef(newId);
+  }
 }
 
 void EditorManager::onDockWidgetActivated(ads::CDockWidget* dock) {

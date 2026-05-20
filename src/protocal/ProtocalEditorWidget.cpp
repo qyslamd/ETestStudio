@@ -65,20 +65,18 @@ void ProtocalEditorWidget::initUi() {
 
   // === Top Toolbar ===
   auto* toolbar = new QWidget(this);
+  toolbar->setObjectName(QStringLiteral("protocalToolbar"));
   toolbar->setFixedHeight(36);
-  toolbar->setStyleSheet(
-      "background-color: #2d2d2d; border-bottom: 1px solid #3c3c3c;");
 
   auto* toolbar_layout = new QHBoxLayout(toolbar);
   toolbar_layout->setContentsMargins(8, 0, 8, 0);
 
   auto* title_label = new QLabel(QStringLiteral("帧属性"), this);
-  title_label->setStyleSheet(
-      "font-weight: bold; color: #cccccc; padding-right: 12px;");
+  title_label->setObjectName(QStringLiteral("protocalTitleLabel"));
 
   frame_name_label_ = new QLabel(
       QStringLiteral("A429_00_ISI_01_发送_Label110_6272T_00"), this);
-  frame_name_label_->setStyleSheet("color: #4ec9b0; padding-right: 16px;");
+  frame_name_label_->setObjectName(QStringLiteral("frameNameLabel"));
 
   frame_type_combo_ = new QComboBox(this);
   frame_type_combo_->addItem(QStringLiteral("发送 (Cmd)"));
@@ -91,7 +89,7 @@ void ProtocalEditorWidget::initUi() {
   byte_order_combo_->addItem(QStringLiteral("大端 (Big Endian)"));
 
   auto* id_label = new QLabel(QStringLiteral("ID: 90"), this);
-  id_label->setStyleSheet("color: #888; padding-left: 12px;");
+  id_label->setObjectName(QStringLiteral("idLabel"));
 
   toolbar_layout->addWidget(title_label);
   toolbar_layout->addWidget(frame_name_label_);
@@ -102,7 +100,7 @@ void ProtocalEditorWidget::initUi() {
 
   auto* length_label =
       new QLabel(QStringLiteral("帧长度: 16 bytes"), this);
-  length_label->setStyleSheet("color: #888; padding-right: 8px;");
+  length_label->setObjectName(QStringLiteral("lengthLabel"));
   toolbar_layout->addWidget(length_label);
 
   main_layout->addWidget(toolbar);
@@ -131,9 +129,8 @@ void ProtocalEditorWidget::initUi() {
 
   // === Bottom Status Bar ===
   auto* status_bar = new QWidget(this);
+  status_bar->setObjectName(QStringLiteral("protocalStatusBar"));
   status_bar->setFixedHeight(24);
-  status_bar->setStyleSheet(
-      "background-color: #007acc; color: white; font-size: 12px;");
 
   auto* status_layout = new QHBoxLayout(status_bar);
   status_layout->setContentsMargins(8, 0, 8, 0);

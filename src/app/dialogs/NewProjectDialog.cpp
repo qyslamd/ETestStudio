@@ -41,9 +41,6 @@ void NewProjectDialog::initUi() {
 
   auto* contentWidget = new QWidget(this);
   contentWidget->setObjectName("dlg_contentWidget");
-  contentWidget->setStyleSheet(
-      "QWidget#dlg_contentWidget { background-color: white;border: 1px solid "
-      "#ccc; border-radius: 8px; }");
   contentWidget->setMinimumWidth(420);
 
   auto* mainLayout = new QVBoxLayout(contentWidget);

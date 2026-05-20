@@ -23,7 +23,7 @@ void IcdPropertyPanel::initUi() {
   outer_layout->setContentsMargins(0, 0, 0, 0);
 
   auto* header = new QLabel(QStringLiteral("信号属性"), this);
-  header->setStyleSheet("font-weight: bold; padding: 4px 8px;");
+  header->setObjectName(QStringLiteral("sectionHeader"));
 
   auto* scroll = new QScrollArea(this);
   scroll->setWidgetResizable(true);
