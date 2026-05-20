@@ -5,6 +5,8 @@
 #include <QString>
 #include <QVector>
 
+#include "TopologyBlockItem.h"
+
 namespace etest::topology {
 
 class TopologyDocument;
@@ -55,7 +57,7 @@ class PortItem : public QGraphicsItem {
 
 // ── UutItem ── product block ─────────────────────────────────────
 
-class UutItem : public QGraphicsItem {
+class UutItem : public TopologyBlockItem {
  public:
   enum { Type = UserType + 2 };
   int type() const override { return Type; }
@@ -64,41 +66,29 @@ class UutItem : public QGraphicsItem {
           TopologyDocument* doc,
           QGraphicsItem* parent = nullptr);
 
-  QRectF boundingRect() const override;
-  QPainterPath shape() const override;
-  bool contains(const QPointF& point) const override;
-  void paint(QPainter* painter,
-             const QStyleOptionGraphicsItem* option,
-             QWidget* widget) override;
-
   int productIndex() const { return product_index_; }
-  TopologyDocument* document() const { return doc_; }
 
   void layoutPorts();
   PortItem* portItem(int portIndex) const;
   QPointF portScenePos(int portIndex) const;
 
  protected:
-  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
-  void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override;
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
-  QVariant itemChange(GraphicsItemChange change,
-                      const QVariant& value) override;
+  QColor blockFillColor() const override;
+  QColor blockBorderColor() const override;
+  void paintContent(QPainter* painter,
+                    const QStyleOptionGraphicsItem* option,
+                    const QRectF& rect) override;
+  qreal calcContentHeight() const override;
+  bool hasChildHovered() const override;
 
  private:
   int product_index_;
-  TopologyDocument* doc_;
   QVector<PortItem*> ports_;
-  bool body_hovered_ = false;
-
-  bool isOverChildPort(const QPointF& point) const;
 
   static constexpr qreal kWidth = 140.0;
   static constexpr qreal kBaseHeight = 60.0;
   static constexpr qreal kPortMargin = 8.0;
   static constexpr qreal kCornerRadius = 8.0;
-
-  qreal contentHeight() const;
 };
 
 // ── DevicePortItem ── connection point on device left edge ───────
@@ -143,7 +133,7 @@ class DevicePortItem : public QGraphicsItem {
 
 // ── DeviceItem ── device block ───────────────────────────────────
 
-class DeviceItem : public QGraphicsItem {
+class DeviceItem : public TopologyBlockItem {
  public:
   enum { Type = UserType + 3 };
   int type() const override { return Type; }
@@ -152,37 +142,25 @@ class DeviceItem : public QGraphicsItem {
              TopologyDocument* doc,
              QGraphicsItem* parent = nullptr);
 
-  QRectF boundingRect() const override;
-  QPainterPath shape() const override;
-  bool contains(const QPointF& point) const override;
-  void paint(QPainter* painter,
-             const QStyleOptionGraphicsItem* option,
-             QWidget* widget) override;
-
   int deviceIndex() const { return device_index_; }
   QString deviceType() const;
-  TopologyDocument* document() const { return doc_; }
-
   QPointF connectionPoint() const;
 
   void layoutDevicePorts();
   DevicePortItem* devicePortItem(int portIndex) const;
-  qreal contentHeight() const;
 
  protected:
-  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
-  void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override;
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
-  QVariant itemChange(GraphicsItemChange change,
-                      const QVariant& value) override;
+  QColor blockFillColor() const override;
+  QColor blockBorderColor() const override;
+  void paintContent(QPainter* painter,
+                    const QStyleOptionGraphicsItem* option,
+                    const QRectF& rect) override;
+  qreal calcContentHeight() const override;
+  bool hasChildHovered() const override;
 
  private:
   int device_index_;
-  TopologyDocument* doc_;
   QVector<DevicePortItem*> device_port_items_;
-  bool body_hovered_ = false;
-
-  bool isOverChildPort(const QPointF& point) const;
 
   static constexpr qreal kWidth = 120.0;
   static constexpr qreal kBaseHeight = 50.0;

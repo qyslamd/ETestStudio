@@ -173,92 +173,46 @@ void PortItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
 // ═══════════════════════════════════════════════════════════════
 
 UutItem::UutItem(int productIndex, TopologyDocument* doc, QGraphicsItem* parent)
-    : QGraphicsItem(parent), product_index_(productIndex), doc_(doc) {
-  setFlag(ItemIsMovable);
-  setFlag(ItemIsSelectable);
-  setFlag(ItemSendsGeometryChanges);
-  setAcceptHoverEvents(true);
-  setCursor(Qt::SizeAllCursor);
-
+    : TopologyBlockItem(doc, kWidth, kCornerRadius, parent),
+      product_index_(productIndex) {
   layoutPorts();
 }
 
-QRectF UutItem::boundingRect() const {
-  qreal m = 6.0;
-  qreal h = contentHeight();
-  return QRectF(-m, -m, kWidth + m * 2, h + m * 2);
-}
-
-QPainterPath UutItem::shape() const {
-  QPainterPath p;
-  p.addRoundedRect(0, 0, kWidth, contentHeight(), kCornerRadius, kCornerRadius);
-  return p;
-}
-
-bool UutItem::contains(const QPointF& point) const {
-  if (!QGraphicsItem::contains(point))
-    return false;
-  for (auto* port : ports_) {
-    if (port->isVisible() && port->shape().contains(port->mapFromParent(point)))
-      return false;
-  }
-  return true;
-}
-
-void UutItem::paint(QPainter* painter,
-                    const QStyleOptionGraphicsItem* option,
-                    QWidget*) {
-  painter->setRenderHint(QPainter::Antialiasing);
-
-  const auto& tc = topologyColors();
-  QColor fill = tc.uutFill;
-  QColor border = tc.uutBorder;
-  qreal penWidth = 1.5;
-
-  if (body_hovered_) {
-    bool childHovered = false;
-    for (auto* port : ports_) {
-      if (port->isVisible() && port->isHovered()) {
-        childHovered = true;
-        break;
-      }
-    }
-    if (!childHovered) {
-      fill = fill.darker(115);
-      border = border.darker(120);
-    }
-  }
-  if (option->state & QStyle::State_Selected) {
-    fill = fill.lighter(130);
-    penWidth = 2.5;
-  }
-
-  qreal h = contentHeight();
-
-  // Shadow
-  painter->setBrush(tc.shadowDark);
-  painter->setPen(Qt::NoPen);
-  painter->drawRoundedRect(QRectF(4, 4, kWidth, h), kCornerRadius,
-                           kCornerRadius);
-  painter->setBrush(tc.shadowLight);
-  painter->drawRoundedRect(QRectF(2, 2, kWidth, h), kCornerRadius,
-                           kCornerRadius);
-
-  painter->setBrush(fill);
-  painter->setPen(QPen(border, penWidth));
-  painter->drawRoundedRect(QRectF(0, 0, kWidth, h), kCornerRadius,
-                           kCornerRadius);
-
+void UutItem::paintContent(QPainter* painter,
+                            const QStyleOptionGraphicsItem*,
+                            const QRectF& rect) {
   const auto* prod = doc_->product(product_index_);
   if (!prod)
     return;
-
-  painter->setPen(tc.textPrimary);
+  painter->setPen(topologyColors().textPrimary);
   QFont f = painter->font();
   f.setPointSize(10);
   f.setBold(true);
   painter->setFont(f);
-  painter->drawText(QRectF(0, 0, kWidth, h), Qt::AlignCenter, prod->name);
+  painter->drawText(rect, Qt::AlignCenter, prod->name);
+}
+
+qreal UutItem::calcContentHeight() const {
+  const auto* prod = doc_->product(product_index_);
+  int portCount = prod ? prod->ports.size() : 0;
+  constexpr qreal kPortSpacing = 20.0;
+  return qMax(kBaseHeight, 2 * kPortMargin + portCount * kPortSpacing);
+}
+
+bool UutItem::hasChildHovered() const {
+  for (auto* port : ports_) {
+    if (port->isVisible() && port->isHovered())
+      return true;
+  }
+  return false;
+}
+
+QColor UutItem::blockFillColor() const {
+  return topologyColors().uutFill;
+}
+
+QColor UutItem::blockBorderColor() const {
+  return topologyColors().uutBorder;
 }
 
 void UutItem::layoutPorts() {
@@ -267,11 +221,12 @@ void UutItem::layoutPorts() {
   if (!prod)
     return;
 
-  qreal h = contentHeight();
+  qreal h = calcContentHeight();
   int n = prod->ports.size();
   for (int i = 0; i < n; ++i) {
     auto* portItem = new PortItem(product_index_, i, doc_, this);
     ports_.append(portItem);
+    addChildPort(portItem);
 
     qreal y;
     if (n <= 1) {
@@ -281,13 +236,6 @@ void UutItem::layoutPorts() {
     }
     portItem->setPos(-kPortRadius, y);
   }
-}
-
-qreal UutItem::contentHeight() const {
-  const auto* prod = doc_->product(product_index_);
-  int portCount = prod ? prod->ports.size() : 0;
-  constexpr qreal kPortSpacing = 20.0;
-  return qMax(kBaseHeight, 2 * kPortMargin + portCount * kPortSpacing);
 }
 
 PortItem* UutItem::portItem(int portIndex) const {
@@ -301,48 +249,6 @@ QPointF UutItem::portScenePos(int portIndex) const {
   return pi ? pi->sceneCenter() : QPointF();
 }
 
-QVariant UutItem::itemChange(GraphicsItemChange change, const QVariant& value) {
-  if (change == ItemPositionHasChanged) {
-    if (auto* s = qobject_cast<TopologyScene*>(scene())) {
-      s->onItemMoved();
-    }
-  }
-  return QGraphicsItem::itemChange(change, value);
-}
-
-void UutItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
-  if (isOverChildPort(event->pos()))
-    return;
-  body_hovered_ = true;
-  update();
-}
-
-void UutItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
-  bool overPort = isOverChildPort(event->pos());
-  if (overPort && body_hovered_) {
-    body_hovered_ = false;
-    update();
-  } else if (!overPort && !body_hovered_) {
-    body_hovered_ = true;
-    update();
-  }
-}
-
-void UutItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
-  if (body_hovered_) {
-    body_hovered_ = false;
-    update();
-  }
-}
-
-bool UutItem::isOverChildPort(const QPointF& point) const {
-  for (auto* port : ports_) {
-    if (port->isVisible() && port->shape().contains(port->mapFromParent(point)))
-      return true;
-  }
-  return false;
-}
-
 // ═══════════════════════════════════════════════════════════════
 //  DeviceItem
 // ═══════════════════════════════════════════════════════════════
@@ -350,97 +256,56 @@ bool UutItem::isOverChildPort(const QPointF& point) const {
 DeviceItem::DeviceItem(int deviceIndex,
                        TopologyDocument* doc,
                        QGraphicsItem* parent)
-    : QGraphicsItem(parent), device_index_(deviceIndex), doc_(doc) {
-  setFlag(ItemIsMovable);
-  setFlag(ItemIsSelectable);
-  setFlag(ItemSendsGeometryChanges);
-  setAcceptHoverEvents(true);
-  setCursor(Qt::SizeAllCursor);
+    : TopologyBlockItem(doc, kWidth, kCornerRadius, parent),
+      device_index_(deviceIndex) {
   layoutDevicePorts();
 }
 
-QRectF DeviceItem::boundingRect() const {
-  qreal m = 6.0;
-  qreal h = contentHeight();
-  return QRectF(-4, -2, kWidth + m, h + m);
-}
-
-QPainterPath DeviceItem::shape() const {
-  QPainterPath p;
-  p.addRoundedRect(0, 0, kWidth, contentHeight(), kCornerRadius, kCornerRadius);
-  return p;
-}
-
-bool DeviceItem::contains(const QPointF& point) const {
-  if (!QGraphicsItem::contains(point))
-    return false;
-  for (auto* port : device_port_items_) {
-    if (port->isVisible() && port->shape().contains(port->mapFromParent(point)))
-      return false;
-  }
-  return true;
-}
-
-void DeviceItem::paint(QPainter* painter,
-                       const QStyleOptionGraphicsItem* option,
-                       QWidget*) {
-  painter->setRenderHint(QPainter::Antialiasing);
-
-  qreal h = contentHeight();
-  const auto& tc = topologyColors();
-  QColor fill = tc.deviceFill;
-  QColor border = tc.deviceBorder;
-  qreal penWidth = 1.5;
-
-  if (body_hovered_) {
-    bool childHovered = false;
-    for (auto* port : device_port_items_) {
-      if (port->isVisible() && port->isHovered()) {
-        childHovered = true;
-        break;
-      }
-    }
-    if (!childHovered) {
-      fill = fill.darker(115);
-      border = border.darker(120);
-    }
-  }
-  if (option->state & QStyle::State_Selected) {
-    fill = fill.lighter(130);
-    penWidth = 2.5;
-  }
-
-  // Shadow
-  painter->setBrush(tc.shadowDark);
-  painter->setPen(Qt::NoPen);
-  painter->drawRoundedRect(QRectF(4, 4, kWidth, h), kCornerRadius,
-                           kCornerRadius);
-  painter->setBrush(tc.shadowLight);
-  painter->drawRoundedRect(QRectF(2, 2, kWidth, h), kCornerRadius,
-                           kCornerRadius);
-
-  painter->setBrush(fill);
-  painter->setPen(QPen(border, penWidth));
-  painter->drawRoundedRect(QRectF(0, 0, kWidth, h), kCornerRadius,
-                           kCornerRadius);
-
+void DeviceItem::paintContent(QPainter* painter,
+                               const QStyleOptionGraphicsItem*,
+                               const QRectF& rect) {
   const auto* dev = doc_->device(device_index_);
   if (!dev)
     return;
 
-  painter->setPen(tc.textPrimary);
+  painter->setPen(topologyColors().textPrimary);
   QFont f = painter->font();
   f.setPointSize(9);
   f.setBold(true);
   painter->setFont(f);
-  painter->drawText(QRectF(0, 6, kWidth, 20), Qt::AlignCenter, dev->name);
+  painter->drawText(QRectF(rect.x(), rect.y() + 6, rect.width(), 20),
+                    Qt::AlignCenter, dev->name);
 
   f.setPointSize(7);
   f.setBold(false);
   painter->setFont(f);
-  painter->setPen(tc.textSecondary);
-  painter->drawText(QRectF(0, 26, kWidth, 18), Qt::AlignCenter,
+  painter->setPen(topologyColors().textSecondary);
+  painter->drawText(QRectF(rect.x(), rect.y() + 26, rect.width(), 18),
+                    Qt::AlignCenter,
                     QStringLiteral("[%1]").arg(dev->deviceType));
+}
+
+qreal DeviceItem::calcContentHeight() const {
+  const auto* dev = doc_->device(device_index_);
+  int portCount = dev ? dev->ports.size() : 0;
+  constexpr qreal kPortSpacing = 20.0;
+  return qMax(kBaseHeight, 2 * kPortMargin + portCount * kPortSpacing);
+}
+
+bool DeviceItem::hasChildHovered() const {
+  for (auto* port : device_port_items_) {
+    if (port->isVisible() && port->isHovered())
+      return true;
+  }
+  return false;
+}
+
+QColor DeviceItem::blockFillColor() const {
+  return topologyColors().deviceFill;
+}
+
+QColor DeviceItem::blockBorderColor() const {
+  return topologyColors().deviceBorder;
 }
 
 QString DeviceItem::deviceType() const {
@@ -449,14 +314,8 @@ QString DeviceItem::deviceType() const {
 }
 
 QPointF DeviceItem::connectionPoint() const {
-  return mapToScene(QPointF(kWidth, contentHeight() / 2.0));
-}
-
-qreal DeviceItem::contentHeight() const {
-  const auto* dev = doc_->device(device_index_);
-  int portCount = dev ? dev->ports.size() : 0;
-  constexpr qreal kPortSpacing = 20.0;
-  return qMax(kBaseHeight, 2 * kPortMargin + portCount * kPortSpacing);
+  return mapToScene(
+      QPointF(block_width_, calcContentHeight() / 2.0));
 }
 
 void DeviceItem::layoutDevicePorts() {
@@ -466,16 +325,18 @@ void DeviceItem::layoutDevicePorts() {
     delete p;
   }
   device_port_items_.clear();
+  clearChildPorts();
 
   const auto* dev = doc_->device(device_index_);
   if (!dev)
     return;
 
-  qreal h = contentHeight();
+  qreal h = calcContentHeight();
   int n = dev->ports.size();
   for (int i = 0; i < n; ++i) {
     auto* portItem = new DevicePortItem(device_index_, i, doc_, this);
     device_port_items_.append(portItem);
+    addChildPort(portItem);
 
     qreal y;
     if (n <= 1) {
@@ -491,49 +352,6 @@ DevicePortItem* DeviceItem::devicePortItem(int portIndex) const {
   if (portIndex < 0 || portIndex >= device_port_items_.size())
     return nullptr;
   return device_port_items_[portIndex];
-}
-
-QVariant DeviceItem::itemChange(GraphicsItemChange change,
-                                const QVariant& value) {
-  if (change == ItemPositionHasChanged) {
-    if (auto* s = qobject_cast<TopologyScene*>(scene())) {
-      s->onItemMoved();
-    }
-  }
-  return QGraphicsItem::itemChange(change, value);
-}
-
-void DeviceItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
-  if (isOverChildPort(event->pos()))
-    return;
-  body_hovered_ = true;
-  update();
-}
-
-void DeviceItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
-  bool overPort = isOverChildPort(event->pos());
-  if (overPort && body_hovered_) {
-    body_hovered_ = false;
-    update();
-  } else if (!overPort && !body_hovered_) {
-    body_hovered_ = true;
-    update();
-  }
-}
-
-void DeviceItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
-  if (body_hovered_) {
-    body_hovered_ = false;
-    update();
-  }
-}
-
-bool DeviceItem::isOverChildPort(const QPointF& point) const {
-  for (auto* port : device_port_items_) {
-    if (port->isVisible() && port->shape().contains(port->mapFromParent(point)))
-      return true;
-  }
-  return false;
 }
 
 // ═══════════════════════════════════════════════════════════════
