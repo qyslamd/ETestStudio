@@ -158,4 +158,26 @@ class PropertyCommand : public QUndoCommand {
   ApplyFn redo_fn_;
 };
 
+// ── ResizeItemCommand ──
+class ResizeItemCommand : public QUndoCommand {
+ public:
+  enum Type { Product, Device };
+
+  ResizeItemCommand(TopologyDocument* doc, int index, Type type,
+                    const QSizeF& oldSize, const QSizeF& newSize,
+                    const QPointF& oldPos, const QPointF& newPos,
+                    QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int index_;
+  Type type_;
+  QSizeF old_size_;
+  QSizeF new_size_;
+  QPointF old_pos_;
+  QPointF new_pos_;
+};
+
 }  // namespace etest::topology

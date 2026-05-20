@@ -87,6 +87,7 @@ class UutItem : public TopologyBlockItem {
                     const QRectF& rect) override;
   qreal calcContentHeight() const override;
   bool hasChildHovered() const override;
+  void onResizeFinished(const QSizeF& oldSize, const QPointF& oldPos) override;
 
  private:
   int product_index_;
@@ -168,6 +169,7 @@ class DeviceItem : public TopologyBlockItem {
                     const QRectF& rect) override;
   qreal calcContentHeight() const override;
   bool hasChildHovered() const override;
+  void onResizeFinished(const QSizeF& oldSize, const QPointF& oldPos) override;
 
  private:
   int device_index_;

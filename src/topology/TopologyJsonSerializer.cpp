@@ -36,6 +36,8 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
     pObj["name"] = p->name;
     pObj["positionX"] = p->position.x();
     pObj["positionY"] = p->position.y();
+    if (p->size.isValid() && p->size.width() > 0)
+      pObj["size"] = QJsonArray{p->size.width(), p->size.height()};
 
     QJsonArray portsArr;
     for (const auto& port : p->ports) {
@@ -64,6 +66,8 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
     dObj["deviceType"] = d->deviceType;
     dObj["positionX"] = d->position.x();
     dObj["positionY"] = d->position.y();
+    if (d->size.isValid() && d->size.width() > 0)
+      dObj["size"] = QJsonArray{d->size.width(), d->size.height()};
 
     QJsonArray propsArr;
     for (const auto& prop : d->properties) {
@@ -124,6 +128,11 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     product.name = pObj["name"].toString();
     product.position =
         QPointF(pObj["positionX"].toDouble(), pObj["positionY"].toDouble());
+    {
+      QJsonArray a = pObj["size"].toArray();
+      if (a.size() == 2)
+        product.size = QSizeF(a[0].toDouble(), a[1].toDouble());
+    }
 
     QJsonArray portsArr = pObj["ports"].toArray();
     for (const auto& portVal : portsArr) {
@@ -150,6 +159,11 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     device.deviceType = dObj["deviceType"].toString();
     device.position =
         QPointF(dObj["positionX"].toDouble(), dObj["positionY"].toDouble());
+    {
+      QJsonArray a = dObj["size"].toArray();
+      if (a.size() == 2)
+        device.size = QSizeF(a[0].toDouble(), a[1].toDouble());
+    }
 
     QJsonArray propsArr = dObj["properties"].toArray();
     for (const auto& propVal : propsArr) {

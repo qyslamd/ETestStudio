@@ -51,6 +51,8 @@ const TopologyColors& topologyColors() {
     light.legendBackground = QColor(255, 255, 255, 200);
     light.legendText = Qt::black;
     light.legendBorder = Qt::gray;
+    light.resizeHandleFill = QColor(255, 255, 255);
+    light.resizeHandleBorder = QColor(66, 133, 244);
 
     // ── Dark (VS Code-inspired) ──────────────────────────────────
     dark.sceneBackground = QColor(30, 30, 30);
@@ -71,6 +73,8 @@ const TopologyColors& topologyColors() {
     dark.legendBackground = QColor(51, 51, 51, 220);
     dark.legendText = QColor(204, 204, 204);
     dark.legendBorder = QColor(85, 85, 85);
+    dark.resizeHandleFill = QColor(60, 60, 60);
+    dark.resizeHandleBorder = QColor(86, 156, 214);
 
     initialized = true;
   }

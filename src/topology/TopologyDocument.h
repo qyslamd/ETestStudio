@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QPair>
 #include <QPointF>
+#include <QSizeF>
 #include <QString>
 #include <QStringList>
 #include <QUndoStack>
@@ -52,6 +53,7 @@ struct TopologyProduct {
   QString name;
   QVector<TopologyPort> ports;
   QPointF position{0, 0};
+  QSizeF size{0, 0};
 };
 
 struct TopologyDevice {
@@ -60,6 +62,7 @@ struct TopologyDevice {
   QPointF position{0, 0};
   QVector<QPair<QString, QString>> properties;
   QVector<TopologyDevicePort> ports;
+  QSizeF size{0, 0};
 };
 
 struct TopologyConnection {
