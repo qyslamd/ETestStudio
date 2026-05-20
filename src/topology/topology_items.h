@@ -6,6 +6,7 @@
 #include <QVector>
 
 #include "TopologyBlockItem.h"
+#include "TopologyPathRouter.h"
 
 namespace etest::topology {
 
@@ -168,7 +169,7 @@ class DeviceItem : public TopologyBlockItem {
   static constexpr qreal kCornerRadius = 10.0;
 };
 
-// ── ConnectionItem ── bezier line from UUT port to device port ──
+// ── ConnectionItem ── line from UUT port to device port ──
 
 class ConnectionItem : public QGraphicsPathItem {
  public:
@@ -183,6 +184,8 @@ class ConnectionItem : public QGraphicsPathItem {
   ~ConnectionItem() override;
 
   void updatePath();
+  void setStyle(PathStyle s);
+  PathStyle style() const { return style_; }
 
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
@@ -201,6 +204,7 @@ class ConnectionItem : public QGraphicsPathItem {
   QString device_port_;
   TopologyDocument* doc_;
   QPainterPath arrow_path_;
+  PathStyle style_ = PathStyle::Bezier;
 };
 
 // ── LegendItem ── color legend overlay ───────────────────────────

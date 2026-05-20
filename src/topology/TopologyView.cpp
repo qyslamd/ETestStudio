@@ -4,6 +4,7 @@
 #include "topology_items.h"
 
 #include <QAction>
+#include <QActionGroup>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
@@ -193,6 +194,34 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     auto* delAct = menu.addAction(QStringLiteral("删除连线"));
     connect(delAct, &QAction::triggered, this,
             [this, conn]() { emit deleteItemRequested(conn); });
+
+    menu.addSeparator();
+
+    auto* styleMenu = menu.addMenu(QStringLiteral("连线样式"));
+    auto* group = new QActionGroup(styleMenu);
+    group->setExclusive(true);
+
+    auto* bezierAct = styleMenu->addAction(QStringLiteral("曲线"));
+    bezierAct->setCheckable(true);
+    bezierAct->setChecked(conn->style() == PathStyle::Bezier);
+    group->addAction(bezierAct);
+
+    auto* polyAct = styleMenu->addAction(QStringLiteral("折线"));
+    polyAct->setCheckable(true);
+    polyAct->setChecked(conn->style() == PathStyle::Polyline);
+    group->addAction(polyAct);
+
+    auto* lineAct = styleMenu->addAction(QStringLiteral("直线"));
+    lineAct->setCheckable(true);
+    lineAct->setChecked(conn->style() == PathStyle::Straight);
+    group->addAction(lineAct);
+
+    connect(bezierAct, &QAction::triggered, this,
+            [conn]() { conn->setStyle(PathStyle::Bezier); });
+    connect(polyAct, &QAction::triggered, this,
+            [conn]() { conn->setStyle(PathStyle::Polyline); });
+    connect(lineAct, &QAction::triggered, this,
+            [conn]() { conn->setStyle(PathStyle::Straight); });
   } else {
     auto* addUutAct = menu.addAction(QStringLiteral("添加 UUT"));
     connect(addUutAct, &QAction::triggered, this,

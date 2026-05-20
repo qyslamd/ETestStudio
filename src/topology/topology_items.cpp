@@ -6,10 +6,14 @@
 #include "TopologyTheme.h"
 #include "topology_items.h"
 
+#include <QAction>
+#include <QActionGroup>
 #include <QCursor>
 #include <QGraphicsScene>
+#include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsSceneMouseEvent>
+#include <QMenu>
 #include <QPainter>
 #include <QPainterPathStroker>
 #include <QStyleOptionGraphicsItem>
@@ -179,8 +183,8 @@ UutItem::UutItem(int productIndex, TopologyDocument* doc, QGraphicsItem* parent)
 }
 
 void UutItem::paintContent(QPainter* painter,
-                            const QStyleOptionGraphicsItem*,
-                            const QRectF& rect) {
+                           const QStyleOptionGraphicsItem*,
+                           const QRectF& rect) {
   const auto* prod = doc_->product(product_index_);
   if (!prod)
     return;
@@ -262,8 +266,8 @@ DeviceItem::DeviceItem(int deviceIndex,
 }
 
 void DeviceItem::paintContent(QPainter* painter,
-                               const QStyleOptionGraphicsItem*,
-                               const QRectF& rect) {
+                              const QStyleOptionGraphicsItem*,
+                              const QRectF& rect) {
   const auto* dev = doc_->device(device_index_);
   if (!dev)
     return;
@@ -314,8 +318,7 @@ QString DeviceItem::deviceType() const {
 }
 
 QPointF DeviceItem::connectionPoint() const {
-  return mapToScene(
-      QPointF(block_width_, calcContentHeight() / 2.0));
+  return mapToScene(QPointF(block_width_, calcContentHeight() / 2.0));
 }
 
 void DeviceItem::layoutDevicePorts() {
@@ -541,20 +544,32 @@ void ConnectionItem::updatePath() {
   QPointF start = source_->sceneCenter();
   QPointF end = target_port_->sceneCenter();
 
-  QPainterPath p;
-  p.moveTo(start);
-
-  qreal dx = qAbs(end.x() - start.x());
-  qreal cpOffset = qMax(dx * 0.5, 50.0);
-  QPointF cp1, cp2;
-  if (end.x() > start.x()) {
-    cp1 = start + QPointF(cpOffset, 0);
-    cp2 = end - QPointF(cpOffset, 0);
-  } else {
-    cp1 = start - QPointF(cpOffset, 0);
-    cp2 = end + QPointF(cpOffset, 0);
+  // Gather obstacle rects (UUT / Device blocks), excluding source/target
+  // parents
+  QVector<QRectF> obstacles;
+  if (auto* sc = scene()) {
+    QGraphicsItem* srcParent = source_->parentItem();
+    QGraphicsItem* tgtParent = target_port_->parentItem();
+    const auto allItems = sc->items();
+    for (auto* item : allItems) {
+      if (item == srcParent || item == tgtParent)
+        continue;
+      if (qgraphicsitem_cast<UutItem*>(item) ||
+          qgraphicsitem_cast<DeviceItem*>(item)) {
+        // Expand slightly so the path doesn't hug the block
+        obstacles.append(item->sceneBoundingRect().adjusted(-6, -6, 6, 6));
+      }
+    }
   }
-  p.cubicTo(cp1, cp2, end);
+
+  TopologyPathRouter::Context ctx;
+  ctx.sourcePos = start;
+  ctx.targetPos = end;
+  ctx.style = style_;
+  ctx.obstacles = obstacles;
+
+  TopologyPathRouter router;
+  QPainterPath p = router.route(ctx);
   setPath(p);
 
   // Compute direction arrow at midpoint
@@ -572,19 +587,21 @@ void ConnectionItem::updatePath() {
   qreal as = 8.0;
   if (dir == TopologyPort::Bidirectional) {
     qreal gap = 8.0;
-    // Forward triangle (points in path direction)
     qreal a = angle;
     QPointF fwdCenter = mid + QPointF(cos(a) * gap, sin(a) * gap);
     arrow_path_.moveTo(fwdCenter + QPointF(cos(a) * as, sin(a) * as));
-    arrow_path_.lineTo(fwdCenter + QPointF(cos(a + 2.5) * as, sin(a + 2.5) * as));
-    arrow_path_.lineTo(fwdCenter + QPointF(cos(a - 2.5) * as, sin(a - 2.5) * as));
+    arrow_path_.lineTo(fwdCenter +
+                       QPointF(cos(a + 2.5) * as, sin(a + 2.5) * as));
+    arrow_path_.lineTo(fwdCenter +
+                       QPointF(cos(a - 2.5) * as, sin(a - 2.5) * as));
     arrow_path_.closeSubpath();
-    // Backward triangle (points opposite path direction)
     a = angle + M_PI;
     QPointF revCenter = mid + QPointF(cos(a) * gap, sin(a) * gap);
     arrow_path_.moveTo(revCenter + QPointF(cos(a) * as, sin(a) * as));
-    arrow_path_.lineTo(revCenter + QPointF(cos(a + 2.5) * as, sin(a + 2.5) * as));
-    arrow_path_.lineTo(revCenter + QPointF(cos(a - 2.5) * as, sin(a - 2.5) * as));
+    arrow_path_.lineTo(revCenter +
+                       QPointF(cos(a + 2.5) * as, sin(a + 2.5) * as));
+    arrow_path_.lineTo(revCenter +
+                       QPointF(cos(a - 2.5) * as, sin(a - 2.5) * as));
     arrow_path_.closeSubpath();
   } else {
     bool forward = (dir == TopologyPort::Input);
@@ -638,6 +655,14 @@ void ConnectionItem::paint(QPainter* painter,
 
 DeviceItem* ConnectionItem::targetDevice() const {
   return target_port_ ? target_port_->parentDeviceItem() : nullptr;
+}
+
+void ConnectionItem::setStyle(PathStyle s) {
+  if (style_ == s)
+    return;
+  style_ = s;
+  updatePath();
+  update();
 }
 
 // ═══════════════════════════════════════════════════════════════
