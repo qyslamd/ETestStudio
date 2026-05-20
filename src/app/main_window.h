@@ -49,6 +49,7 @@ class MainWindow : public QMainWindow {
 
   // 项目相关
   bool tryCloseCurrentProject();
+  void openRecentProject(const QString& path);
   void onNewProject();
   void onOpenProject();
   void onCloseProject();

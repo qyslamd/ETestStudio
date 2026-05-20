@@ -356,8 +356,6 @@ bool EditorManager::saveModifiedFilesInDirectory(const QString& dirPath) {
   }
 
   for (auto it = editors_.constBegin(); it != editors_.constEnd(); ++it) {
-    if (it.value()->editorType() != QStringLiteral("text"))
-      continue;
     QString relativePath = dir.relativeFilePath(it.key());
     if (!relativePath.startsWith("..") && it.value()->isModified()) {
       if (!it.value()->save()) {
@@ -400,8 +398,6 @@ bool EditorManager::hasUnsavedChangesInDirectory(const QString& dirPath) const {
   }
 
   for (auto it = editors_.constBegin(); it != editors_.constEnd(); ++it) {
-    if (it.value()->editorType() != QStringLiteral("text"))
-      continue;
     QString relativePath = dir.relativeFilePath(it.key());
     if (!relativePath.startsWith("..") && it.value()->isModified()) {
       return true;
@@ -643,8 +639,6 @@ bool EditorManager::closeFilesInDirectory(const QString& dirPath) {
 
   QStringList filesToClose;
   for (const QString& editorId : editors_.keys()) {
-    if (editors_[editorId]->editorType() != QStringLiteral("text"))
-      continue;
     QString relativePath = dir.relativeFilePath(editorId);
     if (!relativePath.startsWith("..")) {
       filesToClose.append(editorId);

@@ -338,10 +338,7 @@ void MainWindow::initSignals() {
   connect(welcome_widget_, &WelcomeWidget::openProjectRequested, this,
           &MainWindow::onOpenProject);
   connect(welcome_widget_, &WelcomeWidget::projectOpenRequested, this,
-          [this](const QString& projectPath) {
-            auto& pm = etest::core::project::ProjectManager::instance();
-            pm.openProject(projectPath);
-          });
+          &MainWindow::openRecentProject);
 
   // 项目打开后刷新欢迎页的最近项目列表
   connect(&projectMgr,
@@ -871,6 +868,35 @@ void MainWindow::onOpenProject() {
   }
 }
 
+void MainWindow::openRecentProject(const QString& path) {
+  if (!tryCloseCurrentProject()) {
+    return;
+  }
+
+  auto& pm = etest::core::project::ProjectManager::instance();
+  if (pm.openProject(path))
+    return;
+
+  QFileInfo fi(path);
+  QString msg = fi.exists()
+      ? QStringLiteral("无法打开项目文件：%1").arg(path)
+      : QStringLiteral("项目文件 \"%1\" 不存在，\n文件可能已被移动或删除。\n\n是否从最近项目中移除此记录？").arg(path);
+
+  auto buttons = fi.exists()
+      ? QMessageBox::Ok
+      : (QMessageBox::Yes | QMessageBox::No);
+
+  if (fi.exists()) {
+    QMessageBox::warning(this, QStringLiteral("打开项目失败"), msg);
+  } else {
+    int ret = QMessageBox::question(this, QStringLiteral("打开项目失败"), msg,
+                                    buttons);
+    if (ret == QMessageBox::Yes) {
+      pm.removeFromRecentProjects(path);
+    }
+  }
+}
+
 bool MainWindow::tryCloseCurrentProject() {
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   if (!projectMgr.isProjectOpen())
@@ -961,17 +987,7 @@ void MainWindow::updateRecentProjectsMenu() {
   } else {
     for (const QString& path : recentList) {
       recent_projects_menu_->addAction(path, this, [this, path]() {
-        // 先尝试关闭当前项目
-        if (!tryCloseCurrentProject()) {
-          return;  // 用户取消，不继续打开
-        }
-
-        auto& pm = etest::core::project::ProjectManager::instance();
-        if (!pm.openProject(path)) {
-          QMessageBox::warning(
-              this, QStringLiteral("打开项目失败"),
-              QStringLiteral("无法打开项目文件：%1").arg(path));
-        }
+        openRecentProject(path);
       });
     }
 

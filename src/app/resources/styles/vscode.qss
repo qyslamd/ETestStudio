@@ -23,6 +23,7 @@ QMenuBar::item:selected {
     background-color: #094771;
 }
 QMenu {
+    min-width: 200px;
     background-color: #252526;
     color: #CCCCCC;
     border: 1px solid #454545;
