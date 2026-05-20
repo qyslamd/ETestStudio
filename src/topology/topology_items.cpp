@@ -661,6 +661,11 @@ void ConnectionItem::setStyle(PathStyle s) {
   if (style_ == s)
     return;
   style_ = s;
+  if (doc_ && conn_index_ >= 0) {
+    if (auto* c = doc_->connection(conn_index_)) {
+      c->style = s;
+    }
+  }
   updatePath();
   update();
 }

@@ -99,7 +99,9 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
 
   auto* item =
       new ConnectionItem(sourcePort, targetPort, conn->devicePort, doc_);
+  item->setConnectionIndex(connIndex);
   addItem(item);
+  item->setStyle(conn->style);
   item->updatePath();
   connection_items_.append(item);
   return item;

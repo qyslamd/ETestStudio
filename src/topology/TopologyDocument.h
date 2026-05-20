@@ -8,6 +8,8 @@
 #include <QUndoStack>
 #include <QVector>
 
+#include "TopologyPathRouter.h"
+
 namespace etest::topology {
 
 enum class FunctionType {
@@ -63,6 +65,7 @@ struct TopologyConnection {
   QString portName;
   QString deviceName;
   QString devicePort;
+  PathStyle style = PathStyle::Bezier;
 };
 
 class TopologyDocument : public QObject {

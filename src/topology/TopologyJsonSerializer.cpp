@@ -6,6 +6,21 @@
 
 namespace etest::topology {
 
+static QString pathStyleToString(PathStyle s) {
+  switch (s) {
+    case PathStyle::Bezier:   return QStringLiteral("bezier");
+    case PathStyle::Polyline: return QStringLiteral("polyline");
+    case PathStyle::Straight: return QStringLiteral("straight");
+  }
+  return QStringLiteral("bezier");
+}
+
+static PathStyle stringToPathStyle(const QString& s) {
+  if (s == QStringLiteral("polyline")) return PathStyle::Polyline;
+  if (s == QStringLiteral("straight")) return PathStyle::Straight;
+  return PathStyle::Bezier;
+}
+
 QString TopologyJsonSerializer::last_error_;
 
 QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
@@ -82,6 +97,7 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
     cObj["port"] = c->portName;
     cObj["device"] = c->deviceName;
     cObj["devicePort"] = c->devicePort;
+    cObj["style"] = pathStyleToString(c->style);
     connsArr.append(cObj);
   }
   root["connections"] = connsArr;
@@ -164,6 +180,7 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     conn.portName = cObj["port"].toString();
     conn.deviceName = cObj["device"].toString();
     conn.devicePort = cObj["devicePort"].toString();
+    conn.style = stringToPathStyle(cObj["style"].toString());
     doc->addConnection(conn);
   }
 

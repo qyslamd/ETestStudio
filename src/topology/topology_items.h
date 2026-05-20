@@ -198,6 +198,9 @@ class ConnectionItem : public QGraphicsPathItem {
   DeviceItem* targetDevice() const;
   QString devicePort() const { return device_port_; }
 
+  void setConnectionIndex(int idx) { conn_index_ = idx; }
+  int connectionIndex() const { return conn_index_; }
+
  private:
   PortItem* source_;
   DevicePortItem* target_port_;
@@ -205,6 +208,7 @@ class ConnectionItem : public QGraphicsPathItem {
   TopologyDocument* doc_;
   QPainterPath arrow_path_;
   PathStyle style_ = PathStyle::Bezier;
+  int conn_index_ = -1;
 };
 
 // ── LegendItem ── color legend overlay ───────────────────────────
