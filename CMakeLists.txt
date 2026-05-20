@@ -198,6 +198,7 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/plugins/mock_can_device)
     add_subdirectory(examples/guidance-demo)
     add_subdirectory(examples/lua-debugger-demo)
+    add_subdirectory(examples/topology-demo)
 endif()
 
 
