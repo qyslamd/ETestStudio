@@ -6,14 +6,16 @@
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QTableWidget>
+#include <QTableView>
 #include <QWidget>
 
 #include "TopologyDocument.h"
 
 class QGraphicsItem;
+class QStandardItemModel;
+class ComboBoxDelegate;
 
 namespace etest::topology {
-
 class PropertyPanelWidget : public QWidget {
   Q_OBJECT
  public:
@@ -91,10 +93,14 @@ class PropertyPanelWidget : public QWidget {
   QTableWidget* device_props_table_ = nullptr;
   QPushButton* add_prop_btn_ = nullptr;
   QPushButton* remove_prop_btn_ = nullptr;
-  QTableWidget* device_port_table_ = nullptr;
+  QTableView* device_port_view_ = nullptr;
+  QStandardItemModel* device_port_model_ = nullptr;
+  ComboBoxDelegate* direction_delegate_ = nullptr;
+  ComboBoxDelegate* function_delegate_ = nullptr;
   QPushButton* add_port_btn_ = nullptr;
   QPushButton* remove_port_btn_ = nullptr;
   int editing_device_index_ = -1;
+  bool device_dirty_ = false;
 
   // Connection page widgets
   QLabel* conn_source_label_ = nullptr;

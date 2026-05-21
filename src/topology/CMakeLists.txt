@@ -10,6 +10,7 @@ add_library(${TARGET_NAME} STATIC
     TopologyView.h TopologyView.cpp
     TopologyEditorWidget.h TopologyEditorWidget.cpp
     PropertyPanelWidget.h PropertyPanelWidget.cpp
+    ComboBoxDelegate.h ComboBoxDelegate.cpp
     DeviceTemplateManager.h DeviceTemplateManager.cpp
     DevicePaletteWidget.h DevicePaletteWidget.cpp
     UndoCommands.h UndoCommands.cpp

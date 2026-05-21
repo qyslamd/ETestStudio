@@ -2,10 +2,13 @@
 #include "TopologyDocument.h"
 #include "UndoCommands.h"
 #include "topology_items.h"
+#include "ComboBoxDelegate.h"
 
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHeaderView>
+#include <QStandardItem>
+#include <QStandardItemModel>
 #include <QVBoxLayout>
 
 namespace etest::topology {
@@ -40,13 +43,15 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       int savedIdx = editing_device_index_;
       editing_device_index_ = -1;
 
-      bool wasBlocked = doc_->undoStack()->blockSignals(true);
-      applyDeviceProperties(savedIdx);
-      applyDevicePorts(savedIdx);
-      doc_->undoStack()->blockSignals(wasBlocked);
+      if (device_dirty_) {
+        bool wasBlocked = doc_->undoStack()->blockSignals(true);
+        applyDeviceProperties(savedIdx);
+        applyDevicePorts(savedIdx);
+        doc_->undoStack()->blockSignals(wasBlocked);
 
-      emit documentChanged();  // triggers rebuildSceneAndRestoreSelection
-      return;  // item may be dangling now; rebuild will refresh the panel
+        emit documentChanged();
+      }
+      return;
     }
   }
 
@@ -117,12 +122,15 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       // Save current state for undo support
       saved_device_properties_ = d->properties;
       saved_device_ports_ = d->ports;
+      device_dirty_ = false;
 
       device_name_edit_->blockSignals(true);
       device_name_edit_->setText(d->name);
       device_name_edit_->blockSignals(false);
       device_type_edit_->setText(d->deviceType);
 
+      device_props_table_->setUpdatesEnabled(false);
+      device_props_table_->blockSignals(true);
       device_props_table_->setRowCount(d->properties.size());
       for (int r = 0; r < d->properties.size(); ++r) {
         device_props_table_->setItem(
@@ -130,31 +138,31 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
         device_props_table_->setItem(
             r, 1, new QTableWidgetItem(d->properties[r].second));
       }
+      device_props_table_->blockSignals(false);
+      device_props_table_->setUpdatesEnabled(true);
 
-      // Load device ports into table
-      device_port_table_->setRowCount(d->ports.size());
+      // Load device ports via model (no QComboBox creation)
+      device_port_view_->setUpdatesEnabled(false);
+      device_port_model_->blockSignals(true);
+      const QStringList dirNames = {
+          QStringLiteral("Input"),
+          QStringLiteral("Output"),
+          QStringLiteral("Bidirectional")};
+      device_port_model_->removeRows(0, device_port_model_->rowCount());
       for (int r = 0; r < d->ports.size(); ++r) {
-        device_port_table_->setItem(r, 0,
-                                    new QTableWidgetItem(d->ports[r].name));
-        auto* dirCombo = new QComboBox();
-        dirCombo->addItem(QStringLiteral("Input"));
-        dirCombo->addItem(QStringLiteral("Output"));
-        dirCombo->addItem(QStringLiteral("Bidirectional"));
-        dirCombo->setCurrentIndex(static_cast<int>(d->ports[r].direction));
-        connect(dirCombo, &QComboBox::currentTextChanged, this,
-                [this, r](const QString&) { onDevicePortDirectionChanged(r); });
-        device_port_table_->setCellWidget(r, 1, dirCombo);
-        auto* funcCombo = new QComboBox();
-        for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
-          funcCombo->addItem(
-              functionTypeToString(static_cast<FunctionType>(ft)));
-        }
-        funcCombo->setCurrentIndex(static_cast<int>(d->ports[r].functionType));
-        connect(
-            funcCombo, &QComboBox::currentTextChanged, this,
-            [this, r](const QString&) { onDevicePortFunctionTypeChanged(r); });
-        device_port_table_->setCellWidget(r, 2, funcCombo);
+        device_port_model_->insertRow(r);
+        device_port_model_->setData(
+            device_port_model_->index(r, 0), d->ports[r].name);
+        device_port_model_->setData(
+            device_port_model_->index(r, 1),
+            dirNames[static_cast<int>(d->ports[r].direction)]);
+        device_port_model_->setData(
+            device_port_model_->index(r, 2),
+            functionTypeToString(d->ports[r].functionType));
       }
+      device_port_model_->blockSignals(false);
+      device_port_view_->resizeColumnsToContents();
+      device_port_view_->setUpdatesEnabled(true);
     }
     stack_->setCurrentIndex(PageDevice);
     return;
@@ -299,6 +307,8 @@ void PropertyPanelWidget::buildDevicePage() {
       {QStringLiteral("键"), QStringLiteral("值")});
   device_props_table_->horizontalHeader()->setStretchLastSection(true);
   device_props_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
+  connect(device_props_table_, &QTableWidget::itemChanged, this,
+          [this]() { device_dirty_ = true; });
   propsLay->addWidget(device_props_table_);
 
   auto* btnLay = new QHBoxLayout();
@@ -318,13 +328,32 @@ void PropertyPanelWidget::buildDevicePage() {
   auto* portGroup = new QGroupBox(QStringLiteral("设备端口"), w);
   auto* portLay = new QVBoxLayout(portGroup);
 
-  device_port_table_ = new QTableWidget(0, 3, w);
-  device_port_table_->setHorizontalHeaderLabels({QStringLiteral("名称"),
-                                                 QStringLiteral("方向"),
-                                                 QStringLiteral("功能类型")});
-  device_port_table_->horizontalHeader()->setStretchLastSection(true);
-  device_port_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
-  portLay->addWidget(device_port_table_);
+  device_port_view_ = new QTableView(w);
+  device_port_view_->horizontalHeader()->setStretchLastSection(true);
+  device_port_view_->setSelectionBehavior(QAbstractItemView::SelectRows);
+  device_port_view_->setAlternatingRowColors(true);
+  device_port_model_ = new QStandardItemModel(0, 3, this);
+  device_port_model_->setHorizontalHeaderLabels(
+      {QStringLiteral("名称"), QStringLiteral("方向"),
+       QStringLiteral("功能类型")});
+  device_port_view_->setModel(device_port_model_);
+  connect(device_port_model_, &QStandardItemModel::itemChanged, this,
+          [this]() { device_dirty_ = true; });
+
+  {
+    QStringList funcItems;
+    for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft)
+      funcItems << functionTypeToString(static_cast<FunctionType>(ft));
+    direction_delegate_ = new ComboBoxDelegate(
+        {QStringLiteral("Input"), QStringLiteral("Output"),
+         QStringLiteral("Bidirectional")},
+        this);
+    function_delegate_ = new ComboBoxDelegate(funcItems, this);
+  }
+  device_port_view_->setItemDelegateForColumn(1, direction_delegate_);
+  device_port_view_->setItemDelegateForColumn(2, function_delegate_);
+
+  portLay->addWidget(device_port_view_);
 
   auto* portBtnLay = new QHBoxLayout();
   add_port_btn_ = new QPushButton(QStringLiteral("+"), w);
@@ -542,18 +571,20 @@ void PropertyPanelWidget::onAddPropertyRow() {
   device_props_table_->insertRow(row);
   device_props_table_->setItem(row, 0, new QTableWidgetItem(QString()));
   device_props_table_->setItem(row, 1, new QTableWidgetItem(QString()));
+  device_dirty_ = true;
 }
 
 void PropertyPanelWidget::onRemovePropertyRow() {
   int row = device_props_table_->currentRow();
   if (row >= 0) {
     device_props_table_->removeRow(row);
+    device_dirty_ = true;
   }
 }
 
 void PropertyPanelWidget::applyDeviceProperties(int deviceIndex) {
   auto* dev = doc_->device(deviceIndex);
-  if (!dev)
+  if (!dev || !device_dirty_)
     return;
 
   // Build new properties from table
@@ -586,29 +617,51 @@ void PropertyPanelWidget::applyDeviceProperties(int deviceIndex) {
 
 void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
   auto* dev = doc_->device(deviceIndex);
-  if (!dev)
+  if (!dev || !device_dirty_)
     return;
 
-  // Build new ports from table
+  // Build new ports from model
   QVector<TopologyDevicePort> newPorts;
-  for (int r = 0; r < device_port_table_->rowCount(); ++r) {
-    auto* nameItem = device_port_table_->item(r, 0);
-    if (!nameItem || nameItem->text().isEmpty())
+  for (int r = 0; r < device_port_model_->rowCount(); ++r) {
+    auto name =
+        device_port_model_->index(r, 0).data(Qt::DisplayRole).toString();
+    if (name.isEmpty())
       continue;
-    auto* dirCombo =
-        qobject_cast<QComboBox*>(device_port_table_->cellWidget(r, 1));
-    auto* funcCombo =
-        qobject_cast<QComboBox*>(device_port_table_->cellWidget(r, 2));
+    auto dirText =
+        device_port_model_->index(r, 1).data(Qt::DisplayRole).toString();
+    auto funcText =
+        device_port_model_->index(r, 2).data(Qt::DisplayRole).toString();
     TopologyDevicePort dp;
-    dp.name = nameItem->text();
-    dp.direction = static_cast<TopologyPort::Direction>(
-        dirCombo ? dirCombo->currentIndex() : 1);
-    dp.functionType =
-        static_cast<FunctionType>(funcCombo ? funcCombo->currentIndex() : 0);
+    dp.name = name;
+    dp.direction = dirText == QStringLiteral("Bidirectional")
+                       ? TopologyPort::Bidirectional
+                   : dirText == QStringLiteral("Output") ? TopologyPort::Output
+                                                         : TopologyPort::Input;
+    dp.functionType = FunctionType::CUSTOM;
+    for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
+      if (functionTypeToString(static_cast<FunctionType>(ft)) == funcText) {
+        dp.functionType = static_cast<FunctionType>(ft);
+        break;
+      }
+    }
     newPorts.append(dp);
   }
 
-  // Always push (no comparison operator for TopologyDevicePort)
+  // Compare with saved ports (no operator== on TopologyDevicePort)
+  bool equal = newPorts.size() == saved_device_ports_.size();
+  if (equal) {
+    for (int i = 0; i < newPorts.size(); ++i) {
+      if (newPorts[i].name != saved_device_ports_[i].name ||
+          newPorts[i].direction != saved_device_ports_[i].direction ||
+          newPorts[i].functionType != saved_device_ports_[i].functionType) {
+        equal = false;
+        break;
+      }
+    }
+  }
+  if (equal)
+    return;
+
   auto oldPorts = saved_device_ports_;
   int idx = deviceIndex;
   auto* cmd = new PropertyCommand(
@@ -623,46 +676,38 @@ void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
       },
       QStringLiteral("修改设备端口"));
   doc_->undoStack()->push(cmd);
+  device_dirty_ = false;
 }
 
 // ── Device port slots ─────────────────────────────────────────
 
 void PropertyPanelWidget::onAddDevicePortRow() {
-  int row = device_port_table_->rowCount();
-  device_port_table_->insertRow(row);
-  device_port_table_->setItem(row, 0, new QTableWidgetItem(QString()));
-  auto* dirCombo = new QComboBox();
-  dirCombo->addItem(QStringLiteral("Input"));
-  dirCombo->addItem(QStringLiteral("Output"));
-  dirCombo->addItem(QStringLiteral("Bidirectional"));
-  connect(dirCombo, &QComboBox::currentTextChanged, this,
-          [this, row](const QString&) { onDevicePortDirectionChanged(row); });
-  device_port_table_->setCellWidget(row, 1, dirCombo);
-  auto* funcCombo = new QComboBox();
-  for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
-    funcCombo->addItem(functionTypeToString(static_cast<FunctionType>(ft)));
-  }
-  connect(
-      funcCombo, &QComboBox::currentTextChanged, this,
-      [this, row](const QString&) { onDevicePortFunctionTypeChanged(row); });
-  device_port_table_->setCellWidget(row, 2, funcCombo);
+  int row = device_port_model_->rowCount();
+  device_port_model_->insertRow(row);
+  device_port_model_->setData(
+      device_port_model_->index(row, 0), QString());
+  device_port_model_->setData(
+      device_port_model_->index(row, 1), QStringLiteral("Input"));
+  device_port_model_->setData(
+      device_port_model_->index(row, 2),
+      functionTypeToString(FunctionType::A429));
+  device_dirty_ = true;
 }
 
 void PropertyPanelWidget::onRemoveDevicePortRow() {
-  int row = device_port_table_->currentRow();
+  int row = device_port_view_->currentIndex().row();
   if (row >= 0) {
-    device_port_table_->removeRow(row);
+    device_port_model_->removeRow(row);
+    device_dirty_ = true;
   }
 }
 
-void PropertyPanelWidget::onDevicePortFunctionTypeChanged(int row) {
-  Q_UNUSED(row);
-  // Table edit — batched via applyDevicePorts; no direct document change.
+void PropertyPanelWidget::onDevicePortFunctionTypeChanged(int /*row*/) {
+  device_dirty_ = true;
 }
 
-void PropertyPanelWidget::onDevicePortDirectionChanged(int row) {
-  Q_UNUSED(row);
-  // Table edit — batched via applyDevicePorts; no direct document change.
+void PropertyPanelWidget::onDevicePortDirectionChanged(int /*row*/) {
+  device_dirty_ = true;
 }
 
 void PropertyPanelWidget::onDevicePortNameChanged() {
