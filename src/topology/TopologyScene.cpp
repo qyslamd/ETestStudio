@@ -5,10 +5,13 @@
 #include "topology_items.h"
 
 #include <QGraphicsLineItem>
+#include <QGraphicsPathItem>
 #include <QGraphicsSceneMouseEvent>
+#include <QGraphicsSimpleTextItem>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMimeData>
+#include <QPainterPath>
 #include <QPen>
 
 namespace etest::topology {
@@ -183,8 +186,51 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
   drag_source_ = nullptr;
 }
 
+void TopologyScene::createDragPreview() {
+  const qreal kWidth = 120.0;
+  constexpr qreal kBaseHeight = 50.0;
+  constexpr qreal kPortMargin = 10.0;
+  constexpr qreal kPortSpacing = 20.0;
+  constexpr qreal kRadius = 10.0;
+
+  int portCount = drag_preview_data_["channelCount"].toInt(1);
+  qreal kHeight = qMax(kBaseHeight, 2.0 * kPortMargin + portCount * kPortSpacing);
+
+  QPainterPath path;
+  path.addRoundedRect(0, 0, kWidth, kHeight, kRadius, kRadius);
+  auto* preview = new QGraphicsPathItem(path);
+  preview->setPen(QPen(QColor(100, 180, 255, 200), 1.5, Qt::DashLine));
+  QColor fill = topologyColors().deviceFill;
+  fill.setAlpha(100);
+  preview->setBrush(fill);
+  preview->setZValue(1000);
+
+  QString name = drag_preview_data_["deviceType"].toString();
+  auto* text = new QGraphicsSimpleTextItem(name, preview);
+  QFont f = text->font();
+  f.setPointSize(10);
+  f.setBold(true);
+  text->setFont(f);
+  text->setBrush(QColor(200, 200, 200, 180));
+  text->setPos((kWidth - text->boundingRect().width()) / 2.0,
+               (kHeight - text->boundingRect().height()) / 2.0);
+
+  addItem(preview);
+  drag_preview_ = preview;
+}
+
 void TopologyScene::dragEnterEvent(QGraphicsSceneDragDropEvent* event) {
   if (event->mimeData()->hasFormat(QLatin1String(kTopologyDeviceMime))) {
+    // Parse device data and create a ghost preview
+    QJsonDocument jdoc = QJsonDocument::fromJson(
+        event->mimeData()->data(QLatin1String(kTopologyDeviceMime)));
+    if (jdoc.isObject()) {
+      drag_preview_data_ = jdoc.object();
+      createDragPreview();
+      if (drag_preview_) {
+        drag_preview_->setPos(event->scenePos());
+      }
+    }
     event->acceptProposedAction();
     return;
   }
@@ -193,14 +239,35 @@ void TopologyScene::dragEnterEvent(QGraphicsSceneDragDropEvent* event) {
 
 void TopologyScene::dragMoveEvent(QGraphicsSceneDragDropEvent* event) {
   if (event->mimeData()->hasFormat(QLatin1String(kTopologyDeviceMime))) {
+    if (drag_preview_) {
+      // Preview top-left follows cursor to match drop position
+      drag_preview_->setPos(event->scenePos());
+    }
     event->acceptProposedAction();
     return;
   }
   QGraphicsScene::dragMoveEvent(event);
 }
 
+void TopologyScene::dragLeaveEvent(QGraphicsSceneDragDropEvent* event) {
+  if (drag_preview_) {
+    removeItem(drag_preview_);
+    delete drag_preview_;
+    drag_preview_ = nullptr;
+    drag_preview_data_ = QJsonObject();
+  }
+  QGraphicsScene::dragLeaveEvent(event);
+}
+
 void TopologyScene::dropEvent(QGraphicsSceneDragDropEvent* event) {
   if (event->mimeData()->hasFormat(QLatin1String(kTopologyDeviceMime))) {
+    // Clean up preview
+    if (drag_preview_) {
+      removeItem(drag_preview_);
+      delete drag_preview_;
+      drag_preview_ = nullptr;
+    }
+
     QJsonDocument jdoc = QJsonDocument::fromJson(
         event->mimeData()->data(QLatin1String(kTopologyDeviceMime)));
     if (jdoc.isObject()) {
@@ -211,6 +278,7 @@ void TopologyScene::dropEvent(QGraphicsSceneDragDropEvent* event) {
                          obj["functionType"].toInt(),
                          event->scenePos());
     }
+    drag_preview_data_ = QJsonObject();
     event->acceptProposedAction();
     return;
   }
@@ -304,6 +372,7 @@ UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
 void TopologyScene::clearScene() {
   drag_source_ = nullptr;
   drag_line_ = nullptr;
+  drag_preview_ = nullptr;
   moving_item_ = nullptr;
   clear();
   uut_items_.clear();

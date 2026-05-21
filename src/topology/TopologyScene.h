@@ -2,6 +2,7 @@
 
 #include <QGraphicsScene>
 #include <QGraphicsSceneDragDropEvent>
+#include <QJsonObject>
 #include <QVector>
 
 class QGraphicsLineItem;
@@ -64,19 +65,25 @@ class TopologyScene : public QGraphicsScene {
   void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
   void dragEnterEvent(QGraphicsSceneDragDropEvent* event) override;
   void dragMoveEvent(QGraphicsSceneDragDropEvent* event) override;
+  void dragLeaveEvent(QGraphicsSceneDragDropEvent* event) override;
   void dropEvent(QGraphicsSceneDragDropEvent* event) override;
 
  private:
   void clearScene();
+  void createDragPreview();
 
   TopologyDocument* doc_;
   QVector<UutItem*> uut_items_;
   QVector<DeviceItem*> device_items_;
   QVector<ConnectionItem*> connection_items_;
 
-  // Drag state (PortItem or DevicePortItem)
+  // Connection drag state (PortItem or DevicePortItem)
   QGraphicsItem* drag_source_ = nullptr;
   QGraphicsLineItem* drag_line_ = nullptr;
+
+  // Device palette drag preview
+  QGraphicsItem* drag_preview_ = nullptr;
+  QJsonObject drag_preview_data_;
 
   // Move tracking
   QGraphicsItem* moving_item_ = nullptr;

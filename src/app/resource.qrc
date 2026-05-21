@@ -62,6 +62,38 @@
         <file>resources/icons/svg/file_etopo_light.svg</file>
         <file>resources/icons/svg/file_eproto_dark.svg</file>
         <file>resources/icons/svg/file_eproto_light.svg</file>
+        <file>resources/icons/svg/topo_uut_dark.svg</file>
+        <file>resources/icons/svg/topo_uut_light.svg</file>
+        <file>resources/icons/svg/topo_device_dark.svg</file>
+        <file>resources/icons/svg/topo_device_light.svg</file>
+        <file>resources/icons/svg/topo_zoom_in_dark.svg</file>
+        <file>resources/icons/svg/topo_zoom_in_light.svg</file>
+        <file>resources/icons/svg/topo_zoom_out_dark.svg</file>
+        <file>resources/icons/svg/topo_zoom_out_light.svg</file>
+        <file>resources/icons/svg/topo_zoom_reset_dark.svg</file>
+        <file>resources/icons/svg/topo_zoom_reset_light.svg</file>
+        <file>resources/icons/svg/topo_undo_dark.svg</file>
+        <file>resources/icons/svg/topo_undo_light.svg</file>
+        <file>resources/icons/svg/topo_redo_dark.svg</file>
+        <file>resources/icons/svg/topo_redo_light.svg</file>
+        <file>resources/icons/svg/topo_export_dark.svg</file>
+        <file>resources/icons/svg/topo_export_light.svg</file>
+        <file>resources/icons/svg/topo_align_left_dark.svg</file>
+        <file>resources/icons/svg/topo_align_left_light.svg</file>
+        <file>resources/icons/svg/topo_align_center_dark.svg</file>
+        <file>resources/icons/svg/topo_align_center_light.svg</file>
+        <file>resources/icons/svg/topo_align_right_dark.svg</file>
+        <file>resources/icons/svg/topo_align_right_light.svg</file>
+        <file>resources/icons/svg/topo_align_top_dark.svg</file>
+        <file>resources/icons/svg/topo_align_top_light.svg</file>
+        <file>resources/icons/svg/topo_align_middle_dark.svg</file>
+        <file>resources/icons/svg/topo_align_middle_light.svg</file>
+        <file>resources/icons/svg/topo_align_bottom_dark.svg</file>
+        <file>resources/icons/svg/topo_align_bottom_light.svg</file>
+        <file>resources/icons/svg/topo_distribute_horizontal_dark.svg</file>
+        <file>resources/icons/svg/topo_distribute_horizontal_light.svg</file>
+        <file>resources/icons/svg/topo_distribute_vertical_dark.svg</file>
+        <file>resources/icons/svg/topo_distribute_vertical_light.svg</file>
         <file>resources/icons/svg/chevron_right_light.svg</file>
         <file>resources/icons/svg/chevron_down_light.svg</file>
     </qresource>

@@ -218,7 +218,7 @@ void GitWidget::initUi() {
   QIcon refreshIcon;
   refreshIcon.addFile(":/resources/icons/svg/refresh_dark.svg", QSize(),
                       QIcon::Normal, QIcon::Off);
-  refreshIcon.addFile(":/resources/icons/svg/refresh_light.svg", QSize(),
+  refreshIcon.addFile(":/resources/icons/svg/refresh_dark.svg", QSize(),
                       QIcon::Disabled, QIcon::Off);
   refresh_button_->setIcon(refreshIcon);
   refresh_button_->setIconSize(QSize(16, 16));

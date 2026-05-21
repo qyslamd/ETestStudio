@@ -91,9 +91,11 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   QAction* zoom_reset_action_ = nullptr;
   QAction* export_image_action_ = nullptr;
 
-  // Align / Distribute
-  void doAlign(int alignType);
-  void doDistribute(int distType);
+  enum class Align { Left, HCenter, Right, Top, VCenter, Bottom };
+  enum class Distribute { Horizontal, Vertical };
+
+  void doAlign(Align alignType);
+  void doDistribute(Distribute distType);
   void updateAlignDistributeActions();
 
   QAction* align_left_action_ = nullptr;
