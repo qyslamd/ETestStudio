@@ -1,6 +1,7 @@
 set(TARGET_NAME etest_topology)
 add_library(${TARGET_NAME} STATIC
     TopologyBlockItem.h TopologyBlockItem.cpp
+    TopologyOutlineWidget.h TopologyOutlineWidget.cpp
     TopologyPathRouter.h TopologyPathRouter.cpp
     TopologyDocument.h TopologyDocument.cpp
     TopologyJsonSerializer.h TopologyJsonSerializer.cpp

@@ -358,6 +358,14 @@ ConnectionItem* TopologyScene::connectionItemAt(QPointF scenePos) const {
   return nullptr;
 }
 
+ConnectionItem* TopologyScene::findConnectionItem(int connIndex) const {
+  for (auto* conn : connection_items_) {
+    if (conn && conn->connectionIndex() == connIndex)
+      return conn;
+  }
+  return nullptr;
+}
+
 UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
   auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
                            Qt::DescendingOrder);

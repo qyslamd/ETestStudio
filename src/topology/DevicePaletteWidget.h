@@ -5,6 +5,7 @@
 
 #include "TopologyDocument.h"
 
+class QLineEdit;
 class QMimeData;
 
 namespace etest::topology {
@@ -36,8 +37,10 @@ class DevicePaletteWidget : public QWidget {
 
  private:
   void populateDeviceTypes();
+  void onFilterChanged(const QString& text);
 
   DeviceListWidget* list_widget_ = nullptr;
+  QLineEdit* filter_input_ = nullptr;
 };
 
 }  // namespace etest::topology

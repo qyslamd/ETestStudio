@@ -45,6 +45,9 @@ class TopologyScene : public QGraphicsScene {
   UutItem* findUutItem(int productIndex) const;
   DeviceItem* findDeviceItem(int deviceIndex) const;
 
+  // Find items by index
+  ConnectionItem* findConnectionItem(int connIndex) const;
+
   // Find items at scene position by type
   DeviceItem* deviceItemAt(QPointF scenePos) const;
   DevicePortItem* devicePortItemAt(QPointF scenePos) const;

@@ -15,6 +15,8 @@ class TopologyDocument;
 class TopologyScene;
 class TopologyView;
 class PropertyPanelWidget;
+class TopologyOutlineWidget;
+class DevicePaletteWidget;
 
 class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   Q_OBJECT
@@ -67,6 +69,7 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
                     int direction,
                     int functionType,
                     const QPointF& scenePos);
+  void onOutlineNavigate(int itemType, int mainIndex, int subIndex);
 
  private:
   void initUi();
@@ -78,7 +81,9 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   TopologyScene* scene_;
   TopologyView* view_;
   PropertyPanelWidget* property_panel_;
-  class DevicePaletteWidget* device_palette_ = nullptr;
+  DevicePaletteWidget* device_palette_ = nullptr;
+  TopologyOutlineWidget* outline_widget_ = nullptr;
+  QAction* outline_toggle_action_ = nullptr;
   QSplitter* splitter_;
   QLabel* status_label_ = nullptr;
 

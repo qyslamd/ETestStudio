@@ -3,6 +3,7 @@
 #include <QDrag>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLineEdit>
 #include <QListWidgetItem>
 #include <QMimeData>
 #include <QVBoxLayout>
@@ -106,11 +107,20 @@ static const char* functionLabel(FunctionType t) {
 DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QWidget(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(0);
+
+  filter_input_ = new QLineEdit(this);
+  filter_input_->setPlaceholderText(QStringLiteral("搜索设备类型..."));
+  filter_input_->setClearButtonEnabled(true);
+  layout->addWidget(filter_input_);
 
   list_widget_ = new DeviceListWidget(this);
   layout->addWidget(list_widget_);
 
   populateDeviceTypes();
+
+  connect(filter_input_, &QLineEdit::textChanged, this,
+          &DevicePaletteWidget::onFilterChanged);
 }
 
 void DevicePaletteWidget::populateDeviceTypes() {
@@ -130,6 +140,13 @@ void DevicePaletteWidget::populateDeviceTypes() {
 
     item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
     list_widget_->addItem(item);
+  }
+}
+
+void DevicePaletteWidget::onFilterChanged(const QString& text) {
+  for (int i = 0; i < list_widget_->count(); ++i) {
+    auto* item = list_widget_->item(i);
+    item->setHidden(!item->text().contains(text, Qt::CaseInsensitive));
   }
 }
 

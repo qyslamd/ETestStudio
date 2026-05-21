@@ -27,6 +27,7 @@
 #include "TopologyTheme.h"
 #include "TopologyDocument.h"
 #include "TopologyJsonSerializer.h"
+#include "TopologyOutlineWidget.h"
 #include "TopologyScene.h"
 #include "TopologyView.h"
 #include "UndoCommands.h"
@@ -253,18 +254,55 @@ void TopologyEditorWidget::initUi() {
   redoBtn->setDefaultAction(redo_action_);
   toolbarLayout->addWidget(redoBtn);
 
+  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
+
+  outline_toggle_action_ = new QAction(topoIcon(QStringLiteral("topo_uut")),
+                                       QStringLiteral("大纲"), this);
+  outline_toggle_action_->setCheckable(true);
+  outline_toggle_action_->setChecked(true);
+  outline_toggle_action_->setToolTip(QStringLiteral("显示/隐藏导航大纲"));
+  auto* outlineBtn = new QToolButton(toolbarFrame);
+  outlineBtn->setDefaultAction(outline_toggle_action_);
+  toolbarLayout->addWidget(outlineBtn);
+
   toolbarLayout->addStretch();
   mainLayout->addWidget(toolbarFrame);
 
   device_palette_ = new DevicePaletteWidget(this);
+  device_palette_->setObjectName(QStringLiteral("topologyDevicePalette"));
+  outline_widget_ = new TopologyOutlineWidget(this);
+  outline_widget_->setMinimumWidth(160);
+  outline_widget_->setObjectName(QStringLiteral("topologyOutline"));
+
+  auto* leftSplitter = new QSplitter(Qt::Vertical, this);
+  leftSplitter->addWidget(device_palette_);
+  leftSplitter->addWidget(outline_widget_);
+  leftSplitter->setStretchFactor(0, 1);
+  leftSplitter->setStretchFactor(1, 1);
+  // Subtle border for visual panel separation
+  leftSplitter->setStyleSheet(QStringLiteral(
+      "QWidget#topologyDevicePalette, QWidget#topologyOutline {"
+      "  border: 1px solid palette(mid);"
+      "}"
+      "QWidget#topologyDevicePalette:focus, QWidget#topologyOutline:focus {"
+      "  border: 1px solid palette(highlight);"
+      "}"
+      "QLineEdit {"
+      "  border: 1px solid palette(mid);"
+      "  padding: 2px 4px;"
+      "}"
+      "QLineEdit:focus {"
+      "  border: 1px solid palette(highlight);"
+      "}"));
 
   splitter_ = new QSplitter(Qt::Horizontal, this);
-  splitter_->addWidget(device_palette_);
+  splitter_->addWidget(leftSplitter);
   splitter_->addWidget(view_);
   splitter_->addWidget(property_panel_);
-  splitter_->setStretchFactor(0, 0);  // palette — fixed width
+  splitter_->setStretchFactor(0, 0);  // left panel — fixed width
   splitter_->setStretchFactor(1, 4);  // view — stretch
   splitter_->setStretchFactor(2, 1);  // property panel — stretch less
+  splitter_->setSizes({360, 800, 280});
   mainLayout->addWidget(splitter_, 1);
 
   auto* statusFrame = new QFrame(this);
@@ -341,9 +379,39 @@ void TopologyEditorWidget::initSignals() {
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
           &TopologyEditorWidget::onDocumentChanged);
 
+  // ── Outline navigation ──
+  connect(outline_widget_, &TopologyOutlineWidget::navigateRequested, this,
+          &TopologyEditorWidget::onOutlineNavigate);
+  connect(outline_toggle_action_, &QAction::toggled, outline_widget_,
+          &QWidget::setVisible);
+
   auto* undoStack = doc_->undoStack();
-  connect(undoStack, &QUndoStack::indexChanged, this,
-          [this]() { rebuildSceneAndRestoreSelection(); });
+  connect(undoStack, &QUndoStack::indexChanged, this, [this]() {
+    // Save selection indices before rebuild
+    int selType = -1, selIdx1 = -1, selIdx2 = -1;
+    auto sel = scene_->selectedItems();
+    if (!sel.isEmpty()) {
+      auto* item = sel.first();
+      if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
+        selType = 0; selIdx1 = uut->productIndex();
+      } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
+        selType = 1; selIdx1 = dev->deviceIndex();
+      } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+        selType = 3; selIdx1 = p->productIndex(); selIdx2 = p->portIndex();
+      } else if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(item)) {
+        selType = 4; selIdx1 = dp->deviceIndex(); selIdx2 = dp->portIndex();
+      } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
+        selType = 2; selIdx1 = conn->connectionIndex();
+      }
+    }
+
+    rebuildSceneAndRestoreSelection();
+    outline_widget_->rebuildTree(doc_);
+
+    // Restore outline selection
+    if (selType >= 0)
+      outline_widget_->selectForItem(selType, selIdx1, selIdx2);
+  });
   connect(undoStack, &QUndoStack::canUndoChanged, undo_action_,
           &QAction::setEnabled);
   connect(undoStack, &QUndoStack::canRedoChanged, redo_action_,
@@ -432,6 +500,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
 
   scene_->loadFromDocument();
   doc_->undoStack()->clear();
+  outline_widget_->rebuildTree(doc_);
 }
 
 // ── Slots ──────────────────────────────────────────────────────
@@ -552,8 +621,32 @@ void TopologyEditorWidget::onSaveTemplate(QGraphicsItem* item) {
 void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
   if (item) {
     property_panel_->showPropertiesFor(item);
+
+    // Sync outline tree selection
+    int type = -1, mainIdx = -1, subIdx = -1;
+    if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
+      type = 0;
+      mainIdx = uut->productIndex();
+    } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
+      type = 1;
+      mainIdx = dev->deviceIndex();
+    } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
+      type = 2;
+      mainIdx = conn->connectionIndex();
+    } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+      type = 3;
+      mainIdx = p->productIndex();
+      subIdx = p->portIndex();
+    } else if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(item)) {
+      type = 4;
+      mainIdx = dp->deviceIndex();
+      subIdx = dp->portIndex();
+    }
+    if (type >= 0)
+      outline_widget_->selectForItem(type, mainIdx, subIdx);
   } else {
     property_panel_->clearPanel();
+    outline_widget_->clearSelection();
   }
 }
 
@@ -624,6 +717,7 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
 
 void TopologyEditorWidget::onDocumentChanged() {
   rebuildSceneAndRestoreSelection();
+  outline_widget_->rebuildTree(doc_);
   // 属性面板可能blockSignals导致cleanChanged丢失，此处显式同步修改状态
   emit modificationChanged(!doc_->undoStack()->isClean());
 }
@@ -828,6 +922,46 @@ void TopologyEditorWidget::onPaste() {
   status_label_->setText(QStringLiteral("已粘贴 %1 个 UUT, %2 个设备")
                              .arg(prodsArr.size())
                              .arg(devsArr.size()));
+}
+
+// ── Outline navigation ───────────────────────────────────────
+
+void TopologyEditorWidget::onOutlineNavigate(int itemType, int mainIndex,
+                                              int subIndex) {
+  QGraphicsItem* target = nullptr;
+
+  switch (itemType) {
+    case 0:
+      target = scene_->findUutItem(mainIndex);
+      break;
+    case 1:
+      target = scene_->findDeviceItem(mainIndex);
+      break;
+    case 2:
+      target = scene_->findConnectionItem(mainIndex);
+      break;
+    case 3: {
+      auto* uut = scene_->findUutItem(mainIndex);
+      if (uut)
+        target = uut->portItem(subIndex);
+      break;
+    }
+    case 4: {
+      auto* dev = scene_->findDeviceItem(mainIndex);
+      if (dev)
+        target = dev->devicePortItem(subIndex);
+      break;
+    }
+    default:
+      return;
+  }
+
+  if (target) {
+    scene_->clearSelection();
+    target->setSelected(true);
+    view_->centerOn(target);
+    property_panel_->showPropertiesFor(target);
+  }
 }
 
 // ── Export Image ──────────────────────────────────────────────
