@@ -79,7 +79,8 @@ format_code.bat
    - 使用 Co-Authored-By 信息（如果需要）：Co-Authored-By: claude code 助手 <zhouyohu@163.com>
    - 不使用默认的 Claude 署名
    - 提交信息信息的开始和结束不能有 `@` 符号
-10.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
+10.  Qt 界面样式禁止在 C++ 代码中通过 `setStyleSheet` 硬编码，所有样式统一写入 `src/app/resources/styles/` 下的 QSS 文件中，通过 `setObjectName` 选择器定位控件
+11.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
 
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：
