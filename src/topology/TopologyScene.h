@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QGraphicsScene>
+#include <QGraphicsSceneDragDropEvent>
 #include <QVector>
 
 class QGraphicsLineItem;
@@ -52,10 +53,18 @@ class TopologyScene : public QGraphicsScene {
 
  signals:
   void itemSelected(QGraphicsItem* item);
+  void deviceDropped(const QString& deviceType,
+                     int channelCount,
+                     int direction,
+                     int functionType,
+                     const QPointF& scenePos);
 
  protected:
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
   void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+  void dragEnterEvent(QGraphicsSceneDragDropEvent* event) override;
+  void dragMoveEvent(QGraphicsSceneDragDropEvent* event) override;
+  void dropEvent(QGraphicsSceneDragDropEvent* event) override;
 
  private:
   void clearScene();

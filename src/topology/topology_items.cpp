@@ -17,6 +17,9 @@
 #include <QPainter>
 #include <QPainterPathStroker>
 #include <QStyleOptionGraphicsItem>
+#include <QTimer>
+
+#include "UndoCommands.h"
 
 namespace etest::topology {
 
@@ -39,6 +42,15 @@ PortItem::PortItem(int productIndex,
   setAcceptHoverEvents(true);
   setCursor(Qt::CrossCursor);
   setFlag(ItemIsSelectable);
+}
+
+void PortItem::setPortStyle(PortStyle s) {
+  port_style_ = s;
+  if (auto* prod = doc_->product(product_index_)) {
+    if (port_index_ < prod->ports.size())
+      prod->ports[port_index_].portStyle = static_cast<int>(s);
+  }
+  update();
 }
 
 QRectF PortItem::boundingRect() const {
@@ -118,9 +130,33 @@ void PortItem::paint(QPainter* painter,
   painter->drawEllipse(QPointF(lineEndX, 0), kEndRadius + 0.5,
                        kEndRadius + 0.5);
 
-  painter->setBrush(color);
-  painter->setPen(QPen(color.darker(140), penWidth));
-  painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
+  // Port dot at block edge — circle or triangle
+  if (port_style_ == PortStyle::Circle) {
+    painter->setBrush(color);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
+  } else {
+    qreal hh = dotRadius * 0.85;
+    qreal hw = dotRadius * 1.1;
+    QPainterPath portPath;
+    if (port.direction == TopologyPort::Bidirectional) {
+      portPath.moveTo(hw, 0);
+      portPath.lineTo(0, -hh);
+      portPath.lineTo(-hw, 0);
+      portPath.lineTo(0, hh);
+      portPath.closeSubpath();
+    } else {
+      // Input: tip points into body (+x); Output: tip toward line (-x)
+      qreal tx = (port.direction == TopologyPort::Input) ? hw : -hw;
+      portPath.moveTo(tx, 0);
+      portPath.lineTo(-tx, -hh);
+      portPath.lineTo(-tx, hh);
+      portPath.closeSubpath();
+    }
+    painter->setBrush(color);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawPath(portPath);
+  }
 
   if (port.direction == TopologyPort::Bidirectional) {
     qreal as = 4.0;
@@ -179,6 +215,12 @@ void PortItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
 UutItem::UutItem(int productIndex, TopologyDocument* doc, QGraphicsItem* parent)
     : TopologyBlockItem(doc, kWidth, kCornerRadius, parent),
       product_index_(productIndex) {
+  if (auto* prod = doc->product(productIndex)) {
+    if (prod->size.isValid() && prod->size.width() > 0) {
+      block_width_ = prod->size.width();
+      block_height_ = prod->size.height();
+    }
+  }
   layoutPorts();
 }
 
@@ -225,10 +267,11 @@ void UutItem::layoutPorts() {
   if (!prod)
     return;
 
-  qreal h = calcContentHeight();
+  qreal h = effectiveHeight();
   int n = prod->ports.size();
   for (int i = 0; i < n; ++i) {
     auto* portItem = new PortItem(product_index_, i, doc_, this);
+    portItem->setPortStyle(static_cast<PortStyle>(prod->ports[i].portStyle));
     ports_.append(portItem);
     addChildPort(portItem);
 
@@ -253,6 +296,28 @@ QPointF UutItem::portScenePos(int portIndex) const {
   return pi ? pi->sceneCenter() : QPointF();
 }
 
+void UutItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
+  auto* prod = doc_->product(product_index_);
+  if (!prod)
+    return;
+
+  QSizeF oldSize = prod->size;
+  QSizeF newSize(block_width_, block_height_);
+  if (oldSize == newSize)
+    return;
+
+  prod->size = newSize;
+
+  int idx = product_index_;
+  QPointF newPos = pos();
+  auto* doc = doc_;
+  QTimer::singleShot(0, [doc, idx, oldSize, newSize, oldPos, newPos]() {
+    doc->undoStack()->push(new ResizeItemCommand(
+        doc, idx, ResizeItemCommand::Product, oldSize, newSize, oldPos,
+        newPos));
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  DeviceItem
 // ═══════════════════════════════════════════════════════════════
@@ -262,6 +327,12 @@ DeviceItem::DeviceItem(int deviceIndex,
                        QGraphicsItem* parent)
     : TopologyBlockItem(doc, kWidth, kCornerRadius, parent),
       device_index_(deviceIndex) {
+  if (auto* dev = doc->device(deviceIndex)) {
+    if (dev->size.isValid() && dev->size.width() > 0) {
+      block_width_ = dev->size.width();
+      block_height_ = dev->size.height();
+    }
+  }
   layoutDevicePorts();
 }
 
@@ -318,7 +389,7 @@ QString DeviceItem::deviceType() const {
 }
 
 QPointF DeviceItem::connectionPoint() const {
-  return mapToScene(QPointF(block_width_, calcContentHeight() / 2.0));
+  return mapToScene(QPointF(block_width_, effectiveHeight() / 2.0));
 }
 
 void DeviceItem::layoutDevicePorts() {
@@ -334,10 +405,11 @@ void DeviceItem::layoutDevicePorts() {
   if (!dev)
     return;
 
-  qreal h = calcContentHeight();
+  qreal h = effectiveHeight();
   int n = dev->ports.size();
   for (int i = 0; i < n; ++i) {
     auto* portItem = new DevicePortItem(device_index_, i, doc_, this);
+    portItem->setPortStyle(static_cast<PortStyle>(dev->ports[i].portStyle));
     device_port_items_.append(portItem);
     addChildPort(portItem);
 
@@ -347,7 +419,7 @@ void DeviceItem::layoutDevicePorts() {
     } else {
       y = kPortMargin + i * (h - 2 * kPortMargin) / (n - 1);
     }
-    portItem->setPos(kWidth + kPortRadius, y);
+    portItem->setPos(block_width_ + kPortRadius, y);
   }
 }
 
@@ -355,6 +427,28 @@ DevicePortItem* DeviceItem::devicePortItem(int portIndex) const {
   if (portIndex < 0 || portIndex >= device_port_items_.size())
     return nullptr;
   return device_port_items_[portIndex];
+}
+
+void DeviceItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
+  auto* dev = doc_->device(device_index_);
+  if (!dev)
+    return;
+
+  QSizeF oldSize = dev->size;
+  QSizeF newSize(block_width_, block_height_);
+  if (oldSize == newSize)
+    return;
+
+  dev->size = newSize;
+
+  int idx = device_index_;
+  QPointF newPos = pos();
+  auto* doc = doc_;
+  QTimer::singleShot(0, [doc, idx, oldSize, newSize, oldPos, newPos]() {
+    doc->undoStack()->push(new ResizeItemCommand(
+        doc, idx, ResizeItemCommand::Device, oldSize, newSize, oldPos,
+        newPos));
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -372,6 +466,15 @@ DevicePortItem::DevicePortItem(int deviceIndex,
   setFlag(ItemIsSelectable);
   setAcceptHoverEvents(true);
   setCursor(Qt::CrossCursor);
+}
+
+void DevicePortItem::setPortStyle(PortStyle s) {
+  port_style_ = s;
+  if (auto* dev = doc_->device(device_index_)) {
+    if (port_index_ < dev->ports.size())
+      dev->ports[port_index_].portStyle = static_cast<int>(s);
+  }
+  update();
 }
 
 QRectF DevicePortItem::boundingRect() const {
@@ -438,9 +541,33 @@ void DevicePortItem::paint(QPainter* painter,
   painter->drawEllipse(QPointF(lineEndX, 0), kEndRadius + 0.5,
                        kEndRadius + 0.5);
 
-  painter->setBrush(color);
-  painter->setPen(QPen(color.darker(140), penWidth));
-  painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
+  // Port dot at block edge — circle or triangle
+  if (port_style_ == PortStyle::Circle) {
+    painter->setBrush(color);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawEllipse(QPointF(0, 0), dotRadius, dotRadius);
+  } else {
+    qreal hh = dotRadius * 0.85;
+    qreal hw = dotRadius * 1.1;
+    QPainterPath portPath;
+    if (port.direction == TopologyPort::Bidirectional) {
+      portPath.moveTo(hw, 0);
+      portPath.lineTo(0, -hh);
+      portPath.lineTo(-hw, 0);
+      portPath.lineTo(0, hh);
+      portPath.closeSubpath();
+    } else {
+      // Input: tip points into body (-x); Output: tip toward line (+x)
+      qreal tx = (port.direction == TopologyPort::Input) ? -hw : hw;
+      portPath.moveTo(tx, 0);
+      portPath.lineTo(-tx, -hh);
+      portPath.lineTo(-tx, hh);
+      portPath.closeSubpath();
+    }
+    painter->setBrush(color);
+    painter->setPen(QPen(color.darker(140), penWidth));
+    painter->drawPath(portPath);
+  }
 
   if (port.direction == TopologyPort::Bidirectional) {
     qreal as = 4.0;

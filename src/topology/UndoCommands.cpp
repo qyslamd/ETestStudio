@@ -253,4 +253,53 @@ void PropertyCommand::redo() {
     redo_fn_();
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  ResizeItemCommand
+// ═══════════════════════════════════════════════════════════════
+
+ResizeItemCommand::ResizeItemCommand(TopologyDocument* doc, int index,
+                                     Type type, const QSizeF& oldSize,
+                                     const QSizeF& newSize,
+                                     const QPointF& oldPos,
+                                     const QPointF& newPos,
+                                     QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), index_(index), type_(type),
+      old_size_(oldSize), new_size_(newSize), old_pos_(oldPos),
+      new_pos_(newPos) {
+  setText(type_ == Product ? QStringLiteral("调整 UUT 大小")
+                           : QStringLiteral("调整设备大小"));
+}
+
+void ResizeItemCommand::undo() {
+  if (type_ == Product) {
+    auto* prod = doc_->product(index_);
+    if (prod) {
+      prod->size = old_size_;
+      prod->position = old_pos_;
+    }
+  } else {
+    auto* dev = doc_->device(index_);
+    if (dev) {
+      dev->size = old_size_;
+      dev->position = old_pos_;
+    }
+  }
+}
+
+void ResizeItemCommand::redo() {
+  if (type_ == Product) {
+    auto* prod = doc_->product(index_);
+    if (prod) {
+      prod->size = new_size_;
+      prod->position = new_pos_;
+    }
+  } else {
+    auto* dev = doc_->device(index_);
+    if (dev) {
+      dev->size = new_size_;
+      dev->position = new_pos_;
+    }
+  }
+}
+
 }  // namespace etest::topology

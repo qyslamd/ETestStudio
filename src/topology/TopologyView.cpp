@@ -7,6 +7,7 @@
 #include <QActionGroup>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QPaintEvent>
 #include <QPainter>
 #include <QScrollBar>
 #include <QWheelEvent>
@@ -17,7 +18,7 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
     : QGraphicsView(scene, parent) {
   setRenderHint(QPainter::Antialiasing);
   setDragMode(QGraphicsView::RubberBandDrag);
-  setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
+  setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -28,36 +29,39 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
   // Style — adapt to current theme
   setBackgroundBrush(topologyColors().sceneBackground);
   setFrameShape(QFrame::NoFrame);
+
+  // Accept drops for device palette drag-and-drop
+  setAcceptDrops(true);
 }
 
-void TopologyView::drawForeground(QPainter* painter, const QRectF& rect) {
-  Q_UNUSED(rect);
-  painter->save();
-  painter->resetTransform();
+void TopologyView::paintEvent(QPaintEvent* event) {
+  QGraphicsView::paintEvent(event);
+
+  QPainter painter(viewport());
+  painter.setRenderHint(QPainter::Antialiasing);
 
   int lw = 100, lh = 75;
   int x = viewport()->width() - lw - 10;
   int y = viewport()->height() - lh - 10;
 
-  painter->setRenderHint(QPainter::Antialiasing);
   const auto& tc = topologyColors();
 
-  painter->setBrush(tc.legendBackground);
-  painter->setPen(QPen(tc.legendBorder, 0.5));
-  painter->translate(x, y);
-  painter->drawRoundedRect(0, 0, lw, lh, 4, 4);
+  painter.setBrush(tc.legendBackground);
+  painter.setPen(QPen(tc.legendBorder, 0.5));
+  painter.translate(x, y);
+  painter.drawRoundedRect(0, 0, lw, lh, 4, 4);
 
-  QFont f = painter->font();
+  QFont f = painter.font();
   f.setPointSize(9);
   f.setBold(true);
-  painter->setFont(f);
-  painter->setPen(tc.legendText);
-  painter->drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft,
-                    QStringLiteral("图例"));
+  painter.setFont(f);
+  painter.setPen(tc.legendText);
+  painter.drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft,
+                   QStringLiteral("图例"));
 
   f.setBold(false);
   f.setPointSize(9);
-  painter->setFont(f);
+  painter.setFont(f);
 
   struct Entry {
     QColor color;
@@ -71,14 +75,12 @@ void TopologyView::drawForeground(QPainter* painter, const QRectF& rect) {
 
   for (int i = 0; i < 3; ++i) {
     qreal ey = 24 + i * 16;
-    painter->setBrush(entries[i].color);
-    painter->setPen(Qt::NoPen);
-    painter->drawEllipse(QPointF(14, ey + 4), 4, 4);
-    painter->setPen(tc.legendText);
-    painter->drawText(QRectF(24, ey, 70, 14), Qt::AlignLeft, entries[i].label);
+    painter.setBrush(entries[i].color);
+    painter.setPen(Qt::NoPen);
+    painter.drawEllipse(QPointF(14, ey + 4), 4, 4);
+    painter.setPen(tc.legendText);
+    painter.drawText(QRectF(24, ey, 70, 14), Qt::AlignLeft, entries[i].label);
   }
-
-  painter->restore();
 }
 
 void TopologyView::zoomIn() {
@@ -171,6 +173,7 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
 
   QPointF scenePos = mapToScene(event->pos());
   auto* devPort = s->devicePortItemAt(scenePos);
+  auto* uutPort = s->portItemAt(scenePos);
   auto* uut = s->uutItemAt(scenePos);
   auto* dev = s->deviceItemAt(scenePos);
   auto* conn = s->connectionItemAt(scenePos);
@@ -179,6 +182,39 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     auto* delAct = menu.addAction(QStringLiteral("删除端口"));
     connect(delAct, &QAction::triggered, this,
             [this, devPort]() { emit deleteItemRequested(devPort); });
+
+    menu.addSeparator();
+    auto* portStyleMenu = menu.addMenu(QStringLiteral("端口样式"));
+    auto* portGroup = new QActionGroup(portStyleMenu);
+    portGroup->setExclusive(true);
+    auto* circAct = portStyleMenu->addAction(QStringLiteral("圆形"));
+    circAct->setCheckable(true);
+    circAct->setChecked(devPort->portStyle() == PortStyle::Circle);
+    portGroup->addAction(circAct);
+    auto* triAct = portStyleMenu->addAction(QStringLiteral("三角形"));
+    triAct->setCheckable(true);
+    triAct->setChecked(devPort->portStyle() == PortStyle::Triangle);
+    portGroup->addAction(triAct);
+    connect(circAct, &QAction::triggered, this,
+            [devPort]() { devPort->setPortStyle(PortStyle::Circle); });
+    connect(triAct, &QAction::triggered, this,
+            [devPort]() { devPort->setPortStyle(PortStyle::Triangle); });
+  } else if (uutPort) {
+    auto* portStyleMenu = menu.addMenu(QStringLiteral("端口样式"));
+    auto* portGroup = new QActionGroup(portStyleMenu);
+    portGroup->setExclusive(true);
+    auto* circAct = portStyleMenu->addAction(QStringLiteral("圆形"));
+    circAct->setCheckable(true);
+    circAct->setChecked(uutPort->portStyle() == PortStyle::Circle);
+    portGroup->addAction(circAct);
+    auto* triAct = portStyleMenu->addAction(QStringLiteral("三角形"));
+    triAct->setCheckable(true);
+    triAct->setChecked(uutPort->portStyle() == PortStyle::Triangle);
+    portGroup->addAction(triAct);
+    connect(circAct, &QAction::triggered, this,
+            [uutPort]() { uutPort->setPortStyle(PortStyle::Circle); });
+    connect(triAct, &QAction::triggered, this,
+            [uutPort]() { uutPort->setPortStyle(PortStyle::Triangle); });
   } else if (uut) {
     auto* act = menu.addAction(QStringLiteral("删除 UUT"));
     connect(act, &QAction::triggered, this,

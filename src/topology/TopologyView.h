@@ -24,7 +24,7 @@ class TopologyView : public QGraphicsView {
   void zoomChanged(qreal zoomFactor);
 
  protected:
-  void drawForeground(QPainter* painter, const QRectF& rect) override;
+  void paintEvent(QPaintEvent* event) override;
   void wheelEvent(QWheelEvent* event) override;
   void mousePressEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;

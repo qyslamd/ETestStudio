@@ -16,6 +16,8 @@ class UutItem;
 class DeviceItem;
 class PortItem;
 
+enum class PortStyle { Circle, Triangle };
+
 // ── PortItem ── pin node on UUT edge ─────────────────────────────
 
 class PortItem : public QGraphicsItem {
@@ -40,6 +42,9 @@ class PortItem : public QGraphicsItem {
 
   QPointF sceneCenter() const;
 
+  PortStyle portStyle() const { return port_style_; }
+  void setPortStyle(PortStyle s);
+
  protected:
   void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
   void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
@@ -53,6 +58,7 @@ class PortItem : public QGraphicsItem {
   TopologyDocument* doc_;
   QPointF press_pos_;
   bool hovered_ = false;
+  PortStyle port_style_ = PortStyle::Circle;
   static constexpr qreal kRadius = 6.0;
 };
 
@@ -81,6 +87,7 @@ class UutItem : public TopologyBlockItem {
                     const QRectF& rect) override;
   qreal calcContentHeight() const override;
   bool hasChildHovered() const override;
+  void onResizeFinished(const QSizeF& oldSize, const QPointF& oldPos) override;
 
  private:
   int product_index_;
@@ -116,6 +123,9 @@ class DevicePortItem : public QGraphicsItem {
   DeviceItem* parentDeviceItem() const;
   QPointF sceneCenter() const;
 
+  PortStyle portStyle() const { return port_style_; }
+  void setPortStyle(PortStyle s);
+
  protected:
   void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
   void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
@@ -129,6 +139,7 @@ class DevicePortItem : public QGraphicsItem {
   TopologyDocument* doc_;
   QPointF press_pos_;
   bool hovered_ = false;
+  PortStyle port_style_ = PortStyle::Circle;
   static constexpr qreal kRadius = 6.0;
 };
 
@@ -158,6 +169,7 @@ class DeviceItem : public TopologyBlockItem {
                     const QRectF& rect) override;
   qreal calcContentHeight() const override;
   bool hasChildHovered() const override;
+  void onResizeFinished(const QSizeF& oldSize, const QPointF& oldPos) override;
 
  private:
   int device_index_;

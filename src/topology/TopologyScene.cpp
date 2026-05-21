@@ -6,12 +6,18 @@
 
 #include <QGraphicsLineItem>
 #include <QGraphicsSceneMouseEvent>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMimeData>
 #include <QPen>
 
 namespace etest::topology {
 
+static const char kTopologyDeviceMime[] = "application/x-topology-device";
+
 TopologyScene::TopologyScene(TopologyDocument* doc, QObject* parent)
-    : QGraphicsScene(parent), doc_(doc) {}
+    : QGraphicsScene(parent), doc_(doc) {
+}
 
 void TopologyScene::loadFromDocument() {
   clearScene();
@@ -175,6 +181,40 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
   }
 
   drag_source_ = nullptr;
+}
+
+void TopologyScene::dragEnterEvent(QGraphicsSceneDragDropEvent* event) {
+  if (event->mimeData()->hasFormat(QLatin1String(kTopologyDeviceMime))) {
+    event->acceptProposedAction();
+    return;
+  }
+  QGraphicsScene::dragEnterEvent(event);
+}
+
+void TopologyScene::dragMoveEvent(QGraphicsSceneDragDropEvent* event) {
+  if (event->mimeData()->hasFormat(QLatin1String(kTopologyDeviceMime))) {
+    event->acceptProposedAction();
+    return;
+  }
+  QGraphicsScene::dragMoveEvent(event);
+}
+
+void TopologyScene::dropEvent(QGraphicsSceneDragDropEvent* event) {
+  if (event->mimeData()->hasFormat(QLatin1String(kTopologyDeviceMime))) {
+    QJsonDocument jdoc = QJsonDocument::fromJson(
+        event->mimeData()->data(QLatin1String(kTopologyDeviceMime)));
+    if (jdoc.isObject()) {
+      QJsonObject obj = jdoc.object();
+      emit deviceDropped(obj["deviceType"].toString(),
+                         obj["channelCount"].toInt(),
+                         obj["direction"].toInt(),
+                         obj["functionType"].toInt(),
+                         event->scenePos());
+    }
+    event->acceptProposedAction();
+    return;
+  }
+  QGraphicsScene::dropEvent(event);
 }
 
 void TopologyScene::onItemMoved() {

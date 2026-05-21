@@ -29,6 +29,8 @@ add_executable(${TARGET_NAME}
     HardwareTreeWidget.cpp
     TextEditorWidget.h
     TextEditorWidget.cpp
+    ImageViewerWidget.h
+    ImageViewerWidget.cpp
     EditorManager.h
     EditorManager.cpp
     editor/EditorFactory.h

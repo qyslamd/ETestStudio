@@ -1,0 +1,136 @@
+#include "DevicePaletteWidget.h"
+
+#include <QDrag>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QListWidgetItem>
+#include <QMimeData>
+#include <QVBoxLayout>
+
+namespace etest::topology {
+
+// MIME type used when dragging devices from the palette.
+static const char kTopologyDeviceMime[] = "application/x-topology-device";
+
+// ── Device palette entries ───────────────────────────────────
+
+static const DeviceEntry kDeviceTypes[] = {
+    {"EPH6272T", "EPH6272T ARINC429 4CH", 4, TopologyPort::Bidirectional,
+     FunctionType::A429},
+    {"EPH6633A", "EPH6633A Analog 8CH", 8, TopologyPort::Bidirectional,
+     FunctionType::AD},
+    {"EPH5121A", "EPH5121A Discrete 32CH", 32, TopologyPort::Bidirectional,
+     FunctionType::DISCRETE},
+};
+
+static const int kDeviceTypeCount =
+    sizeof(kDeviceTypes) / sizeof(kDeviceTypes[0]);
+
+// ── DeviceListWidget ─────────────────────────────────────────
+
+DeviceListWidget::DeviceListWidget(QWidget* parent) : QListWidget(parent) {
+  setDragEnabled(true);
+  setDragDropMode(QAbstractItemView::DragOnly);
+  setFrameShape(QFrame::NoFrame);
+}
+
+void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
+  auto items = selectedItems();
+  if (items.isEmpty())
+    return;
+
+  // Build JSON with full device entry for the selected item
+  QString dt = items.first()->data(Qt::UserRole).toString();
+  QJsonObject obj;
+  obj["deviceType"] = dt;
+  for (int i = 0; i < kDeviceTypeCount; ++i) {
+    if (dt == QLatin1String(kDeviceTypes[i].deviceType)) {
+      obj["channelCount"] = kDeviceTypes[i].channelCount;
+      obj["direction"] = static_cast<int>(kDeviceTypes[i].direction);
+      obj["functionType"] = static_cast<int>(kDeviceTypes[i].functionType);
+      break;
+    }
+  }
+
+  auto* mime = new QMimeData();
+  mime->setData(QLatin1String(kTopologyDeviceMime),
+                QJsonDocument(obj).toJson(QJsonDocument::Compact));
+
+  auto* drag = new QDrag(this);
+  drag->setMimeData(mime);
+  drag->exec(supportedActions);
+}
+
+// ── Direction/Function label helpers ─────────────────────────
+
+static const char* directionLabel(TopologyPort::Direction d) {
+  switch (d) {
+    case TopologyPort::Input:
+      return "Input";
+    case TopologyPort::Output:
+      return "Output";
+    case TopologyPort::Bidirectional:
+      return "Bidirectional";
+  }
+  return "Bidirectional";
+}
+
+static const char* functionLabel(FunctionType t) {
+  switch (t) {
+    case FunctionType::A429:
+      return "A429";
+    case FunctionType::AD:
+      return "AD";
+    case FunctionType::DA:
+      return "DA";
+    case FunctionType::DISCRETE:
+      return "Discrete";
+    case FunctionType::SERIAL:
+      return "Serial";
+    case FunctionType::MIL1553:
+      return "MIL1553";
+    case FunctionType::POWER:
+      return "Power";
+    case FunctionType::CAMERA:
+      return "Camera";
+    case FunctionType::OSCILLOSCOPE:
+      return "Oscilloscope";
+    case FunctionType::CUSTOM:
+      return "Custom";
+  }
+  return "Custom";
+}
+
+// ── DevicePaletteWidget ──────────────────────────────────────
+
+DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QWidget(parent) {
+  auto* layout = new QVBoxLayout(this);
+  layout->setContentsMargins(0, 0, 0, 0);
+
+  list_widget_ = new DeviceListWidget(this);
+  layout->addWidget(list_widget_);
+
+  populateDeviceTypes();
+}
+
+void DevicePaletteWidget::populateDeviceTypes() {
+  for (int i = 0; i < kDeviceTypeCount; ++i) {
+    const auto& entry = kDeviceTypes[i];
+
+    auto* item = new QListWidgetItem(QString::fromUtf8(entry.displayName));
+    item->setData(Qt::UserRole, QString::fromUtf8(entry.deviceType));
+
+    QString tip =
+        QStringLiteral("%1\n%2ch %3 %4\n拖放至画布创建设备")
+            .arg(QString::fromUtf8(entry.displayName))
+            .arg(entry.channelCount)
+            .arg(QString::fromUtf8(directionLabel(entry.direction)))
+            .arg(QString::fromUtf8(functionLabel(entry.functionType)));
+    item->setToolTip(tip);
+
+    item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
+    list_widget_->addItem(item);
+  }
+}
+
+}  // namespace etest::topology

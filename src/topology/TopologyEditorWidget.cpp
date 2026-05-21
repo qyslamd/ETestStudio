@@ -20,6 +20,7 @@
 #include <QMenu>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include "DevicePaletteWidget.h"
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
 #include "TopologyTheme.h"
@@ -32,7 +33,7 @@
 
 namespace etest::topology {
 
-TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QWidget(parent) {
+TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QFrame(parent) {
   setAutoFillBackground(true);
 
   doc_ = new TopologyDocument(this);
@@ -243,11 +244,15 @@ void TopologyEditorWidget::initUi() {
   toolbarLayout->addStretch();
   mainLayout->addWidget(toolbarFrame);
 
+  device_palette_ = new DevicePaletteWidget(this);
+
   splitter_ = new QSplitter(Qt::Horizontal, this);
+  splitter_->addWidget(device_palette_);
   splitter_->addWidget(view_);
   splitter_->addWidget(property_panel_);
-  splitter_->setStretchFactor(0, 4);
-  splitter_->setStretchFactor(1, 1);
+  splitter_->setStretchFactor(0, 0);  // palette — fixed width
+  splitter_->setStretchFactor(1, 4);  // view — stretch
+  splitter_->setStretchFactor(2, 1);  // property panel — stretch less
   mainLayout->addWidget(splitter_, 1);
 
   auto* statusFrame = new QFrame(this);
@@ -311,6 +316,9 @@ void TopologyEditorWidget::initSignals() {
 
   connect(scene_, &TopologyScene::itemSelected, this,
           &TopologyEditorWidget::onSelectionChanged);
+
+  connect(scene_, &TopologyScene::deviceDropped, this,
+          &TopologyEditorWidget::onDropDevice);
 
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
           &TopologyEditorWidget::onDocumentChanged);
@@ -437,6 +445,32 @@ void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
   auto* cmd = new AddDeviceCommand(doc_, dev);
   doc_->undoStack()->push(cmd);
   status_label_->setText(QStringLiteral("已添加设备: %1").arg(dev.name));
+}
+
+void TopologyEditorWidget::onDropDevice(const QString& deviceType,
+                                        int channelCount,
+                                        int direction,
+                                        int functionType,
+                                        const QPointF& scenePos) {
+  int n = doc_->deviceCount() + 1;
+  TopologyDevice dev;
+  dev.deviceType = deviceType;
+  dev.name =
+      QStringLiteral("%1_%2").arg(deviceType).arg(n, 2, 10, QChar('0'));
+  dev.position = scenePos;
+
+  for (int i = 0; i < channelCount; ++i) {
+    TopologyDevicePort dp;
+    dp.name = QStringLiteral("ch%1").arg(i);
+    dp.direction = static_cast<TopologyPort::Direction>(direction);
+    dp.functionType = static_cast<FunctionType>(functionType);
+    dev.ports.append(dp);
+  }
+
+  auto* cmd = new AddDeviceCommand(doc_, dev);
+  doc_->undoStack()->push(cmd);
+  status_label_->setText(
+      QStringLiteral("已拖放添加设备: %1").arg(dev.name));
 }
 
 void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {

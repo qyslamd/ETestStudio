@@ -31,6 +31,9 @@ struct TopologyColors {
   QColor legendBackground;
   QColor legendText;
   QColor legendBorder;
+  // Resize handle
+  QColor resizeHandleFill;
+  QColor resizeHandleBorder;
 };
 
 bool isDarkTheme();

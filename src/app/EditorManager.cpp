@@ -14,6 +14,7 @@
 #include <QMenu>
 #include <QMessageBox>
 
+#include "ImageViewerWidget.h"
 #include "TextEditorWidget.h"
 #include "editor/EditorFactory.h"
 #include "logger/Logger.h"
@@ -76,6 +77,14 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerExtension("etopo", "topology");
   EditorFactoryRegistry::registerExtension("eproto", "protocal");
 
+  EditorFactoryRegistry::registerExtension("png", "image");
+  EditorFactoryRegistry::registerExtension("jpg", "image");
+  EditorFactoryRegistry::registerExtension("jpeg", "image");
+  EditorFactoryRegistry::registerExtension("bmp", "image");
+  EditorFactoryRegistry::registerExtension("gif", "image");
+  EditorFactoryRegistry::registerExtension("webp", "image");
+  EditorFactoryRegistry::registerExtension("ico", "image");
+
   EditorFactoryRegistry::registerFactory(
       "text", [](const QString& path, QWidget* parent) {
         return new TextEditorWidget(path, parent);
@@ -109,6 +118,11 @@ void EditorManager::registerEditorTypes() {
           editor->setEditorId(id);
         }
         return editor;
+      });
+
+  EditorFactoryRegistry::registerFactory(
+      "image", [](const QString& id, QWidget* parent) {
+        return new ImageViewerWidget(id, parent);
       });
 }
 

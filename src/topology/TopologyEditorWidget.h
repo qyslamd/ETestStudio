@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QWidget>
+#include <QFrame>
 
 #include "api/IEditor.h"
 
@@ -16,7 +16,7 @@ class TopologyScene;
 class TopologyView;
 class PropertyPanelWidget;
 
-class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
+class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   Q_OBJECT
  public:
   explicit TopologyEditorWidget(QWidget* parent = nullptr);
@@ -62,6 +62,11 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   void onPaste();
   void onExportImage();
   void onAddDeviceFromTemplate(const QPointF& scenePos);
+  void onDropDevice(const QString& deviceType,
+                    int channelCount,
+                    int direction,
+                    int functionType,
+                    const QPointF& scenePos);
 
  private:
   void initUi();
@@ -73,6 +78,7 @@ class TopologyEditorWidget : public QWidget, public etest::app::IEditor {
   TopologyScene* scene_;
   TopologyView* view_;
   PropertyPanelWidget* property_panel_;
+  class DevicePaletteWidget* device_palette_ = nullptr;
   QSplitter* splitter_;
   QLabel* status_label_ = nullptr;
 
