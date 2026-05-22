@@ -2,10 +2,25 @@
 
 ## 2026-05-22
 
+### 帧协议编辑器实现
+- icd_utility 扩展：Frame/Node 新增 setter + remove 方法，Repository 新增 remove_frame
+- JSON 序列化：新增 json_serializer 实现 .eproto 格式序列化写出
+- ProtocalEditorWidget：三面板联动（树↔位图↔属性面板），双向信号连接
+- IcdNodeTreeWidget：加载 Repository 展示帧/节点树，搜索过滤
+- IcdBitLayoutView：收集叶子节点按位宽着色渲染，支持点击高亮
+- IcdPropertyPanel：动态表单编辑（基本/帧属性/节点属性/缩放/扩展属性），信号安全连接管理
+- .eproto 文件加载/保存/新建帧/删除帧
+- protocal-demo：文件菜单增加「打开...」（Ctrl+O）
+- Schema XML → .eproto 格式转换验证（A429_11_ISI_02_发送_Label221_6272T_11.xml）
+- 已合并到 master（71d4164）
+
+### 当前状态
+- **阶段1.5（编辑器完善）** ✅ 已完成（拓扑+帧协议编辑器）
+- **阶段2.5（拓扑增强）** ✅ 已完成
+- **阶段2（HAL层）** ❌ 待开始
+
 ### 已完成
-- 修复 TopologyOutlineWidget 导航到大纲 Item 的编号错位 bug（ItemTag 枚举值不匹配 onOutlineNavigate 的 case 分支）
-- 修复 rebuildSceneAndRestoreSelection 中使用非标准编号（缺少 Connection、Port/DevicePort 编号错误）
-- 移除 TopologyEditorWidget 构造函数中的 buildDefaultDocument() 调用，新建 .etopo 文件打开不再有默认 Item
+- 监听器模式设计（commit 36dd608）
 
 ### 监听器（Monitor）功能实现
 - 数据模型：新增 TopologyMonitorTap / TopologyMonitor 结构体，monitors_ 成员，monitor 增删改查 + tap 管理

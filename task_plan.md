@@ -13,6 +13,7 @@
 | 1.5 编辑器完善 | ✅ 已完成 | 100% |
 | 2.5 拓扑编辑器增强 | ✅ 已完成 | 100% |
 | 2.5b 拓扑编辑器持续完善 | 🔄 进行中 | 待定 |
+| 1.5.2 帧协议编辑器完善 | ✅ 已完成 | 100% |
 | 2 HAL接口定义+Mock实现 | ❌ 未开始 | 0% |
 | 3 ICD信号层 | ❌ 未开始 | 0% |
 | 4 用例管理层 | ❌ 未开始 | 0% |
@@ -87,11 +88,19 @@
 - [x] **缩放状态显示**：状态栏显示当前缩放比例（如 `125%`）
 - [x] **从模板新建设备**：右键菜单"从模板添加设备"，用已有 .dvt 文件快速添加
 
-### 1.5.2 帧协议编辑器完善（待开始）
+### 1.5.2 帧协议编辑器完善（已完成）
 
-> 见 1.5.1 完成后启动
+> 实际完成时间：2026-05-22
 
-当前状态：UI 骨架完成，save/saveAs 未实现，三面板无联动，无数据模型。
+- [x] icd_utility 扩展：Frame/Node setter 方法、remove_child/remove_root、Repository remove_frame
+- [x] JSON 序列化：.eproto 格式写入（json_serializer）
+- [x] ProtocalEditorWidget：三面板联动（树↔位图↔属性面板）
+- [x] IcdNodeTreeWidget：帧/节点树浏览 + 搜索过滤
+- [x] IcdBitLayoutView：位级可视化布局展示
+- [x] IcdPropertyPanel：动态属性编辑面板
+- [x] .eproto 文件加载/保存/新建/删除帧
+- [x] protocal-demo 文件菜单「打开...」（Ctrl+O）
+- [x] Schema XML → .eproto 转换测试（A429_11_ISI_02_发送_Label221_6272T_11）
 
 ---
 
