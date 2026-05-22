@@ -2,6 +2,7 @@
 #include "FileExplorerWidget.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
+#include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
 
 #include <QHBoxLayout>
@@ -54,6 +55,10 @@ void SidebarWidget::setupUi() {
   buttons_.append(createButton(QStringLiteral("硬件"),
                                 ":/resources/icons/svg/hardware_dark.svg",
                                 ":/resources/icons/svg/hardware_light.svg"));
+  // 索引6：协议
+  buttons_.append(createButton(QStringLiteral("协议"),
+                                ":/resources/icons/svg/protocol_dark.svg",
+                                ":/resources/icons/svg/protocol_light.svg"));
 
   for (int i = 0; i < buttons_.size(); ++i) {
     top_layout->addWidget(buttons_[i]);
@@ -147,6 +152,11 @@ void SidebarWidget::setupUi() {
   stack_->addWidget(hardware_tree_);
   view_titles_ << QStringLiteral("硬件");
 
+  // 页6：协议管理器
+  protocol_manager_ = new ProtocolManagerWidget(this);
+  stack_->addWidget(protocol_manager_);
+  view_titles_ << QStringLiteral("协议");
+
   content_layout->addWidget(stack_);
 
   outer_layout->addWidget(content_panel_);
@@ -217,6 +227,10 @@ FileExplorerWidget* SidebarWidget::fileExplorer() const {
 
 HardwareTreeWidget* SidebarWidget::hardwareTree() const {
   return hardware_tree_;
+}
+
+ProtocolManagerWidget* SidebarWidget::protocolManager() const {
+  return protocol_manager_;
 }
 
 SearchWidget* SidebarWidget::searchWidget() const {

@@ -33,6 +33,26 @@
 - 属性面板：新增 PageMonitor（名称/设备类型/已挂载连线列表）
 - 大纲面板：新增 Monitors 分支，展开显示已挂载连线
 
+## 2026-05-22（下午）
+
+### 协议管理器页面实现
+- 新增 ProtocolManagerWidget：协议树（.eproto 文件列表 + 帧子节点）、+新建/导入XML/重命名/删除
+- SidebarWidget 集成：添加协议管理按钮（第6个面板）
+- main_window 信号连接（projectOpened → refreshList, openFileRequested → editor open）
+- QSS 样式适配
+
+### XML 导入功能实现（onImportXml）
+- ICDConfig 多帧配置 → Loader::init() 自动解析
+- ICDData 单帧文件 → parse_xml_frame() + build_repository() 转换
+- 自动检测 XML 根元素（兼容 xmlns 属性）
+- 保存 .eproto 到协议目录，注册并打开
+
+### 单元测试
+- 新增 test_xml_import：单帧/配置/无效 XML 三条管线测试
+- 新增 test_schema_import：批量导入测试（--schema_dir 参数或 SCHEMA_DIR 环境变量）
+- 测试数据：frame-simple.xml + config-simple.xml
+- XML 检测修复：head.contains 改为不含尾部 `>` 的匹配，兼容 xmlns 属性
+
 ## 2026-05-20
 
 ### 已完成

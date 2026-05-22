@@ -27,6 +27,8 @@ add_executable(${TARGET_NAME}
     GitWidget.cpp
     HardwareTreeWidget.h
     HardwareTreeWidget.cpp
+    ProtocolManagerWidget.h
+    ProtocolManagerWidget.cpp
     TextEditorWidget.h
     TextEditorWidget.cpp
     ImageViewerWidget.h

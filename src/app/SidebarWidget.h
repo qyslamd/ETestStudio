@@ -13,6 +13,7 @@ class QToolButton;
 namespace etest::app {
 class FileExplorerWidget;
 class HardwareTreeWidget;
+class ProtocolManagerWidget;
 class SearchWidget;
 class GitWidget;
 
@@ -32,6 +33,7 @@ class SidebarWidget : public QWidget {
 
   FileExplorerWidget* fileExplorer() const;
   HardwareTreeWidget* hardwareTree() const;
+  ProtocolManagerWidget* protocolManager() const;
   SearchWidget* searchWidget() const;
   GitWidget* gitWidget() const;
 
@@ -50,6 +52,7 @@ class SidebarWidget : public QWidget {
   QWidget* content_panel_ = nullptr;
   FileExplorerWidget* file_explorer_ = nullptr;
   HardwareTreeWidget* hardware_tree_ = nullptr;
+  ProtocolManagerWidget* protocol_manager_ = nullptr;
   SearchWidget* search_widget_ = nullptr;
   GitWidget* git_widget_ = nullptr;
 

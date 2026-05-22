@@ -486,6 +486,46 @@ SidebarWidget QToolButton:hover {
     background-color: #252526;
 }
 
+/* ==================== ProtocolManagerWidget ==================== */
+ProtocolManagerWidget {
+    background-color: #252526;
+}
+ProtocolManagerWidget QTreeWidget {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: none;
+    outline: none;
+}
+ProtocolManagerWidget QTreeWidget::item {
+    padding: 4px 8px;
+    min-height: 22px;
+}
+ProtocolManagerWidget QTreeWidget::item:selected {
+    background-color: #094771;
+    color: #FFFFFF;
+}
+ProtocolManagerWidget QTreeWidget::item:hover {
+    background-color: #2A2D2E;
+}
+#protocolManagerToolbar {
+    background-color: #252526;
+    border-bottom: 1px solid #1E1E1E;
+}
+#protocolNewBtn, #protocolImportBtn {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #454545;
+    border-radius: 3px;
+    padding: 2px 12px;
+    font-size: 12px;
+}
+#protocolNewBtn:hover, #protocolImportBtn:hover {
+    background-color: #505050;
+}
+#protocolNewBtn:pressed, #protocolImportBtn:pressed {
+    background-color: #2D2D2D;
+}
+
 /* ==================== SearchWidget ==================== */
 SearchWidget {
     background-color: #252526;

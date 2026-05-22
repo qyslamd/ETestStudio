@@ -53,6 +53,9 @@ ProtocolRef ProtocolRef::fromJson(const QJsonObject& obj) {
   ref.id = obj["id"].toString();
   ref.name = obj["name"].toString();
   ref.filePath = obj["file"].toString();
+  if (ref.filePath.isEmpty()) {
+    ref.filePath = ref.id;          // 兼容旧数据：id 字段曾用作路径
+  }
   if (ref.id.isEmpty()) {
     ref.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
   }

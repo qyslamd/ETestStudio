@@ -79,6 +79,8 @@
         <file>resources/icons/svg/topo_export_dark.svg</file>
         <file>resources/icons/svg/topo_export_light.svg</file>
         <file>resources/icons/svg/topo_tap_dark.svg</file>
+        <file>resources/icons/svg/protocol_dark.svg</file>
+        <file>resources/icons/svg/protocol_light.svg</file>
         <file>resources/icons/svg/topo_align_left_dark.svg</file>
         <file>resources/icons/svg/topo_align_left_light.svg</file>
         <file>resources/icons/svg/topo_align_center_dark.svg</file>

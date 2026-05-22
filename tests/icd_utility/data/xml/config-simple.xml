@@ -1,0 +1,14 @@
+<ICDConfig>
+  <Files>
+    <FileInfo>
+      <Name>SimpleFrame</Name>
+      <ID>100</ID>
+      <Type>0</Type>
+      <Description>Simple test frame</Description>
+      <Enable>1</Enable>
+      <WordType>0</WordType>
+      <ByteOrder>0</ByteOrder>
+      <Path>frame-simple.xml</Path>
+    </FileInfo>
+  </Files>
+</ICDConfig>

@@ -31,6 +31,7 @@
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "OutputPanel.h"
+#include "ProtocolManagerWidget.h"
 #include "PanelContainerWidget.h"
 #include "ProblemsPanel.h"
 #include "SearchWidget.h"
@@ -478,6 +479,17 @@ void MainWindow::initSignals() {
           hardwareTree, &HardwareTreeWidget::refreshTree);
   connect(&pluginMgr, &etest::core::plugin::PluginManager::pluginUnloaded,
           hardwareTree, &HardwareTreeWidget::refreshTree);
+
+  // 协议管理器：双击文件打开编辑器
+  auto* protocolMgr = sidebar_->protocolManager();
+  connect(protocolMgr, &ProtocolManagerWidget::openFileRequested,
+          editor_manager_, &EditorManager::openFile);
+
+  // 协议管理器：项目打开/关闭时刷新
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+          protocolMgr, &ProtocolManagerWidget::refreshList);
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+          protocolMgr, &ProtocolManagerWidget::refreshList);
 
   // 日志输出到界面
   auto* qtSink = etest::core::logger::Logger::qtConsoleSink();

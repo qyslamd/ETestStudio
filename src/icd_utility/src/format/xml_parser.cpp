@@ -2,8 +2,10 @@
 
 #include <pugixml.hpp>
 
+#include <fstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace icd::format {
 namespace {
@@ -64,6 +66,8 @@ ValueType parse_value_type(std::string_view type) noexcept {
     if (type == "byte") return ValueType::byte_;
     if (type == "bytes") return ValueType::bytes;
     if (type == "word") return ValueType::word;
+    if (type == "dword") return ValueType::longword;
+    if (type == "short") return ValueType::shortint;
     if (type == "float") return ValueType::single;
     if (type == "double") return ValueType::double_;
     if (type == "string") return ValueType::string_;
@@ -148,11 +152,33 @@ tl::expected<schema::SchemaNodeDef, Error> parse_node(const pugi::xml_node& item
 }
 
 tl::expected<pugi::xml_document, Error> load_xml_document(const std::filesystem::path& path) {
+    // pugixml's load_file uses fopen internally, which on Windows cannot handle
+    // CJK characters in paths (fopen uses ANSI encoding). Read the file ourselves
+    // using std::ifstream (which supports wide paths on MSVC), then parse via load_buffer.
+    std::ifstream stream(path, std::ios::binary | std::ios::ate);
+    if (!stream) {
+        return tl::make_unexpected(Error{ErrorCode::parse_error, "failed to open file", path, {}});
+    }
+
+    auto size = stream.tellg();
+    if (size <= 0) {
+        return tl::make_unexpected(Error{ErrorCode::parse_error, "file is empty", path, {}});
+    }
+
+    stream.seekg(0, std::ios::beg);
+    std::vector<char> buffer(static_cast<size_t>(size));
+    stream.read(buffer.data(), static_cast<std::streamsize>(size));
+
+    if (!stream) {
+        return tl::make_unexpected(Error{ErrorCode::parse_error, "failed to read file", path, {}});
+    }
+
     pugi::xml_document doc;
-    const auto result = doc.load_file(path.string().c_str(), pugi::parse_default, pugi::encoding_utf8);
+    const auto result = doc.load_buffer(buffer.data(), buffer.size(), pugi::parse_default, pugi::encoding_auto);
     if (!result) {
         return tl::make_unexpected(Error{ErrorCode::parse_error, result.description(), path, {}});
     }
+
     return doc;
 }
 

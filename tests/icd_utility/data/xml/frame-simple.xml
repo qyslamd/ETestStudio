@@ -1,0 +1,45 @@
+<ICDData>
+  <Name>SimpleFrame</Name>
+  <Data>
+    <Item>
+      <Offset>0</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>8</BitWidth>
+      <Type>byte</Type>
+      <Name>Field1</Name>
+      <Description>First field</Description>
+      <Tag>0</Tag>
+      <IsScaled>0</IsScaled>
+    </Item>
+    <Item>
+      <Offset>1</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>16</BitWidth>
+      <Type>word</Type>
+      <Name>Field2</Name>
+      <Description>Second field</Description>
+      <Tag>0</Tag>
+      <IsScaled>0</IsScaled>
+    </Item>
+    <Item>
+      <Offset>3</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>32</BitWidth>
+      <Type>dword</Type>
+      <Name>Field3</Name>
+      <Description>Third field (dword)</Description>
+      <Tag>0</Tag>
+      <IsScaled>0</IsScaled>
+    </Item>
+    <Item>
+      <Offset>7</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>16</BitWidth>
+      <Type>short</Type>
+      <Name>Field4</Name>
+      <Description>Fourth field (short)</Description>
+      <Tag>0</Tag>
+      <IsScaled>0</IsScaled>
+    </Item>
+  </Data>
+</ICDData>
