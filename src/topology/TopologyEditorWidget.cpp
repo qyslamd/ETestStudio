@@ -46,7 +46,6 @@ TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QFrame(parent) {
 
   initUi();
   initSignals();
-  buildDefaultDocument();
 }
 
 TopologyEditorWidget::~TopologyEditorWidget() {}
@@ -144,6 +143,7 @@ TopologyDocument* TopologyEditorWidget::document() const {
 
 void TopologyEditorWidget::reloadScene() {
   scene_->loadFromDocument();
+  outline_widget_->rebuildTree(doc_);
 }
 
 void TopologyEditorWidget::setEditorId(const QString& newId) {
@@ -509,7 +509,11 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
   int n = doc_->productCount() + 1;
   TopologyProduct prod;
   prod.name = QStringLiteral("UUT-%1").arg(n, 2, 10, QChar('0'));
-  prod.position = (scenePos.isNull()) ? QPointF(450, 100 + n * 80) : scenePos;
+  prod.position = scenePos;
+  if (prod.position.isNull()) {
+    auto center = view_->mapToScene(view_->viewport()->rect().center());
+    prod.position = (center.isNull()) ? QPointF(0, 0) : center;
+  }
   prod.ports.append({QStringLiteral("Port_IN1"),
                      TopologyPort::Input,
                      {QStringLiteral("A429")}});
@@ -520,6 +524,12 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
   auto* cmd = new AddProductCommand(doc_, prod);
   doc_->undoStack()->push(cmd);
   status_label_->setText(QStringLiteral("已添加 UUT: %1").arg(prod.name));
+
+  // 居中到新添加的 Item
+  if (auto* uut = scene_->findUutItem(cmd->productIndex())) {
+    uut->setSelected(true);
+    view_->centerOn(uut);
+  }
 }
 
 void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
@@ -527,11 +537,21 @@ void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
   TopologyDevice dev;
   dev.name = QStringLiteral("Device-%1").arg(n, 2, 10, QChar('0'));
   dev.deviceType = QStringLiteral("EPH6272T");
-  dev.position = (scenePos.isNull()) ? QPointF(50, 100 + n * 80) : scenePos;
+  dev.position = scenePos;
+  if (dev.position.isNull()) {
+    auto center = view_->mapToScene(view_->viewport()->rect().center());
+    dev.position = (center.isNull()) ? QPointF(0, 0) : center;
+  }
 
   auto* cmd = new AddDeviceCommand(doc_, dev);
   doc_->undoStack()->push(cmd);
   status_label_->setText(QStringLiteral("已添加设备: %1").arg(dev.name));
+
+  // 居中到新添加的 Item
+  if (auto* devItem = scene_->findDeviceItem(cmd->deviceIndex())) {
+    devItem->setSelected(true);
+    view_->centerOn(devItem);
+  }
 }
 
 void TopologyEditorWidget::onDropDevice(const QString& deviceType,
@@ -558,6 +578,12 @@ void TopologyEditorWidget::onDropDevice(const QString& deviceType,
   doc_->undoStack()->push(cmd);
   status_label_->setText(
       QStringLiteral("已拖放添加设备: %1").arg(dev.name));
+
+  // 居中到新添加的 Item
+  if (auto* devItem = scene_->findDeviceItem(cmd->deviceIndex())) {
+    devItem->setSelected(true);
+    view_->centerOn(devItem);
+  }
 }
 
 void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
@@ -661,12 +687,15 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
     } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
       selType = 1;
       selIdx1 = dev->deviceIndex();
-    } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+    } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
       selType = 2;
+      selIdx1 = conn->connectionIndex();
+    } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+      selType = 3;
       selIdx1 = p->productIndex();
       selIdx2 = p->portIndex();
     } else if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(item)) {
-      selType = 3;
+      selType = 4;
       selIdx1 = dp->deviceIndex();
       selIdx2 = dp->portIndex();
     }
@@ -689,6 +718,12 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
       newItem = dev;
     }
   } else if (selType == 2) {
+    auto* conn = scene_->findConnectionItem(selIdx1);
+    if (conn) {
+      conn->setSelected(true);
+      newItem = conn;
+    }
+  } else if (selType == 3) {
     auto* uut = scene_->findUutItem(selIdx1);
     if (uut) {
       auto* port = uut->portItem(selIdx2);
@@ -697,7 +732,7 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
         newItem = port;
       }
     }
-  } else if (selType == 3) {
+  } else if (selType == 4) {
     auto* dev = scene_->findDeviceItem(selIdx1);
     if (dev) {
       auto* dp = dev->devicePortItem(selIdx2);

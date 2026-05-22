@@ -11,7 +11,8 @@
 |------|------|--------|
 | 1 基础框架搭建 | ✅ 已完成 | 100% |
 | 1.5 编辑器完善 | ✅ 已完成 | 100% |
-| 2.5 拓扑编辑器增强 | 🔄 规划中 | 0% |
+| 2.5 拓扑编辑器增强 | ✅ 已完成 | 100% |
+| 2.5b 拓扑编辑器持续完善 | 🔄 进行中 | 待定 |
 | 2 HAL接口定义+Mock实现 | ❌ 未开始 | 0% |
 | 3 ICD信号层 | ❌ 未开始 | 0% |
 | 4 用例管理层 | ❌ 未开始 | 0% |
@@ -31,7 +32,8 @@
 | M4：用例就绪 | JSON用例可编辑、校验、转换为Lua脚本 | 阶段4 |
 | M5：引擎就绪 | Lua脚本可执行、调试、生成报告 | 阶段5 |
 | M6：硬件就绪 | 真实设备驱动可用，Dry Run/Real模式可切换，全链路闭环通过 | 阶段6 |
-| M2.5：拓扑增强就绪 | 连线智能路由、公共基类提取、交互体验增强，topology-demo验证通过 | 阶段2.5 |
+| M2.5：拓扑增强就绪 | 连线智能路由、公共基类提取、交互体验增强，topology-demo验证通过 | 阶段2.5 ✅ |
+| M2.5b：拓扑编辑器持续完善 | 帧协议编辑器完善、属性面板优化、用户体验提升 | 阶段2.5b |
 | M7：产品发布 | 全链路闭环测试通过，安装包可交付 | 阶段7 |
 
 ---
@@ -93,40 +95,61 @@
 
 ---
 
-## 阶段2.5 拓扑编辑器增强（规划中）
+## 阶段2.5 拓扑编辑器增强（已完成）
 
-> 基于 FlowGraph 项目设计分析，对拓扑编辑器进行 7 项增强。详细计划见 `docs/01-规划/阶段2.5-拓扑编辑器增强计划.md`，研究参考见 `docs/02-研究/FlowGraph拓扑设计借鉴.md`
+> 基于 FlowGraph 项目设计分析，对拓扑编辑器进行 7 项增强。实际完成时间跨度：2026-05-20 ~ 2026-05-22。
 
-### 2.5.1 端口连接约束增强（0.5天）
-- [ ] 同方向阻止（Input→Input / Output→Output 不允许）
-- [ ] 输入端单连线检查
-- [ ] 功能类型匹配校验
+### 2.5.1 端口连接约束增强 ✅
+- [x] 同方向阻止（Input→Input / Output→Output 不允许）
+- [x] 输入端单连线检查
+- [x] 功能类型匹配校验
 
-### 2.5.2 TopologyBlockItem 公共基类提取（1.5天）
-- [ ] 新增 `TopologyBlockItem`，将 UutItem/DeviceItem 通用交互逻辑上提
-- [ ] UutItem/DeviceItem 改为只实现 `paintContent()` 和 `calcContentHeight()`
-- [ ] 消除约 40% 重复代码
+### 2.5.2 TopologyBlockItem 公共基类提取 ✅
+- [x] 新增 `TopologyBlockItem`，将 UutItem/DeviceItem 通用交互逻辑上提
+- [x] UutItem/DeviceItem 改为只实现 `paintContent()` 和 `calcContentHeight()`
+- [x] 消除约 50% 重复代码
 
-### 2.5.3 NicePathMaker 智能路径路由（2天）
-- [ ] 新增 `TopologyPathRouter` 类：支持曲线/折线/直线三种风格
-- [ ] 折线模式自动避障绕行
-- [ ] ConnectionItem 引入路由引擎
+### 2.5.3 NicePathMaker 智能路径路由 ✅
+- [x] 新增 `TopologyPathRouter` 类：支持曲线/折线/直线三种风格
+- [x] 折线模式自动避障绕行
+- [x] ConnectionItem 引入路由引擎
 
-### 2.5.4 连线风格右键切换（0.5天）
-- [ ] ConnectionItem 右键菜单增加连线风格切换子菜单
+### 2.5.4 连线风格右键切换 ✅
+- [x] ConnectionItem 右键菜单增加连线风格切换子菜单
 
-### 2.5.5 端口可视化风格多样化（1天）
-- [ ] PortItem/DevicePortItem 支持圆形和三角形两种绘制风格
+### 2.5.5 端口可视化风格多样化 ✅
+- [x] PortItem/DevicePortItem 支持圆形和三角形两种绘制风格
+- [x] 端口样式持久化（序列化/反序列化）
 
-### 2.5.6 拖放创建 Item（1.5天）
-- [ ] TopologyScene 增加 drag/drop 事件处理
-- [ ] 自定义 MIME 类型，支持从面板拖入创建设备
+### 2.5.6 拖放创建 Item ✅
+- [x] TopologyScene 增加 drag/drop 事件处理
+- [x] 自定义 MIME 类型，支持从面板拖入创建设备
+- [x] DevicePaletteWidget 拖放预览
 
-### 2.5.7 Item Resize 手柄（1.5天）
-- [ ] TopologyBlockItem 增加 8 方向 resize 手柄
-- [ ] 拖拽手柄改变块大小，鼠标悬停光标变化
+### 2.5.7 Item Resize 手柄 ✅
+- [x] TopologyBlockItem 增加 8 方向 resize 手柄
+- [x] 拖拽手柄改变块大小，鼠标悬停光标变化
 
-### 预估工期：8.5天
+### 额外完成（超出原计划）
+- [x] **可搜索大纲导航面板**：TopologyOutlineWidget，树形结构展示 UUT/Device/Connection，支持搜索过滤和点击导航
+- [x] **设备面板搜索栏**：DevicePaletteWidget 增加过滤搜索
+- [x] **PropertyPanelWidget 端口表重构**：QTableWidget → QTableView + QStandardItemModel + ComboBoxDelegate
+- [x] **工具栏 SVG 图标**：TopologyEditorWidget 工具栏使用 SVG 图标
+- [x] **拖放预览优化**：拖放时显示设备预览效果
+- [x] **分布对齐优化**：编辑器内设备分布和对齐功能
+- [x] **外观优化 + QSS 样式迁移**：面板标题头、暗色主题一致性调整
+
+### 实际工期：约 3 天
+
+---
+
+## 阶段2.5b 拓扑编辑器持续完善（进行中）
+
+> 在前7项增强基础上继续完善拓扑编辑器的交互体验和功能完整性。具体任务待与用户确认。
+
+### 待定任务
+
+- 帧协议编辑器完善（UI 骨架已有，save/saveAs 未实现，三面板无联动，无数据模型）
 
 ---
 

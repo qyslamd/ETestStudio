@@ -29,7 +29,8 @@ class TopologyOutlineWidget : public QWidget {
   void onTreeItemClicked(QTreeWidgetItem* item, int column);
 
  private:
-  enum class ItemTag { Category, Uut, Device, Connection, Port, DevicePort };
+  // Values align with onOutlineNavigate scheme: 0=UUT, 1=Device, 2=Connection, 3=Port, 4=DevicePort
+  enum class ItemTag { Category = -1, Uut = 0, Device = 1, Connection = 2, Port = 3, DevicePort = 4 };
 
   static constexpr int kRoleTag = Qt::UserRole + 1;
   static constexpr int kRoleMainIdx = Qt::UserRole + 2;

@@ -103,10 +103,10 @@ void EditorManager::registerEditorTypes() {
               etest::topology::TopologyJsonSerializer::deserialize(
                   jdoc.object(), editor->document());
               editor->document()->undoStack()->clear();
-              editor->reloadScene();
-              editor->setEditorId(id);
             }
+            editor->reloadScene();
           }
+          editor->setEditorId(id);
         }
         return editor;
       });

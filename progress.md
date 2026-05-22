@@ -1,5 +1,12 @@
 # IATP — 进度日志
 
+## 2026-05-22
+
+### 已完成
+- 修复 TopologyOutlineWidget 导航到大纲 Item 的编号错位 bug（ItemTag 枚举值不匹配 onOutlineNavigate 的 case 分支）
+- 修复 rebuildSceneAndRestoreSelection 中使用非标准编号（缺少 Connection、Port/DevicePort 编号错误）
+- 移除 TopologyEditorWidget 构造函数中的 buildDefaultDocument() 调用，新建 .etopo 文件打开不再有默认 Item
+
 ## 2026-05-20
 
 ### 已完成
