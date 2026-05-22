@@ -62,6 +62,18 @@ public:
 
     void add_child(std::unique_ptr<Node> child);
 
+    void setName(std::string_view name);
+    void setDescription(std::string_view description);
+    void setOffset(int offset);
+    void setBitOffset(int bit_offset);
+    void setBitWidth(int bit_width);
+    void setValueType(ValueType value_type);
+    void setTag(Tag tag);
+    void setAttrs(NodeAttrs attrs);
+
+    // Remove child by index. Returns true if index was valid.
+    bool remove_child(std::size_t index);
+
 private:
     void set_frame(Frame* frame) noexcept;
     void mark_children_modified() noexcept;

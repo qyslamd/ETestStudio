@@ -44,6 +44,17 @@ public:
 
     void add_root(std::unique_ptr<Node> node);
 
+    void setId(int id);
+    void setName(std::string_view name);
+    void setDescription(std::string_view description);
+    void setType(FrameType type);
+    void setOrder(ByteOrder order);
+
+    // Remove root node by index. Returns true if index was valid.
+    // Note: the flat nodes_ index is NOT updated by this call.
+    // The caller must ensure the frame is re-indexed if needed.
+    bool remove_root(std::size_t index);
+
 private:
     void index_subtree(Node& node) noexcept;
 

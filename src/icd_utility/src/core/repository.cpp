@@ -1,5 +1,6 @@
 ﻿#include <icd/repository.hpp>
 
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -33,6 +34,22 @@ void Repository::add_frame(std::unique_ptr<Frame> frame) {
     frames_by_id_.emplace(frame_ptr->id(), frame_ptr);
     frames_by_name_.emplace(std::string(frame_ptr->name()), frame_ptr);
     frames_.push_back(std::move(frame));
+}
+
+bool Repository::remove_frame(int id) {
+    auto it = frames_by_id_.find(id);
+    if (it == frames_by_id_.end()) return false;
+
+    auto name = std::string(it->second->name());
+    frames_by_name_.erase(name);
+    frames_by_id_.erase(it);
+
+    auto fit = std::remove_if(frames_.begin(), frames_.end(),
+        [id](const auto& f) { return f->id() == id; });
+    if (fit != frames_.end()) {
+        frames_.erase(fit, frames_.end());
+    }
+    return true;
 }
 
 } // namespace icd

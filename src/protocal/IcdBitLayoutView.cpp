@@ -12,6 +12,9 @@
 #include <QScrollBar>
 #include <QVBoxLayout>
 
+#include <functional>
+#include <icd/node.hpp>
+
 namespace etest::protocal {
 
 // ============================================================
@@ -197,7 +200,7 @@ void IcdBitLayoutScene::drawBackground(QPainter* painter, const QRectF&) {
 // ============================================================
 IcdBitLayoutView::IcdBitLayoutView(QWidget* parent) : QWidget(parent) {
   initUi();
-  initPlaceholderBlocks();
+  setFrameData(4, 32);
 }
 
 void IcdBitLayoutView::initUi() {
@@ -246,37 +249,66 @@ void IcdBitLayoutView::initUi() {
   layout->addWidget(view_, 1);
 }
 
-void IcdBitLayoutView::initPlaceholderBlocks() {
-  setFrameData(16, 32);
+void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
+    clearBlocks();
 
-  auto colors = {QColor(66, 133, 244, 180), QColor(52, 168, 83, 180),
-                 QColor(251, 188, 4, 180),  QColor(234, 67, 53, 180),
-                 QColor(142, 68, 173, 180), QColor(46, 204, 113, 180),
-                 QColor(231, 76, 60, 180),  QColor(52, 152, 219, 180)};
+    // Collect all leaf nodes from the frame's node tree
+    QVector<const icd::Node*> leaves;
+    for (const auto& root : frame.roots()) {
+        collectLeafNodes(*root, leaves);
+    }
 
-  struct Proto {
-    const char* name;
-    int offset;
-    int bit;
-    int width;
-  };
+    if (leaves.isEmpty()) return;
 
-  Proto data[] = {
-      {"Label", 0, 0, 8},      {"SDI", 0, 8, 2},
-      {"Data", 0, 10, 19},     {"SSM", 0, 29, 2},
-      {"Parity", 0, 31, 1},    {"Latitude", 1, 0, 21},
-      {"Longitude", 4, 0, 21}, {"Altitude", 8, 0, 16},
-  };
+    // Calculate frame length from max extent
+    int max_bits = 0;
+    for (auto* node : leaves) {
+        int end = (node->offset() * 8) + node->bit_offset() + node->bit_width();
+        if (end > max_bits) max_bits = end;
+    }
+    int frame_length = (max_bits + 7) / 8;
+    if (frame_length < 1) frame_length = 1;
 
-  int idx = 0;
-  for (auto& p : data) {
-    addBlock(QString::fromLatin1(p.name), p.offset, p.bit, p.width,
-             *std::next(colors.begin(), idx % 8));
-    ++idx;
-  }
+    setFrameData(frame_length, 32);
 
-  view_->scale(0.75, 0.75);
-  view_->centerOn(0, 0);
+    // Color palette indexed by group name hash
+    QVector<QColor> palette = {
+        QColor(66, 133, 244, 180),   // blue
+        QColor(52, 168, 83, 180),    // green
+        QColor(251, 188, 4, 180),    // yellow
+        QColor(234, 67, 53, 180),    // red
+        QColor(142, 68, 173, 180),   // purple
+        QColor(46, 204, 113, 180),   // emerald
+        QColor(231, 76, 60, 180),    // crimson
+        QColor(52, 152, 219, 180),   // sky blue
+        QColor(243, 156, 18, 180),   // orange
+        QColor(149, 165, 166, 180),  // gray
+    };
+
+    for (auto* node : leaves) {
+        // Assign color based on group name hash (or node name if no group)
+        std::string group = node->attrs().group_name.empty()
+                            ? std::string(node->name())
+                            : node->attrs().group_name;
+        size_t hash = std::hash<std::string>{}(group);
+        QColor color = palette[hash % palette.size()];
+
+        QString qname = QString::fromStdString(std::string(node->name()));
+        addBlock(qname, node->offset(), node->bit_offset(), node->bit_width(), color);
+    }
+
+    view_->scale(0.75, 0.75);
+    view_->centerOn(0, 0);
+}
+
+void IcdBitLayoutView::collectLeafNodes(const icd::Node& node, QVector<const icd::Node*>& leaves) {
+    if (node.children().empty()) {
+        leaves.push_back(&node);
+    } else {
+        for (const auto& child : node.children()) {
+            collectLeafNodes(*child, leaves);
+        }
+    }
 }
 
 void IcdBitLayoutView::setFrameData(int length_bytes, int bits_per_row) {

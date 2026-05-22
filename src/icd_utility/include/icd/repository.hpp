@@ -28,6 +28,7 @@ public:
     const Node* find(std::string_view frame_name, std::string_view node_name) const noexcept;
 
     void add_frame(std::unique_ptr<Frame> frame);
+    bool remove_frame(int id);
 
 private:
     std::vector<std::unique_ptr<Frame>> frames_;

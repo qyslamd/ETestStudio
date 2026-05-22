@@ -9,10 +9,110 @@
 #include <QLineEdit>
 #include <QScrollArea>
 #include <QSpinBox>
-#include <QTextEdit>
 #include <QVBoxLayout>
 
 namespace etest::protocal {
+
+// ---------------------------------------------------------------------------
+// Anonymous-namespace helpers: ValueType/Tag/FrameType/ByteOrder <-> display
+// ---------------------------------------------------------------------------
+namespace {
+
+const char* valueTypeName(icd::ValueType vt) {
+  switch (vt) {
+    case icd::ValueType::unknown:   return "unknown";
+    case icd::ValueType::boolean:   return "boolean";
+    case icd::ValueType::byte_:     return "uint8";
+    case icd::ValueType::bytes:     return "bytes";
+    case icd::ValueType::word:      return "uint16";
+    case icd::ValueType::shortint:  return "int16";
+    case icd::ValueType::smallint:  return "int16";
+    case icd::ValueType::longword:  return "uint32";
+    case icd::ValueType::integer:   return "int32";
+    case icd::ValueType::ulong_:    return "uint64";
+    case icd::ValueType::single:    return "float";
+    case icd::ValueType::double_:   return "double";
+    case icd::ValueType::string_:   return "string";
+  }
+  return "unknown";
+}
+
+icd::ValueType valueTypeFromName(const QString& name) {
+  if (name == QLatin1String("uint8"))   return icd::ValueType::byte_;
+  if (name == QLatin1String("uint16"))  return icd::ValueType::word;
+  if (name == QLatin1String("int16"))   return icd::ValueType::shortint;
+  if (name == QLatin1String("uint32"))  return icd::ValueType::longword;
+  if (name == QLatin1String("int32"))   return icd::ValueType::integer;
+  if (name == QLatin1String("uint64"))  return icd::ValueType::ulong_;
+  if (name == QLatin1String("float"))   return icd::ValueType::single;
+  if (name == QLatin1String("double"))  return icd::ValueType::double_;
+  if (name == QLatin1String("boolean")) return icd::ValueType::boolean;
+  if (name == QLatin1String("bytes"))   return icd::ValueType::bytes;
+  if (name == QLatin1String("string"))  return icd::ValueType::string_;
+  return icd::ValueType::unknown;
+}
+
+const char* tagName(icd::Tag tag) {
+  switch (tag) {
+    case icd::Tag::none:             return "none";
+    case icd::Tag::head:             return "head";
+    case icd::Tag::length:           return "length";
+    case icd::Tag::count:            return "count";
+    case icd::Tag::sum:              return "sum";
+    case icd::Tag::sum2:             return "sum";
+    case icd::Tag::xor_:             return "xor";
+    case icd::Tag::xor1:             return "xor";
+    case icd::Tag::xor2:             return "xor";
+    case icd::Tag::init_value:       return "init_value";
+    case icd::Tag::signal_in_value:  return "signal_in_value";
+    case icd::Tag::big_endian_value: return "big_endian_value";
+  }
+  return "none";
+}
+
+icd::Tag tagFromName(const QString& name) {
+  if (name == QLatin1String("head"))            return icd::Tag::head;
+  if (name == QLatin1String("length"))           return icd::Tag::length;
+  if (name == QLatin1String("count"))            return icd::Tag::count;
+  if (name == QLatin1String("sum"))              return icd::Tag::sum;
+  if (name == QLatin1String("xor"))              return icd::Tag::xor_;
+  if (name == QLatin1String("signal_in_value"))  return icd::Tag::signal_in_value;
+  return icd::Tag::none;
+}
+
+int frameTypeIndex(icd::FrameType ft) {
+  switch (ft) {
+    case icd::FrameType::data:     return 0;
+    case icd::FrameType::cmd:      return 1;
+    case icd::FrameType::data_cmd: return 2;
+  }
+  return 0;
+}
+
+icd::FrameType frameTypeFromIndex(int idx) {
+  static constexpr icd::FrameType types[] = {
+      icd::FrameType::data, icd::FrameType::cmd, icd::FrameType::data_cmd};
+  if (idx >= 0 && idx < 3) return types[idx];
+  return icd::FrameType::data;
+}
+
+int byteOrderIndex(icd::ByteOrder bo) {
+  switch (bo) {
+    case icd::ByteOrder::little_endian: return 0;
+    case icd::ByteOrder::big_endian:    return 1;
+  }
+  return 0;
+}
+
+icd::ByteOrder byteOrderFromIndex(int idx) {
+  return idx == 1 ? icd::ByteOrder::big_endian : icd::ByteOrder::little_endian;
+}
+
+}  // anonymous namespace
+
+// ===========================================================================
+// Constructor & UI construction
+// ===========================================================================
 
 IcdPropertyPanel::IcdPropertyPanel(QWidget* parent) : QWidget(parent) {
   initUi();
@@ -22,104 +122,491 @@ void IcdPropertyPanel::initUi() {
   auto* outer_layout = new QVBoxLayout(this);
   outer_layout->setContentsMargins(0, 0, 0, 0);
 
+  // -- Section header (styled via #sectionHeader in QSS) --
   auto* header = new QLabel(QStringLiteral("信号属性"), this);
   header->setObjectName(QStringLiteral("sectionHeader"));
 
+  // -- Scrollable form container --
   auto* scroll = new QScrollArea(this);
   scroll->setWidgetResizable(true);
   scroll->setFrameShape(QFrame::NoFrame);
 
   form_widget_ = new QWidget(this);
-  auto* form_layout = new QFormLayout(form_widget_);
-  form_layout->setContentsMargins(8, 8, 8, 8);
-  form_layout->setSpacing(6);
-  form_layout->setLabelAlignment(Qt::AlignRight);
+  form_layout_ = new QFormLayout(form_widget_);
+  form_layout_->setContentsMargins(8, 8, 8, 8);
+  form_layout_->setSpacing(6);
+  form_layout_->setLabelAlignment(Qt::AlignRight);
 
-  auto add_line = [&](const QString& label, const QString& placeholder) {
-    auto* edit = new QLineEdit(placeholder, form_widget_);
-    edit->setReadOnly(true);
-    form_layout->addRow(label, edit);
-  };
+  // =====================================================================
+  //  1. Basic info  (name / description)
+  // =====================================================================
+  basic_group_ = new QGroupBox(QStringLiteral("基本信息"), form_widget_);
+  auto* basic_form = new QFormLayout(basic_group_);
+  basic_form->setSpacing(4);
 
-  auto add_spin = [&](const QString& label, int value, int min, int max) {
-    auto* spin = new QSpinBox(form_widget_);
-    spin->setRange(min, max);
-    spin->setValue(value);
-    spin->setReadOnly(true);
-    form_layout->addRow(label, spin);
-  };
+  edit_name_ = new QLineEdit(basic_group_);
+  edit_desc_ = new QLineEdit(basic_group_);
+  basic_form->addRow(QStringLiteral("名称"), edit_name_);
+  basic_form->addRow(QStringLiteral("描述"), edit_desc_);
 
-  auto add_dspin = [&](const QString& label, double value) {
-    auto* spin = new QDoubleSpinBox(form_widget_);
-    spin->setRange(-1e9, 1e9);
-    spin->setDecimals(8);
-    spin->setValue(value);
-    spin->setReadOnly(true);
-    form_layout->addRow(label, spin);
-  };
+  form_layout_->addRow(basic_group_);
 
-  auto add_combo = [&](const QString& label, const QStringList& items,
-                       int index) {
-    auto* combo = new QComboBox(form_widget_);
-    combo->addItems(items);
-    combo->setCurrentIndex(index);
-    combo->setEnabled(false);
-    form_layout->addRow(label, combo);
-  };
+  // =====================================================================
+  //  2. Frame-specific properties  (hidden by default)
+  // =====================================================================
+  frame_group_ = new QGroupBox(QStringLiteral("帧属性"), form_widget_);
+  auto* frame_form = new QFormLayout(frame_group_);
+  frame_form->setSpacing(4);
 
-  // -- Basic properties --
-  auto* basic_group = new QGroupBox(QStringLiteral("基本信息"), form_widget_);
-  auto* basic_form = new QFormLayout(basic_group);
-  add_line(QStringLiteral("Name"), QStringLiteral("GNSS_Latitude"));
-  add_spin(QStringLiteral("Offset"), 1, 0, 255);
-  add_spin(QStringLiteral("StartBit"), 0, 0, 7);
-  add_spin(QStringLiteral("BitWidth"), 21, 1, 64);
-  add_combo(QStringLiteral("Type"),
-            {QStringLiteral("byte"), QStringLiteral("int"),
-             QStringLiteral("uint"), QStringLiteral("float"),
-             QStringLiteral("double"), QStringLiteral("string"),
-             QStringLiteral("bytes"), QStringLiteral("dword")},
-            2);
-  add_combo(QStringLiteral("Tag"),
-            {QStringLiteral("none"), QStringLiteral("head"),
-             QStringLiteral("length"), QStringLiteral("count"),
-             QStringLiteral("sum"), QStringLiteral("xor"),
-             QStringLiteral("signal_in_value")},
-            0);
-  form_layout->addRow(basic_group);
+  spin_frame_id_ = new QSpinBox(frame_group_);
+  spin_frame_id_->setRange(0, 65535);
 
-  // -- Scale properties --
-  auto* scale_group = new QGroupBox(QStringLiteral("缩放"), form_widget_);
-  auto* scale_form = new QFormLayout(scale_group);
-  auto* scaled_cb = new QCheckBox(QStringLiteral("启用缩放"), form_widget_);
-  scaled_cb->setChecked(true);
-  scaled_cb->setEnabled(false);
-  scale_form->addRow(scaled_cb);
-  add_dspin(QStringLiteral("ScaleA"), 0.00017166);
-  add_dspin(QStringLiteral("ScaleB"), 0.0);
-  add_line(QStringLiteral("Unit"), QStringLiteral("°"));
-  add_line(QStringLiteral("预览"), QStringLiteral("原始值 524288 = 物理值 90.0°"));
-  form_layout->addRow(scale_group);
+  combo_frame_type_ = new QComboBox(frame_group_);
+  combo_frame_type_->addItems({
+      QStringLiteral("数据"),
+      QStringLiteral("命令"),
+      QStringLiteral("数据/命令"),
+  });
+  combo_byte_order_ = new QComboBox(frame_group_);
+  combo_byte_order_->addItems({
+      QStringLiteral("小端"),
+      QStringLiteral("大端"),
+  });
 
-  // -- Extended properties --
-  auto* ext_group = new QGroupBox(QStringLiteral("扩展属性"), form_widget_);
-  auto* ext_form = new QFormLayout(ext_group);
-  add_line(QStringLiteral("SystemName"), QStringLiteral("ARINC429总线通讯模块"));
-  add_line(QStringLiteral("GroupName"), QStringLiteral("ISI-01#A429_IN1(110)"));
-  add_line(QStringLiteral("Description"), QStringLiteral("GNSS Latitude"));
-  add_dspin(QStringLiteral("Min"), -90.0);
-  add_dspin(QStringLiteral("Max"), 90.0);
-  add_line(QStringLiteral("ValueTextList"), QStringLiteral("110"));
-  add_combo(QStringLiteral("LinkTo"),
-            {QStringLiteral("6272T_00"), QStringLiteral("6272T_01"),
-             QStringLiteral("6272T_02"), QStringLiteral("6272T_03")},
-            0);
-  form_layout->addRow(ext_group);
+  frame_form->addRow(QStringLiteral("帧 ID"), spin_frame_id_);
+  frame_form->addRow(QStringLiteral("类型"), combo_frame_type_);
+  frame_form->addRow(QStringLiteral("字节序"), combo_byte_order_);
+  form_layout_->addRow(frame_group_);
+  frame_group_->hide();
 
+  // =====================================================================
+  //  3. Node properties (offset, bit-layout, type, tag)
+  // =====================================================================
+  node_group_ = new QGroupBox(QStringLiteral("节点属性"), form_widget_);
+  auto* node_form = new QFormLayout(node_group_);
+  node_form->setSpacing(4);
+
+  spin_offset_ = new QSpinBox(node_group_);
+  spin_offset_->setRange(0, 65535);
+
+  spin_start_bit_ = new QSpinBox(node_group_);
+  spin_start_bit_->setRange(0, 7);
+
+  spin_bit_width_ = new QSpinBox(node_group_);
+  spin_bit_width_->setRange(1, 64);
+
+  combo_type_ = new QComboBox(node_group_);
+  combo_type_->addItems({
+      QStringLiteral("uint8"),
+      QStringLiteral("uint16"),
+      QStringLiteral("int16"),
+      QStringLiteral("uint32"),
+      QStringLiteral("int32"),
+      QStringLiteral("uint64"),
+      QStringLiteral("float"),
+      QStringLiteral("double"),
+      QStringLiteral("boolean"),
+      QStringLiteral("bytes"),
+      QStringLiteral("string"),
+      QStringLiteral("unknown"),
+  });
+
+  combo_tag_ = new QComboBox(node_group_);
+  combo_tag_->addItems({
+      QStringLiteral("none"),
+      QStringLiteral("head"),
+      QStringLiteral("length"),
+      QStringLiteral("count"),
+      QStringLiteral("sum"),
+      QStringLiteral("xor"),
+      QStringLiteral("signal_in_value"),
+  });
+
+  node_form->addRow(QStringLiteral("偏移"), spin_offset_);
+  node_form->addRow(QStringLiteral("起始位"), spin_start_bit_);
+  node_form->addRow(QStringLiteral("位宽"), spin_bit_width_);
+  node_form->addRow(QStringLiteral("类型"), combo_type_);
+  node_form->addRow(QStringLiteral("标签"), combo_tag_);
+  form_layout_->addRow(node_group_);
+
+  // =====================================================================
+  //  4. Scaling  (is_scaled, scale_a/b, unit, formula, convertor)
+  // =====================================================================
+  scale_group_ = new QGroupBox(QStringLiteral("缩放"), form_widget_);
+  auto* scale_form = new QFormLayout(scale_group_);
+  scale_form->setSpacing(4);
+
+  check_scaled_ = new QCheckBox(QStringLiteral("启用缩放"), scale_group_);
+
+  dspin_scale_a_ = new QDoubleSpinBox(scale_group_);
+  dspin_scale_a_->setRange(-1e9, 1e9);
+  dspin_scale_a_->setDecimals(8);
+
+  dspin_scale_b_ = new QDoubleSpinBox(scale_group_);
+  dspin_scale_b_->setRange(-1e9, 1e9);
+  dspin_scale_b_->setDecimals(8);
+
+  edit_unit_ = new QLineEdit(scale_group_);
+  edit_scale_formula_ = new QLineEdit(scale_group_);
+  edit_scale_convertor_ = new QLineEdit(scale_group_);
+
+  scale_form->addRow(check_scaled_);
+  scale_form->addRow(QStringLiteral("Scale A"), dspin_scale_a_);
+  scale_form->addRow(QStringLiteral("Scale B"), dspin_scale_b_);
+  scale_form->addRow(QStringLiteral("单位"), edit_unit_);
+  scale_form->addRow(QStringLiteral("缩放公式"), edit_scale_formula_);
+  scale_form->addRow(QStringLiteral("缩放转换器"), edit_scale_convertor_);
+  form_layout_->addRow(scale_group_);
+
+  // =====================================================================
+  //  5. Extended attributes  (system, group, min, max, values-text, link)
+  // =====================================================================
+  ext_group_ = new QGroupBox(QStringLiteral("扩展属性"), form_widget_);
+  auto* ext_form = new QFormLayout(ext_group_);
+  ext_form->setSpacing(4);
+
+  edit_system_ = new QLineEdit(ext_group_);
+  edit_group_ = new QLineEdit(ext_group_);
+
+  dspin_min_ = new QDoubleSpinBox(ext_group_);
+  dspin_min_->setRange(-1e9, 1e9);
+  dspin_min_->setDecimals(6);
+
+  dspin_max_ = new QDoubleSpinBox(ext_group_);
+  dspin_max_->setRange(-1e9, 1e9);
+  dspin_max_->setDecimals(6);
+
+  edit_value_text_ = new QLineEdit(ext_group_);
+  edit_link_to_ = new QLineEdit(ext_group_);
+
+  ext_form->addRow(QStringLiteral("系统名"), edit_system_);
+  ext_form->addRow(QStringLiteral("组名"), edit_group_);
+  ext_form->addRow(QStringLiteral("最小值"), dspin_min_);
+  ext_form->addRow(QStringLiteral("最大值"), dspin_max_);
+  ext_form->addRow(QStringLiteral("值文本列表"), edit_value_text_);
+  ext_form->addRow(QStringLiteral("链接"), edit_link_to_);
+  form_layout_->addRow(ext_group_);
+
+  // -- Assemble --
   scroll->setWidget(form_widget_);
-
   outer_layout->addWidget(header);
   outer_layout->addWidget(scroll, 1);
+
+  // Start in the "empty" state
+  clearForm();
+}
+
+// ===========================================================================
+// Helper: disconnect all previously-connected node editing signals
+// ===========================================================================
+
+void IcdPropertyPanel::clearNodeConnections() {
+  for (const auto& conn : node_connections_) {
+    disconnect(conn);
+  }
+  node_connections_.clear();
+}
+
+// ===========================================================================
+// Clear the entire form to default / empty state
+// ===========================================================================
+
+void IcdPropertyPanel::clearForm() {
+  clearNodeConnections();
+  current_node_ = nullptr;
+
+  // Reset all widget values to defaults
+  edit_name_->clear();
+  edit_desc_->clear();
+
+  spin_offset_->setValue(0);
+  spin_start_bit_->setValue(0);
+  spin_bit_width_->setValue(1);
+  combo_type_->setCurrentIndex(
+      combo_type_->findText(QStringLiteral("unknown")));
+  combo_tag_->setCurrentIndex(0);
+
+  check_scaled_->setChecked(false);
+  dspin_scale_a_->setValue(0.0);
+  dspin_scale_b_->setValue(0.0);
+  edit_unit_->clear();
+  edit_scale_formula_->clear();
+  edit_scale_convertor_->clear();
+
+  edit_system_->clear();
+  edit_group_->clear();
+  dspin_min_->setValue(0.0);
+  dspin_max_->setValue(0.0);
+  edit_value_text_->clear();
+  edit_link_to_->clear();
+
+  spin_frame_id_->setValue(0);
+  combo_frame_type_->setCurrentIndex(0);
+  combo_byte_order_->setCurrentIndex(0);
+
+  // Hide all groups; the caller (showNode / showFrame) re-shows what
+  // is appropriate.
+  basic_group_->hide();
+  frame_group_->hide();
+  node_group_->hide();
+  scale_group_->hide();
+  ext_group_->hide();
+}
+
+// ===========================================================================
+// Public API: populate form from an icd::Node  (with editing support)
+// ===========================================================================
+
+void IcdPropertyPanel::showNode(const icd::Node& node) {
+  clearForm();
+  current_node_ = &node;
+
+  // ---- Populate basic info ----
+  edit_name_->setText(QString::fromStdString(std::string(node.name())));
+  edit_desc_->setText(QString::fromStdString(std::string(node.description())));
+
+  // ---- Populate node properties ----
+  spin_offset_->setValue(node.offset());
+  spin_start_bit_->setValue(node.bit_offset());
+  spin_bit_width_->setValue(node.bit_width());
+
+  {
+    const int idx = combo_type_->findText(QString::fromLatin1(valueTypeName(node.value_type())));
+    if (idx >= 0) combo_type_->setCurrentIndex(idx);
+  }
+  {
+    const int idx = combo_tag_->findText(QString::fromLatin1(tagName(node.tag())));
+    if (idx >= 0) combo_tag_->setCurrentIndex(idx);
+  }
+
+  // ---- Populate scale section ----
+  const auto& attrs = node.attrs();
+  check_scaled_->setChecked(attrs.is_scaled);
+  dspin_scale_a_->setValue(static_cast<double>(attrs.scale_a.value_or(0.0f)));
+  dspin_scale_b_->setValue(static_cast<double>(attrs.scale_b.value_or(0.0f)));
+  edit_unit_->setText(QString::fromStdString(attrs.unit));
+  edit_scale_formula_->setText(QString::fromStdString(attrs.scale_formula));
+  edit_scale_convertor_->setText(QString::fromStdString(attrs.scale_convertor));
+
+  // ---- Populate extended properties ----
+  edit_system_->setText(QString::fromStdString(attrs.system_name));
+  edit_group_->setText(QString::fromStdString(attrs.group_name));
+  dspin_min_->setValue(static_cast<double>(attrs.min.value_or(0.0f)));
+  dspin_max_->setValue(static_cast<double>(attrs.max.value_or(0.0f)));
+  edit_value_text_->setText(QString::fromStdString(attrs.value_text_list));
+  edit_link_to_->setText(QString::fromStdString(attrs.link_to));
+
+  // ---- Show the relevant groups ----
+  basic_group_->show();
+  node_group_->show();
+  scale_group_->show();
+  ext_group_->show();
+  // frame_group_ stays hidden
+
+  // ---- Wire editing signals (disconnected by clearForm above) ----
+  auto cn = [this](auto* sender, auto signal, auto&& lambda) {
+    node_connections_.append(
+        connect(sender, signal, this, std::forward<decltype(lambda)>(lambda)));
+  };
+
+  // Name
+  cn(edit_name_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      const_cast<icd::Node*>(current_node_)
+          ->setName(edit_name_->text().toStdString());
+      emit nodeModified();
+    }
+  });
+  // Description
+  cn(edit_desc_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      const_cast<icd::Node*>(current_node_)
+          ->setDescription(edit_desc_->text().toStdString());
+      emit nodeModified();
+    }
+  });
+
+  // Offset
+  cn(spin_offset_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
+    if (current_node_) {
+      const_cast<icd::Node*>(current_node_)->setOffset(val);
+      emit nodeModified();
+    }
+  });
+  // Start bit
+  cn(spin_start_bit_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
+    if (current_node_) {
+      const_cast<icd::Node*>(current_node_)->setBitOffset(val);
+      emit nodeModified();
+    }
+  });
+  // Bit width
+  cn(spin_bit_width_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
+    if (current_node_) {
+      const_cast<icd::Node*>(current_node_)->setBitWidth(val);
+      emit nodeModified();
+    }
+  });
+
+  // Value type combo
+  cn(combo_type_, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int /*idx*/) {
+    if (current_node_) {
+      const_cast<icd::Node*>(current_node_)
+          ->setValueType(valueTypeFromName(combo_type_->currentText()));
+      emit nodeModified();
+    }
+  });
+  // Tag combo
+  cn(combo_tag_, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int /*idx*/) {
+    if (current_node_) {
+      const_cast<icd::Node*>(current_node_)
+          ->setTag(tagFromName(combo_tag_->currentText()));
+      emit nodeModified();
+    }
+  });
+
+  // Scaled checkbox
+  cn(check_scaled_, &QCheckBox::toggled, [this](bool checked) {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.is_scaled = checked;
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+  // Scale A
+  cn(dspin_scale_a_, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+     [this](double val) {
+       if (current_node_) {
+         auto a = current_node_->attrs();
+         a.scale_a = static_cast<float>(val);
+         const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+         emit nodeModified();
+       }
+     });
+  // Scale B
+  cn(dspin_scale_b_, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+     [this](double val) {
+       if (current_node_) {
+         auto a = current_node_->attrs();
+         a.scale_b = static_cast<float>(val);
+         const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+         emit nodeModified();
+       }
+     });
+
+  // Unit
+  cn(edit_unit_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.unit = edit_unit_->text().toStdString();
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+  // Scale formula
+  cn(edit_scale_formula_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.scale_formula = edit_scale_formula_->text().toStdString();
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+  // Scale convertor
+  cn(edit_scale_convertor_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.scale_convertor = edit_scale_convertor_->text().toStdString();
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+
+  // System name
+  cn(edit_system_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.system_name = edit_system_->text().toStdString();
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+  // Group name
+  cn(edit_group_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.group_name = edit_group_->text().toStdString();
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+  // Min
+  cn(dspin_min_, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this](double val) {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.min = static_cast<float>(val);
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+  // Max
+  cn(dspin_max_, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this](double val) {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.max = static_cast<float>(val);
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+  // Value text list
+  cn(edit_value_text_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.value_text_list = edit_value_text_->text().toStdString();
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+  // Link to
+  cn(edit_link_to_, &QLineEdit::editingFinished, [this]() {
+    if (current_node_) {
+      auto a = current_node_->attrs();
+      a.link_to = edit_link_to_->text().toStdString();
+      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      emit nodeModified();
+    }
+  });
+}
+
+// ===========================================================================
+// Public API: populate form from an icd::Frame  (read-only display for now)
+// ===========================================================================
+
+void IcdPropertyPanel::showFrame(const icd::Frame& frame) {
+  clearForm();
+
+  // ---- Populate basic info ----
+  edit_name_->setText(QString::fromStdString(std::string(frame.name())));
+  edit_desc_->setText(QString::fromStdString(std::string(frame.description())));
+
+  // ---- Populate frame-specific fields ----
+  spin_frame_id_->setValue(frame.id());
+  combo_frame_type_->setCurrentIndex(frameTypeIndex(frame.type()));
+  combo_byte_order_->setCurrentIndex(byteOrderIndex(frame.order()));
+
+  // ---- Show only frame-relevant groups ----
+  basic_group_->show();
+  frame_group_->show();
+  // node_group_, scale_group_, ext_group_ stay hidden
+}
+
+// ===========================================================================
+// Public API: clear form to empty state
+// ===========================================================================
+
+void IcdPropertyPanel::clear() {
+  clearForm();
 }
 
 }  // namespace etest::protocal

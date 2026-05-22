@@ -447,6 +447,46 @@ void Node::add_child(std::unique_ptr<Node> child) {
     children_.push_back(std::move(child));
 }
 
+void Node::setName(std::string_view name) {
+    name_ = std::string(name);
+}
+
+void Node::setDescription(std::string_view description) {
+    description_ = std::string(description);
+}
+
+void Node::setOffset(int offset) {
+    offset_ = offset;
+}
+
+void Node::setBitOffset(int bit_offset) {
+    bit_offset_ = bit_offset;
+}
+
+void Node::setBitWidth(int bit_width) {
+    bit_width_ = bit_width;
+}
+
+void Node::setValueType(ValueType value_type) {
+    value_type_ = value_type;
+}
+
+void Node::setTag(Tag tag) {
+    tag_ = tag;
+}
+
+void Node::setAttrs(NodeAttrs attrs) {
+    attrs_ = std::move(attrs);
+}
+
+bool Node::remove_child(std::size_t index) {
+    if (index >= children_.size()) {
+        return false;
+    }
+    children_.erase(children_.begin() + static_cast<std::ptrdiff_t>(index));
+    return true;
+}
+
 void Node::set_frame(Frame* frame) noexcept {
     frame_ = frame;
     for (const auto& child : children_) {

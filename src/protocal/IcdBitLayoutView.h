@@ -7,6 +7,8 @@
 #include <QColor>
 #include <QString>
 
+#include <icd/frame.hpp>
+
 class QComboBox;
 
 namespace etest::protocal {
@@ -87,6 +89,7 @@ class IcdBitLayoutView : public QWidget {
   explicit IcdBitLayoutView(QWidget* parent = nullptr);
 
   void setFrameData(int length_bytes, int bits_per_row = 32);
+  void loadFromFrame(const icd::Frame& frame);
   BitBlockItem* addBlock(const QString& name, int byte_offset,
                          int start_bit, int bit_width, const QColor& color);
   void clearBlocks();
@@ -100,7 +103,7 @@ class IcdBitLayoutView : public QWidget {
 
  private:
   void initUi();
-  void initPlaceholderBlocks();
+  void collectLeafNodes(const icd::Node& node, QVector<const icd::Node*>& leaves);
   void fitToContent();
 
   IcdBitLayoutScene* scene_ = nullptr;

@@ -20,6 +20,20 @@ void MainWindow::createMenus() {
   // ── 文件菜单 ──
   auto* fileMenu = menuBar()->addMenu(QStringLiteral("文件"));
 
+  auto* openAction = fileMenu->addAction(QStringLiteral("打开..."));
+  openAction->setShortcut(QKeySequence::Open);
+  connect(openAction, &QAction::triggered, this, [this]() {
+    QString path = QFileDialog::getOpenFileName(
+        this, QStringLiteral("打开协议文件"), QString(),
+        QStringLiteral("协议文件 (*.epro);;所有文件 (*)"));
+    if (path.isEmpty()) return;
+    editor_->setEditorId(path);
+    updateWindowTitle();
+    statusBar()->showMessage(QStringLiteral("已打开: %1").arg(path), 3000);
+  });
+
+  fileMenu->addSeparator();
+
   auto* saveAction = fileMenu->addAction(QStringLiteral("保存"));
   saveAction->setShortcut(QKeySequence::Save);
   connect(saveAction, &QAction::triggered, this, [this]() {

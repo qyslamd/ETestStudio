@@ -6,6 +6,7 @@ add_library(icd_utility
     src/schema/builder.cpp
     src/format/xml_parser.cpp
     src/format/json_parser.cpp
+    src/format/json_serializer.cpp
     src/loader/loader.cpp
 )
 

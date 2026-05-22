@@ -1,18 +1,129 @@
 #include "ProtocalEditorWidget.h"
 
+#pragma push_macro("slots")
+#undef slots
+#include <nlohmann/json.hpp>
+#pragma pop_macro("slots")
+
 #include <QComboBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QSplitter>
+#include <QToolButton>
 #include <QVBoxLayout>
+
+#include <fstream>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "IcdBitLayoutView.h"
 #include "IcdNodeTreeWidget.h"
 #include "IcdPropertyPanel.h"
 
 namespace etest::protocal {
+namespace {
 
+using json = nlohmann::json;
+
+// ── ValueType string → enum ──────────────────────────────────
+icd::ValueType valueTypeFromString(const std::string& s) {
+  if (s == "boolean") return icd::ValueType::boolean;
+  if (s == "uint8")   return icd::ValueType::byte_;
+  if (s == "bytes")   return icd::ValueType::bytes;
+  if (s == "uint16")  return icd::ValueType::word;
+  if (s == "int16")   return icd::ValueType::shortint;
+  if (s == "uint32")  return icd::ValueType::longword;
+  if (s == "int32")   return icd::ValueType::integer;
+  if (s == "uint64")  return icd::ValueType::ulong_;
+  if (s == "float")   return icd::ValueType::single;
+  if (s == "double")  return icd::ValueType::double_;
+  if (s == "string")  return icd::ValueType::string_;
+  return icd::ValueType::unknown;
+}
+
+// ── FrameType string → enum ──────────────────────────────────
+icd::FrameType frameTypeFromString(const std::string& s) {
+  if (s == "cmd")      return icd::FrameType::cmd;
+  if (s == "data")     return icd::FrameType::data;
+  if (s == "dataCfg")  return icd::FrameType::data_cmd;
+  return icd::FrameType::data;
+}
+
+// ── ByteOrder string → enum ─────────────────────────────────
+icd::ByteOrder byteOrderFromString(const std::string& s) {
+  return (s == "bigEndian") ? icd::ByteOrder::big_endian
+                            : icd::ByteOrder::little_endian;
+}
+
+// ── Recursive node JSON parser ───────────────────────────────
+std::unique_ptr<icd::Node> parseNode(const json& j) {
+  auto value_type = valueTypeFromString(
+      j.value("valueType", std::string("unknown")));
+
+  icd::NodeAttrs attrs;
+  if (auto it = j.find("attrs"); it != j.end()) {
+    const auto& a = *it;
+    attrs.system_name      = a.value("systemName", std::string());
+    attrs.group_name       = a.value("groupName", std::string());
+    attrs.unit             = a.value("unit", std::string());
+    attrs.value_text_list  = a.value("valueTextList", std::string());
+    attrs.scale_formula    = a.value("scaleFormula", std::string());
+    attrs.scale_convertor  = a.value("scaleConveror", std::string());
+    attrs.link_to          = a.value("linkTo", std::string());
+    attrs.is_scaled        = a.value("isScaled", false);
+    if (auto v = a.find("scaleA"); v != a.end() && v->is_number())
+      attrs.scale_a = v->get<float>();
+    if (auto v = a.find("scaleB"); v != a.end() && v->is_number())
+      attrs.scale_b = v->get<float>();
+    if (auto v = a.find("min"); v != a.end() && v->is_number())
+      attrs.min = v->get<float>();
+    if (auto v = a.find("max"); v != a.end() && v->is_number())
+      attrs.max = v->get<float>();
+  }
+
+  auto tag = static_cast<icd::Tag>(j.value("tag", 0));
+
+  auto node = std::make_unique<icd::Node>(
+      j.value("name", std::string()),
+      j.value("description", std::string()),
+      j.value("offset", 0),
+      j.value("startBit", 0),
+      j.value("bitWidth", 8),
+      value_type, tag, std::move(attrs));
+
+  // Parse children recursively
+  if (auto it = j.find("children"); it != j.end() && it->is_array()) {
+    for (const auto& child : *it) {
+      node->add_child(parseNode(child));
+    }
+  }
+
+  return node;
+}
+
+// ── JSON node recursion for frame length calc ───────────────
+void updateMaxBits(const icd::Node& node, int& max_bits) {
+  int end = (node.offset() * 8) + node.bit_offset() + node.bit_width();
+  if (end > max_bits) max_bits = end;
+  for (const auto& child : node.children())
+    updateMaxBits(*child, max_bits);
+}
+
+int calcFrameLength(const icd::Frame& frame) {
+  int max_bits = 0;
+  for (const auto& root : frame.roots())
+    updateMaxBits(*root, max_bits);
+  return (max_bits + 7) / 8;
+}
+
+}  // namespace
+
+// ──────────────────────────────────────────────────────────────
+// ProtocalEditorWidget
+// ──────────────────────────────────────────────────────────────
 ProtocalEditorWidget::ProtocalEditorWidget(QWidget* parent)
     : QWidget(parent) {
   initUi();
@@ -20,24 +131,37 @@ ProtocalEditorWidget::ProtocalEditorWidget(QWidget* parent)
 }
 
 QString ProtocalEditorWidget::displayName() const {
-  if (current_file_.isEmpty()) {
-    return QStringLiteral("未命名协议");
-  }
+  if (current_file_.isEmpty()) return QStringLiteral("未命名协议");
   return QFileInfo(current_file_).fileName();
 }
 
 bool ProtocalEditorWidget::isModified() const { return modified_; }
 
-bool ProtocalEditorWidget::save() { return false; }
+bool ProtocalEditorWidget::save() {
+  if (current_file_.isEmpty()) return false;
+  if (saveEproto(current_file_)) {
+    setModified(false);
+    return true;
+  }
+  return false;
+}
 
-bool ProtocalEditorWidget::saveAs(const QString& path) { return false; }
+bool ProtocalEditorWidget::saveAs(const QString& path) {
+  QString old = current_file_;
+  current_file_ = path;
+  if (saveEproto(path)) {
+    setModified(false);
+    emit editorIdChanged(old, path);
+    return true;
+  }
+  current_file_ = old;
+  return false;
+}
 
 QString ProtocalEditorWidget::filePath() const { return current_file_; }
 
 QString ProtocalEditorWidget::editorId() const {
-  if (current_file_.isEmpty()) {
-    return QStringLiteral("editor://protocal/new");
-  }
+  if (current_file_.isEmpty()) return QStringLiteral("editor://protocal/new");
   return current_file_;
 }
 
@@ -55,9 +179,159 @@ void ProtocalEditorWidget::undo() {}
 void ProtocalEditorWidget::redo() {}
 
 void ProtocalEditorWidget::setEditorId(const QString& id) {
+  if (id == current_file_) return;
   current_file_ = id;
+  if (QFileInfo::exists(id)) {
+    loadEproto(id);
+  }
 }
 
+// ── Load .eproto JSON ─────────────────────────────────────────
+bool ProtocalEditorWidget::loadEproto(const QString& path) {
+  std::ifstream stream(path.toStdString());
+  if (!stream.is_open()) return false;
+
+  json document;
+  try {
+    stream >> document;
+  } catch (...) {
+    return false;
+  }
+
+  clearAll();
+
+  if (auto it = document.find("frames"); it != document.end() && it->is_array()) {
+    for (const auto& frame_json : *it) {
+      int id = frame_json.value("id", 0);
+      std::string name = frame_json.value("name", std::string());
+      std::string desc = frame_json.value("description", std::string());
+      auto type = frameTypeFromString(frame_json.value("type", std::string("data")));
+      auto order = byteOrderFromString(frame_json.value("byteOrder", std::string("littleEndian")));
+
+      auto frame = std::make_unique<icd::Frame>(id, name, desc, type, order);
+
+      if (auto nodes_it = frame_json.find("nodes"); nodes_it != frame_json.end() && nodes_it->is_array()) {
+        for (const auto& node_json : *nodes_it) {
+          frame->add_root(parseNode(node_json));
+        }
+      }
+
+      repo_.add_frame(std::move(frame));
+    }
+  }
+
+  populateFrames();
+
+  // Select first frame if available
+  if (!repo_.frames().empty()) {
+    setCurrentFrame(repo_.frames()[0].get());
+  }
+
+  return true;
+}
+
+// ── Save .eproto JSON ─────────────────────────────────────────
+bool ProtocalEditorWidget::saveEproto(const QString& path) {
+  json document;
+  document["version"] = "1.0";
+
+  json frames = json::array();
+  for (const auto& f : repo_.frames()) {
+    json frame_obj;
+    frame_obj["id"] = f->id();
+    frame_obj["name"] = std::string(f->name());
+    frame_obj["description"] = std::string(f->description());
+
+    switch (f->type()) {
+    case icd::FrameType::cmd:      frame_obj["type"] = "cmd";     break;
+    case icd::FrameType::data:     frame_obj["type"] = "data";    break;
+    case icd::FrameType::data_cmd: frame_obj["type"] = "dataCfg"; break;
+    }
+
+    frame_obj["byteOrder"] = (f->order() == icd::ByteOrder::little_endian)
+                                 ? "littleEndian" : "bigEndian";
+
+    frame_obj["length"] = calcFrameLength(*f);
+
+    json nodes = json::array();
+    // Use a lambda to serialize nodes since we need recursion
+    // and icd::Node has complex access patterns
+    struct Serializer {
+      static json serialize(const icd::Node& n) {
+        json obj;
+        obj["name"]        = std::string(n.name());
+        obj["description"] = std::string(n.description());
+        obj["offset"]      = n.offset();
+        obj["startBit"]    = n.bit_offset();
+        obj["bitWidth"]    = n.bit_width();
+        obj["valueType"]   = valueTypeToString(n.value_type());
+        obj["tag"]         = static_cast<int>(n.tag());
+
+        json attrs_obj;
+        const auto& a = n.attrs();
+        attrs_obj["systemName"]    = a.system_name;
+        attrs_obj["groupName"]     = a.group_name;
+        attrs_obj["unit"]          = a.unit;
+        attrs_obj["valueTextList"] = a.value_text_list;
+        attrs_obj["scaleFormula"]  = a.scale_formula;
+        attrs_obj["scaleConveror"] = a.scale_convertor;
+        attrs_obj["linkTo"]        = a.link_to;
+        attrs_obj["isScaled"]      = a.is_scaled;
+        if (a.scale_a.has_value()) attrs_obj["scaleA"] = *a.scale_a;
+        if (a.scale_b.has_value()) attrs_obj["scaleB"] = *a.scale_b;
+        if (a.min.has_value())     attrs_obj["min"]    = *a.min;
+        if (a.max.has_value())     attrs_obj["max"]    = *a.max;
+        obj["attrs"] = std::move(attrs_obj);
+
+        if (!n.children().empty()) {
+          json children = json::array();
+          for (const auto& child : n.children())
+            children.push_back(serialize(*child));
+          obj["children"] = std::move(children);
+        }
+
+        return obj;
+      }
+
+      static std::string valueTypeToString(icd::ValueType vt) {
+        switch (vt) {
+        case icd::ValueType::boolean:  return "boolean";
+        case icd::ValueType::byte_:    return "uint8";
+        case icd::ValueType::bytes:    return "bytes";
+        case icd::ValueType::word:     return "uint16";
+        case icd::ValueType::shortint: return "int16";
+        case icd::ValueType::smallint: return "int16";
+        case icd::ValueType::longword: return "uint32";
+        case icd::ValueType::integer:  return "int32";
+        case icd::ValueType::ulong_:   return "uint64";
+        case icd::ValueType::single:   return "float";
+        case icd::ValueType::double_:  return "double";
+        case icd::ValueType::string_:  return "string";
+        case icd::ValueType::unknown:  return "unknown";
+        }
+        return "unknown";
+      }
+    };
+
+    for (const auto& root : f->roots())
+      nodes.push_back(Serializer::serialize(*root));
+    frame_obj["nodes"] = std::move(nodes);
+
+    frames.push_back(std::move(frame_obj));
+  }
+  document["frames"] = std::move(frames);
+
+  std::ofstream stream(path.toStdString());
+  if (!stream.is_open()) return false;
+  try {
+    stream << document.dump(2);
+  } catch (...) {
+    return false;
+  }
+  return true;
+}
+
+// ── UI ─────────────────────────────────────────────────────────
 void ProtocalEditorWidget::initUi() {
   auto* main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -74,34 +348,42 @@ void ProtocalEditorWidget::initUi() {
   auto* title_label = new QLabel(QStringLiteral("帧属性"), this);
   title_label->setObjectName(QStringLiteral("protocalTitleLabel"));
 
-  frame_name_label_ = new QLabel(
-      QStringLiteral("A429_00_ISI_01_发送_Label110_6272T_00"), this);
+  frame_name_label_ = new QLabel(QStringLiteral("(无帧)"), this);
   frame_name_label_->setObjectName(QStringLiteral("frameNameLabel"));
 
   frame_type_combo_ = new QComboBox(this);
   frame_type_combo_->addItem(QStringLiteral("发送 (Cmd)"));
   frame_type_combo_->addItem(QStringLiteral("接收 (Data)"));
-  frame_type_combo_->addItem(QStringLiteral("配置 (Config)"));
-  frame_type_combo_->setCurrentIndex(0);
+  frame_type_combo_->addItem(QStringLiteral("配置 (DataCfg)"));
+  frame_type_combo_->setEnabled(false);
 
   byte_order_combo_ = new QComboBox(this);
   byte_order_combo_->addItem(QStringLiteral("小端 (Little Endian)"));
   byte_order_combo_->addItem(QStringLiteral("大端 (Big Endian)"));
+  byte_order_combo_->setEnabled(false);
 
-  auto* id_label = new QLabel(QStringLiteral("ID: 90"), this);
-  id_label->setObjectName(QStringLiteral("idLabel"));
+  frame_id_label_ = new QLabel(QStringLiteral("ID: -"), this);
+  frame_id_label_->setObjectName(QStringLiteral("idLabel"));
+
+  frame_length_label_ = new QLabel(QStringLiteral("长度: -"), this);
+  frame_length_label_->setObjectName(QStringLiteral("lengthLabel"));
+
+  new_frame_btn_ = new QToolButton(this);
+  new_frame_btn_->setText(QStringLiteral("+帧"));
+
+  delete_frame_btn_ = new QToolButton(this);
+  delete_frame_btn_->setText(QStringLiteral("-帧"));
+  delete_frame_btn_->setEnabled(false);
 
   toolbar_layout->addWidget(title_label);
   toolbar_layout->addWidget(frame_name_label_);
   toolbar_layout->addWidget(frame_type_combo_);
   toolbar_layout->addWidget(byte_order_combo_);
-  toolbar_layout->addWidget(id_label);
+  toolbar_layout->addWidget(frame_id_label_);
+  toolbar_layout->addWidget(new_frame_btn_);
+  toolbar_layout->addWidget(delete_frame_btn_);
   toolbar_layout->addStretch();
-
-  auto* length_label =
-      new QLabel(QStringLiteral("帧长度: 16 bytes"), this);
-  length_label->setObjectName(QStringLiteral("lengthLabel"));
-  toolbar_layout->addWidget(length_label);
+  toolbar_layout->addWidget(frame_length_label_);
 
   main_layout->addWidget(toolbar);
 
@@ -135,22 +417,206 @@ void ProtocalEditorWidget::initUi() {
   auto* status_layout = new QHBoxLayout(status_bar);
   status_layout->setContentsMargins(8, 0, 8, 0);
 
-  status_label_ = new QLabel(
-      QStringLiteral("GNSS_Latitude  |  Offset: 1  |  Bit: 0~20  |  "
-                     "Type: uint  |  Scaled"),
-      this);
+  status_label_ = new QLabel(QStringLiteral("就绪"), this);
   status_layout->addWidget(status_label_);
   status_layout->addStretch();
 
   auto* hint_label = new QLabel(
-      QStringLiteral("点击信号树或色块查看属性"), this);
+      QStringLiteral("选择帧或信号查看属性"), this);
   status_layout->addWidget(hint_label);
 
   main_layout->addWidget(status_bar);
 }
 
+// ── Signals ───────────────────────────────────────────────────
 void ProtocalEditorWidget::initSignals() {
-  // Placeholder: no business logic yet
+  // Frame selection from tree
+  connect(node_tree_, &IcdNodeTreeWidget::frameSelected,
+          this, &ProtocalEditorWidget::setCurrentFrame);
+
+  // Node selection from tree → property panel + bit view highlight
+  connect(node_tree_, &IcdNodeTreeWidget::nodeSelected,
+          this, [this](const icd::Node* node) {
+    if (node) {
+      property_panel_->showNode(*node);
+      bit_view_->highlightBlock(
+          QString::fromStdString(std::string(node->name())));
+      status_label_->setText(
+          QStringLiteral("Node: %1  |  Offset: %2  |  Bit: %3~%4")
+              .arg(QString::fromStdString(std::string(node->name())))
+              .arg(node->offset())
+              .arg(node->bit_offset())
+              .arg(node->bit_offset() + node->bit_width() - 1));
+    }
+  });
+
+  // Bit block clicked → find node → property panel
+  connect(bit_view_, &IcdBitLayoutView::blockClicked,
+          this, [this](const QString& name) {
+    if (!current_frame_) return;
+    const auto* node = current_frame_->find(name.toStdString());
+    if (node) {
+      property_panel_->showNode(*node);
+      status_label_->setText(
+          QStringLiteral("Node: %1  |  Offset: %2  |  Bit: %3~%4")
+              .arg(QString::fromStdString(std::string(node->name())))
+              .arg(node->offset())
+              .arg(node->bit_offset())
+              .arg(node->bit_offset() + node->bit_width() - 1));
+    }
+  });
+
+  // Node property modified
+  connect(property_panel_, &IcdPropertyPanel::nodeModified,
+          this, [this]() {
+    setModified(true);
+    // Refresh bit view to reflect changes
+    if (current_frame_) {
+      bit_view_->loadFromFrame(*current_frame_);
+    }
+  });
+
+  // New frame
+  connect(new_frame_btn_, &QToolButton::clicked,
+          this, [this]() {
+    static int next_id = 1;
+    // Find max existing id
+    int max_id = 0;
+    for (const auto& f : repo_.frames()) {
+      if (f->id() > max_id) max_id = f->id();
+    }
+    int new_id = max_id + 1;
+    auto name = "Frame_" + std::to_string(new_id);
+
+    auto frame = std::make_unique<icd::Frame>(
+        new_id, name, "", icd::FrameType::data,
+        icd::ByteOrder::little_endian);
+    auto* frame_ptr = frame.get();
+    repo_.add_frame(std::move(frame));
+    populateFrames();
+    setCurrentFrame(frame_ptr);
+    setModified(true);
+  });
+
+  // Delete frame
+  connect(delete_frame_btn_, &QToolButton::clicked,
+          this, [this]() {
+    if (!current_frame_) return;
+    int id = current_frame_->id();
+    if (repo_.remove_frame(id)) {
+      setCurrentFrame(nullptr);
+      populateFrames();
+      if (!repo_.frames().empty())
+        setCurrentFrame(repo_.frames()[0].get());
+      setModified(true);
+      status_label_->setText(QStringLiteral("已删除帧"));
+    }
+  });
+
+  // Frame type combo changed
+  connect(frame_type_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int index) {
+    if (!current_frame_) return;
+    icd::FrameType new_type;
+    switch (index) {
+    case 0: new_type = icd::FrameType::cmd; break;
+    case 1: new_type = icd::FrameType::data; break;
+    case 2: new_type = icd::FrameType::data_cmd; break;
+    default: return;
+    }
+    const_cast<icd::Frame*>(current_frame_)->setType(new_type);
+    setModified(true);
+  });
+
+  // Byte order combo changed
+  connect(byte_order_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int index) {
+    if (!current_frame_) return;
+    auto order = (index == 0) ? icd::ByteOrder::little_endian
+                              : icd::ByteOrder::big_endian;
+    const_cast<icd::Frame*>(current_frame_)->setOrder(order);
+    setModified(true);
+  });
+}
+
+// ── Toolbar update ────────────────────────────────────────────
+void ProtocalEditorWidget::updateToolbar() {
+  if (current_frame_) {
+    frame_name_label_->setText(
+        QString::fromStdString(std::string(current_frame_->name())));
+    frame_id_label_->setText(
+        QStringLiteral("ID: %1").arg(current_frame_->id()));
+
+    // Block signals to avoid recursive modification
+    frame_type_combo_->blockSignals(true);
+    switch (current_frame_->type()) {
+    case icd::FrameType::cmd:      frame_type_combo_->setCurrentIndex(0); break;
+    case icd::FrameType::data:     frame_type_combo_->setCurrentIndex(1); break;
+    case icd::FrameType::data_cmd: frame_type_combo_->setCurrentIndex(2); break;
+    }
+    frame_type_combo_->blockSignals(false);
+
+    byte_order_combo_->blockSignals(true);
+    byte_order_combo_->setCurrentIndex(
+        current_frame_->order() == icd::ByteOrder::little_endian ? 0 : 1);
+    byte_order_combo_->blockSignals(false);
+
+    frame_length_label_->setText(
+        QStringLiteral("长度: %1 bytes").arg(calcFrameLength(*current_frame_)));
+
+    frame_type_combo_->setEnabled(true);
+    byte_order_combo_->setEnabled(true);
+    delete_frame_btn_->setEnabled(true);
+  } else {
+    frame_name_label_->setText(QStringLiteral("(无帧)"));
+    frame_id_label_->setText(QStringLiteral("ID: -"));
+    frame_length_label_->setText(QStringLiteral("长度: -"));
+    frame_type_combo_->setEnabled(false);
+    byte_order_combo_->setEnabled(false);
+    delete_frame_btn_->setEnabled(false);
+  }
+}
+
+// ── Populate tree from repo ──────────────────────────────────
+void ProtocalEditorWidget::populateFrames() {
+  node_tree_->loadFromRepository(repo_);
+}
+
+// ── Set current frame ────────────────────────────────────────
+void ProtocalEditorWidget::setCurrentFrame(const icd::Frame* frame) {
+  current_frame_ = frame;
+  if (frame) {
+    bit_view_->loadFromFrame(*frame);
+    property_panel_->showFrame(*frame);
+    status_label_->setText(
+        QStringLiteral("Frame: %1  |  ID: %2")
+            .arg(QString::fromStdString(std::string(frame->name())))
+            .arg(frame->id()));
+  } else {
+    bit_view_->clearBlocks();
+    property_panel_->clear();
+    status_label_->setText(QStringLiteral("就绪"));
+  }
+  updateToolbar();
+}
+
+// ── Clear all data ───────────────────────────────────────────
+void ProtocalEditorWidget::clearAll() {
+  current_frame_ = nullptr;
+  // Cannot directly clear icd::Repository — but we can assign a new one
+  repo_ = icd::Repository();
+  node_tree_->clear();
+  bit_view_->clearBlocks();
+  property_panel_->clear();
+  updateToolbar();
+}
+
+// ── Modified flag ────────────────────────────────────────────
+void ProtocalEditorWidget::setModified(bool modified) {
+  if (modified_ != modified) {
+    modified_ = modified;
+    emit modificationChanged(modified);
+  }
 }
 
 }  // namespace etest::protocal

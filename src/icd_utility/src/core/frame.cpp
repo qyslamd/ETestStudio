@@ -1,7 +1,9 @@
 ﻿#include <icd/frame.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <utility>
+#include <vector>
 
 namespace icd {
 
@@ -57,6 +59,35 @@ tl::expected<void, Error> Frame::decode(    icd::span<const std::byte> frame_byt
 void Frame::add_root(std::unique_ptr<Node> node) {
     index_subtree(*node);
     roots_.push_back(std::move(node));
+}
+
+void Frame::setId(int id) { id_ = id; }
+void Frame::setName(std::string_view name) { name_ = std::string(name); }
+void Frame::setDescription(std::string_view description) { description_ = std::string(description); }
+void Frame::setType(FrameType type) { type_ = type; }
+void Frame::setOrder(ByteOrder order) { order_ = order; }
+
+bool Frame::remove_root(std::size_t index) {
+    if (index >= roots_.size()) {
+        return false;
+    }
+    // Find all nodes in this subtree and remove from flat index
+    auto& root = roots_[index];
+    std::vector<Node*> to_remove;
+    to_remove.push_back(root.get());
+    for (std::size_t i = 0; i < to_remove.size(); ++i) {
+        for (const auto& child : to_remove[i]->children()) {
+            to_remove.push_back(const_cast<Node*>(child.get()));
+        }
+    }
+    for (auto* node : to_remove) {
+        auto it = std::find(nodes_.begin(), nodes_.end(), node);
+        if (it != nodes_.end()) {
+            nodes_.erase(it);
+        }
+    }
+    roots_.erase(roots_.begin() + static_cast<std::ptrdiff_t>(index));
+    return true;
 }
 
 void Frame::index_subtree(Node& node) noexcept {
