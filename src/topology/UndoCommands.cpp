@@ -267,7 +267,8 @@ ResizeItemCommand::ResizeItemCommand(TopologyDocument* doc, int index,
       old_size_(oldSize), new_size_(newSize), old_pos_(oldPos),
       new_pos_(newPos) {
   setText(type_ == Product ? QStringLiteral("调整 UUT 大小")
-                           : QStringLiteral("调整设备大小"));
+           : type_ == Monitor ? QStringLiteral("调整监听器大小")
+                              : QStringLiteral("调整设备大小"));
 }
 
 void ResizeItemCommand::undo() {
@@ -276,6 +277,12 @@ void ResizeItemCommand::undo() {
     if (prod) {
       prod->size = old_size_;
       prod->position = old_pos_;
+    }
+  } else if (type_ == Monitor) {
+    auto* mon = doc_->monitor(index_);
+    if (mon) {
+      mon->size = old_size_;
+      mon->position = old_pos_;
     }
   } else {
     auto* dev = doc_->device(index_);
@@ -293,6 +300,12 @@ void ResizeItemCommand::redo() {
       prod->size = new_size_;
       prod->position = new_pos_;
     }
+  } else if (type_ == Monitor) {
+    auto* mon = doc_->monitor(index_);
+    if (mon) {
+      mon->size = new_size_;
+      mon->position = new_pos_;
+    }
   } else {
     auto* dev = doc_->device(index_);
     if (dev) {
@@ -300,6 +313,106 @@ void ResizeItemCommand::redo() {
       dev->position = new_pos_;
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AddMonitorCommand
+// ═══════════════════════════════════════════════════════════════
+
+AddMonitorCommand::AddMonitorCommand(TopologyDocument* doc,
+                                     const TopologyMonitor& monitor,
+                                     QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), monitor_(monitor) {
+  setText(QStringLiteral("添加监听器"));
+}
+
+void AddMonitorCommand::undo() {
+  if (index_ >= 0) {
+    doc_->removeMonitor(index_);
+  }
+}
+
+void AddMonitorCommand::redo() {
+  index_ = doc_->addMonitor(monitor_);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RemoveMonitorCommand
+// ═══════════════════════════════════════════════════════════════
+
+RemoveMonitorCommand::RemoveMonitorCommand(TopologyDocument* doc,
+                                           int monitorIndex,
+                                           QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), index_(monitorIndex) {
+  const auto* mon = doc_->monitor(monitorIndex);
+  if (mon) {
+    monitor_ = *mon;
+  }
+  setText(QStringLiteral("删除监听器"));
+}
+
+void RemoveMonitorCommand::undo() {
+  doc_->addMonitor(monitor_);
+}
+
+void RemoveMonitorCommand::redo() {
+  doc_->removeMonitor(index_);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TapConnectionCommand
+// ═══════════════════════════════════════════════════════════════
+
+TapConnectionCommand::TapConnectionCommand(TopologyDocument* doc,
+                                           int monitorIndex,
+                                           const TopologyMonitorTap& tap,
+                                           QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), monitor_index_(monitorIndex),
+      tap_(tap) {
+  setText(QStringLiteral("挂载连线"));
+}
+
+void TapConnectionCommand::undo() {
+  const auto* mon = doc_->monitor(monitor_index_);
+  if (mon) {
+    for (int i = mon->taps.size() - 1; i >= 0; --i) {
+      if (mon->taps[i].productName == tap_.productName &&
+          mon->taps[i].portName == tap_.portName &&
+          mon->taps[i].deviceName == tap_.deviceName &&
+          mon->taps[i].devicePort == tap_.devicePort) {
+        doc_->removeTap(monitor_index_, i);
+        break;
+      }
+    }
+  }
+}
+
+void TapConnectionCommand::redo() {
+  doc_->addTap(monitor_index_, tap_);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UnTapConnectionCommand
+// ═══════════════════════════════════════════════════════════════
+
+UnTapConnectionCommand::UnTapConnectionCommand(TopologyDocument* doc,
+                                               int monitorIndex, int tapIndex,
+                                               QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), monitor_index_(monitorIndex),
+      tap_index_(tapIndex) {
+  const auto* mon = doc_->monitor(monitorIndex);
+  if (mon && tapIndex >= 0 && tapIndex < mon->taps.size()) {
+    tap_ = mon->taps[tapIndex];
+  }
+  setText(QStringLiteral("解除挂载"));
+}
+
+void UnTapConnectionCommand::undo() {
+  doc_->addTap(monitor_index_, tap_);
+}
+
+void UnTapConnectionCommand::redo() {
+  doc_->removeTap(monitor_index_, tap_index_);
 }
 
 }  // namespace etest::topology

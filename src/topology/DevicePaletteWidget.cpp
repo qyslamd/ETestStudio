@@ -28,6 +28,20 @@ static const DeviceEntry kDeviceTypes[] = {
 static const int kDeviceTypeCount =
     sizeof(kDeviceTypes) / sizeof(kDeviceTypes[0]);
 
+// ── Monitor palette entries ──────────────────────────────────
+
+struct MonitorEntry {
+  const char* deviceType;
+  const char* displayName;
+};
+
+static const MonitorEntry kMonitorTypes[] = {
+    {"Monitor-4CH", "Monitor-4CH (4通道监听器)"},
+};
+
+static const int kMonitorTypeCount =
+    sizeof(kMonitorTypes) / sizeof(kMonitorTypes[0]);
+
 // ── DeviceListWidget ─────────────────────────────────────────
 
 DeviceListWidget::DeviceListWidget(QWidget* parent) : QListWidget(parent) {
@@ -43,14 +57,22 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
 
   // Build JSON with full device entry for the selected item
   QString dt = items.first()->data(Qt::UserRole).toString();
+
   QJsonObject obj;
   obj["deviceType"] = dt;
-  for (int i = 0; i < kDeviceTypeCount; ++i) {
-    if (dt == QLatin1String(kDeviceTypes[i].deviceType)) {
-      obj["channelCount"] = kDeviceTypes[i].channelCount;
-      obj["direction"] = static_cast<int>(kDeviceTypes[i].direction);
-      obj["functionType"] = static_cast<int>(kDeviceTypes[i].functionType);
-      break;
+
+  // Check if this is a monitor item
+  bool isMonitor = items.first()->data(Qt::UserRole + 1).toBool();
+  if (isMonitor) {
+    obj["isMonitor"] = true;
+  } else {
+    for (int i = 0; i < kDeviceTypeCount; ++i) {
+      if (dt == QLatin1String(kDeviceTypes[i].deviceType)) {
+        obj["channelCount"] = kDeviceTypes[i].channelCount;
+        obj["direction"] = static_cast<int>(kDeviceTypes[i].direction);
+        obj["functionType"] = static_cast<int>(kDeviceTypes[i].functionType);
+        break;
+      }
     }
   }
 
@@ -145,6 +167,25 @@ void DevicePaletteWidget::populateDeviceTypes() {
 
     item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
     list_widget_->addItem(item);
+  }
+
+  // ── Monitor section ──
+  if (kMonitorTypeCount > 0) {
+    auto* sep = new QListWidgetItem(QStringLiteral("─── 监听器 ───"));
+    sep->setFlags(sep->flags() & ~Qt::ItemIsSelectable);
+    sep->setForeground(QColor(140, 140, 140));
+    list_widget_->addItem(sep);
+
+    for (int i = 0; i < kMonitorTypeCount; ++i) {
+      const auto& entry = kMonitorTypes[i];
+      auto* item = new QListWidgetItem(QString::fromUtf8(entry.displayName));
+      item->setData(Qt::UserRole, QString::fromUtf8(entry.deviceType));
+      item->setData(Qt::UserRole + 1, true);  // isMonitor flag
+      item->setToolTip(QStringLiteral("%1\n拖放至画布添加监听器").arg(
+          QString::fromUtf8(entry.displayName)));
+      item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
+      list_widget_->addItem(item);
+    }
   }
 }
 

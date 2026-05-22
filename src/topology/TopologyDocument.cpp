@@ -256,11 +256,69 @@ bool TopologyDocument::canConnect(const QString& productName,
   return false;
 }
 
+// ---------------------------------------------------------------------------
+// Monitor management
+// ---------------------------------------------------------------------------
+int TopologyDocument::addMonitor(const TopologyMonitor& monitor) {
+  int index = monitors_.size();
+  monitors_.append(monitor);
+  emit monitorAdded(index);
+  return index;
+}
+
+void TopologyDocument::removeMonitor(int index) {
+  if (index < 0 || index >= monitors_.size())
+    return;
+  monitors_.removeAt(index);
+  emit monitorRemoved(index);
+}
+
+TopologyMonitor* TopologyDocument::monitor(int index) {
+  if (index < 0 || index >= monitors_.size())
+    return nullptr;
+  return &monitors_[index];
+}
+
+const TopologyMonitor* TopologyDocument::monitor(int index) const {
+  if (index < 0 || index >= monitors_.size())
+    return nullptr;
+  return &monitors_[index];
+}
+
+int TopologyDocument::monitorCount() const { return monitors_.size(); }
+
+int TopologyDocument::findMonitorIndex(const QString& name) const {
+  for (int i = 0; i < monitors_.size(); ++i) {
+    if (monitors_[i].name == name)
+      return i;
+  }
+  return -1;
+}
+
+void TopologyDocument::addTap(int monitorIndex,
+                               const TopologyMonitorTap& tap) {
+  if (monitorIndex < 0 || monitorIndex >= monitors_.size())
+    return;
+  monitors_[monitorIndex].taps.append(tap);
+  emit monitorChanged(monitorIndex);
+}
+
+void TopologyDocument::removeTap(int monitorIndex, int tapIndex) {
+  if (monitorIndex < 0 || monitorIndex >= monitors_.size())
+    return;
+  auto& mon = monitors_[monitorIndex];
+  if (tapIndex < 0 || tapIndex >= mon.taps.size())
+    return;
+  mon.taps.removeAt(tapIndex);
+  emit monitorChanged(monitorIndex);
+}
+
 void TopologyDocument::clear() {
   undo_stack_->clear();
   products_.clear();
   devices_.clear();
   connections_.clear();
+  monitors_.clear();
   emit documentCleared();
 }
 

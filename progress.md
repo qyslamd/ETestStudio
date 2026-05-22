@@ -7,6 +7,17 @@
 - 修复 rebuildSceneAndRestoreSelection 中使用非标准编号（缺少 Connection、Port/DevicePort 编号错误）
 - 移除 TopologyEditorWidget 构造函数中的 buildDefaultDocument() 调用，新建 .etopo 文件打开不再有默认 Item
 
+### 监听器（Monitor）功能实现
+- 数据模型：新增 TopologyMonitorTap / TopologyMonitor 结构体，monitors_ 成员，monitor 增删改查 + tap 管理
+- UndoCommands：新增 AddMonitorCommand / RemoveMonitorCommand / TapConnectionCommand / UnTapConnectionCommand + ResizeItemCommand::Monitor
+- JSON 序列化：monitors 数组读写（含 taps）
+- 设备面板：新增 Monitor-4CH 条目（独立 MIME 类型标识）
+- MonitorItem 图形项：继承 TopologyBlockItem，紫色系 block + 显示名称/设备类型/挂载数 + 8方向缩放
+- TopologyScene：monitor_items_ 管理、tap 模式交互（startTapMode/finishTap/cancelTapMode）、tap 虚线视觉
+- TopologyEditorWidget：挂载模式工具栏按钮（topo_tap_dark.svg 图标）、onDropMonitor 处理、delete 支持
+- 属性面板：新增 PageMonitor（名称/设备类型/已挂载连线列表）
+- 大纲面板：新增 Monitors 分支，展开显示已挂载连线
+
 ## 2026-05-20
 
 ### 已完成

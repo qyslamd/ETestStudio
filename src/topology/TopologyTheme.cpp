@@ -38,6 +38,8 @@ const TopologyColors& topologyColors() {
     light.uutBorder = QColor(66, 133, 244);
     light.deviceFill = QColor(255, 228, 181);
     light.deviceBorder = QColor(230, 145, 56);
+    light.monitorFill = QColor(232, 224, 240);
+    light.monitorBorder = QColor(155, 110, 234);
     light.connectionLine = QColor(80, 80, 80);
     light.connectionHover = QColor(41, 98, 255);
     light.connectionSelected = QColor(220, 80, 0);
@@ -60,6 +62,8 @@ const TopologyColors& topologyColors() {
     dark.uutBorder = QColor(86, 156, 214);
     dark.deviceFill = QColor(60, 42, 28);
     dark.deviceBorder = QColor(215, 186, 125);
+    dark.monitorFill = QColor(61, 46, 92);
+    dark.monitorBorder = QColor(197, 134, 192);
     dark.connectionLine = QColor(136, 136, 136);
     dark.connectionHover = QColor(86, 156, 214);
     dark.connectionSelected = QColor(244, 135, 113);

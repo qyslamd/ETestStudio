@@ -73,6 +73,23 @@ struct TopologyConnection {
   PathStyle style = PathStyle::Bezier;
 };
 
+// Tap point identifying a connection by its endpoint names
+struct TopologyMonitorTap {
+  QString productName;
+  QString portName;
+  QString deviceName;
+  QString devicePort;
+};
+
+// Listener / monitor device — passively taps existing connections
+struct TopologyMonitor {
+  QString name;
+  QString deviceType;
+  QPointF position{0, 0};
+  QSizeF size{0, 0};
+  QVector<TopologyMonitorTap> taps;
+};
+
 class TopologyDocument : public QObject {
   Q_OBJECT
  public:
@@ -102,6 +119,18 @@ class TopologyDocument : public QObject {
   const TopologyConnection* connection(int index) const;
   int connectionCount() const;
 
+  // Monitor management
+  int addMonitor(const TopologyMonitor& monitor);
+  void removeMonitor(int index);
+  TopologyMonitor* monitor(int index);
+  const TopologyMonitor* monitor(int index) const;
+  int monitorCount() const;
+  int findMonitorIndex(const QString& name) const;
+
+  // Tap management
+  void addTap(int monitorIndex, const TopologyMonitorTap& tap);
+  void removeTap(int monitorIndex, int tapIndex);
+
   bool canConnect(const QString& productName,
                   const QString& portName,
                   const QString& deviceName,
@@ -122,6 +151,9 @@ class TopologyDocument : public QObject {
   void deviceChanged(int index);
   void connectionAdded(int index);
   void connectionRemoved(int index);
+  void monitorAdded(int index);
+  void monitorRemoved(int index);
+  void monitorChanged(int index);
   void documentCleared();
 
  private:
@@ -129,6 +161,7 @@ class TopologyDocument : public QObject {
   QVector<TopologyProduct> products_;
   QVector<TopologyDevice> devices_;
   QVector<TopologyConnection> connections_;
+  QVector<TopologyMonitor> monitors_;
 };
 
 }  // namespace etest::topology

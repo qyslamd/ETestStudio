@@ -161,7 +161,7 @@ class PropertyCommand : public QUndoCommand {
 // ── ResizeItemCommand ──
 class ResizeItemCommand : public QUndoCommand {
  public:
-  enum Type { Product, Device };
+  enum Type { Product, Device, Monitor };
 
   ResizeItemCommand(TopologyDocument* doc, int index, Type type,
                     const QSizeF& oldSize, const QSizeF& newSize,
@@ -178,6 +178,65 @@ class ResizeItemCommand : public QUndoCommand {
   QSizeF new_size_;
   QPointF old_pos_;
   QPointF new_pos_;
+};
+
+// ── AddMonitorCommand ──
+class AddMonitorCommand : public QUndoCommand {
+ public:
+  AddMonitorCommand(TopologyDocument* doc, const TopologyMonitor& monitor,
+                    QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+  int monitorIndex() const { return index_; }
+
+ private:
+  TopologyDocument* doc_;
+  TopologyMonitor monitor_;
+  int index_ = -1;
+};
+
+// ── RemoveMonitorCommand ──
+class RemoveMonitorCommand : public QUndoCommand {
+ public:
+  RemoveMonitorCommand(TopologyDocument* doc, int monitorIndex,
+                       QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int index_;
+  TopologyMonitor monitor_;
+};
+
+// ── TapConnectionCommand ──
+class TapConnectionCommand : public QUndoCommand {
+ public:
+  TapConnectionCommand(TopologyDocument* doc, int monitorIndex,
+                       const TopologyMonitorTap& tap,
+                       QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int monitor_index_;
+  TopologyMonitorTap tap_;
+};
+
+// ── UnTapConnectionCommand ──
+class UnTapConnectionCommand : public QUndoCommand {
+ public:
+  UnTapConnectionCommand(TopologyDocument* doc, int monitorIndex, int tapIndex,
+                         QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int monitor_index_;
+  int tap_index_;
+  TopologyMonitorTap tap_;
 };
 
 }  // namespace etest::topology

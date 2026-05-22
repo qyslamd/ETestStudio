@@ -69,6 +69,8 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
                     int direction,
                     int functionType,
                     const QPointF& scenePos);
+  void onDropMonitor(const QString& deviceType,
+                     const QPointF& scenePos);
   void onOutlineNavigate(int itemType, int mainIndex, int subIndex);
 
  private:
@@ -95,6 +97,8 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   QAction* zoom_out_action_ = nullptr;
   QAction* zoom_reset_action_ = nullptr;
   QAction* export_image_action_ = nullptr;
+  QAction* monitor_view_action_ = nullptr;
+  QAction* mount_action_ = nullptr;
 
   enum class Align { Left, HCenter, Right, Top, VCenter, Bottom };
   enum class Distribute { Horizontal, Vertical };

@@ -233,6 +233,77 @@ void TopologyEditorWidget::initUi() {
 
   toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
 
+  // ── Monitor view toggle ──
+  monitor_view_action_ = new QAction(topoIcon(QStringLiteral("topo_tap")),
+                                     QStringLiteral("监听器视图"), this);
+  monitor_view_action_->setToolTip(QStringLiteral("显示/隐藏监听器挂载虚线"));
+  monitor_view_action_->setCheckable(true);
+  monitor_view_action_->setEnabled(true);
+  auto* monitorViewBtn = new QToolButton(toolbarFrame);
+  monitorViewBtn->setDefaultAction(monitor_view_action_);
+  toolbarLayout->addWidget(monitorViewBtn);
+
+  // Mount-to-connection button (only active when monitor view ON + MonitorItem selected)
+  mount_action_ = new QAction(topoIcon(QStringLiteral("topo_tap")),
+                              QStringLiteral("挂载到连线"), this);
+  mount_action_->setToolTip(QStringLiteral("将选中监听器挂载到连线"));
+  mount_action_->setEnabled(false);
+  auto* mountBtn = new QToolButton(toolbarFrame);
+  mountBtn->setDefaultAction(mount_action_);
+  toolbarLayout->addWidget(mountBtn);
+
+  // Monitor view toggle → show/hide tap lines
+  connect(monitor_view_action_, &QAction::triggered, this, [this](bool checked) {
+    scene_->setMonitorViewActive(checked);
+    if (!checked) {
+      mount_action_->setEnabled(false);
+      if (scene_->isTapModeActive())
+        scene_->cancelTapMode();
+      status_label_->setText(QStringLiteral("监听器视图已关闭"));
+    } else {
+      status_label_->setText(QStringLiteral("监听器视图已开启 — 选中监听器后可挂载"));
+      // Refresh mount state in case a MonitorItem is already selected
+      bool hasMonitor = false;
+      for (auto* item : scene_->selectedItems()) {
+        if (qgraphicsitem_cast<MonitorItem*>(item)) {
+          hasMonitor = true;
+          break;
+        }
+      }
+      mount_action_->setEnabled(hasMonitor);
+    }
+  });
+
+  // Mount button → start tap mode
+  connect(mount_action_, &QAction::triggered, this, [this]() {
+    auto selected = scene_->selectedItems();
+    for (auto* item : selected) {
+      if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
+        scene_->startTapMode(mon->monitorIndex());
+        status_label_->setText(QStringLiteral("点击一条连线来挂载监听器"));
+        return;
+      }
+    }
+  });
+
+  // Selection/state changes update button enabled states
+  connect(scene_, &QGraphicsScene::selectionChanged, this, [this]() {
+    bool viewOn = scene_->isMonitorViewActive();
+    bool hasSelectedMonitor = false;
+    if (viewOn) {
+      auto selected = scene_->selectedItems();
+      for (auto* item : selected) {
+        if (qgraphicsitem_cast<MonitorItem*>(item)) {
+          hasSelectedMonitor = true;
+          break;
+        }
+      }
+    }
+    mount_action_->setEnabled(viewOn && hasSelectedMonitor && !scene_->isTapModeActive());
+  });
+
+  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
+
   export_image_action_ = new QAction(topoIcon(QStringLiteral("topo_export")), QStringLiteral("导出图片"), this);
   export_image_action_->setToolTip(QStringLiteral("导出拓扑图为 PNG"));
   auto* exportBtn = new QToolButton(toolbarFrame);
@@ -375,6 +446,8 @@ void TopologyEditorWidget::initSignals() {
 
   connect(scene_, &TopologyScene::deviceDropped, this,
           &TopologyEditorWidget::onDropDevice);
+  connect(scene_, &TopologyScene::monitorDropped, this,
+          &TopologyEditorWidget::onDropMonitor);
 
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
           &TopologyEditorWidget::onDocumentChanged);
@@ -586,6 +659,23 @@ void TopologyEditorWidget::onDropDevice(const QString& deviceType,
   }
 }
 
+void TopologyEditorWidget::onDropMonitor(const QString& deviceType,
+                                          const QPointF& scenePos) {
+  int n = doc_->monitorCount() + 1;
+  TopologyMonitor mon;
+  mon.deviceType = deviceType;
+  mon.name = QStringLiteral("%1_%2").arg(deviceType).arg(n, 2, 10, QChar('0'));
+  mon.position = scenePos;
+  mon.size = QSizeF(120, 60);
+
+  auto* cmd = new AddMonitorCommand(doc_, mon);
+  doc_->undoStack()->push(cmd);
+  status_label_->setText(
+      QStringLiteral("已拖放添加监听器: %1").arg(mon.name));
+
+  // TODO: center on the new monitor item once MonitorItem is implemented
+}
+
 void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
   if (!item)
     return;
@@ -598,6 +688,10 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
     auto* cmd = new RemoveDeviceCommand(doc_, dev->deviceIndex());
     doc_->undoStack()->push(cmd);
     status_label_->setText(QStringLiteral("已删除设备"));
+  } else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
+    auto* cmd = new RemoveMonitorCommand(doc_, mon->monitorIndex());
+    doc_->undoStack()->push(cmd);
+    status_label_->setText(QStringLiteral("已删除监听器"));
   } else if (auto* devPort = qgraphicsitem_cast<DevicePortItem*>(item)) {
     doc_->removeDevicePort(devPort->deviceIndex(), devPort->portIndex());
     onDocumentChanged();
@@ -659,6 +753,9 @@ void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
     } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
       type = 2;
       mainIdx = conn->connectionIndex();
+    } else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
+      type = 5;
+      mainIdx = mon->monitorIndex();
     } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
       type = 3;
       mainIdx = p->productIndex();
@@ -698,6 +795,9 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
       selType = 4;
       selIdx1 = dp->deviceIndex();
       selIdx2 = dp->portIndex();
+    } else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
+      selType = 5;
+      selIdx1 = mon->monitorIndex();
     }
   }
 
@@ -740,6 +840,12 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
         dp->setSelected(true);
         newItem = dp;
       }
+    }
+  } else if (selType == 5) {
+    auto* mon = scene_->findMonitorItem(selIdx1);
+    if (mon) {
+      mon->setSelected(true);
+      newItem = mon;
     }
   }
 
@@ -987,6 +1093,9 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType, int mainIndex,
         target = dev->devicePortItem(subIndex);
       break;
     }
+    case 5:
+      target = scene_->findMonitorItem(mainIndex);
+      break;
     default:
       return;
   }

@@ -15,6 +15,7 @@ class DeviceItem;
 class DevicePortItem;
 class PortItem;
 class ConnectionItem;
+class MonitorItem;
 
 class TopologyScene : public QGraphicsScene {
   Q_OBJECT
@@ -32,6 +33,7 @@ class TopologyScene : public QGraphicsScene {
   UutItem* addProductItem(int productIndex, const QPointF& pos);
   DeviceItem* addDeviceItem(int deviceIndex, const QPointF& pos);
   ConnectionItem* addConnectionItem(int connIndex);
+  MonitorItem* addMonitorItem(int monitorIndex, const QPointF& pos);
 
   // Connection drag interaction (called from PortItem / DevicePortItem)
   void startConnectionDrag(QGraphicsItem* port, QPointF scenePos);
@@ -47,6 +49,7 @@ class TopologyScene : public QGraphicsScene {
 
   // Find items by index
   ConnectionItem* findConnectionItem(int connIndex) const;
+  MonitorItem* findMonitorItem(int monitorIndex) const;
 
   // Find items at scene position by type
   DeviceItem* deviceItemAt(QPointF scenePos) const;
@@ -62,6 +65,23 @@ class TopologyScene : public QGraphicsScene {
                      int direction,
                      int functionType,
                      const QPointF& scenePos);
+  void monitorDropped(const QString& deviceType,
+                      const QPointF& scenePos);
+
+ public:
+  // Tap mode — click a connection to attach it to a monitor
+  void startTapMode(int monitorIndex);
+  void finishTap(QPointF scenePos);
+  void cancelTapMode();
+  bool isTapModeActive() const { return tap_mode_monitor_ >= 0; }
+  int tapModeMonitorIndex() const { return tap_mode_monitor_; }
+
+  // Refresh tap visual indicators (dotted lines)
+  void updateTapVisuals();
+
+  // Monitor view mode — shows/hides all tap lines and gates tap operations
+  void setMonitorViewActive(bool active);
+  bool isMonitorViewActive() const { return monitor_view_active_; }
 
  protected:
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
@@ -79,6 +99,7 @@ class TopologyScene : public QGraphicsScene {
   QVector<UutItem*> uut_items_;
   QVector<DeviceItem*> device_items_;
   QVector<ConnectionItem*> connection_items_;
+  QVector<MonitorItem*> monitor_items_;
 
   // Connection drag state (PortItem or DevicePortItem)
   QGraphicsItem* drag_source_ = nullptr;
@@ -91,6 +112,13 @@ class TopologyScene : public QGraphicsScene {
   // Move tracking
   QGraphicsItem* moving_item_ = nullptr;
   QPointF move_start_pos_;
+
+  // Monitor view mode
+  bool monitor_view_active_ = false;
+
+  // Tap mode state
+  int tap_mode_monitor_ = -1;
+  QVector<QGraphicsLineItem*> tap_lines_;
 };
 
 }  // namespace etest::topology

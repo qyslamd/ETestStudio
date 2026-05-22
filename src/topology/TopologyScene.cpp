@@ -8,11 +8,13 @@
 #include <QGraphicsPathItem>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsSimpleTextItem>
+#include <QGraphicsView>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMimeData>
 #include <QPainterPath>
 #include <QPen>
+#include <QtMath>
 
 namespace etest::topology {
 
@@ -33,9 +35,14 @@ void TopologyScene::loadFromDocument() {
     const auto* dev = doc_->device(i);
     addDeviceItem(i, dev->position);
   }
+  for (int i = 0; i < doc_->monitorCount(); ++i) {
+    const auto* mon = doc_->monitor(i);
+    addMonitorItem(i, mon->position);
+  }
   for (int i = 0; i < doc_->connectionCount(); ++i) {
     addConnectionItem(i);
   }
+  updateTapVisuals();
 }
 
 void TopologyScene::syncPositionsToDocument() {
@@ -47,6 +54,11 @@ void TopologyScene::syncPositionsToDocument() {
   for (auto* dev : device_items_) {
     if (auto* d = doc_->device(dev->deviceIndex())) {
       d->position = dev->pos();
+    }
+  }
+  for (auto* mon : monitor_items_) {
+    if (auto* m = doc_->monitor(mon->monitorIndex())) {
+      m->position = mon->pos();
     }
   }
 }
@@ -114,6 +126,148 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
   item->updatePath();
   connection_items_.append(item);
   return item;
+}
+
+MonitorItem* TopologyScene::addMonitorItem(int monitorIndex, const QPointF& pos) {
+  auto* item = new MonitorItem(monitorIndex, doc_);
+  item->setPos(pos);
+  addItem(item);
+  monitor_items_.append(item);
+  return item;
+}
+
+// ── Tap mode ────────────────────────────────────────────────
+
+void TopologyScene::startTapMode(int monitorIndex) {
+  if (!monitor_view_active_)
+    return;
+  tap_mode_monitor_ = monitorIndex;
+  // Use cross cursor to indicate tap selection mode
+  for (auto* view : views())
+    view->setCursor(Qt::CrossCursor);
+}
+
+void TopologyScene::finishTap(QPointF scenePos) {
+  if (tap_mode_monitor_ < 0)
+    return;
+
+  // Find a connection at the click position
+  auto* conn = connectionItemAt(scenePos);
+  if (conn) {
+    const auto* c = doc_->connection(conn->connectionIndex());
+    if (c) {
+      TopologyMonitorTap tap;
+      tap.productName = c->productName;
+      tap.portName = c->portName;
+      tap.deviceName = c->deviceName;
+      tap.devicePort = c->devicePort;
+
+      // Check it's not already tapped by this monitor
+      const auto* mon = doc_->monitor(tap_mode_monitor_);
+      bool alreadyTapped = false;
+      if (mon) {
+        for (const auto& t : mon->taps) {
+          if (t.productName == tap.productName &&
+              t.portName == tap.portName &&
+              t.deviceName == tap.deviceName &&
+              t.devicePort == tap.devicePort) {
+            alreadyTapped = true;
+            break;
+          }
+        }
+      }
+
+      if (!alreadyTapped) {
+        auto* cmd = new TapConnectionCommand(doc_, tap_mode_monitor_, tap);
+        doc_->undoStack()->push(cmd);
+      }
+    }
+  }
+
+  cancelTapMode();
+}
+
+void TopologyScene::cancelTapMode() {
+  tap_mode_monitor_ = -1;
+  for (auto* view : views())
+    view->unsetCursor();
+}
+
+// ── Tap visual indicators ────────────────────────────────────
+
+void TopologyScene::setMonitorViewActive(bool active) {
+  monitor_view_active_ = active;
+  if (!active) {
+    // Cancel any in-progress tap mode
+    if (tap_mode_monitor_ >= 0)
+      cancelTapMode();
+  }
+  updateTapVisuals();
+}
+
+void TopologyScene::updateTapVisuals() {
+  // Remove old tap lines
+  for (auto* line : tap_lines_) {
+    removeItem(line);
+    delete line;
+  }
+  tap_lines_.clear();
+
+  if (!monitor_view_active_)
+    return;
+
+  // Build a lookup: connection endpoint → monitorItem + tap index
+  for (auto* monItem : monitor_items_) {
+    if (!monItem)
+      continue;
+    const auto* mon = doc_->monitor(monItem->monitorIndex());
+    if (!mon)
+      continue;
+
+    QPointF monCenter = monItem->sceneBoundingRect().center();
+
+    for (const auto& tap : mon->taps) {
+      // Find the ConnectionItem matching this tap
+      for (auto* connItem : connection_items_) {
+        if (!connItem)
+          continue;
+        const auto* c = doc_->connection(connItem->connectionIndex());
+        if (!c)
+          continue;
+        if (c->productName == tap.productName &&
+            c->portName == tap.portName &&
+            c->deviceName == tap.deviceName &&
+            c->devicePort == tap.devicePort) {
+          // Find closest point on the connection path to monitor center
+          QPainterPath path = connItem->path();
+          qreal bestParam = 0;
+          qreal bestDist = 1e18;
+          // Sample the path at 20 points
+          for (int i = 0; i <= 20; ++i) {
+            qreal t = i / 20.0;
+            QPointF pt = path.pointAtPercent(t);
+            qreal d = QLineF(pt, monCenter).length();
+            if (d < bestDist) {
+              bestDist = d;
+              bestParam = t;
+            }
+          }
+          QPointF tapPt = path.pointAtPercent(bestParam);
+
+          // Draw dotted line from tap point to monitor
+          auto* line = new QGraphicsLineItem(QLineF(tapPt, monCenter));
+          line->setPen(QPen(QColor(180, 130, 255, 180), 1.5, Qt::DashLine));
+          line->setZValue(4);
+          addItem(line);
+          tap_lines_.append(line);
+
+          // Draw a small diamond at the tap point
+          // (handled by painting a small marker — for now just the line suffices)
+          break;
+        }
+      }
+    }
+  }
 }
 
 void TopologyScene::startConnectionDrag(QGraphicsItem* port, QPointF scenePos) {
@@ -272,11 +426,16 @@ void TopologyScene::dropEvent(QGraphicsSceneDragDropEvent* event) {
         event->mimeData()->data(QLatin1String(kTopologyDeviceMime)));
     if (jdoc.isObject()) {
       QJsonObject obj = jdoc.object();
-      emit deviceDropped(obj["deviceType"].toString(),
-                         obj["channelCount"].toInt(),
-                         obj["direction"].toInt(),
-                         obj["functionType"].toInt(),
-                         event->scenePos());
+      if (obj["isMonitor"].toBool()) {
+        emit monitorDropped(obj["deviceType"].toString(),
+                            event->scenePos());
+      } else {
+        emit deviceDropped(obj["deviceType"].toString(),
+                           obj["channelCount"].toInt(),
+                           obj["direction"].toInt(),
+                           obj["functionType"].toInt(),
+                           event->scenePos());
+      }
     }
     drag_preview_data_ = QJsonObject();
     event->acceptProposedAction();
@@ -290,6 +449,7 @@ void TopologyScene::onItemMoved() {
     if (conn)
       conn->updatePath();
   }
+  updateTapVisuals();
 }
 
 DeviceItem* TopologyScene::deviceItemAt(QPointF scenePos) const {
@@ -366,6 +526,14 @@ ConnectionItem* TopologyScene::findConnectionItem(int connIndex) const {
   return nullptr;
 }
 
+MonitorItem* TopologyScene::findMonitorItem(int monitorIndex) const {
+  for (auto* mon : monitor_items_) {
+    if (mon && mon->monitorIndex() == monitorIndex)
+      return mon;
+  }
+  return nullptr;
+}
+
 UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
   auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
                            Qt::DescendingOrder);
@@ -382,13 +550,24 @@ void TopologyScene::clearScene() {
   drag_line_ = nullptr;
   drag_preview_ = nullptr;
   moving_item_ = nullptr;
+  tap_mode_monitor_ = -1;
+  monitor_view_active_ = false;
+  tap_lines_.clear();  // Items will be deleted by clear()
   clear();
   uut_items_.clear();
   device_items_.clear();
   connection_items_.clear();
+  monitor_items_.clear();
 }
 
 void TopologyScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
+  // Tap mode — clicking on a connection creates a tap
+  if (event->button() == Qt::LeftButton && tap_mode_monitor_ >= 0) {
+    finishTap(event->scenePos());
+    event->accept();
+    return;
+  }
+
   QGraphicsScene::mousePressEvent(event);
 
   if (event->button() == Qt::LeftButton) {

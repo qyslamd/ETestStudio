@@ -35,6 +35,7 @@ class PropertyPanelWidget : public QWidget {
   void buildDevicePage();
   void buildConnectionPage();
   void buildDevicePortPage();
+  void buildMonitorPage();
 
   void onUutNameChanged();
   void onPortNameChanged();
@@ -65,14 +66,15 @@ class PropertyPanelWidget : public QWidget {
   QVector<QPair<QString, QString>> saved_device_properties_;
   QVector<TopologyDevicePort> saved_device_ports_;
 
-  // Index mapping: 0=empty, 1=uut, 2=port, 3=device, 4=connection, 5=deviceport
+  // Index mapping: 0=empty, 1=uut, 2=port, 3=device, 4=connection, 5=deviceport, 6=monitor
   enum Page {
     PageEmpty = 0,
     PageUut,
     PagePort,
     PageDevice,
     PageConnection,
-    PageDevicePort
+    PageDevicePort,
+    PageMonitor
   };
 
   // UUT page widgets
@@ -113,6 +115,12 @@ class PropertyPanelWidget : public QWidget {
   QComboBox* devport_function_combo_ = nullptr;
   int editing_device_port_device_ = -1;
   int editing_device_port_index_ = -1;
+
+  // Monitor page widgets
+  QLineEdit* monitor_name_edit_ = nullptr;
+  QLabel* monitor_type_label_ = nullptr;
+  QTableWidget* monitor_taps_table_ = nullptr;
+  int editing_monitor_index_ = -1;
 };
 
 }  // namespace etest::topology

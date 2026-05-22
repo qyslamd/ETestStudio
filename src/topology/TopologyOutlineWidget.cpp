@@ -61,6 +61,11 @@ void TopologyOutlineWidget::rebuildTree(TopologyDocument* doc) {
   for (int i = 0; i < doc->connectionCount(); ++i)
     addConnectionItem(i, doc, connCat);
 
+  auto* monCat = addCategoryItem(
+      QStringLiteral("Monitors (%1)").arg(doc->monitorCount()));
+  for (int i = 0; i < doc->monitorCount(); ++i)
+    addMonitorItem(i, doc, monCat);
+
   tree_->expandAll();
   updating_selection_ = false;
 }
@@ -133,6 +138,30 @@ void TopologyOutlineWidget::addConnectionItem(int index,
   item->setData(0, kRoleTag, static_cast<int>(ItemTag::Connection));
   item->setData(0, kRoleMainIdx, index);
   item->setData(0, kRoleSubIdx, -1);
+}
+
+void TopologyOutlineWidget::addMonitorItem(int index, TopologyDocument* doc,
+                                            QTreeWidgetItem* parent) {
+  const auto* mon = doc->monitor(index);
+  if (!mon)
+    return;
+
+  auto* item = new QTreeWidgetItem(parent);
+  item->setText(0, mon->name);
+  item->setData(0, kRoleTag, static_cast<int>(ItemTag::Monitor));
+  item->setData(0, kRoleMainIdx, index);
+  item->setData(0, kRoleSubIdx, -1);
+
+  // Show tapped connections as children
+  for (int ti = 0; ti < mon->taps.size(); ++ti) {
+    const auto& tap = mon->taps[ti];
+    auto* tapItem = new QTreeWidgetItem(item);
+    tapItem->setText(0, QStringLiteral("%1:%2 → %3:%4")
+                             .arg(tap.productName, tap.portName,
+                                  tap.deviceName, tap.devicePort));
+    tapItem->setData(0, kRoleTag, static_cast<int>(ItemTag::Category));
+    tapItem->setFlags(tapItem->flags() & ~Qt::ItemIsSelectable);
+  }
 }
 
 void TopologyOutlineWidget::onFilterTextChanged(const QString& text) {

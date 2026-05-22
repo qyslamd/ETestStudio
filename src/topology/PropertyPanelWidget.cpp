@@ -34,6 +34,7 @@ PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc, QWidget* parent)
   buildDevicePage();
   buildConnectionPage();
   buildDevicePortPage();
+  buildMonitorPage();
 
   stack_->setCurrentIndex(PageEmpty);
 }
@@ -69,6 +70,7 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
   editing_device_index_ = -1;
   editing_device_port_device_ = -1;
   editing_device_port_index_ = -1;
+  editing_monitor_index_ = -1;
 
   if (!item) {
     stack_->setCurrentIndex(PageEmpty);
@@ -214,6 +216,35 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
     }
     conn_device_port_label_->setText(conn->devicePort());
     stack_->setCurrentIndex(PageConnection);
+    return;
+  }
+
+  if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
+    editing_monitor_index_ = mon->monitorIndex();
+    auto* m = doc_->monitor(editing_monitor_index_);
+    if (m) {
+      monitor_name_edit_->blockSignals(true);
+      monitor_name_edit_->setText(m->name);
+      monitor_name_edit_->blockSignals(false);
+      monitor_type_label_->setText(m->deviceType);
+
+      // Populate taps table
+      monitor_taps_table_->setUpdatesEnabled(false);
+      monitor_taps_table_->blockSignals(true);
+      monitor_taps_table_->setRowCount(m->taps.size());
+      for (int r = 0; r < m->taps.size(); ++r) {
+        const auto& tap = m->taps[r];
+        monitor_taps_table_->setItem(
+            r, 0, new QTableWidgetItem(
+                QStringLiteral("%1:%2").arg(tap.productName, tap.portName)));
+        monitor_taps_table_->setItem(
+            r, 1, new QTableWidgetItem(
+                QStringLiteral("%1:%2").arg(tap.deviceName, tap.devicePort)));
+      }
+      monitor_taps_table_->blockSignals(false);
+      monitor_taps_table_->setUpdatesEnabled(true);
+    }
+    stack_->setCurrentIndex(PageMonitor);
     return;
   }
 
@@ -422,6 +453,54 @@ void PropertyPanelWidget::buildDevicePortPage() {
           [this](const QString&) { onDevicePortFunctionTypeChanged(); });
   lay->addRow(QStringLiteral("功能类型"), devport_function_combo_);
 
+  stack_->addWidget(w);
+}
+
+void PropertyPanelWidget::buildMonitorPage() {
+  auto* w = new QWidget(this);
+  w->setObjectName("monitorPage");
+  auto* lay = new QVBoxLayout(w);
+
+  auto* form = new QFormLayout();
+  monitor_name_edit_ = new QLineEdit(w);
+  connect(monitor_name_edit_, &QLineEdit::editingFinished, this, [this]() {
+    auto* mon = doc_->monitor(editing_monitor_index_);
+    if (mon) {
+      QString oldName = mon->name;
+      QString newName = monitor_name_edit_->text();
+      int idx = editing_monitor_index_;
+      auto* cmd = new PropertyCommand(
+          doc_,
+          [doc = doc_, idx, oldName]() {
+            if (auto* m = doc->monitor(idx))
+              m->name = oldName;
+          },
+          [doc = doc_, idx, newName]() {
+            if (auto* m = doc->monitor(idx))
+              m->name = newName;
+          },
+          QStringLiteral("修改监听器名称"));
+      doc_->undoStack()->push(cmd);
+    }
+  });
+  form->addRow(QStringLiteral("名称"), monitor_name_edit_);
+
+  monitor_type_label_ = new QLabel(w);
+  form->addRow(QStringLiteral("设备类型"), monitor_type_label_);
+  lay->addLayout(form);
+
+  auto* tapsGroup = new QGroupBox(QStringLiteral("已挂载连线"), w);
+  auto* tapsLay = new QVBoxLayout(tapsGroup);
+
+  monitor_taps_table_ = new QTableWidget(0, 2, w);
+  monitor_taps_table_->setHorizontalHeaderLabels(
+      {QStringLiteral("源"), QStringLiteral("目标")});
+  monitor_taps_table_->horizontalHeader()->setStretchLastSection(true);
+  monitor_taps_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
+  monitor_taps_table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  tapsLay->addWidget(monitor_taps_table_);
+
+  lay->addWidget(tapsGroup);
   stack_->addWidget(w);
 }
 

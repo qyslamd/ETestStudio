@@ -108,6 +108,32 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
   }
   root["connections"] = connsArr;
 
+  // Monitors
+  QJsonArray monitorsArr;
+  for (int i = 0; i < doc.monitorCount(); ++i) {
+    const auto* m = doc.monitor(i);
+    QJsonObject mObj;
+    mObj["name"] = m->name;
+    mObj["deviceType"] = m->deviceType;
+    mObj["positionX"] = m->position.x();
+    mObj["positionY"] = m->position.y();
+    if (m->size.isValid() && m->size.width() > 0)
+      mObj["size"] = QJsonArray{m->size.width(), m->size.height()};
+
+    QJsonArray tapsArr;
+    for (const auto& tap : m->taps) {
+      QJsonObject tapObj;
+      tapObj["productName"] = tap.productName;
+      tapObj["portName"] = tap.portName;
+      tapObj["deviceName"] = tap.deviceName;
+      tapObj["devicePort"] = tap.devicePort;
+      tapsArr.append(tapObj);
+    }
+    mObj["taps"] = tapsArr;
+    monitorsArr.append(mObj);
+  }
+  root["monitors"] = monitorsArr;
+
   return root;
 }
 
@@ -200,6 +226,34 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     conn.devicePort = cObj["devicePort"].toString();
     conn.style = stringToPathStyle(cObj["style"].toString());
     doc->addConnection(conn);
+  }
+
+  // Monitors
+  QJsonArray monitorsArr = json["monitors"].toArray();
+  for (const auto& mVal : monitorsArr) {
+    QJsonObject mObj = mVal.toObject();
+    TopologyMonitor mon;
+    mon.name = mObj["name"].toString();
+    mon.deviceType = mObj["deviceType"].toString();
+    mon.position =
+        QPointF(mObj["positionX"].toDouble(), mObj["positionY"].toDouble());
+    {
+      QJsonArray a = mObj["size"].toArray();
+      if (a.size() == 2)
+        mon.size = QSizeF(a[0].toDouble(), a[1].toDouble());
+    }
+
+    QJsonArray tapsArr = mObj["taps"].toArray();
+    for (const auto& tapVal : tapsArr) {
+      QJsonObject tapObj = tapVal.toObject();
+      TopologyMonitorTap tap;
+      tap.productName = tapObj["productName"].toString();
+      tap.portName = tapObj["portName"].toString();
+      tap.deviceName = tapObj["deviceName"].toString();
+      tap.devicePort = tapObj["devicePort"].toString();
+      mon.taps.append(tap);
+    }
+    doc->addMonitor(mon);
   }
 
   return true;

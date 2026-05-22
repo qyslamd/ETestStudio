@@ -853,4 +853,87 @@ void LegendItem::paint(QPainter* painter,
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  MonitorItem
+// ═══════════════════════════════════════════════════════════════
+
+MonitorItem::MonitorItem(int monitorIndex,
+                         TopologyDocument* doc,
+                         QGraphicsItem* parent)
+    : TopologyBlockItem(doc, kWidth, kCornerRadius, parent),
+      monitor_index_(monitorIndex) {
+  setFlag(ItemIsSelectable);
+  setAcceptHoverEvents(true);
+}
+
+QColor MonitorItem::blockFillColor() const {
+  return topologyColors().monitorFill;
+}
+
+QColor MonitorItem::blockBorderColor() const {
+  return topologyColors().monitorBorder;
+}
+
+void MonitorItem::paintContent(QPainter* painter,
+                                const QStyleOptionGraphicsItem*,
+                                const QRectF& rect) {
+  const auto* mon = doc_->monitor(monitor_index_);
+  if (!mon)
+    return;
+
+  painter->setPen(topologyColors().textPrimary);
+  QFont f = painter->font();
+  f.setPointSize(9);
+  f.setBold(true);
+  painter->setFont(f);
+  painter->drawText(QRectF(rect.x(), rect.y() + 6, rect.width(), 20),
+                    Qt::AlignCenter, mon->name);
+
+  f.setPointSize(7);
+  f.setBold(false);
+  painter->setFont(f);
+  painter->setPen(topologyColors().textSecondary);
+  painter->drawText(QRectF(rect.x(), rect.y() + 26, rect.width(), 18),
+                    Qt::AlignCenter,
+                    QStringLiteral("[%1]").arg(mon->deviceType));
+
+  // Show tap count
+  f.setPointSize(7);
+  painter->setFont(f);
+  painter->setPen(topologyColors().textSecondary);
+  QString tapText = QStringLiteral("已挂载: %1 条连线").arg(mon->taps.size());
+  painter->drawText(QRectF(rect.x(), rect.y() + 42, rect.width(), 16),
+                    Qt::AlignCenter, tapText);
+}
+
+qreal MonitorItem::calcContentHeight() const {
+  return kBaseHeight;  // Fixed height, no ports to accommodate
+}
+
+int MonitorItem::tapCount() const {
+  const auto* mon = doc_->monitor(monitor_index_);
+  return mon ? mon->taps.size() : 0;
+}
+
+void MonitorItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
+  auto* mon = doc_->monitor(monitor_index_);
+  if (!mon)
+    return;
+
+  QSizeF oldSize = mon->size;
+  QSizeF newSize(block_width_, block_height_);
+  if (oldSize == newSize)
+    return;
+
+  mon->size = newSize;
+
+  int idx = monitor_index_;
+  QPointF newPos = pos();
+  auto* doc = doc_;
+  QTimer::singleShot(0, [doc, idx, oldSize, newSize, oldPos, newPos]() {
+    doc->undoStack()->push(new ResizeItemCommand(
+        doc, idx, ResizeItemCommand::Monitor, oldSize, newSize, oldPos, newPos));
+  });
+}
+
 }  // namespace etest::topology
