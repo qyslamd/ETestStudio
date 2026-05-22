@@ -62,9 +62,9 @@ ProtocolRef ProtocolRef::fromJson(const QJsonObject& obj) {
   return ref;
 }
 
-// ── TestCaseRef ──────────────────────────────────────────────
+// ── TestProgramRef ─────────────────────────────────────────────
 
-QJsonObject TestCaseRef::toJson() const {
+QJsonObject TestProgramRef::toJson() const {
   QJsonObject obj;
   obj["id"] = id;
   obj["name"] = name;
@@ -73,8 +73,8 @@ QJsonObject TestCaseRef::toJson() const {
   return obj;
 }
 
-TestCaseRef TestCaseRef::fromJson(const QJsonObject& obj) {
-  TestCaseRef ref;
+TestProgramRef TestProgramRef::fromJson(const QJsonObject& obj) {
+  TestProgramRef ref;
   ref.id = obj["id"].toString();
   ref.name = obj["name"].toString();
   ref.filePath = obj["file"].toString();
@@ -154,10 +154,10 @@ QJsonObject ProjectInfo::toJson() const {
   obj["protocols"] = protoArr;
 
   QJsonArray caseArr;
-  for (const auto& c : test_cases_) {
+  for (const auto& c : test_programs_) {
     caseArr.append(c.toJson());
   }
-  obj["test_cases"] = caseArr;
+  obj["test_programs"] = caseArr;
 
   QJsonArray reportArr;
   for (const auto& r : reports_) {
@@ -207,10 +207,10 @@ bool ProjectInfo::fromJson(const QJsonObject& json) {
     }
   }
 
-  test_cases_.clear();
-  if (json.contains("test_cases")) {
-    for (const auto& item : json["test_cases"].toArray()) {
-      test_cases_.append(TestCaseRef::fromJson(item.toObject()));
+  test_programs_.clear();
+  if (json.contains("test_programs")) {
+    for (const auto& item : json["test_programs"].toArray()) {
+      test_programs_.append(TestProgramRef::fromJson(item.toObject()));
     }
   }
 
@@ -339,27 +339,27 @@ void ProjectInfo::removeProtocol(const QString& id) {
 
 void ProjectInfo::clearProtocols() { protocols_.clear(); }
 
-// ── TestCaseRef 访问器 ──
+// ── TestProgramRef 访问器 ──
 
-QVector<TestCaseRef> ProjectInfo::testCases() const { return test_cases_; }
+QVector<TestProgramRef> ProjectInfo::testPrograms() const { return test_programs_; }
 
-void ProjectInfo::setTestCases(const QVector<TestCaseRef>& refs) {
-  test_cases_ = refs;
+void ProjectInfo::setTestPrograms(const QVector<TestProgramRef>& refs) {
+  test_programs_ = refs;
 }
 
-void ProjectInfo::addTestCase(const TestCaseRef& ref) {
-  test_cases_.append(ref);
+void ProjectInfo::addTestProgram(const TestProgramRef& ref) {
+  test_programs_.append(ref);
 }
 
-void ProjectInfo::removeTestCase(const QString& id) {
-  test_cases_.erase(std::remove_if(test_cases_.begin(), test_cases_.end(),
-                                   [&](const TestCaseRef& c) {
-                                     return c.id == id;
-                                   }),
-                    test_cases_.end());
+void ProjectInfo::removeTestProgram(const QString& id) {
+  test_programs_.erase(std::remove_if(test_programs_.begin(), test_programs_.end(),
+                                      [&](const TestProgramRef& c) {
+                                        return c.id == id;
+                                      }),
+                       test_programs_.end());
 }
 
-void ProjectInfo::clearTestCases() { test_cases_.clear(); }
+void ProjectInfo::clearTestPrograms() { test_programs_.clear(); }
 
 // ── ReportRef 访问器 ──
 

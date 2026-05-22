@@ -401,6 +401,7 @@ bool ProtocolManagerWidget::renameProtocolFile(const QString& oldPath) {
     if (QDir(refAbsPath) == QDir(oldPath)) {
       project->removeProtocol(ref.id);
       ProtocolRef newRef = ref;
+      newRef.id = newPath;  // 同步更新 id 为新的绝对路径
       newRef.filePath = newRelativePath;
       newRef.name = newFileName;
       project->addProtocol(newRef);

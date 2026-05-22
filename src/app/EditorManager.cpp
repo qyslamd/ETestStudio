@@ -15,6 +15,7 @@
 #include <QMessageBox>
 
 #include "ImageViewerWidget.h"
+#include "TestProgramEditorWidget.h"
 #include "TextEditorWidget.h"
 #include "editor/EditorFactory.h"
 #include "logger/Logger.h"
@@ -76,6 +77,7 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerExtension("txt", "text");
   EditorFactoryRegistry::registerExtension("etopo", "topology");
   EditorFactoryRegistry::registerExtension("eproto", "protocal");
+  EditorFactoryRegistry::registerExtension("tcase", "testprogram");
 
   EditorFactoryRegistry::registerExtension("png", "image");
   EditorFactoryRegistry::registerExtension("jpg", "image");
@@ -123,6 +125,15 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerFactory(
       "image", [](const QString& id, QWidget* parent) {
         return new ImageViewerWidget(id, parent);
+      });
+
+  EditorFactoryRegistry::registerFactory(
+      "testprogram", [](const QString& id, QWidget* parent) {
+        auto* editor = new TestProgramEditorWidget(id, parent);
+        if (!id.startsWith("editor://") && QFileInfo::exists(id)) {
+          editor->setEditorId(id);
+        }
+        return editor;
       });
 }
 
@@ -210,6 +221,22 @@ void EditorManager::openFile(const QString& filePath) {
             [this, editor](const QString&, const QString& newId) {
               updateEditorId(editor, newId);
             });
+  } else if (auto* tpEditor =
+                 dynamic_cast<TestProgramEditorWidget*>(editor)) {
+    connect(tpEditor, &TestProgramEditorWidget::modificationChanged, this,
+            [this, editor, dock](bool modified) {
+              QString title = editor->displayName();
+              if (modified) {
+                title.prepend("* ");
+              }
+              dock->setWindowTitle(title);
+              emit unsavedChangesChanged();
+              emit modificationChanged(modified);
+            });
+    connect(tpEditor, &TestProgramEditorWidget::editorIdChanged, this,
+            [this, editor](const QString&, const QString& newId) {
+              updateEditorId(editor, newId);
+            });
   }
 
   connect(dock, &ads::CDockWidget::closeRequested, this,
@@ -255,6 +282,8 @@ void EditorManager::openFile(const QString& filePath) {
     pm.registerTopologyRef(filePath);
   } else if (suffix == QStringLiteral("eproto")) {
     pm.registerProtocolRef(filePath);
+  } else if (suffix == QStringLiteral("tcase")) {
+    pm.registerTestProgramRef(filePath);
   }
 }
 
@@ -330,6 +359,8 @@ bool EditorManager::closeFile(const QString& editorId) {
     pm.removeTopologyRef(editorId);
   } else if (suffix == QStringLiteral("eproto")) {
     pm.removeProtocolRef(editorId);
+  } else if (suffix == QStringLiteral("tcase")) {
+    pm.removeTestProgramRef(editorId);
   }
 
   emit unsavedChangesChanged();
@@ -517,6 +548,22 @@ void EditorManager::createEditor(const QString& editorType,
             [this, editor](const QString&, const QString& newId) {
               updateEditorId(editor, newId);
             });
+  } else if (auto* tpEditor =
+                 dynamic_cast<TestProgramEditorWidget*>(editor)) {
+    connect(tpEditor, &TestProgramEditorWidget::modificationChanged, this,
+            [this, editor, dock](bool modified) {
+              QString title = editor->displayName();
+              if (modified) {
+                title.prepend("* ");
+              }
+              dock->setWindowTitle(title);
+              emit unsavedChangesChanged();
+              emit modificationChanged(modified);
+            });
+    connect(tpEditor, &TestProgramEditorWidget::editorIdChanged, this,
+            [this, editor](const QString&, const QString& newId) {
+              updateEditorId(editor, newId);
+            });
   }
 
   connect(dock, &ads::CDockWidget::closeRequested, this,
@@ -581,12 +628,16 @@ void EditorManager::updateEditorId(IEditor* editor, const QString& newId) {
     pm.removeTopologyRef(oldId);
   } else if (oldSuffix == QStringLiteral("eproto")) {
     pm.removeProtocolRef(oldId);
+  } else if (oldSuffix == QStringLiteral("tcase")) {
+    pm.removeTestProgramRef(oldId);
   }
 
   if (newSuffix == QStringLiteral("etopo")) {
     pm.registerTopologyRef(newId);
   } else if (newSuffix == QStringLiteral("eproto")) {
     pm.registerProtocolRef(newId);
+  } else if (newSuffix == QStringLiteral("tcase")) {
+    pm.registerTestProgramRef(newId);
   }
 }
 

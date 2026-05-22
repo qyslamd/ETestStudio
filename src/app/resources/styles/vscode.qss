@@ -526,6 +526,132 @@ ProtocolManagerWidget QTreeWidget::item:hover {
     background-color: #2D2D2D;
 }
 
+/* ==================== TestProgramManagerWidget ==================== */
+TestProgramManagerWidget {
+    background-color: #252526;
+}
+TestProgramManagerWidget QTreeWidget {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: none;
+    outline: none;
+}
+TestProgramManagerWidget QTreeWidget::item {
+    padding: 4px 8px;
+    min-height: 22px;
+}
+TestProgramManagerWidget QTreeWidget::item:selected {
+    background-color: #094771;
+    color: #FFFFFF;
+}
+TestProgramManagerWidget QTreeWidget::item:hover {
+    background-color: #2A2D2E;
+}
+#testProgramToolbar {
+    background-color: #252526;
+    border-bottom: 1px solid #1E1E1E;
+}
+#testProgramNewBtn {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #454545;
+    border-radius: 3px;
+    padding: 2px 12px;
+    font-size: 12px;
+}
+#testProgramNewBtn:hover {
+    background-color: #505050;
+}
+#testProgramNewBtn:pressed {
+    background-color: #2D2D2D;
+}
+
+/* ==================== TestProgramEditorWidget ==================== */
+TestProgramEditorWidget {
+    background-color: #1E1E1E;
+}
+TestProgramEditorWidget QLineEdit {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 2px;
+    padding: 4px 8px;
+    selection-background-color: #264F78;
+}
+TestProgramEditorWidget QLineEdit:focus {
+    border-color: #007ACC;
+}
+TestProgramEditorWidget QTextEdit {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 2px;
+    selection-background-color: #264F78;
+}
+TestProgramEditorWidget QTextEdit:focus {
+    border-color: #007ACC;
+}
+TestProgramEditorWidget QTableWidget {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    gridline-color: #3C3C3C;
+    outline: none;
+    selection-background-color: #094771;
+    selection-color: #FFFFFF;
+}
+TestProgramEditorWidget QTableWidget::item {
+    padding: 4px 8px;
+}
+TestProgramEditorWidget QHeaderView::section {
+    background-color: #2D2D2D;
+    color: #CCCCCC;
+    border: none;
+    border-bottom: 1px solid #3C3C3C;
+    padding: 4px 8px;
+    font-weight: bold;
+}
+TestProgramEditorWidget QTabWidget::pane {
+    border: 1px solid #3C3C3C;
+    background-color: #252526;
+}
+TestProgramEditorWidget QTabBar::tab {
+    background-color: #2D2D2D;
+    color: #CCCCCC;
+    border: none;
+    padding: 6px 16px;
+    margin-right: 2px;
+}
+TestProgramEditorWidget QTabBar::tab:selected {
+    background-color: #1E1E1E;
+    color: #FFFFFF;
+    border-bottom: 2px solid #007ACC;
+}
+TestProgramEditorWidget QTabBar::tab:hover {
+    background-color: #3C3C3C;
+}
+#testProgramEditorToolbar {
+    background-color: #252526;
+    border-bottom: 1px solid #1E1E1E;
+}
+#testProgramEditorAddCaseBtn, #testProgramEditorRemoveCaseBtn,
+#testProgramEditorAddStepBtn, #testProgramEditorRemoveStepBtn {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #454545;
+    border-radius: 3px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+#testProgramEditorAddCaseBtn:hover, #testProgramEditorRemoveCaseBtn:hover,
+#testProgramEditorAddStepBtn:hover, #testProgramEditorRemoveStepBtn:hover {
+    background-color: #505050;
+}
+#testProgramEditorAddCaseBtn:pressed, #testProgramEditorRemoveCaseBtn:pressed,
+#testProgramEditorAddStepBtn:pressed, #testProgramEditorRemoveStepBtn:pressed {
+    background-color: #2D2D2D;
+}
+
 /* ==================== SearchWidget ==================== */
 SearchWidget {
     background-color: #252526;

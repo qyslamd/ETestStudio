@@ -16,6 +16,7 @@ class HardwareTreeWidget;
 class ProtocolManagerWidget;
 class SearchWidget;
 class GitWidget;
+class TestProgramManagerWidget;
 
 class SidebarWidget : public QWidget {
   Q_OBJECT
@@ -36,6 +37,7 @@ class SidebarWidget : public QWidget {
   ProtocolManagerWidget* protocolManager() const;
   SearchWidget* searchWidget() const;
   GitWidget* gitWidget() const;
+  TestProgramManagerWidget* testProgramManager() const;
 
  signals:
   void settingsTriggered();
@@ -55,6 +57,7 @@ class SidebarWidget : public QWidget {
   ProtocolManagerWidget* protocol_manager_ = nullptr;
   SearchWidget* search_widget_ = nullptr;
   GitWidget* git_widget_ = nullptr;
+  TestProgramManagerWidget* test_program_manager_ = nullptr;
 
   QStringList view_titles_;
   QVector<QPushButton*> buttons_;

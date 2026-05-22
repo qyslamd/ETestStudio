@@ -272,6 +272,26 @@ void ProjectManager::removeProtocolRef(const QString& id) {
   m_impl->current_project->saveToFile();
 }
 
+void ProjectManager::registerTestProgramRef(const QString& filePath) {
+  if (!isProjectOpen())
+    return;
+  QFileInfo fi(filePath);
+  TestProgramRef ref;
+  ref.id = filePath;
+  ref.name = fi.completeBaseName();
+  ref.filePath = QDir(currentProjectRoot()).relativeFilePath(filePath);
+  ref.type = QStringLiteral("json");
+  m_impl->current_project->addTestProgram(ref);
+  m_impl->current_project->saveToFile();
+}
+
+void ProjectManager::removeTestProgramRef(const QString& id) {
+  if (!isProjectOpen())
+    return;
+  m_impl->current_project->removeTestProgram(id);
+  m_impl->current_project->saveToFile();
+}
+
 bool ProjectManager::doCloseProject() {
   if (!isProjectOpen())
     return true;

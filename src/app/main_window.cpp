@@ -37,6 +37,7 @@
 #include "SearchWidget.h"
 #include "SettingsWidget.h"
 #include "SidebarWidget.h"
+#include "TestProgramManagerWidget.h"
 #include "TerminalPanel.h"
 #include "TextEditorWidget.h"
 #include "WelcomeWidget.h"
@@ -490,6 +491,17 @@ void MainWindow::initSignals() {
           protocolMgr, &ProtocolManagerWidget::refreshList);
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
           protocolMgr, &ProtocolManagerWidget::refreshList);
+
+  // 用例管理器：双击文件打开编辑器
+  auto* tpMgr = sidebar_->testProgramManager();
+  connect(tpMgr, &TestProgramManagerWidget::openFileRequested, editor_manager_,
+          &EditorManager::openFile);
+
+  // 用例管理器：项目打开/关闭时刷新
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+          tpMgr, &TestProgramManagerWidget::refreshList);
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+          tpMgr, &TestProgramManagerWidget::refreshList);
 
   // 日志输出到界面
   auto* qtSink = etest::core::logger::Logger::qtConsoleSink();

@@ -32,15 +32,15 @@ struct ProtocolRef {
   static ProtocolRef fromJson(const QJsonObject& obj);
 };
 
-// ── 测试用例引用 ──
-struct TestCaseRef {
+// ── 测试程序引用 ──
+struct TestProgramRef {
   QString id;
   QString name;
   QString filePath;  // 相对于项目根目录
   QString type;      // "json" | "lua" | "excel"
 
   QJsonObject toJson() const;
-  static TestCaseRef fromJson(const QJsonObject& obj);
+  static TestProgramRef fromJson(const QJsonObject& obj);
 };
 
 // ── 测试报告引用 ──
@@ -111,12 +111,12 @@ class ProjectInfo {
   void removeProtocol(const QString& id);
   void clearProtocols();
 
-  // ── 测试用例引用 ──
-  QVector<TestCaseRef> testCases() const;
-  void setTestCases(const QVector<TestCaseRef>& refs);
-  void addTestCase(const TestCaseRef& ref);
-  void removeTestCase(const QString& id);
-  void clearTestCases();
+  // ── 测试程序引用 ──
+  QVector<TestProgramRef> testPrograms() const;
+  void setTestPrograms(const QVector<TestProgramRef>& refs);
+  void addTestProgram(const TestProgramRef& ref);
+  void removeTestProgram(const QString& id);
+  void clearTestPrograms();
 
   // ── 测试报告引用 ──
   QVector<ReportRef> reports() const;
@@ -136,7 +136,7 @@ class ProjectInfo {
 
   QVector<TopologyRef> topologies_;
   QVector<ProtocolRef> protocols_;
-  QVector<TestCaseRef> test_cases_;
+  QVector<TestProgramRef> test_programs_;
   QVector<ReportRef> reports_;
 };
 

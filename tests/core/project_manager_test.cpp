@@ -153,11 +153,11 @@ TEST_F(ProjectInfoTest, RefRoundTrip) {
   EXPECT_EQ(protoBack.id, "p1");
   EXPECT_EQ(protoBack.name, "协议X");
 
-  // TestCaseRef
-  TestCaseRef tc{"c1", "测试案例Y", "cases/test_y.json", "json"};
-  auto tcBack = TestCaseRef::fromJson(tc.toJson());
-  EXPECT_EQ(tcBack.id, "c1");
-  EXPECT_EQ(tcBack.type, "json");
+  // TestProgramRef
+  TestProgramRef tp{"c1", "测试案例Y", "cases/test_y.json", "json"};
+  auto tpBack = TestProgramRef::fromJson(tp.toJson());
+  EXPECT_EQ(tpBack.id, "c1");
+  EXPECT_EQ(tpBack.type, "json");
 
   // ReportRef
   ReportRef rpt{"r1", "报告Z", "reports/report_z.html", "html",
@@ -176,7 +176,7 @@ TEST_F(ProjectInfoTest, RefListSerialization) {
   info.addTopology({"t1", "拓扑A", "topology/a.etopo"});
   info.addTopology({"t2", "拓扑B", "topology/b.etopo"});
   info.addProtocol({"p1", "协议X", "protocol/x.json"});
-  info.addTestCase({"c1", "测试Y", "cases/y.json", "json"});
+  info.addTestProgram({"c1", "测试Y", "cases/y.json", "json"});
   info.addReport({"r1", "报告Z", "reports/z.html", "html", QDateTime()});
 
   // toJson → fromJson 往返
@@ -190,8 +190,8 @@ TEST_F(ProjectInfoTest, RefListSerialization) {
   EXPECT_EQ(restored.topologies()[1].name, "拓扑B");
   ASSERT_EQ(restored.protocols().size(), 1);
   EXPECT_EQ(restored.protocols()[0].name, "协议X");
-  ASSERT_EQ(restored.testCases().size(), 1);
-  EXPECT_EQ(restored.testCases()[0].name, "测试Y");
+  ASSERT_EQ(restored.testPrograms().size(), 1);
+  EXPECT_EQ(restored.testPrograms()[0].name, "测试Y");
   ASSERT_EQ(restored.reports().size(), 1);
   EXPECT_EQ(restored.reports()[0].name, "报告Z");
 

@@ -43,6 +43,8 @@ class ProjectManager : public QObject {
   void removeTopologyRef(const QString& id);
   void registerProtocolRef(const QString& filePath);
   void removeProtocolRef(const QString& id);
+  void registerTestProgramRef(const QString& filePath);
+  void removeTestProgramRef(const QString& id);
 
   // 脏文件检查接口
   using DirtyCheckCallback = std::function<bool()>;

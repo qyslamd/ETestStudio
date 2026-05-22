@@ -4,6 +4,7 @@
 #include "HardwareTreeWidget.h"
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
+#include "TestProgramManagerWidget.h"
 
 #include <QHBoxLayout>
 #include <QIcon>
@@ -59,6 +60,10 @@ void SidebarWidget::setupUi() {
   buttons_.append(createButton(QStringLiteral("协议"),
                                 ":/resources/icons/svg/protocol_dark.svg",
                                 ":/resources/icons/svg/protocol_light.svg"));
+  // 索引7：用例
+  buttons_.append(createButton(QStringLiteral("用例"),
+                                ":/resources/icons/svg/testprogram_dark.svg",
+                                ":/resources/icons/svg/testprogram_light.svg"));
 
   for (int i = 0; i < buttons_.size(); ++i) {
     top_layout->addWidget(buttons_[i]);
@@ -157,6 +162,11 @@ void SidebarWidget::setupUi() {
   stack_->addWidget(protocol_manager_);
   view_titles_ << QStringLiteral("协议");
 
+  // 页7：用例管理器
+  test_program_manager_ = new TestProgramManagerWidget(this);
+  stack_->addWidget(test_program_manager_);
+  view_titles_ << QStringLiteral("用例");
+
   content_layout->addWidget(stack_);
 
   outer_layout->addWidget(content_panel_);
@@ -239,6 +249,10 @@ SearchWidget* SidebarWidget::searchWidget() const {
 
 GitWidget* SidebarWidget::gitWidget() const {
   return git_widget_;
+}
+
+TestProgramManagerWidget* SidebarWidget::testProgramManager() const {
+  return test_program_manager_;
 }
 
 }  // namespace etest::app
