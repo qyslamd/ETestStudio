@@ -9,15 +9,17 @@
 class QMenu;
 class QAction;
 class QLabel;
+class QSplitter;
 
 namespace etest::app {
 
+class ActivityBarWidget;
 class SidebarWidget;
 class OutputPanel;
 class ProblemsPanel;
 class SettingsWidget;
 class TerminalPanel;
-class PanelContainerWidget;
+class BottomContainerWidget;
 class EditorManager;
 class WelcomeWidget;
 
@@ -82,21 +84,34 @@ class MainWindow : public QMainWindow {
   static void hideDockTitleBarButtons(ads::CDockAreaWidget* area);
   ads::CDockManager* dock_manager_;
 
+  // 活动栏 + 侧边栏
+  ActivityBarWidget* activity_bar_;
   SidebarWidget* sidebar_;
-  ads::CDockWidget* sidebar_dock_ = nullptr;
-  int sidebar_expanded_width_ = 280;
+
+  // 水平/垂直分割器
+  QSplitter* h_splitter_;  // 水平：Sidebar / 垂直区域 / AuxSidebar
+  QSplitter* v_splitter_;  // 垂直：CDockManager / BottomContainer
 
   // 编辑器管理
   EditorManager* editor_manager_;
 
   // 欢迎页
   WelcomeWidget* welcome_widget_ = nullptr;
+  ads::CDockWidget* central_dock_ = nullptr;
 
   // 底部面板
   OutputPanel* output_panel_;
   ProblemsPanel* problems_panel_;
   TerminalPanel* terminal_panel_;
-  PanelContainerWidget* panel_container_ = nullptr;
+  BottomContainerWidget* bottom_container_ = nullptr;
+  int bottom_container_height_ = 200;
+
+  // 辅助侧边栏
+  QWidget* aux_sidebar_widget_ = nullptr;
+  int aux_sidebar_width_ = 280;
+
+  // 侧边栏展开宽度（用于折叠记忆）
+  int sidebar_expanded_width_ = 280;
 
   // 设置对话框（非模态，只创建一次）
   SettingsWidget* settings_dialog_ = nullptr;

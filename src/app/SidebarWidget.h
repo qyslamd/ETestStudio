@@ -2,7 +2,6 @@
 #define ETEST_APP_SIDEBAR_WIDGET_H_
 
 #include <QLabel>
-#include <QPushButton>
 #include <QStackedWidget>
 #include <QVector>
 #include <QVBoxLayout>
@@ -27,10 +26,9 @@ class SidebarWidget : public QWidget {
   void switchPage(int index);
   int pageCount() const;
 
-  // Activity bar
-  void setActiveIndex(int index);
-  int activeIndex() const;
-  void toggleContentPanel();
+  void showContent();
+  void hideContent();
+  bool isContentVisible() const;
 
   FileExplorerWidget* fileExplorer() const;
   HardwareTreeWidget* hardwareTree() const;
@@ -39,15 +37,8 @@ class SidebarWidget : public QWidget {
   GitWidget* gitWidget() const;
   TestProgramManagerWidget* testProgramManager() const;
 
- signals:
-  void settingsTriggered();
-  void contentPanelToggled(bool visible);
-
  private:
   void setupUi();
-  QPushButton* createButton(const QString& tooltip,
-                            const QString& darkIconPath,
-                            const QString& lightIconPath);
 
   QStackedWidget* stack_;
   QLabel* title_label_;
@@ -60,8 +51,6 @@ class SidebarWidget : public QWidget {
   TestProgramManagerWidget* test_program_manager_ = nullptr;
 
   QStringList view_titles_;
-  QVector<QPushButton*> buttons_;
-  int active_index_ = 0;
 };
 
 }  // namespace etest::app

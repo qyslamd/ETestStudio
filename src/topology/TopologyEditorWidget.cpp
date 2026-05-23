@@ -48,7 +48,14 @@ TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QFrame(parent) {
   initSignals();
 }
 
-TopologyEditorWidget::~TopologyEditorWidget() {}
+TopologyEditorWidget::~TopologyEditorWidget() {
+  // 断开 undoStack 信号，防止在析构过程中触发回调访问已释放的数据
+  if (doc_) {
+    auto* stack = doc_->undoStack();
+    if (stack)
+      stack->disconnect(this);
+  }
+}
 
 // ── IEditor interface ──────────────────────────────────────────
 
