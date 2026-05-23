@@ -1,7 +1,6 @@
 #ifndef ETEST_APP_MAINWINDOW_H_
 #define ETEST_APP_MAINWINDOW_H_
 
-#include <QJsonObject>
 #include <QMainWindow>
 #include <QToolBar>
 #include "DockManager.h"
@@ -39,9 +38,6 @@ class MainWindow : public QMainWindow {
 
   void saveWindowState();
   void restoreWindowState();
-  QJsonObject captureSessionData();
-  void writeSessionFile(const QJsonObject& data);
-  void restoreSession();
 
   void createMenuBar();
   void createStatusBar();

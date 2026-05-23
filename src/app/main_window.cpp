@@ -15,13 +15,10 @@
 #include <QScrollBar>
 #include <QShortcut>
 #include <QSplitter>
-#include <QStandardPaths>
 #include <QStatusBar>
 #include <QToolButton>
 
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+
 
 #include <DockAreaTitleBar.h>
 #include <DockAreaWidget.h>
@@ -74,7 +71,6 @@ MainWindow::MainWindow(QWidget* parent)
       terminal_panel_(nullptr) {
   initUi();
   initSignals();
-  restoreSession();
   updateWindowTitle();
 
   // 加载插件并刷新硬件树
@@ -1212,13 +1208,9 @@ void MainWindow::onGoToLine() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-  // 捕获当前会话状态（文件都还开着，数据完整）
-  QJsonObject sessionData = captureSessionData();
-
   // 尝试关闭所有编辑器文件，如果用户取消则不关闭程序
   if (!editor_manager_->closeAllFiles()) {
     event->ignore();
-    // sessionData 出作用域自动释放
     return;
   }
 
@@ -1228,8 +1220,6 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     projectMgr.closeProject();
   }
 
-  // 确认关闭后才写盘
-  writeSessionFile(sessionData);
   saveWindowState();
   QMainWindow::closeEvent(event);
 }
@@ -1274,271 +1264,6 @@ void MainWindow::restoreWindowState() {
   }
 }
 
-QJsonObject MainWindow::captureSessionData() {
-  QJsonObject root;
-  root["version"] = 1;
-
-  // 当前项目路径
-  auto& projectMgr = etest::core::project::ProjectManager::instance();
-  if (projectMgr.isProjectOpen()) {
-    root["projectPath"] = projectMgr.currentProject()->projectFilePath();
-  }
-
-  // 编辑器状态
-  QJsonObject editorsObj;
-  editorsObj["activeFile"] = editor_manager_->currentFilePath();
-
-  QJsonArray filesArray;
-  for (const QString& path : editor_manager_->openFiles()) {
-    QJsonObject fileObj;
-    fileObj["path"] = path;
-    auto* editor = editor_manager_->editorById(path);
-    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-      int line, col;
-      textEditor->editor()->getCursorPosition(&line, &col);
-      fileObj["cursorLine"] = line;
-      fileObj["cursorColumn"] = col;
-      fileObj["scrollPos"] = textEditor->editor()->verticalScrollBar()->value();
-    }
-    filesArray.append(fileObj);
-  }
-  editorsObj["openFiles"] = filesArray;
-  root["editors"] = editorsObj;
-
-  // 侧边栏状态
-  QJsonObject sidebarObj;
-  sidebarObj["activeTab"] = activity_bar_->activeIndex();
-  sidebarObj["visible"] = sidebar_->isContentVisible();
-  root["sidebar"] = sidebarObj;
-
-  // 面板状态
-  QJsonObject panelObj;
-  panelObj["activeTab"] = bottom_container_->currentPanelIndex();
-  panelObj["visible"] = bottom_container_->isVisible();
-  panelObj["height"] = bottom_container_height_;
-  root["panel"] = panelObj;
-
-  // 辅助侧边栏状态
-  root["auxSidebarVisible"] = aux_sidebar_widget_->isVisible();
-  root["auxSidebarWidth"] = aux_sidebar_width_;
-
-  // 从分割器获取实际的当前尺寸（而非可能过期的成员变量）
-  {
-    auto sizes = v_splitter_->sizes();
-    if (sizes.size() >= 2) {
-      bottom_container_height_ = sizes[1];
-    }
-  }
-  {
-    auto sizes = h_splitter_->sizes();
-    if (sizes.size() >= 3) {
-      aux_sidebar_width_ = sizes[2];
-    }
-  }
-
-  // QADS 布局（必须在编辑器关闭前保存）
-  root["dockLayout"] = QString(dock_manager_->saveState().toBase64());
-
-  // 分割器状态
-  root["hSplitter"] = QString(h_splitter_->saveState().toBase64());
-  root["vSplitter"] = QString(v_splitter_->saveState().toBase64());
-
-  int fileCount = editorsObj["openFiles"].toArray().size();
-  LOG_INFO("SESSION", "会话已捕获：项目={}, 文件={}, 侧边栏tab={}, 面板tab={}",
-           root.contains("projectPath")
-               ? root["projectPath"].toString().toStdString()
-               : "无",
-           fileCount, sidebarObj["activeTab"].toInt(),
-           panelObj["activeTab"].toInt());
-  return root;
-}
-
-void MainWindow::writeSessionFile(const QJsonObject& data) {
-  QString sessionPath =
-      QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
-      "/session.json";
-  QFile file(sessionPath);
-  if (file.open(QIODevice::WriteOnly)) {
-    qint64 bytes = file.write(QJsonDocument(data).toJson());
-    LOG_INFO("SESSION", "会话已写入：{} ({} 字节)", sessionPath.toStdString(),
-             bytes);
-  } else {
-    LOG_WARN("SESSION", "会话写入失败：无法打开 {}", sessionPath.toStdString());
-  }
-}
-
-void MainWindow::restoreSession() {
-  QString sessionPath =
-      QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
-      "/session.json";
-  QFile file(sessionPath);
-  if (!file.open(QIODevice::ReadOnly))
-    return;
-
-  QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-  QJsonObject root = doc.object();
-  if (root["version"].toInt() != 1)
-    return;
-
-  // 恢复侧边栏
-  QJsonObject sidebarObj = root["sidebar"].toObject();
-  if (!sidebarObj.isEmpty()) {
-    int tab = sidebarObj["activeTab"].toInt();
-    if (tab >= 0 && tab < sidebar_->pageCount()) {
-      activity_bar_->setActiveIndex(tab);
-      sidebar_->switchPage(tab);
-    } else {
-      activity_bar_->setActiveIndex(0);
-      sidebar_->switchPage(0);
-    }
-    if (sidebarObj.contains("visible") && !sidebarObj["visible"].toBool()) {
-      sidebar_->hideContent();
-    }
-  }
-
-  // 恢复面板
-  QJsonObject panelObj = root["panel"].toObject();
-  if (!panelObj.isEmpty()) {
-    bottom_container_->setCurrentPanel(panelObj["activeTab"].toInt());
-    if (panelObj.contains("visible")) {
-      bool visible = panelObj["visible"].toBool();
-      bottom_container_->setVisible(visible);
-      if (view_panel_action_) {
-        view_panel_action_->setChecked(visible);
-      }
-    }
-    if (panelObj.contains("height")) {
-      bottom_container_height_ = panelObj["height"].toInt();
-    }
-  }
-
-  // 恢复辅助侧边栏
-  if (root.contains("auxSidebarVisible")) {
-    bool visible = root["auxSidebarVisible"].toBool();
-    aux_sidebar_widget_->setVisible(visible);
-    if (view_aux_sidebar_action_) {
-      view_aux_sidebar_action_->setChecked(visible);
-    }
-  }
-  if (root.contains("auxSidebarWidth")) {
-    aux_sidebar_width_ = root["auxSidebarWidth"].toInt();
-  }
-
-  // 恢复项目
-  QString projectPath = root["projectPath"].toString();
-  if (!projectPath.isEmpty() && QFileInfo::exists(projectPath)) {
-    etest::core::project::ProjectManager::instance().openProject(projectPath);
-  }
-
-  // 恢复编辑器（先打开所有文件，最后激活 activeFile）
-  QJsonObject editorsObj = root["editors"].toObject();
-  QJsonArray filesArray = editorsObj["openFiles"].toArray();
-  QString activeFile = editorsObj["activeFile"].toString();
-
-  for (const QJsonValue& val : filesArray) {
-    QJsonObject fileObj = val.toObject();
-    QString path = fileObj["path"].toString();
-    if (path.isEmpty() || !QFileInfo::exists(path))
-      continue;
-    editor_manager_->openFile(path);
-  }
-
-  // 激活之前正在编辑的文件
-  if (!activeFile.isEmpty() && editor_manager_->isOpen(activeFile)) {
-    editor_manager_->openFile(activeFile);
-  }
-
-  // 恢复QADS布局（从会话JSON读取，确保编辑器dock正确摆放）
-  //
-  // 注意：当有编辑器需要恢复时，先临时移除欢迎页再 restoreState，避免
-  // QADS将欢迎页与编辑器dock混合排列。当没有编辑器时，欢迎页已在 initUi
-  // 中正确设置为中央组件，无需移除/重加。
-  auto* centralDock = dock_manager_->findDockWidget("CentralDock");
-  bool hadCentralDock = (centralDock != nullptr);
-  bool hasEditorsToRestore = (filesArray.size() > 0);
-
-  if (hasEditorsToRestore && hadCentralDock) {
-    dock_manager_->removeDockWidget(centralDock);
-  }
-
-  if (root.contains("dockLayout")) {
-    QByteArray dockState = QByteArray::fromBase64(root["dockLayout"].toString().toUtf8());
-    dock_manager_->restoreState(dockState);
-  }
-
-  if (hasEditorsToRestore && hadCentralDock) {
-    dock_manager_->setCentralWidget(centralDock);
-    auto* centralArea = centralDock->dockAreaWidget();
-    if (centralArea) {
-      hideDockTitleBarButtons(centralArea);
-    }
-  }
-
-  // 恢复分割器状态
-  if (root.contains("hSplitter")) {
-    QByteArray hState = QByteArray::fromBase64(root["hSplitter"].toString().toUtf8());
-    h_splitter_->restoreState(hState);
-  }
-  if (root.contains("vSplitter")) {
-    QByteArray vState = QByteArray::fromBase64(root["vSplitter"].toString().toUtf8());
-    v_splitter_->restoreState(vState);
-  }
-
-  // 同步侧边栏/面板/辅助栏的实际尺寸到成员变量，用于后续显隐切换
-  {
-    auto sizes = h_splitter_->sizes();
-    if (!sizes.isEmpty()) sidebar_expanded_width_ = sizes[0];
-    if (sizes.size() >= 3) aux_sidebar_width_ = sizes[2];
-  }
-  {
-    auto sizes = v_splitter_->sizes();
-    if (sizes.size() >= 2) bottom_container_height_ = sizes[1];
-  }
-
-  // 恢复文本编辑器光标位置和滚动位置
-  for (const QJsonValue& val : filesArray) {
-    QJsonObject fileObj = val.toObject();
-    QString path = fileObj["path"].toString();
-    auto* editor = editor_manager_->editorById(path);
-    if (!editor) continue;
-    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-      int line = fileObj["cursorLine"].toInt();
-      int col = fileObj["cursorColumn"].toInt();
-      int scrollPos = fileObj["scrollPos"].toInt();
-
-      int maxLine = textEditor->editor()->lines() - 1;
-      if (line > maxLine)
-        line = maxLine;
-      if (line < 0)
-        line = 0;
-
-      int maxCol = textEditor->editor()->text(line).length();
-      if (col > maxCol)
-        col = maxCol;
-      if (col < 0)
-        col = 0;
-
-      textEditor->editor()->setCursorPosition(line, col);
-
-      int maxScroll = textEditor->editor()->verticalScrollBar()->maximum();
-      if (scrollPos > maxScroll)
-        scrollPos = maxScroll;
-      if (scrollPos < 0)
-        scrollPos = 0;
-      textEditor->editor()->verticalScrollBar()->setValue(scrollPos);
-    }
-  }
-
-  int restoredCount = filesArray.size();
-  int skippedCount = 0;
-  for (const QJsonValue& val : filesArray) {
-    if (!QFileInfo::exists(val.toObject()["path"].toString()))
-      skippedCount++;
-  }
-  LOG_INFO("SESSION", "会话恢复完成：文件={}, 跳过={}, 项目={}",
-           restoredCount - skippedCount, skippedCount,
-           projectPath.isEmpty() ? "无" : projectPath.toStdString());
-}
 
 void MainWindow::hideDockTitleBarButtons(ads::CDockAreaWidget* area) {
   if (!area)
