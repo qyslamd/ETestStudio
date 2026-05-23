@@ -1,4 +1,4 @@
-#include "SettingsWidget.h"
+#include "dialogs/SettingsDialog.h"
 
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -13,12 +13,12 @@ namespace etest::app {
 
 using namespace core::config;
 
-SettingsWidget::SettingsWidget(QWidget* parent) : QDialog(parent) {
+SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent) {
   initUi();
   initSignals();
 }
 
-void SettingsWidget::initUi() {
+void SettingsDialog::initUi() {
   setWindowTitle(QStringLiteral("设置"));
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
   resize(700, 500);
@@ -75,7 +75,7 @@ void SettingsWidget::initUi() {
   pages_->setCurrentIndex(0);
 }
 
-void SettingsWidget::initSignals() {
+void SettingsDialog::initSignals() {
   // Tree item selection → switch page
   connect(tree_, &QTreeWidget::currentItemChanged, this,
           [this](QTreeWidgetItem* current, QTreeWidgetItem* /*previous*/) {
@@ -87,14 +87,14 @@ void SettingsWidget::initSignals() {
 
   // Config changes from external sources → update controls
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
-          &SettingsWidget::onConfigChanged);
+          &SettingsDialog::onConfigChanged);
 }
 
 // =========================================================================
 // Page creation
 // =========================================================================
 
-QWidget* SettingsWidget::createGeneralPage() {
+QWidget* SettingsDialog::createGeneralPage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
@@ -146,7 +146,7 @@ QWidget* SettingsWidget::createGeneralPage() {
   return page;
 }
 
-QWidget* SettingsWidget::createEditorPage() {
+QWidget* SettingsDialog::createEditorPage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
@@ -168,7 +168,7 @@ QWidget* SettingsWidget::createEditorPage() {
   return page;
 }
 
-QWidget* SettingsWidget::createTerminalPage() {
+QWidget* SettingsDialog::createTerminalPage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
@@ -187,7 +187,7 @@ QWidget* SettingsWidget::createTerminalPage() {
   return page;
 }
 
-QWidget* SettingsWidget::createAppearancePage() {
+QWidget* SettingsDialog::createAppearancePage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
@@ -200,7 +200,7 @@ QWidget* SettingsWidget::createAppearancePage() {
   return page;
 }
 
-QWidget* SettingsWidget::createBackupPage() {
+QWidget* SettingsDialog::createBackupPage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
@@ -231,7 +231,7 @@ QWidget* SettingsWidget::createBackupPage() {
 // Section header
 // =========================================================================
 
-QWidget* SettingsWidget::createSectionHeader(const QString& title) {
+QWidget* SettingsDialog::createSectionHeader(const QString& title) {
   auto* label = new QLabel(title, this);
   label->setObjectName("SettingsSectionHeader");
   return label;
@@ -241,7 +241,7 @@ QWidget* SettingsWidget::createSectionHeader(const QString& title) {
 // Form row creators — each knows its ConfigKey and default value
 // =========================================================================
 
-QSpinBox* SettingsWidget::addSpinBoxRow(QWidget* parent,
+QSpinBox* SettingsDialog::addSpinBoxRow(QWidget* parent,
                                         const QString& label,
                                         const QString& configKey,
                                         int min,
@@ -276,7 +276,7 @@ QSpinBox* SettingsWidget::addSpinBoxRow(QWidget* parent,
   return spin;
 }
 
-QCheckBox* SettingsWidget::addCheckBoxRow(QWidget* parent,
+QCheckBox* SettingsDialog::addCheckBoxRow(QWidget* parent,
                                           const QString& label,
                                           const QString& configKey,
                                           bool defaultVal) {
@@ -303,7 +303,7 @@ QCheckBox* SettingsWidget::addCheckBoxRow(QWidget* parent,
   return cb;
 }
 
-QComboBox* SettingsWidget::addComboBoxRow(QWidget* parent,
+QComboBox* SettingsDialog::addComboBoxRow(QWidget* parent,
                                           const QString& label,
                                           const QString& configKey,
                                           const QStringList& items,
@@ -335,7 +335,7 @@ QComboBox* SettingsWidget::addComboBoxRow(QWidget* parent,
   return combo;
 }
 
-QPushButton* SettingsWidget::addButtonRow(QWidget* parent,
+QPushButton* SettingsDialog::addButtonRow(QWidget* parent,
                                           const QString& label,
                                           const QString& text) {
   auto* row = new QWidget(parent);
@@ -363,25 +363,25 @@ QPushButton* SettingsWidget::addButtonRow(QWidget* parent,
 // Bidirectional binding: control → config and config → control
 // =========================================================================
 
-void SettingsWidget::spinBoxToConfig(const QString& key, QSpinBox* spin) {
+void SettingsDialog::spinBoxToConfig(const QString& key, QSpinBox* spin) {
   connect(spin, QOverload<int>::of(&QSpinBox::valueChanged), this,
           [key](int val) { ConfigManager::instance().set<int>(key, val); });
 }
 
-void SettingsWidget::checkBoxToConfig(const QString& key, QCheckBox* cb) {
+void SettingsDialog::checkBoxToConfig(const QString& key, QCheckBox* cb) {
   connect(cb, &QCheckBox::toggled, this, [key](bool checked) {
     ConfigManager::instance().set<bool>(key, checked);
   });
 }
 
-void SettingsWidget::comboBoxToConfig(const QString& key, QComboBox* combo) {
+void SettingsDialog::comboBoxToConfig(const QString& key, QComboBox* combo) {
   connect(combo, &QComboBox::currentTextChanged, this,
           [key](const QString& text) {
             ConfigManager::instance().set<QString>(key, text);
           });
 }
 
-void SettingsWidget::onConfigChanged(const QString& key) {
+void SettingsDialog::onConfigChanged(const QString& key) {
   // Suppress re-entrant updates: config changes triggered by our own controls
   // would otherwise cause infinite loops
   if (spin_map_.contains(key)) {

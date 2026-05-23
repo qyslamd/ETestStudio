@@ -1,5 +1,5 @@
-#ifndef ETEST_APP_SETTINGS_WIDGET_H_
-#define ETEST_APP_SETTINGS_WIDGET_H_
+#ifndef ETEST_APP_DIALOGS_SETTINGSDIALOG_H_
+#define ETEST_APP_DIALOGS_SETTINGSDIALOG_H_
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -13,11 +13,11 @@
 
 namespace etest::app {
 
-class SettingsWidget : public QDialog {
+class SettingsDialog : public QDialog {
   Q_OBJECT
 
  public:
-  explicit SettingsWidget(QWidget* parent = nullptr);
+  explicit SettingsDialog(QWidget* parent = nullptr);
 
  private:
   void initUi();
@@ -72,4 +72,4 @@ class SettingsWidget : public QDialog {
 
 }  // namespace etest::app
 
-#endif  // ETEST_APP_SETTINGS_WIDGET_H_
+#endif  // ETEST_APP_DIALOGS_SETTINGSDIALOG_H_
