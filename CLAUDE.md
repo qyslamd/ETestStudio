@@ -97,4 +97,4 @@ format_code.bat
 
 ## 其它注意事项
  - Qt使用的SDK是 5.12.12 msvc2017_64，但是我并未使用MSVC2017的环境，实际测试下来 MSVC2019编译环境完全兼容 MSVC2017
- - **禁止在bash终端中直接执行构建命令**（如 `scripts/build_ninja.bat` 或 `ninja`）。Claude Code的bash终端环境会引入GNU环境变量（如MSYSTEM），导致libpng等跨平台库的CMake配置误判为GNU/MSYS环境而非MSVC，从而编译失败。构建必须由用户在Windows CMD或Developer Command Prompt中手动执行。
+ - 可以直接在终端中执行 `scripts/build_ninja.bat` 构建项目。libpng 的 MSYS 环境兼容性问题已通过 `cmake/libpng/patch_msys_env.cmake` 补丁解决。

@@ -73,6 +73,7 @@ add_subdirectory(3rdparty/zlib-1.3.2)
 # libpng PNG库
 # 应用libpng CMake补丁
 include(cmake/libpng/patch_cmake_version.cmake)
+include(cmake/libpng/patch_msys_env.cmake)
 # 由于使用我们自行编译的zlib，它生成的静态库目标是 ZLIB::ZLIBSTATIC 是目标 zlibstatic的别名，
 # 而不是 ZLIB::ZLIB 这个名字，因此 libpng 的 CMakeLists.txt 中找不到 ZLIB::ZLIB 这个目标。
 # 因此，这里将这个目标改个名字，让libpng能够找到并链接到它
@@ -90,6 +91,7 @@ set(PNG_TESTS OFF CACHE BOOL "Do not build libpng tests" FORCE)
 # 让libpng使用我们自己的zlib目标
 set(ZLIB_FOUND TRUE CACHE BOOL "ZLIB found" FORCE)
 set(ZLIB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/zlib-1.3.2" CACHE PATH "ZLIB include dir" FORCE)
+set(ZLIB_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/3rdparty/zlib-1.3.2" CACHE PATH "ZLIB include dirs" FORCE)
 set(ZLIB_LIBRARY ZLIB::ZLIBSTATIC CACHE FILEPATH "ZLIB library" FORCE)
 
 add_subdirectory(3rdparty/libpng-1.6.43)
@@ -115,6 +117,7 @@ add_subdirectory(3rdparty/lua-5.4.4)
 # 让libharu找到我们自己的zlib和libpng
 set(ZLIB_FOUND TRUE CACHE BOOL "ZLIB found" FORCE)
 set(ZLIB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/3rdparty/zlib-1.3.2" CACHE PATH "ZLIB include dir" FORCE)
+set(ZLIB_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/3rdparty/zlib-1.3.2" CACHE PATH "ZLIB include dirs" FORCE)
 set(ZLIB_LIBRARY zlibstatic CACHE FILEPATH "ZLIB library" FORCE)
 set(PNG_FOUND TRUE CACHE BOOL "PNG found" FORCE)
 set(PNG_PNG_INCLUDE_DIR 
