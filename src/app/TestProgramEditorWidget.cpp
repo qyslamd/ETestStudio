@@ -183,6 +183,7 @@ void TestProgramEditorWidget::onAddStep() {
   table->setRowCount(row + 1);
 
   // 批量插入默认值，block 信号避免每个 setItem 都触发 cellChanged
+  bool wasBlocked = table->signalsBlocked();
   table->blockSignals(true);
   table->setItem(row, 0, new QTableWidgetItem(QString()));
   table->setItem(row, 1, new QTableWidgetItem(QStringLiteral("SET")));
@@ -190,7 +191,7 @@ void TestProgramEditorWidget::onAddStep() {
   table->setItem(row, 3, new QTableWidgetItem(QString()));
   table->setItem(row, 4, new QTableWidgetItem(QStringLiteral("0")));
   table->setItem(row, 5, new QTableWidgetItem(QStringLiteral("5000")));
-  table->blockSignals(false);
+  table->blockSignals(wasBlocked);
 
   saveSnapshot();
   setModified(true);
@@ -222,6 +223,11 @@ void TestProgramEditorWidget::saveSnapshot() {
   while (snapshots_.size() > kMaxSnapshots) {
     snapshots_.removeFirst();
     snapshot_index_--;
+    if (clean_snapshot_index_ > 0) {
+      clean_snapshot_index_--;
+    } else if (clean_snapshot_index_ == 0) {
+      clean_snapshot_index_ = -1;
+    }
   }
 }
 
@@ -345,10 +351,7 @@ bool TestProgramEditorWidget::saveFile(const QString& path) {
     return false;
   }
 
-  // 保存后重置快照栈，将当前状态作为新的基底
-  snapshots_.clear();
-  snapshot_index_ = -1;
-  saveSnapshot();
+  // 保存后将当前状态标记为干净
   clean_snapshot_index_ = snapshot_index_;
 
   modified_ = false;

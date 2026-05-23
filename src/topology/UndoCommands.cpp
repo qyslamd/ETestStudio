@@ -360,6 +360,30 @@ void RemoveMonitorCommand::redo() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  RemoveDevicePortCommand
+// ═══════════════════════════════════════════════════════════════
+
+RemoveDevicePortCommand::RemoveDevicePortCommand(TopologyDocument* doc,
+                                                 int deviceIndex, int portIndex,
+                                                 QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), device_index_(deviceIndex),
+      port_index_(portIndex) {
+  const auto* dev = doc_->device(deviceIndex);
+  if (dev && portIndex >= 0 && portIndex < dev->ports.size()) {
+    port_ = dev->ports[portIndex];
+  }
+  setText(QStringLiteral("删除设备端口"));
+}
+
+void RemoveDevicePortCommand::undo() {
+  doc_->addDevicePort(device_index_, port_);
+}
+
+void RemoveDevicePortCommand::redo() {
+  doc_->removeDevicePort(device_index_, port_index_);
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  TapConnectionCommand
 // ═══════════════════════════════════════════════════════════════
 

@@ -14,11 +14,15 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     Qt5::Widgets
     Qt5::Core
     Qt5::Gui
+    core
+    spdlog::spdlog
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/app
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/3rdparty/spdlog-1.17.0/include
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES

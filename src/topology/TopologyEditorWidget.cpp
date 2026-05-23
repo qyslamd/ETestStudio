@@ -693,8 +693,8 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
     doc_->undoStack()->push(cmd);
     status_label_->setText(QStringLiteral("已删除监听器"));
   } else if (auto* devPort = qgraphicsitem_cast<DevicePortItem*>(item)) {
-    doc_->removeDevicePort(devPort->deviceIndex(), devPort->portIndex());
-    onDocumentChanged();
+    doc_->undoStack()->push(new RemoveDevicePortCommand(
+        doc_, devPort->deviceIndex(), devPort->portIndex()));
     status_label_->setText(QStringLiteral("已删除设备端口"));
   } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
     auto* src = conn->sourcePort();

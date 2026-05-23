@@ -123,7 +123,7 @@ void TextEditorWidget::setFilePath(const QString& newPath) {
 
 bool TextEditorWidget::loadFile() {
   QFile file(file_path_);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+  if (!file.open(QIODevice::ReadOnly)) {
     return false;
   }
   QTextStream in(&file);
@@ -137,7 +137,7 @@ bool TextEditorWidget::saveFile() {
   if (file_path_.isEmpty())
     return false;
   QFile file(file_path_);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+  if (!file.open(QIODevice::WriteOnly)) {
     return false;
   }
   QTextStream out(&file);
@@ -242,6 +242,13 @@ void TextEditorWidget::setupEditor() {
 }
 
 void TextEditorWidget::applyLexer(const QString& suffix) {
+  // 删除旧的 lexer 防止内存泄漏
+  QsciLexer* oldLexer = editor_->lexer();
+  if (oldLexer) {
+    editor_->setLexer(nullptr);
+    delete oldLexer;
+  }
+
   QsciLexer* lexer = nullptr;
 
   if (suffix == "cpp" || suffix == "h" || suffix == "c" || suffix == "hpp" ||

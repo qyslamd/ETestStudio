@@ -8,6 +8,7 @@
 #include <QComboBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QJsonDocument>
 #include <QLabel>
 #include <QMessageBox>
 #include <QSplitter>
@@ -35,6 +36,7 @@ icd::ValueType valueTypeFromString(const std::string& s) {
   if (s == "bytes")   return icd::ValueType::bytes;
   if (s == "uint16")  return icd::ValueType::word;
   if (s == "int16")   return icd::ValueType::shortint;
+  if (s == "smallint") return icd::ValueType::smallint;
   if (s == "uint32")  return icd::ValueType::longword;
   if (s == "int32")   return icd::ValueType::integer;
   if (s == "uint64")  return icd::ValueType::ulong_;
@@ -56,6 +58,62 @@ icd::FrameType frameTypeFromString(const std::string& s) {
 icd::ByteOrder byteOrderFromString(const std::string& s) {
   return (s == "bigEndian") ? icd::ByteOrder::big_endian
                             : icd::ByteOrder::little_endian;
+}
+
+// ── ValueType enum → string ──────────────────────────────────
+std::string valueTypeToString(icd::ValueType vt) {
+  switch (vt) {
+  case icd::ValueType::boolean:  return "boolean";
+  case icd::ValueType::byte_:    return "uint8";
+  case icd::ValueType::bytes:    return "bytes";
+  case icd::ValueType::word:     return "uint16";
+  case icd::ValueType::shortint: return "int16";
+  case icd::ValueType::smallint: return "smallint";
+  case icd::ValueType::longword: return "uint32";
+  case icd::ValueType::integer:  return "int32";
+  case icd::ValueType::ulong_:   return "uint64";
+  case icd::ValueType::single:   return "float";
+  case icd::ValueType::double_:  return "double";
+  case icd::ValueType::string_:  return "string";
+  case icd::ValueType::unknown:  return "unknown";
+  }
+  return "unknown";
+}
+
+// ── Recursive node JSON serializer ──────────────────────────
+json serializeNode(const icd::Node& n) {
+  json obj;
+  obj["name"]        = std::string(n.name());
+  obj["description"] = std::string(n.description());
+  obj["offset"]      = n.offset();
+  obj["startBit"]    = n.bit_offset();
+  obj["bitWidth"]    = n.bit_width();
+  obj["valueType"]   = valueTypeToString(n.value_type());
+  obj["tag"]         = static_cast<int>(n.tag());
+
+  json attrs_obj;
+  const auto& a = n.attrs();
+  attrs_obj["systemName"]    = a.system_name;
+  attrs_obj["groupName"]     = a.group_name;
+  attrs_obj["unit"]          = a.unit;
+  attrs_obj["valueTextList"] = a.value_text_list;
+  attrs_obj["scaleFormula"]  = a.scale_formula;
+  attrs_obj["scaleConveror"] = a.scale_convertor;
+  attrs_obj["linkTo"]        = a.link_to;
+  attrs_obj["isScaled"]      = a.is_scaled;
+  if (a.scale_a.has_value()) attrs_obj["scaleA"] = *a.scale_a;
+  if (a.scale_b.has_value()) attrs_obj["scaleB"] = *a.scale_b;
+  if (a.min.has_value())     attrs_obj["min"]    = *a.min;
+  if (a.max.has_value())     attrs_obj["max"]    = *a.max;
+  obj["attrs"] = std::move(attrs_obj);
+
+  if (!n.children().empty()) {
+    json children = json::array();
+    for (const auto& child : n.children())
+      children.push_back(serializeNode(*child));
+    obj["children"] = std::move(children);
+  }
+  return obj;
 }
 
 // ── Recursive node JSON parser ───────────────────────────────
@@ -173,16 +231,29 @@ QString ProtocalEditorWidget::editorType() const {
 
 QObject* ProtocalEditorWidget::signalObject() { return this; }
 
-bool ProtocalEditorWidget::canUndo() const { return false; }
-bool ProtocalEditorWidget::canRedo() const { return false; }
-void ProtocalEditorWidget::undo() {}
-void ProtocalEditorWidget::redo() {}
+bool ProtocalEditorWidget::canUndo() const { return snapshot_index_ > 0; }
+bool ProtocalEditorWidget::canRedo() const { return snapshot_index_ < snapshots_.size() - 1; }
+void ProtocalEditorWidget::undo() {
+  if (!canUndo()) return;
+  --snapshot_index_;
+  restoreSnapshot(snapshots_[snapshot_index_]);
+  emit modificationChanged(modified_);
+}
+void ProtocalEditorWidget::redo() {
+  if (!canRedo()) return;
+  ++snapshot_index_;
+  restoreSnapshot(snapshots_[snapshot_index_]);
+  emit modificationChanged(modified_);
+}
 
 void ProtocalEditorWidget::setEditorId(const QString& id) {
   if (id == current_file_) return;
   current_file_ = id;
   if (QFileInfo::exists(id)) {
-    loadEproto(id);
+    if (!loadEproto(id)) {
+      QMessageBox::warning(this, QStringLiteral("加载失败"),
+          QStringLiteral("无法加载协议文件: %1").arg(id));
+    }
   }
 }
 
@@ -227,6 +298,7 @@ bool ProtocalEditorWidget::loadEproto(const QString& path) {
     setCurrentFrame(repo_.frames()[0].get());
   }
 
+  saveSnapshot();
   return true;
 }
 
@@ -300,7 +372,7 @@ bool ProtocalEditorWidget::saveEproto(const QString& path) {
         case icd::ValueType::bytes:    return "bytes";
         case icd::ValueType::word:     return "uint16";
         case icd::ValueType::shortint: return "int16";
-        case icd::ValueType::smallint: return "int16";
+        case icd::ValueType::smallint: return "smallint";
         case icd::ValueType::longword: return "uint32";
         case icd::ValueType::integer:  return "int32";
         case icd::ValueType::ulong_:   return "uint64";
@@ -438,7 +510,7 @@ void ProtocalEditorWidget::initSignals() {
   connect(node_tree_, &IcdNodeTreeWidget::nodeSelected,
           this, [this](const icd::Node* node) {
     if (node) {
-      property_panel_->showNode(*node);
+      property_panel_->showNode(const_cast<icd::Node&>(*node));
       bit_view_->highlightBlock(
           QString::fromStdString(std::string(node->name())));
       status_label_->setText(
@@ -456,7 +528,7 @@ void ProtocalEditorWidget::initSignals() {
     if (!current_frame_) return;
     const auto* node = current_frame_->find(name.toStdString());
     if (node) {
-      property_panel_->showNode(*node);
+      property_panel_->showNode(const_cast<icd::Node&>(*node));
       status_label_->setText(
           QStringLiteral("Node: %1  |  Offset: %2  |  Bit: %3~%4")
               .arg(QString::fromStdString(std::string(node->name())))
@@ -479,7 +551,7 @@ void ProtocalEditorWidget::initSignals() {
   // New frame
   connect(new_frame_btn_, &QToolButton::clicked,
           this, [this]() {
-    static int next_id = 1;
+    saveSnapshot();
     // Find max existing id
     int max_id = 0;
     for (const auto& f : repo_.frames()) {
@@ -502,9 +574,10 @@ void ProtocalEditorWidget::initSignals() {
   connect(delete_frame_btn_, &QToolButton::clicked,
           this, [this]() {
     if (!current_frame_) return;
+    saveSnapshot();
     int id = current_frame_->id();
+    setCurrentFrame(nullptr);
     if (repo_.remove_frame(id)) {
-      setCurrentFrame(nullptr);
       populateFrames();
       if (!repo_.frames().empty())
         setCurrentFrame(repo_.frames()[0].get());
@@ -517,6 +590,7 @@ void ProtocalEditorWidget::initSignals() {
   connect(frame_type_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this](int index) {
     if (!current_frame_) return;
+    saveSnapshot();
     icd::FrameType new_type;
     switch (index) {
     case 0: new_type = icd::FrameType::cmd; break;
@@ -532,10 +606,101 @@ void ProtocalEditorWidget::initSignals() {
   connect(byte_order_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this](int index) {
     if (!current_frame_) return;
+    saveSnapshot();
     auto order = (index == 0) ? icd::ByteOrder::little_endian
                               : icd::ByteOrder::big_endian;
     const_cast<icd::Frame*>(current_frame_)->setOrder(order);
     setModified(true);
+  });
+
+  // ── Context-menu from tree widget ──────────────────────────
+  connect(node_tree_, &IcdNodeTreeWidget::addFrameRequested,
+          this, [this]() {
+    saveSnapshot();
+    int max_id = 0;
+    for (const auto& f : repo_.frames()) {
+      if (f->id() > max_id) max_id = f->id();
+    }
+    int new_id = max_id + 1;
+    auto name = "Frame_" + std::to_string(new_id);
+    auto frame = std::make_unique<icd::Frame>(
+        new_id, name, "", icd::FrameType::data,
+        icd::ByteOrder::little_endian);
+    auto* frame_ptr = frame.get();
+    repo_.add_frame(std::move(frame));
+    populateFrames();
+    setCurrentFrame(frame_ptr);
+    setModified(true);
+  });
+
+  connect(node_tree_, &IcdNodeTreeWidget::deleteFrameRequested,
+          this, [this](int frameId) {
+    saveSnapshot();
+    if (current_frame_ && current_frame_->id() == frameId) {
+      setCurrentFrame(nullptr);
+    }
+    if (repo_.remove_frame(frameId)) {
+      populateFrames();
+      if (!repo_.frames().empty())
+        setCurrentFrame(repo_.frames()[0].get());
+      setModified(true);
+    }
+  });
+
+  connect(node_tree_, &IcdNodeTreeWidget::addNodeRequested,
+          this, [this](int frameId) {
+    saveSnapshot();
+    for (const auto& frame_ptr : repo_.frames()) {
+      if (frame_ptr->id() == frameId) {
+        auto* frame = const_cast<icd::Frame*>(frame_ptr.get());
+        auto node = std::make_unique<icd::Node>(
+            "NewNode", "", 0, 0, 8,
+            icd::ValueType::byte_, icd::Tag::none, icd::NodeAttrs{});
+        frame->add_root(std::move(node));
+        populateFrames();
+        setCurrentFrame(frame);
+        setModified(true);
+        break;
+      }
+    }
+  });
+
+  connect(node_tree_, &IcdNodeTreeWidget::deleteNodeRequested,
+          this, [this](int frameId, const icd::Node* node) {
+    if (!node) return;
+    saveSnapshot();
+    for (const auto& frame_ptr : repo_.frames()) {
+      if (frame_ptr->id() != frameId) continue;
+      auto* frame = const_cast<icd::Frame*>(frame_ptr.get());
+
+      // Check root nodes
+      const auto& roots = frame->roots();
+      for (std::size_t i = 0; i < roots.size(); ++i) {
+        if (roots[i].get() == node) {
+          frame->remove_root(i);
+          populateFrames();
+          setCurrentFrame(frame);
+          setModified(true);
+          return;
+        }
+      }
+
+      // Check child nodes
+      for (auto* n : frame->nodes()) {
+        if (n == node) continue;
+        const auto& children = n->children();
+        for (std::size_t i = 0; i < children.size(); ++i) {
+          if (children[i].get() == node) {
+            n->remove_child(i);
+            populateFrames();
+            setCurrentFrame(frame);
+            setModified(true);
+            return;
+          }
+        }
+      }
+      break;
+    }
   });
 }
 
@@ -609,6 +774,92 @@ void ProtocalEditorWidget::clearAll() {
   bit_view_->clearBlocks();
   property_panel_->clear();
   updateToolbar();
+  snapshots_.clear();
+  snapshot_index_ = -1;
+}
+
+// ── Snapshot (undo/redo) ──────────────────────────────────────
+void ProtocalEditorWidget::saveSnapshot() {
+  json document;
+  document["version"] = "1.0";
+
+  json frames = json::array();
+  for (const auto& f : repo_.frames()) {
+    json frame_obj;
+    frame_obj["id"] = f->id();
+    frame_obj["name"] = std::string(f->name());
+    frame_obj["description"] = std::string(f->description());
+
+    switch (f->type()) {
+    case icd::FrameType::cmd:      frame_obj["type"] = "cmd";     break;
+    case icd::FrameType::data:     frame_obj["type"] = "data";    break;
+    case icd::FrameType::data_cmd: frame_obj["type"] = "dataCfg"; break;
+    }
+
+    frame_obj["byteOrder"] = (f->order() == icd::ByteOrder::little_endian)
+                                 ? "littleEndian" : "bigEndian";
+    frame_obj["length"] = calcFrameLength(*f);
+
+    json nodes = json::array();
+    for (const auto& root : f->roots())
+      nodes.push_back(serializeNode(*root));
+    frame_obj["nodes"] = std::move(nodes);
+
+    frames.push_back(std::move(frame_obj));
+  }
+  document["frames"] = std::move(frames);
+
+  // Convert nlohmann::json → QJsonObject
+  QString jsonStr = QString::fromStdString(document.dump());
+  QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8());
+
+  // Truncate redo history
+  if (snapshot_index_ < snapshots_.size() - 1) {
+    snapshots_.resize(snapshot_index_ + 1);
+  }
+
+  snapshots_.append(doc.object());
+  snapshot_index_ = snapshots_.size() - 1;
+}
+
+void ProtocalEditorWidget::restoreSnapshot(const QJsonObject& obj) {
+  QJsonDocument doc(obj);
+  QString jsonStr = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
+
+  json document = json::parse(jsonStr.toStdString());
+
+  current_frame_ = nullptr;
+  repo_ = icd::Repository();
+
+  if (auto it = document.find("frames"); it != document.end() && it->is_array()) {
+    for (const auto& frame_json : *it) {
+      int id = frame_json.value("id", 0);
+      std::string name = frame_json.value("name", std::string());
+      std::string desc = frame_json.value("description", std::string());
+      auto type = frameTypeFromString(frame_json.value("type", std::string("data")));
+      auto order = byteOrderFromString(frame_json.value("byteOrder", std::string("littleEndian")));
+
+      auto frame = std::make_unique<icd::Frame>(id, name, desc, type, order);
+
+      if (auto nodes_it = frame_json.find("nodes"); nodes_it != frame_json.end() && nodes_it->is_array()) {
+        for (const auto& node_json : *nodes_it) {
+          frame->add_root(parseNode(node_json));
+        }
+      }
+
+      repo_.add_frame(std::move(frame));
+    }
+  }
+
+  populateFrames();
+
+  if (!repo_.frames().empty()) {
+    setCurrentFrame(repo_.frames()[0].get());
+  } else {
+    bit_view_->clearBlocks();
+    property_panel_->clear();
+    updateToolbar();
+  }
 }
 
 // ── Modified flag ────────────────────────────────────────────

@@ -55,6 +55,8 @@ ValueType parse_value_type(std::string_view type) noexcept {
     if (type == "double") return ValueType::double_;
     if (type == "string") return ValueType::string_;
     if (type == "int") return ValueType::integer;
+    if (type == "int16") return ValueType::shortint;
+    if (type == "smallint") return ValueType::smallint;
     return ValueType::unknown;
 }
 

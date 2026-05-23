@@ -357,7 +357,7 @@ void IcdPropertyPanel::clearForm() {
 // Public API: populate form from an icd::Node  (with editing support)
 // ===========================================================================
 
-void IcdPropertyPanel::showNode(const icd::Node& node) {
+void IcdPropertyPanel::showNode(icd::Node& node) {
   clearForm();
   current_node_ = &node;
 
@@ -412,7 +412,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
   // Name
   cn(edit_name_, &QLineEdit::editingFinished, [this]() {
     if (current_node_) {
-      const_cast<icd::Node*>(current_node_)
+      current_node_
           ->setName(edit_name_->text().toStdString());
       emit nodeModified();
     }
@@ -420,7 +420,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
   // Description
   cn(edit_desc_, &QLineEdit::editingFinished, [this]() {
     if (current_node_) {
-      const_cast<icd::Node*>(current_node_)
+      current_node_
           ->setDescription(edit_desc_->text().toStdString());
       emit nodeModified();
     }
@@ -429,21 +429,21 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
   // Offset
   cn(spin_offset_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
     if (current_node_) {
-      const_cast<icd::Node*>(current_node_)->setOffset(val);
+      current_node_->setOffset(val);
       emit nodeModified();
     }
   });
   // Start bit
   cn(spin_start_bit_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
     if (current_node_) {
-      const_cast<icd::Node*>(current_node_)->setBitOffset(val);
+      current_node_->setBitOffset(val);
       emit nodeModified();
     }
   });
   // Bit width
   cn(spin_bit_width_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
     if (current_node_) {
-      const_cast<icd::Node*>(current_node_)->setBitWidth(val);
+      current_node_->setBitWidth(val);
       emit nodeModified();
     }
   });
@@ -451,7 +451,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
   // Value type combo
   cn(combo_type_, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int /*idx*/) {
     if (current_node_) {
-      const_cast<icd::Node*>(current_node_)
+      current_node_
           ->setValueType(valueTypeFromName(combo_type_->currentText()));
       emit nodeModified();
     }
@@ -459,7 +459,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
   // Tag combo
   cn(combo_tag_, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int /*idx*/) {
     if (current_node_) {
-      const_cast<icd::Node*>(current_node_)
+      current_node_
           ->setTag(tagFromName(combo_tag_->currentText()));
       emit nodeModified();
     }
@@ -470,7 +470,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.is_scaled = checked;
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -480,7 +480,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
        if (current_node_) {
          auto a = current_node_->attrs();
          a.scale_a = static_cast<float>(val);
-         const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+         current_node_->setAttrs(std::move(a));
          emit nodeModified();
        }
      });
@@ -490,7 +490,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
        if (current_node_) {
          auto a = current_node_->attrs();
          a.scale_b = static_cast<float>(val);
-         const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+         current_node_->setAttrs(std::move(a));
          emit nodeModified();
        }
      });
@@ -500,7 +500,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.unit = edit_unit_->text().toStdString();
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -509,7 +509,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.scale_formula = edit_scale_formula_->text().toStdString();
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -518,7 +518,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.scale_convertor = edit_scale_convertor_->text().toStdString();
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -528,7 +528,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.system_name = edit_system_->text().toStdString();
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -537,7 +537,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.group_name = edit_group_->text().toStdString();
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -546,7 +546,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.min = static_cast<float>(val);
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -555,7 +555,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.max = static_cast<float>(val);
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -564,7 +564,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.value_text_list = edit_value_text_->text().toStdString();
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -573,7 +573,7 @@ void IcdPropertyPanel::showNode(const icd::Node& node) {
     if (current_node_) {
       auto a = current_node_->attrs();
       a.link_to = edit_link_to_->text().toStdString();
-      const_cast<icd::Node*>(current_node_)->setAttrs(std::move(a));
+      current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
@@ -592,8 +592,11 @@ void IcdPropertyPanel::showFrame(const icd::Frame& frame) {
 
   // ---- Populate frame-specific fields ----
   spin_frame_id_->setValue(frame.id());
+  spin_frame_id_->setReadOnly(true);
   combo_frame_type_->setCurrentIndex(frameTypeIndex(frame.type()));
+  combo_frame_type_->setEnabled(false);
   combo_byte_order_->setCurrentIndex(byteOrderIndex(frame.order()));
+  combo_byte_order_->setEnabled(false);
 
   // ---- Show only frame-relevant groups ----
   basic_group_->show();

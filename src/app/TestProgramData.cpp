@@ -1,8 +1,11 @@
 #include "TestProgramData.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+
+#include "logger/Logger.h"
 
 namespace etest::app {
 
@@ -133,6 +136,7 @@ bool saveTestProgram(const QString& filePath, const TestProgramData& suite) {
 TestProgramData loadTestProgram(const QString& filePath) {
   QFile file(filePath);
   if (!file.open(QIODevice::ReadOnly)) {
+    LOG_ERROR("TP", "无法打开文件: {}", filePath.toStdString());
     return TestProgramData{};
   }
 
@@ -140,7 +144,14 @@ TestProgramData loadTestProgram(const QString& filePath) {
   QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &err);
   file.close();
 
-  if (err.error != QJsonParseError::NoError || !doc.isObject()) {
+  if (err.error != QJsonParseError::NoError) {
+    LOG_ERROR("TP", "JSON解析失败 ({}): {}",
+              filePath.toStdString(), err.errorString().toStdString());
+    return TestProgramData{};
+  }
+
+  if (!doc.isObject()) {
+    LOG_ERROR("TP", "JSON根节点不是对象: {}", filePath.toStdString());
     return TestProgramData{};
   }
 

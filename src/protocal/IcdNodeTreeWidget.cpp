@@ -1,9 +1,11 @@
 #include "IcdNodeTreeWidget.h"
 
+#include <QAction>
 #include <QHeaderView>
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QTreeView>
@@ -128,8 +130,12 @@ void IcdNodeTreeWidget::initUi() {
     tree_view_->setIndentation(16);
     tree_view_->setExpandsOnDoubleClick(true);
     tree_view_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    tree_view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
     model_ = new QStandardItemModel(this);
+
+    connect(tree_view_, &QTreeView::customContextMenuRequested,
+            this, &IcdNodeTreeWidget::onContextMenu);
 
     layout->addWidget(header);
     layout->addWidget(filter_input_);
@@ -252,6 +258,64 @@ QStandardItem* IcdNodeTreeWidget::createNodeItem(const icd::Node& node) {
     }
 
     return item;
+}
+
+// ---------------------------------------------------------------------------
+// Context menu
+// ---------------------------------------------------------------------------
+void IcdNodeTreeWidget::onContextMenu(const QPoint& pos) {
+    QModelIndex index = tree_view_->indexAt(pos);
+    QMenu menu;
+
+    if (!index.isValid()) {
+        // Clicked on empty space
+        auto* action = menu.addAction(QStringLiteral("添加帧"));
+        connect(action, &QAction::triggered,
+                this, &IcdNodeTreeWidget::addFrameRequested);
+    } else {
+        auto* item = model_->itemFromIndex(index);
+        if (!item) return;
+
+        if (!item->parent()) {
+            // Frame-level item
+            auto* frame = variantToPtr<icd::Frame>(item->data(PtrRole));
+            if (!frame) return;
+
+            auto* addAction = menu.addAction(QStringLiteral("添加节点"));
+            connect(addAction, &QAction::triggered, this, [this, frame]() {
+                emit addNodeRequested(frame->id());
+            });
+
+            menu.addSeparator();
+
+            auto* delAction = menu.addAction(QStringLiteral("删除帧"));
+            connect(delAction, &QAction::triggered, this, [this, frame]() {
+                emit deleteFrameRequested(frame->id());
+            });
+        } else {
+            // Node-level item
+            auto* node = variantToPtr<icd::Node>(item->data(PtrRole));
+            if (!node) return;
+
+            auto* parentItem = item->parent();
+            auto* frame = variantToPtr<icd::Frame>(parentItem->data(PtrRole));
+            if (!frame) return;
+
+            auto* addChildAction = menu.addAction(QStringLiteral("添加子节点"));
+            connect(addChildAction, &QAction::triggered, this, [this, frame]() {
+                emit addNodeRequested(frame->id());
+            });
+
+            menu.addSeparator();
+
+            auto* delAction = menu.addAction(QStringLiteral("删除节点"));
+            connect(delAction, &QAction::triggered, this, [this, frame, node]() {
+                emit deleteNodeRequested(frame->id(), node);
+            });
+        }
+    }
+
+    menu.exec(tree_view_->viewport()->mapToGlobal(pos));
 }
 
 }  // namespace etest::protocal

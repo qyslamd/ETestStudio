@@ -7,6 +7,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -329,22 +330,57 @@ bool EditorManager::closeFile(const QString& editorId) {
   auto* dock = dock_widgets_.take(editorId);
   editors_.erase(it);
 
-  if (dock) {
-    dock->closeDockWidget();
-  }
-
   if (current_file_path_ == editorId) {
-    if (!editors_.isEmpty()) {
-      current_file_path_ = editors_.firstKey();
-      auto* dock = dock_widgets_[current_file_path_];
-      if (dock) {
-        dock->raise();
+    // 优先激活相邻tab，而非字母序第一个
+    QString nextEditorId;
+    if (dock) {
+      auto* area = dock->dockAreaWidget();
+      if (area) {
+        auto docks = area->dockWidgets();
+        for (int i = 0; i < docks.size(); ++i) {
+          if (docks[i] == dock) {
+            if (i + 1 < docks.size()) {
+              for (auto it = dock_widgets_.constBegin();
+                   it != dock_widgets_.constEnd(); ++it) {
+                if (it.value() == docks[i + 1]) {
+                  nextEditorId = it.key();
+                  break;
+                }
+              }
+            } else if (i > 0) {
+              for (auto it = dock_widgets_.constBegin();
+                   it != dock_widgets_.constEnd(); ++it) {
+                if (it.value() == docks[i - 1]) {
+                  nextEditorId = it.key();
+                  break;
+                }
+              }
+            }
+            break;
+          }
+        }
       }
-      emit currentEditorChanged(editors_.first());
+    }
+
+    if (nextEditorId.isEmpty() && !editors_.isEmpty()) {
+      nextEditorId = editors_.firstKey();
+    }
+
+    if (!nextEditorId.isEmpty()) {
+      current_file_path_ = nextEditorId;
+      auto* nextDock = dock_widgets_[nextEditorId];
+      if (nextDock) {
+        nextDock->raise();
+      }
+      emit currentEditorChanged(editors_.value(nextEditorId));
     } else {
       current_file_path_.clear();
       emit currentEditorChanged(nullptr);
     }
+  }
+
+  if (dock) {
+    dock->closeDockWidget();
   }
 
   LOG_INFO("EDITOR", "关闭编辑器：{}", editorId.toStdString());
@@ -503,6 +539,10 @@ void EditorManager::createEditor(const QString& editorType,
   dock->setWidget(editor->widget());
   dock->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
   dock->setFeature(ads::CDockWidget::CustomCloseHandling, true);
+
+  dock->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(dock, &ads::CDockWidget::customContextMenuRequested, this,
+          &EditorManager::onDockCustomContextMenuRequested);
 
   auto* obj = editor->signalObject();
   if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
@@ -693,9 +733,11 @@ void EditorManager::onFileDeleted(const QString& filePath) {
     }
 
     if (ret == QMessageBox::Save) {
-      if (!editor->saveAs(QString())) {
-        return;
-      }
+      QString newPath = QFileDialog::getSaveFileName(
+          parentWidget, QStringLiteral("保存文件到"),
+          editor->filePath(), QStringLiteral("所有文件 (*)"));
+      if (newPath.isEmpty()) return;
+      if (!editor->saveAs(newPath)) return;
     } else if (ret == QMessageBox::Discard) {
       if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
         textEditor->editor()->setModified(false);
@@ -718,6 +760,15 @@ void EditorManager::onFileRenamed(const QString& oldPath,
 
   if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
     textEditor->setFilePath(newPath);
+  } else if (auto* protocalEditor =
+                 dynamic_cast<etest::protocal::ProtocalEditorWidget*>(editor)) {
+    protocalEditor->setEditorId(newPath);
+  } else if (auto* topoEditor =
+                 dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
+    topoEditor->setEditorId(newPath);
+  } else if (auto* tpEditor =
+                 dynamic_cast<TestProgramEditorWidget*>(editor)) {
+    tpEditor->setEditorId(newPath);
   }
 
   editors_.remove(oldPath);

@@ -166,8 +166,12 @@ void TestProgramManagerWidget::onNewTestProgram() {
 
   name = name.trimmed();
   QString fileName = name + QStringLiteral(".tcase");
-  QString filePath = QDir(rootPath).absoluteFilePath(
-      QStringLiteral("cases") + QStringLiteral("/") + fileName);
+  QString dirPath = QDir(rootPath).absoluteFilePath(QStringLiteral("cases"));
+  QDir casesDir(dirPath);
+  if (!casesDir.exists()) {
+    casesDir.mkpath(".");
+  }
+  QString filePath = casesDir.absoluteFilePath(fileName);
 
   if (QFile::exists(filePath)) {
     QMessageBox::warning(this, QStringLiteral("新建失败"),

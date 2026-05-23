@@ -209,6 +209,21 @@ class RemoveMonitorCommand : public QUndoCommand {
   TopologyMonitor monitor_;
 };
 
+// ── RemoveDevicePortCommand ──
+class RemoveDevicePortCommand : public QUndoCommand {
+ public:
+  RemoveDevicePortCommand(TopologyDocument* doc, int deviceIndex, int portIndex,
+                          QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int device_index_;
+  int port_index_;
+  TopologyDevicePort port_;
+};
+
 // ── TapConnectionCommand ──
 class TapConnectionCommand : public QUndoCommand {
  public:

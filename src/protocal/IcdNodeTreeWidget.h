@@ -28,9 +28,14 @@ class IcdNodeTreeWidget : public QWidget {
  signals:
   void frameSelected(const icd::Frame* frame);
   void nodeSelected(const icd::Node* node);
+  void addFrameRequested();
+  void deleteFrameRequested(int frameId);
+  void addNodeRequested(int frameId);
+  void deleteNodeRequested(int frameId, const icd::Node* node);
 
  private:
   void initUi();
+  void onContextMenu(const QPoint& pos);
   QStandardItem* createFrameItem(const icd::Frame& frame);
   QStandardItem* createNodeItem(const icd::Node& node);
 

@@ -1016,6 +1016,8 @@ void MainWindow::onSaveFileAs() {
     if (!editor->saveAs(newPath)) {
       QMessageBox::warning(this, QStringLiteral("保存失败"),
                            QStringLiteral("无法保存文件：%1").arg(newPath));
+    } else {
+      editor_manager_->updateEditorId(editor, newPath);
     }
   }
 }
@@ -1119,23 +1121,30 @@ void MainWindow::onReplace() {
   bool found = textEditor->editor()->findFirst(searchText, false, false, false,
                                                true, true, line, column, true);
   if (found) {
-    int ret = QMessageBox::question(
-        this, QStringLiteral("替换"), QStringLiteral("替换当前匹配项吗？"),
-        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-    if (ret == QMessageBox::Cancel) {
-      return;
-    } else if (ret == QMessageBox::Yes) {
-      textEditor->editor()->replace(replaceText);
-    }
-
+    int ret = QMessageBox::Yes;
     while (textEditor->editor()->findNext()) {
-      ret = QMessageBox::question(
-          this, QStringLiteral("替换"), QStringLiteral("替换当前匹配项吗？"),
-          QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+      QMessageBox msgBox(this);
+      msgBox.setText(QStringLiteral("替换"));
+      msgBox.setInformativeText(QStringLiteral("替换当前匹配项吗？"));
+      auto* yesAllBtn = msgBox.addButton(QStringLiteral("全部替换"),
+                                         QMessageBox::YesRole);
+      msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No |
+                                QMessageBox::Cancel);
+      msgBox.setDefaultButton(QMessageBox::Yes);
+
+      ret = msgBox.exec();
       if (ret == QMessageBox::Cancel) {
         break;
-      } else if (ret == QMessageBox::Yes) {
+      }
+      if (ret == QMessageBox::Yes ||
+          msgBox.clickedButton() == yesAllBtn) {
         textEditor->editor()->replace(replaceText);
+      }
+      if (msgBox.clickedButton() == yesAllBtn) {
+        while (textEditor->editor()->findNext()) {
+          textEditor->editor()->replaceSelectedText(replaceText);
+        }
+        break;
       }
     }
 
@@ -1226,25 +1235,6 @@ void MainWindow::restoreWindowState() {
     showMaximized();
   }
 
-  QString dockStateStr = cfg.get<QString>(CONFIG_DOCK_LAYOUT);
-  if (!dockStateStr.isEmpty()) {
-    QByteArray dockState = QByteArray::fromBase64(dockStateStr.toUtf8());
-    dock_manager_->restoreState(dockState);
-  }
-
-  // restoreState会重建标题栏，需要重新隐藏固定dock的标题栏
-  if (sidebar_dock_ && sidebar_dock_->dockAreaWidget()) {
-    sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-  }
-  auto* panelDock = dock_manager_->findDockWidget("PanelDock");
-  if (panelDock && panelDock->dockAreaWidget()) {
-    hideDockTitleBarButtons(panelDock->dockAreaWidget());
-  }
-  auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
-  if (auxDock && auxDock->dockAreaWidget()) {
-    hideDockTitleBarButtons(auxDock->dockAreaWidget());
-  }
-
   // 恢复工具栏可见性
   if (file_toolbar_ && edit_toolbar_) {
     bool toolbarVisible =
@@ -1293,7 +1283,6 @@ QJsonObject MainWindow::captureSessionData() {
   } else {
     sidebarObj["activeTab"] = 0;
   }
-  sidebarObj["visible"] = sidebar_dock_ && !sidebar_dock_->isClosed();
   root["sidebar"] = sidebarObj;
 
   // 面板状态
@@ -1302,8 +1291,6 @@ QJsonObject MainWindow::captureSessionData() {
     panelObj["activeTab"] = panel_container_->currentPanelIndex();
     panelObj["maximized"] = panel_container_->isMaximized();
   }
-  auto* panelDock = dock_manager_->findDockWidget("PanelDock");
-  panelObj["visible"] = panelDock && !panelDock->isClosed();
   root["panel"] = panelObj;
 
   int fileCount = editorsObj["openFiles"].toArray().size();
@@ -1354,34 +1341,12 @@ void MainWindow::restoreSession() {
       sidebar_->setActiveIndex(0);
       sidebar_->switchPage(0);
     }
-
-    if (sidebar_dock_) {
-      if (sidebarObj["visible"].toBool(true) && sidebar_dock_->isClosed()) {
-        sidebar_dock_->toggleView(true);
-        if (sidebar_dock_->dockAreaWidget()) {
-          sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-        }
-      } else if (!sidebarObj["visible"].toBool(true) &&
-                 !sidebar_dock_->isClosed()) {
-        sidebar_dock_->closeDockWidget();
-      }
-    }
   }
 
   // 恢复面板
   QJsonObject panelObj = root["panel"].toObject();
   if (!panelObj.isEmpty() && panel_container_) {
     panel_container_->setCurrentPanel(panelObj["activeTab"].toInt());
-
-    auto* panelDock = dock_manager_->findDockWidget("PanelDock");
-    if (panelDock) {
-      if (panelObj["visible"].toBool(true) && panelDock->isClosed()) {
-        panelDock->toggleView(true);
-        hideDockTitleBarButtons(panelDock->dockAreaWidget());
-      } else if (!panelObj["visible"].toBool(true) && !panelDock->isClosed()) {
-        panelDock->closeDockWidget();
-      }
-    }
 
     if (panelObj["maximized"].toBool()) {
       panel_container_->setMaximized(true);
@@ -1410,6 +1375,7 @@ void MainWindow::restoreSession() {
     editor_manager_->openFile(path);
 
     auto* editor = editor_manager_->editorById(path);
+    if (!editor) continue;
     if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
       int line = fileObj["cursorLine"].toInt();
       int col = fileObj["cursorColumn"].toInt();
@@ -1442,6 +1408,31 @@ void MainWindow::restoreSession() {
   if (!activeFile.isEmpty() && editor_manager_->isOpen(activeFile)) {
     // 查找对应的 dock 并置前
     editor_manager_->openFile(activeFile);
+  }
+
+  // 恢复QADS布局（在所有编辑器 dock 创建之后调用）
+  {
+    auto& cfg = ConfigManager::instance();
+    QString dockStateStr = cfg.get<QString>(CONFIG_DOCK_LAYOUT);
+    if (!dockStateStr.isEmpty()) {
+      QByteArray dockState = QByteArray::fromBase64(dockStateStr.toUtf8());
+      dock_manager_->restoreState(dockState);
+    }
+  }
+
+  // restoreState会重建标题栏，需要重新隐藏固定dock的标题栏
+  if (sidebar_dock_ && sidebar_dock_->dockAreaWidget()) {
+    sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+  }
+  {
+    auto* panelDock = dock_manager_->findDockWidget("PanelDock");
+    if (panelDock && panelDock->dockAreaWidget()) {
+      hideDockTitleBarButtons(panelDock->dockAreaWidget());
+    }
+    auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
+    if (auxDock && auxDock->dockAreaWidget()) {
+      hideDockTitleBarButtons(auxDock->dockAreaWidget());
+    }
   }
 
   int restoredCount = filesArray.size();

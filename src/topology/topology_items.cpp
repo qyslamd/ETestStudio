@@ -16,6 +16,7 @@
 #include <QMenu>
 #include <QPainter>
 #include <QPainterPathStroker>
+#include <QPointer>
 #include <QStyleOptionGraphicsItem>
 #include <QTimer>
 
@@ -310,8 +311,10 @@ void UutItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
 
   int idx = product_index_;
   QPointF newPos = pos();
-  auto* doc = doc_;
+  QPointer<TopologyDocument> doc = doc_;
   QTimer::singleShot(0, [doc, idx, oldSize, newSize, oldPos, newPos]() {
+    if (!doc)
+      return;
     doc->undoStack()->push(new ResizeItemCommand(
         doc, idx, ResizeItemCommand::Product, oldSize, newSize, oldPos,
         newPos));
@@ -443,8 +446,10 @@ void DeviceItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
 
   int idx = device_index_;
   QPointF newPos = pos();
-  auto* doc = doc_;
+  QPointer<TopologyDocument> doc = doc_;
   QTimer::singleShot(0, [doc, idx, oldSize, newSize, oldPos, newPos]() {
+    if (!doc)
+      return;
     doc->undoStack()->push(new ResizeItemCommand(
         doc, idx, ResizeItemCommand::Device, oldSize, newSize, oldPos,
         newPos));
@@ -929,8 +934,10 @@ void MonitorItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
 
   int idx = monitor_index_;
   QPointF newPos = pos();
-  auto* doc = doc_;
+  QPointer<TopologyDocument> doc = doc_;
   QTimer::singleShot(0, [doc, idx, oldSize, newSize, oldPos, newPos]() {
+    if (!doc)
+      return;
     doc->undoStack()->push(new ResizeItemCommand(
         doc, idx, ResizeItemCommand::Monitor, oldSize, newSize, oldPos, newPos));
   });

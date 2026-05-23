@@ -23,7 +23,7 @@ std::string value_type_to_string(ValueType type) {
     case ValueType::bytes:    return "bytes";
     case ValueType::word:     return "uint16";
     case ValueType::shortint: return "int16";
-    case ValueType::smallint: return "int16";
+    case ValueType::smallint: return "smallint";
     case ValueType::longword: return "uint32";
     case ValueType::integer:  return "int32";
     case ValueType::ulong_:   return "uint64";
