@@ -134,13 +134,6 @@ QWidget* SettingsDialog::createGeneralPage() {
   addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,
                  CONFIG_TOOLBAR_DEFAULT_VISIBLE);
   addButtonRow(page, QStringLiteral("窗口布局"), QStringLiteral("恢复默认"));
-  layout->addSpacing(12);
-
-  // --- 启动 section ---
-  layout->addWidget(createSectionHeader(QStringLiteral("启动")));
-  addCheckBoxRow(page, QStringLiteral("恢复上次会话"),
-                 CONFIG_SESSION_RESTORE_ENABLED,
-                 CONFIG_SESSION_RESTORE_DEFAULT_ENABLED);
   layout->addStretch();
 
   return page;

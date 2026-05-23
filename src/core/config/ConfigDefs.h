@@ -62,10 +62,6 @@ constexpr const char* CONFIG_PLUGIN_SEARCH_PATHS = "plugin/search_paths";  // �
 constexpr const char* CONFIG_PROJECT_AUTO_OPEN_LAST = "project/auto_open_last";
 constexpr bool CONFIG_PROJECT_DEFAULT_AUTO_OPEN_LAST = false;
 
-// Session 配置组
-constexpr const char* CONFIG_SESSION_RESTORE_ENABLED = "session/restore_enabled";
-constexpr bool CONFIG_SESSION_RESTORE_DEFAULT_ENABLED = false;
-
 // 工具栏配置组
 constexpr const char* CONFIG_TOOLBAR_VISIBLE = "toolbar/visible";
 constexpr const char* CONFIG_TOOLBAR_ICON_SIZE = "toolbar/icon_size";

@@ -54,8 +54,6 @@ class ConfigManager::Impl {
         QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     m_defaultValues[CONFIG_DEFAULT_PROTOCOL_PATH] = "";
 
-    m_defaultValues[CONFIG_SESSION_RESTORE_ENABLED] = CONFIG_SESSION_RESTORE_DEFAULT_ENABLED;
-
     // 终端ANSI 16色调色板
     m_defaultValues[CONFIG_TERMINAL_COLOR_BLACK]     = QStringLiteral("#1E1E1E");
     m_defaultValues[CONFIG_TERMINAL_COLOR_RED]       = QStringLiteral("#CD3131");

@@ -1212,15 +1212,8 @@ void MainWindow::onGoToLine() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-  auto& cfg = ConfigManager::instance();
-  bool saveSession = cfg.get<bool>(CONFIG_SESSION_RESTORE_ENABLED,
-                                   CONFIG_SESSION_RESTORE_DEFAULT_ENABLED);
-
   // 捕获当前会话状态（文件都还开着，数据完整）
-  QJsonObject sessionData;
-  if (saveSession) {
-    sessionData = captureSessionData();
-  }
+  QJsonObject sessionData = captureSessionData();
 
   // 尝试关闭所有编辑器文件，如果用户取消则不关闭程序
   if (!editor_manager_->closeAllFiles()) {
@@ -1235,9 +1228,8 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     projectMgr.closeProject();
   }
 
-  if (saveSession) {
-    writeSessionFile(sessionData);
-  }
+  // 确认关闭后才写盘
+  writeSessionFile(sessionData);
   saveWindowState();
   QMainWindow::closeEvent(event);
 }
@@ -1376,14 +1368,6 @@ void MainWindow::writeSessionFile(const QJsonObject& data) {
 }
 
 void MainWindow::restoreSession() {
-  auto& cfg = ConfigManager::instance();
-  if (!cfg.get<bool>(CONFIG_SESSION_RESTORE_ENABLED,
-                     CONFIG_SESSION_RESTORE_DEFAULT_ENABLED)) {
-    LOG_INFO("SESSION", "会话恢复已禁用（配置项 {})",
-             CONFIG_SESSION_RESTORE_ENABLED);
-    return;
-  }
-
   QString sessionPath =
       QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
       "/session.json";
