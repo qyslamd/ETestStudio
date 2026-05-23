@@ -7,7 +7,7 @@
 #include "TestProgramManagerWidget.h"
 
 #include <QHBoxLayout>
-#include <QIcon>
+#include <QLabel>
 
 namespace etest::app {
 
@@ -20,80 +20,7 @@ void SidebarWidget::setupUi() {
   outer_layout->setContentsMargins(0, 0, 0, 0);
   outer_layout->setSpacing(0);
 
-  // ===== 左侧：活动按钮栏 =====
-  auto* activity_panel = new QWidget(this);
-  activity_panel->setFixedWidth(48);
-  activity_panel->setObjectName(QStringLiteral("sidebarActivityBar"));
-  auto* activity_layout = new QVBoxLayout(activity_panel);
-  activity_layout->setContentsMargins(0, 4, 0, 4);
-  activity_layout->setSpacing(0);
-
-  auto* top_layout = new QVBoxLayout();
-  top_layout->setSpacing(4);
-  top_layout->setContentsMargins(0, 0, 0, 0);
-
-  // 索引0：资源管理器
-  buttons_.append(createButton(QStringLiteral("资源管理器"),
-                                ":/resources/icons/svg/project_dark.svg",
-                                ":/resources/icons/svg/project_light.svg"));
-  // 索引1：搜索
-  buttons_.append(createButton(QStringLiteral("搜索"),
-                                ":/resources/icons/svg/search_dark.svg",
-                                ":/resources/icons/svg/search_light.svg"));
-  // 索引2：源代码管理
-  buttons_.append(createButton(QStringLiteral("源代码管理"),
-                                ":/resources/icons/svg/git_dark.svg",
-                                ":/resources/icons/svg/git_light.svg"));
-  // 索引3：调试
-  buttons_.append(createButton(QStringLiteral("调试"),
-                                ":/resources/icons/svg/debug_dark.svg",
-                                ":/resources/icons/svg/debug_dark.svg"));
-  // 索引4：扩展
-  buttons_.append(createButton(QStringLiteral("扩展"),
-                                ":/resources/icons/svg/extensions_dark.svg",
-                                ":/resources/icons/svg/extensions_light.svg"));
-  // 索引5：硬件
-  buttons_.append(createButton(QStringLiteral("硬件"),
-                                ":/resources/icons/svg/hardware_dark.svg",
-                                ":/resources/icons/svg/hardware_light.svg"));
-  // 索引6：协议
-  buttons_.append(createButton(QStringLiteral("协议"),
-                                ":/resources/icons/svg/protocol_dark.svg",
-                                ":/resources/icons/svg/protocol_light.svg"));
-  // 索引7：用例
-  buttons_.append(createButton(QStringLiteral("用例"),
-                                ":/resources/icons/svg/testprogram_dark.svg",
-                                ":/resources/icons/svg/testprogram_light.svg"));
-
-  for (int i = 0; i < buttons_.size(); ++i) {
-    top_layout->addWidget(buttons_[i]);
-    connect(buttons_[i], &QPushButton::clicked, this, [this, i]() {
-      if (active_index_ != i) {
-        setActiveIndex(i);
-        switchPage(i);
-      } else {
-        toggleContentPanel();
-      }
-    });
-  }
-
-  activity_layout->addLayout(top_layout);
-  activity_layout->addStretch();
-
-  // 底部设置按钮
-  auto* bottom_layout = new QVBoxLayout();
-  bottom_layout->setSpacing(0);
-  bottom_layout->setContentsMargins(0, 0, 0, 0);
-  auto* settings_btn = createButton(QStringLiteral("设置"),
-                                     ":/resources/icons/svg/settings_dark.svg",
-                                     ":/resources/icons/svg/settings_light.svg");
-  bottom_layout->addWidget(settings_btn);
-  connect(settings_btn, &QPushButton::clicked, this, &SidebarWidget::settingsTriggered);
-  activity_layout->addLayout(bottom_layout);
-
-  outer_layout->addWidget(activity_panel);
-
-  // ===== 右侧：内容面板 =====
+  // 内容面板
   content_panel_ = new QWidget(this);
   auto* content_layout = new QVBoxLayout(content_panel_);
   content_layout->setContentsMargins(0, 0, 0, 0);
@@ -171,29 +98,7 @@ void SidebarWidget::setupUi() {
 
   outer_layout->addWidget(content_panel_);
 
-  setMinimumWidth(48);
-  setActiveIndex(0);
   switchPage(0);
-}
-
-QPushButton* SidebarWidget::createButton(const QString& tooltip,
-                                          const QString& darkIconPath,
-                                          const QString& lightIconPath) {
-  auto* btn = new QPushButton(this);
-  btn->setToolTip(tooltip);
-  btn->setFixedSize(48, 40);
-  btn->setCheckable(true);
-  btn->setFlat(true);
-  btn->setFocusPolicy(Qt::NoFocus);
-
-  QIcon icon;
-  icon.addFile(darkIconPath, QSize(), QIcon::Normal, QIcon::Off);
-  icon.addFile(lightIconPath, QSize(), QIcon::Disabled, QIcon::Off);
-  btn->setIcon(icon);
-  btn->setIconSize(QSize(24, 24));
-  btn->setText(QString());
-
-  return btn;
 }
 
 int SidebarWidget::pageCount() const {
@@ -202,10 +107,6 @@ int SidebarWidget::pageCount() const {
 
 void SidebarWidget::switchPage(int index) {
   if (index >= 0 && index < stack_->count()) {
-    if (!content_panel_->isVisible()) {
-      content_panel_->show();
-      emit contentPanelToggled(true);
-    }
     stack_->setCurrentIndex(index);
     if (index < view_titles_.size()) {
       title_label_->setText(view_titles_[index]);
@@ -213,22 +114,16 @@ void SidebarWidget::switchPage(int index) {
   }
 }
 
-void SidebarWidget::setActiveIndex(int index) {
-  if (index < 0 || index >= buttons_.size()) return;
-  active_index_ = index;
-  for (int i = 0; i < buttons_.size(); ++i) {
-    buttons_[i]->setChecked(i == index);
-  }
+void SidebarWidget::showContent() {
+  content_panel_->show();
 }
 
-int SidebarWidget::activeIndex() const {
-  return active_index_;
+void SidebarWidget::hideContent() {
+  content_panel_->hide();
 }
 
-void SidebarWidget::toggleContentPanel() {
-  bool visible = content_panel_->isVisible();
-  content_panel_->setVisible(!visible);
-  emit contentPanelToggled(!visible);
+bool SidebarWidget::isContentVisible() const {
+  return content_panel_->isVisible();
 }
 
 FileExplorerWidget* SidebarWidget::fileExplorer() const {

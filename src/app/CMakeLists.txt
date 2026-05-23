@@ -17,6 +17,8 @@ add_executable(${TARGET_NAME}
     main.cpp
     main_window.h
     main_window.cpp
+    ActivityBarWidget.h
+    ActivityBarWidget.cpp
     SidebarWidget.h
     SidebarWidget.cpp
     FileExplorerWidget.h
@@ -45,8 +47,8 @@ add_executable(${TARGET_NAME}
     editor/EditorFactory.cpp
     OutputPanel.h
     OutputPanel.cpp
-    PanelContainerWidget.h
-    PanelContainerWidget.cpp
+    BottomContainerWidget.h
+    BottomContainerWidget.cpp
     ProblemsPanel.h
     ProblemsPanel.cpp
     TerminalPanel.h

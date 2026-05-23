@@ -14,6 +14,7 @@
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QShortcut>
+#include <QSplitter>
 #include <QStandardPaths>
 #include <QStatusBar>
 #include <QToolButton>
@@ -26,13 +27,14 @@
 #include <DockAreaWidget.h>
 #include <DockSplitter.h>
 #include <DockWidgetTab.h>
+#include "ActivityBarWidget.h"
+#include "BottomContainerWidget.h"
 #include "EditorManager.h"
 #include "FileExplorerWidget.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "OutputPanel.h"
 #include "ProtocolManagerWidget.h"
-#include "PanelContainerWidget.h"
 #include "ProblemsPanel.h"
 #include "SearchWidget.h"
 #include "SettingsWidget.h"
@@ -62,7 +64,10 @@ namespace etest::app {
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       dock_manager_(nullptr),
+      activity_bar_(nullptr),
       sidebar_(nullptr),
+      h_splitter_(nullptr),
+      v_splitter_(nullptr),
       editor_manager_(nullptr),
       output_panel_(nullptr),
       problems_panel_(nullptr),
@@ -108,11 +113,35 @@ void MainWindow::initUi() {
   createToolBar();
   createStatusBar();
 
-  // QADS Dock Manager
-  ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
-  dock_manager_ = new ads::CDockManager(this);
+  // ==================== 中央容器 ====================
+  auto* centralContainer = new QWidget(this);
+  centralContainer->setObjectName("centralContainer");
+  auto* main_layout = new QHBoxLayout(centralContainer);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setSpacing(0);
 
-  // 覆盖QADS内置的default.css，应用暗色主题（必须设置到CDockManager自身才生效）
+  // ==================== 活动栏 ====================
+  activity_bar_ = new ActivityBarWidget(centralContainer);
+  main_layout->addWidget(activity_bar_);
+
+  // ==================== 水平分割器 ====================
+  h_splitter_ = new QSplitter(Qt::Horizontal, centralContainer);
+  h_splitter_->setChildrenCollapsible(true);
+
+  // ===== 侧边栏 =====
+  sidebar_ = new SidebarWidget(h_splitter_);
+  h_splitter_->addWidget(sidebar_);
+
+  // ===== 垂直分割器（编辑器 + 底部面板） =====
+  v_splitter_ = new QSplitter(Qt::Vertical, h_splitter_);
+  v_splitter_->setChildrenCollapsible(true);
+  h_splitter_->addWidget(v_splitter_);
+
+  // ===== 编辑器区域 =====
+  ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
+  dock_manager_ = new ads::CDockManager(v_splitter_);
+
+  // 覆盖QADS内置的default.css，应用暗色主题
   QFile adsStyleFile(":/resources/styles/ads_dark.qss");
   if (adsStyleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
     dock_manager_->setStyleSheet(dock_manager_->styleSheet() +
@@ -120,16 +149,16 @@ void MainWindow::initUi() {
     adsStyleFile.close();
   }
 
-  // 中央编辑区：Welcome页面（必须在添加其他dock之前建立）
+  // 中央编辑区：Welcome页面
   welcome_widget_ = new WelcomeWidget(this);
-  auto* centralDock = new ads::CDockWidget(QStringLiteral("欢迎"));
-  centralDock->setObjectName("CentralDock");
-  centralDock->setWidget(welcome_widget_);
-  centralDock->tabWidget()->setElideMode(Qt::ElideNone);
-  dock_manager_->setCentralWidget(centralDock);
+  central_dock_ = new ads::CDockWidget(QStringLiteral("欢迎"));
+  central_dock_->setObjectName("CentralDock");
+  central_dock_->setWidget(welcome_widget_);
+  central_dock_->tabWidget()->setElideMode(Qt::ElideNone);
+  dock_manager_->setCentralWidget(central_dock_);
 
-  // 隐藏中央区域标题栏的菜单和分离按钮，保留tab
-  auto* centralArea = centralDock->dockAreaWidget();
+  // 隐藏中央区域标题栏的菜单和分离按钮
+  auto* centralArea = central_dock_->dockAreaWidget();
   if (centralArea) {
     hideDockTitleBarButtons(centralArea);
   }
@@ -137,93 +166,86 @@ void MainWindow::initUi() {
   // 编辑器管理器
   editor_manager_ = new EditorManager(dock_manager_, this);
 
-  // 左侧：活动栏 + 侧边栏合并为一个 DockWidget
-  sidebar_ = new SidebarWidget(this);
-  sidebar_dock_ = new ads::CDockWidget(QStringLiteral("侧边栏"));
-  sidebar_dock_->setObjectName("SidebarDock");
-  sidebar_dock_->setWidget(sidebar_);
-  sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, false);
-  sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
-  sidebar_dock_->setFeature(ads::CDockWidget::DockWidgetMovable, false);
-  sidebar_dock_->tabWidget()->setElideMode(Qt::ElideNone);
-  dock_manager_->addDockWidget(ads::LeftDockWidgetArea, sidebar_dock_);
-  // 隐藏侧边栏标题栏
-  sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-
-  // ==================== 底部：统一面板容器 ====================
+  // ===== 底部面板 =====
   output_panel_ = new OutputPanel(this);
   problems_panel_ = new ProblemsPanel(this);
   terminal_panel_ = new TerminalPanel(this);
 
-  // Terminal shell auto-starts via TerminalPanel::showEvent()
+  bottom_container_ = new BottomContainerWidget(v_splitter_);
+  bottom_container_->addPanel(QStringLiteral("输出"), output_panel_);
+  bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_);
+  bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_);
+  v_splitter_->addWidget(bottom_container_);
 
-  panel_container_ = new PanelContainerWidget(this);
-  panel_container_->addPanel(QStringLiteral("输出"), output_panel_);
-  panel_container_->addPanel(QStringLiteral("问题"), problems_panel_);
-  panel_container_->addPanel(QStringLiteral("终端"), terminal_panel_);
+  // ===== 辅助侧边栏 =====
+  aux_sidebar_widget_ = new QWidget(h_splitter_);
+  auto* aux_layout = new QVBoxLayout(aux_sidebar_widget_);
+  aux_layout->setContentsMargins(0, 0, 0, 0);
+  auto* auxLabel = new QLabel(QStringLiteral("辅助侧边栏"), aux_sidebar_widget_);
+  auxLabel->setAlignment(Qt::AlignCenter);
+  aux_layout->addWidget(auxLabel);
+  aux_sidebar_widget_->hide();  // 默认隐藏
+  h_splitter_->addWidget(aux_sidebar_widget_);
 
-  auto* panelDock = new ads::CDockWidget(QStringLiteral("面板"));
-  panelDock->setObjectName("PanelDock");
-  panelDock->setWidget(panel_container_);
-  panelDock->setFeature(ads::CDockWidget::DockWidgetClosable, true);
-  panelDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
-  panelDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
-  panelDock->tabWidget()->setElideMode(Qt::ElideNone);
-  dock_manager_->addDockWidget(ads::BottomDockWidgetArea, panelDock);
-  // 隐藏面板标题栏右侧的三个按钮（PanelContainerWidget内部已有tab和关闭按钮）
-  hideDockTitleBarButtons(panelDock->dockAreaWidget());
+  // 设置 splitter 初始尺寸
+  h_splitter_->setSizes({280, 800, 0});   // sidebar / 垂直区域 / aux
+  v_splitter_->setSizes({600, 200});       // 编辑器 / 底部面板
 
-  // 面板容器信号
-  connect(panel_container_, &PanelContainerWidget::panelClosed, this,
-          [panelDock]() { panelDock->closeDockWidget(); });
-  connect(panel_container_, &PanelContainerWidget::panelMaximized, this,
-          [this]() {
-            if (sidebar_dock_)
-              sidebar_dock_->closeDockWidget();
-          });
-  connect(panel_container_, &PanelContainerWidget::panelRestored, this,
-          [this]() {
-            if (sidebar_dock_) {
-              sidebar_dock_->toggleView(true);
-              if (sidebar_dock_->dockAreaWidget()) {
-                sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-              }
-            }
-          });
-
-  // ==================== 右侧：辅助侧边栏（默认隐藏） ====================
-  auto* auxPlaceholder = new QLabel(QStringLiteral("辅助侧边栏"), this);
-  auxPlaceholder->setAlignment(Qt::AlignCenter);
-  auto* auxDock = new ads::CDockWidget(QStringLiteral("辅助侧边栏"));
-  auxDock->setObjectName("AuxSidebarDock");
-  auxDock->setWidget(auxPlaceholder);
-  auxDock->setFeature(ads::CDockWidget::DockWidgetClosable, true);
-  auxDock->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
-  auxDock->setFeature(ads::CDockWidget::DockWidgetMovable, false);
-  auxDock->tabWidget()->setElideMode(Qt::ElideNone);
-  dock_manager_->addDockWidget(ads::RightDockWidgetArea, auxDock);
-  hideDockTitleBarButtons(auxDock->dockAreaWidget());
-  // auxDock->closeDockWidget();  // 默认隐藏
+  main_layout->addWidget(h_splitter_);
+  setCentralWidget(centralContainer);
 
   // 恢复窗口状态
   restoreWindowState();
 }
 
 void MainWindow::initSignals() {
-  // View菜单显示时同步菜单项选中状态与实际dock状态
+  // View菜单显示时同步菜单项选中状态
   if (view_menu_) {
     connect(view_menu_, &QMenu::aboutToShow, this, [this]() {
-      auto* panelDock = dock_manager_->findDockWidget("PanelDock");
-      if (panelDock && view_panel_action_) {
-        view_panel_action_->setChecked(!panelDock->isClosed());
+      if (view_panel_action_) {
+        view_panel_action_->setChecked(bottom_container_->isVisible());
       }
-      auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
-      if (auxDock && view_aux_sidebar_action_) {
-        view_aux_sidebar_action_->setChecked(!auxDock->isClosed());
+      if (view_aux_sidebar_action_) {
+        view_aux_sidebar_action_->setChecked(aux_sidebar_widget_->isVisible());
       }
     });
   }
 
+  // 视图菜单：输出面板显隐
+  connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
+    if (checked) {
+      bottom_container_->show();
+      auto sizes = v_splitter_->sizes();
+      if (sizes.size() >= 2) {
+        sizes[1] = bottom_container_height_;
+        v_splitter_->setSizes(sizes);
+      }
+    } else {
+      auto sizes = v_splitter_->sizes();
+      if (sizes.size() >= 2) {
+        bottom_container_height_ = sizes[1];
+      }
+      bottom_container_->hide();
+    }
+  });
+
+  // 视图菜单：辅助侧边栏显隐
+  connect(view_aux_sidebar_action_, &QAction::triggered, this, [this](bool checked) {
+    if (checked) {
+      aux_sidebar_widget_->show();
+      auto sizes = h_splitter_->sizes();
+      if (sizes.size() >= 3) {
+        sizes[2] = aux_sidebar_width_;
+        h_splitter_->setSizes(sizes);
+      }
+    } else {
+      auto sizes = h_splitter_->sizes();
+      if (sizes.size() >= 3) {
+        aux_sidebar_width_ = sizes[2];
+      }
+      aux_sidebar_widget_->hide();
+    }
+  });
 
   // 项目管理信号
   auto& projectMgr = etest::core::project::ProjectManager::instance();
@@ -453,21 +475,38 @@ void MainWindow::initSignals() {
   // Ctrl+B 切换侧边栏
   auto* toggleSidebar = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_B), this);
   connect(toggleSidebar, &QShortcut::activated, this, [this]() {
-    sidebar_->toggleContentPanel();
+    if (sidebar_->isContentVisible()) {
+      auto sizes = h_splitter_->sizes();
+      if (!sizes.isEmpty()) {
+        sidebar_expanded_width_ = sizes[0];
+        sizes[0] = 0;
+        h_splitter_->setSizes(sizes);
+      }
+      sidebar_->hideContent();
+    } else {
+      sidebar_->showContent();
+      auto sizes = h_splitter_->sizes();
+      if (!sizes.isEmpty()) {
+        sizes[0] = sidebar_expanded_width_;
+        h_splitter_->setSizes(sizes);
+      }
+    }
   });
 
   // Ctrl+Shift+F 全局搜索
   auto* globalSearchShortcut =
       new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F), this);
   connect(globalSearchShortcut, &QShortcut::activated, this, [this]() {
-    sidebar_->switchPage(1);
-    sidebar_->setActiveIndex(1);
-    if (sidebar_dock_ && sidebar_dock_->isClosed()) {
-      sidebar_dock_->toggleView(true);
-      if (sidebar_dock_->dockAreaWidget()) {
-        sidebar_dock_->dockAreaWidget()->titleBar()->hide();
+    if (!sidebar_->isContentVisible()) {
+      sidebar_->showContent();
+      auto sizes = h_splitter_->sizes();
+      if (!sizes.isEmpty()) {
+        sizes[0] = sidebar_expanded_width_;
+        h_splitter_->setSizes(sizes);
       }
     }
+    sidebar_->switchPage(1);
+    activity_bar_->setActiveIndex(1);
     if (auto* sw = sidebar_->searchWidget()) {
       sw->setFocusOnSearchInput();
     }
@@ -510,8 +549,8 @@ void MainWindow::initSignals() {
             &OutputPanel::appendLog);
   }
 
-  // 设置对话框
-  connect(sidebar_, &SidebarWidget::settingsTriggered, this, [this]() {
+  // 活动栏：设置对话框
+  connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
     if (!settings_dialog_) {
       settings_dialog_ = new SettingsWidget(this);
     }
@@ -520,32 +559,45 @@ void MainWindow::initSignals() {
     settings_dialog_->activateWindow();
   });
 
-  // 内容面板显隐时调整 SidebarDock 宽度，让编辑器区域贴合
-  connect(sidebar_, &SidebarWidget::contentPanelToggled, this, [this](bool visible) {
-    auto* area = sidebar_dock_->dockAreaWidget();
-    auto* splitter = ads::internal::findParent<ads::CDockSplitter*>(area);
-    if (!visible) {
-      sidebar_expanded_width_ = area->width();
-      area->setFixedWidth(48);
-      if (splitter) {
-        auto sizes = splitter->sizes();
-        int idx = splitter->indexOf(area);
-        if (idx >= 0 && idx < sizes.size()) {
-          sizes[idx] = 48;
-          splitter->setSizes(sizes);
-        }
+  // 活动栏：页面切换
+  connect(activity_bar_, &ActivityBarWidget::pageClicked, this, [this](int index) {
+    bool samePage = (index == activity_bar_->activeIndex());
+
+    if (samePage && sidebar_->isContentVisible()) {
+      // 再次点击同一按钮，隐藏侧边栏
+      auto sizes = h_splitter_->sizes();
+      if (!sizes.isEmpty()) {
+        sidebar_expanded_width_ = sizes[0];
+        sizes[0] = 0;
+        h_splitter_->setSizes(sizes);
       }
-    } else {
-      area->setMinimumWidth(0);
-      area->setMaximumWidth(QWIDGETSIZE_MAX);
-      if (splitter) {
-        auto sizes = splitter->sizes();
-        int idx = splitter->indexOf(area);
-        if (idx >= 0 && idx < sizes.size()) {
-          sizes[idx] = sidebar_expanded_width_;
-          splitter->setSizes(sizes);
-        }
+      sidebar_->hideContent();
+      return;
+    }
+
+    // 确保侧边栏可见
+    if (!sidebar_->isContentVisible()) {
+      sidebar_->showContent();
+      auto sizes = h_splitter_->sizes();
+      if (!sizes.isEmpty()) {
+        sizes[0] = sidebar_expanded_width_;
+        h_splitter_->setSizes(sizes);
       }
+    }
+
+    sidebar_->switchPage(index);
+    activity_bar_->setActiveIndex(index);
+  });
+
+  // 底部面板关闭按钮
+  connect(bottom_container_, &BottomContainerWidget::panelClosed, this, [this]() {
+    auto sizes = v_splitter_->sizes();
+    if (sizes.size() >= 2) {
+      bottom_container_height_ = sizes[1];
+    }
+    bottom_container_->hide();
+    if (view_panel_action_) {
+      view_panel_action_->setChecked(false);
     }
   });
 }
@@ -622,33 +674,12 @@ void MainWindow::createMenuBar() {
   view_panel_action_->setShortcut(QStringLiteral("Ctrl+J"));
   view_panel_action_->setCheckable(true);
   view_panel_action_->setChecked(true);
-  connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
-    auto* panelDock = dock_manager_->findDockWidget("PanelDock");
-    if (panelDock) {
-      if (checked) {
-        panelDock->toggleView(true);
-        // toggleView会重建标题栏，需要重新隐藏按钮
-        hideDockTitleBarButtons(panelDock->dockAreaWidget());
-      } else {
-        panelDock->closeDockWidget();
-      }
-    }
-  });
 
-  // 辅助侧边栏
+  // 辅助侧边栏（默认隐藏）
   view_aux_sidebar_action_ =
       view_menu_->addAction(QStringLiteral("辅助侧边栏"));
   view_aux_sidebar_action_->setCheckable(true);
-  view_aux_sidebar_action_->setChecked(true);
-  connect(view_aux_sidebar_action_, &QAction::triggered, this,
-          [this](bool checked) {
-            auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
-            if (auxDock) {
-              auxDock->toggleView(checked);
-              // toggleView会重建标题栏，需要重新隐藏按钮
-              hideDockTitleBarButtons(auxDock->dockAreaWidget());
-            }
-          });
+  view_aux_sidebar_action_->setChecked(false);
 
   auto* toolsMenu = menuBar->addMenu(QStringLiteral("工具(&T)"));
   toolsMenu->addAction(QStringLiteral("设置(&S)..."), this, [this]() {
@@ -1213,9 +1244,6 @@ void MainWindow::saveWindowState() {
   if (file_toolbar_) {
     cfg.set(CONFIG_TOOLBAR_VISIBLE, file_toolbar_->isVisible());
   }
-
-  QByteArray dockState = dock_manager_->saveState();
-  cfg.set(CONFIG_DOCK_LAYOUT, QString(dockState.toBase64()));
 }
 
 void MainWindow::restoreWindowState() {
@@ -1277,21 +1305,41 @@ QJsonObject MainWindow::captureSessionData() {
 
   // 侧边栏状态
   QJsonObject sidebarObj;
-  int tab = sidebar_->activeIndex();
-  if (tab >= 0 && tab < sidebar_->pageCount()) {
-    sidebarObj["activeTab"] = tab;
-  } else {
-    sidebarObj["activeTab"] = 0;
-  }
+  sidebarObj["activeTab"] = activity_bar_->activeIndex();
+  sidebarObj["visible"] = sidebar_->isContentVisible();
   root["sidebar"] = sidebarObj;
 
   // 面板状态
   QJsonObject panelObj;
-  if (panel_container_) {
-    panelObj["activeTab"] = panel_container_->currentPanelIndex();
-    panelObj["maximized"] = panel_container_->isMaximized();
-  }
+  panelObj["activeTab"] = bottom_container_->currentPanelIndex();
+  panelObj["visible"] = bottom_container_->isVisible();
+  panelObj["height"] = bottom_container_height_;
   root["panel"] = panelObj;
+
+  // 辅助侧边栏状态
+  root["auxSidebarVisible"] = aux_sidebar_widget_->isVisible();
+  root["auxSidebarWidth"] = aux_sidebar_width_;
+
+  // 从分割器获取实际的当前尺寸（而非可能过期的成员变量）
+  {
+    auto sizes = v_splitter_->sizes();
+    if (sizes.size() >= 2) {
+      bottom_container_height_ = sizes[1];
+    }
+  }
+  {
+    auto sizes = h_splitter_->sizes();
+    if (sizes.size() >= 3) {
+      aux_sidebar_width_ = sizes[2];
+    }
+  }
+
+  // QADS 布局（必须在编辑器关闭前保存）
+  root["dockLayout"] = QString(dock_manager_->saveState().toBase64());
+
+  // 分割器状态
+  root["hSplitter"] = QString(h_splitter_->saveState().toBase64());
+  root["vSplitter"] = QString(v_splitter_->saveState().toBase64());
 
   int fileCount = editorsObj["openFiles"].toArray().size();
   LOG_INFO("SESSION", "会话已捕获：项目={}, 文件={}, 侧边栏tab={}, 面板tab={}",
@@ -1335,24 +1383,43 @@ void MainWindow::restoreSession() {
   if (!sidebarObj.isEmpty()) {
     int tab = sidebarObj["activeTab"].toInt();
     if (tab >= 0 && tab < sidebar_->pageCount()) {
-      sidebar_->setActiveIndex(tab);
+      activity_bar_->setActiveIndex(tab);
       sidebar_->switchPage(tab);
     } else {
-      sidebar_->setActiveIndex(0);
+      activity_bar_->setActiveIndex(0);
       sidebar_->switchPage(0);
+    }
+    if (sidebarObj.contains("visible") && !sidebarObj["visible"].toBool()) {
+      sidebar_->hideContent();
     }
   }
 
   // 恢复面板
   QJsonObject panelObj = root["panel"].toObject();
-  if (!panelObj.isEmpty() && panel_container_) {
-    panel_container_->setCurrentPanel(panelObj["activeTab"].toInt());
-
-    if (panelObj["maximized"].toBool()) {
-      panel_container_->setMaximized(true);
-      if (sidebar_dock_)
-        sidebar_dock_->closeDockWidget();
+  if (!panelObj.isEmpty()) {
+    bottom_container_->setCurrentPanel(panelObj["activeTab"].toInt());
+    if (panelObj.contains("visible")) {
+      bool visible = panelObj["visible"].toBool();
+      bottom_container_->setVisible(visible);
+      if (view_panel_action_) {
+        view_panel_action_->setChecked(visible);
+      }
     }
+    if (panelObj.contains("height")) {
+      bottom_container_height_ = panelObj["height"].toInt();
+    }
+  }
+
+  // 恢复辅助侧边栏
+  if (root.contains("auxSidebarVisible")) {
+    bool visible = root["auxSidebarVisible"].toBool();
+    aux_sidebar_widget_->setVisible(visible);
+    if (view_aux_sidebar_action_) {
+      view_aux_sidebar_action_->setChecked(visible);
+    }
+  }
+  if (root.contains("auxSidebarWidth")) {
+    aux_sidebar_width_ = root["auxSidebarWidth"].toInt();
   }
 
   // 恢复项目
@@ -1361,7 +1428,7 @@ void MainWindow::restoreSession() {
     etest::core::project::ProjectManager::instance().openProject(projectPath);
   }
 
-  // 恢复编辑器（先恢复所有文件，最后激活 activeFile）
+  // 恢复编辑器（先打开所有文件，最后激活 activeFile）
   QJsonObject editorsObj = root["editors"].toObject();
   QJsonArray filesArray = editorsObj["openFiles"].toArray();
   QString activeFile = editorsObj["activeFile"].toString();
@@ -1371,9 +1438,65 @@ void MainWindow::restoreSession() {
     QString path = fileObj["path"].toString();
     if (path.isEmpty() || !QFileInfo::exists(path))
       continue;
-
     editor_manager_->openFile(path);
+  }
 
+  // 激活之前正在编辑的文件
+  if (!activeFile.isEmpty() && editor_manager_->isOpen(activeFile)) {
+    editor_manager_->openFile(activeFile);
+  }
+
+  // 恢复QADS布局（从会话JSON读取，确保编辑器dock正确摆放）
+  //
+  // 注意：当有编辑器需要恢复时，先临时移除欢迎页再 restoreState，避免
+  // QADS将欢迎页与编辑器dock混合排列。当没有编辑器时，欢迎页已在 initUi
+  // 中正确设置为中央组件，无需移除/重加。
+  auto* centralDock = dock_manager_->findDockWidget("CentralDock");
+  bool hadCentralDock = (centralDock != nullptr);
+  bool hasEditorsToRestore = (filesArray.size() > 0);
+
+  if (hasEditorsToRestore && hadCentralDock) {
+    dock_manager_->removeDockWidget(centralDock);
+  }
+
+  if (root.contains("dockLayout")) {
+    QByteArray dockState = QByteArray::fromBase64(root["dockLayout"].toString().toUtf8());
+    dock_manager_->restoreState(dockState);
+  }
+
+  if (hasEditorsToRestore && hadCentralDock) {
+    dock_manager_->setCentralWidget(centralDock);
+    auto* centralArea = centralDock->dockAreaWidget();
+    if (centralArea) {
+      hideDockTitleBarButtons(centralArea);
+    }
+  }
+
+  // 恢复分割器状态
+  if (root.contains("hSplitter")) {
+    QByteArray hState = QByteArray::fromBase64(root["hSplitter"].toString().toUtf8());
+    h_splitter_->restoreState(hState);
+  }
+  if (root.contains("vSplitter")) {
+    QByteArray vState = QByteArray::fromBase64(root["vSplitter"].toString().toUtf8());
+    v_splitter_->restoreState(vState);
+  }
+
+  // 同步侧边栏/面板/辅助栏的实际尺寸到成员变量，用于后续显隐切换
+  {
+    auto sizes = h_splitter_->sizes();
+    if (!sizes.isEmpty()) sidebar_expanded_width_ = sizes[0];
+    if (sizes.size() >= 3) aux_sidebar_width_ = sizes[2];
+  }
+  {
+    auto sizes = v_splitter_->sizes();
+    if (sizes.size() >= 2) bottom_container_height_ = sizes[1];
+  }
+
+  // 恢复文本编辑器光标位置和滚动位置
+  for (const QJsonValue& val : filesArray) {
+    QJsonObject fileObj = val.toObject();
+    QString path = fileObj["path"].toString();
     auto* editor = editor_manager_->editorById(path);
     if (!editor) continue;
     if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
@@ -1401,37 +1524,6 @@ void MainWindow::restoreSession() {
       if (scrollPos < 0)
         scrollPos = 0;
       textEditor->editor()->verticalScrollBar()->setValue(scrollPos);
-    }
-  }
-
-  // 激活之前正在编辑的文件（已在循环中打开，只需 raise）
-  if (!activeFile.isEmpty() && editor_manager_->isOpen(activeFile)) {
-    // 查找对应的 dock 并置前
-    editor_manager_->openFile(activeFile);
-  }
-
-  // 恢复QADS布局（在所有编辑器 dock 创建之后调用）
-  {
-    auto& cfg = ConfigManager::instance();
-    QString dockStateStr = cfg.get<QString>(CONFIG_DOCK_LAYOUT);
-    if (!dockStateStr.isEmpty()) {
-      QByteArray dockState = QByteArray::fromBase64(dockStateStr.toUtf8());
-      dock_manager_->restoreState(dockState);
-    }
-  }
-
-  // restoreState会重建标题栏，需要重新隐藏固定dock的标题栏
-  if (sidebar_dock_ && sidebar_dock_->dockAreaWidget()) {
-    sidebar_dock_->dockAreaWidget()->titleBar()->hide();
-  }
-  {
-    auto* panelDock = dock_manager_->findDockWidget("PanelDock");
-    if (panelDock && panelDock->dockAreaWidget()) {
-      hideDockTitleBarButtons(panelDock->dockAreaWidget());
-    }
-    auto* auxDock = dock_manager_->findDockWidget("AuxSidebarDock");
-    if (auxDock && auxDock->dockAreaWidget()) {
-      hideDockTitleBarButtons(auxDock->dockAreaWidget());
     }
   }
 
