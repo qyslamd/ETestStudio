@@ -53,8 +53,8 @@ add_executable(${TARGET_NAME}
     ProblemsPanel.cpp
     TerminalPanel.h
     TerminalPanel.cpp
-    SettingsWidget.h
-    SettingsWidget.cpp
+    dialogs/SettingsDialog.h
+    dialogs/SettingsDialog.cpp
     SearchWidget.h
     SearchWidget.cpp
     WelcomeWidget.h

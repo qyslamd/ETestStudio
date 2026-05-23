@@ -37,7 +37,7 @@
 #include "ProtocolManagerWidget.h"
 #include "ProblemsPanel.h"
 #include "SearchWidget.h"
-#include "SettingsWidget.h"
+#include "dialogs/SettingsDialog.h"
 #include "SidebarWidget.h"
 #include "TestProgramManagerWidget.h"
 #include "TerminalPanel.h"
@@ -552,7 +552,9 @@ void MainWindow::initSignals() {
   // 活动栏：设置对话框
   connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
     if (!settings_dialog_) {
-      settings_dialog_ = new SettingsWidget(this);
+      settings_dialog_ = new SettingsDialog(this);
+      // QDialog 作为独立窗口，需要主动继承 MainWindow 的样式表
+      settings_dialog_->setStyleSheet(styleSheet());
     }
     settings_dialog_->show();
     settings_dialog_->raise();
@@ -684,7 +686,7 @@ void MainWindow::createMenuBar() {
   auto* toolsMenu = menuBar->addMenu(QStringLiteral("工具(&T)"));
   toolsMenu->addAction(QStringLiteral("设置(&S)..."), this, [this]() {
     if (!settings_dialog_) {
-      settings_dialog_ = new SettingsWidget(this);
+      settings_dialog_ = new SettingsDialog(this);
     }
     settings_dialog_->show();
     settings_dialog_->raise();
