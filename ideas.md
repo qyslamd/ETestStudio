@@ -7,6 +7,29 @@
   -> [设计文档](docs/01-规划/全局IconProvider和ThemeManager设计.md)
   -> [任务计划](task_plan.md) 阶段 1.6
 
+- [ ] **评估集成 QtNodes（paceholder/nodeeditor）**
+  用途：测试流程可视化编辑（阶段4-5）、ICD 信号映射可视化
+  注意：不能替代现有拓扑编辑器（范式不同）
+  -> https://github.com/paceholder/nodeeditor
+  参考案例：BehaviorTree/Groot 就是用 QtNodes 搭建领域特定节点编辑器的实际例子
+  -> https://github.com/BehaviorTree/Groot
+  评估时机：做到阶段 4（用例管理层）时再决定是否集成
+
+- [ ] **帧协议编辑器改进思路（参考 Protocol Designer）**
+  参考：https://github.com/filipskrabak/protocol-designer
+  可以借鉴的点：
+  - 位图换行算法：bitsPerRow × pixelsPerBit 控制行宽，字段超出自动换行，变长字段支持填充/截断
+  - Hover 联动高亮：位图悬停时高亮同字段所有跨行分块，同时联动树节点
+  - 右键快捷操作：位图上直接右键 Edit/AddBefore/AddAfter/Delete
+  - 分组着色：字段按功能分组（header/payload/checksum），自动分配底色
+  - 双视图模式：位图可视化 + 列表拖拽排序并存
+
+- [x] **评估 Taskflow（已评估，不适用）**
+  用途评估：测试执行引擎的并行调度
+  结论：不适用。引擎是顺序执行 + 控制流 + 交互式调试模型，与 Taskflow 的 DAG 并行范式不匹配。
+  保留价值：后期多个独立用例并行执行时可能参考，但 MVP 不需要。
+  -> https://github.com/taskflow/taskflow
+
 ## 已完成
 
 - [x] **UI 布局重构**
