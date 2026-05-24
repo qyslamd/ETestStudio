@@ -11,6 +11,7 @@
 |------|------|--------|
 | 1 基础框架搭建 | ✅ 已完成 | 100% |
 | 1.5 编辑器完善 | ✅ 已完成 | 100% |
+| 1.6 GUI主题与图标管理 | 🔄 进行中 | 待定 |
 | 2.5 拓扑编辑器增强 | ✅ 已完成 | 100% |
 | 2.5b 拓扑编辑器持续完善 | 🔄 进行中 | 待定 |
 | 1.5.2 帧协议编辑器完善 | ✅ 已完成 | 100% |
@@ -69,6 +70,9 @@
 - [x] 会话持久化（captureSessionData/writeSessionFile/restoreSession）
 - [x] 单元测试（10+测试文件）
 - [x] AnimationDialog动画对话框基类 + 版本管理模块
+- [x] **主窗口迁移到 SARibbon 功能区**：QMainWindow → SARibbonMainWindow，Ribbon 替代传统菜单栏/工具栏
+- [x] **UI 布局重构**：全 QADS 布局 → QSplitter 混合布局，活动栏/侧边栏/底部面板独立为普通 QWidget，QADS 仅管理编辑器区。附带修复关闭崩溃、Session 恢复、侧边栏显隐等问题。设计文档：`docs/01-规划/UI布局重构方案.md`（commit 3b526e1）
+- [x] **core → etest_core 重命名**：统一 CMake 目标命名规范
 
 ### 遗留可选项
 - [ ] SidebarWidget Git/调试/扩展页仍为占位符（P2，后续阶段按需实现）
@@ -103,6 +107,35 @@
 - [x] Schema XML → .eproto 转换测试（A429_11_ISI_02_发送_Label221_6272T_11）
 
 ---
+
+## 阶段1.6 GUI主题与图标管理（进行中）
+
+> 创建全局 ThemeManager 和 IconProvider 单例，统一管理主题切换和图标加载。
+> 设计文档：`docs/01-规划/全局IconProvider和ThemeManager设计.md`
+
+### 1.6.1 创建 ThemeManager + IconProvider（待开始）
+- [ ] 创建 `src/app/ThemeManager.h/.cpp`：主题状态管理 + 信号机制 + QSS 加载
+- [ ] 创建 `src/app/IconProvider.h/.cpp`：图标路劲解析 + 主题感知 + QCache 缓存
+- [ ] `src/app/CMakeLists.txt` 添加源文件，编译通过
+
+### 1.6.2 FileTypeIconProvider 融合（待开始）
+- [ ] `loadDualThemeIcon()` 委托 `IconProvider::icon()`
+- [ ] 移除 `#include "core/common/ThemeState.h"` 依赖
+- [ ] 增加 `reload()` 方法，连接 `ThemeManager::themeChanged`
+- [ ] 移除 `#include "core/common/ThemeState.h"` FileTypeIconProvider 中引用
+
+### 1.6.3 MainWindow 接入（待开始）
+- [ ] 移除 `applyTheme()`，添加 `onThemeChanged(bool)` slot
+- [ ] `initUi()` 中调用 `ThemeManager::instance().setTheme(theme)`
+- [ ] `initSignals()` 中连接 `themeChanged` → 加载 QSS + 处理 ADS/settings
+- [ ] ConfigManager 的 configChanged 监听移至 ThemeManager 内部
+
+### 1.6.4 ActivityBarWidget 迁移（待开始）
+- [ ] 移除 `IconPair` 结构体，改用 `QStringList icon_names_`
+- [ ] 图标加载改为 `IconProvider::icon("project")`
+- [ ] 连接 `ThemeManager::themeChanged` → `reloadIcons()`
+
+### 预估工期：1 天（4 个子任务可分批实施）
 
 ## 阶段2.5 拓扑编辑器增强（已完成）
 

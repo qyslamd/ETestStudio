@@ -1,5 +1,29 @@
 # IATP — 进度日志
 
+## 2026-05-25
+
+### ThemeManager + IconProvider 设计阶段
+- 完成全局 IconProvider 和 ThemeManager 设计方案，文档：`docs/01-规划/全局IconProvider和ThemeManager设计.md`
+- 决策：不做单独静态库，放在 `src/app/`，example 需要时通过加 QRC 和源文件接入
+- 决策：FileTypeIconProvider 融合进 IconProvider，`loadDualThemeIcon()` 内部委托 `IconProvider::icon()`
+- 决策：IconProvider 的 `resolvePath()` 内部调用 `ThemeManager::instance().isDarkTheme()`，调用者无需传主题
+- 更新 task_plan.md：新增阶段 1.6 GUI主题与图标管理（4 个子任务，预估 1 天）
+
+### 此前完成但未记录的工作
+- **UI 布局重构**（commit 3b526e1）：全 QADS 布局 → QSplitter 混合布局，活动栏/侧边栏/底部面板独立为普通 QWidget，QADS 仅管编辑器区。附带修复关闭崩溃、Session 恢复、侧边栏显隐等问题
+- **SARibbon 主窗口改造**（commit 7e15c75）：QMainWindow → SARibbonMainWindow，Ribbon 功能区替代传统菜单栏和工具栏
+- **core → etest_core 重命名**（commit 466f6ce）：统一 CMake 目标命名规范，涉及 12 个 CMakeLists.txt
+- **topology-demo 修复**（commit 7e15c75）：添加 resource.qrc 加载 SVG 图标，默认浅色主题
+- 以上已补录到 task_plan.md 阶段1.3
+
+### 当前状态
+- **阶段1（基础框架）** ✅ 已完成
+- **阶段1.5（编辑器完善）** ✅ 已完成
+- **阶段1.6（GUI主题与图标管理）** 🔄 规划中（0%）
+- **阶段2.5（拓扑编辑器增强）** ✅ 已完成
+- **阶段2.5b（拓扑持续完善）** 🔄 进行中
+- **阶段2（HAL层）** ❌ 待开始
+
 ## 2026-05-22
 
 ### 帧协议编辑器实现

@@ -1,6 +1,32 @@
 # IATP — 研究发现
 
-## Lua + sol2 技术调研（2026-05-11）
+## ThemeManager + IconProvider 设计（2026-05-25）
+
+### 关键设计决策
+1. **不做单独静态库**：ThemeManager/IconProvider 放 `src/app/`，不拆成 `etest_gui` 库。example 需要时通过手动添加 QRC 和源文件复用
+2. **FileTypeIconProvider 融合**：现有的文件类型图标提供者将内部委托 IconProvider，`loadDualThemeIcon()` 替换为 `IconProvider::icon()`。FileTypeIconProvider 同时增加 `reload()` 方法连接 `themeChanged`，实现文件浏览器图标实时刷新
+3. **ThemeManager 不持有 widget 指针**：只负责状态管理 + 信号通知，QSS 加载由 MainWindow 在响应 `themeChanged` 的 slot 中完成
+4. **IconProvider 依赖 ThemeManager**：`resolvePath()` 内部调用 `ThemeManager::instance().isDarkTheme()`，API 简洁
+5. **向后兼容**：`core::common::isDarkTheme()` 继续可用（ThemeManager 内部同步），现有调用点无需修改
+
+### 图标路劲命名约定
+```
+isDarkTheme() == true  (暗色背景)  → 使用 {name}_light.svg
+isDarkTheme() == false (亮色背景)  → 使用 {name}_dark.svg
+```
+单状态图标（如 `switch_on.svg`、`checkbox_checked.svg`）通过 `QFile::exists()` 回退。
+
+### 缓存策略
+- `QCache<QString, QIcon>` 200 条目上限，42 对图标绰绰有余
+- 空图标也缓存（防止反复命中不存在的文件）
+- `clearCache()` 通过 `Qt::QueuedConnection` 连接 `ThemeManager::themeChanged`
+
+### Re-entry 防护
+`setTheme()` 写 ConfigManager 会触发 `configChanged` → 再次调用 `setTheme()`。通过在 `setTheme()` 开头检查 `if (themeId == current_theme_) return;` 打断循环。
+
+---
+
+
 
 ### sol2绑定Qt类型
 - **QString不原生支持**：sol2不直接识别QString，需要通过`.toStdString()`和`QString::fromStdString()`转换。在Lua侧统一使用Lua string，C++端做转换
