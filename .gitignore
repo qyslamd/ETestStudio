@@ -64,6 +64,14 @@ scripts/run_topology-demo.bat
 scripts/run_protocal-demo.bat
 scripts/run_testprogram-demo.bat
 scripts/run_saribbon-demo.bat
+# SARibbon 自带 examples 运行脚本
+scripts/run_MainWindowExample.bat
+scripts/run_UseNativeFrameExample.bat
+scripts/run_WidgetWithRibbon.bat
+scripts/run_NormalMenuBarExample.bat
+scripts/run_MdiAreaWindowExample.bat
+scripts/run_MatlabUI.bat
+scripts/run_StaticExample.bat
 scripts/code_stats.bat
 scripts/code_stats.ps1
 scripts/format_code.bat
