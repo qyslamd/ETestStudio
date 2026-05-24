@@ -1,8 +1,7 @@
 #ifndef ETEST_APP_MAINWINDOW_H_
 #define ETEST_APP_MAINWINDOW_H_
 
-#include <QMainWindow>
-#include <QToolBar>
+#include "SARibbonMainWindow.h"
 #include "DockManager.h"
 
 class QMenu;
@@ -22,7 +21,7 @@ class BottomContainerWidget;
 class EditorManager;
 class WelcomeWidget;
 
-class MainWindow : public QMainWindow {
+class MainWindow : public SARibbonMainWindow {
   Q_OBJECT
 
  public:
@@ -40,10 +39,8 @@ class MainWindow : public QMainWindow {
   void saveWindowState();
   void restoreWindowState();
 
-  void createMenuBar();
+  void setupRibbon();
   void createStatusBar();
-  void createToolBar();
-  void createEditMenu();
 
   // 项目相关
   bool tryCloseCurrentProject();
@@ -114,7 +111,6 @@ class MainWindow : public QMainWindow {
   SettingsDialog* settings_dialog_ = nullptr;
 
   // 菜单和状态
-  QMenu* view_menu_ = nullptr;
   QMenu* recent_projects_menu_ = nullptr;
   QAction* view_panel_action_ = nullptr;
   QAction* view_aux_sidebar_action_ = nullptr;
@@ -135,10 +131,6 @@ class MainWindow : public QMainWindow {
   QLabel* status_encoding_label_ = nullptr;
   QLabel* status_eol_label_ = nullptr;
   QLabel* status_language_label_ = nullptr;
-
-  // 工具栏相关
-  QToolBar* file_toolbar_ = nullptr;
-  QToolBar* edit_toolbar_ = nullptr;
 
   // 编辑菜单动作
   QAction* edit_undo_action_ = nullptr;

@@ -107,7 +107,7 @@ target_link_libraries(${TARGET_NAME}
     Qt5::Core
     Qt5::Gui
     Qt5::Widgets
-    core
+    etest_core
     etest_api
     etest_topology
     etest_protocal
@@ -117,6 +117,7 @@ target_link_libraries(${TARGET_NAME}
     qtadvanceddocking
     QXlsx::QXlsx
     qsci
+    SARibbonBar::SARibbonBar
     )
 
 #=======================================

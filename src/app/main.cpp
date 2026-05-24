@@ -44,6 +44,9 @@ int main(int argc, char* argv[]) {
 
   LOG_INFO("MAIN", "全局配置管理模块初始化完成");
 
+  // 初始化 SARibbon 静态资源
+  Q_INIT_RESOURCE(SARibbonResource);
+
   // 初始化崩溃捕获模块
   auto crashHandler = CrashHandler::create();
   if (crashHandler) {

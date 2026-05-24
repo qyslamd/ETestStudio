@@ -10,7 +10,6 @@
 #include <QIcon>
 #include <QInputDialog>
 #include <QMenu>
-#include <QMenuBar>
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QShortcut>
@@ -18,7 +17,10 @@
 #include <QStatusBar>
 #include <QToolButton>
 
-
+#include "SARibbonBar.h"
+#include "SARibbonCategory.h"
+#include "SARibbonPanel.h"
+#include "SARibbonQuickAccessBar.h"
 
 #include <DockAreaTitleBar.h>
 #include <DockAreaWidget.h>
@@ -60,7 +62,7 @@ using namespace etest::core::logger;
 namespace etest::app {
 
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent),
+    : SARibbonMainWindow(parent),
       dock_manager_(nullptr),
       activity_bar_(nullptr),
       sidebar_(nullptr),
@@ -106,9 +108,7 @@ void MainWindow::initUi() {
     core::common::setDarkTheme(theme == QStringLiteral("vscode"));
   }
 
-  createMenuBar();
-  createEditMenu();
-  createToolBar();
+  setupRibbon();
   createStatusBar();
 
   // ==================== 中央容器 ====================
@@ -233,18 +233,6 @@ void MainWindow::initSignals() {
               applyTheme();
             }
           });
-
-  // View菜单显示时同步菜单项选中状态
-  if (view_menu_) {
-    connect(view_menu_, &QMenu::aboutToShow, this, [this]() {
-      if (view_panel_action_) {
-        view_panel_action_->setChecked(bottom_container_->isVisible());
-      }
-      if (view_aux_sidebar_action_) {
-        view_aux_sidebar_action_->setChecked(aux_sidebar_widget_->isVisible());
-      }
-    });
-  }
 
   // 视图菜单：输出面板显隐
   connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
@@ -639,102 +627,6 @@ void MainWindow::initSignals() {
   });
 }
 
-void MainWindow::createMenuBar() {
-  auto* menuBar = this->menuBar();
-
-  auto* fileMenu = menuBar->addMenu(QStringLiteral("文件(&F)"));
-  fileMenu->setObjectName("fileMenu");
-
-  new_project_action_ = fileMenu->addAction(QStringLiteral("新建项目"), this,
-                                            &MainWindow::onNewProject);
-  new_project_action_->setShortcut(QStringLiteral("Ctrl+Shift+N"));
-
-  open_project_action_ = fileMenu->addAction(QStringLiteral("打开项目"), this,
-                                             &MainWindow::onOpenProject);
-  open_project_action_->setShortcut(QKeySequence::Open);
-  close_project_action_ = fileMenu->addAction(QStringLiteral("关闭项目"), this,
-                                              &MainWindow::onCloseProject);
-  close_project_action_->setEnabled(false);
-
-  fileMenu->addSeparator();
-
-  save_action_ = fileMenu->addAction(QStringLiteral("保存"), this,
-                                     &MainWindow::onSaveFile);
-  save_action_->setShortcut(QKeySequence::Save);
-  save_action_->setShortcutContext(
-      Qt::ApplicationShortcut);  // 全局级快捷键，不受焦点控件影响
-  save_action_->setEnabled(false);
-
-  save_as_action_ = fileMenu->addAction(QStringLiteral("另存为..."), this,
-                                        &MainWindow::onSaveFileAs);
-  save_as_action_->setEnabled(false);
-
-  save_all_action_ = fileMenu->addAction(QStringLiteral("保存所有"), this,
-                                         &MainWindow::onSaveAllFiles);
-  save_all_action_->setShortcut(QStringLiteral("Ctrl+Shift+S"));
-  save_all_action_->setEnabled(false);
-
-  fileMenu->addSeparator();
-
-  close_file_action_ = fileMenu->addAction(QStringLiteral("关闭文件"), this,
-                                           &MainWindow::onCloseCurrentFile);
-  close_file_action_->setShortcut(QKeySequence::Close);
-  close_file_action_->setEnabled(false);
-
-  close_all_files_action_ = fileMenu->addAction(
-      QStringLiteral("关闭所有文件"), this, &MainWindow::onCloseAllFiles);
-  close_all_files_action_->setEnabled(false);
-
-  fileMenu->addSeparator();
-
-  recent_projects_menu_ = fileMenu->addMenu(QStringLiteral("最近项目"));
-  updateRecentProjectsMenu();
-
-  fileMenu->addSeparator();
-  fileMenu->addAction(QStringLiteral("退出"), this, &QWidget::close);
-
-  QMenu* edit_menu = menuBar->addMenu(QStringLiteral("编辑(&E)"));
-  edit_menu->setObjectName("editMenu");
-  view_menu_ = menuBar->addMenu(QStringLiteral("视图(&V)"));
-
-  // 欢迎页
-  auto* welcomeViewAction = view_menu_->addAction(QStringLiteral("欢迎页(&W)"));
-  connect(welcomeViewAction, &QAction::triggered, this, [this]() {
-    auto* centralDock = dock_manager_->findDockWidget("CentralDock");
-    if (centralDock && centralDock->dockAreaWidget()) {
-      centralDock->dockAreaWidget()->setCurrentIndex(0);
-    }
-  });
-
-  // 输出面板
-  view_panel_action_ = view_menu_->addAction(QStringLiteral("输出面板"));
-  view_panel_action_->setShortcut(QStringLiteral("Ctrl+J"));
-  view_panel_action_->setCheckable(true);
-  view_panel_action_->setChecked(true);
-
-  // 辅助侧边栏（默认隐藏）
-  view_aux_sidebar_action_ =
-      view_menu_->addAction(QStringLiteral("辅助侧边栏"));
-  view_aux_sidebar_action_->setCheckable(true);
-  view_aux_sidebar_action_->setChecked(false);
-
-  auto* toolsMenu = menuBar->addMenu(QStringLiteral("工具(&T)"));
-  toolsMenu->addAction(QStringLiteral("设置(&S)..."), this, [this]() {
-    if (!settings_dialog_) {
-      settings_dialog_ = new SettingsDialog(this);
-    }
-    settings_dialog_->show();
-    settings_dialog_->raise();
-    settings_dialog_->activateWindow();
-  });
-
-  auto* helpMenu = menuBar->addMenu(QStringLiteral("帮助(&H)"));
-  helpMenu->addAction(QStringLiteral("关于(&A)..."), this, [this]() {
-    QMessageBox::about(this, QStringLiteral("关于 ETest Demo"),
-                       QStringLiteral("ETest Demo v1.0.0\n\n"
-                                      "基于 Qt/C++ 的测试系统仿真实现。"));
-  });
-}
 
 void MainWindow::createStatusBar() {
   // 状态栏样式已由全局QSS覆盖，无需内联设置
@@ -772,120 +664,7 @@ void MainWindow::createStatusBar() {
   statusBar()->clearMessage();
 }
 
-void MainWindow::createToolBar() {
-  // ==================== 文件工具栏 ====================
-  file_toolbar_ = addToolBar(QStringLiteral("文件"));
-  file_toolbar_->setObjectName("FileToolbar");
-  file_toolbar_->setMovable(false);                           // 固定在顶部
-  file_toolbar_->setToolButtonStyle(Qt::ToolButtonIconOnly);  // 仅显示图标
 
-  new_project_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
-  new_project_action_->setToolTip(QStringLiteral("新建项目 (Ctrl+Shift+N)"));
-  file_toolbar_->addAction(new_project_action_);
-
-  open_project_action_->setIcon(
-      style()->standardIcon(QStyle::SP_DialogOpenButton));
-  open_project_action_->setToolTip(QStringLiteral("打开项目 (Ctrl+O)"));
-  file_toolbar_->addAction(open_project_action_);
-
-  file_toolbar_->addSeparator();
-
-  save_action_->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
-  save_action_->setToolTip(QStringLiteral("保存 (Ctrl+S)"));
-  file_toolbar_->addAction(save_action_);
-
-  // ==================== 编辑工具栏 ====================
-  edit_toolbar_ = addToolBar(QStringLiteral("编辑"));
-  edit_toolbar_->setObjectName("EditToolbar");
-  edit_toolbar_->setMovable(false);
-  edit_toolbar_->setToolButtonStyle(Qt::ToolButtonIconOnly);
-
-  edit_undo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowBack));
-  edit_undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
-  edit_toolbar_->addAction(edit_undo_action_);
-
-  edit_redo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
-  edit_redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
-  edit_toolbar_->addAction(edit_redo_action_);
-
-  edit_toolbar_->addSeparator();
-
-  edit_cut_action_->setIcon(style()->standardIcon(QStyle::SP_FileLinkIcon));
-  edit_cut_action_->setToolTip(QStringLiteral("剪切 (Ctrl+X)"));
-  edit_toolbar_->addAction(edit_cut_action_);
-
-  edit_copy_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
-  edit_copy_action_->setToolTip(QStringLiteral("复制 (Ctrl+C)"));
-  edit_toolbar_->addAction(edit_copy_action_);
-
-  edit_paste_action_->setIcon(style()->standardIcon(QStyle::SP_FileLinkIcon));
-  edit_paste_action_->setToolTip(QStringLiteral("粘贴 (Ctrl+V)"));
-  edit_toolbar_->addAction(edit_paste_action_);
-}
-
-void MainWindow::createEditMenu() {
-  QMenu* edit_menu = menuBar()->findChild<QMenu*>("editMenu");
-  if (!edit_menu) {
-    edit_menu = menuBar()->addMenu(QStringLiteral("编辑(&E)"));
-    edit_menu->setObjectName("editMenu");
-  }
-
-  // 撤销
-  edit_undo_action_ =
-      edit_menu->addAction(style()->standardIcon(QStyle::SP_ArrowBack),
-                           QStringLiteral("撤销"), this, &MainWindow::onUndo);
-  edit_undo_action_->setShortcut(QKeySequence::Undo);
-  edit_undo_action_->setEnabled(false);
-
-  // 重做
-  edit_redo_action_ =
-      edit_menu->addAction(style()->standardIcon(QStyle::SP_ArrowForward),
-                           QStringLiteral("重做"), this, &MainWindow::onRedo);
-  edit_redo_action_->setShortcut(QKeySequence::Redo);
-  edit_redo_action_->setEnabled(false);
-
-  edit_menu->addSeparator();
-
-  // 剪切
-  edit_cut_action_ =
-      edit_menu->addAction(QStringLiteral("剪切"), this, &MainWindow::onCut);
-  edit_cut_action_->setShortcut(QKeySequence::Cut);
-  edit_cut_action_->setEnabled(false);
-
-  // 复制
-  edit_copy_action_ =
-      edit_menu->addAction(QStringLiteral("复制"), this, &MainWindow::onCopy);
-  edit_copy_action_->setShortcut(QKeySequence::Copy);
-  edit_copy_action_->setEnabled(false);
-
-  // 粘贴
-  edit_paste_action_ =
-      edit_menu->addAction(QStringLiteral("粘贴"), this, &MainWindow::onPaste);
-  edit_paste_action_->setShortcut(QKeySequence::Paste);
-  edit_paste_action_->setEnabled(false);
-
-  edit_menu->addSeparator();
-
-  // 查找
-  edit_find_action_ =
-      edit_menu->addAction(QStringLiteral("查找"), this, &MainWindow::onFind);
-  edit_find_action_->setShortcut(QKeySequence::Find);
-  edit_find_action_->setEnabled(false);
-
-  // 替换
-  edit_replace_action_ = edit_menu->addAction(QStringLiteral("替换"), this,
-                                              &MainWindow::onReplace);
-  edit_replace_action_->setShortcut(QKeySequence::Replace);
-  edit_replace_action_->setEnabled(false);
-
-  edit_menu->addSeparator();
-
-  // 跳转到行
-  edit_go_to_line_action_ = edit_menu->addAction(QStringLiteral("跳转到行"),
-                                                 this, &MainWindow::onGoToLine);
-  edit_go_to_line_action_->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
-  edit_go_to_line_action_->setEnabled(false);
-}
 
 void MainWindow::onNewProject() {
   // 先尝试关闭当前项目
@@ -1263,6 +1042,244 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   QMainWindow::closeEvent(event);
 }
 
+//-----------------------------------------------------------------------------
+// Ribbon
+//-----------------------------------------------------------------------------
+
+void MainWindow::setupRibbon() {
+  auto* ribbon = ribbonBar();
+
+  // ---- 创建文件动作（原 createMenuBar 中的逻辑） ----
+  new_project_action_ = new QAction(QStringLiteral("新建项目"), this);
+  new_project_action_->setShortcut(QStringLiteral("Ctrl+Shift+N"));
+  connect(new_project_action_, &QAction::triggered, this,
+          &MainWindow::onNewProject);
+
+  open_project_action_ = new QAction(QStringLiteral("打开项目"), this);
+  open_project_action_->setShortcut(QKeySequence::Open);
+  connect(open_project_action_, &QAction::triggered, this,
+          &MainWindow::onOpenProject);
+
+  close_project_action_ = new QAction(QStringLiteral("关闭项目"), this);
+  close_project_action_->setEnabled(false);
+  connect(close_project_action_, &QAction::triggered, this,
+          &MainWindow::onCloseProject);
+
+  save_action_ = new QAction(QStringLiteral("保存"), this);
+  save_action_->setShortcut(QKeySequence::Save);
+  save_action_->setShortcutContext(Qt::ApplicationShortcut);
+  save_action_->setEnabled(false);
+  connect(save_action_, &QAction::triggered, this, &MainWindow::onSaveFile);
+
+  save_as_action_ = new QAction(QStringLiteral("另存为..."), this);
+  save_as_action_->setEnabled(false);
+  connect(save_as_action_, &QAction::triggered, this,
+          &MainWindow::onSaveFileAs);
+
+  save_all_action_ = new QAction(QStringLiteral("保存所有"), this);
+  save_all_action_->setShortcut(QStringLiteral("Ctrl+Shift+S"));
+  save_all_action_->setEnabled(false);
+  connect(save_all_action_, &QAction::triggered, this,
+          &MainWindow::onSaveAllFiles);
+
+  close_file_action_ = new QAction(QStringLiteral("关闭文件"), this);
+  close_file_action_->setShortcut(QKeySequence::Close);
+  close_file_action_->setEnabled(false);
+  connect(close_file_action_, &QAction::triggered, this,
+          &MainWindow::onCloseCurrentFile);
+
+  close_all_files_action_ = new QAction(QStringLiteral("关闭所有文件"), this);
+  close_all_files_action_->setEnabled(false);
+  connect(close_all_files_action_, &QAction::triggered, this,
+          &MainWindow::onCloseAllFiles);
+
+  // ---- 创建编辑动作（原 createEditMenu 中的逻辑） ----
+  edit_undo_action_ = new QAction(
+      style()->standardIcon(QStyle::SP_ArrowBack),
+      QStringLiteral("撤销"), this);
+  edit_undo_action_->setShortcut(QKeySequence::Undo);
+  edit_undo_action_->setEnabled(false);
+
+  edit_redo_action_ = new QAction(
+      style()->standardIcon(QStyle::SP_ArrowForward),
+      QStringLiteral("重做"), this);
+  edit_redo_action_->setShortcut(QKeySequence::Redo);
+  edit_redo_action_->setEnabled(false);
+
+  edit_cut_action_ = new QAction(QStringLiteral("剪切"), this);
+  edit_cut_action_->setShortcut(QKeySequence::Cut);
+  edit_cut_action_->setEnabled(false);
+
+  edit_copy_action_ = new QAction(QStringLiteral("复制"), this);
+  edit_copy_action_->setShortcut(QKeySequence::Copy);
+  edit_copy_action_->setEnabled(false);
+
+  edit_paste_action_ = new QAction(QStringLiteral("粘贴"), this);
+  edit_paste_action_->setShortcut(QKeySequence::Paste);
+  edit_paste_action_->setEnabled(false);
+
+  edit_find_action_ = new QAction(QStringLiteral("查找"), this);
+  edit_find_action_->setShortcut(QKeySequence::Find);
+  edit_find_action_->setEnabled(false);
+
+  edit_replace_action_ = new QAction(QStringLiteral("替换"), this);
+  edit_replace_action_->setShortcut(QKeySequence::Replace);
+  edit_replace_action_->setEnabled(false);
+
+  edit_go_to_line_action_ = new QAction(QStringLiteral("跳转到行"), this);
+  edit_go_to_line_action_->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
+  edit_go_to_line_action_->setEnabled(false);
+
+  // ---- QuickAccessBar ----
+  auto* qab = ribbon->quickAccessBar();
+  new_project_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
+  qab->addAction(new_project_action_);
+  open_project_action_->setIcon(
+      style()->standardIcon(QStyle::SP_DialogOpenButton));
+  qab->addAction(open_project_action_);
+  save_action_->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+  qab->addAction(save_action_);
+  qab->addSeparator();
+
+  edit_undo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowBack));
+  qab->addAction(edit_undo_action_);
+  edit_redo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
+  qab->addAction(edit_redo_action_);
+
+  // ---- Application Button ----
+  ribbon->applicationButton()->setIcon(
+      style()->standardIcon(QStyle::SP_FileIcon));
+  ribbon->applicationButton()->setText(QStringLiteral("文件"));
+
+  // 文件 Application Button 菜单 (QMenu)
+  auto* app_menu = new QMenu(this);
+  app_menu->addAction(close_project_action_);
+  app_menu->addSeparator();
+  app_menu->addAction(save_all_action_);
+  app_menu->addAction(save_as_action_);
+  app_menu->addSeparator();
+  app_menu->addAction(close_file_action_);
+  app_menu->addAction(close_all_files_action_);
+  app_menu->addSeparator();
+
+  recent_projects_menu_ = app_menu->addMenu(QStringLiteral("最近项目"));
+  updateRecentProjectsMenu();
+
+  app_menu->addSeparator();
+  app_menu->addAction(QStringLiteral("退出"), this, &QWidget::close);
+
+  // 将 QMenu 挂到 Application Button 上
+  if (auto* app_btn = qobject_cast<QToolButton*>(ribbon->applicationButton())) {
+    app_btn->setMenu(app_menu);
+  }
+
+  // ============================================================
+  //  主页
+  // ============================================================
+  {
+    auto* cat = ribbon->addCategoryPage(QStringLiteral("主页"));
+
+    // 文件 Panel
+    auto* panel_file = cat->addPanel(QStringLiteral("文件"));
+    panel_file->addLargeAction(new_project_action_);
+    panel_file->addLargeAction(open_project_action_);
+    panel_file->addLargeAction(save_action_);
+
+    // 编辑 Panel
+    auto* panel_edit = cat->addPanel(QStringLiteral("编辑"));
+    panel_edit->addLargeAction(edit_undo_action_);
+    panel_edit->addLargeAction(edit_redo_action_);
+    panel_edit->addSeparator();
+
+    edit_cut_action_->setIcon(
+        style()->standardIcon(QStyle::SP_FileLinkIcon));
+    edit_copy_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
+    edit_paste_action_->setIcon(
+        style()->standardIcon(QStyle::SP_FileLinkIcon));
+    panel_edit->addSmallAction(edit_cut_action_);
+    panel_edit->addSmallAction(edit_copy_action_);
+    panel_edit->addSmallAction(edit_paste_action_);
+
+    panel_edit->addSeparator();
+    panel_edit->addSmallAction(edit_find_action_);
+    panel_edit->addSmallAction(edit_replace_action_);
+    panel_edit->addSmallAction(edit_go_to_line_action_);
+  }
+
+  // ============================================================
+  //  视图
+  // ============================================================
+  {
+    auto* cat = ribbon->addCategoryPage(QStringLiteral("视图"));
+
+    auto* panel_panels = cat->addPanel(QStringLiteral("面板"));
+
+    auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
+    connect(act_welcome, &QAction::triggered, this, [this]() {
+      auto* centralDock = dock_manager_->findDockWidget("CentralDock");
+      if (centralDock && centralDock->dockAreaWidget()) {
+        centralDock->dockAreaWidget()->setCurrentIndex(0);
+      }
+    });
+    panel_panels->addLargeAction(act_welcome);
+
+    view_panel_action_ = new QAction(QStringLiteral("输出面板"), this);
+    view_panel_action_->setCheckable(true);
+    view_panel_action_->setChecked(true);
+    view_panel_action_->setShortcut(QStringLiteral("Ctrl+J"));
+    panel_panels->addLargeAction(view_panel_action_);
+
+    view_aux_sidebar_action_ =
+        new QAction(QStringLiteral("辅助侧边栏"), this);
+    view_aux_sidebar_action_->setCheckable(true);
+    view_aux_sidebar_action_->setChecked(false);
+    panel_panels->addLargeAction(view_aux_sidebar_action_);
+  }
+
+  // ============================================================
+  //  工具
+  // ============================================================
+  {
+    auto* cat = ribbon->addCategoryPage(QStringLiteral("工具"));
+
+    auto* panel_tools = cat->addPanel(QStringLiteral("工具"));
+    auto* act_settings = new QAction(
+        style()->standardIcon(QStyle::SP_FileDialogNewFolder),
+        QStringLiteral("设置"), this);
+    connect(act_settings, &QAction::triggered, this, [this]() {
+      if (!settings_dialog_) {
+        settings_dialog_ = new SettingsDialog(this);
+        settings_dialog_->setStyleSheet(styleSheet());
+      }
+      settings_dialog_->show();
+      settings_dialog_->raise();
+      settings_dialog_->activateWindow();
+    });
+    panel_tools->addLargeAction(act_settings);
+  }
+
+  // ============================================================
+  //  帮助
+  // ============================================================
+  {
+    auto* cat = ribbon->addCategoryPage(QStringLiteral("帮助"));
+
+    auto* panel_about = cat->addPanel(QStringLiteral("关于"));
+    auto* act_about = new QAction(QStringLiteral("关于 ETest Demo"), this);
+    connect(act_about, &QAction::triggered, this, [this]() {
+      QMessageBox::about(this, QStringLiteral("关于 ETest Demo"),
+                         QStringLiteral("ETest Demo v1.0.0\n\n"
+                                        "基于 Qt/C++ 的测试系统仿真实现。"));
+    });
+    panel_about->addLargeAction(act_about);
+  }
+
+  // Ribbon style & collapse
+  ribbon->setRibbonStyle(SARibbonBar::RibbonStyleLooseThreeRow);
+  ribbon->showMinimumModeButton(true);
+  ribbon->setTabDoubleClickToMinimumMode(true);
+}
+
 void MainWindow::saveWindowState() {
   auto& cfg = ConfigManager::instance();
   cfg.set(CONFIG_WINDOW_WIDTH, width());
@@ -1270,11 +1287,6 @@ void MainWindow::saveWindowState() {
   cfg.set(CONFIG_WINDOW_X, x());
   cfg.set(CONFIG_WINDOW_Y, y());
   cfg.set(CONFIG_WINDOW_MAXIMIZED, isMaximized());
-
-  // 保存工具栏可见性
-  if (file_toolbar_) {
-    cfg.set(CONFIG_TOOLBAR_VISIBLE, file_toolbar_->isVisible());
-  }
 }
 
 void MainWindow::restoreWindowState() {
@@ -1292,14 +1304,6 @@ void MainWindow::restoreWindowState() {
 
   if (cfg.get<bool>(CONFIG_WINDOW_MAXIMIZED, CONFIG_WINDOW_DEFAULT_MAXIMIZED)) {
     showMaximized();
-  }
-
-  // 恢复工具栏可见性
-  if (file_toolbar_ && edit_toolbar_) {
-    bool toolbarVisible =
-        cfg.get<bool>(CONFIG_TOOLBAR_VISIBLE, CONFIG_TOOLBAR_DEFAULT_VISIBLE);
-    file_toolbar_->setVisible(toolbarVisible);
-    edit_toolbar_->setVisible(toolbarVisible);
   }
 }
 
