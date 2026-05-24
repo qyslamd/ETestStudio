@@ -63,6 +63,7 @@ scripts/run_icd-editor-demo.bat
 scripts/run_topology-demo.bat
 scripts/run_protocal-demo.bat
 scripts/run_testprogram-demo.bat
+scripts/run_saribbon-demo.bat
 scripts/code_stats.bat
 scripts/code_stats.ps1
 scripts/format_code.bat
@@ -91,3 +92,6 @@ version.txt
 3rdparty/zlib-1.3.2/
 3rdparty/libpng-1.6.43/
 3rdparty/sol2-3.3.0/
+3rdparty/SARibbon-2.5.7/
+3rdparty/qwindowkit-1.5.0/
+3rdparty/qmsetup-4a3ff82/

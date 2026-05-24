@@ -101,6 +101,25 @@ set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "Do not build spdlog examples" FORCE)
 set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "Do not build spdlog tests" FORCE)
 add_subdirectory(3rdparty/spdlog-1.17.0)
 
+# QWindowKit - frameless window support library (used by SARibbon)
+set(QWINDOWKIT_BUILD_STATIC ON CACHE BOOL "Build static library for QWindowKit" FORCE)
+set(QWINDOWKIT_BUILD_EXAMPLES OFF CACHE BOOL "Do not build QWindowKit examples" FORCE)
+set(QWINDOWKIT_BUILD_DOCUMENTATIONS OFF CACHE BOOL "Do not build QWindowKit docs" FORCE)
+set(QWINDOWKIT_BUILD_QUICK OFF CACHE BOOL "Do not build QWindowKit quick module" FORCE)
+set(QWINDOWKIT_BUILD_WIDGETS ON CACHE BOOL "Build QWindowKit widgets module" FORCE)
+set(QWINDOWKIT_INSTALL OFF CACHE BOOL "Do not install QWindowKit" FORCE)
+add_subdirectory(3rdparty/qwindowkit-1.5.0)
+
+# SARibbon QWindowKit 补丁：替换 find_package 为本项目直接目标引用
+include(cmake/saribbon/patch_qwindowkit.cmake)
+
+# SARibbon Ribbon 界面控件库
+set(SARIBBON_BUILD_STATIC_LIBS ON CACHE BOOL "Build static library for SARibbon" FORCE)
+set(SARIBBON_BUILD_EXAMPLES OFF CACHE BOOL "Do not build SARibbon examples" FORCE)
+set(SARIBBON_USE_FRAMELESS_LIB ON CACHE BOOL "Use QWindowKit for frameless window" FORCE)
+set(SARIBBON_INSTALL_IN_CURRENT_DIR OFF CACHE BOOL "Do not install in current dir" FORCE)
+add_subdirectory(3rdparty/SARibbon-2.5.7)
+
 # googletest 单元测库
 add_subdirectory(3rdparty/googletest-1.17.0)
 
@@ -204,6 +223,7 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/topology-demo)
     add_subdirectory(examples/protocal-demo)
     add_subdirectory(examples/testprogram-demo)
+    add_subdirectory(examples/saribbon-demo)
 endif()
 
 

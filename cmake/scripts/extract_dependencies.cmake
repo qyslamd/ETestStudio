@@ -16,6 +16,9 @@ set(DEPENDENCY_ARCHIVES
     "lua-5.4.4.tar.gz"
     "libpng-1.6.43.tar.gz"
     "sol2-3.3.0.tar.gz"
+    "SARibbon-2.5.7.tar.gz"
+    "qwindowkit-1.5.0.tar.gz"
+    "qmsetup-4a3ff82.tar.gz"
 )
 
 # 检测tar解压命令是否可用

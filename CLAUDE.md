@@ -84,7 +84,7 @@ format_code.bat
 
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：
-- Qt 5.12.12（Core、Gui、Widgets、PrintSupport、Test、Xml、Svg），Qt使用官方编译的二进制发布包，默认是共享库
+- Qt 5.14.2（Core、Gui、Widgets、PrintSupport、Test、Xml、Svg），Qt使用官方编译的二进制发布包，默认是共享库
 - Qt-Advanced-Docking-System 3.8.3（高级停靠系统）
 - QXlsx 1.5.0（Excel读写）
 - zlib 1.3.2（压缩库）
@@ -96,5 +96,5 @@ format_code.bat
 - QScintilla 2.11.3（高级文本编辑器组件）
 
 ## 其它注意事项
- - Qt使用的SDK是 5.12.12 msvc2017_64，但是我并未使用MSVC2017的环境，实际测试下来 MSVC2019编译环境完全兼容 MSVC2017
+ - Qt使用的SDK是 5.14.2 msvc2017_64，但是编译器使用的是 MSVC2019，实际测试下来 MSVC2019编译环境完全兼容 MSVC2017 编译的 Qt 库
  - 可以直接在终端中执行 `scripts/build_ninja.bat` 构建项目。libpng 的 MSYS 环境兼容性问题已通过 `cmake/libpng/patch_msys_env.cmake` 补丁解决。
