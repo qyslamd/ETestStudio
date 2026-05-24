@@ -16,7 +16,7 @@ set(DEPENDENCY_ARCHIVES
     "lua-5.4.4.tar.gz"
     "libpng-1.6.43.tar.gz"
     "sol2-3.3.0.tar.gz"
-    "SARibbon-2.5.7.tar.gz"
+    "SARibbon-2.5.7.zip"
     "qwindowkit-1.5.0.tar.gz"
     "qmsetup-4a3ff82.tar.gz"
 )
@@ -61,8 +61,8 @@ function(extract_if_needed archive_file)
         return()
     endif()
     
-    # 提取目录名（去掉.tar.gz后缀）
-    string(REGEX REPLACE "\\.tar\\.gz$" "" dir_name "${archive_file}")
+    # 提取目录名（去掉.tar.gz或.zip后缀）
+    string(REGEX REPLACE "\\.(tar\\.gz|zip)$" "" dir_name "${archive_file}")
     set(dir_path "${3RDPARTY_DIR}/${dir_name}")
     
     # 检查目录是否已存在
@@ -73,42 +73,57 @@ function(extract_if_needed archive_file)
     
     # 尝试解压
     message(STATUS "Extracting: ${archive_file}")
-    
-    set(extract_success FALSE)
-    
-    # 优先使用tar命令
-    if(TAR_FOUND)
-        execute_process(COMMAND tar -xf "${archive_file}"
-                        WORKING_DIRECTORY "${3RDPARTY_DIR}"
-                        RESULT_VARIABLE extract_result
-                        OUTPUT_QUIET
-                        ERROR_QUIET)
-        if(extract_result EQUAL 0)
-            set(extract_success TRUE)
-            message(STATUS "  Successfully extracted using tar")
-        else()
-            message(WARNING "  tar extraction failed, trying 7z...")
+
+    # 判断文件类型：
+    # - .tar.gz 使用 tar 命令解压
+    # - .zip 使用 CMake 内置的 file(ARCHIVE_EXTRACT) 解压
+    if("${archive_file}" MATCHES "\\.zip$")
+        message(STATUS "  Detected zip format, using CMake built-in extract...")
+        file(ARCHIVE_EXTRACT INPUT "${archive_path}" DESTINATION "${3RDPARTY_DIR}")
+        set(extract_success TRUE)
+    else()
+        set(extract_success FALSE)
+
+        # 优先使用tar命令
+        if(TAR_FOUND)
+            execute_process(COMMAND tar -xf "${archive_file}"
+                            WORKING_DIRECTORY "${3RDPARTY_DIR}"
+                            RESULT_VARIABLE extract_result
+                            OUTPUT_QUIET)
+            if(extract_result EQUAL 0)
+                set(extract_success TRUE)
+                message(STATUS "  Successfully extracted using tar")
+            else()
+                message(STATUS "  tar finished with warnings (exit code ${extract_result}), checking directory...")
+            endif()
+        endif()
+
+        # 如果tar失败或不存在，尝试7z
+        if(NOT extract_success AND 7Z_FOUND)
+            message(STATUS "  Trying 7z...")
+            execute_process(COMMAND 7z x "${archive_file}" -y
+                            WORKING_DIRECTORY "${3RDPARTY_DIR}"
+                            RESULT_VARIABLE extract_result
+                            OUTPUT_QUIET)
+            if(extract_result EQUAL 0)
+                set(extract_success TRUE)
+                message(STATUS "  Successfully extracted using 7z")
+            else()
+                message(STATUS "  7z finished with warnings (exit code ${extract_result}), checking directory...")
+            endif()
         endif()
     endif()
-    
-    # 如果tar失败或不存在，尝试7z
-    if(NOT extract_success AND 7Z_FOUND)
-        execute_process(COMMAND 7z x "${archive_file}" -y
-                        WORKING_DIRECTORY "${3RDPARTY_DIR}"
-                        RESULT_VARIABLE extract_result
-                        OUTPUT_QUIET
-                        ERROR_QUIET)
-        if(extract_result EQUAL 0)
-            set(extract_success TRUE)
-            message(STATUS "  Successfully extracted using 7z")
+
+    # 验证解压结果：目录存在且非空即视为成功
+    # Windows 内置 tar.exe 对含中文文件的压缩包报错退出，
+    # 但实际源文件已正确解出，不影响编译
+    if(EXISTS "${dir_path}")
+        file(GLOB dir_content "${dir_path}/*")
+        if(dir_content)
+            message(STATUS "  Extraction complete: ${dir_name}")
         else()
-            message(WARNING "  7z extraction failed")
+            message(FATAL_ERROR "  Extraction failed: ${dir_name} is empty")
         endif()
-    endif()
-    
-    # 验证解压结果
-    if(extract_success AND EXISTS "${dir_path}")
-        message(STATUS "  Extraction complete: ${dir_name}")
     else()
         message(FATAL_ERROR "  Extraction failed for: ${archive_file}")
     endif()
@@ -139,3 +154,30 @@ message(STATUS "========================================")
 message(STATUS "Dependency extraction complete!")
 message(STATUS "========================================")
 message(STATUS "")
+
+# ----------------------------------
+# Post-extraction setup
+# ----------------------------------
+
+# QWindowKit requires qmsetup inside its own source tree (git submodule).
+# After both archives are extracted, copy qmsetup into place if missing.
+set(QWINDOWKIT_DIR "${3RDPARTY_DIR}/qwindowkit-1.5.0")
+set(QMSETUP_SOURCE_DIR "${3RDPARTY_DIR}/qmsetup-4a3ff82")
+set(QMSETUP_TARGET_DIR "${QWINDOWKIT_DIR}/qmsetup")
+
+if(EXISTS "${QWINDOWKIT_DIR}" AND EXISTS "${QMSETUP_SOURCE_DIR}")
+    if(NOT EXISTS "${QMSETUP_TARGET_DIR}/CMakeLists.txt")
+        message(STATUS "Setting up qmsetup for QWindowKit...")
+        file(COPY "${QMSETUP_SOURCE_DIR}/" DESTINATION "${QMSETUP_TARGET_DIR}")
+        message(STATUS "  qmsetup copied to ${QMSETUP_TARGET_DIR}")
+    else()
+        message(STATUS "qmsetup already in place for QWindowKit")
+    endif()
+else()
+    if(NOT EXISTS "${QWINDOWKIT_DIR}")
+        message(STATUS "QWindowKit directory not found, skipping qmsetup setup")
+    endif()
+    if(NOT EXISTS "${QMSETUP_SOURCE_DIR}")
+        message(STATUS "Standalone qmsetup directory not found, skipping qmsetup setup")
+    endif()
+endif()
