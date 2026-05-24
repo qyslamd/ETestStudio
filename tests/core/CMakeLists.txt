@@ -2,7 +2,7 @@
 add_etest(
     NAME test_core_config
     SOURCES config_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test
     LABELS CORE
 )
@@ -11,7 +11,7 @@ add_etest(
 add_etest(
     NAME test_core_logger
     SOURCES logger_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test
     LABELS CORE
 )
@@ -21,7 +21,7 @@ if(WIN32)
     add_etest(
         NAME test_core_crashhandler
         SOURCES crashhandler_test.cpp
-        LIBS core dbghelp
+        LIBS etest_core dbghelp
         QT_MODULES Core Test Widgets
         LABELS CORE
     )
@@ -35,7 +35,7 @@ endif()
 add_etest(
     NAME test_core_utils
     SOURCES utils_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test
     LABELS CORE
 )
@@ -44,7 +44,7 @@ add_etest(
 add_etest(
     NAME test_core_string_util
     SOURCES string_util_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test
     LABELS CORE
 )
@@ -53,7 +53,7 @@ add_etest(
 add_etest(
     NAME test_core_byte_util
     SOURCES byte_util_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test
     LABELS CORE
 )
@@ -62,7 +62,7 @@ add_etest(
 add_etest(
     NAME test_core_plugin_manager
     SOURCES plugin_manager_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test Widgets
     LABELS CORE
 )
@@ -71,7 +71,7 @@ add_etest(
 add_etest(
     NAME test_core_ad_device_plugin
     SOURCES ad_device_plugin_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test
     LABELS CORE
 )
@@ -80,7 +80,7 @@ add_etest(
 add_etest(
     NAME test_core_project_manager
     SOURCES project_manager_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test
     LABELS CORE
 )
@@ -89,7 +89,7 @@ add_etest(
 add_etest(
     NAME test_core_global_exception_handler
     SOURCES global_exception_handler_test.cpp
-    LIBS core
+    LIBS etest_core
     QT_MODULES Core Test Widgets
     LABELS CORE
 )

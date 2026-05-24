@@ -1,4 +1,4 @@
-set(TARGET_NAME core)
+set(TARGET_NAME etest_core)
 
 set(SOURCES
     logger/Logger.cpp

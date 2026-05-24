@@ -14,7 +14,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     Qt5::Widgets
     Qt5::Core
     Qt5::Gui
-    core
+    etest_core
     spdlog::spdlog
 )
 

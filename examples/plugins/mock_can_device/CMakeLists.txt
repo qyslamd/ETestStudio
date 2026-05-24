@@ -14,7 +14,7 @@ target_include_directories(${PLUGIN_NAME} PRIVATE
 )
 
 target_link_libraries(${PLUGIN_NAME} PRIVATE
-    core
+    etest_core
 )
 
 set_target_properties(${PLUGIN_NAME} PROPERTIES
