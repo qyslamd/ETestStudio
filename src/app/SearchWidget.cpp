@@ -10,6 +10,8 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
+#include "core/common/ThemeState.h"
+
 #include "logger/Logger.h"
 
 using namespace etest::core::logger;
@@ -50,9 +52,9 @@ void SearchWidget::initUi() {
   search_button_ = new QPushButton(this);
   search_button_->setToolTip(QStringLiteral("搜索"));
   search_button_->setFixedSize(26, 26);
-  QIcon searchIcon;
-  searchIcon.addFile(":/resources/icons/svg/search_dark.svg", QSize(),
-                     QIcon::Normal, QIcon::Off);
+  QIcon searchIcon(core::common::isDarkTheme()
+                       ? ":/resources/icons/svg/search_light.svg"
+                       : ":/resources/icons/svg/search_dark.svg");
   search_button_->setIcon(searchIcon);
   search_button_->setIconSize(QSize(16, 16));
 

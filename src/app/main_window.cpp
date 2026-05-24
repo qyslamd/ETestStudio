@@ -51,6 +51,7 @@
 #include "project/ProjectManager.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
+#include "core/common/ThemeState.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -97,11 +98,12 @@ void MainWindow::initUi() {
   setMinimumSize(900, 600);
   setWindowIcon(QIcon(":/resources/icons/app_icon.ico"));
 
-  // 加载VSCode风格样式表
-  QFile styleFile(":/resources/styles/vscode.qss");
-  if (styleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    setStyleSheet(QString::fromUtf8(styleFile.readAll()));
-    styleFile.close();
+  // 在widget构造前设置图标主题标志，确保按钮图标选取正确的变体
+  {
+    QString theme = ConfigManager::instance().get<QString>(
+        CONFIG_APPEARANCE_THEME,
+        QString::fromLatin1(CONFIG_APPEARANCE_DEFAULT_THEME));
+    core::common::setDarkTheme(theme == QStringLiteral("vscode"));
   }
 
   createMenuBar();
@@ -137,13 +139,8 @@ void MainWindow::initUi() {
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   dock_manager_ = new ads::CDockManager(v_splitter_);
 
-  // 覆盖QADS内置的default.css，应用暗色主题
-  QFile adsStyleFile(":/resources/styles/ads_dark.qss");
-  if (adsStyleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    dock_manager_->setStyleSheet(dock_manager_->styleSheet() +
-                                 QString::fromUtf8(adsStyleFile.readAll()));
-    adsStyleFile.close();
-  }
+  // 根据配置加载主题样式表
+  applyTheme();
 
   // 中央编辑区：Welcome页面
   welcome_widget_ = new WelcomeWidget(this);
@@ -194,7 +191,49 @@ void MainWindow::initUi() {
   restoreWindowState();
 }
 
+void MainWindow::applyTheme() {
+  auto& cfg = ConfigManager::instance();
+  QString theme = cfg.get<QString>(CONFIG_APPEARANCE_THEME,
+                                   QString::fromLatin1(CONFIG_APPEARANCE_DEFAULT_THEME));
+
+  // 更新图标主题
+  bool dark = (theme == QStringLiteral("vscode"));
+  core::common::setDarkTheme(dark);
+  activity_bar_->reloadIcons();
+
+  // 加载应用样式表
+  QFile styleFile(QStringLiteral(":/resources/styles/%1.qss").arg(theme));
+  if (styleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    setStyleSheet(QString::fromUtf8(styleFile.readAll()));
+    styleFile.close();
+  }
+
+  // 暗色主题时加载QADS暗色覆盖，默认主题使用QADS内置default.css
+  if (theme == QStringLiteral("vscode")) {
+    QFile adsFile(QStringLiteral(":/resources/styles/ads_dark.qss"));
+    if (adsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      dock_manager_->setStyleSheet(QString::fromUtf8(adsFile.readAll()));
+      adsFile.close();
+    }
+  } else {
+    dock_manager_->setStyleSheet(QString());
+  }
+
+  // 同步设置对话框样式
+  if (settings_dialog_) {
+    settings_dialog_->setStyleSheet(styleSheet());
+  }
+}
+
 void MainWindow::initSignals() {
+  // 主题切换：监听配置变化
+  connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
+          [this](const QString& key) {
+            if (key == QString::fromLatin1(CONFIG_APPEARANCE_THEME)) {
+              applyTheme();
+            }
+          });
+
   // View菜单显示时同步菜单项选中状态
   if (view_menu_) {
     connect(view_menu_, &QMenu::aboutToShow, this, [this]() {

@@ -8,6 +8,8 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 
+#include "core/common/ThemeState.h"
+
 namespace etest::app {
 
 // ── Constructor ──────────────────────────────────────────────────
@@ -58,7 +60,8 @@ void ImageViewerWidget::setupUi() {
   view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   view_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   view_->setFrameShape(QFrame::NoFrame);
-  view_->setBackgroundBrush(QColor(60, 60, 60));
+  view_->setBackgroundBrush(core::common::isDarkTheme() ? QColor(60, 60, 60)
+                                                     : QColor(210, 210, 210));
   layout->addWidget(view_);
 }
 

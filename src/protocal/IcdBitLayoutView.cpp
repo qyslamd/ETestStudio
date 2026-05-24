@@ -15,6 +15,8 @@
 #include <functional>
 #include <icd/node.hpp>
 
+#include "core/common/ThemeState.h"
+
 namespace etest::protocal {
 
 // ============================================================
@@ -91,7 +93,8 @@ void BitBlockItem::mousePressEvent(QGraphicsSceneMouseEvent*) {
 // ============================================================
 IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent)
     : QGraphicsScene(parent) {
-  setBackgroundBrush(QColor(30, 30, 30));
+  setBackgroundBrush(core::common::isDarkTheme() ? QColor(30, 30, 30)
+                                                  : QColor(248, 248, 248));
 }
 
 void IcdBitLayoutScene::setFrame(int length_bytes, int bits_per_row) {
@@ -144,7 +147,10 @@ void IcdBitLayoutScene::highlightBlock(const QString& name) {
 }
 
 void IcdBitLayoutScene::drawBackground(QPainter* painter, const QRectF&) {
-  painter->fillRect(sceneRect(), QColor(30, 30, 30));
+  bool dark = core::common::isDarkTheme();
+
+  painter->fillRect(sceneRect(), dark ? QColor(30, 30, 30)
+                                      : QColor(245, 245, 245));
 
   int rows = (frame_length_ * 8 + bits_per_row_ - 1) / bits_per_row_;
   int cols = bits_per_row_;
@@ -155,18 +161,23 @@ void IcdBitLayoutScene::drawBackground(QPainter* painter, const QRectF&) {
       int x = margin_left_ + c * cell_size_;
       int y = margin_top_ + r * cell_size_;
 
-      QColor cell_color = ((r * cols + c) % 2 == 0)
-                              ? QColor(40, 40, 40)
-                              : QColor(45, 45, 45);
+      QColor cell_color;
+      if (dark) {
+        cell_color = ((r * cols + c) % 2 == 0) ? QColor(40, 40, 40)
+                                                : QColor(45, 45, 45);
+      } else {
+        cell_color = ((r * cols + c) % 2 == 0) ? QColor(232, 232, 232)
+                                                : QColor(238, 238, 238);
+      }
       painter->fillRect(x, y, cell_size_, cell_size_, cell_color);
-      painter->setPen(QPen(QColor(55, 55, 55), 1));
+      painter->setPen(QPen(dark ? QColor(55, 55, 55) : QColor(210, 210, 210), 1));
       painter->drawRect(x, y, cell_size_, cell_size_);
     }
   }
 
   // 4-byte separator lines
   int bytes_per_row = bits_per_row_ / 8;
-  painter->setPen(QPen(QColor(90, 90, 90), 1));
+  painter->setPen(QPen(dark ? QColor(90, 90, 90) : QColor(190, 190, 190), 1));
   for (int r = 0; r < rows; ++r) {
     for (int b = 1; b < bytes_per_row; ++b) {
       int x = margin_left_ + b * 8 * cell_size_;
@@ -176,7 +187,7 @@ void IcdBitLayoutScene::drawBackground(QPainter* painter, const QRectF&) {
   }
 
   // Top bit ruler
-  painter->setPen(QColor(180, 180, 180));
+  painter->setPen(dark ? QColor(180, 180, 180) : QColor(120, 120, 120));
   QFont small_font;
   small_font.setPointSize(7);
   painter->setFont(small_font);
@@ -235,7 +246,8 @@ void IcdBitLayoutView::initUi() {
   view_->setDragMode(QGraphicsView::ScrollHandDrag);
   view_->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   view_->setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
-  view_->setBackgroundBrush(QColor(30, 30, 30));
+  view_->setBackgroundBrush(core::common::isDarkTheme() ? QColor(30, 30, 30)
+                                                        : QColor(248, 248, 248));
   view_->setFrameShape(QFrame::NoFrame);
   view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   view_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

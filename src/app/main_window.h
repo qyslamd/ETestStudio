@@ -35,6 +35,7 @@ class MainWindow : public QMainWindow {
  private:
   void initUi();
   void initSignals();
+  void applyTheme();
 
   void saveWindowState();
   void restoreWindowState();

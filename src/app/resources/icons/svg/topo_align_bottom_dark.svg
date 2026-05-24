@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-  <path fill="#FFFFFF" d="M4 20h16v2H4v-2zm3-4V4h2v12H7zm6 0V4h2v12h-2zm-3-4V4h2v12h-2V8z"/>
+  <path fill="#000000" d="M4 20h16v2H4v-2zm3-4V4h2v12H7zm6 0V4h2v12h-2zm-3-4V4h2v12h-2V8z"/>
 </svg>

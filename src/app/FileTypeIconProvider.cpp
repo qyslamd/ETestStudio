@@ -5,6 +5,8 @@
 #include <QPainter>
 #include <QPixmap>
 
+#include "core/common/ThemeState.h"
+
 #include "logger/Logger.h"
 
 using namespace etest::core::logger;
@@ -53,11 +55,14 @@ void FileTypeIconProvider::loadIcons() {
 }
 
 QIcon FileTypeIconProvider::loadDualThemeIcon(const QString& baseName) const {
-  QString lightPath =
-      QStringLiteral(":/resources/icons/svg/%1_light.svg").arg(baseName);
-  QIcon icon(lightPath);
+  bool dark = core::common::isDarkTheme();
+  QString iconPath =
+      QStringLiteral(":/resources/icons/svg/%1_%2.svg")
+          .arg(baseName, dark ? QStringLiteral("light")
+                              : QStringLiteral("dark"));
+  QIcon icon(iconPath);
   if (icon.isNull()) {
-    LOG_WARN("UI", "Failed to load icon: {}", lightPath.toStdString());
+    LOG_WARN("UI", "Failed to load icon: {}", iconPath.toStdString());
   }
   return icon;
 }

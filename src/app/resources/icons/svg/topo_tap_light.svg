@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Horizontal connection line with tap point -->
+  <path fill="none" stroke="#FFFFFF" stroke-width="2" d="M2 12h12"/>
+  <!-- Tap point (diamond) -->
+  <polygon fill="#FFFFFF" points="14,12 17,9 20,12 17,15"/>
+  <!-- Vertical dotted line to monitor -->
+  <path fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-dasharray="2,2" d="M17,12 L17,20"/>
+  <!-- Monitor block at bottom -->
+  <rect x="12" y="17" width="10" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
+</svg>

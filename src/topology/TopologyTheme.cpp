@@ -3,28 +3,9 @@
 #include <QApplication>
 #include <QWidget>
 
-namespace etest::topology {
+#include "core/common/ThemeState.h"
 
-bool isDarkTheme() {
-  // The app applies dark theme via QSS on MainWindow (vscode.qss).
-  // QPalette is NOT modified by QSS, so we check the stylesheet content instead.
-  static bool checked = false;
-  static bool dark = false;
-  if (!checked) {
-    checked = true;
-    // Search all top-level widgets for dark-theme QSS markers
-    for (auto* w : QApplication::topLevelWidgets()) {
-      QString sheet = w->styleSheet();
-      // vscode.qss uses #1E1E1E as the main background color
-      if (sheet.contains(QLatin1String("#1E1E1E")) ||
-          sheet.contains(QLatin1String("#252526"))) {
-        dark = true;
-        break;
-      }
-    }
-  }
-  return dark;
-}
+namespace etest::topology {
 
 const TopologyColors& topologyColors() {
   static TopologyColors light;
@@ -83,7 +64,7 @@ const TopologyColors& topologyColors() {
     initialized = true;
   }
 
-  return isDarkTheme() ? dark : light;
+  return core::common::isDarkTheme() ? dark : light;
 }
 
 }  // namespace etest::topology

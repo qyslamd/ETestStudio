@@ -5,6 +5,8 @@
 #include <QTabBar>
 #include <QToolButton>
 
+#include "core/common/ThemeState.h"
+
 namespace etest::app {
 
 BottomContainerWidget::BottomContainerWidget(QWidget* parent) : QWidget(parent) {
@@ -31,7 +33,9 @@ void BottomContainerWidget::setupUi() {
 
   // 关闭按钮
   close_button_ = new QToolButton(this);
-  close_button_->setIcon(QIcon(":/resources/icons/svg/close_dark.svg"));
+  close_button_->setIcon(QIcon(core::common::isDarkTheme()
+                                   ? ":/resources/icons/svg/close_light.svg"
+                                   : ":/resources/icons/svg/close_dark.svg"));
   close_button_->setToolTip(QStringLiteral("关闭面板"));
   close_button_->setAutoRaise(true);
   close_button_->setFixedSize(20, 20);

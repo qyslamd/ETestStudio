@@ -39,7 +39,6 @@ struct TopologyColors {
   QColor resizeHandleBorder;
 };
 
-bool isDarkTheme();
 const TopologyColors& topologyColors();
 
 }  // namespace etest::topology

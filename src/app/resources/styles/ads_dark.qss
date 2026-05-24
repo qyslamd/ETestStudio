@@ -97,7 +97,7 @@ QScrollArea#dockWidgetScrollArea {
     background: none;
     border: none;
     padding: 0px -2px;
-    qproperty-icon: url(:/resources/icons/svg/close_dark.svg);
+    qproperty-icon: url(:/resources/icons/svg/close_light.svg);
     qproperty-iconSize: 16px;
 }
 
@@ -115,12 +115,12 @@ QScrollArea#dockWidgetScrollArea {
 }
 
 #tabsMenuButton {
-    qproperty-icon: url(:/resources/icons/svg/drop_down_arrow_dark.svg);
+    qproperty-icon: url(:/resources/icons/svg/drop_down_arrow_light.svg);
     qproperty-iconSize: 16px;
 }
 
 #dockAreaCloseButton {
-    qproperty-icon: url(:/resources/icons/svg/close_dark.svg);
+    qproperty-icon: url(:/resources/icons/svg/close_light.svg);
     qproperty-iconSize: 16px;
 }
 

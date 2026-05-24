@@ -25,6 +25,7 @@
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
 #include "TopologyTheme.h"
+#include "core/common/ThemeState.h"
 #include "TopologyDocument.h"
 #include "TopologyJsonSerializer.h"
 #include "TopologyOutlineWidget.h"
@@ -165,12 +166,10 @@ void TopologyEditorWidget::setEditorId(const QString& newId) {
 
 void TopologyEditorWidget::initUi() {
   auto topoIcon = [](const QString& name) {
-    QIcon icon;
-    icon.addFile(QStringLiteral(":/resources/icons/svg/%1_dark.svg").arg(name),
-                 QSize(24, 24), QIcon::Normal);
-    icon.addFile(QStringLiteral(":/resources/icons/svg/%1_dark.svg").arg(name),
-                 QSize(24, 24), QIcon::Disabled);
-    return icon;
+    QString path = QStringLiteral(":/resources/icons/svg/%1_%2.svg")
+                       .arg(name, core::common::isDarkTheme() ? QStringLiteral("light")
+                                                : QStringLiteral("dark"));
+    return QIcon(path);
   };
 
   auto* mainLayout = new QVBoxLayout(this);

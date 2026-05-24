@@ -186,6 +186,44 @@ QWidget* SettingsDialog::createAppearancePage() {
   layout->setContentsMargins(20, 16, 20, 16);
   layout->setSpacing(8);
 
+  // 主题选择（手动创建，使用 userData 存储配置值）
+  {
+    auto* row = new QWidget(page);
+    auto* rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(0, 2, 0, 2);
+
+    auto* lbl = new QLabel(QStringLiteral("主题"), row);
+    lbl->setFixedWidth(120);
+
+    auto* combo = new QComboBox(row);
+    combo->addItem(QStringLiteral("默认主题"), QStringLiteral("default"));
+    combo->addItem(QStringLiteral("VS Code 暗黑"), QStringLiteral("vscode"));
+    combo->setFixedWidth(160);
+
+    QString val = ConfigManager::instance().get<QString>(
+        CONFIG_APPEARANCE_THEME,
+        QString::fromLatin1(CONFIG_APPEARANCE_DEFAULT_THEME));
+    int idx = combo->findData(val);
+    if (idx >= 0)
+      combo->setCurrentIndex(idx);
+
+    rowLayout->addWidget(lbl);
+    rowLayout->addWidget(combo);
+    rowLayout->addStretch();
+    page->layout()->addWidget(row);
+
+    // 注册到 combo_map_ 以支持 onConfigChanged 同步
+    combo_map_.insert(QString::fromLatin1(CONFIG_APPEARANCE_THEME), combo);
+
+    // 使用 currentIndexChanged(int) 以访问 currentData()
+    connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [combo]() {
+              ConfigManager::instance().set<QString>(
+                  CONFIG_APPEARANCE_THEME,
+                  combo->currentData().toString());
+            });
+  }
+
   addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,
                  CONFIG_TOOLBAR_DEFAULT_VISIBLE);
   addButtonRow(page, QStringLiteral("窗口布局"), QStringLiteral("恢复默认"));
@@ -375,8 +413,22 @@ void SettingsDialog::comboBoxToConfig(const QString& key, QComboBox* combo) {
 }
 
 void SettingsDialog::onConfigChanged(const QString& key) {
-  // Suppress re-entrant updates: config changes triggered by our own controls
-  // would otherwise cause infinite loops
+  // 主题选择使用 userData 而非 displayText，需特殊处理
+  if (key == QString::fromLatin1(CONFIG_APPEARANCE_THEME)) {
+    if (combo_map_.contains(key)) {
+      auto* combo = combo_map_[key];
+      QString val = ConfigManager::instance().get<QString>(key);
+      if (combo->currentData().toString() != val) {
+        combo->blockSignals(true);
+        int idx = combo->findData(val);
+        if (idx >= 0)
+          combo->setCurrentIndex(idx);
+        combo->blockSignals(false);
+      }
+    }
+    return;
+  }
+
   if (spin_map_.contains(key)) {
     auto* spin = spin_map_[key];
     int val = ConfigManager::instance().get<int>(key);

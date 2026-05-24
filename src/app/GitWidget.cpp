@@ -8,6 +8,8 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
+#include "core/common/ThemeState.h"
+
 #include "logger/Logger.h"
 
 using namespace etest::core::logger;
@@ -215,11 +217,9 @@ void GitWidget::initUi() {
   refresh_button_->setObjectName("refresh_button_");
   refresh_button_->setToolTip(QStringLiteral("刷新"));
   refresh_button_->setFixedSize(26, 26);
-  QIcon refreshIcon;
-  refreshIcon.addFile(":/resources/icons/svg/refresh_dark.svg", QSize(),
-                      QIcon::Normal, QIcon::Off);
-  refreshIcon.addFile(":/resources/icons/svg/refresh_dark.svg", QSize(),
-                      QIcon::Disabled, QIcon::Off);
+  QIcon refreshIcon(core::common::isDarkTheme()
+                        ? ":/resources/icons/svg/refresh_light.svg"
+                        : ":/resources/icons/svg/refresh_dark.svg");
   refresh_button_->setIcon(refreshIcon);
   refresh_button_->setIconSize(QSize(16, 16));
 
