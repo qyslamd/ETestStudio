@@ -2,6 +2,10 @@ set(TARGET_NAME "saribbon-demo")
 
 add_executable(${TARGET_NAME}
     main.cpp
+    MainWindow.h
+    MainWindow.cpp
+    resources.qrc
+    ${CMAKE_SOURCE_DIR}/src/app/resource.qrc
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
@@ -13,6 +17,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 
 set_target_properties(${TARGET_NAME} PROPERTIES
     AUTOMOC ON
+    AUTORCC ON
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
