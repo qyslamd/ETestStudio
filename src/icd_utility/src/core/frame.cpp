@@ -61,6 +61,12 @@ void Frame::add_root(std::unique_ptr<Node> node) {
     roots_.push_back(std::move(node));
 }
 
+void Frame::insert_root(std::size_t index, std::unique_ptr<Node> node) {
+    if (index > roots_.size()) index = roots_.size();
+    index_subtree(*node);
+    roots_.insert(roots_.begin() + static_cast<std::ptrdiff_t>(index), std::move(node));
+}
+
 void Frame::setId(int id) { id_ = id; }
 void Frame::setName(std::string_view name) { name_ = std::string(name); }
 void Frame::setDescription(std::string_view description) { description_ = std::string(description); }

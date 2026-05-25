@@ -43,6 +43,7 @@ public:
     tl::expected<void, Error> decode(icd::span<const std::byte> frame_bytes, DecodeMode mode = DecodeMode::eager);
 
     void add_root(std::unique_ptr<Node> node);
+    void insert_root(std::size_t index, std::unique_ptr<Node> node);
 
     void setId(int id);
     void setName(std::string_view name);

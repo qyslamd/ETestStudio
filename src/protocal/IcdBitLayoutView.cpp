@@ -2,10 +2,13 @@
 
 #include <QComboBox>
 #include <QGraphicsScene>
+#include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsView>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMap>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QPainter>
@@ -16,6 +19,69 @@
 #include <icd/node.hpp>
 
 #include "core/common/ThemeState.h"
+
+namespace {
+
+// ============================================================
+// Group → Color mapping (semantic, not hash-based)
+// ============================================================
+struct GroupColor {
+    QColor dark;
+    QColor light;
+};
+
+static const QMap<QString, GroupColor> kGroupColors = {
+    {QStringLiteral("header"),   {QColor( 74, 144, 217), QColor( 91, 160, 233)}},
+    {QStringLiteral("payload"),  {QColor( 92, 184,  92), QColor(108, 200, 108)}},
+    {QStringLiteral("checksum"), {QColor(217,  83,  79), QColor(233,  99,  95)}},
+    {QStringLiteral("length"),   {QColor(240, 173,  78), QColor(255, 189,  94)}},
+    {QStringLiteral("count"),    {QColor(142,  68, 173), QColor(158,  84, 189)}},
+    {QStringLiteral("address"),  {QColor( 91, 192, 222), QColor(107, 208, 238)}},
+};
+
+static const GroupColor kDefaultGroupColor = {
+    QColor(127, 140, 141), QColor(149, 165, 166)
+};
+
+// Map icd::Tag to a group name so tagged fields get meaningful colors
+// even when group_name is not explicitly set.
+static QString tagToGroupName(icd::Tag tag) {
+    switch (tag) {
+    case icd::Tag::head:    return QStringLiteral("header");
+    case icd::Tag::length:  return QStringLiteral("length");
+    case icd::Tag::count:   return QStringLiteral("count");
+    case icd::Tag::sum:
+    case icd::Tag::sum2:
+    case icd::Tag::xor_:
+    case icd::Tag::xor1:
+    case icd::Tag::xor2:    return QStringLiteral("checksum");
+    default:                return {};
+    }
+}
+
+static QColor resolveGroupColor(const icd::Node& node, bool dark) {
+    // 1. Explicit group_name takes priority
+    QString group = QString::fromStdString(node.attrs().group_name);
+    if (group.isEmpty()) {
+        // 2. Fallback to tag-based grouping
+        group = tagToGroupName(node.tag());
+    }
+    if (group.isEmpty()) {
+        // 3. No group, no tag → gray fallback
+        return dark ? kDefaultGroupColor.dark : kDefaultGroupColor.light;
+    }
+    auto it = kGroupColors.find(group);
+    if (it != kGroupColors.end()) {
+        return dark ? it->dark : it->light;
+    }
+    return dark ? kDefaultGroupColor.dark : kDefaultGroupColor.light;
+}
+
+}  // anonymous namespace
+
+// ============================================================
+// BitBlockItem
+// ============================================================
 
 namespace etest::protocal {
 
@@ -88,6 +154,27 @@ void BitBlockItem::mousePressEvent(QGraphicsSceneMouseEvent*) {
   emit clicked(name_);
 }
 
+void BitBlockItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
+  QMenu menu;
+  QAction* act_edit = menu.addAction(QStringLiteral("编辑"));
+  menu.addSeparator();
+  QAction* act_add_before = menu.addAction(QStringLiteral("在前面插入"));
+  QAction* act_add_after = menu.addAction(QStringLiteral("在后面插入"));
+  menu.addSeparator();
+  QAction* act_delete = menu.addAction(QStringLiteral("删除"));
+
+  QAction* chosen = menu.exec(event->screenPos());
+  if (chosen == act_edit) {
+    emit clicked(name_);
+  } else if (chosen == act_add_before) {
+    emit contextMenuAction(name_, QStringLiteral("addBefore"));
+  } else if (chosen == act_add_after) {
+    emit contextMenuAction(name_, QStringLiteral("addAfter"));
+  } else if (chosen == act_delete) {
+    emit contextMenuAction(name_, QStringLiteral("delete"));
+  }
+}
+
 // ============================================================
 // IcdBitLayoutScene
 // ============================================================
@@ -114,19 +201,35 @@ BitBlockItem* IcdBitLayoutScene::addBlock(const QString& name,
                                            int bit_width,
                                            const QColor& color) {
   int global_start = byte_offset * 8 + start_bit;
-  int row = global_start / bits_per_row_;
-  int col = global_start % bits_per_row_;
+  int remaining = bit_width;
+  int current_pos = global_start;
 
-  int x = margin_left_ + col * cell_size_;
-  int y = margin_top_ + row * cell_size_;
+  BitBlockItem* first_item = nullptr;
 
-  auto* item =
-      new BitBlockItem(name, byte_offset, start_bit, bit_width, color,
-                       cell_size_);
-  item->setPos(x, y);
-  addItem(item);
-  connect(item, &BitBlockItem::clicked, this, &IcdBitLayoutScene::blockClicked);
-  return item;
+  while (remaining > 0) {
+    int row = current_pos / bits_per_row_;
+    int col = current_pos % bits_per_row_;
+    int bits_in_row = std::min(remaining, bits_per_row_ - col);
+
+    int x = margin_left_ + col * cell_size_;
+    int y = margin_top_ + row * cell_size_;
+
+    auto* item =
+        new BitBlockItem(name, byte_offset, start_bit, bits_in_row, color,
+                         cell_size_);
+    item->setPos(x, y);
+    addItem(item);
+    connect(item, &BitBlockItem::clicked, this, &IcdBitLayoutScene::blockClicked);
+    connect(item, &BitBlockItem::contextMenuAction,
+            this, &IcdBitLayoutScene::contextMenuAction);
+
+    if (!first_item) first_item = item;
+
+    current_pos += bits_in_row;
+    remaining -= bits_in_row;
+  }
+
+  return first_item;
 }
 
 void IcdBitLayoutScene::clearBlocks() {
@@ -257,6 +360,8 @@ void IcdBitLayoutView::initUi() {
   view_->installEventFilter(this);
   connect(scene_, &IcdBitLayoutScene::blockClicked, this,
           &IcdBitLayoutView::blockClicked);
+  connect(scene_, &IcdBitLayoutScene::contextMenuAction,
+          this, &IcdBitLayoutView::contextMenuAction);
 
   layout->addWidget(view_, 1);
 }
@@ -283,28 +388,8 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
 
     setFrameData(frame_length, 32);
 
-    // Color palette indexed by group name hash
-    QVector<QColor> palette = {
-        QColor(66, 133, 244, 180),   // blue
-        QColor(52, 168, 83, 180),    // green
-        QColor(251, 188, 4, 180),    // yellow
-        QColor(234, 67, 53, 180),    // red
-        QColor(142, 68, 173, 180),   // purple
-        QColor(46, 204, 113, 180),   // emerald
-        QColor(231, 76, 60, 180),    // crimson
-        QColor(52, 152, 219, 180),   // sky blue
-        QColor(243, 156, 18, 180),   // orange
-        QColor(149, 165, 166, 180),  // gray
-    };
-
     for (auto* node : leaves) {
-        // Assign color based on group name hash (or node name if no group)
-        std::string group = node->attrs().group_name.empty()
-                            ? std::string(node->name())
-                            : node->attrs().group_name;
-        size_t hash = std::hash<std::string>{}(group);
-        QColor color = palette[hash % palette.size()];
-
+        QColor color = resolveGroupColor(*node, core::common::isDarkTheme());
         QString qname = QString::fromStdString(std::string(node->name()));
         addBlock(qname, node->offset(), node->bit_offset(), node->bit_width(), color);
     }

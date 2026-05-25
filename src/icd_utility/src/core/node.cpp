@@ -447,6 +447,12 @@ void Node::add_child(std::unique_ptr<Node> child) {
     children_.push_back(std::move(child));
 }
 
+void Node::insert_child(std::size_t index, std::unique_ptr<Node> child) {
+    if (index > children_.size()) index = children_.size();
+    child->parent_ = this;
+    children_.insert(children_.begin() + static_cast<std::ptrdiff_t>(index), std::move(child));
+}
+
 void Node::setName(std::string_view name) {
     name_ = std::string(name);
 }

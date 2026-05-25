@@ -538,6 +538,82 @@ void ProtocalEditorWidget::initSignals() {
     }
   });
 
+  // Bit block context menu actions
+  connect(bit_view_, &IcdBitLayoutView::contextMenuAction,
+          this, [this](const QString& name, const QString& action) {
+    if (!current_frame_) return;
+    auto* frame = const_cast<icd::Frame*>(current_frame_);
+
+    if (action == QStringLiteral("delete")) {
+      const auto* node = current_frame_->find(name.toStdString());
+      if (!node) return;
+
+      saveSnapshot();
+      auto* parent = const_cast<icd::Node*>(node->parent());
+      if (!parent) {
+        // Root node — find in roots and remove
+        const auto& roots = frame->roots();
+        for (std::size_t i = 0; i < roots.size(); ++i) {
+          if (roots[i].get() == node) {
+            frame->remove_root(i);
+            break;
+          }
+        }
+      } else {
+        // Child node — find in parent's children and remove
+        const auto& children = parent->children();
+        for (std::size_t i = 0; i < children.size(); ++i) {
+          if (children[i].get() == node) {
+            parent->remove_child(i);
+            break;
+          }
+        }
+      }
+      populateFrames();
+      setCurrentFrame(frame);
+      setModified(true);
+      status_label_->setText(QStringLiteral("已删除信号: %1").arg(name));
+
+    } else if (action == QStringLiteral("addBefore") ||
+               action == QStringLiteral("addAfter")) {
+      const auto* node = current_frame_->find(name.toStdString());
+      if (!node) return;
+
+      saveSnapshot();
+      auto new_node = std::make_unique<icd::Node>(
+          "NewNode", "", 0, 0, 8,
+          icd::ValueType::byte_, icd::Tag::none, icd::NodeAttrs{});
+
+      auto* parent = const_cast<icd::Node*>(node->parent());
+      if (!parent) {
+        // Root node — find index and insert adjacent
+        const auto& roots = frame->roots();
+        for (std::size_t i = 0; i < roots.size(); ++i) {
+          if (roots[i].get() == node) {
+            std::size_t pos = (action == QStringLiteral("addBefore")) ? i : i + 1;
+            frame->insert_root(pos, std::move(new_node));
+            break;
+          }
+        }
+      } else {
+        // Child node — find in parent's children and insert adjacent
+        const auto& children = parent->children();
+        for (std::size_t i = 0; i < children.size(); ++i) {
+          if (children[i].get() == node) {
+            std::size_t pos = (action == QStringLiteral("addBefore")) ? i : i + 1;
+            parent->insert_child(pos, std::move(new_node));
+            break;
+          }
+        }
+      }
+      populateFrames();
+      setCurrentFrame(frame);
+      setModified(true);
+      status_label_->setText(
+          QStringLiteral("已插入信号 (相邻: %1)").arg(name));
+    }
+  });
+
   // Node property modified
   connect(property_panel_, &IcdPropertyPanel::nodeModified,
           this, [this]() {

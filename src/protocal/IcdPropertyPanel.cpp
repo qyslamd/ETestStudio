@@ -266,7 +266,18 @@ void IcdPropertyPanel::initUi() {
   ext_form->setSpacing(4);
 
   edit_system_ = new QLineEdit(ext_group_);
-  edit_group_ = new QLineEdit(ext_group_);
+  combo_group_ = new QComboBox(ext_group_);
+  combo_group_->setEditable(true);
+  combo_group_->lineEdit()->setPlaceholderText(QStringLiteral("输入或选择分组..."));
+  combo_group_->addItems({
+      QStringLiteral(""),
+      QStringLiteral("header"),
+      QStringLiteral("payload"),
+      QStringLiteral("checksum"),
+      QStringLiteral("length"),
+      QStringLiteral("count"),
+      QStringLiteral("address"),
+  });
 
   dspin_min_ = new QDoubleSpinBox(ext_group_);
   dspin_min_->setRange(-1e9, 1e9);
@@ -280,7 +291,7 @@ void IcdPropertyPanel::initUi() {
   edit_link_to_ = new QLineEdit(ext_group_);
 
   ext_form->addRow(QStringLiteral("系统名"), edit_system_);
-  ext_form->addRow(QStringLiteral("组名"), edit_group_);
+  ext_form->addRow(QStringLiteral("组名"), combo_group_);
   ext_form->addRow(QStringLiteral("最小值"), dspin_min_);
   ext_form->addRow(QStringLiteral("最大值"), dspin_max_);
   ext_form->addRow(QStringLiteral("值文本列表"), edit_value_text_);
@@ -334,7 +345,7 @@ void IcdPropertyPanel::clearForm() {
   edit_scale_convertor_->clear();
 
   edit_system_->clear();
-  edit_group_->clear();
+  combo_group_->setCurrentText(QString());
   dspin_min_->setValue(0.0);
   dspin_max_->setValue(0.0);
   edit_value_text_->clear();
@@ -390,7 +401,7 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
 
   // ---- Populate extended properties ----
   edit_system_->setText(QString::fromStdString(attrs.system_name));
-  edit_group_->setText(QString::fromStdString(attrs.group_name));
+  combo_group_->setCurrentText(QString::fromStdString(attrs.group_name));
   dspin_min_->setValue(static_cast<double>(attrs.min.value_or(0.0f)));
   dspin_max_->setValue(static_cast<double>(attrs.max.value_or(0.0f)));
   edit_value_text_->setText(QString::fromStdString(attrs.value_text_list));
@@ -532,11 +543,11 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
       emit nodeModified();
     }
   });
-  // Group name
-  cn(edit_group_, &QLineEdit::editingFinished, [this]() {
+  // Group name (editable QComboBox: fires on both dropdown select and typed edit)
+  cn(combo_group_, &QComboBox::currentTextChanged, [this](const QString& text) {
     if (current_node_) {
       auto a = current_node_->attrs();
-      a.group_name = edit_group_->text().toStdString();
+      a.group_name = text.toStdString();
       current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }

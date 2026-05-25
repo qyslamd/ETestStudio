@@ -61,6 +61,7 @@ public:
     decode(icd::span<const std::byte> frame_bytes, ByteOrder frame_order) const;
 
     void add_child(std::unique_ptr<Node> child);
+    void insert_child(std::size_t index, std::unique_ptr<Node> child);
 
     void setName(std::string_view name);
     void setDescription(std::string_view description);

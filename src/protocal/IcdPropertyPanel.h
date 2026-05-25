@@ -6,13 +6,13 @@
 #include <icd/node.hpp>
 #include <icd/frame.hpp>
 
-class QLineEdit;
-class QSpinBox;
-class QDoubleSpinBox;
-class QComboBox;
 class QCheckBox;
+class QComboBox;
+class QDoubleSpinBox;
 class QFormLayout;
 class QGroupBox;
+class QLineEdit;
+class QSpinBox;
 
 namespace etest::protocal {
 
@@ -56,11 +56,13 @@ class IcdPropertyPanel : public QWidget {
   QDoubleSpinBox* dspin_scale_b_ = nullptr;
   QLineEdit* edit_unit_ = nullptr;
   QLineEdit* edit_system_ = nullptr;
-  QLineEdit* edit_group_ = nullptr;
   QLineEdit* edit_value_text_ = nullptr;
   QLineEdit* edit_link_to_ = nullptr;
   QDoubleSpinBox* dspin_min_ = nullptr;
   QDoubleSpinBox* dspin_max_ = nullptr;
+
+  // Group editor: QComboBox (editable) instead of plain QLineEdit
+  QComboBox* combo_group_ = nullptr;
   QLineEdit* edit_scale_formula_ = nullptr;
   QLineEdit* edit_scale_convertor_ = nullptr;
 

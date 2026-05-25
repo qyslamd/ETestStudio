@@ -5,6 +5,7 @@
 #include <QWidget>
 
 #include <QColor>
+#include <QPoint>
 #include <QString>
 
 #include <icd/frame.hpp>
@@ -33,11 +34,13 @@ class BitBlockItem : public QGraphicsObject {
 
  signals:
   void clicked(const QString& name);
+  void contextMenuAction(const QString& name, const QString& action);
 
  protected:
   void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
   void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent* event) override;
 
  private:
   QString name_;
@@ -68,6 +71,7 @@ class IcdBitLayoutScene : public QGraphicsScene {
 
  signals:
   void blockClicked(const QString& name);
+  void contextMenuAction(const QString& name, const QString& action);
 
  protected:
   void drawBackground(QPainter* painter, const QRectF& rect) override;
@@ -97,6 +101,7 @@ class IcdBitLayoutView : public QWidget {
 
  signals:
   void blockClicked(const QString& name);
+  void contextMenuAction(const QString& name, const QString& action);
 
  protected:
   bool eventFilter(QObject* obj, QEvent* event) override;

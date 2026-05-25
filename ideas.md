@@ -30,7 +30,23 @@
   保留价值：后期多个独立用例并行执行时可能参考，但 MVP 不需要。
   -> https://github.com/taskflow/taskflow
 
+- [ ] **引入 Step Result 路由机制**
+  参考 TestStand 的 Pass/Fail/Error 跳转，在 JSON 用例中增加 `onPass`/`onFail`/`onError` 字段
+  -> [NI 分析报告](docs/02-研究/NI_VeriStand_TestStand_分析与对比.md) 7.1 节
+
+- [ ] **引入 Process Model 概念**
+  参考 TestStand 的流程模板，在用例管理层增加顺序/循环等执行模式模板
+  -> [NI 分析报告](docs/02-研究/NI_VeriStand_TestStand_分析与对比.md) 7.3 节
+
+- [ ] **引入 Callback 钩子机制**
+  PreStep/PostStep/onSetup/onCleanup 生命周期管理
+  -> [NI 分析报告](docs/02-研究/NI_VeriStand_TestStand_分析与对比.md) 7.3 节
+
 ## 已完成
+
+- [x] **NI VeriStand + TestStand 拆解分析**
+  完成 NI 两大产品的模块拆解和与 IATP 的逐层对比报告，验证了 IATP 架构决策（UUID 信号/ICD 独立/Lua MVP），识别了 5 个可借鉴的设计模式
+  -> [分析报告](docs/02-研究/NI_VeriStand_TestStand_分析与对比.md)
 
 - [x] **UI 布局重构**
   全 QADS → QSplitter 混合布局，活动栏/侧边栏/底部面板独立为普通 QWidget

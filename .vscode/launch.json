@@ -15,11 +15,11 @@
             "environment": [
                 {
                     "name": "PATH",
-                    "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/bin;${env:PATH}"
+                    "value": "D:/Qt/Qt5.14.2/5.14.2/msvc2017_64/bin;${env:PATH}"
                 },
                 {
                     "name": "QT_PLUGIN_PATH",
-                    "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/plugins"
+                    "value": "D:/Qt/Qt5.14.2/5.14.2/msvc2017_64/plugins"
                 }
             ],
             "console": "externalTerminal",
@@ -36,11 +36,11 @@
             "environment": [
                 {
                     "name": "PATH",
-                    "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/bin;${env:PATH}"
+                    "value": "D:/Qt/Qt5.14.2/5.14.2/msvc2017_64/bin;${env:PATH}"
                 },
                 {
                     "name": "QT_PLUGIN_PATH",
-                    "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/plugins"
+                    "value": "D:/Qt/Qt5.14.2/5.14.2/msvc2017_64/plugins"
                 },
                 // 强制调试进程用UTF-8
                 {
@@ -67,11 +67,11 @@
             "environment": [
                 {
                     "name": "PATH",
-                    "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/bin;${env:PATH}"
+                    "value": "D:/Qt/Qt5.14.2/5.14.2/msvc2017_64/bin;${env:PATH}"
                 },
                 {
                     "name": "QT_PLUGIN_PATH",
-                    "value": "D:/Qt/Qt5.12.12/5.12.12/msvc2017_64/plugins"
+                    "value": "D:/Qt/Qt5.14.2/5.14.2/msvc2017_64/plugins"
                 }
             ],
             "console": "integratedTerminal",
