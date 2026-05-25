@@ -3,7 +3,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include "IconProvider.h"
+#include "AppIconProvider.h"
 #include "ThemeManager.h"
 
 namespace etest::app {
@@ -49,7 +49,7 @@ void ActivityBarWidget::setupUi() {
   for (const auto& d : defs) {
     icon_names_.append(d.iconName);
     auto* btn = createButton(d.tip);
-    btn->setIcon(IconProvider::instance().icon(d.iconName));
+    btn->setIcon(AppIconProvider::instance().icon(d.iconName));
     btn->setIconSize(QSize(24, 24));
     buttons_.append(btn);
     top_layout->addWidget(btn);
@@ -67,7 +67,7 @@ void ActivityBarWidget::setupUi() {
   bottom_layout->setContentsMargins(0, 0, 0, 0);
   icon_names_.append(QStringLiteral("settings"));
   auto* settings_btn = createButton(QStringLiteral("设置"));
-  settings_btn->setIcon(IconProvider::instance().icon(QStringLiteral("settings")));
+  settings_btn->setIcon(AppIconProvider::instance().icon(QStringLiteral("settings")));
   settings_btn->setIconSize(QSize(24, 24));
   buttons_.append(settings_btn);
   bottom_layout->addWidget(settings_btn);
@@ -81,7 +81,7 @@ void ActivityBarWidget::setupUi() {
 void ActivityBarWidget::reloadIcons() {
   // 前 8 个按钮
   for (int i = 0; i < buttons_.size(); ++i) {
-    buttons_[i]->setIcon(IconProvider::instance().icon(icon_names_[i]));
+    buttons_[i]->setIcon(AppIconProvider::instance().icon(icon_names_[i]));
   }
 }
 

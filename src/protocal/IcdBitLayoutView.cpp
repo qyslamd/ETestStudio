@@ -18,7 +18,7 @@
 #include <functional>
 #include <icd/node.hpp>
 
-#include "core/common/ThemeState.h"
+#include "ThemeManager.h"
 
 namespace {
 
@@ -186,7 +186,7 @@ void BitBlockItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
 // ============================================================
 IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent)
     : QGraphicsScene(parent) {
-  setBackgroundBrush(core::common::isDarkTheme() ? QColor(30, 30, 30)
+  setBackgroundBrush(etest::app::ThemeManager::instance().isDarkTheme() ? QColor(30, 30, 30)
                                                              : QColor(248, 248, 248));
 }
 
@@ -278,7 +278,7 @@ void IcdBitLayoutScene::onBlockHovered(const QString& name, bool on) {
 }
 
 void IcdBitLayoutScene::drawBackground(QPainter* painter, const QRectF&) {
-  bool dark = core::common::isDarkTheme();
+  bool dark = etest::app::ThemeManager::instance().isDarkTheme();
 
   painter->fillRect(sceneRect(), dark ? QColor(30, 30, 30)
                                       : QColor(245, 245, 245));
@@ -377,7 +377,7 @@ void IcdBitLayoutView::initUi() {
   view_->setDragMode(QGraphicsView::ScrollHandDrag);
   view_->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   view_->setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
-  view_->setBackgroundBrush(core::common::isDarkTheme() ? QColor(30, 30, 30)
+  view_->setBackgroundBrush(etest::app::ThemeManager::instance().isDarkTheme() ? QColor(30, 30, 30)
                                                                      : QColor(248, 248, 248));
   view_->setFrameShape(QFrame::NoFrame);
   view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -393,10 +393,24 @@ void IcdBitLayoutView::initUi() {
   connect(scene_, &IcdBitLayoutScene::blockHovered,
           this, &IcdBitLayoutView::blockHovered);
 
+  // Theme switch: refresh backgrounds and reload blocks
+  connect(&etest::app::ThemeManager::instance(),
+          &etest::app::ThemeManager::themeChanged, this, [this](bool) {
+            bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+            scene_->setBackgroundBrush(dark ? QColor(30, 30, 30)
+                                            : QColor(248, 248, 248));
+            view_->setBackgroundBrush(dark ? QColor(30, 30, 30)
+                                           : QColor(248, 248, 248));
+            if (last_frame_) {
+              loadFromFrame(*last_frame_);
+            }
+          });
+
   layout->addWidget(view_, 1);
 }
 
 void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
+    last_frame_ = &frame;
     clearBlocks();
 
     // Collect all leaf nodes from the frame's node tree
@@ -419,7 +433,7 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
     setFrameData(frame_length, 32);
 
     for (auto* node : leaves) {
-        QColor color = resolveGroupColor(*node, core::common::isDarkTheme());
+        QColor color = resolveGroupColor(*node, etest::app::ThemeManager::instance().isDarkTheme());
         QString qname = QString::fromStdString(std::string(node->name()));
         addBlock(qname, node->offset(), node->bit_offset(), node->bit_width(), color);
     }

@@ -19,10 +19,6 @@ add_executable(${TARGET_NAME}
     main_window.cpp
     ActivityBarWidget.h
     ActivityBarWidget.cpp
-    ThemeManager.h
-    ThemeManager.cpp
-    IconProvider.h
-    IconProvider.cpp
     SidebarWidget.h
     SidebarWidget.cpp
     FileExplorerWidget.h

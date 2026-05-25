@@ -10,7 +10,7 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
-#include "IconProvider.h"
+#include "AppIconProvider.h"
 #include "ThemeManager.h"
 
 #include "logger/Logger.h"
@@ -53,7 +53,7 @@ void SearchWidget::initUi() {
   search_button_ = new QPushButton(this);
   search_button_->setToolTip(QStringLiteral("搜索"));
   search_button_->setFixedSize(26, 26);
-  search_button_->setIcon(IconProvider::instance().icon("search"));
+  search_button_->setIcon(AppIconProvider::instance().icon("search"));
   search_button_->setIconSize(QSize(16, 16));
 
   case_sensitive_check_ = new QCheckBox(QStringLiteral("Aa"), this);
@@ -91,7 +91,7 @@ void SearchWidget::initSignals() {
   // Theme change: refresh search icon
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
           [this](bool) {
-            search_button_->setIcon(IconProvider::instance().icon("search"));
+            search_button_->setIcon(AppIconProvider::instance().icon("search"));
           });
 
   connect(result_tree_, &QTreeWidget::itemClicked, this,

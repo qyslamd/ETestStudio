@@ -54,7 +54,7 @@
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
 #include "ThemeManager.h"
-#include "IconProvider.h"
+#include "AppIconProvider.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;

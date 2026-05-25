@@ -100,6 +100,8 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   QAction* monitor_view_action_ = nullptr;
   QAction* mount_action_ = nullptr;
 
+  void reloadToolbarIcons();
+
   enum class Align { Left, HCenter, Right, Top, VCenter, Bottom };
   enum class Distribute { Horizontal, Vertical };
 
