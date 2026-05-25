@@ -21,6 +21,9 @@ Makefile
 *.exe
 !3rdparty/cloc-2.06/cloc-2.06.exe   # cloc 工具需要被 git 管理
 
+# ========== 会话记录 ==========
+conversations/
+
 # ========== 日志和 IDE 用户配置 ==========
 *.log
 *.user
