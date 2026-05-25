@@ -19,6 +19,8 @@ class FileTypeIconProvider : public QFileIconProvider {
 
   QIcon coloredFolderIcon(const QColor& accentColor) const;
 
+  void reload();
+
  private:
   void loadIcons();
   QIcon loadDualThemeIcon(const QString& baseName) const;

@@ -20,6 +20,7 @@
 #include "logger/Logger.h"
 #include "utils/FileUtil.h"
 #include "FileTypeIconProvider.h"
+#include "ThemeManager.h"
 
 using namespace etest::core::utils;
 using namespace etest::core::logger;
@@ -181,6 +182,14 @@ void FileExplorerWidget::initUi() {
 }
 
 void FileExplorerWidget::initSignals() {
+  // 主题切换时刷新文件图标
+  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+          [this](bool) {
+            if (icon_provider_) {
+              icon_provider_->reload();
+            }
+          });
+
   connect(tree_view_, &QTreeView::doubleClicked, this,
           [this](const QModelIndex& index) {
             if (!model_)
