@@ -61,44 +61,88 @@ public:
     ThemeManager& operator=(const ThemeManager&) = delete;
 
     // 查询
-    bool isDarkTheme() const;           // 替代 core::common::isDarkTheme()
-    QString currentTheme() const;       // 返回 "default" 或 "vscode"
+    bool isDarkTheme() const;           // 从当前主题 QSS 主色调亮度判断
+    QString currentTheme() const;       // 返回主题 ID，如 "default"、"vscode"
+    QStringList availableThemes() const; // 扫描主题目录返回所有可用主题 ID
 
-    // 设置主题（写配置、发信号）
+    // 设置主题（加载 QSS、更新状态、发信号）
     void setTheme(const QString& themeId);
 
 signals:
     // 主题变化信号，widget 连接此信号刷新图标/颜色
-    // isDark=true 表示切换到暗色主题
+    // isDark=true 表示暗色背景（图标应使用 _light 变体）
     void themeChanged(bool isDark);
 
 private:
     ThemeManager(QObject* parent = nullptr);
-    void connectConfigManager();
+    void loadQss(const QString& themeId);             // 加载主题 QSS 并应用到 qApp
+    bool detectDarkFromQss(const QString& qss) const; // 从 QSS 解析主背景色并判断亮暗
+    void syncLegacyState();
 
-    QString current_theme_ = QStringLiteral("default");
+    QString current_theme_;
+    bool is_dark_ = true;
 };
 
 }  // namespace etest::app
 ```
 
+#### isDarkTheme() 判断逻辑
+
+不再通过硬编码 `themeId == "vscode"` 判断暗亮，而是从 QSS 的主背景色中计算亮度：
+
+```cpp
+bool ThemeManager::detectDarkFromQss(const QString& qss) const {
+    // 尝试提取 QWidget、QMainWindow 或通用 background-color
+    static const QRegularExpression rx(
+        R"((?:QWidget|QMainWindow|\.?[A-Z]\w*)\s*\{[^}]*background-color\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\s*\([^)]+\)))"
+    );
+    auto match = rx.match(qss);
+    if (!match.hasMatch()) return false;  // 无背景色定义，默认亮色（Qt 默认白色背景）
+
+    QColor bg(match.captured(1).trimmed());
+    if (!bg.isValid()) return true;
+
+    // 计算相对亮度 (ITU-R BT.709)
+    // luminance = 0.2126 * R + 0.7152 * G + 0.0722 * B
+    double luma = 0.2126 * bg.redF() + 0.7152 * bg.greenF() + 0.0722 * bg.blueF();
+    return luma < 0.4;  // 低亮度 → 暗色主题
+}
+```
+
+这样新增任意主题，只需提供 QSS 文件，系统自动识别暗亮。
+
 #### 行为设计
 
 **构造时**：
-1. 从 `ConfigManager` 读取当前配置的 `appearance/theme` 值
-2. 调用 `core::common::setDarkTheme()` 同步遗留状态标志
-3. 连接 `ConfigManager::configChanged` 以响应外部配置变更
+1. 扫描 `src/app/resources/styles/` 收集所有可用主题 ID
+2. 从 `ConfigManager` 读取当前配置的 `appearance/theme` 值
+3. 调用 `loadQss(themeId)` 加载 QSS 并计算 `is_dark_`
+4. 调用 `syncLegacyState()` 同步 `core::common::setDarkTheme()`
+5. 连接 `ConfigManager::configChanged` 以响应外部配置变更
 
 **`setTheme(themeId)`**：
 1. guard：如果 `themeId == current_theme_`，直接返回（防止 re-entry）
 2. 更新 `current_theme_`
-3. 调用 `core::common::setDarkTheme(themeId == "vscode")` 同步遗留状态
-4. 写 `ConfigManager::set("appearance/theme", themeId)` 持久化
-5. emit `themeChanged(isDark)`
+3. 调用 `loadQss(themeId)` 加载并应用 QSS，同时内部更新 `is_dark_`
+4. 调用 `syncLegacyState()` 同步遗留状态
+5. 写 `ConfigManager::set("appearance/theme", themeId)` 持久化
+6. emit `themeChanged(is_dark_)`
+
+**主题目录结构约定**：
+
+```
+src/app/resources/styles/
+├── default.qss          # 亮色主题
+├── vscode.qss           # 暗色主题
+├── high-contrast.qss    # 高对比度（未来）
+└── ...
+```
+
+每个 `.qss` 文件的 stem（不含扩展名）即为主题 ID。ThemeManager 启动时扫描该目录自动发现可用主题。
 
 **Re-entry 防护**：`setTheme()` 写 ConfigManager 会触发 `configChanged`，进而再次调用 `setTheme()`。第一步的 guard `if (themeId == current_theme_) return;` 打断这个循环。
 
-**QSS 加载策略**：ThemeManager **不持有 widget 指针**，也不直接加载 QSS。它只负责状态管理和信号通知。QSS 加载由 MainWindow（或其他窗口）在响应 `themeChanged` 信号的 slot 中完成。这样 ThemeManager 保持通用性，不依赖特定的窗口结构。
+**QSS 加载策略**：ThemeManager 通过 `loadQss()` 直接调用 `qApp->setStyleSheet(qss)` 应用 QSS，同时获取 ADS 补丁 QSS（如 `vscode.qss` 对应 `ads_dark.qss`）一并应用。这样 MainWindow 不再负责 QSS 加载。
 
 #### 信号流
 
@@ -112,16 +156,18 @@ ConfigManager::configChanged("appearance/theme")
         ▼
 ThemeManager::setTheme("vscode")  [guard: 不同则继续]
     │   ├── current_theme_ = "vscode"
-    │   ├── core::common::setDarkTheme(true)
+    │   ├── loadQss("vscode"):
+    │   │      ├── qApp->setStyleSheet(qss内容)
+    │   │      ├── 加载 ads_dark.qss 补丁
+    │   │      └── qss解析 → is_dark_ = true (由 detectDarkFromQss 判定)
+    │   ├── syncLegacyState() → core::common::setDarkTheme(true)
     │   ├── ConfigManager::set(...)  [不会递归：guard 已拦截]
     │   └── emit themeChanged(true)
     │             │
     │     ┌───────┼───────────┐
     │     ▼       ▼           ▼
     │  ActivityBar  MainWindow  其他 widget(未来)
-    │  reloadIcons  onThemeChanged
-    │               ├── load QSS
-    │               ├── ads_dark QSS
+    │  reloadIcons  onThemeChanged(如还需额外操作)
     │               └── 同步 settings_dialog
     ▼
 complete
@@ -233,13 +279,13 @@ QIcon FileTypeIconProvider::loadDualThemeIcon(const QString& baseName) const {
 
 **main_window.h**：
 - 移除 `applyTheme()` 声明
-- 添加 `onThemeChanged(bool)` slot
+- 添加 `onThemeChanged(bool)` slot（仅做 SettingsDialog 同步等少量操作）
 
 **main_window.cpp**：
 - `initUi()` 中：`setDarkTheme(theme == "vscode")` → `ThemeManager::instance().setTheme(theme)`
-- `initSignals()` 中：连接 `themeChanged` → `onThemeChanged`（加载 QSS、处理 ADS/settings）
+- `initSignals()` 中：连接 `themeChanged` → `onThemeChanged`
 - ConfigManager 的 configChanged 监听移至 ThemeManager 内部
-- 移除原来的 `applyTheme()` 方法实现
+- 移除原来的 `applyTheme()` 方法实现（QSS 加载已由 ThemeManager 接管）
 
 ### Phase 3：ActivityBarWidget 迁移
 

@@ -1,15 +1,19 @@
 #include "ActivityBarWidget.h"
 
 #include <QHBoxLayout>
-#include <QIcon>
 #include <QVBoxLayout>
 
-#include "core/common/ThemeState.h"
+#include "IconProvider.h"
+#include "ThemeManager.h"
 
 namespace etest::app {
 
 ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
   setupUi();
+
+  // 主题切换时刷新图标
+  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+          &ActivityBarWidget::reloadIcons);
 }
 
 void ActivityBarWidget::setupUi() {
@@ -26,44 +30,26 @@ void ActivityBarWidget::setupUi() {
 
   struct ButtonDef {
     QString tip;
-    QString dark;
-    QString light;
+    QString iconName;
   };
 
   // clang-format off
   const ButtonDef defs[] = {
-    {QStringLiteral("资源管理器"),
-     QStringLiteral(":/resources/icons/svg/project_dark.svg"),
-     QStringLiteral(":/resources/icons/svg/project_light.svg")},
-    {QStringLiteral("搜索"),
-     QStringLiteral(":/resources/icons/svg/search_dark.svg"),
-     QStringLiteral(":/resources/icons/svg/search_light.svg")},
-    {QStringLiteral("源代码管理"),
-     QStringLiteral(":/resources/icons/svg/git_dark.svg"),
-     QStringLiteral(":/resources/icons/svg/git_light.svg")},
-    {QStringLiteral("调试"),
-     QStringLiteral(":/resources/icons/svg/debug_dark.svg"),
-     QStringLiteral(":/resources/icons/svg/debug_light.svg")},
-    {QStringLiteral("扩展"),
-     QStringLiteral(":/resources/icons/svg/extensions_dark.svg"),
-     QStringLiteral(":/resources/icons/svg/extensions_light.svg")},
-    {QStringLiteral("硬件"),
-     QStringLiteral(":/resources/icons/svg/hardware_dark.svg"),
-     QStringLiteral(":/resources/icons/svg/hardware_light.svg")},
-    {QStringLiteral("协议"),
-     QStringLiteral(":/resources/icons/svg/protocol_dark.svg"),
-     QStringLiteral(":/resources/icons/svg/protocol_light.svg")},
-    {QStringLiteral("用例"),
-     QStringLiteral(":/resources/icons/svg/testprogram_dark.svg"),
-     QStringLiteral(":/resources/icons/svg/testprogram_light.svg")},
+    {QStringLiteral("资源管理器"), QStringLiteral("project")},
+    {QStringLiteral("搜索"),        QStringLiteral("search")},
+    {QStringLiteral("源代码管理"),  QStringLiteral("git")},
+    {QStringLiteral("调试"),        QStringLiteral("debug")},
+    {QStringLiteral("扩展"),        QStringLiteral("extensions")},
+    {QStringLiteral("硬件"),        QStringLiteral("hardware")},
+    {QStringLiteral("协议"),        QStringLiteral("protocol")},
+    {QStringLiteral("用例"),        QStringLiteral("testprogram")},
   };
   // clang-format on
 
-  bool dark = core::common::isDarkTheme();
   for (const auto& d : defs) {
-    icon_pairs_.append({d.dark, d.light});
+    icon_names_.append(d.iconName);
     auto* btn = createButton(d.tip);
-    btn->setIcon(QIcon(dark ? d.light : d.dark));
+    btn->setIcon(IconProvider::instance().icon(d.iconName));
     btn->setIconSize(QSize(24, 24));
     buttons_.append(btn);
     top_layout->addWidget(btn);
@@ -79,13 +65,11 @@ void ActivityBarWidget::setupUi() {
   auto* bottom_layout = new QVBoxLayout();
   bottom_layout->setSpacing(0);
   bottom_layout->setContentsMargins(0, 0, 0, 0);
-  icon_pairs_.append({
-      QStringLiteral(":/resources/icons/svg/settings_dark.svg"),
-      QStringLiteral(":/resources/icons/svg/settings_light.svg")});
+  icon_names_.append(QStringLiteral("settings"));
   auto* settings_btn = createButton(QStringLiteral("设置"));
-  settings_btn->setIcon(QIcon(dark ? icon_pairs_.last().light
-                                   : icon_pairs_.last().dark));
+  settings_btn->setIcon(IconProvider::instance().icon(QStringLiteral("settings")));
   settings_btn->setIconSize(QSize(24, 24));
+  buttons_.append(settings_btn);
   bottom_layout->addWidget(settings_btn);
   connect(settings_btn, &QPushButton::clicked, this,
           &ActivityBarWidget::settingsTriggered);
@@ -95,11 +79,9 @@ void ActivityBarWidget::setupUi() {
 }
 
 void ActivityBarWidget::reloadIcons() {
-  bool dark = core::common::isDarkTheme();
   // 前 8 个按钮
   for (int i = 0; i < buttons_.size(); ++i) {
-    buttons_[i]->setIcon(QIcon(dark ? icon_pairs_[i].light
-                                    : icon_pairs_[i].dark));
+    buttons_[i]->setIcon(IconProvider::instance().icon(icon_names_[i]));
   }
 }
 
