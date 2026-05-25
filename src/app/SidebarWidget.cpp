@@ -69,16 +69,6 @@ void SidebarWidget::setupUi() {
   stack_->addWidget(debugPage);
   view_titles_ << QStringLiteral("调试");
 
-  // 页4：扩展占位
-  auto* extPage = new QWidget(this);
-  auto* extLayout = new QVBoxLayout(extPage);
-  extLayout->setContentsMargins(0, 0, 0, 0);
-  auto* extLabel = new QLabel(QStringLiteral("扩展\n（待实现）"), this);
-  extLabel->setAlignment(Qt::AlignCenter);
-  extLayout->addWidget(extLabel);
-  stack_->addWidget(extPage);
-  view_titles_ << QStringLiteral("扩展");
-
   // 页5：硬件树
   hardware_tree_ = new HardwareTreeWidget(this);
   stack_->addWidget(hardware_tree_);
