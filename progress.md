@@ -2,7 +2,33 @@
 
 ## 2026-05-25
 
-### ThemeManager + IconProvider 设计阶段
+### ThemeManager + IconProvider 实现阶段
+- **Phase 0**：创建 ThemeManager（单例，QSS加载+detectDarkFromQss亮暗检测）和 IconProvider（QObject单例，QCache缓存+主题感知路径解析）
+- **Phase 1**：MainWindow 接入 — 移除 `applyTheme()`，改为 `onThemeChanged(bool)` slot；QSS加载和ConfigManager监听迁移至ThemeManager内部
+- **Phase 2**：ActivityBarWidget 迁移 — 移除 `IconPair` 硬编码路径对，改用 `IconProvider::icon(name)`；连接 `themeChanged` 信号自动刷新
+- **编译验证**：46/46 targets 编译通过，应用启动运行正常
+- **commit**: `bae2d1b`
+
+### FileTypeIconProvider 融合阶段
+- **FileTypeIconProvider**: `loadDualThemeIcon()` 委托至 `IconProvider::icon()`，增加 `reload()` 方法
+- **FileExplorerWidget**: 连接 `ThemeManager::themeChanged` → `icon_provider_->reload()`
+- **编译验证**: 成功
+
+### 其他 widget 接入 themeChanged
+- **SearchWidget**: `core::common::isDarkTheme()` 硬编码路径 → `IconProvider::instance().icon("search")`，连接 `themeChanged` 刷新
+- **GitWidget**: 同上模式，使用 `IconProvider::instance().icon("refresh")`
+- **BottomContainerWidget**: 同上模式，使用 `IconProvider::instance().icon("close")`
+- **ImageViewerWidget**: `core::common::isDarkTheme()` → `ThemeManager::instance().isDarkTheme()`，连接 `themeChanged` 刷新背景色
+- **IcdBitLayoutView/TopologyEditorWidget**: 位于独立静态库，无法链接 app 符号。保留使用 `core::common::isDarkTheme()`（ThemeManager 同步，初始值正确，绘制动态）
+- **编译验证**: 47/47 targets 编译通过（etest_demo、protocal-demo、topology-demo 均成功链接）
+- **Phase 1.6 完成度**: 87% → 100%
+
+### 设计文档更新（2026-05-25，实现前）
+- isDarkTheme 改为从 QSS 主背景色亮度判断（detectDarkFromQss），支持任意数量主题
+- ThemeManager 直接加载 QSS 到 qApp，MainWindow 不再负责 QSS 加载
+- 设计文档：`docs/01-规划/全局IconProvider和ThemeManager设计.md`
+
+### ThemeManager + IconProvider 设计阶段（此前）
 - 完成全局 IconProvider 和 ThemeManager 设计方案，文档：`docs/01-规划/全局IconProvider和ThemeManager设计.md`
 - 决策：不做单独静态库，放在 `src/app/`，example 需要时通过加 QRC 和源文件接入
 - 决策：FileTypeIconProvider 融合进 IconProvider，`loadDualThemeIcon()` 内部委托 `IconProvider::icon()`

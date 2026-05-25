@@ -26,15 +26,10 @@ class ActivityBarWidget : public QWidget {
   void settingsTriggered();
 
  private:
-  struct IconPair {
-    QString dark;
-    QString light;
-  };
-
   void setupUi();
   QPushButton* createButton(const QString& tooltip);
 
-  QVector<IconPair> icon_pairs_;
+  QStringList icon_names_;
   QVector<QPushButton*> buttons_;
   int active_index_ = 0;
 };
