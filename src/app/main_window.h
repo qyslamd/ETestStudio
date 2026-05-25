@@ -34,7 +34,7 @@ class MainWindow : public SARibbonMainWindow {
  private:
   void initUi();
   void initSignals();
-  void applyTheme();
+  void onThemeChanged(bool isDark);
 
   void saveWindowState();
   void restoreWindowState();

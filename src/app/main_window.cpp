@@ -3,7 +3,7 @@
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QCoreApplication>
-#include <QFile>
+#include <QApplication>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
@@ -53,7 +53,8 @@
 #include "project/ProjectManager.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
-#include "core/common/ThemeState.h"
+#include "ThemeManager.h"
+#include "IconProvider.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -100,13 +101,8 @@ void MainWindow::initUi() {
   setMinimumSize(900, 600);
   setWindowIcon(QIcon(":/resources/icons/app_icon.ico"));
 
-  // 在widget构造前设置图标主题标志，确保按钮图标选取正确的变体
-  {
-    QString theme = ConfigManager::instance().get<QString>(
-        CONFIG_APPEARANCE_THEME,
-        QString::fromLatin1(CONFIG_APPEARANCE_DEFAULT_THEME));
-    core::common::setDarkTheme(theme == QStringLiteral("vscode"));
-  }
+  // 初始化 ThemeManager（加载 QSS、检测暗亮、同步遗留状态）
+  ThemeManager::instance();
 
   setupRibbon();
   createStatusBar();
@@ -138,9 +134,6 @@ void MainWindow::initUi() {
   // ===== 编辑器区域 =====
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   dock_manager_ = new ads::CDockManager(v_splitter_);
-
-  // 根据配置加载主题样式表
-  applyTheme();
 
   // 中央编辑区：Welcome页面
   welcome_widget_ = new WelcomeWidget(this);
@@ -191,48 +184,18 @@ void MainWindow::initUi() {
   restoreWindowState();
 }
 
-void MainWindow::applyTheme() {
-  auto& cfg = ConfigManager::instance();
-  QString theme = cfg.get<QString>(CONFIG_APPEARANCE_THEME,
-                                   QString::fromLatin1(CONFIG_APPEARANCE_DEFAULT_THEME));
-
-  // 更新图标主题
-  bool dark = (theme == QStringLiteral("vscode"));
-  core::common::setDarkTheme(dark);
-  activity_bar_->reloadIcons();
-
-  // 加载应用样式表
-  QFile styleFile(QStringLiteral(":/resources/styles/%1.qss").arg(theme));
-  if (styleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    setStyleSheet(QString::fromUtf8(styleFile.readAll()));
-    styleFile.close();
-  }
-
-  // 暗色主题时加载QADS暗色覆盖，默认主题使用QADS内置default.css
-  if (theme == QStringLiteral("vscode")) {
-    QFile adsFile(QStringLiteral(":/resources/styles/ads_dark.qss"));
-    if (adsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      dock_manager_->setStyleSheet(QString::fromUtf8(adsFile.readAll()));
-      adsFile.close();
-    }
-  } else {
-    dock_manager_->setStyleSheet(QString());
-  }
-
-  // 同步设置对话框样式
+void MainWindow::onThemeChanged(bool /*isDark*/) {
+  // 同步设置对话框样式（QSS 已由 ThemeManager 全局加载到 qApp）
+  // ADS dock manager 样式跟随全局 QSS，无需单独设置
   if (settings_dialog_) {
-    settings_dialog_->setStyleSheet(styleSheet());
+    settings_dialog_->setStyleSheet(qApp->styleSheet());
   }
 }
 
 void MainWindow::initSignals() {
-  // 主题切换：监听配置变化
-  connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
-          [this](const QString& key) {
-            if (key == QString::fromLatin1(CONFIG_APPEARANCE_THEME)) {
-              applyTheme();
-            }
-          });
+  // 主题切换：连接 ThemeManager 信号
+  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+          &MainWindow::onThemeChanged);
 
   // 视图菜单：输出面板显隐
   connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
