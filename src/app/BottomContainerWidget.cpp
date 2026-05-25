@@ -5,7 +5,8 @@
 #include <QTabBar>
 #include <QToolButton>
 
-#include "core/common/ThemeState.h"
+#include "IconProvider.h"
+#include "ThemeManager.h"
 
 namespace etest::app {
 
@@ -33,9 +34,7 @@ void BottomContainerWidget::setupUi() {
 
   // 关闭按钮
   close_button_ = new QToolButton(this);
-  close_button_->setIcon(QIcon(core::common::isDarkTheme()
-                                   ? ":/resources/icons/svg/close_light.svg"
-                                   : ":/resources/icons/svg/close_dark.svg"));
+  close_button_->setIcon(IconProvider::instance().icon("close"));
   close_button_->setToolTip(QStringLiteral("关闭面板"));
   close_button_->setAutoRaise(true);
   close_button_->setFixedSize(20, 20);
@@ -54,6 +53,12 @@ void BottomContainerWidget::setupUi() {
 
   connect(close_button_, &QToolButton::clicked, this,
           &BottomContainerWidget::panelClosed);
+
+  // Theme change: refresh close icon
+  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+          [this](bool) {
+            close_button_->setIcon(IconProvider::instance().icon("close"));
+          });
 }
 
 void BottomContainerWidget::addPanel(const QString& title, QWidget* panel) {

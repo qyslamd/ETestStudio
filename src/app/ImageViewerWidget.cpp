@@ -8,7 +8,7 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 
-#include "core/common/ThemeState.h"
+#include "ThemeManager.h"
 
 namespace etest::app {
 
@@ -18,6 +18,14 @@ ImageViewerWidget::ImageViewerWidget(const QString& filePath, QWidget* parent)
     : QWidget(parent), file_path_(filePath) {
   setupUi();
   loadFile();
+
+  // Theme change: refresh background brush
+  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+          [this](bool) {
+            view_->setBackgroundBrush(ThemeManager::instance().isDarkTheme()
+                                          ? QColor(60, 60, 60)
+                                          : QColor(210, 210, 210));
+          });
 }
 
 // ── IEditor interface ────────────────────────────────────────────
@@ -60,8 +68,9 @@ void ImageViewerWidget::setupUi() {
   view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   view_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   view_->setFrameShape(QFrame::NoFrame);
-  view_->setBackgroundBrush(core::common::isDarkTheme() ? QColor(60, 60, 60)
-                                                     : QColor(210, 210, 210));
+  view_->setBackgroundBrush(ThemeManager::instance().isDarkTheme()
+                                ? QColor(60, 60, 60)
+                                : QColor(210, 210, 210));
   layout->addWidget(view_);
 }
 
