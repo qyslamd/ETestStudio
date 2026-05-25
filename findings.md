@@ -4,10 +4,11 @@
 
 ### 关键设计决策
 1. **不做单独静态库**：ThemeManager/IconProvider 放 `src/app/`，不拆成 `etest_gui` 库。example 需要时通过手动添加 QRC 和源文件复用
-2. **FileTypeIconProvider 融合**：现有的文件类型图标提供者将内部委托 IconProvider，`loadDualThemeIcon()` 替换为 `IconProvider::icon()`。FileTypeIconProvider 同时增加 `reload()` 方法连接 `themeChanged`，实现文件浏览器图标实时刷新
-3. **ThemeManager 不持有 widget 指针**：只负责状态管理 + 信号通知，QSS 加载由 MainWindow 在响应 `themeChanged` 的 slot 中完成
+2. **FileTypeIconProvider 融合**（待实现）：现有的文件类型图标提供者将内部委托 IconProvider，`loadDualThemeIcon()` 替换为 `IconProvider::icon()`。FileTypeIconProvider 同时增加 `reload()` 方法连接 `themeChanged`，实现文件浏览器图标实时刷新
+3. **ThemeManager 直接加载 QSS**：不再委托 MainWindow。ThemeManager 的 `loadQss()` 调用 `qApp->setStyleSheet()`，同时合并 ADS 暗色补丁 QSS。`detectDarkFromQss()` 从 QSS 提取 `background-color` 计算亮度（ITU-R BT.709），`luma < 0.4` 判定为暗色
 4. **IconProvider 依赖 ThemeManager**：`resolvePath()` 内部调用 `ThemeManager::instance().isDarkTheme()`，API 简洁
 5. **向后兼容**：`core::common::isDarkTheme()` 继续可用（ThemeManager 内部同步），现有调用点无需修改
+6. **IconProvider 继承 QObject**：实现时发现 `QObject::connect` 要求接收对象是 QObject，因此 IconProvider 继承了 QObject + Q_OBJECT。`connect` 使用 4 参数重载（sender, signal, context, lambda）的 `AutoConnection`
 
 ### 图标路劲命名约定
 ```
@@ -19,10 +20,16 @@ isDarkTheme() == false (亮色背景)  → 使用 {name}_dark.svg
 ### 缓存策略
 - `QCache<QString, QIcon>` 200 条目上限，42 对图标绰绰有余
 - 空图标也缓存（防止反复命中不存在的文件）
-- `clearCache()` 通过 `Qt::QueuedConnection` 连接 `ThemeManager::themeChanged`
+- `clearCache()` 通过 `AutoConnection` 连接 `ThemeManager::themeChanged`（同线程 = DirectConnection）
 
 ### Re-entry 防护
 `setTheme()` 写 ConfigManager 会触发 `configChanged` → 再次调用 `setTheme()`。通过在 `setTheme()` 开头检查 `if (themeId == current_theme_) return;` 打断循环。
+
+### 编译错误记录
+| 错误 | 原因 | 修复 |
+|------|------|------|
+| `ConfigManager` 不是类或命名空间 | 缺少 `using namespace etest::core::config` | 添加 using 声明 |
+| `QObject::connect` 无法匹配 4 参数重载 | IconProvider 不是 QObject | IconProvider 继承 QObject + Q_OBJECT，改用 `connect(sender, signal, this, lambda)` |
 
 ---
 

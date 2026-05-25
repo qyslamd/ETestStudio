@@ -187,7 +187,7 @@ void BitBlockItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
 IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent)
     : QGraphicsScene(parent) {
   setBackgroundBrush(core::common::isDarkTheme() ? QColor(30, 30, 30)
-                                                  : QColor(248, 248, 248));
+                                                             : QColor(248, 248, 248));
 }
 
 void IcdBitLayoutScene::setFrame(int length_bytes, int bits_per_row) {
@@ -378,7 +378,7 @@ void IcdBitLayoutView::initUi() {
   view_->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   view_->setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
   view_->setBackgroundBrush(core::common::isDarkTheme() ? QColor(30, 30, 30)
-                                                        : QColor(248, 248, 248));
+                                                                     : QColor(248, 248, 248));
   view_->setFrameShape(QFrame::NoFrame);
   view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   view_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

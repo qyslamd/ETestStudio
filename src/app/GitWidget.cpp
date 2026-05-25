@@ -8,7 +8,8 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
-#include "core/common/ThemeState.h"
+#include "IconProvider.h"
+#include "ThemeManager.h"
 
 #include "logger/Logger.h"
 
@@ -217,10 +218,7 @@ void GitWidget::initUi() {
   refresh_button_->setObjectName("refresh_button_");
   refresh_button_->setToolTip(QStringLiteral("刷新"));
   refresh_button_->setFixedSize(26, 26);
-  QIcon refreshIcon(core::common::isDarkTheme()
-                        ? ":/resources/icons/svg/refresh_light.svg"
-                        : ":/resources/icons/svg/refresh_dark.svg");
-  refresh_button_->setIcon(refreshIcon);
+  refresh_button_->setIcon(IconProvider::instance().icon("refresh"));
   refresh_button_->setIconSize(QSize(16, 16));
 
   headerRow->addWidget(titleLabel);
@@ -297,6 +295,12 @@ void GitWidget::initUi() {
 
 void GitWidget::initSignals() {
   connect(refresh_button_, &QPushButton::clicked, this, &GitWidget::refresh);
+
+  // Theme change: refresh git icons
+  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+          [this](bool) {
+            refresh_button_->setIcon(IconProvider::instance().icon("refresh"));
+          });
 
   connect(commit_button_, &QPushButton::clicked, this, [this]() {
     doCommit(commit_input_->toPlainText());

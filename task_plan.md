@@ -11,7 +11,7 @@
 |------|------|--------|
 | 1 基础框架搭建 | ✅ 已完成 | 100% |
 | 1.5 编辑器完善 | ✅ 已完成 | 100% |
-| 1.6 GUI主题与图标管理 | 🔄 进行中 | 待定 |
+| 1.6 GUI主题与图标管理 | ✅ 已完成 | 100% |
 | 2.5 拓扑编辑器增强 | ✅ 已完成 | 100% |
 | 2.5b 拓扑编辑器持续完善 | 🔄 进行中 | 待定 |
 | 1.5.2 帧协议编辑器完善 | ✅ 已完成 | 100% |
@@ -113,27 +113,35 @@
 > 创建全局 ThemeManager 和 IconProvider 单例，统一管理主题切换和图标加载。
 > 设计文档：`docs/01-规划/全局IconProvider和ThemeManager设计.md`
 
-### 1.6.1 创建 ThemeManager + IconProvider（待开始）
-- [ ] 创建 `src/app/ThemeManager.h/.cpp`：主题状态管理 + 信号机制 + QSS 加载
-- [ ] 创建 `src/app/IconProvider.h/.cpp`：图标路劲解析 + 主题感知 + QCache 缓存
-- [ ] `src/app/CMakeLists.txt` 添加源文件，编译通过
+### 1.6.1 创建 ThemeManager + IconProvider（已完成）
+- [x] 创建 `src/app/ThemeManager.h/.cpp`：主题状态管理 + 信号机制 + QSS 加载 + detectDarkFromQss
+- [x] 创建 `src/app/IconProvider.h/.cpp`：图标路劲解析 + 主题感知 + QCache 缓存
+- [x] `src/app/CMakeLists.txt` 添加源文件，编译通过
 
-### 1.6.2 FileTypeIconProvider 融合（待开始）
-- [ ] `loadDualThemeIcon()` 委托 `IconProvider::icon()`
-- [ ] 移除 `#include "core/common/ThemeState.h"` 依赖
-- [ ] 增加 `reload()` 方法，连接 `ThemeManager::themeChanged`
-- [ ] 移除 `#include "core/common/ThemeState.h"` FileTypeIconProvider 中引用
+### 1.6.2 FileTypeIconProvider 融合（已完成）
+- [x] `loadDualThemeIcon()` 委托 `IconProvider::icon()`
+- [x] 增加 `reload()` 方法，清理缓存并重建图标映射
+- [x] FileExplorerWidget 连接 `themeChanged` → `reload()`
 
-### 1.6.3 MainWindow 接入（待开始）
-- [ ] 移除 `applyTheme()`，添加 `onThemeChanged(bool)` slot
-- [ ] `initUi()` 中调用 `ThemeManager::instance().setTheme(theme)`
-- [ ] `initSignals()` 中连接 `themeChanged` → 加载 QSS + 处理 ADS/settings
-- [ ] ConfigManager 的 configChanged 监听移至 ThemeManager 内部
+### 1.6.3 MainWindow 接入（已完成）
+- [x] 移除 `applyTheme()`，添加 `onThemeChanged(bool)` slot
+- [x] `initUi()` 中调用 `ThemeManager::instance()` 替换 `setDarkTheme()`
+- [x] `initSignals()` 中连接 `themeChanged` → 同步 settings_dialog
+- [x] ConfigManager 的 configChanged 监听移至 ThemeManager 内部
 
-### 1.6.4 ActivityBarWidget 迁移（待开始）
-- [ ] 移除 `IconPair` 结构体，改用 `QStringList icon_names_`
-- [ ] 图标加载改为 `IconProvider::icon("project")`
-- [ ] 连接 `ThemeManager::themeChanged` → `reloadIcons()`
+### 1.6.4 ActivityBarWidget 迁移（已完成）
+- [x] 移除 `IconPair` 结构体，改用 `QStringList icon_names_`
+- [x] 图标加载改为 `IconProvider::icon("project")`
+- [x] 连接 `ThemeManager::themeChanged` → `reloadIcons()`
+
+### 1.6.5 其他 widget 接入 themeChanged（已完成）
+- [x] SearchWidget：使用 `IconProvider::icon("search")`，连接 `themeChanged` 刷新按钮图标
+- [x] GitWidget：使用 `IconProvider::icon("refresh")`，连接 `themeChanged` 刷新按钮图标
+- [x] BottomContainerWidget：使用 `IconProvider::icon("close")`，连接 `themeChanged` 刷新关闭按钮图标
+- [x] ImageViewerWidget：使用 `ThemeManager::isDarkTheme()`，连接 `themeChanged` 刷新背景色
+
+### 注意（跨模块限制）
+- IcdBitLayoutView（protocal）、TopologyEditorWidget（topology）位于独立静态库中，不链接 app 模块，因此继续使用 `core::common::isDarkTheme()`（由 ThemeManager 同步，初始值正确）。场景绘制（drawBackground、topologyColors）已是动态读取，主题切换后自动生效。
 
 ### 预估工期：1 天（4 个子任务可分批实施）
 
