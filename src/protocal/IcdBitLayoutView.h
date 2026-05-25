@@ -121,6 +121,7 @@ class IcdBitLayoutView : public QWidget {
   IcdBitLayoutScene* scene_ = nullptr;
   QGraphicsView* view_ = nullptr;
   QComboBox* mode_combo_ = nullptr;
+  const icd::Frame* last_frame_ = nullptr;
 };
 
 }  // namespace etest::protocal

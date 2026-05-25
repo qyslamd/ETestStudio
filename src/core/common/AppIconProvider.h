@@ -7,20 +7,20 @@
 
 namespace etest::app {
 
-class IconProvider : public QObject {
+class AppIconProvider : public QObject {
   Q_OBJECT
  public:
-  static IconProvider& instance();
+  static AppIconProvider& instance();
 
-  IconProvider(const IconProvider&) = delete;
-  IconProvider& operator=(const IconProvider&) = delete;
+  AppIconProvider(const AppIconProvider&) = delete;
+  AppIconProvider& operator=(const AppIconProvider&) = delete;
 
   QIcon icon(const QString& name) const;
   void clearCache();
 
  private:
-  explicit IconProvider(QObject* parent = nullptr);
-  ~IconProvider() override = default;
+  explicit AppIconProvider(QObject* parent = nullptr);
+  ~AppIconProvider() override = default;
 
   QString resolvePath(const QString& baseName) const;
 

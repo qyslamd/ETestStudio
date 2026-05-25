@@ -3,7 +3,7 @@
 #include <QApplication>
 #include <QWidget>
 
-#include "core/common/ThemeState.h"
+#include "ThemeManager.h"
 
 namespace etest::topology {
 
@@ -64,7 +64,7 @@ const TopologyColors& topologyColors() {
     initialized = true;
   }
 
-  return core::common::isDarkTheme() ? dark : light;
+  return etest::app::ThemeManager::instance().isDarkTheme() ? dark : light;
 }
 
 }  // namespace etest::topology

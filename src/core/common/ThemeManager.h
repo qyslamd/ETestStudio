@@ -30,7 +30,6 @@ class ThemeManager : public QObject {
 
   void loadQss(const QString& themeId);
   bool detectDarkFromQss(const QString& qss) const;
-  void syncLegacyState();
   void onConfigChanged(const QString& key);
 
   QString current_theme_;
