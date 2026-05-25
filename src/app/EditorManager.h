@@ -19,7 +19,8 @@ class EditorManager : public QObject {
 
   static void registerEditorTypes();
 
-  void openFile(const QString& filePath);
+  void openFile(const QString& filePath,
+                const QString& forcedEditorType = QString());
   void openFileAtLine(const QString& filePath, int line);
   bool closeFile(const QString& editorId);
   bool closeAllFiles();

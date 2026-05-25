@@ -138,7 +138,8 @@ void EditorManager::registerEditorTypes() {
       });
 }
 
-void EditorManager::openFile(const QString& filePath) {
+void EditorManager::openFile(const QString& filePath,
+                              const QString& forcedEditorType) {
   QString editorKey = filePath;
   if (editors_.contains(editorKey)) {
     auto* dock = dock_widgets_[editorKey];
@@ -153,7 +154,9 @@ void EditorManager::openFile(const QString& filePath) {
   }
 
   QString suffix = fi.suffix().toLower();
-  QString editorType = EditorFactoryRegistry::typeForExtension(suffix);
+  QString editorType = forcedEditorType.isEmpty()
+      ? EditorFactoryRegistry::typeForExtension(suffix)
+      : forcedEditorType;
   if (editorType.isEmpty()) {
     editorType = QStringLiteral("text");
   }

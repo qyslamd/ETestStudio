@@ -17,6 +17,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
+#include "editor/EditorFactory.h"
 #include "logger/Logger.h"
 #include "utils/FileUtil.h"
 #include "FileTypeIconProvider.h"
@@ -228,6 +229,12 @@ void FileExplorerWidget::onCustomContextMenu(const QPoint& pos) {
     context_menu_->addSeparator();
     ctx_open_in_fs_ = context_menu_->addAction(QStringLiteral("在文件系统中打开"), this,
                                                &FileExplorerWidget::onOpenInFileSystem);
+    context_menu_->addSeparator();
+    ctx_open_as_text_ = context_menu_->addAction(QStringLiteral("用文本编辑器打开"), this,
+                                                 [this]() {
+      if (!context_index_.isValid()) return;
+      emit fileOpenAsTextRequested(sourceFilePath(context_index_));
+    });
   }
 
   // 根据上下文状态启用/禁用菜单项
@@ -250,6 +257,21 @@ void FileExplorerWidget::onCustomContextMenu(const QPoint& pos) {
   ctx_copy_path_->setEnabled(hasSelection);
   ctx_copy_rel_path_->setEnabled(hasSelection);
   ctx_open_in_fs_->setEnabled(hasRoot);
+
+  // "用文本编辑器打开"：仅对非 text、非 image 的已知文件类型启用
+  bool canOpenAsText = false;
+  if (hasSelection && model_) {
+    QString path = sourceFilePath(context_index_);
+    QFileInfo fi(path);
+    if (fi.isFile()) {
+      QString suffix = fi.suffix().toLower();
+      QString editorType = etest::app::EditorFactoryRegistry::typeForExtension(suffix);
+      canOpenAsText = !editorType.isEmpty()
+                      && editorType != QStringLiteral("text")
+                      && editorType != QStringLiteral("image");
+    }
+  }
+  ctx_open_as_text_->setVisible(canOpenAsText);
 
   context_menu_->popup(tree_view_->viewport()->mapToGlobal(pos));
 }

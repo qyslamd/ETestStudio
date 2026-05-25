@@ -269,8 +269,15 @@ void MainWindow::initSignals() {
           fileExplorer, [fileExplorer]() { fileExplorer->setRootPath({}); });
 
   // 文件浏览器：双击文件打开编辑器
-  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, editor_manager_,
-          &EditorManager::openFile);
+  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, fileExplorer,
+          [this](const QString& path) {
+            editor_manager_->openFile(path);
+          });
+  // 文件浏览器：右键→用文本编辑器打开
+  connect(fileExplorer, &FileExplorerWidget::fileOpenAsTextRequested,
+          fileExplorer, [this](const QString& path) {
+            editor_manager_->openFile(path, QStringLiteral("text"));
+          });
   // 文件浏览器：文件删除/重命名同步到编辑器
   connect(fileExplorer, &FileExplorerWidget::fileDeleted, editor_manager_,
           &EditorManager::onFileDeleted);
@@ -322,8 +329,9 @@ void MainWindow::initSignals() {
           welcome_widget_, &WelcomeWidget::refreshRecentProjects);
 
   // Git面板：点击文件打开编辑器
-  connect(gitWidget, &GitWidget::fileOpenRequested, editor_manager_,
-          &EditorManager::openFile);
+  connect(gitWidget, &GitWidget::fileOpenRequested, gitWidget, [this](const QString& path) {
+    editor_manager_->openFile(path);
+  });
 
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
   connect(
@@ -521,7 +529,9 @@ void MainWindow::initSignals() {
   // 协议管理器：双击文件打开编辑器
   auto* protocolMgr = sidebar_->protocolManager();
   connect(protocolMgr, &ProtocolManagerWidget::openFileRequested,
-          editor_manager_, &EditorManager::openFile);
+          protocolMgr, [this](const QString& path) {
+            editor_manager_->openFile(path);
+          });
 
   // 协议管理器：项目打开/关闭时刷新
   connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
@@ -531,8 +541,10 @@ void MainWindow::initSignals() {
 
   // 用例管理器：双击文件打开编辑器
   auto* tpMgr = sidebar_->testProgramManager();
-  connect(tpMgr, &TestProgramManagerWidget::openFileRequested, editor_manager_,
-          &EditorManager::openFile);
+  connect(tpMgr, &TestProgramManagerWidget::openFileRequested, tpMgr,
+          [this](const QString& path) {
+            editor_manager_->openFile(path);
+          });
 
   // 用例管理器：项目打开/关闭时刷新
   connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
