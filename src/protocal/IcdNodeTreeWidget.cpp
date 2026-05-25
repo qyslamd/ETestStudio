@@ -14,6 +14,7 @@
 #include <icd/repository.hpp>
 
 #include <cstdint>
+#include <functional>
 
 namespace etest::protocal {
 namespace {
@@ -147,6 +148,54 @@ void IcdNodeTreeWidget::initUi() {
 // ---------------------------------------------------------------------------
 void IcdNodeTreeWidget::clear() {
     model_->clear();
+}
+
+// ---------------------------------------------------------------------------
+// Select a tree item by node pointer
+// ---------------------------------------------------------------------------
+void IcdNodeTreeWidget::selectNode(const icd::Node* node) {
+    if (!node || !model_) return;
+
+    std::function<void(QStandardItem*)> search = [&](QStandardItem* item) {
+        for (int i = 0; i < item->rowCount(); ++i) {
+            auto* child = item->child(i);
+            if (auto* stored = variantToPtr<icd::Node>(child->data(PtrRole))) {
+                if (stored == node) {
+                    tree_view_->setCurrentIndex(model_->indexFromItem(child));
+                    return;
+                }
+            }
+            search(child);
+        }
+    };
+
+    for (int i = 0; i < model_->rowCount(); ++i) {
+        search(model_->item(i));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Reveal a tree item by node pointer (scroll to, no selection change)
+// ---------------------------------------------------------------------------
+void IcdNodeTreeWidget::revealNode(const icd::Node* node) {
+    if (!node || !model_) return;
+
+    std::function<void(QStandardItem*)> search = [&](QStandardItem* item) {
+        for (int i = 0; i < item->rowCount(); ++i) {
+            auto* child = item->child(i);
+            if (auto* stored = variantToPtr<icd::Node>(child->data(PtrRole))) {
+                if (stored == node) {
+                    tree_view_->scrollTo(model_->indexFromItem(child));
+                    return;
+                }
+            }
+            search(child);
+        }
+    };
+
+    for (int i = 0; i < model_->rowCount(); ++i) {
+        search(model_->item(i));
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -522,19 +522,31 @@ void ProtocalEditorWidget::initSignals() {
     }
   });
 
-  // Bit block clicked → find node → property panel
+  // Bit block clicked → highlight block + property panel
   connect(bit_view_, &IcdBitLayoutView::blockClicked,
           this, [this](const QString& name) {
     if (!current_frame_) return;
+    bit_view_->highlightBlock(name);
     const auto* node = current_frame_->find(name.toStdString());
     if (node) {
       property_panel_->showNode(const_cast<icd::Node&>(*node));
+      node_tree_->selectNode(node);
       status_label_->setText(
           QStringLiteral("Node: %1  |  Offset: %2  |  Bit: %3~%4")
               .arg(QString::fromStdString(std::string(node->name())))
               .arg(node->offset())
               .arg(node->bit_offset())
               .arg(node->bit_offset() + node->bit_width() - 1));
+    }
+  });
+
+  // Bit block hover → reveal tree node (scroll only, no selection change)
+  connect(bit_view_, &IcdBitLayoutView::blockHovered,
+          this, [this](const QString& name, bool /*on*/) {
+    if (!current_frame_) return;
+    const auto* node = current_frame_->find(name.toStdString());
+    if (node) {
+      node_tree_->revealNode(node);
     }
   });
 

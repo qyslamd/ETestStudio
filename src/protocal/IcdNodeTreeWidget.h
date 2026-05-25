@@ -24,6 +24,8 @@ class IcdNodeTreeWidget : public QWidget {
 
   void loadFromRepository(const icd::Repository& repo);
   void clear();
+  void selectNode(const icd::Node* node);
+  void revealNode(const icd::Node* node);
 
  signals:
   void frameSelected(const icd::Frame* frame);

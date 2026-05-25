@@ -35,6 +35,7 @@ class BitBlockItem : public QGraphicsObject {
  signals:
   void clicked(const QString& name);
   void contextMenuAction(const QString& name, const QString& action);
+  void hovered(const QString& name, bool on);
 
  protected:
   void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
@@ -69,9 +70,13 @@ class IcdBitLayoutScene : public QGraphicsScene {
 
   int cellSize() const { return cell_size_; }
 
+ public slots:
+  void onBlockHovered(const QString& name, bool on);
+
  signals:
   void blockClicked(const QString& name);
   void contextMenuAction(const QString& name, const QString& action);
+  void blockHovered(const QString& name, bool on);
 
  protected:
   void drawBackground(QPainter* painter, const QRectF& rect) override;
@@ -82,6 +87,7 @@ class IcdBitLayoutScene : public QGraphicsScene {
   int cell_size_ = 34;
   int margin_left_ = 52;
   int margin_top_ = 32;
+  QString selected_name_;
 };
 
 // ============================================================
@@ -102,6 +108,7 @@ class IcdBitLayoutView : public QWidget {
  signals:
   void blockClicked(const QString& name);
   void contextMenuAction(const QString& name, const QString& action);
+  void blockHovered(const QString& name, bool on);
 
  protected:
   bool eventFilter(QObject* obj, QEvent* event) override;

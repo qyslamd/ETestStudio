@@ -141,12 +141,18 @@ void BitBlockItem::setHighlighted(bool on) {
 }
 
 void BitBlockItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
-  hovered_ = true;
+  if (!hovered_) {
+    hovered_ = true;
+    emit hovered(name_, true);
+  }
   update();
 }
 
 void BitBlockItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
-  hovered_ = false;
+  if (hovered_) {
+    hovered_ = false;
+    emit hovered(name_, false);
+  }
   update();
 }
 
@@ -222,6 +228,8 @@ BitBlockItem* IcdBitLayoutScene::addBlock(const QString& name,
     connect(item, &BitBlockItem::clicked, this, &IcdBitLayoutScene::blockClicked);
     connect(item, &BitBlockItem::contextMenuAction,
             this, &IcdBitLayoutScene::contextMenuAction);
+    connect(item, &BitBlockItem::hovered,
+            this, &IcdBitLayoutScene::onBlockHovered);
 
     if (!first_item) first_item = item;
 
@@ -242,11 +250,31 @@ void IcdBitLayoutScene::clearBlocks() {
 }
 
 void IcdBitLayoutScene::highlightBlock(const QString& name) {
+  selected_name_ = name;
   for (auto* item : items()) {
     if (auto* block = dynamic_cast<BitBlockItem*>(item)) {
       block->setHighlighted(block->name() == name);
     }
   }
+}
+
+void IcdBitLayoutScene::onBlockHovered(const QString& name, bool on) {
+  if (on) {
+    // Hover enter: highlight all blocks with this name
+    for (auto* item : items()) {
+      if (auto* block = dynamic_cast<BitBlockItem*>(item)) {
+        block->setHighlighted(block->name() == name);
+      }
+    }
+  } else {
+    // Hover leave: restore selection highlight
+    for (auto* item : items()) {
+      if (auto* block = dynamic_cast<BitBlockItem*>(item)) {
+        block->setHighlighted(block->name() == selected_name_);
+      }
+    }
+  }
+  emit blockHovered(name, on);
 }
 
 void IcdBitLayoutScene::drawBackground(QPainter* painter, const QRectF&) {
@@ -362,6 +390,8 @@ void IcdBitLayoutView::initUi() {
           &IcdBitLayoutView::blockClicked);
   connect(scene_, &IcdBitLayoutScene::contextMenuAction,
           this, &IcdBitLayoutView::contextMenuAction);
+  connect(scene_, &IcdBitLayoutScene::blockHovered,
+          this, &IcdBitLayoutView::blockHovered);
 
   layout->addWidget(view_, 1);
 }
