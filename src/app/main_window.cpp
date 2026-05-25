@@ -133,6 +133,7 @@ void MainWindow::initUi() {
 
   // ===== 编辑器区域 =====
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
+  ads::CDockManager::setConfigFlag(ads::CDockManager::MiddleMouseButtonClosesTab, true);
   dock_manager_ = new ads::CDockManager(v_splitter_);
 
   // 中央编辑区：Welcome页面
@@ -142,6 +143,9 @@ void MainWindow::initUi() {
   central_dock_->setWidget(welcome_widget_);
   central_dock_->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(central_dock_);
+
+  // 允许关闭欢迎页
+  central_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);
 
   // 隐藏中央区域标题栏的菜单和分离按钮
   auto* centralArea = central_dock_->dockAreaWidget();
@@ -1188,9 +1192,11 @@ void MainWindow::setupRibbon() {
     auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
     connect(act_welcome, &QAction::triggered, this, [this]() {
       auto* centralDock = dock_manager_->findDockWidget("CentralDock");
-      if (centralDock && centralDock->dockAreaWidget()) {
-        centralDock->dockAreaWidget()->setCurrentIndex(0);
-      }
+      if (!centralDock) return;
+      if (centralDock->isClosed())
+        centralDock->toggleView(true);
+      if (auto* area = centralDock->dockAreaWidget())
+        area->setCurrentIndex(0);
     });
     panel_panels->addLargeAction(act_welcome);
 
