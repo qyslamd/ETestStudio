@@ -119,7 +119,7 @@ include(cmake/saribbon/patch_examples.cmake)
 
 # SARibbon Ribbon 界面控件库
 set(SARIBBON_BUILD_STATIC_LIBS ON CACHE BOOL "Build static library for SARibbon" FORCE)
-set(SARIBBON_BUILD_EXAMPLES ON CACHE BOOL "Do not build SARibbon examples" FORCE)
+set(SARIBBON_BUILD_EXAMPLES OFF CACHE BOOL "Do not build SARibbon examples" FORCE)
 set(SARIBBON_USE_FRAMELESS_LIB ON CACHE BOOL "Use QWindowKit for frameless window" FORCE)
 set(SARIBBON_INSTALL_IN_CURRENT_DIR OFF CACHE BOOL "Do not install in current dir" FORCE)
 add_subdirectory(3rdparty/SARibbon-2.5.7)
