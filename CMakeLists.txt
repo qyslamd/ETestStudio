@@ -110,6 +110,9 @@ set(QWINDOWKIT_BUILD_WIDGETS ON CACHE BOOL "Build QWindowKit widgets module" FOR
 set(QWINDOWKIT_INSTALL OFF CACHE BOOL "Do not install QWindowKit" FORCE)
 add_subdirectory(3rdparty/qwindowkit-1.5.0)
 
+# SARibbon CMake 版本补丁：更新 cmake_minimum_required 避免 deprecation 警告
+include(cmake/saribbon/patch_cmake_version.cmake)
+
 # SARibbon QWindowKit 补丁：替换 find_package 为本项目直接目标引用
 include(cmake/saribbon/patch_qwindowkit.cmake)
 
