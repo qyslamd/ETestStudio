@@ -165,15 +165,46 @@ RemoveConnectionCommand::RemoveConnectionCommand(TopologyDocument* doc,
   const auto* c = doc_->connection(connectionIndex);
   if (c) {
     conn_ = *c;
+    // 级联清理：找到所有引用此连接端点的 tap
+    for (int mi = 0; mi < doc_->monitorCount(); ++mi) {
+      const auto* mon = doc_->monitor(mi);
+      if (!mon) continue;
+      for (const auto& tap : mon->taps) {
+        if (tap.productName == c->productName &&
+            tap.portName == c->portName &&
+            tap.deviceName == c->deviceName &&
+            tap.devicePort == c->devicePort) {
+          saved_taps_.append({mi, tap});
+        }
+      }
+    }
   }
   setText(QStringLiteral("删除连线"));
 }
 
 void RemoveConnectionCommand::undo() {
   doc_->addConnection(conn_);
+  // 恢复所有被级联清理的 tap
+  for (const auto& st : saved_taps_) {
+    doc_->addTap(st.monitorIndex, st.tap);
+  }
 }
 
 void RemoveConnectionCommand::redo() {
+  // 先移除所有引用此连接的 tap
+  for (const auto& st : saved_taps_) {
+    const auto* mon = doc_->monitor(st.monitorIndex);
+    if (!mon) continue;
+    for (int ti = mon->taps.size() - 1; ti >= 0; --ti) {
+      if (mon->taps[ti].productName == st.tap.productName &&
+          mon->taps[ti].portName == st.tap.portName &&
+          mon->taps[ti].deviceName == st.tap.deviceName &&
+          mon->taps[ti].devicePort == st.tap.devicePort) {
+        doc_->removeTap(st.monitorIndex, ti);
+        break;
+      }
+    }
+  }
   doc_->removeConnection(index_);
 }
 
@@ -228,6 +259,33 @@ void MoveDeviceCommand::redo() {
   auto* dev = doc_->device(index_);
   if (dev) {
     dev->position = new_pos_;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MoveMonitorCommand
+// ═══════════════════════════════════════════════════════════════
+
+MoveMonitorCommand::MoveMonitorCommand(TopologyDocument* doc, int monitorIndex,
+                                       const QPointF& oldPos,
+                                       const QPointF& newPos,
+                                       QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), index_(monitorIndex), old_pos_(oldPos),
+      new_pos_(newPos) {
+  setText(QStringLiteral("移动监听器"));
+}
+
+void MoveMonitorCommand::undo() {
+  auto* mon = doc_->monitor(index_);
+  if (mon) {
+    mon->position = old_pos_;
+  }
+}
+
+void MoveMonitorCommand::redo() {
+  auto* mon = doc_->monitor(index_);
+  if (mon) {
+    mon->position = new_pos_;
   }
 }
 

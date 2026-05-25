@@ -106,9 +106,14 @@ class RemoveConnectionCommand : public QUndoCommand {
   void redo() override;
 
  private:
+  struct SavedTap {
+    int monitorIndex;
+    TopologyMonitorTap tap;
+  };
   TopologyDocument* doc_;
   int index_;
   TopologyConnection conn_;
+  QVector<SavedTap> saved_taps_;
 };
 
 // ── MoveProductCommand ──
@@ -133,6 +138,22 @@ class MoveDeviceCommand : public QUndoCommand {
   MoveDeviceCommand(TopologyDocument* doc, int deviceIndex,
                     const QPointF& oldPos, const QPointF& newPos,
                     QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int index_;
+  QPointF old_pos_;
+  QPointF new_pos_;
+};
+
+// ── MoveMonitorCommand ──
+class MoveMonitorCommand : public QUndoCommand {
+ public:
+  MoveMonitorCommand(TopologyDocument* doc, int monitorIndex,
+                     const QPointF& oldPos, const QPointF& newPos,
+                     QUndoCommand* parent = nullptr);
   void undo() override;
   void redo() override;
 

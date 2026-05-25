@@ -121,6 +121,7 @@ class PropertyPanelWidget : public QWidget {
   QLabel* monitor_type_label_ = nullptr;
   QTableWidget* monitor_taps_table_ = nullptr;
   int editing_monitor_index_ = -1;
+  void onTapTableContextMenu(const QPoint& pos);
 };
 
 }  // namespace etest::topology

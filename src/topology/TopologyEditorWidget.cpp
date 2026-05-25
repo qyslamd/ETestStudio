@@ -461,6 +461,10 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onOutlineNavigate);
   connect(outline_toggle_action_, &QAction::toggled, outline_widget_,
           &QWidget::setVisible);
+  connect(outline_widget_, &TopologyOutlineWidget::unmountRequested, this,
+          [this](int monIdx, int tapIdx) {
+    doc_->undoStack()->push(new UnTapConnectionCommand(doc_, monIdx, tapIdx));
+  });
 
   auto* undoStack = doc_->undoStack();
   connect(undoStack, &QUndoStack::indexChanged, this, [this]() {
@@ -711,7 +715,11 @@ void TopologyEditorWidget::onDropMonitor(const QString& deviceType,
   status_label_->setText(
       QStringLiteral("已拖放添加监听器: %1").arg(mon.name));
 
-  // TODO: center on the new monitor item once MonitorItem is implemented
+  // 居中到新添加的 Monitor
+  if (auto* monItem = scene_->findMonitorItem(cmd->monitorIndex())) {
+    monItem->setSelected(true);
+    view_->centerOn(monItem);
+  }
 }
 
 void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
@@ -933,7 +941,7 @@ static const char kClipboardMime[] = "application/x-ietopology-items";
 
 void TopologyEditorWidget::onCopy() {
   QJsonObject root;
-  QJsonArray prodsArr, devsArr;
+  QJsonArray prodsArr, devsArr, monsArr;
   auto selected = scene_->selectedItems();
 
   for (auto* item : selected) {
@@ -986,23 +994,47 @@ void TopologyEditorWidget::onCopy() {
       }
       obj["ports"] = portsArr;
       devsArr.append(obj);
+    } else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
+      const auto* m = doc_->monitor(mon->monitorIndex());
+      if (!m)
+        continue;
+      QJsonObject obj;
+      obj["name"] = m->name;
+      obj["deviceType"] = m->deviceType;
+      obj["positionX"] = m->position.x();
+      obj["positionY"] = m->position.y();
+      obj["sizeWidth"] = m->size.width();
+      obj["sizeHeight"] = m->size.height();
+      QJsonArray tapsArr;
+      for (const auto& tap : m->taps) {
+        QJsonObject tapObj;
+        tapObj["productName"] = tap.productName;
+        tapObj["portName"] = tap.portName;
+        tapObj["deviceName"] = tap.deviceName;
+        tapObj["devicePort"] = tap.devicePort;
+        tapsArr.append(tapObj);
+      }
+      obj["taps"] = tapsArr;
+      monsArr.append(obj);
     }
   }
 
-  if (prodsArr.isEmpty() && devsArr.isEmpty())
+  if (prodsArr.isEmpty() && devsArr.isEmpty() && monsArr.isEmpty())
     return;
 
   root["products"] = prodsArr;
   root["devices"] = devsArr;
+  root["monitors"] = monsArr;
   QByteArray data = QJsonDocument(root).toJson(QJsonDocument::Compact);
 
   auto* clip = QApplication::clipboard();
   auto* mime = new QMimeData();
   mime->setData(QLatin1String(kClipboardMime), data);
   clip->setMimeData(mime);
-  status_label_->setText(QStringLiteral("已复制 %1 个 UUT, %2 个设备")
+  status_label_->setText(QStringLiteral("已复制 %1 个 UUT, %2 个设备, %3 个监听器")
                              .arg(prodsArr.size())
-                             .arg(devsArr.size()));
+                             .arg(devsArr.size())
+                             .arg(monsArr.size()));
 }
 
 void TopologyEditorWidget::onPaste() {
@@ -1019,6 +1051,7 @@ void TopologyEditorWidget::onPaste() {
   QJsonObject root = jdoc.object();
   QJsonArray prodsArr = root["products"].toArray();
   QJsonArray devsArr = root["devices"].toArray();
+  QJsonArray monsArr = root["monitors"].toArray();
 
   scene_->clearSelection();
 
@@ -1098,9 +1131,47 @@ void TopologyEditorWidget::onPaste() {
     doc_->undoStack()->push(cmd);
   }
 
-  status_label_->setText(QStringLiteral("已粘贴 %1 个 UUT, %2 个设备")
-                             .arg(prodsArr.size())
-                             .arg(devsArr.size()));
+  // Paste monitors with offset and unique names
+  for (const auto& val : monsArr) {
+    QJsonObject obj = val.toObject();
+    TopologyMonitor mon;
+    mon.name = obj["name"].toString();
+    mon.deviceType = obj["deviceType"].toString();
+    mon.position = QPointF(obj["positionX"].toDouble() + 30,
+                           obj["positionY"].toDouble() + 30);
+    mon.size = QSizeF(obj["sizeWidth"].toDouble(120),
+                      obj["sizeHeight"].toDouble(60));
+
+    // Generate unique name if conflict
+    if (doc_->findMonitorIndex(mon.name) >= 0) {
+      int suffix = 1;
+      QString base = mon.name;
+      while (doc_->findMonitorIndex(
+                 QStringLiteral("%1_copy%2").arg(base).arg(suffix)) >= 0)
+        ++suffix;
+      mon.name = QStringLiteral("%1_copy%2").arg(base).arg(suffix);
+    }
+
+    QJsonArray tapsArr = obj["taps"].toArray();
+    for (const auto& tv : tapsArr) {
+      QJsonObject tapObj = tv.toObject();
+      TopologyMonitorTap tap;
+      tap.productName = tapObj["productName"].toString();
+      tap.portName = tapObj["portName"].toString();
+      tap.deviceName = tapObj["deviceName"].toString();
+      tap.devicePort = tapObj["devicePort"].toString();
+      mon.taps.append(tap);
+    }
+
+    auto* cmd = new AddMonitorCommand(doc_, mon);
+    doc_->undoStack()->push(cmd);
+  }
+
+  status_label_->setText(
+      QStringLiteral("已粘贴 %1 个 UUT, %2 个设备, %3 个监听器")
+          .arg(prodsArr.size())
+          .arg(devsArr.size())
+          .arg(monsArr.size()));
 }
 
 // ── Outline navigation ───────────────────────────────────────
@@ -1132,6 +1203,10 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType, int mainIndex,
       break;
     }
     case 5:
+      target = scene_->findMonitorItem(mainIndex);
+      break;
+    case 6:
+      // Tap node navigates to the parent Monitor
       target = scene_->findMonitorItem(mainIndex);
       break;
     default:
@@ -1241,7 +1316,8 @@ void TopologyEditorWidget::updateAlignDistributeActions() {
   int movable = 0;
   for (auto* sel : scene_->selectedItems()) {
     if (qgraphicsitem_cast<UutItem*>(sel) ||
-        qgraphicsitem_cast<DeviceItem*>(sel)) {
+        qgraphicsitem_cast<DeviceItem*>(sel) ||
+        qgraphicsitem_cast<MonitorItem*>(sel)) {
       ++movable;
     }
   }
@@ -1257,19 +1333,22 @@ void TopologyEditorWidget::updateAlignDistributeActions() {
 }
 
 void TopologyEditorWidget::doAlign(Align alignType) {
-  // Collect selected UUT/Device items
+  // Collect selected UUT/Device/Monitor items
   struct Entry {
     QGraphicsItem* item;
     int index;
     bool isProduct;
+    bool isMonitor;
     QPointF oldPos;
   };
   QVector<Entry> entries;
   for (auto* sel : scene_->selectedItems()) {
     if (auto* uut = qgraphicsitem_cast<UutItem*>(sel))
-      entries.append({sel, uut->productIndex(), true, sel->pos()});
+      entries.append({sel, uut->productIndex(), true, false, sel->pos()});
     else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(sel))
-      entries.append({sel, dev->deviceIndex(), false, sel->pos()});
+      entries.append({sel, dev->deviceIndex(), false, false, sel->pos()});
+    else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(sel))
+      entries.append({sel, mon->monitorIndex(), false, true, sel->pos()});
   }
   if (entries.size() < 2)
     return;
@@ -1312,6 +1391,8 @@ void TopologyEditorWidget::doAlign(Align alignType) {
     if (newPos != e.oldPos) {
       if (e.isProduct)
         new MoveProductCommand(doc_, e.index, e.oldPos, newPos, macro);
+      else if (e.isMonitor)
+        new MoveMonitorCommand(doc_, e.index, e.oldPos, newPos, macro);
       else
         new MoveDeviceCommand(doc_, e.index, e.oldPos, newPos, macro);
     }
@@ -1327,19 +1408,22 @@ void TopologyEditorWidget::doAlign(Align alignType) {
 }
 
 void TopologyEditorWidget::doDistribute(Distribute distType) {
-  // Collect selected UUT/Device items
+  // Collect selected UUT/Device/Monitor items
   struct Entry {
     QGraphicsItem* item;
     int index;
     bool isProduct;
+    bool isMonitor;
     QPointF oldPos;
   };
   QVector<Entry> entries;
   for (auto* sel : scene_->selectedItems()) {
     if (auto* uut = qgraphicsitem_cast<UutItem*>(sel))
-      entries.append({sel, uut->productIndex(), true, sel->pos()});
+      entries.append({sel, uut->productIndex(), true, false, sel->pos()});
     else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(sel))
-      entries.append({sel, dev->deviceIndex(), false, sel->pos()});
+      entries.append({sel, dev->deviceIndex(), false, false, sel->pos()});
+    else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(sel))
+      entries.append({sel, mon->monitorIndex(), false, true, sel->pos()});
   }
   if (entries.size() < 2)
     return;
@@ -1400,6 +1484,8 @@ void TopologyEditorWidget::doDistribute(Distribute distType) {
     if (newPos != e.oldPos) {
       if (e.isProduct)
         new MoveProductCommand(doc_, e.index, e.oldPos, newPos, macro);
+      else if (e.isMonitor)
+        new MoveMonitorCommand(doc_, e.index, e.oldPos, newPos, macro);
       else
         new MoveDeviceCommand(doc_, e.index, e.oldPos, newPos, macro);
     }

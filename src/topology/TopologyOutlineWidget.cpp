@@ -4,6 +4,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
@@ -37,9 +38,13 @@ TopologyOutlineWidget::TopologyOutlineWidget(QWidget* parent)
           &TopologyOutlineWidget::onFilterTextChanged);
   connect(tree_, &QTreeWidget::itemClicked, this,
           &TopologyOutlineWidget::onTreeItemClicked);
+  tree_->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(tree_, &QTreeWidget::customContextMenuRequested, this,
+          &TopologyOutlineWidget::onTreeContextMenu);
 }
 
 void TopologyOutlineWidget::rebuildTree(TopologyDocument* doc) {
+  saveExpandedState();
   tree_->clear();
   if (!doc)
     return;
@@ -66,8 +71,49 @@ void TopologyOutlineWidget::rebuildTree(TopologyDocument* doc) {
   for (int i = 0; i < doc->monitorCount(); ++i)
     addMonitorItem(i, doc, monCat);
 
-  tree_->expandAll();
+  restoreExpandedState();
   updating_selection_ = false;
+}
+
+void TopologyOutlineWidget::saveExpandedState() {
+  expanded_keys_.clear();
+  for (int c = 0; c < tree_->topLevelItemCount(); ++c) {
+    auto* cat = tree_->topLevelItem(c);
+    if (!cat || !cat->isExpanded()) continue;
+    expanded_keys_.insert(QString::number(c)); // "c" → category expanded
+    for (int i = 0; i < cat->childCount(); ++i) {
+      auto* child = cat->child(i);
+      if (!child || !child->isExpanded()) continue;
+      int mainIdx = child->data(0, kRoleMainIdx).toInt();
+      expanded_keys_.insert(QStringLiteral("%1/%2").arg(c).arg(mainIdx));
+    }
+  }
+}
+
+void TopologyOutlineWidget::restoreExpandedState() {
+  if (expanded_keys_.isEmpty()) {
+    // Default: expand all categories, collapse items
+    for (int c = 0; c < tree_->topLevelItemCount(); ++c) {
+      if (auto* cat = tree_->topLevelItem(c))
+        cat->setExpanded(true);
+    }
+    return;
+  }
+
+  for (int c = 0; c < tree_->topLevelItemCount(); ++c) {
+    auto* cat = tree_->topLevelItem(c);
+    if (!cat) continue;
+    if (expanded_keys_.contains(QString::number(c)))
+      cat->setExpanded(true);
+    for (int i = 0; i < cat->childCount(); ++i) {
+      auto* child = cat->child(i);
+      if (!child) continue;
+      int mainIdx = child->data(0, kRoleMainIdx).toInt();
+      if (expanded_keys_.contains(QStringLiteral("%1/%2").arg(c).arg(mainIdx)))
+        child->setExpanded(true);
+    }
+  }
+  expanded_keys_.clear();
 }
 
 QTreeWidgetItem* TopologyOutlineWidget::addCategoryItem(
@@ -159,8 +205,9 @@ void TopologyOutlineWidget::addMonitorItem(int index, TopologyDocument* doc,
     tapItem->setText(0, QStringLiteral("%1:%2 → %3:%4")
                              .arg(tap.productName, tap.portName,
                                   tap.deviceName, tap.devicePort));
-    tapItem->setData(0, kRoleTag, static_cast<int>(ItemTag::Category));
-    tapItem->setFlags(tapItem->flags() & ~Qt::ItemIsSelectable);
+    tapItem->setData(0, kRoleTag, static_cast<int>(ItemTag::Tap));
+    tapItem->setData(0, kRoleMainIdx, index);
+    tapItem->setData(0, kRoleSubIdx, ti);
   }
 }
 
@@ -261,6 +308,25 @@ void TopologyOutlineWidget::clearSelection() {
   updating_selection_ = true;
   tree_->clearSelection();
   updating_selection_ = false;
+}
+
+void TopologyOutlineWidget::onTreeContextMenu(const QPoint& pos) {
+  auto* item = tree_->itemAt(pos);
+  if (!item)
+    return;
+  auto tag = static_cast<ItemTag>(item->data(0, kRoleTag).toInt());
+  if (tag != ItemTag::Tap)
+    return;
+
+  int monIdx = item->data(0, kRoleMainIdx).toInt();
+  int tapIdx = item->data(0, kRoleSubIdx).toInt();
+
+  QMenu menu(this);
+  auto* unmountAction = menu.addAction(QStringLiteral("解除挂载"));
+  connect(unmountAction, &QAction::triggered, this, [this, monIdx, tapIdx]() {
+    emit unmountRequested(monIdx, tapIdx);
+  });
+  menu.exec(tree_->viewport()->mapToGlobal(pos));
 }
 
 }  // namespace etest::topology

@@ -9,6 +9,7 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMenu>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QVBoxLayout>
@@ -498,10 +499,28 @@ void PropertyPanelWidget::buildMonitorPage() {
   monitor_taps_table_->horizontalHeader()->setStretchLastSection(true);
   monitor_taps_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
   monitor_taps_table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  monitor_taps_table_->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(monitor_taps_table_, &QTableWidget::customContextMenuRequested, this,
+          &PropertyPanelWidget::onTapTableContextMenu);
   tapsLay->addWidget(monitor_taps_table_);
 
   lay->addWidget(tapsGroup);
   stack_->addWidget(w);
+}
+
+void PropertyPanelWidget::onTapTableContextMenu(const QPoint& pos) {
+  int row = monitor_taps_table_->rowAt(pos.y());
+  if (row < 0 || editing_monitor_index_ < 0)
+    return;
+
+  QMenu menu(this);
+  auto* unmountAction =
+      menu.addAction(QStringLiteral("解除挂载"));
+  connect(unmountAction, &QAction::triggered, this, [this, row]() {
+    doc_->undoStack()->push(
+        new UnTapConnectionCommand(doc_, editing_monitor_index_, row));
+  });
+  menu.exec(monitor_taps_table_->viewport()->mapToGlobal(pos));
 }
 
 // ── Slots ──────────────────────────────────────────────────────
