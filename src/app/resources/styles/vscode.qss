@@ -714,6 +714,10 @@ SearchWidget QTreeWidget::item:hover {
 SearchWidget QTreeWidget::item:selected {
     background-color: #094771;
 }
+SearchWidget QFrame {
+    background-color: #3C3C3C;
+    max-height: 1px;
+}
 SearchWidget QLabel {
     color: #858585;
     font-size: 12px;

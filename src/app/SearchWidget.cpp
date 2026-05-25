@@ -4,6 +4,7 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QTextStream>
@@ -39,7 +40,7 @@ void SearchWidget::setFocusOnSearchInput() {
 void SearchWidget::initUi() {
   auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
-  mainLayout->setSpacing(0);
+  mainLayout->setSpacing(2);
 
   auto* inputRow = new QHBoxLayout();
   inputRow->setContentsMargins(8, 6, 8, 4);
@@ -60,13 +61,18 @@ void SearchWidget::initUi() {
 
   case_sensitive_check_ = new QCheckBox(QStringLiteral("Aa"), this);
   case_sensitive_check_->setToolTip(QStringLiteral("区分大小写"));
-  case_sensitive_check_->setFixedSize(30, 26);
+  case_sensitive_check_->setFixedSize(40, 26);
 
   inputRow->addWidget(search_input_);
   inputRow->addWidget(search_button_);
   inputRow->addWidget(case_sensitive_check_);
 
   mainLayout->addLayout(inputRow);
+
+  auto* separator = new QFrame(this);
+  separator->setFrameShape(QFrame::HLine);
+  separator->setFixedHeight(1);
+  mainLayout->addWidget(separator);
 
   status_label_ = new QLabel(this);
   status_label_->setContentsMargins(8, 2, 8, 4);
