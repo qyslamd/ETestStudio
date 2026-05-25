@@ -5,7 +5,7 @@
 #include <QPainter>
 #include <QPixmap>
 
-#include "core/common/ThemeState.h"
+#include "IconProvider.h"
 
 #include "logger/Logger.h"
 
@@ -13,7 +13,7 @@ using namespace etest::core::logger;
 
 namespace etest::app {
 
-FileTypeIconProvider::FileTypeIconProvider() : QFileIconProvider() {
+FileTypeIconProvider::FileTypeIconProvider() {
   loadIcons();
   LOG_INFO("UI",
            "FileTypeIconProvider loaded, {} extensions mapped, folder null={}",
@@ -55,16 +55,19 @@ void FileTypeIconProvider::loadIcons() {
 }
 
 QIcon FileTypeIconProvider::loadDualThemeIcon(const QString& baseName) const {
-  bool dark = core::common::isDarkTheme();
-  QString iconPath =
-      QStringLiteral(":/resources/icons/svg/%1_%2.svg")
-          .arg(baseName, dark ? QStringLiteral("light")
-                              : QStringLiteral("dark"));
-  QIcon icon(iconPath);
+  QIcon icon = IconProvider::instance().icon(baseName);
   if (icon.isNull()) {
-    LOG_WARN("UI", "Failed to load icon: {}", iconPath.toStdString());
+    LOG_WARN("UI", "Failed to load icon via IconProvider: {}", baseName.toStdString());
   }
   return icon;
+}
+
+void FileTypeIconProvider::reload() {
+  extension_icons_.clear();
+  colored_folder_cache_.clear();
+  loadIcons();
+  LOG_INFO("UI", "FileTypeIconProvider reloaded, {} extensions",
+           extension_icons_.size());
 }
 
 QIcon FileTypeIconProvider::coloredFolderIcon(const QColor& accentColor) const {
