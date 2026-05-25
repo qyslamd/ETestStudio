@@ -11,7 +11,8 @@ set(SOURCES
     common/ByteException.cpp
     common/GlobalExceptionHandler.cpp
     common/SingleInstance.cpp
-    common/ThemeState.cpp
+    common/ThemeManager.cpp
+    common/AppIconProvider.cpp
     backup/BackupManager.cpp
     utils/FileUtil.cpp
     utils/TimeUtil.cpp
@@ -36,7 +37,8 @@ set(HEADERS
     common/ByteException.h
     common/GlobalExceptionHandler.h
     common/SingleInstance.h
-    common/ThemeState.h
+    common/ThemeManager.h
+    common/AppIconProvider.h
     backup/BackupManager.h
     utils/FileUtil.h
     utils/TimeUtil.h

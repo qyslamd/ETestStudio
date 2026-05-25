@@ -25,7 +25,8 @@
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
 #include "TopologyTheme.h"
-#include "core/common/ThemeState.h"
+#include "AppIconProvider.h"
+#include "ThemeManager.h"
 #include "TopologyDocument.h"
 #include "TopologyJsonSerializer.h"
 #include "TopologyOutlineWidget.h"
@@ -166,10 +167,7 @@ void TopologyEditorWidget::setEditorId(const QString& newId) {
 
 void TopologyEditorWidget::initUi() {
   auto topoIcon = [](const QString& name) {
-    QString path = QStringLiteral(":/resources/icons/svg/%1_%2.svg")
-                       .arg(name, core::common::isDarkTheme() ? QStringLiteral("light")
-                                                : QStringLiteral("dark"));
-    return QIcon(path);
+    return etest::app::AppIconProvider::instance().icon(name);
   };
 
   auto* mainLayout = new QVBoxLayout(this);
@@ -515,6 +513,40 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onPaste);
 
   updateAlignDistributeActions();
+
+  // Theme switch: refresh toolbar icons
+  connect(&etest::app::ThemeManager::instance(),
+          &etest::app::ThemeManager::themeChanged,
+          this, &TopologyEditorWidget::reloadToolbarIcons);
+}
+
+void TopologyEditorWidget::reloadToolbarIcons() {
+  auto icon = [](const QString& name) {
+    return etest::app::AppIconProvider::instance().icon(name);
+  };
+  add_uut_action_->setIcon(icon(QStringLiteral("topo_uut")));
+  add_device_action_->setIcon(icon(QStringLiteral("topo_device")));
+
+  align_left_action_->setIcon(icon(QStringLiteral("topo_align_left")));
+  align_hcenter_action_->setIcon(icon(QStringLiteral("topo_align_center")));
+  align_right_action_->setIcon(icon(QStringLiteral("topo_align_right")));
+  align_top_action_->setIcon(icon(QStringLiteral("topo_align_top")));
+  align_vcenter_action_->setIcon(icon(QStringLiteral("topo_align_middle")));
+  align_bottom_action_->setIcon(icon(QStringLiteral("topo_align_bottom")));
+  distribute_horizontal_action_->setIcon(icon(QStringLiteral("topo_distribute_horizontal")));
+  distribute_vertical_action_->setIcon(icon(QStringLiteral("topo_distribute_vertical")));
+
+  zoom_in_action_->setIcon(icon(QStringLiteral("topo_zoom_in")));
+  zoom_out_action_->setIcon(icon(QStringLiteral("topo_zoom_out")));
+  zoom_reset_action_->setIcon(icon(QStringLiteral("topo_zoom_reset")));
+
+  monitor_view_action_->setIcon(icon(QStringLiteral("topo_tap")));
+  mount_action_->setIcon(icon(QStringLiteral("topo_tap")));
+
+  export_image_action_->setIcon(icon(QStringLiteral("topo_export")));
+  undo_action_->setIcon(icon(QStringLiteral("topo_undo")));
+  redo_action_->setIcon(icon(QStringLiteral("topo_redo")));
+  outline_toggle_action_->setIcon(icon(QStringLiteral("topo_uut")));
 }
 
 void TopologyEditorWidget::buildDefaultDocument() {

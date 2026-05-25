@@ -5,7 +5,7 @@
 #include <QPainter>
 #include <QPixmap>
 
-#include "IconProvider.h"
+#include "AppIconProvider.h"
 
 #include "logger/Logger.h"
 
@@ -55,9 +55,9 @@ void FileTypeIconProvider::loadIcons() {
 }
 
 QIcon FileTypeIconProvider::loadDualThemeIcon(const QString& baseName) const {
-  QIcon icon = IconProvider::instance().icon(baseName);
+  QIcon icon = AppIconProvider::instance().icon(baseName);
   if (icon.isNull()) {
-    LOG_WARN("UI", "Failed to load icon via IconProvider: {}", baseName.toStdString());
+    LOG_WARN("UI", "Failed to load icon via AppIconProvider: {}", baseName.toStdString());
   }
   return icon;
 }
