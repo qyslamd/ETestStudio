@@ -47,6 +47,7 @@ enpht/
 
 # ========== 文档/模式相关 ==========
 Schema/
+!src/icd_utility/src/schema/
 _unpacked/
 docs/*.js
 docs/*.ts
