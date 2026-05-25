@@ -68,6 +68,10 @@ constexpr const char* CONFIG_APPEARANCE_THEME = "appearance/theme";
 // 外观默认值
 constexpr const char* CONFIG_APPEARANCE_DEFAULT_THEME = "default";
 
+// Ribbon 配置组
+constexpr const char* CONFIG_RIBBON_MINIMIZED = "ribbon/minimized";
+constexpr bool CONFIG_RIBBON_DEFAULT_MINIMIZED = false;
+
 // 工具栏配置组
 constexpr const char* CONFIG_TOOLBAR_VISIBLE = "toolbar/visible";
 constexpr const char* CONFIG_TOOLBAR_ICON_SIZE = "toolbar/icon_size";

@@ -197,6 +197,14 @@ void MainWindow::initSignals() {
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
           &MainWindow::onThemeChanged);
 
+  // Ribbon 展开/收起状态持久化
+  connect(ribbonBar(), &SARibbonBar::ribbonModeChanged, this,
+          [](SARibbonBar::RibbonMode mode) {
+    ConfigManager::instance().set<bool>(
+        CONFIG_RIBBON_MINIMIZED,
+        mode == SARibbonBar::MinimumRibbonMode);
+  });
+
   // 视图菜单：输出面板显隐
   connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
     if (checked) {
@@ -1241,6 +1249,11 @@ void MainWindow::setupRibbon() {
   ribbon->setRibbonStyle(SARibbonBar::RibbonStyleLooseThreeRow);
   ribbon->showMinimumModeButton(true);
   ribbon->setTabDoubleClickToMinimumMode(true);
+
+  // 恢复已保存的折叠状态
+  bool minimized = ConfigManager::instance().get<bool>(
+      CONFIG_RIBBON_MINIMIZED, CONFIG_RIBBON_DEFAULT_MINIMIZED);
+  ribbon->setMinimumMode(minimized);
 }
 
 void MainWindow::saveWindowState() {
