@@ -39,7 +39,6 @@ void ActivityBarWidget::setupUi() {
     {QStringLiteral("搜索"),        QStringLiteral("search")},
     {QStringLiteral("源代码管理"),  QStringLiteral("git")},
     {QStringLiteral("调试"),        QStringLiteral("debug")},
-    {QStringLiteral("扩展"),        QStringLiteral("extensions")},
     {QStringLiteral("硬件"),        QStringLiteral("hardware")},
     {QStringLiteral("协议"),        QStringLiteral("protocol")},
     {QStringLiteral("用例"),        QStringLiteral("testprogram")},
