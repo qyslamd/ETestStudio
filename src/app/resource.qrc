@@ -103,5 +103,7 @@
         <file>resources/icons/svg/chevron_down_light.svg</file>
         <file>resources/icons/svg/account_dark.svg</file>
         <file>resources/icons/svg/account_light.svg</file>
+        <file alias="translations/ads_zh_CN.qm">resources/translations/ads_zh_CN.qm</file>
+        <file alias="translations/SARibbon_zh_CN.qm">resources/translations/SARibbon_zh_CN.qm</file>
     </qresource>
 </RCC>

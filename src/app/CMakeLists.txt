@@ -128,18 +128,15 @@ target_link_libraries(${TARGET_NAME}
 find_package(Qt5 COMPONENTS LinguistTools CONFIG)
 if(Qt5LinguistTools_FOUND)
     message(STATUS "Qt5LinguistTools found, enabling translations")
-    set(TS_FILES
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/translations)
+    set_source_files_properties(
         translations/ads_zh_CN.ts
         translations/SARibbon_zh_CN.ts
+        PROPERTIES OUTPUT_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/resources/translations"
     )
-    qt5_add_translation(QM_FILES ${TS_FILES})
-    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_BINARY_DIR}/ads_zh_CN.qm"
-        "$<TARGET_FILE_DIR:${TARGET_NAME}>/"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_BINARY_DIR}/SARibbon_zh_CN.qm"
-        "$<TARGET_FILE_DIR:${TARGET_NAME}>/"
+    qt5_add_translation(QM_FILES
+        translations/ads_zh_CN.ts
+        translations/SARibbon_zh_CN.ts
     )
 endif()
 

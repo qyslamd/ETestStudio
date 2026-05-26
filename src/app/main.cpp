@@ -50,11 +50,11 @@ int main(int argc, char* argv[]) {
 
   // 加载翻译
   QTranslator adsTrans;
-  adsTrans.load("ads_zh_CN.qm", QCoreApplication::applicationDirPath());
+  adsTrans.load(":/translations/ads_zh_CN.qm");
   app.installTranslator(&adsTrans);
 
   QTranslator saribbonTrans;
-  saribbonTrans.load("SARibbon_zh_CN.qm", QCoreApplication::applicationDirPath());
+  saribbonTrans.load(":/translations/SARibbon_zh_CN.qm");
   app.installTranslator(&saribbonTrans);
 
   // 初始化崩溃捕获模块

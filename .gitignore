@@ -19,6 +19,7 @@ Makefile
 *.so
 *.dll
 *.exe
+*.qm
 !3rdparty/cloc-2.06/cloc-2.06.exe   # cloc 工具需要被 git 管理
 
 # ========== 会话记录 ==========
