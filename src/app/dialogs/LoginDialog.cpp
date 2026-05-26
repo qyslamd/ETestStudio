@@ -1,0 +1,116 @@
+#include "LoginDialog.h"
+#include "auth/AuthService.h"
+
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QVBoxLayout>
+
+namespace etest::app {
+
+using etest::core::auth::AuthService;
+using etest::core::auth::User;
+
+LoginDialog::LoginDialog(QWidget* parent) : AnimationDialog(parent) {
+  round_radius_ = 12;
+  initUi();
+  initSignals();
+}
+
+void LoginDialog::initUi() {
+  auto* content = new QWidget;
+  content->setObjectName(QStringLiteral("loginContent"));
+  content->setFixedSize(440, 320);
+
+  auto* hLayout = new QHBoxLayout(content);
+  hLayout->setContentsMargins(0, 0, 0, 0);
+  hLayout->setSpacing(0);
+
+  // 左侧品牌区
+  auto* brand = new QWidget(content);
+  brand->setObjectName(QStringLiteral("loginBrand"));
+  brand->setFixedWidth(160);
+  auto* brandLayout = new QVBoxLayout(brand);
+  brandLayout->setContentsMargins(24, 24, 24, 24);
+  brandLayout->setSpacing(4);
+  auto* brandTitle = new QLabel(QStringLiteral("ETest"), brand);
+  brandTitle->setObjectName(QStringLiteral("loginBrandTitle"));
+  auto* brandSub = new QLabel(QStringLiteral("测试系统"), brand);
+  brandSub->setObjectName(QStringLiteral("loginBrandSub"));
+  auto* brandHint = new QLabel(QStringLiteral("请登录以使用全部功能"), brand);
+  brandHint->setObjectName(QStringLiteral("loginBrandHint"));
+  brandLayout->addWidget(brandTitle);
+  brandLayout->addWidget(brandSub);
+  brandLayout->addStretch();
+  brandLayout->addWidget(brandHint);
+  hLayout->addWidget(brand);
+
+  // 右侧表单区
+  auto* form = new QWidget(content);
+  form->setObjectName(QStringLiteral("loginForm"));
+  auto* formLayout = new QVBoxLayout(form);
+  formLayout->setContentsMargins(24, 24, 24, 24);
+  formLayout->setSpacing(12);
+
+  auto* titleLabel = new QLabel(QStringLiteral("登录"), form);
+  titleLabel->setObjectName(QStringLiteral("loginFormTitle"));
+
+  usernameEdit_ = new QLineEdit(form);
+  usernameEdit_->setObjectName(QStringLiteral("loginUsername"));
+  usernameEdit_->setPlaceholderText(QStringLiteral("admin"));
+
+  passwordEdit_ = new QLineEdit(form);
+  passwordEdit_->setObjectName(QStringLiteral("loginPassword"));
+  passwordEdit_->setPlaceholderText(QStringLiteral("请输入密码"));
+  passwordEdit_->setEchoMode(QLineEdit::Password);
+
+  loginButton_ = new QPushButton(QStringLiteral("登录"), form);
+  loginButton_->setObjectName(QStringLiteral("loginButton"));
+
+  hintLabel_ = new QLabel(form);
+  hintLabel_->setObjectName(QStringLiteral("loginHint"));
+  hintLabel_->hide();
+
+  formLayout->addWidget(titleLabel);
+  formLayout->addWidget(usernameEdit_);
+  formLayout->addWidget(passwordEdit_);
+  formLayout->addWidget(loginButton_);
+  formLayout->addWidget(hintLabel_);
+  formLayout->addStretch();
+  hLayout->addWidget(form);
+
+  setWidget(content);
+  setWindowTitle(QStringLiteral("登录"));
+}
+
+void LoginDialog::initSignals() {
+  connect(loginButton_, &QPushButton::clicked, this,
+          &LoginDialog::onLoginClicked);
+  connect(&AuthService::instance(), &AuthService::loginSucceeded,
+          this, [this](const User&) {
+            actHideAnimation();
+          });
+  connect(&AuthService::instance(), &AuthService::loginFailed,
+          this, [this](const QString& reason) {
+            hintLabel_->setText(reason);
+            hintLabel_->show();
+          });
+}
+
+void LoginDialog::keyReleaseEvent(QKeyEvent* event) {
+  if (event->key() == Qt::Key_Return ||
+      event->key() == Qt::Key_Enter) {
+    onLoginClicked();
+  }
+  AnimationDialog::keyReleaseEvent(event);
+}
+
+void LoginDialog::onLoginClicked() {
+  hintLabel_->hide();
+  AuthService::instance().login(
+      usernameEdit_->text(), passwordEdit_->text());
+}
+
+}  // namespace etest::app

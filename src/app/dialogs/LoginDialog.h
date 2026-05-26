@@ -1,0 +1,32 @@
+#pragma once
+
+#include "dialogs/AnimationDialog.h"
+
+class QLabel;
+class QLineEdit;
+class QPushButton;
+class QKeyEvent;
+
+namespace etest::app {
+
+class LoginDialog : public AnimationDialog {
+  Q_OBJECT
+
+ public:
+  explicit LoginDialog(QWidget* parent = nullptr);
+
+ protected:
+  void keyReleaseEvent(QKeyEvent* event) override;
+
+ private:
+  void initUi();
+  void initSignals();
+  void onLoginClicked();
+
+  QLineEdit* usernameEdit_ = nullptr;
+  QLineEdit* passwordEdit_ = nullptr;
+  QPushButton* loginButton_ = nullptr;
+  QLabel* hintLabel_ = nullptr;
+};
+
+}  // namespace etest::app
