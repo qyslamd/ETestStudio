@@ -2,8 +2,10 @@
 #define ETEST_APP_DIALOGS_ANIMATIONDIALOG_H_
 
 #include <QDialog>
+#include <QPixmap>
 #include <functional>
 
+class QGraphicsDropShadowEffect;
 class WindowMover;
 
 namespace etest::app {
@@ -35,6 +37,11 @@ class AnimationDialog : public QDialog {
   QWidget* widget_ = nullptr;
   WindowMover* mover_ = nullptr;
   int round_radius_ = 8;
+
+  // 动画截图机制
+  QPixmap cachedPixmap_;
+  QPoint snapshotOffset_;
+  QGraphicsDropShadowEffect* shadowEffect_ = nullptr;
 };
 
 }  // namespace etest::app

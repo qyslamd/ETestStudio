@@ -35,11 +35,11 @@ void AnimationDialog::setWidget(QWidget* widget) {
   widget_->setParent(this);
   mover_ = new WindowMover(widget_, this);
 
-  auto* shadow = new QGraphicsDropShadowEffect(widget_);
-  shadow->setColor(QColor(105, 105, 105, 200));
-  shadow->setBlurRadius(9);
-  shadow->setOffset(0, 0);
-  widget_->setGraphicsEffect(shadow);
+  shadowEffect_ = new QGraphicsDropShadowEffect(widget_);
+  shadowEffect_->setColor(QColor(105, 105, 105, 200));
+  shadowEffect_->setBlurRadius(9);
+  shadowEffect_->setOffset(0, 0);
+  widget_->setGraphicsEffect(shadowEffect_);
 }
 
 void AnimationDialog::showEvent(QShowEvent* event) {
@@ -57,6 +57,12 @@ void AnimationDialog::paintEvent(QPaintEvent* event) {
   QPainterPath path;
   path.addRoundedRect(rect(), round_radius_, round_radius_);
   p.fillPath(path, QColor(205, 205, 205, 170));
+
+  if (!cachedPixmap_.isNull()) {
+    int x = (width() - cachedPixmap_.width()) / 2 + snapshotOffset_.x();
+    int y = (height() - cachedPixmap_.height()) / 2 + snapshotOffset_.y();
+    p.drawPixmap(x, y, cachedPixmap_);
+  }
 }
 
 void AnimationDialog::keyPressEvent(QKeyEvent* e) {
@@ -67,12 +73,14 @@ void AnimationDialog::actShowAnimation() {
   if (!widget_) {
     return;
   }
+
   auto centerX = this->width() / 2;
   auto centerY = this->height() / 2;
   auto w = widget_->width();
   auto h = widget_->height();
-  QPoint p1;
+  auto center = QPoint(centerX - w / 2, centerY - h / 2);
 
+  QPoint p1;
   switch ((quint32)QRandomGenerator::global()->generate() % 4) {
     case 0:
       p1 = QPoint(-w, centerY - h / 2);
@@ -90,15 +98,31 @@ void AnimationDialog::actShowAnimation() {
       break;
   }
 
-  auto* anime = new QPropertyAnimation(this);
-  anime->setEasingCurve(QEasingCurve::OutQuint);
-  anime->setTargetObject(widget_);
-  anime->setPropertyName("pos");
-  anime->setDuration(500);
-  anime->setStartValue(p1);
-  anime->setEndValue(QPoint(centerX - w / 2, centerY - h / 2));
+  // 截图：关阴影 → grab → 恢复阴影
+  if (shadowEffect_) shadowEffect_->setEnabled(false);
+  cachedPixmap_ = widget_->grab();
+  if (shadowEffect_) shadowEffect_->setEnabled(true);
+  widget_->hide();
 
-  connect(anime, &QVariantAnimation::finished, anime, &QObject::deleteLater);
+  auto* anime = new QVariantAnimation(this);
+  anime->setEasingCurve(QEasingCurve::OutQuint);
+  anime->setDuration(500);
+  anime->setStartValue(QPoint(p1 - center));
+  anime->setEndValue(QPoint(0, 0));
+
+  connect(anime, &QVariantAnimation::valueChanged, this,
+          [this](const QVariant& value) {
+            snapshotOffset_ = value.toPoint();
+            update();
+          });
+  connect(anime, &QVariantAnimation::finished, this, [this, center]() {
+    snapshotOffset_ = {};
+    cachedPixmap_ = {};
+    widget_->move(center);
+    widget_->show();
+  });
+  connect(anime, &QVariantAnimation::finished, anime,
+          &QObject::deleteLater);
   anime->start();
 }
 
@@ -110,10 +134,12 @@ void AnimationDialog::actHideAnimation(std::function<void()> func) {
   if (!widget_) {
     return;
   }
+
   auto centerX = this->width() / 2;
   auto centerY = this->height() / 2;
   auto w = widget_->width();
   auto h = widget_->height();
+  auto center = QPoint(centerX - w / 2, centerY - h / 2);
 
   QPoint p2;
   switch ((quint32)QRandomGenerator::global()->generate() % 4) {
@@ -133,19 +159,31 @@ void AnimationDialog::actHideAnimation(std::function<void()> func) {
       break;
   }
 
-  auto* anime = new QPropertyAnimation(this);
+  // 截图：关阴影 → grab → 恢复阴影
+  if (shadowEffect_) shadowEffect_->setEnabled(false);
+  cachedPixmap_ = widget_->grab();
+  if (shadowEffect_) shadowEffect_->setEnabled(true);
+  widget_->hide();
+
+  auto* anime = new QVariantAnimation(this);
   anime->setEasingCurve(QEasingCurve::OutQuint);
-  anime->setTargetObject(widget_);
-  anime->setPropertyName("pos");
   anime->setDuration(500);
-  anime->setStartValue(widget_->pos());
-  anime->setEndValue(p2);
-  if (func) {
-    connect(anime, &QPropertyAnimation::finished, this, [=] { func(); });
-  }
-  connect(anime, &QPropertyAnimation::finished, this,
-          &AnimationDialog::hideAnimationFinished);
-  connect(anime, &QVariantAnimation::finished, anime, &QObject::deleteLater);
+  anime->setStartValue(QPoint(0, 0));
+  anime->setEndValue(QPoint(p2 - center));
+
+  connect(anime, &QVariantAnimation::valueChanged, this,
+          [this](const QVariant& value) {
+            snapshotOffset_ = value.toPoint();
+            update();
+          });
+  connect(anime, &QVariantAnimation::finished, this, [this, func]() {
+    snapshotOffset_ = {};
+    cachedPixmap_ = {};
+    emit hideAnimationFinished();
+    if (func) func();
+  });
+  connect(anime, &QVariantAnimation::finished, anime,
+          &QObject::deleteLater);
   anime->start();
 }
 

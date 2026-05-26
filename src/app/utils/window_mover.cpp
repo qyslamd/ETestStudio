@@ -29,10 +29,17 @@ bool WindowMover::eventFilter(QObject *obj, QEvent *event) {
     case QEvent::MouseMove:
       if (m_dragging && (mouseEvent->buttons() & Qt::LeftButton)) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        m_target->move(mouseEvent->globalPosition().toPoint() - m_dragPosition);
+        QPoint newPos = mouseEvent->globalPosition().toPoint() - m_dragPosition;
 #else
-        m_target->move(mouseEvent->globalPos() - m_dragPosition);
+        QPoint newPos = mouseEvent->globalPos() - m_dragPosition;
 #endif
+        if (auto* parent = m_target->parentWidget()) {
+          int maxX = parent->width() - m_target->width();
+          int maxY = parent->height() - m_target->height();
+          newPos.setX(qBound(0, newPos.x(), maxX));
+          newPos.setY(qBound(0, newPos.y(), maxY));
+        }
+        m_target->move(newPos);
         return true;
       }
       break;
