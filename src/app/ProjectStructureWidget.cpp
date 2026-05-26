@@ -136,7 +136,11 @@ void ProjectStructureWidget::setupUi() {
     });
   }
 
-  ph_layout->addLayout(btn_grid);
+  auto* btn_row = new QHBoxLayout();
+  btn_row->addStretch();
+  btn_row->addLayout(btn_grid);
+  btn_row->addStretch();
+  ph_layout->addLayout(btn_row);
   ph_layout->addStretch();
 
   stack_->addWidget(placeholder_widget_);  // index 0
