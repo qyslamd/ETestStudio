@@ -1,9 +1,9 @@
 #include "main_window.h"
 
+#include <QApplication>
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QCoreApplication>
-#include <QApplication>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
@@ -17,6 +17,7 @@
 #include <QStatusBar>
 #include <QToolButton>
 
+
 #include "SARibbonBar.h"
 #include "SARibbonCategory.h"
 #include "SARibbonPanel.h"
@@ -27,34 +28,35 @@
 #include <DockSplitter.h>
 #include <DockWidgetTab.h>
 #include "ActivityBarWidget.h"
+#include "AppIconProvider.h"
 #include "BottomContainerWidget.h"
 #include "EditorManager.h"
 #include "FileExplorerWidget.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "OutputPanel.h"
-#include "ProtocolManagerWidget.h"
 #include "ProblemsPanel.h"
+#include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
-#include "dialogs/SettingsDialog.h"
 #include "SidebarWidget.h"
-#include "TestProgramManagerWidget.h"
 #include "TerminalPanel.h"
+#include "TestProgramManagerWidget.h"
 #include "TextEditorWidget.h"
+#include "ThemeManager.h"
 #include "WelcomeWidget.h"
+#include "api/IEditor.h"
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "dialogs/NewProjectDialog.h"
-#include "api/IEditor.h"
+#include "dialogs/SettingsDialog.h"
 #include "logger/Logger.h"
 #include "logger/QtConsoleSink.h"
 #include "plugin/PluginManager.h"
 #include "project/ProjectManager.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
-#include "ThemeManager.h"
-#include "AppIconProvider.h"
+
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -133,6 +135,8 @@ void MainWindow::initUi() {
 
   // ===== 编辑器区域 =====
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
+  ads::CDockManager::setConfigFlag(
+      ads::CDockManager::MiddleMouseButtonClosesTab, true);
   dock_manager_ = new ads::CDockManager(v_splitter_);
 
   // 中央编辑区：Welcome页面
@@ -142,6 +146,9 @@ void MainWindow::initUi() {
   central_dock_->setWidget(welcome_widget_);
   central_dock_->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(central_dock_);
+
+  // 允许关闭欢迎页
+  central_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);
 
   // 隐藏中央区域标题栏的菜单和分离按钮
   auto* centralArea = central_dock_->dockAreaWidget();
@@ -167,15 +174,16 @@ void MainWindow::initUi() {
   aux_sidebar_widget_ = new QWidget(h_splitter_);
   auto* aux_layout = new QVBoxLayout(aux_sidebar_widget_);
   aux_layout->setContentsMargins(0, 0, 0, 0);
-  auto* auxLabel = new QLabel(QStringLiteral("辅助侧边栏"), aux_sidebar_widget_);
+  auto* auxLabel =
+      new QLabel(QStringLiteral("辅助侧边栏"), aux_sidebar_widget_);
   auxLabel->setAlignment(Qt::AlignCenter);
   aux_layout->addWidget(auxLabel);
   aux_sidebar_widget_->hide();  // 默认隐藏
   h_splitter_->addWidget(aux_sidebar_widget_);
 
   // 设置 splitter 初始尺寸
-  h_splitter_->setSizes({280, 800, 0});   // sidebar / 垂直区域 / aux
-  v_splitter_->setSizes({600, 200});       // 编辑器 / 底部面板
+  h_splitter_->setSizes({280, 800, 0});  // sidebar / 垂直区域 / aux
+  v_splitter_->setSizes({600, 200});     // 编辑器 / 底部面板
 
   main_layout->addWidget(h_splitter_);
   setCentralWidget(centralContainer);
@@ -197,6 +205,14 @@ void MainWindow::initSignals() {
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
           &MainWindow::onThemeChanged);
 
+  // Ribbon 展开/收起状态持久化
+  connect(ribbonBar(), &SARibbonBar::ribbonModeChanged, this,
+          [](SARibbonBar::RibbonMode mode) {
+            ConfigManager::instance().set<bool>(
+                CONFIG_RIBBON_MINIMIZED,
+                mode == SARibbonBar::MinimumRibbonMode);
+          });
+
   // 视图菜单：输出面板显隐
   connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
     if (checked) {
@@ -216,22 +232,23 @@ void MainWindow::initSignals() {
   });
 
   // 视图菜单：辅助侧边栏显隐
-  connect(view_aux_sidebar_action_, &QAction::triggered, this, [this](bool checked) {
-    if (checked) {
-      aux_sidebar_widget_->show();
-      auto sizes = h_splitter_->sizes();
-      if (sizes.size() >= 3) {
-        sizes[2] = aux_sidebar_width_;
-        h_splitter_->setSizes(sizes);
-      }
-    } else {
-      auto sizes = h_splitter_->sizes();
-      if (sizes.size() >= 3) {
-        aux_sidebar_width_ = sizes[2];
-      }
-      aux_sidebar_widget_->hide();
-    }
-  });
+  connect(view_aux_sidebar_action_, &QAction::triggered, this,
+          [this](bool checked) {
+            if (checked) {
+              aux_sidebar_widget_->show();
+              auto sizes = h_splitter_->sizes();
+              if (sizes.size() >= 3) {
+                sizes[2] = aux_sidebar_width_;
+                h_splitter_->setSizes(sizes);
+              }
+            } else {
+              auto sizes = h_splitter_->sizes();
+              if (sizes.size() >= 3) {
+                aux_sidebar_width_ = sizes[2];
+              }
+              aux_sidebar_widget_->hide();
+            }
+          });
 
   // 项目管理信号
   auto& projectMgr = etest::core::project::ProjectManager::instance();
@@ -257,8 +274,13 @@ void MainWindow::initSignals() {
           fileExplorer, [fileExplorer]() { fileExplorer->setRootPath({}); });
 
   // 文件浏览器：双击文件打开编辑器
-  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, editor_manager_,
-          &EditorManager::openFile);
+  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, fileExplorer,
+          [this](const QString& path) { editor_manager_->openFile(path); });
+  // 文件浏览器：右键→用文本编辑器打开
+  connect(fileExplorer, &FileExplorerWidget::fileOpenAsTextRequested,
+          fileExplorer, [this](const QString& path) {
+            editor_manager_->openFile(path, QStringLiteral("text"));
+          });
   // 文件浏览器：文件删除/重命名同步到编辑器
   connect(fileExplorer, &FileExplorerWidget::fileDeleted, editor_manager_,
           &EditorManager::onFileDeleted);
@@ -310,8 +332,8 @@ void MainWindow::initSignals() {
           welcome_widget_, &WelcomeWidget::refreshRecentProjects);
 
   // Git面板：点击文件打开编辑器
-  connect(gitWidget, &GitWidget::fileOpenRequested, editor_manager_,
-          &EditorManager::openFile);
+  connect(gitWidget, &GitWidget::fileOpenRequested, gitWidget,
+          [this](const QString& path) { editor_manager_->openFile(path); });
 
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
   connect(
@@ -508,8 +530,8 @@ void MainWindow::initSignals() {
 
   // 协议管理器：双击文件打开编辑器
   auto* protocolMgr = sidebar_->protocolManager();
-  connect(protocolMgr, &ProtocolManagerWidget::openFileRequested,
-          editor_manager_, &EditorManager::openFile);
+  connect(protocolMgr, &ProtocolManagerWidget::openFileRequested, protocolMgr,
+          [this](const QString& path) { editor_manager_->openFile(path); });
 
   // 协议管理器：项目打开/关闭时刷新
   connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
@@ -519,8 +541,8 @@ void MainWindow::initSignals() {
 
   // 用例管理器：双击文件打开编辑器
   auto* tpMgr = sidebar_->testProgramManager();
-  connect(tpMgr, &TestProgramManagerWidget::openFileRequested, editor_manager_,
-          &EditorManager::openFile);
+  connect(tpMgr, &TestProgramManagerWidget::openFileRequested, tpMgr,
+          [this](const QString& path) { editor_manager_->openFile(path); });
 
   // 用例管理器：项目打开/关闭时刷新
   connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
@@ -548,48 +570,49 @@ void MainWindow::initSignals() {
   });
 
   // 活动栏：页面切换
-  connect(activity_bar_, &ActivityBarWidget::pageClicked, this, [this](int index) {
-    bool samePage = (index == activity_bar_->activeIndex());
+  connect(activity_bar_, &ActivityBarWidget::pageClicked, this,
+          [this](int index) {
+            bool samePage = (index == activity_bar_->activeIndex());
 
-    if (samePage && sidebar_->isContentVisible()) {
-      // 再次点击同一按钮，隐藏侧边栏
-      auto sizes = h_splitter_->sizes();
-      if (!sizes.isEmpty()) {
-        sidebar_expanded_width_ = sizes[0];
-        sizes[0] = 0;
-        h_splitter_->setSizes(sizes);
-      }
-      sidebar_->hideContent();
-      return;
-    }
+            if (samePage && sidebar_->isContentVisible()) {
+              // 再次点击同一按钮，隐藏侧边栏
+              auto sizes = h_splitter_->sizes();
+              if (!sizes.isEmpty()) {
+                sidebar_expanded_width_ = sizes[0];
+                sizes[0] = 0;
+                h_splitter_->setSizes(sizes);
+              }
+              sidebar_->hideContent();
+              return;
+            }
 
-    // 确保侧边栏可见
-    if (!sidebar_->isContentVisible()) {
-      sidebar_->showContent();
-      auto sizes = h_splitter_->sizes();
-      if (!sizes.isEmpty()) {
-        sizes[0] = sidebar_expanded_width_;
-        h_splitter_->setSizes(sizes);
-      }
-    }
+            // 确保侧边栏可见
+            if (!sidebar_->isContentVisible()) {
+              sidebar_->showContent();
+              auto sizes = h_splitter_->sizes();
+              if (!sizes.isEmpty()) {
+                sizes[0] = sidebar_expanded_width_;
+                h_splitter_->setSizes(sizes);
+              }
+            }
 
-    sidebar_->switchPage(index);
-    activity_bar_->setActiveIndex(index);
-  });
+            sidebar_->switchPage(index);
+            activity_bar_->setActiveIndex(index);
+          });
 
   // 底部面板关闭按钮
-  connect(bottom_container_, &BottomContainerWidget::panelClosed, this, [this]() {
-    auto sizes = v_splitter_->sizes();
-    if (sizes.size() >= 2) {
-      bottom_container_height_ = sizes[1];
-    }
-    bottom_container_->hide();
-    if (view_panel_action_) {
-      view_panel_action_->setChecked(false);
-    }
-  });
+  connect(bottom_container_, &BottomContainerWidget::panelClosed, this,
+          [this]() {
+            auto sizes = v_splitter_->sizes();
+            if (sizes.size() >= 2) {
+              bottom_container_height_ = sizes[1];
+            }
+            bottom_container_->hide();
+            if (view_panel_action_) {
+              view_panel_action_->setChecked(false);
+            }
+          });
 }
-
 
 void MainWindow::createStatusBar() {
   // 状态栏样式已由全局QSS覆盖，无需内联设置
@@ -626,8 +649,6 @@ void MainWindow::createStatusBar() {
 
   statusBar()->clearMessage();
 }
-
-
 
 void MainWindow::onNewProject() {
   // 先尝试关闭当前项目
@@ -681,13 +702,15 @@ void MainWindow::openRecentProject(const QString& path) {
     return;
 
   QFileInfo fi(path);
-  QString msg = fi.exists()
-      ? QStringLiteral("无法打开项目文件：%1").arg(path)
-      : QStringLiteral("项目文件 \"%1\" 不存在，\n文件可能已被移动或删除。\n\n是否从最近项目中移除此记录？").arg(path);
+  QString msg = fi.exists() ? QStringLiteral("无法打开项目文件：%1").arg(path)
+                            : QStringLiteral(
+                                  "项目文件 \"%1\" "
+                                  "不存在，\n文件可能已被移动或删除。\n\n是否从"
+                                  "最近项目中移除此记录？")
+                                  .arg(path);
 
-  auto buttons = fi.exists()
-      ? QMessageBox::Ok
-      : (QMessageBox::Yes | QMessageBox::No);
+  auto buttons =
+      fi.exists() ? QMessageBox::Ok : (QMessageBox::Yes | QMessageBox::No);
 
   if (fi.exists()) {
     QMessageBox::warning(this, QStringLiteral("打开项目失败"), msg);
@@ -789,9 +812,8 @@ void MainWindow::updateRecentProjectsMenu() {
     emptyAction->setEnabled(false);
   } else {
     for (const QString& path : recentList) {
-      recent_projects_menu_->addAction(path, this, [this, path]() {
-        openRecentProject(path);
-      });
+      recent_projects_menu_->addAction(
+          path, this, [this, path]() { openRecentProject(path); });
     }
 
     recent_projects_menu_->addSeparator();
@@ -936,8 +958,8 @@ void MainWindow::onReplace() {
       QMessageBox msgBox(this);
       msgBox.setText(QStringLiteral("替换"));
       msgBox.setInformativeText(QStringLiteral("替换当前匹配项吗？"));
-      auto* yesAllBtn = msgBox.addButton(QStringLiteral("全部替换"),
-                                         QMessageBox::YesRole);
+      auto* yesAllBtn =
+          msgBox.addButton(QStringLiteral("全部替换"), QMessageBox::YesRole);
       msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No |
                                 QMessageBox::Cancel);
       msgBox.setDefaultButton(QMessageBox::Yes);
@@ -946,8 +968,7 @@ void MainWindow::onReplace() {
       if (ret == QMessageBox::Cancel) {
         break;
       }
-      if (ret == QMessageBox::Yes ||
-          msgBox.clickedButton() == yesAllBtn) {
+      if (ret == QMessageBox::Yes || msgBox.clickedButton() == yesAllBtn) {
         textEditor->editor()->replace(replaceText);
       }
       if (msgBox.clickedButton() == yesAllBtn) {
@@ -1057,15 +1078,14 @@ void MainWindow::setupRibbon() {
           &MainWindow::onCloseAllFiles);
 
   // ---- 创建编辑动作（原 createEditMenu 中的逻辑） ----
-  edit_undo_action_ = new QAction(
-      style()->standardIcon(QStyle::SP_ArrowBack),
-      QStringLiteral("撤销"), this);
+  edit_undo_action_ = new QAction(style()->standardIcon(QStyle::SP_ArrowBack),
+                                  QStringLiteral("撤销"), this);
   edit_undo_action_->setShortcut(QKeySequence::Undo);
   edit_undo_action_->setEnabled(false);
 
-  edit_redo_action_ = new QAction(
-      style()->standardIcon(QStyle::SP_ArrowForward),
-      QStringLiteral("重做"), this);
+  edit_redo_action_ =
+      new QAction(style()->standardIcon(QStyle::SP_ArrowForward),
+                  QStringLiteral("重做"), this);
   edit_redo_action_->setShortcut(QKeySequence::Redo);
   edit_redo_action_->setEnabled(false);
 
@@ -1154,11 +1174,9 @@ void MainWindow::setupRibbon() {
     panel_edit->addLargeAction(edit_redo_action_);
     panel_edit->addSeparator();
 
-    edit_cut_action_->setIcon(
-        style()->standardIcon(QStyle::SP_FileLinkIcon));
+    edit_cut_action_->setIcon(style()->standardIcon(QStyle::SP_FileLinkIcon));
     edit_copy_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
-    edit_paste_action_->setIcon(
-        style()->standardIcon(QStyle::SP_FileLinkIcon));
+    edit_paste_action_->setIcon(style()->standardIcon(QStyle::SP_FileLinkIcon));
     panel_edit->addSmallAction(edit_cut_action_);
     panel_edit->addSmallAction(edit_copy_action_);
     panel_edit->addSmallAction(edit_paste_action_);
@@ -1180,9 +1198,12 @@ void MainWindow::setupRibbon() {
     auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
     connect(act_welcome, &QAction::triggered, this, [this]() {
       auto* centralDock = dock_manager_->findDockWidget("CentralDock");
-      if (centralDock && centralDock->dockAreaWidget()) {
-        centralDock->dockAreaWidget()->setCurrentIndex(0);
-      }
+      if (!centralDock)
+        return;
+      if (centralDock->isClosed())
+        centralDock->toggleView(true);
+      if (auto* area = centralDock->dockAreaWidget())
+        area->setCurrentIndex(0);
     });
     panel_panels->addLargeAction(act_welcome);
 
@@ -1192,8 +1213,7 @@ void MainWindow::setupRibbon() {
     view_panel_action_->setShortcut(QStringLiteral("Ctrl+J"));
     panel_panels->addLargeAction(view_panel_action_);
 
-    view_aux_sidebar_action_ =
-        new QAction(QStringLiteral("辅助侧边栏"), this);
+    view_aux_sidebar_action_ = new QAction(QStringLiteral("辅助侧边栏"), this);
     view_aux_sidebar_action_->setCheckable(true);
     view_aux_sidebar_action_->setChecked(false);
     panel_panels->addLargeAction(view_aux_sidebar_action_);
@@ -1206,9 +1226,9 @@ void MainWindow::setupRibbon() {
     auto* cat = ribbon->addCategoryPage(QStringLiteral("工具"));
 
     auto* panel_tools = cat->addPanel(QStringLiteral("工具"));
-    auto* act_settings = new QAction(
-        style()->standardIcon(QStyle::SP_FileDialogNewFolder),
-        QStringLiteral("设置"), this);
+    auto* act_settings =
+        new QAction(style()->standardIcon(QStyle::SP_FileDialogNewFolder),
+                    QStringLiteral("设置"), this);
     connect(act_settings, &QAction::triggered, this, [this]() {
       if (!settings_dialog_) {
         settings_dialog_ = new SettingsDialog(this);
@@ -1241,6 +1261,11 @@ void MainWindow::setupRibbon() {
   ribbon->setRibbonStyle(SARibbonBar::RibbonStyleLooseThreeRow);
   ribbon->showMinimumModeButton(true);
   ribbon->setTabDoubleClickToMinimumMode(true);
+
+  // 恢复已保存的折叠状态
+  bool minimized = ConfigManager::instance().get<bool>(
+      CONFIG_RIBBON_MINIMIZED, CONFIG_RIBBON_DEFAULT_MINIMIZED);
+  ribbon->setMinimumMode(minimized);
 }
 
 void MainWindow::saveWindowState() {
@@ -1269,7 +1294,6 @@ void MainWindow::restoreWindowState() {
     showMaximized();
   }
 }
-
 
 void MainWindow::hideDockTitleBarButtons(ads::CDockAreaWidget* area) {
   if (!area)

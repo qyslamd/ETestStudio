@@ -15,13 +15,24 @@
 - **编译验证**: 成功
 
 ### 其他 widget 接入 themeChanged
-- **SearchWidget**: `core::common::isDarkTheme()` 硬编码路径 → `IconProvider::instance().icon("search")`，连接 `themeChanged` 刷新
-- **GitWidget**: 同上模式，使用 `IconProvider::instance().icon("refresh")`
-- **BottomContainerWidget**: 同上模式，使用 `IconProvider::instance().icon("close")`
+- **SearchWidget**: `core::common::isDarkTheme()` 硬编码路径 → `AppIconProvider::instance().icon("search")`，连接 `themeChanged` 刷新
+- **GitWidget**: 同上模式，使用 `AppIconProvider::instance().icon("refresh")`
+- **BottomContainerWidget**: 同上模式，使用 `AppIconProvider::instance().icon("close")`
 - **ImageViewerWidget**: `core::common::isDarkTheme()` → `ThemeManager::instance().isDarkTheme()`，连接 `themeChanged` 刷新背景色
 - **IcdBitLayoutView/TopologyEditorWidget**: 位于独立静态库，无法链接 app 符号。保留使用 `core::common::isDarkTheme()`（ThemeManager 同步，初始值正确，绘制动态）
 - **编译验证**: 47/47 targets 编译通过（etest_demo、protocal-demo、topology-demo 均成功链接）
 - **Phase 1.6 完成度**: 87% → 100%
+
+### ThemeManager + IconProvider 移入 etest_core (2026-05-25)
+- **背景**：TopologyEditorWidget 和 IcdBitLayoutView 无法链接 app 符号（IconProvider/ThemeManager 在 etest_demo.exe 中）
+- **决策**：从 `src/app/` 移至 `src/core/common/`，以静态库 `etest_core` 形式供所有模块链接
+- **冲突**：Qt-Advanced-Docking-System 自带 `IconProvider.h`，include 路径优先级冲突
+- **解决**：重命名 `IconProvider` → `AppIconProvider`（类名 + 文件名均改名，namespace 保持 `etest::app`）
+- **受影响的模块**: etest_core、etest_demo、etest_topology、etest_protocal 及其 demo
+- **TopologyEditorWidget**: 替换 `topoIcon` lambda（硬编码路径+`isDarkTheme()`）→ `AppIconProvider::instance().icon(name)`，新增 `reloadToolbarIcons()` 响应 `themeChanged` 实时刷新
+- **IcdBitLayoutView**: 替换 `core::common::isDarkTheme()` → `ThemeManager::instance().isDarkTheme()`，新增 `themeChanged` 连接实时刷新块颜色和背景
+- **Cross-module limitation 已彻底解决**：拓扑/协议模块图标和主题均可实时切换
+- **编译验证**: 47/47 targets 编译通过，etest_demo、topology-demo、protocal-demo 均成功链接
 
 ### 设计文档更新（2026-05-25，实现前）
 - isDarkTheme 改为从 QSS 主背景色亮度判断（detectDarkFromQss），支持任意数量主题
@@ -45,9 +56,10 @@
 ### 当前状态
 - **阶段1（基础框架）** ✅ 已完成
 - **阶段1.5（编辑器完善）** ✅ 已完成
-- **阶段1.6（GUI主题与图标管理）** 🔄 规划中（0%）
+- **阶段1.6（GUI主题与图标管理）** ✅ 已完成（含 cross-module 链接修复）
 - **阶段2.5（拓扑编辑器增强）** ✅ 已完成
 - **阶段2.5b（拓扑持续完善）** 🔄 进行中
+- **阶段2（HAL层）** ❌ 待开始
 - **阶段2（HAL层）** ❌ 待开始
 
 ## 2026-05-22

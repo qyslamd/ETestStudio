@@ -610,6 +610,10 @@ void TopologyScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
       auto* cmd = new MoveDeviceCommand(doc_, dev->deviceIndex(),
                                         move_start_pos_, moving_item_->pos());
       doc_->undoStack()->push(cmd);
+    } else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(moving_item_)) {
+      auto* cmd = new MoveMonitorCommand(doc_, mon->monitorIndex(),
+                                         move_start_pos_, moving_item_->pos());
+      doc_->undoStack()->push(cmd);
     }
   }
   moving_item_ = nullptr;

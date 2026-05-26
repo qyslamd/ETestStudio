@@ -25,6 +25,7 @@ class FileExplorerWidget : public QWidget {
 
  signals:
   void fileOpenRequested(const QString& filePath);
+  void fileOpenAsTextRequested(const QString& filePath);
   void fileDeleted(const QString& filePath);
   void fileRenamed(const QString& oldPath, const QString& newPath);
 
@@ -61,6 +62,7 @@ class FileExplorerWidget : public QWidget {
   QAction* ctx_copy_path_ = nullptr;
   QAction* ctx_copy_rel_path_ = nullptr;
   QAction* ctx_open_in_fs_ = nullptr;
+  QAction* ctx_open_as_text_ = nullptr;
 };
 
 }  // namespace etest::app
