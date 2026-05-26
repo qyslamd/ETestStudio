@@ -1223,18 +1223,22 @@ void MainWindow::setupRibbon() {
 
   // ---- QuickAccessBar ----
   auto* qab = ribbon->quickAccessBar();
-  new_project_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
+  new_project_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("file_new")));
   qab->addAction(new_project_action_);
   open_project_action_->setIcon(
-      style()->standardIcon(QStyle::SP_DialogOpenButton));
+      AppIconProvider::instance().icon(QStringLiteral("file_open")));
   qab->addAction(open_project_action_);
-  save_action_->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+  save_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("file_save")));
   qab->addAction(save_action_);
   qab->addSeparator();
 
-  edit_undo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowBack));
+  edit_undo_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("file_undo")));
   qab->addAction(edit_undo_action_);
-  edit_redo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
+  edit_redo_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("file_redo")));
   qab->addAction(edit_redo_action_);
 
   // ── 登录按钮 ──
@@ -1263,7 +1267,7 @@ void MainWindow::setupRibbon() {
 
   // ---- Application Button ----
   ribbon->applicationButton()->setIcon(
-      style()->standardIcon(QStyle::SP_FileIcon));
+      AppIconProvider::instance().icon(QStringLiteral("file_new")));
   ribbon->applicationButton()->setText(QStringLiteral("文件"));
 
   // 文件 Application Button 菜单 (QMenu)
@@ -1306,9 +1310,12 @@ void MainWindow::setupRibbon() {
     panel_edit->addLargeAction(edit_redo_action_);
     panel_edit->addSeparator();
 
-    edit_cut_action_->setIcon(style()->standardIcon(QStyle::SP_FileLinkIcon));
-    edit_copy_action_->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
-    edit_paste_action_->setIcon(style()->standardIcon(QStyle::SP_FileLinkIcon));
+    edit_cut_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("file_cut")));
+    edit_copy_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("file_copy")));
+    edit_paste_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("file_paste")));
     panel_edit->addSmallAction(edit_cut_action_);
     panel_edit->addSmallAction(edit_copy_action_);
     panel_edit->addSmallAction(edit_paste_action_);

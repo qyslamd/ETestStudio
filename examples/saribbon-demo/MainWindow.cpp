@@ -15,6 +15,17 @@
 #include "SARibbonPanel.h"
 #include "SARibbonQuickAccessBar.h"
 
+// ---------------------------------------------------------------------------
+//  Helper: load a themed SVG icon from the app resource bundle.
+//  Uses the _dark variant (suitable for light backgrounds in the default
+//  theme).  The main application replaces these with AppIconProvider for
+//  full dark/light switching.
+// ---------------------------------------------------------------------------
+static QIcon ribbonIcon(const QString& name) {
+  return QIcon(
+      QStringLiteral(":/resources/icons/svg/%1_dark.svg").arg(name));
+}
+
 //=============================================================================
 // ActivityBar
 //=============================================================================
@@ -40,16 +51,16 @@ ActivityBar::ActivityBar(QWidget* parent) : QWidget(parent) {
     };
   // clang-format on
 
-  // Standard pixmaps for each activity button
-  const QStyle::StandardPixmap spix[]{
-      QStyle::SP_ComputerIcon,            // 资源管理器
-      QStyle::SP_FileDialogContentsView,  // 搜索
-      QStyle::SP_DriveNetIcon,            // 源代码管理
-      QStyle::SP_MessageBoxQuestion,      // 调试
-      QStyle::SP_FileDialogListView,      // 扩展
-      QStyle::SP_DriveHDIcon,             // 硬件
-      QStyle::SP_FileDialogInfoView,      // 协议
-      QStyle::SP_FileDialogDetailedView,  // 用例
+  // Themed SVG icon names for each activity button
+  const char* icon_names[]{
+      "project",      // 资源管理器
+      "search",       // 搜索
+      "git",          // 源代码管理
+      "debug",        // 调试
+      "account",      // 扩展
+      "hardware",     // 硬件
+      "protocol",     // 协议
+      "testprogram",  // 用例
   };
 
   for (int i = 0; i < 8; ++i) {
@@ -59,7 +70,7 @@ ActivityBar::ActivityBar(QWidget* parent) : QWidget(parent) {
     btn->setFixedSize(48, 40);
     btn->setAutoRaise(true);
     btn->setIconSize(QSize(24, 24));
-    btn->setIcon(style()->standardIcon(spix[i]));
+    btn->setIcon(ribbonIcon(icon_names[i]));
 
     lay->addWidget(btn);
     buttons_.append(btn);
@@ -78,7 +89,7 @@ ActivityBar::ActivityBar(QWidget* parent) : QWidget(parent) {
   settings_btn->setFixedSize(48, 40);
   settings_btn->setAutoRaise(true);
   settings_btn->setIconSize(QSize(24, 24));
-  settings_btn->setIcon(style()->standardIcon(QStyle::SP_FileDialogNewFolder));
+  settings_btn->setIcon(ribbonIcon("settings"));
   lay->addWidget(settings_btn);
 
   connect(settings_btn, &QToolButton::clicked, this,
@@ -123,17 +134,17 @@ void MainWindow::setupRibbon() {
 
   // ---- QuickAccessBar ----
   auto* qab = ribbon->quickAccessBar();
-  act_new_project_ = new QAction(style()->standardIcon(QStyle::SP_FileIcon),
-                                 QStringLiteral("新建项目"), this);  // 新建项目
+  act_new_project_ = new QAction(ribbonIcon("file_new"),
+                                 QStringLiteral("新建项目"), this);
   act_open_project_ =
-      new QAction(style()->standardIcon(QStyle::SP_DialogOpenButton),
-                  QStringLiteral("打开项目"), this);  // 打开项目
-  act_save_ = new QAction(style()->standardIcon(QStyle::SP_DialogSaveButton),
-                          QStringLiteral("保存"), this);  // 保存
-  act_undo_ = new QAction(style()->standardIcon(QStyle::SP_ArrowBack),
-                          QStringLiteral("撤销"), this);  // 撤销
-  act_redo_ = new QAction(style()->standardIcon(QStyle::SP_ArrowForward),
-                          QStringLiteral("重做"), this);  // 重做
+      new QAction(ribbonIcon("file_open"),
+                  QStringLiteral("打开项目"), this);
+  act_save_ = new QAction(ribbonIcon("file_save"),
+                          QStringLiteral("保存"), this);
+  act_undo_ = new QAction(ribbonIcon("file_undo"),
+                          QStringLiteral("撤销"), this);
+  act_redo_ = new QAction(ribbonIcon("file_redo"),
+                          QStringLiteral("重做"), this);
 
   qab->addAction(act_new_project_);
   qab->addAction(act_open_project_);
@@ -165,10 +176,10 @@ void MainWindow::setupRibbon() {
     panel_edit->addLargeAction(act_undo_);
     panel_edit->addLargeAction(act_redo_);
     panel_edit->addSeparator();
-    act_cut_ = new QAction(style()->standardIcon(QStyle::SP_FileLinkIcon),
-                           QStringLiteral("切剪"), this);  // 剪切
-    act_copy_ = new QAction(style()->standardIcon(QStyle::SP_FileIcon),
-                            QStringLiteral("复制"), this);   // 复制
+    act_cut_ = new QAction(ribbonIcon("file_cut"),
+                           QStringLiteral("切剪"), this);
+    act_copy_ = new QAction(ribbonIcon("file_copy"),
+                            QStringLiteral("复制"), this);
     act_paste_ = new QAction(QStringLiteral("粘贴"), this);  // 粘贴
     panel_edit->addSmallAction(act_cut_);
     panel_edit->addSmallAction(act_copy_);

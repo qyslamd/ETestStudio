@@ -103,6 +103,22 @@
         <file>resources/icons/svg/chevron_down_light.svg</file>
         <file>resources/icons/svg/account_dark.svg</file>
         <file>resources/icons/svg/account_light.svg</file>
+        <file>resources/icons/svg/file_new_dark.svg</file>
+        <file>resources/icons/svg/file_new_light.svg</file>
+        <file>resources/icons/svg/file_open_dark.svg</file>
+        <file>resources/icons/svg/file_open_light.svg</file>
+        <file>resources/icons/svg/file_save_dark.svg</file>
+        <file>resources/icons/svg/file_save_light.svg</file>
+        <file>resources/icons/svg/file_undo_dark.svg</file>
+        <file>resources/icons/svg/file_undo_light.svg</file>
+        <file>resources/icons/svg/file_redo_dark.svg</file>
+        <file>resources/icons/svg/file_redo_light.svg</file>
+        <file>resources/icons/svg/file_cut_dark.svg</file>
+        <file>resources/icons/svg/file_cut_light.svg</file>
+        <file>resources/icons/svg/file_copy_dark.svg</file>
+        <file>resources/icons/svg/file_copy_light.svg</file>
+        <file>resources/icons/svg/file_paste_dark.svg</file>
+        <file>resources/icons/svg/file_paste_light.svg</file>
         <file alias="translations/ads_zh_CN.qm">resources/translations/ads_zh_CN.qm</file>
         <file alias="translations/SARibbon_zh_CN.qm">resources/translations/SARibbon_zh_CN.qm</file>
     </qresource>
