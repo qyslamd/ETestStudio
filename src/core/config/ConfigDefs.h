@@ -79,6 +79,10 @@ constexpr const char* CONFIG_PLUGIN_SEARCH_PATHS = "plugin/search_paths";  // �
 constexpr const char* CONFIG_PROJECT_AUTO_OPEN_LAST = "project/auto_open_last";
 constexpr bool CONFIG_PROJECT_DEFAULT_AUTO_OPEN_LAST = false;
 
+// 登录认证配置组
+constexpr const char* CONFIG_AUTH_REMEMBER_USERNAME = "auth/remember_username";
+constexpr const char* CONFIG_AUTH_REMEMBER_PASSWORD = "auth/remember_password";
+
 // 外观配置组
 constexpr const char* CONFIG_APPEARANCE_THEME = "appearance/theme";
 

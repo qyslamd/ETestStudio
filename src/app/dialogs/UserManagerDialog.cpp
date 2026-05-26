@@ -43,10 +43,18 @@ void UserManagerDialog::initUi() {
   addBtn->setObjectName(QStringLiteral("userMgrAddBtn"));
   addBtn->setCursor(Qt::PointingHandCursor);
   connect(addBtn, &QPushButton::clicked, this, &UserManagerDialog::onAddUser);
+  auto* closeBtn = new QPushButton(QStringLiteral("×"), content);
+  closeBtn->setObjectName(QStringLiteral("userMgrCloseBtn"));
+  closeBtn->setFixedSize(28, 28);
+  closeBtn->setCursor(Qt::PointingHandCursor);
+  connect(closeBtn, &QPushButton::clicked, this, [this]() {
+    actHideAnimation();
+  });
   headerRow->addWidget(title);
   headerRow->addWidget(countLabel_);
   headerRow->addStretch();
   headerRow->addWidget(addBtn);
+  headerRow->addWidget(closeBtn);
   mainLayout->addLayout(headerRow);
 
   // Table

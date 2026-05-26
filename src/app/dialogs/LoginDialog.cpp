@@ -1,6 +1,9 @@
 #include "LoginDialog.h"
 #include "auth/AuthService.h"
+#include "config/ConfigDefs.h"
+#include "config/ConfigManager.h"
 
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
@@ -12,17 +15,30 @@ namespace etest::app {
 
 using etest::core::auth::AuthService;
 using etest::core::auth::User;
+using namespace etest::core::config;
 
 LoginDialog::LoginDialog(QWidget* parent) : AnimationDialog(parent) {
   round_radius_ = 12;
   initUi();
   initSignals();
+
+  // 加载记住的凭据
+  auto& cfg = etest::core::config::ConfigManager::instance();
+  QString savedUser = cfg.get<QString>(CONFIG_AUTH_REMEMBER_USERNAME);
+  QString savedPass = cfg.get<QString>(CONFIG_AUTH_REMEMBER_PASSWORD);
+  if (!savedUser.isEmpty()) {
+    usernameEdit_->setText(savedUser);
+    rememberCheckBox_->setChecked(true);
+  }
+  if (!savedPass.isEmpty()) {
+    passwordEdit_->setText(savedPass);
+  }
 }
 
 void LoginDialog::initUi() {
   auto* content = new QWidget;
   content->setObjectName(QStringLiteral("loginContent"));
-  content->setFixedSize(440, 320);
+  content->setFixedSize(440, 350);
 
   auto* hLayout = new QHBoxLayout(content);
   hLayout->setContentsMargins(0, 0, 0, 0);
@@ -54,8 +70,19 @@ void LoginDialog::initUi() {
   formLayout->setContentsMargins(24, 24, 24, 24);
   formLayout->setSpacing(12);
 
+  auto* titleRow = new QHBoxLayout;
   auto* titleLabel = new QLabel(QStringLiteral("登录"), form);
   titleLabel->setObjectName(QStringLiteral("loginFormTitle"));
+  auto* closeBtn = new QPushButton(QStringLiteral("×"), form);
+  closeBtn->setObjectName(QStringLiteral("loginCloseBtn"));
+  closeBtn->setFixedSize(28, 28);
+  closeBtn->setCursor(Qt::PointingHandCursor);
+  titleRow->addWidget(titleLabel);
+  titleRow->addStretch();
+  titleRow->addWidget(closeBtn);
+  connect(closeBtn, &QPushButton::clicked, this, [this]() {
+    actHideAnimation();
+  });
 
   usernameEdit_ = new QLineEdit(form);
   usernameEdit_->setObjectName(QStringLiteral("loginUsername"));
@@ -66,6 +93,9 @@ void LoginDialog::initUi() {
   passwordEdit_->setPlaceholderText(QStringLiteral("请输入密码"));
   passwordEdit_->setEchoMode(QLineEdit::Password);
 
+  rememberCheckBox_ = new QCheckBox(QStringLiteral("记住密码"), form);
+  rememberCheckBox_->setObjectName(QStringLiteral("loginRemember"));
+
   loginButton_ = new QPushButton(QStringLiteral("登录"), form);
   loginButton_->setObjectName(QStringLiteral("loginButton"));
 
@@ -73,9 +103,10 @@ void LoginDialog::initUi() {
   hintLabel_->setObjectName(QStringLiteral("loginHint"));
   hintLabel_->hide();
 
-  formLayout->addWidget(titleLabel);
+  formLayout->addLayout(titleRow);
   formLayout->addWidget(usernameEdit_);
   formLayout->addWidget(passwordEdit_);
+  formLayout->addWidget(rememberCheckBox_);
   formLayout->addWidget(loginButton_);
   formLayout->addWidget(hintLabel_);
   formLayout->addStretch();
@@ -89,7 +120,16 @@ void LoginDialog::initSignals() {
   connect(loginButton_, &QPushButton::clicked, this,
           &LoginDialog::onLoginClicked);
   connect(&AuthService::instance(), &AuthService::loginSucceeded,
-          this, [this](const User&) {
+          this, [this]() {
+            // 保存或清除记住的密码
+            auto& cfg = etest::core::config::ConfigManager::instance();
+            if (rememberCheckBox_->isChecked()) {
+              cfg.set(CONFIG_AUTH_REMEMBER_USERNAME, usernameEdit_->text());
+              cfg.set(CONFIG_AUTH_REMEMBER_PASSWORD, passwordEdit_->text());
+            } else {
+              cfg.set(CONFIG_AUTH_REMEMBER_USERNAME, QString());
+              cfg.set(CONFIG_AUTH_REMEMBER_PASSWORD, QString());
+            }
             actHideAnimation();
           });
   connect(&AuthService::instance(), &AuthService::loginFailed,

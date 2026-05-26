@@ -5,6 +5,7 @@
 class QLabel;
 class QLineEdit;
 class QPushButton;
+class QCheckBox;
 class QKeyEvent;
 
 namespace etest::app {
@@ -25,6 +26,7 @@ class LoginDialog : public AnimationDialog {
 
   QLineEdit* usernameEdit_ = nullptr;
   QLineEdit* passwordEdit_ = nullptr;
+  QCheckBox* rememberCheckBox_ = nullptr;
   QPushButton* loginButton_ = nullptr;
   QLabel* hintLabel_ = nullptr;
 };
