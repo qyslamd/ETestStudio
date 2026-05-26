@@ -67,6 +67,8 @@ add_executable(${TARGET_NAME}
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h
     dialogs/LoginDialog.cpp
+    dialogs/UserManagerDialog.h
+    dialogs/UserManagerDialog.cpp
     utils/window_mover.h
     utils/window_mover.cpp
     utils/eph_qt_switch_button.h
