@@ -8,6 +8,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMenu>
@@ -69,10 +70,9 @@ void ProjectStructureWidget::setupUi() {
       QStringLiteral("font-size:12px;color:#aaa;line-height:1.6;"));
   ph_layout->addWidget(ph_desc);
 
-  // 快捷操作
-  auto* btn_layout = new QHBoxLayout();
-  btn_layout->setSpacing(8);
-  btn_layout->addStretch();
+  // 快捷操作 — 2×2 grid 适配侧边栏宽度
+  auto* btn_grid = new QGridLayout();
+  btn_grid->setSpacing(8);
 
   auto* new_proto_btn = new QPushButton(QStringLiteral("新建协议"), this);
   auto* new_topo_btn = new QPushButton(QStringLiteral("新建拓扑"), this);
@@ -93,9 +93,12 @@ void ProjectStructureWidget::setupUi() {
   };
   QPushButton* btns[] = {new_proto_btn, new_topo_btn, new_tcase_btn,
                          new_script_btn};
+  // 2×2 grid: row0=(proto,topo), row1=(tcase,script)
+  static const int kRows[] = {0, 0, 1, 1};
+  static const int kCols[] = {0, 1, 0, 1};
   for (int i = 0; i < 4; ++i) {
     btns[i]->setFixedHeight(28);
-    btn_layout->addWidget(btns[i]);
+    btn_grid->addWidget(btns[i], kRows[i], kCols[i]);
     connect(btns[i], &QPushButton::clicked, this, [this, d = kDefs[i]]() {
       if (project_path_.isEmpty()) {
         // 无项目模式：弹出文件保存对话框
@@ -105,12 +108,12 @@ void ProjectStructureWidget::setupUi() {
             QStandardPaths::writableLocation(
                 QStandardPaths::DocumentsLocation));
         QString defaultName =
-            QString::fromLatin1(d.baseName) + QStringLiteral(".") +
+            QString::fromUtf8(d.baseName) + QStringLiteral(".") +
             QString::fromLatin1(d.ext);
         QString filePath = QFileDialog::getSaveFileName(
-            this, QString::fromLatin1(d.baseName), defaultDir,
+            this, QString::fromUtf8(d.baseName), defaultDir,
             QStringLiteral("%1 (*.%2)")
-                .arg(QString::fromLatin1(d.baseName))
+                .arg(QString::fromUtf8(d.baseName))
                 .arg(QString::fromLatin1(d.ext)));
         if (filePath.isEmpty()) return;
 
@@ -129,12 +132,11 @@ void ProjectStructureWidget::setupUi() {
       }
       createNewFile(QString::fromLatin1(d.catId),
                     QString::fromLatin1(d.ext),
-                    QString::fromLatin1(d.baseName));
+                    QString::fromUtf8(d.baseName));
     });
   }
 
-  btn_layout->addStretch();
-  ph_layout->addLayout(btn_layout);
+  ph_layout->addLayout(btn_grid);
   ph_layout->addStretch();
 
   stack_->addWidget(placeholder_widget_);  // index 0
