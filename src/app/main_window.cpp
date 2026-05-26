@@ -82,6 +82,8 @@ MainWindow::MainWindow(QWidget* parent)
       terminal_panel_(nullptr) {
   initUi();
   initSignals();
+  // 加载用户数据（首次运行自动创建 admin 默认用户）
+  AuthService::instance();
   updateWindowTitle();
 
   // 加载插件并刷新硬件树
