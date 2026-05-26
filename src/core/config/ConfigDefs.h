@@ -71,6 +71,7 @@ constexpr int CONFIG_BACKUP_DEFAULT_MAX_COUNT = 5; // 默认保留5份
 // 默认参数配置组
 constexpr const char* CONFIG_DEFAULT_PROJECT_PATH = "default/project_path";
 constexpr const char* CONFIG_DEFAULT_PROTOCOL_PATH = "default/protocol_path";
+constexpr const char* CONFIG_DEFAULT_FILE_SAVE_PATH = "default/file_save_path";
 
 // 插件配置组
 constexpr const char* CONFIG_PLUGIN_SEARCH_PATHS = "plugin/search_paths";  // 分号分隔的自定义搜索路径

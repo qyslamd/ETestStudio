@@ -5,6 +5,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QDirIterator>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
 #include <QHBoxLayout>
@@ -13,6 +14,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSet>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QTreeView>
 #include <QVBoxLayout>
@@ -96,9 +98,33 @@ void ProjectStructureWidget::setupUi() {
     btn_layout->addWidget(btns[i]);
     connect(btns[i], &QPushButton::clicked, this, [this, d = kDefs[i]]() {
       if (project_path_.isEmpty()) {
-        QMessageBox::information(
-            this, QStringLiteral("提示"),
-            QStringLiteral("请先创建或打开一个项目"));
+        // 无项目模式：弹出文件保存对话框
+        auto& cfg = etest::core::config::ConfigManager::instance();
+        QString defaultDir = cfg.get<QString>(
+            etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH,
+            QStandardPaths::writableLocation(
+                QStandardPaths::DocumentsLocation));
+        QString defaultName =
+            QString::fromLatin1(d.baseName) + QStringLiteral(".") +
+            QString::fromLatin1(d.ext);
+        QString filePath = QFileDialog::getSaveFileName(
+            this, QString::fromLatin1(d.baseName), defaultDir,
+            QStringLiteral("%1 (*.%2)")
+                .arg(QString::fromLatin1(d.baseName))
+                .arg(QString::fromLatin1(d.ext)));
+        if (filePath.isEmpty()) return;
+
+        // 记住目录
+        QFileInfo fi(filePath);
+        cfg.set(etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH, fi.absolutePath());
+
+        // 创建空文件
+        QFile file(filePath);
+        if (!file.open(QIODevice::WriteOnly)) return;
+        file.close();
+
+        emit fileCreated(filePath);
+        emit fileOpenRequested(filePath);
         return;
       }
       createNewFile(QString::fromLatin1(d.catId),
