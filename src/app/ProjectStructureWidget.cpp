@@ -77,9 +77,34 @@ void ProjectStructureWidget::setupUi() {
   auto* new_tcase_btn = new QPushButton(QStringLiteral("新建用例"), this);
   auto* new_script_btn = new QPushButton(QStringLiteral("新建脚本"), this);
 
-  for (auto* btn : {new_proto_btn, new_topo_btn, new_tcase_btn, new_script_btn}) {
-    btn->setFixedHeight(28);
-    btn_layout->addWidget(btn);
+  // 快捷按钮：新建协议/拓扑/用例/脚本
+  struct ButtonDef {
+    const char* catId;
+    const char* ext;
+    const char* baseName;
+  };
+  static const ButtonDef kDefs[] = {
+      {"protocol", "eproto", "新建协议文件"},
+      {"topology", "etopo", "新建拓扑文件"},
+      {"testprog", "tcase", "新建测试用例"},
+      {"script", "lua", "新建脚本"},
+  };
+  QPushButton* btns[] = {new_proto_btn, new_topo_btn, new_tcase_btn,
+                         new_script_btn};
+  for (int i = 0; i < 4; ++i) {
+    btns[i]->setFixedHeight(28);
+    btn_layout->addWidget(btns[i]);
+    connect(btns[i], &QPushButton::clicked, this, [this, d = kDefs[i]]() {
+      if (project_path_.isEmpty()) {
+        QMessageBox::information(
+            this, QStringLiteral("提示"),
+            QStringLiteral("请先创建或打开一个项目"));
+        return;
+      }
+      createNewFile(QString::fromLatin1(d.catId),
+                    QString::fromLatin1(d.ext),
+                    QString::fromLatin1(d.baseName));
+    });
   }
 
   btn_layout->addStretch();
