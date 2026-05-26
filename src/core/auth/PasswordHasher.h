@@ -1,9 +1,12 @@
-#pragma once
+#ifndef ETEST_CORE_AUTH_PASSWORD_HASHER_H_
+#define ETEST_CORE_AUTH_PASSWORD_HASHER_H_
 
 #include <QString>
 #include <memory>
 
 namespace etest::core::auth {
+
+inline constexpr const char* HASHER_PLAIN = "plain";
 
 class PasswordHasher {
  public:
@@ -26,3 +29,5 @@ class HasherFactory {
 };
 
 }  // namespace etest::core::auth
+
+#endif  // ETEST_CORE_AUTH_PASSWORD_HASHER_H_

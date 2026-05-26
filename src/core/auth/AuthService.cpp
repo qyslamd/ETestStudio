@@ -8,7 +8,9 @@ AuthService& AuthService::instance() {
   return inst;
 }
 
-AuthService::AuthService() : QObject(nullptr) {}
+AuthService::AuthService() : QObject(nullptr) {
+  UserManager::instance().loadUsers();
+}
 
 bool AuthService::login(const QString& username, const QString& password) {
   UserManager::instance().loadUsers();
@@ -19,7 +21,8 @@ bool AuthService::login(const QString& username, const QString& password) {
   }
   loggedIn_ = true;
   currentUser_ = user;
-  emit loginSucceeded(user);
+  currentUser_.password.clear();  // 信号中不携带密码
+  emit loginSucceeded(currentUser_);
   return true;
 }
 

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ETEST_CORE_AUTH_USER_MANAGER_H_
+#define ETEST_CORE_AUTH_USER_MANAGER_H_
 
 #include <QList>
 #include <QString>
@@ -35,3 +36,5 @@ class UserManager {
 };
 
 }  // namespace etest::core::auth
+
+#endif  // ETEST_CORE_AUTH_USER_MANAGER_H_

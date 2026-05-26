@@ -700,13 +700,13 @@ void MainWindow::initSignals() {
                      ? QStringLiteral("Admin")
                      : QStringLiteral("User")));
 
-    login_menu_->actions()[0]->setText(
+    login_user_info_action_->setText(
         QStringLiteral("%1 (%2)")
             .arg(user.userName)
             .arg(user.role == UserRole::Admin
                      ? QStringLiteral("Admin")
                      : QStringLiteral("User")));
-    login_menu_->actions()[2]->setVisible(
+    login_manage_users_action_->setVisible(
         user.role == UserRole::Admin);
   });
 
@@ -1244,12 +1244,12 @@ void MainWindow::setupRibbon() {
 
   // 登录后的菜单
   login_menu_ = new QMenu(this);
-  auto* userInfoAction = login_menu_->addAction(QStringLiteral("admin (Admin)"));
-  userInfoAction->setEnabled(false);
+  login_user_info_action_ = login_menu_->addAction(QStringLiteral("admin (Admin)"));
+  login_user_info_action_->setEnabled(false);
   login_menu_->addSeparator();
-  auto* manageUsersAction = login_menu_->addAction(
+  login_manage_users_action_ = login_menu_->addAction(
       QStringLiteral("用户管理"));
-  connect(manageUsersAction, &QAction::triggered, this, [this]() {
+  connect(login_manage_users_action_, &QAction::triggered, this, [this]() {
     UserManagerDialog dlg(this);
     dlg.exec();
   });

@@ -26,7 +26,7 @@ bool UserManager::loadUsers() {
   users_.clear();
   QString path = dataFilePath();
   if (!QFile::exists(path)) {
-    auto hasher = HasherFactory::create("plain");
+    auto hasher = HasherFactory::create(HASHER_PLAIN);
     users_.append(User{"admin", hasher->hash("admin123"), UserRole::Admin});
     return saveUsers();
   }
@@ -75,7 +75,7 @@ QList<User> UserManager::allUsers() const { return users_; }
 
 User UserManager::authenticate(const QString& username,
                                const QString& password) const {
-  auto hasher = HasherFactory::create("plain");
+  auto hasher = HasherFactory::create(HASHER_PLAIN);
   for (const auto& u : users_) {
     if (u.userName == username && hasher->verify(password, u.password))
       return u;
@@ -90,7 +90,7 @@ bool UserManager::addUser(const QString& username, const QString& password,
     lastError_ = "用户已存在";
     return false;
   }
-  auto hasher = HasherFactory::create("plain");
+  auto hasher = HasherFactory::create(HASHER_PLAIN);
   users_.append(User{username, hasher->hash(password), role});
   return saveUsers();
 }
@@ -103,7 +103,7 @@ bool UserManager::updateUser(const QString& username,
     return false;
   }
   auto& u = users_[idx];
-  auto hasher = HasherFactory::create("plain");
+  auto hasher = HasherFactory::create(HASHER_PLAIN);
   if (!newPassword.isEmpty())
     u.password = hasher->hash(newPassword);
   u.role = newRole;

@@ -42,6 +42,7 @@ void UserManagerDialog::initUi() {
   auto* addBtn = new QPushButton(QStringLiteral("+ 添加用户"), content);
   addBtn->setObjectName(QStringLiteral("userMgrAddBtn"));
   addBtn->setCursor(Qt::PointingHandCursor);
+  connect(addBtn, &QPushButton::clicked, this, &UserManagerDialog::onAddUser);
   headerRow->addWidget(title);
   headerRow->addWidget(countLabel_);
   headerRow->addStretch();

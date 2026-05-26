@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ETEST_CORE_AUTH_AUTH_SERVICE_H_
+#define ETEST_CORE_AUTH_AUTH_SERVICE_H_
 
 #include <QObject>
 #include <QSet>
@@ -36,3 +37,5 @@ class AuthService : public QObject {
 };
 
 }  // namespace etest::core::auth
+
+#endif  // ETEST_CORE_AUTH_AUTH_SERVICE_H_

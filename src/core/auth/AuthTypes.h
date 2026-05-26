@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ETEST_CORE_AUTH_AUTH_TYPES_H_
+#define ETEST_CORE_AUTH_AUTH_TYPES_H_
 
 #include <QString>
 
@@ -19,3 +20,5 @@ struct User {
 inline constexpr const char* PERM_USER_MANAGE = "user.manage";
 
 }  // namespace etest::core::auth
+
+#endif  // ETEST_CORE_AUTH_AUTH_TYPES_H_

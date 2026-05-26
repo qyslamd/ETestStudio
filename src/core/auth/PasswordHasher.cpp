@@ -13,7 +13,7 @@ bool PlainTextHasher::verify(const QString& password,
 
 std::unique_ptr<PasswordHasher> HasherFactory::create(
     const QString& algorithm) {
-  if (algorithm == "plain") {
+  if (algorithm == HASHER_PLAIN) {
     return std::make_unique<PlainTextHasher>();
   }
   return std::make_unique<PlainTextHasher>();
