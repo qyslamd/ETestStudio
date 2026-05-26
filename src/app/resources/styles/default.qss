@@ -1,1 +1,88 @@
 /* 默认主题 - 保持原生控件样式 */
+
+/* ==================== AboutDialog ==================== */
+#aboutContent {
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+}
+#aboutHeader {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+        stop: 0 #42A5F5, stop: 1 #1565C0);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+#aboutLogo {
+    background: transparent;
+}
+#aboutName {
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: bold;
+    background: transparent;
+}
+#aboutVersion {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    background: transparent;
+}
+#aboutBody {
+    background: transparent;
+}
+#aboutDesc {
+    color: #333333;
+    font-size: 12px;
+    background: transparent;
+}
+#aboutTechHeader {
+    color: #888888;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: transparent;
+    padding: 0;
+}
+#aboutTechChip {
+    background-color: #EEEEEE;
+    color: #555555;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 11px;
+}
+#aboutSep {
+    background-color: #E0E0E0;
+    border: none;
+    max-height: 1px;
+}
+#aboutBuildInfo {
+    color: #999999;
+    font-size: 11px;
+    background: transparent;
+}
+#aboutOkButton {
+    background-color: #1565C0;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+}
+#aboutOkButton:hover {
+    background-color: #1976D2;
+}
+#aboutOkButton:pressed {
+    background-color: #0D47A1;
+}
+#aboutCopyright {
+    color: #999999;
+    font-size: 11px;
+    background: transparent;
+}
+#aboutLicense {
+    color: #AAAAAA;
+    font-size: 10px;
+    background: transparent;
+}

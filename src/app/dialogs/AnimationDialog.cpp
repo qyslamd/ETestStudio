@@ -4,6 +4,7 @@
 #include <QKeyEvent>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPropertyAnimation>
 #include <QRandomGenerator>
 #include <QShowEvent>
@@ -53,9 +54,9 @@ void AnimationDialog::paintEvent(QPaintEvent* event) {
   QDialog::paintEvent(event);
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
-  p.save();
-  p.fillRect(this->rect(), QColor(205, 205, 205, 170));
-  p.restore();
+  QPainterPath path;
+  path.addRoundedRect(rect(), round_radius_, round_radius_);
+  p.fillPath(path, QColor(205, 205, 205, 170));
 }
 
 void AnimationDialog::keyPressEvent(QKeyEvent* e) {

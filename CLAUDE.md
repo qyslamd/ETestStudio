@@ -82,6 +82,33 @@ format_code.bat
    - 提交信息的开始和结束不能有 @ 符号
    - 合并远程更新使用 git rebase，避免产生多余的 merge commit
    - 执行 git pull 时使用 git pull --rebase
+   - Git 提交信息规范
+```txt
+<type>(<scope>): <subject>
+
+[body]
+
+[footer]
+
+## Type（必选其一）
+- `feat` - 新功能
+- `fix` - 修复bug
+- `docs` - 文档
+- `style` - 代码格式（不影响运行）
+- `refactor` - 重构
+- `perf` - 性能优化
+- `test` - 测试
+- `build` - 构建/依赖
+- `ci` - CI配置
+- `chore` - 杂项
+- `revert` - 回滚
+
+## 规则
+1. `subject`：祈使句、现在时，不超过50字，**英文首字母小写**，结尾不加句号
+2. `scope`（可选）：模块名，如 `auth`、`api`
+3. `body`（可选）：解释为什么，每行≤72字符
+4. `footer`（可选）：`Closes #123` 或 `BREAKING CHANGE: 说明`
+```
 10.  Qt 界面样式禁止在 C++ 代码中通过 `setStyleSheet` 硬编码，所有样式统一写入 `src/app/resources/styles/` 下的 QSS 文件中，通过 `setObjectName` 选择器定位控件
 11.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
 12.  每次会话开始时先读取 `ideas.md`，了解待办想法的最新进度

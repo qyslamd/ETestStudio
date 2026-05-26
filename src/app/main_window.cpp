@@ -11,6 +11,7 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
+#include "dialogs/AboutDialog.h"
 #include <QScrollBar>
 #include <QShortcut>
 #include <QSplitter>
@@ -1252,9 +1253,8 @@ void MainWindow::setupRibbon() {
     auto* panel_about = cat->addPanel(QStringLiteral("关于"));
     auto* act_about = new QAction(QStringLiteral("关于 ETest Demo"), this);
     connect(act_about, &QAction::triggered, this, [this]() {
-      QMessageBox::about(this, QStringLiteral("关于 ETest Demo"),
-                         QStringLiteral("ETest Demo v1.0.0\n\n"
-                                        "基于 Qt/C++ 的测试系统仿真实现。"));
+      AboutDialog dlg(this);
+      dlg.exec();
     });
     panel_about->addLargeAction(act_about);
   }

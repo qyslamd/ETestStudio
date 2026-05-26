@@ -34,6 +34,7 @@ class AnimationDialog : public QDialog {
  protected:
   QWidget* widget_ = nullptr;
   WindowMover* mover_ = nullptr;
+  int round_radius_ = 8;
 };
 
 }  // namespace etest::app
