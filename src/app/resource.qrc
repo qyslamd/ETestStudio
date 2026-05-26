@@ -101,5 +101,7 @@
         <file>resources/icons/svg/topo_distribute_vertical_light.svg</file>
         <file>resources/icons/svg/chevron_right_light.svg</file>
         <file>resources/icons/svg/chevron_down_light.svg</file>
+        <file>resources/icons/svg/account_dark.svg</file>
+        <file>resources/icons/svg/account_light.svg</file>
     </qresource>
 </RCC>
