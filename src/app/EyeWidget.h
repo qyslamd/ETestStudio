@@ -1,8 +1,11 @@
-#ifndef ETEST_EXAMPLES_EYETRACKING_EYEWIDGET_H_
-#define ETEST_EXAMPLES_EYETRACKING_EYEWIDGET_H_
+#ifndef ETEST_APP_EYEWIDGET_H_
+#define ETEST_APP_EYEWIDGET_H_
 
+#include <QElapsedTimer>
 #include <QPoint>
 #include <QWidget>
+
+class QTimer;
 
 class EyeWidget : public QWidget {
   Q_OBJECT
@@ -15,11 +18,29 @@ class EyeWidget : public QWidget {
   bool eventFilter(QObject* obj, QEvent* event) override;
 
  private:
-  void drawEye(QPainter& painter, const QPointF& center, double radius,
-               const QPointF& pupilOffset);
-  QPointF clampedPupilOffset(const QPointF& eyeCenter, double maxRadius) const;
+  void tick();
+  void scheduleNextBlink();
 
-  QPointF mouse_pos_;
+  // smooth tracking
+  QPointF target_pos_;
+  QPointF smooth_pos_;
+  QTimer* anim_timer_ = nullptr;
+
+  // blink
+  double blink_phase_ = 0;
+  int blink_remaining_ = 0;
+  bool blink_closing_ = true;
+  QTimer* blink_scheduler_ = nullptr;
+
+  // idle/drowsy
+  QElapsedTimer last_move_elapsed_;
+  double drowsy_level_ = 0;
+
+  // click effect
+  double cross_eye_phase_ = 0;
+
+  // derived
+  double mouse_nearness_ = 0;
 };
 
-#endif  // ETEST_EXAMPLES_EYETRACKING_EYEWIDGET_H_
+#endif  // ETEST_APP_EYEWIDGET_H_

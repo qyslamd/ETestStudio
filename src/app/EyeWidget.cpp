@@ -1,67 +1,176 @@
 #include "EyeWidget.h"
 
 #include <QApplication>
+#include <QLineF>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
+#include <QRandomGenerator>
+#include <QTimer>
 #include <QtMath>
 
 EyeWidget::EyeWidget(QWidget* parent) : QWidget(parent) {
   qApp->installEventFilter(this);
-  mouse_pos_ = QPointF(0, 0);
+  target_pos_ = QPointF(0, 0);
+  smooth_pos_ = QPointF(0, 0);
+  last_move_elapsed_.start();
+
+  anim_timer_ = new QTimer(this);
+  connect(anim_timer_, &QTimer::timeout, this, &EyeWidget::tick);
+  anim_timer_->start(16);
+
+  blink_scheduler_ = new QTimer(this);
+  blink_scheduler_->setSingleShot(true);
+  connect(blink_scheduler_, &QTimer::timeout, this, [this]() {
+    blink_phase_ = 0.001;
+    blink_closing_ = true;
+  });
+  scheduleNextBlink();
+}
+
+void EyeWidget::tick() {
+  // smooth tracking
+  smooth_pos_ += (target_pos_ - smooth_pos_) * 0.12;
+
+  // idle → drowsy
+  qint64 idle = last_move_elapsed_.elapsed();
+  if (idle > 3000) {
+    drowsy_level_ = qMin(1.0, drowsy_level_ + 0.003);
+  }
+
+  // cross-eyed animation
+  if (cross_eye_phase_ > 0) {
+    cross_eye_phase_ = qMax(0.0, cross_eye_phase_ - 0.025);
+  }
+
+  // blink animation
+  if (blink_phase_ > 0) {
+    const double speed = 0.055;
+    if (blink_closing_) {
+      blink_phase_ = qMin(1.0, blink_phase_ + speed);
+      if (blink_phase_ >= 1.0)
+        blink_closing_ = false;
+    } else {
+      blink_phase_ = qMax(0.0, blink_phase_ - speed);
+      if (blink_phase_ <= 0) {
+        blink_phase_ = 0;
+        blink_closing_ = true;
+        if (blink_remaining_ > 0) {
+          blink_remaining_--;
+          if (blink_remaining_ > 0)
+            blink_phase_ = 0.001;
+        }
+        if (blink_phase_ == 0)
+          scheduleNextBlink();
+      }
+    }
+  }
+
+  // mouse nearness for eyebrows
+  QPointF center = rect().center();
+  double dist = qMax(1.0, QLineF(smooth_pos_, center).length());
+  double maxDist = qMax(width(), height()) * 0.7;
+  mouse_nearness_ = qBound(0.0, 1.0 - dist / maxDist, 1.0);
+
+  update();
+}
+
+void EyeWidget::scheduleNextBlink() {
+  if (blink_remaining_ > 0) return;
+  int interval = QRandomGenerator::global()->bounded(2000, 5001);
+  blink_scheduler_->start(interval);
 }
 
 void EyeWidget::paintEvent(QPaintEvent*) {
-  QPainter painter(this);
-  painter.setRenderHint(QPainter::Antialiasing);
+  QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
 
   // background
-  painter.fillRect(rect(), QColor(0x1e, 0x1e, 0x2e));
+  p.fillRect(rect(), QColor(0x1e, 0x1e, 0x2e));
 
-  auto fg = rect();
-  double cx = fg.width() / 2.0;
-  double cy = fg.height() / 2.0;
-  double eyeRadius = qMin(fg.width(), fg.height()) / 5.0;
-  double eyeSpacing = eyeRadius * 1.6;
+  // eye geometry
+  double cx = width() / 2.0;
+  double cy = height() / 2.0;
+  double eyeR = qMin(width(), height()) / 5.0;
+  double eyeSpacing = eyeR * 1.6;
 
-  QPointF leftCenter(cx - eyeSpacing, cy);
-  QPointF rightCenter(cx + eyeSpacing, cy);
+  QPointF leftC(cx - eyeSpacing, cy);
+  QPointF rightC(cx + eyeSpacing, cy);
 
-  auto offset = clampedPupilOffset(leftCenter, eyeRadius * 0.55);
+  double closeFactor = qMin(1.0, blink_phase_ + drowsy_level_ * 0.6);
+  double scaleY = 1.0 - closeFactor * 0.85;
+  double maxPupilR = eyeR * 0.55;
 
-  drawEye(painter, leftCenter, eyeRadius, offset);
-  drawEye(painter, rightCenter, eyeRadius, offset);
-}
+  // pupil offset with cross-eyed effect
+  auto rawOffset = [&](const QPointF& ec, double crossDir) {
+    QPointF v(smooth_pos_.x() - ec.x(), smooth_pos_.y() - ec.y());
+    v += QPointF(crossDir * cross_eye_phase_ * eyeSpacing * 0.25, 0);
+    double len = qSqrt(v.x() * v.x() + v.y() * v.y());
+    if (len <= maxPupilR) return v;
+    return v * (maxPupilR / len);
+  };
+  QPointF leftOff = rawOffset(leftC, 1.0);
+  QPointF rightOff = rawOffset(rightC, -1.0);
 
-void EyeWidget::drawEye(QPainter& painter, const QPointF& center,
-                        double radius, const QPointF& pupilOffset) {
-  // eye white
-  painter.setBrush(QColor(0xff, 0xff, 0xff));
-  painter.setPen(QPen(QColor(0xcc, 0xcc, 0xcc), 2));
-  painter.drawEllipse(center, radius, radius);
+  // eyebrows
+  double browRaise = -4 + mouse_nearness_ * 12 - drowsy_level_ * 5;
+  auto drawBrow = [&](const QPointF& ec) {
+    double bw = eyeR * 0.8;
+    double by = ec.y() - eyeR * 1.1 + browRaise;
+    QPainterPath path;
+    path.moveTo(ec.x() - bw, by);
+    path.quadTo(ec.x(), by - eyeR * 0.3 + browRaise * 0.3, ec.x() + bw, by);
+    p.setPen(QPen(QColor(0x88, 0x88, 0x99), 2.5));
+    p.setBrush(Qt::NoBrush);
+    p.drawPath(path);
+  };
+  drawBrow(leftC);
+  drawBrow(rightC);
 
-  // pupil
-  double pupilR = radius * 0.35;
-  QPointF pupilPos = center + pupilOffset;
-  painter.setBrush(QColor(0x2c, 0x2c, 0x2c));
-  painter.setPen(Qt::NoPen);
-  painter.drawEllipse(pupilPos, pupilR, pupilR);
-}
+  // eyes
+  auto drawEye = [&](const QPointF& ec, const QPointF& off) {
+    // eye white
+    p.setBrush(QColor(0xff, 0xff, 0xff));
+    p.setPen(QPen(QColor(0xcc, 0xcc, 0xcc), 2));
+    p.drawEllipse(ec, eyeR, eyeR * scaleY);
 
-QPointF EyeWidget::clampedPupilOffset(const QPointF& eyeCenter,
-                                      double maxRadius) const {
-  QPointF vec(mouse_pos_.x() - eyeCenter.x(),
-              mouse_pos_.y() - eyeCenter.y());
-  double dist = qSqrt(vec.x() * vec.x() + vec.y() * vec.y());
-  if (dist <= maxRadius)
-    return vec;
-  return vec * (maxRadius / dist);
+    // pupil
+    double pupilR = eyeR * 0.35 * qMax(0.3, scaleY);
+    double pupilY = ec.y() + off.y() * scaleY - closeFactor * eyeR * 0.15;
+    QPointF pupilPos(ec.x() + off.x(), pupilY);
+    p.setBrush(QColor(0x2c, 0x2c, 0x2c));
+    p.setPen(Qt::NoPen);
+    p.drawEllipse(pupilPos, pupilR, pupilR * scaleY);
+  };
+  drawEye(leftC, leftOff);
+  drawEye(rightC, rightOff);
+
+  // eyelid line when partially closed
+  if (closeFactor > 0.3) {
+    double lineY = cy - closeFactor * eyeR * 0.2;
+    p.setPen(QPen(QColor(0x1e, 0x1e, 0x2e), 2));
+    p.drawLine(QPointF(cx - eyeSpacing - eyeR, lineY),
+               QPointF(cx + eyeSpacing + eyeR, lineY));
+  }
 }
 
 bool EyeWidget::eventFilter(QObject* obj, QEvent* event) {
   if (event->type() == QEvent::MouseMove) {
     auto* me = static_cast<QMouseEvent*>(event);
-    mouse_pos_ = mapFromGlobal(me->globalPos());
-    update();
+    target_pos_ = mapFromGlobal(me->globalPos());
+    last_move_elapsed_.restart();
+    drowsy_level_ = 0;
+  } else if (event->type() == QEvent::MouseButtonPress) {
+    if (QRandomGenerator::global()->bounded(2) == 0) {
+      blink_remaining_ = 3;
+      if (blink_phase_ <= 0) {
+        blink_phase_ = 0.001;
+        blink_closing_ = true;
+        blink_scheduler_->stop();
+      }
+    } else {
+      cross_eye_phase_ = 1.0;
+    }
   }
   return QWidget::eventFilter(obj, event);
 }
