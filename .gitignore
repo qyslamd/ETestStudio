@@ -70,6 +70,8 @@ scripts/run_topology-demo.bat
 scripts/run_protocal-demo.bat
 scripts/run_testprogram-demo.bat
 scripts/run_saribbon-demo.bat
+scripts/run_eye-tracking-demo.bat
+scripts/run_penguin-demo.bat
 # SARibbon 自带 examples 运行脚本
 scripts/run_MainWindowExample.bat
 scripts/run_UseNativeFrameExample.bat
