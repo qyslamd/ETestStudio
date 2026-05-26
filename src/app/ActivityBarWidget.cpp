@@ -35,7 +35,7 @@ void ActivityBarWidget::setupUi() {
   bottom_layout->setContentsMargins(0, 0, 0, 0);
   settings_btn_ = createButton(QStringLiteral("设置"));
   settings_btn_->setIcon(AppIconProvider::instance().icon(QStringLiteral("settings")));
-  settings_btn_->setIconSize(QSize(24, 24));
+  settings_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   bottom_layout->addWidget(settings_btn_);
   connect(settings_btn_, &QPushButton::clicked, this,
           &ActivityBarWidget::settingsTriggered);
@@ -53,7 +53,7 @@ void ActivityBarWidget::addPage(const QString& id, const QString& tooltip,
 
   auto* btn = createButton(tooltip);
   btn->setIcon(AppIconProvider::instance().icon(iconName));
-  btn->setIconSize(QSize(24, 24));
+  btn->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   buttons_.append(btn);
   top_layout_->addWidget(btn);
 
@@ -74,6 +74,15 @@ void ActivityBarWidget::reloadIcons() {
   if (settings_btn_) {
     settings_btn_->setIcon(AppIconProvider::instance().icon(QStringLiteral("settings")));
   }
+  updateActiveIconSize();
+}
+
+void ActivityBarWidget::updateActiveIconSize() {
+  for (int i = 0; i < buttons_.size(); ++i) {
+    bool active = (pages_[i].id == active_page_id_);
+    buttons_[i]->setIconSize(active ? QSize(kActiveIconSize, kActiveIconSize)
+                                    : QSize(kNormalIconSize, kNormalIconSize));
+  }
 }
 
 QPushButton* ActivityBarWidget::createButton(const QString& tooltip) {
@@ -91,6 +100,7 @@ void ActivityBarWidget::setActivePageId(const QString& id) {
   for (int i = 0; i < pages_.size(); ++i) {
     buttons_[i]->setChecked(pages_[i].id == id);
   }
+  updateActiveIconSize();
 }
 
 QString ActivityBarWidget::activePageId() const {

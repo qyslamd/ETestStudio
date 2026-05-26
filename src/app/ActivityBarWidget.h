@@ -35,6 +35,9 @@ class ActivityBarWidget : public QWidget {
  private:
   void setupUi();
   QPushButton* createButton(const QString& tooltip);
+  void updateActiveIconSize();
+
+  enum { kNormalIconSize = 24, kActiveIconSize = 36 };
 
   QVector<ActivityBarPageInfo> pages_;
   QVector<QPushButton*> buttons_;
