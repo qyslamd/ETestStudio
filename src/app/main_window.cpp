@@ -192,12 +192,14 @@ void MainWindow::initUi() {
   restoreWindowState();
 }
 
-void MainWindow::onThemeChanged(bool /*isDark*/) {
+void MainWindow::onThemeChanged(bool isDark) {
   // 同步设置对话框样式（QSS 已由 ThemeManager 全局加载到 qApp）
   // ADS dock manager 样式跟随全局 QSS，无需单独设置
   if (settings_dialog_) {
     settings_dialog_->setStyleSheet(qApp->styleSheet());
   }
+  setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
+                        : SARibbonTheme::RibbonThemeOffice2021Blue);
 }
 
 void MainWindow::initSignals() {
@@ -1266,6 +1268,11 @@ void MainWindow::setupRibbon() {
   bool minimized = ConfigManager::instance().get<bool>(
       CONFIG_RIBBON_MINIMIZED, CONFIG_RIBBON_DEFAULT_MINIMIZED);
   ribbon->setMinimumMode(minimized);
+
+  // 初始化 Ribbon 主题，与当前 ThemeManager 主题一致
+  bool isDark = ThemeManager::instance().isDarkTheme();
+  setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
+                        : SARibbonTheme::RibbonThemeOffice2021Blue);
 }
 
 void MainWindow::saveWindowState() {
