@@ -97,3 +97,12 @@ add_etest(
 set(TARGET_NAME test_core_global_exception_handler)
 configure_file("${CMAKE_SOURCE_DIR}/cmake/run_disabled_test.bat.in"
                "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run_${TARGET_NAME}_disabled.bat" @ONLY)
+
+# 认证模块测试
+add_etest(
+    NAME test_core_auth
+    SOURCES auth_test.cpp
+    LIBS etest_core
+    QT_MODULES Core Test
+    LABELS CORE
+)
