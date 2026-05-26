@@ -16,6 +16,7 @@ set(SOURCES
     backup/BackupManager.cpp
     auth/PasswordHasher.cpp
     auth/UserManager.cpp
+    auth/AuthService.cpp
     utils/FileUtil.cpp
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
@@ -45,6 +46,7 @@ set(HEADERS
     auth/AuthTypes.h
     auth/PasswordHasher.h
     auth/UserManager.h
+    auth/AuthService.h
     utils/FileUtil.h
     utils/TimeUtil.h
     utils/StringUtil.h
