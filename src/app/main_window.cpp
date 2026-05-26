@@ -12,6 +12,8 @@
 #include <QMenu>
 #include <QMessageBox>
 #include "dialogs/AboutDialog.h"
+#include "dialogs/LoginDialog.h"
+#include "dialogs/UserManagerDialog.h"
 #include <QScrollBar>
 #include <QShortcut>
 #include <QSplitter>
@@ -49,6 +51,7 @@
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
+#include "auth/AuthService.h"
 #include "dialogs/NewProjectDialog.h"
 #include "dialogs/SettingsDialog.h"
 #include "logger/Logger.h"
@@ -62,6 +65,7 @@
 using namespace etest::core::config;
 using namespace etest::core::project;
 using namespace etest::core::logger;
+using namespace etest::core::auth;
 
 namespace etest::app {
 
@@ -615,6 +619,53 @@ void MainWindow::initSignals() {
               view_panel_action_->setChecked(false);
             }
           });
+
+  // 登录认证
+  connect(login_action_, &QAction::triggered, this, [this]() {
+    if (AuthService::instance().isLoggedIn()) {
+      login_menu_->exec(QCursor::pos());
+    } else {
+      auto* dlg = new LoginDialog(this);
+      connect(dlg, &QDialog::finished, dlg, &QObject::deleteLater);
+      dlg->show();
+    }
+  });
+
+  connect(&AuthService::instance(), &AuthService::loginSucceeded,
+          this, [this](const User& user) {
+    login_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("account")));
+    login_action_->setToolTip(
+        QStringLiteral("当前用户：%1 (%2)")
+            .arg(user.userName)
+            .arg(user.role == UserRole::Admin
+                     ? QStringLiteral("Admin")
+                     : QStringLiteral("User")));
+    login_action_->setText(
+        QStringLiteral("%1 (%2)")
+            .arg(user.userName)
+            .arg(user.role == UserRole::Admin
+                     ? QStringLiteral("Admin")
+                     : QStringLiteral("User")));
+
+    login_menu_->actions()[0]->setText(
+        QStringLiteral("%1 (%2)")
+            .arg(user.userName)
+            .arg(user.role == UserRole::Admin
+                     ? QStringLiteral("Admin")
+                     : QStringLiteral("User")));
+    login_menu_->actions()[2]->setVisible(
+        user.role == UserRole::Admin);
+  });
+
+  connect(&AuthService::instance(), &AuthService::loggedOut,
+          this, [this]() {
+    login_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("account")));
+    login_action_->setToolTip(QStringLiteral("登录"));
+    login_action_->setText(QStringLiteral("登录"));
+    login_action_->setMenu(nullptr);
+  });
 }
 
 void MainWindow::createStatusBar() {
@@ -1131,6 +1182,30 @@ void MainWindow::setupRibbon() {
   qab->addAction(edit_undo_action_);
   edit_redo_action_->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
   qab->addAction(edit_redo_action_);
+
+  // ── 登录按钮 ──
+  login_action_ = new QAction(
+      AppIconProvider::instance().icon(QStringLiteral("account")),
+      QStringLiteral("登录"), this);
+  login_action_->setToolTip(QStringLiteral("登录"));
+  qab->addAction(login_action_);
+
+  // 登录后的菜单
+  login_menu_ = new QMenu(this);
+  auto* userInfoAction = login_menu_->addAction(QStringLiteral("admin (Admin)"));
+  userInfoAction->setEnabled(false);
+  login_menu_->addSeparator();
+  auto* manageUsersAction = login_menu_->addAction(
+      QStringLiteral("用户管理"));
+  connect(manageUsersAction, &QAction::triggered, this, [this]() {
+    UserManagerDialog dlg(this);
+    dlg.exec();
+  });
+  login_menu_->addSeparator();
+  auto* logoutAction = login_menu_->addAction(QStringLiteral("退出登录"));
+  connect(logoutAction, &QAction::triggered, this, [this]() {
+    AuthService::instance().logout();
+  });
 
   // ---- Application Button ----
   ribbon->applicationButton()->setIcon(

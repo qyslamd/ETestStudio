@@ -145,6 +145,10 @@ class MainWindow : public SARibbonMainWindow {
   // 剪贴板
   QClipboard* clipboard_ = nullptr;
 
+  // 登录认证
+  QAction* login_action_ = nullptr;
+  QMenu* login_menu_ = nullptr;
+
   // 当前编辑器的信号连接
   QMetaObject::Connection current_editor_modification_connection_;
   QMetaObject::Connection current_editor_selection_connection_;

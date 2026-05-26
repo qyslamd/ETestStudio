@@ -1213,3 +1213,120 @@ SettingsDialog QPushButton:pressed {
     font-size: 10px;
     background: transparent;
 }
+
+/* ========== LoginDialog ========== */
+#loginContent {
+  background: #252526;
+  border-radius: 12px;
+}
+#loginBrand {
+  background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+    stop:0 #1565C0, stop:1 #4527A0);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+#loginBrandTitle {
+  color: white;
+  font-size: 22px;
+  font-weight: 600;
+}
+#loginBrandSub {
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+}
+#loginBrandHint {
+  color: rgba(255,255,255,0.55);
+  font-size: 11px;
+}
+#loginFormTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #CCCCCC;
+}
+#loginUsername, #loginPassword {
+  background: #3c3c3c;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #CCCCCC;
+}
+#loginUsername:focus, #loginPassword:focus {
+  border-color: #4FC3F7;
+  background: #3c3c3c;
+}
+#loginButton {
+  background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+    stop:0 #1565C0, stop:1 #42A5F5);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+#loginButton:hover {
+  background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+    stop:0 #0D47A1, stop:1 #1E88E5);
+}
+#loginButton:pressed {
+  background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+    stop:0 #0D47A1, stop:1 #1565C0);
+}
+#loginHint {
+  color: #ef5350;
+  font-size: 12px;
+}
+
+/* ========== UserManagerDialog ========== */
+#userMgrContent {
+  background: #252526;
+  border-radius: 12px;
+}
+#userMgrTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #CCCCCC;
+}
+#userMgrCount {
+  font-size: 12px;
+  color: #888;
+  margin-left: 8px;
+}
+#userMgrAddBtn {
+  background: #0D47A1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
+}
+#userMgrAddBtn:hover {
+  background: #1565C0;
+}
+#userMgrTable {
+  border: 1px solid #3c3c3c;
+  border-radius: 8px;
+  gridline-color: #333;
+  color: #CCCCCC;
+  background: #1e1e1e;
+}
+#userMgrTable::item {
+  padding: 6px 12px;
+}
+#userMgrEditBtn {
+  background: transparent;
+  color: #4FC3F7;
+  border: none;
+  font-size: 12px;
+}
+#userMgrDeleteBtn {
+  background: transparent;
+  color: #ef5350;
+  border: none;
+  font-size: 12px;
+}
+#userMgrHint {
+  font-size: 12px;
+  color: #666;
+}
