@@ -14,6 +14,7 @@ set(SOURCES
     common/ThemeManager.cpp
     common/AppIconProvider.cpp
     backup/BackupManager.cpp
+    auth/PasswordHasher.cpp
     utils/FileUtil.cpp
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
@@ -40,6 +41,8 @@ set(HEADERS
     common/ThemeManager.h
     common/AppIconProvider.h
     backup/BackupManager.h
+    auth/AuthTypes.h
+    auth/PasswordHasher.h
     utils/FileUtil.h
     utils/TimeUtil.h
     utils/StringUtil.h
@@ -85,6 +88,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/crashhandler
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_CURRENT_SOURCE_DIR}/backup
+    ${CMAKE_CURRENT_SOURCE_DIR}/auth
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin
     ${CMAKE_CURRENT_SOURCE_DIR}/project
