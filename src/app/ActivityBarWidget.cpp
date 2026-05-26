@@ -49,7 +49,7 @@ void ActivityBarWidget::setupUi() {
     icon_names_.append(d.iconName);
     auto* btn = createButton(d.tip);
     btn->setIcon(AppIconProvider::instance().icon(d.iconName));
-    btn->setIconSize(QSize(24, 24));
+    btn->setIconSize(QSize(32, 32));
     buttons_.append(btn);
     top_layout->addWidget(btn);
     connect(btn, &QPushButton::clicked, this, [this, i = buttons_.size() - 1]() {
@@ -67,7 +67,7 @@ void ActivityBarWidget::setupUi() {
   icon_names_.append(QStringLiteral("settings"));
   auto* settings_btn = createButton(QStringLiteral("设置"));
   settings_btn->setIcon(AppIconProvider::instance().icon(QStringLiteral("settings")));
-  settings_btn->setIconSize(QSize(24, 24));
+  settings_btn->setIconSize(QSize(32, 32));
   buttons_.append(settings_btn);
   bottom_layout->addWidget(settings_btn);
   connect(settings_btn, &QPushButton::clicked, this,
