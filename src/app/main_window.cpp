@@ -34,11 +34,11 @@
 #include "AppIconProvider.h"
 #include "BottomContainerWidget.h"
 #include "EditorManager.h"
-#include "FileExplorerWidget.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "OutputPanel.h"
 #include "ProblemsPanel.h"
+#include "ProjectStructureWidget.h"
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
 #include "SidebarWidget.h"
@@ -134,6 +134,55 @@ void MainWindow::initUi() {
   // ===== 侧边栏 =====
   sidebar_ = new SidebarWidget(h_splitter_);
   h_splitter_->addWidget(sidebar_);
+
+  // ── 注册侧边栏页面（按活动栏顺序） ──
+  // 项目概览 → 后续替换为 ProjectStructureWidget
+  sidebar_->addPage(PageId::kProjectOverview, new ProjectStructureWidget(sidebar_),
+                    QStringLiteral("项目概览"));
+  // 拓扑 → 占位，待 TopologyManagerWidget 实现
+  sidebar_->addPage(PageId::kTopology, new QWidget(sidebar_),
+                    QStringLiteral("拓扑"));
+  // 硬件树
+  sidebar_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_),
+                    QStringLiteral("硬件"));
+  // 协议管理器
+  sidebar_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_),
+                    QStringLiteral("协议"));
+  // 用例管理器
+  sidebar_->addPage(PageId::kTestProgram, new TestProgramManagerWidget(sidebar_),
+                    QStringLiteral("用例"));
+  // 运行 → 占位，待实现
+  sidebar_->addPage(PageId::kRun, new QWidget(sidebar_),
+                    QStringLiteral("运行"));
+  // 报告 → 占位，待实现
+  sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
+                    QStringLiteral("报告"));
+  // 搜索
+  sidebar_->addPage(PageId::kSearch, new SearchWidget(sidebar_),
+                    QStringLiteral("搜索"));
+  // Git
+  sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
+                    QStringLiteral("Git"));
+
+  // ── 注册活动栏按钮 ──
+  activity_bar_->addPage(PageId::kProjectOverview,
+                         QStringLiteral("项目概览"), QStringLiteral("project"));
+  activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
+                         QStringLiteral("topo_tap"));
+  activity_bar_->addPage(PageId::kHardware, QStringLiteral("硬件"),
+                         QStringLiteral("hardware"));
+  activity_bar_->addPage(PageId::kProtocol, QStringLiteral("协议"),
+                         QStringLiteral("protocol"));
+  activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("用例"),
+                         QStringLiteral("testprogram"));
+  activity_bar_->addPage(PageId::kRun, QStringLiteral("运行"),
+                         QStringLiteral("debug"));
+  activity_bar_->addPage(PageId::kReport, QStringLiteral("报告"),
+                         QStringLiteral("project"));
+  activity_bar_->addPage(PageId::kSearch, QStringLiteral("搜索"),
+                         QStringLiteral("search"));
+  activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
+                         QStringLiteral("git"));
 
   // ===== 垂直分割器（编辑器 + 底部面板） =====
   v_splitter_ = new QSplitter(Qt::Vertical, h_splitter_);
@@ -273,28 +322,29 @@ void MainWindow::initSignals() {
   projectMgr.setDirtyCheckCallback(
       [this]() { return editor_manager_->hasUnsavedChanges(); });
 
-  // 文件浏览器：项目打开/关闭时设置根路径
-  auto* fileExplorer = sidebar_->fileExplorer();
-  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
-          fileExplorer, [fileExplorer](const QString& projectPath) {
-            fileExplorer->setRootPath(projectPath);
-          });
-  connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
-          fileExplorer, [fileExplorer]() { fileExplorer->setRootPath({}); });
+  // 项目结构树：项目打开/关闭时切换
+  auto* psWidget = qobject_cast<ProjectStructureWidget*>(
+      sidebar_->pageById(PageId::kProjectOverview));
+  if (psWidget) {
+    connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+            psWidget, &ProjectStructureWidget::setProjectPath);
+    connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+            psWidget, &ProjectStructureWidget::clearProjectPath);
 
-  // 文件浏览器：双击文件打开编辑器
-  connect(fileExplorer, &FileExplorerWidget::fileOpenRequested, fileExplorer,
-          [this](const QString& path) { editor_manager_->openFile(path); });
-  // 文件浏览器：右键→用文本编辑器打开
-  connect(fileExplorer, &FileExplorerWidget::fileOpenAsTextRequested,
-          fileExplorer, [this](const QString& path) {
-            editor_manager_->openFile(path, QStringLiteral("text"));
-          });
-  // 文件浏览器：文件删除/重命名同步到编辑器
-  connect(fileExplorer, &FileExplorerWidget::fileDeleted, editor_manager_,
-          &EditorManager::onFileDeleted);
-  connect(fileExplorer, &FileExplorerWidget::fileRenamed, editor_manager_,
-          &EditorManager::onFileRenamed);
+    // 项目结构树：双击文件打开编辑器
+    connect(psWidget, &ProjectStructureWidget::fileOpenRequested, psWidget,
+            [this](const QString& path) { editor_manager_->openFile(path); });
+    // 项目结构树：右键→用文本编辑器打开
+    connect(psWidget, &ProjectStructureWidget::fileOpenAsTextRequested,
+            psWidget, [this](const QString& path) {
+              editor_manager_->openFile(path, QStringLiteral("text"));
+            });
+    // 项目结构树：文件删除/重命名同步到编辑器
+    connect(psWidget, &ProjectStructureWidget::fileDeleted, editor_manager_,
+            &EditorManager::onFileDeleted);
+    connect(psWidget, &ProjectStructureWidget::fileRenamed, editor_manager_,
+            &EditorManager::onFileRenamed);
+  }
 
   // 搜索组件：项目打开/关闭时设置搜索根目录
   auto* searchWidget = sidebar_->searchWidget();
@@ -522,8 +572,8 @@ void MainWindow::initSignals() {
         h_splitter_->setSizes(sizes);
       }
     }
-    sidebar_->switchPage(1);
-    activity_bar_->setActiveIndex(1);
+    sidebar_->switchPage(PageId::kSearch);
+    activity_bar_->setActivePageId(PageId::kSearch);
     if (auto* sw = sidebar_->searchWidget()) {
       sw->setFocusOnSearchInput();
     }
@@ -580,8 +630,8 @@ void MainWindow::initSignals() {
 
   // 活动栏：页面切换
   connect(activity_bar_, &ActivityBarWidget::pageClicked, this,
-          [this](int index) {
-            bool samePage = (index == activity_bar_->activeIndex());
+          [this](const QString& id) {
+            bool samePage = (id == activity_bar_->activePageId());
 
             if (samePage && sidebar_->isContentVisible()) {
               // 再次点击同一按钮，隐藏侧边栏
@@ -605,8 +655,8 @@ void MainWindow::initSignals() {
               }
             }
 
-            sidebar_->switchPage(index);
-            activity_bar_->setActiveIndex(index);
+            sidebar_->switchPage(id);
+            activity_bar_->setActivePageId(id);
           });
 
   // 底部面板关闭按钮

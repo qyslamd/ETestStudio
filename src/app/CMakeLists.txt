@@ -21,10 +21,8 @@ add_executable(${TARGET_NAME}
     ActivityBarWidget.cpp
     SidebarWidget.h
     SidebarWidget.cpp
-    FileExplorerWidget.h
-    FileExplorerWidget.cpp
-    FileTypeIconProvider.h
-    FileTypeIconProvider.cpp
+    ProjectStructureWidget.h
+    ProjectStructureWidget.cpp
     GitWidget.h
     GitWidget.cpp
     HardwareTreeWidget.h

@@ -11,27 +11,36 @@ class QVBoxLayout;
 
 namespace etest::app {
 
+struct ActivityBarPageInfo {
+  QString id;
+  QString iconName;
+  QString tooltip;
+};
+
 class ActivityBarWidget : public QWidget {
   Q_OBJECT
 
  public:
   explicit ActivityBarWidget(QWidget* parent = nullptr);
 
-  void setActiveIndex(int index);
-  int activeIndex() const;
+  void addPage(const QString& id, const QString& tooltip, const QString& iconName);
+  void setActivePageId(const QString& id);
+  QString activePageId() const;
   void reloadIcons();
 
  signals:
-  void pageClicked(int index);
+  void pageClicked(const QString& id);
   void settingsTriggered();
 
  private:
   void setupUi();
   QPushButton* createButton(const QString& tooltip);
 
-  QStringList icon_names_;
+  QVector<ActivityBarPageInfo> pages_;
   QVector<QPushButton*> buttons_;
-  int active_index_ = 0;
+  QVBoxLayout* top_layout_ = nullptr;
+  QPushButton* settings_btn_ = nullptr;
+  QString active_page_id_;
 };
 
 }  // namespace etest::app

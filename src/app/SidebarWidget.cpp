@@ -1,5 +1,4 @@
 #include "SidebarWidget.h"
-#include "FileExplorerWidget.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "ProtocolManagerWidget.h"
@@ -43,65 +42,66 @@ void SidebarWidget::setupUi() {
 
   // 内容区域
   stack_ = new QStackedWidget(this);
-
-  // 页0：资源管理器
-  file_explorer_ = new FileExplorerWidget(this);
-  stack_->addWidget(file_explorer_);
-  view_titles_ << QStringLiteral("资源管理器");
-
-  // 页1：全局搜索
-  search_widget_ = new SearchWidget(this);
-  stack_->addWidget(search_widget_);
-  view_titles_ << QStringLiteral("搜索");
-
-  // 页2：源代码管理
-  git_widget_ = new GitWidget(this);
-  stack_->addWidget(git_widget_);
-  view_titles_ << QStringLiteral("源代码管理");
-
-  // 页3：调试占位
-  auto* debugPage = new QWidget(this);
-  auto* debugLayout = new QVBoxLayout(debugPage);
-  debugLayout->setContentsMargins(0, 0, 0, 0);
-  auto* debugLabel = new QLabel(QStringLiteral("调试\n（待实现）"), this);
-  debugLabel->setAlignment(Qt::AlignCenter);
-  debugLayout->addWidget(debugLabel);
-  stack_->addWidget(debugPage);
-  view_titles_ << QStringLiteral("调试");
-
-  // 页5：硬件树
-  hardware_tree_ = new HardwareTreeWidget(this);
-  stack_->addWidget(hardware_tree_);
-  view_titles_ << QStringLiteral("硬件");
-
-  // 页6：协议管理器
-  protocol_manager_ = new ProtocolManagerWidget(this);
-  stack_->addWidget(protocol_manager_);
-  view_titles_ << QStringLiteral("协议");
-
-  // 页7：用例管理器
-  test_program_manager_ = new TestProgramManagerWidget(this);
-  stack_->addWidget(test_program_manager_);
-  view_titles_ << QStringLiteral("用例");
-
   content_layout->addWidget(stack_);
 
   outer_layout->addWidget(content_panel_);
+}
 
-  switchPage(0);
+void SidebarWidget::addPage(const QString& id, QWidget* page,
+                            const QString& title) {
+  if (id_to_index_.contains(id)) return;
+
+  int index = stack_->count();
+  id_to_index_[id] = index;
+  id_to_title_[id] = title;
+  id_order_.append(id);
+  stack_->addWidget(page);
+
+  // 记录类型安全指针
+  if (auto* hw = qobject_cast<HardwareTreeWidget*>(page)) {
+    hardware_tree_ = hw;
+  } else if (auto* pm = qobject_cast<ProtocolManagerWidget*>(page)) {
+    protocol_manager_ = pm;
+  } else if (auto* sw = qobject_cast<SearchWidget*>(page)) {
+    search_widget_ = sw;
+  } else if (auto* gw = qobject_cast<GitWidget*>(page)) {
+    git_widget_ = gw;
+  } else if (auto* tp = qobject_cast<TestProgramManagerWidget*>(page)) {
+    test_program_manager_ = tp;
+  }
+
+  // 默认显示第一个页面
+  if (id_order_.size() == 1) {
+    switchPage(id);
+  }
+}
+
+void SidebarWidget::switchPage(const QString& id) {
+  auto it = id_to_index_.constFind(id);
+  if (it != id_to_index_.constEnd()) {
+    stack_->setCurrentIndex(it.value());
+    current_page_id_ = id;
+    auto titleIt = id_to_title_.constFind(id);
+    if (titleIt != id_to_title_.constEnd()) {
+      title_label_->setText(titleIt.value());
+    }
+  }
+}
+
+QString SidebarWidget::currentPageId() const {
+  return current_page_id_;
+}
+
+QWidget* SidebarWidget::pageById(const QString& id) const {
+  auto it = id_to_index_.constFind(id);
+  if (it != id_to_index_.constEnd()) {
+    return stack_->widget(it.value());
+  }
+  return nullptr;
 }
 
 int SidebarWidget::pageCount() const {
   return stack_->count();
-}
-
-void SidebarWidget::switchPage(int index) {
-  if (index >= 0 && index < stack_->count()) {
-    stack_->setCurrentIndex(index);
-    if (index < view_titles_.size()) {
-      title_label_->setText(view_titles_[index]);
-    }
-  }
 }
 
 void SidebarWidget::showContent() {
@@ -114,10 +114,6 @@ void SidebarWidget::hideContent() {
 
 bool SidebarWidget::isContentVisible() const {
   return content_panel_->isVisible();
-}
-
-FileExplorerWidget* SidebarWidget::fileExplorer() const {
-  return file_explorer_;
 }
 
 HardwareTreeWidget* SidebarWidget::hardwareTree() const {

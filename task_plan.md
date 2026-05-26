@@ -14,6 +14,7 @@
 | 1.6 GUI主题与图标管理 | ✅ 已完成 | 100% |
 | 2.5 拓扑编辑器增强 | ✅ 已完成 | 100% |
 | 2.5b 拓扑编辑器持续完善 | 🔄 进行中 | 待定 |
+| 2.5c 项目结构树+活动栏重构 | ✅ 已完成 | 100% |
 | 1.5.2 帧协议编辑器完善 | ✅ 已完成 | 100% |
 | 2 HAL接口定义+Mock实现 | ❌ 未开始 | 0% |
 | 3 ICD信号层 | ❌ 未开始 | 0% |
@@ -36,6 +37,7 @@
 | M6：硬件就绪 | 真实设备驱动可用，Dry Run/Real模式可切换，全链路闭环通过 | 阶段6 |
 | M2.5：拓扑增强就绪 | 连线智能路由、公共基类提取、交互体验增强，topology-demo验证通过 | 阶段2.5 ✅ |
 | M2.5b：拓扑编辑器持续完善 | 帧协议编辑器完善、属性面板优化、用户体验提升 | 阶段2.5b |
+| M2.5c：项目结构树就绪 | FileExplorerWidget 替换为 ProjectStructureWidget，活动栏字符串 ID 解耦，领域感知右键菜单，无项目占位模式 | 阶段2.5c |
 | M7：产品发布 | 全链路闭环测试通过，安装包可交付 | 阶段7 |
 
 ---
@@ -203,7 +205,65 @@
 
 ---
 
-## 阶段2 HAL接口定义 + Mock实现（仅接口与模拟，无真实硬件）
+## 阶段2.5c 项目结构树 + 活动栏重构（进行中）
+
+> 设计文档：`docs/01-规划/项目结构树设计.md`（已定稿）
+>
+> 将 FileExplorerWidget（QFileSystemModel 原始文件树）替换为 ProjectStructureWidget（领域分类树），活动栏/侧边栏改为字符串 ID 关联解耦。
+
+### 2.5c.1 活动栏 + 侧边栏字符串 ID 重构
+- [x] 在 `SidebarWidget` 中定义 `PageId` 命名空间常量（`kProjectOverview`, `kTopology`, `kHardware`, `kProtocol`, `kTestProgram`, `kRun`, `kReport`, `kSearch`, `kGit`）
+- [x] 修改 `ActivityBarWidget`：`pageClicked(int)` → `pageClicked(const QString& id)`，`QVector<PageInfo>` 存储 id/icon/tooltip
+- [x] 修改 `SidebarWidget`：`switchPage(int)` → `switchPage(const QString& id)`，`QMap<QString, QWidget*>` 映射，`addPage(const QString& id, QWidget* page, const QString& title)` 方法
+- [x] 更新 `MainWindow`：活动栏 ↔ 侧边栏通过字符串 ID 联动，移除数字索引硬编码
+- [x] 调整活动栏按钮顺序：项目概览→拓扑→硬件→协议→用例→运行→报告→搜索→Git
+
+### 2.5c.2 ProjectStructureWidget 框架
+- [x] 创建 `src/app/ProjectStructureWidget.h/.cpp`，继承 `QWidget`
+- [x] 内部 `QStackedWidget`：index 0 = 无项目占位页（快捷操作），index 1 = 领域分类树
+- [x] 无项目模式：显示项目名称输入框 + "创建项目"/"打开项目"按钮 + 最近项目列表
+- [x] 有项目模式：`QTreeView` + `QStandardItemModel`，隐藏列标头
+- [x] 定义信号：`fileOpenRequested(const QString& path)`, `fileOpenAsTextRequested(const QString& path)`, `fileCreated(const QString& path)`, `fileDeleted(const QString& path)`, `fileRenamed(const QString& oldPath, const QString& newPath)`
+- [x] `setProjectPath(const QString& path)` / `clearProjectPath()` 切换双模式
+- [x] CMakeLists.txt 添加新源文件
+
+### 2.5c.3 目录扫描与树构建（已完成基本实现）
+- [x] 定义标准分类 CategoryInfo 数据结构：名称、图标、相对路径、是否必选
+- [x] 8 个固定分类：协议(protocol/)、拓扑(topology/)、硬件(harware/)、用例(testprog/)、脚本(script/)、报告(report/)、配置(config/)、备份(backup/)
+- [x] "其他文件"分类：扫描项目根目录未在任何标准分类中的文件
+- [x] QFileSystemWatcher 监控标准目录，200ms 防抖定时器，外部变化时自动刷新树
+- [x] 分类节点始终显示，目录缺失时灰色标注"（目录缺失）"
+- [ ] 树构建在 `RebuildWorker` 异步线程中执行（QThread + 信号）— 后续优化
+- [ ] 文件类型图标通过 `IconProvider::icon()` 加载（而非 FileTypeIconProvider）
+
+### 2.5c.4 文件操作与右键菜单（已完成）
+- [x] 分类节点右键：显示领域相关"新建"（如协议节点→"新建协议文件".eproto）+ "在文件系统中打开"
+- [x] 文件节点右键：重命名、删除、复制路径、复制相对路径、在文件系统中打开、用文本编辑器打开
+- [x] 空白区域右键：新建文件、新建文件夹、在文件系统中打开（通用，不限领域）
+- [x] 领域文件创建后自动打开编辑器（非领域文件进入重命名状态）
+- [x] 领域管理器同步信号：ProjectStructureWidget 发射 fileCreated/fileDeleted 信号
+- [x] 删除确认对话框（文件节点专属，防止误删）
+
+### 2.5c.5 集成与清理（已完成）
+- [x] MainWindow 接入：FileExplorerWidget 替换为 ProjectStructureWidget，连接所有信号
+- [x] 活动栏信号重连：`pageClicked(id)` → `switchPage(id)` 路由
+- [x] 删除 `FileExplorerWidget.h/.cpp` 和 `FileTypeIconProvider.h/.cpp`
+- [x] 更新 `src/app/CMakeLists.txt`
+- [x] 编译通过
+- [ ] 验证无项目模式 — 手动测试
+- [ ] 验证文件操作 — 手动测试
+
+### 设计决策
+- 活动栏 ↔ 侧边栏：字符串 ID 配对，`PageId` 命名空间常量
+- 树模型：`QStandardItemModel`（非自定义 QAbstractItemModel）
+- 新建后行为：领域文件自动打开，非领域文件进重命名
+- 无项目默认路径：ConfigManager 记忆，首次回退 Documents
+- 标准目录缺失：始终显示，灰色标注"（目录缺失）"
+- "其他文件"展开深度：递归展开，子目录可折叠
+- 领域管理器同步：ProjectStructureWidget 发射信号 → MainWindow 路由 → `refreshList()`
+- 硬件树不归入本项目结构树，保留独立 HardwareTreeWidget
+
+---
 
 > 本阶段只完成接口定义和Mock模拟实现，不涉及任何真实硬件对接。
 > 架构V1.0决策：HAL层只保留物理硬件插件，TCP/UDP作为ICD传输通道选项，不在HAL层
