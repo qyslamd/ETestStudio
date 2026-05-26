@@ -1424,7 +1424,7 @@ void MainWindow::saveWindowState() {
     }
   }
   cfg.set(CONFIG_SIDEBAR_EXPANDED_WIDTH, sidebar_expanded_width_);
-  cfg.set(CONFIG_SIDEBAR_ACTIVE_PAGE, activity_bar_->activeIndex());
+  cfg.set(CONFIG_SIDEBAR_ACTIVE_PAGE, activity_bar_->activePageId());
 
   // 底部面板状态
   cfg.set(CONFIG_BOTTOM_PANEL_HEIGHT, bottom_container_height_);
@@ -1477,10 +1477,10 @@ void MainWindow::restoreWindowState() {
   }
 
   // 侧边栏活动页面
-  int activePage = cfg.get<int>(CONFIG_SIDEBAR_ACTIVE_PAGE, 0);
-  if (activePage >= 0 && activePage < sidebar_->pageCount()) {
+  QString activePage = cfg.get<QString>(CONFIG_SIDEBAR_ACTIVE_PAGE, PageId::kProjectOverview);
+  if (sidebar_->pageById(activePage)) {
     sidebar_->switchPage(activePage);
-    activity_bar_->setActiveIndex(activePage);
+    activity_bar_->setActivePageId(activePage);
   }
 
   // 底部面板
