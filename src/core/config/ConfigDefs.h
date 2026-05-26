@@ -16,6 +16,23 @@ constexpr const char* CONFIG_WINDOW_Y = "window/y";
 constexpr const char* CONFIG_WINDOW_MAXIMIZED = "window/maximized";
 constexpr const char* CONFIG_DOCK_LAYOUT = "window/dock_layout";
 
+// Splitter 布局状态
+constexpr const char* CONFIG_WINDOW_H_SPLITTER_STATE = "window/h_splitter_state";
+constexpr const char* CONFIG_WINDOW_V_SPLITTER_STATE = "window/v_splitter_state";
+
+// 侧边栏状态
+constexpr const char* CONFIG_SIDEBAR_VISIBLE = "sidebar/visible";
+constexpr const char* CONFIG_SIDEBAR_EXPANDED_WIDTH = "sidebar/expanded_width";
+constexpr const char* CONFIG_SIDEBAR_ACTIVE_PAGE = "sidebar/active_page";
+
+// 底部面板状态
+constexpr const char* CONFIG_BOTTOM_PANEL_VISIBLE = "bottom_panel/visible";
+constexpr const char* CONFIG_BOTTOM_PANEL_HEIGHT = "bottom_panel/height";
+
+// 辅助侧边栏状态
+constexpr const char* CONFIG_AUX_SIDEBAR_VISIBLE = "aux_sidebar/visible";
+constexpr const char* CONFIG_AUX_SIDEBAR_WIDTH = "aux_sidebar/width";
+
 // 窗口默认值
 constexpr int CONFIG_WINDOW_DEFAULT_WIDTH = 1200;
 constexpr int CONFIG_WINDOW_DEFAULT_HEIGHT = 800;

@@ -1282,6 +1282,30 @@ void MainWindow::saveWindowState() {
   cfg.set(CONFIG_WINDOW_X, x());
   cfg.set(CONFIG_WINDOW_Y, y());
   cfg.set(CONFIG_WINDOW_MAXIMIZED, isMaximized());
+
+  // Splitter 状态
+  cfg.set(CONFIG_WINDOW_H_SPLITTER_STATE, h_splitter_->saveState());
+  cfg.set(CONFIG_WINDOW_V_SPLITTER_STATE, v_splitter_->saveState());
+
+  // 侧边栏状态
+  bool sidebarVis = sidebar_->isContentVisible();
+  cfg.set(CONFIG_SIDEBAR_VISIBLE, sidebarVis);
+  if (sidebarVis) {
+    auto sizes = h_splitter_->sizes();
+    if (!sizes.isEmpty()) {
+      sidebar_expanded_width_ = sizes[0];
+    }
+  }
+  cfg.set(CONFIG_SIDEBAR_EXPANDED_WIDTH, sidebar_expanded_width_);
+  cfg.set(CONFIG_SIDEBAR_ACTIVE_PAGE, activity_bar_->activeIndex());
+
+  // 底部面板状态
+  cfg.set(CONFIG_BOTTOM_PANEL_HEIGHT, bottom_container_height_);
+  cfg.set(CONFIG_BOTTOM_PANEL_VISIBLE, bottom_container_->isVisible());
+
+  // 辅助侧边栏状态
+  cfg.set(CONFIG_AUX_SIDEBAR_WIDTH, aux_sidebar_width_);
+  cfg.set(CONFIG_AUX_SIDEBAR_VISIBLE, aux_sidebar_widget_->isVisible());
 }
 
 void MainWindow::restoreWindowState() {
@@ -1299,6 +1323,71 @@ void MainWindow::restoreWindowState() {
 
   if (cfg.get<bool>(CONFIG_WINDOW_MAXIMIZED, CONFIG_WINDOW_DEFAULT_MAXIMIZED)) {
     showMaximized();
+  }
+
+  // Splitter 状态
+  QByteArray hState = cfg.get<QByteArray>(CONFIG_WINDOW_H_SPLITTER_STATE);
+  if (!hState.isEmpty()) {
+    h_splitter_->restoreState(hState);
+  }
+  QByteArray vState = cfg.get<QByteArray>(CONFIG_WINDOW_V_SPLITTER_STATE);
+  if (!vState.isEmpty()) {
+    v_splitter_->restoreState(vState);
+  }
+
+  // 侧边栏可见性
+  sidebar_expanded_width_ = cfg.get<int>(CONFIG_SIDEBAR_EXPANDED_WIDTH, 280);
+  bool sidebarVisible = cfg.get<bool>(CONFIG_SIDEBAR_VISIBLE, true);
+  if (sidebarVisible) {
+    sidebar_->showContent();
+  } else {
+    sidebar_->hideContent();
+    auto sizes = h_splitter_->sizes();
+    if (!sizes.isEmpty() && sizes[0] > 0) {
+      sizes[0] = 0;
+      h_splitter_->setSizes(sizes);
+    }
+  }
+
+  // 侧边栏活动页面
+  int activePage = cfg.get<int>(CONFIG_SIDEBAR_ACTIVE_PAGE, 0);
+  if (activePage >= 0 && activePage < sidebar_->pageCount()) {
+    sidebar_->switchPage(activePage);
+    activity_bar_->setActiveIndex(activePage);
+  }
+
+  // 底部面板
+  bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
+  bool bottomVisible = cfg.get<bool>(CONFIG_BOTTOM_PANEL_VISIBLE, true);
+  if (bottomVisible) {
+    bottom_container_->show();
+    auto sizes = v_splitter_->sizes();
+    if (sizes.size() >= 2 && sizes[1] <= 0) {
+      sizes[1] = bottom_container_height_;
+      v_splitter_->setSizes(sizes);
+    }
+  } else {
+    bottom_container_->hide();
+  }
+  if (view_panel_action_) {
+    view_panel_action_->setChecked(bottomVisible);
+  }
+
+  // 辅助侧边栏
+  aux_sidebar_width_ = cfg.get<int>(CONFIG_AUX_SIDEBAR_WIDTH, 280);
+  bool auxVisible = cfg.get<bool>(CONFIG_AUX_SIDEBAR_VISIBLE, false);
+  if (auxVisible) {
+    aux_sidebar_widget_->show();
+    auto sizes = h_splitter_->sizes();
+    if (sizes.size() >= 3 && sizes[2] <= 0) {
+      sizes[2] = aux_sidebar_width_;
+      h_splitter_->setSizes(sizes);
+    }
+  } else {
+    aux_sidebar_widget_->hide();
+  }
+  if (view_aux_sidebar_action_) {
+    view_aux_sidebar_action_->setChecked(auxVisible);
   }
 }
 
