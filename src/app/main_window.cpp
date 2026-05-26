@@ -303,6 +303,8 @@ void MainWindow::initSignals() {
               auto sizes = h_splitter_->sizes();
               if (sizes.size() >= 3) {
                 aux_sidebar_width_ = sizes[2];
+                sizes[2] = 0;
+                h_splitter_->setSizes(sizes);
               }
               aux_sidebar_widget_->hide();
             }
@@ -1414,25 +1416,14 @@ void MainWindow::saveWindowState() {
   cfg.set(CONFIG_WINDOW_H_SPLITTER_STATE, h_splitter_->saveState());
   cfg.set(CONFIG_WINDOW_V_SPLITTER_STATE, v_splitter_->saveState());
 
-  // 侧边栏状态
-  bool sidebarVis = sidebar_->isContentVisible();
-  cfg.set(CONFIG_SIDEBAR_VISIBLE, sidebarVis);
-  if (sidebarVis) {
-    auto sizes = h_splitter_->sizes();
-    if (!sizes.isEmpty()) {
-      sidebar_expanded_width_ = sizes[0];
-    }
-  }
-  cfg.set(CONFIG_SIDEBAR_EXPANDED_WIDTH, sidebar_expanded_width_);
+  // sidebar state
   cfg.set(CONFIG_SIDEBAR_ACTIVE_PAGE, activity_bar_->activePageId());
 
   // 底部面板状态
   cfg.set(CONFIG_BOTTOM_PANEL_HEIGHT, bottom_container_height_);
   cfg.set(CONFIG_BOTTOM_PANEL_VISIBLE, bottom_container_->isVisible());
 
-  // 辅助侧边栏状态
-  cfg.set(CONFIG_AUX_SIDEBAR_WIDTH, aux_sidebar_width_);
-  cfg.set(CONFIG_AUX_SIDEBAR_VISIBLE, aux_sidebar_widget_->isVisible());
+  // 辅助侧边栏状态（已由 h_splitter_->saveState() 保存）
 }
 
 void MainWindow::restoreWindowState() {
@@ -1462,18 +1453,13 @@ void MainWindow::restoreWindowState() {
     v_splitter_->restoreState(vState);
   }
 
-  // 侧边栏可见性
-  sidebar_expanded_width_ = cfg.get<int>(CONFIG_SIDEBAR_EXPANDED_WIDTH, 280);
-  bool sidebarVisible = cfg.get<bool>(CONFIG_SIDEBAR_VISIBLE, true);
+  // sidebar visibility from h_splitter_ restoreState
+  auto sizes = h_splitter_->sizes();
+  bool sidebarVisible = sizes.isEmpty() || sizes[0] > 0;
   if (sidebarVisible) {
     sidebar_->showContent();
   } else {
     sidebar_->hideContent();
-    auto sizes = h_splitter_->sizes();
-    if (!sizes.isEmpty() && sizes[0] > 0) {
-      sizes[0] = 0;
-      h_splitter_->setSizes(sizes);
-    }
   }
 
   // 侧边栏活动页面
@@ -1500,16 +1486,12 @@ void MainWindow::restoreWindowState() {
     view_panel_action_->setChecked(bottomVisible);
   }
 
-  // 辅助侧边栏
-  aux_sidebar_width_ = cfg.get<int>(CONFIG_AUX_SIDEBAR_WIDTH, 280);
-  bool auxVisible = cfg.get<bool>(CONFIG_AUX_SIDEBAR_VISIBLE, false);
+  // 辅助侧边栏：从 h_splitter_ restoreState 恢复的尺寸判断可见性
+  auto hSizes = h_splitter_->sizes();
+  bool auxVisible = hSizes.size() >= 3 && hSizes[2] > 0;
   if (auxVisible) {
+    aux_sidebar_width_ = hSizes[2];
     aux_sidebar_widget_->show();
-    auto sizes = h_splitter_->sizes();
-    if (sizes.size() >= 3 && sizes[2] <= 0) {
-      sizes[2] = aux_sidebar_width_;
-      h_splitter_->setSizes(sizes);
-    }
   } else {
     aux_sidebar_widget_->hide();
   }
