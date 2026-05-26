@@ -11,6 +11,7 @@
 #include <QPainterPath>
 #include <QPixmap>
 
+#include "EyeWidget.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "project/ProjectManager.h"
@@ -105,6 +106,15 @@ void WelcomeWidget::initUi() {
   btnLayout->addStretch();
 
   layout->addLayout(btnLayout);
+
+  // 眼睛互动（全局鼠标追踪）
+  auto* eye_row = new QHBoxLayout();
+  eye_row->addStretch();
+  auto* eye_widget = new EyeWidget(this);
+  eye_widget->setFixedSize(240, 120);
+  eye_row->addWidget(eye_widget);
+  eye_row->addStretch();
+  layout->addLayout(eye_row);
 
   // === 最近项目 ===
   auto* recentHeader = new QLabel(QStringLiteral("最近项目"), this);

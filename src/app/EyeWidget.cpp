@@ -1,11 +1,12 @@
 #include "EyeWidget.h"
 
+#include <QApplication>
+#include <QMouseEvent>
 #include <QPainter>
-#include <QEnterEvent>
 #include <QtMath>
 
 EyeWidget::EyeWidget(QWidget* parent) : QWidget(parent) {
-  setMouseTracking(true);
+  qApp->installEventFilter(this);
   mouse_pos_ = QPointF(0, 0);
 }
 
@@ -25,8 +26,7 @@ void EyeWidget::paintEvent(QPaintEvent*) {
   QPointF leftCenter(cx - eyeSpacing, cy);
   QPointF rightCenter(cx + eyeSpacing, cy);
 
-  auto offset = mouse_inside_ ? clampedPupilOffset(leftCenter, eyeRadius * 0.55)
-                              : QPointF(0, 0);
+  auto offset = clampedPupilOffset(leftCenter, eyeRadius * 0.55);
 
   drawEye(painter, leftCenter, eyeRadius, offset);
   drawEye(painter, rightCenter, eyeRadius, offset);
@@ -57,19 +57,11 @@ QPointF EyeWidget::clampedPupilOffset(const QPointF& eyeCenter,
   return vec * (maxRadius / dist);
 }
 
-void EyeWidget::mouseMoveEvent(QMouseEvent* event) {
-  mouse_pos_ = event->pos();
-  update();
-}
-
-bool EyeWidget::event(QEvent* event) {
-  if (event->type() == QEvent::Enter) {
-    mouse_inside_ = true;
-    update();
-  } else if (event->type() == QEvent::Leave) {
-    mouse_inside_ = false;
-    mouse_pos_ = QPointF(0, 0);
+bool EyeWidget::eventFilter(QObject* obj, QEvent* event) {
+  if (event->type() == QEvent::MouseMove) {
+    auto* me = static_cast<QMouseEvent*>(event);
+    mouse_pos_ = mapFromGlobal(me->globalPos());
     update();
   }
-  return QWidget::event(event);
+  return QWidget::eventFilter(obj, event);
 }

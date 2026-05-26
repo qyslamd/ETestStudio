@@ -72,6 +72,8 @@ add_executable(${TARGET_NAME}
     utils/eph_qt_switch_button.h
     utils/eph_qt_switch_button.cpp
     resource.qrc
+    EyeWidget.h
+    EyeWidget.cpp
 )
 
 #=======================================
