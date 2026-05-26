@@ -15,6 +15,7 @@ set(SOURCES
     common/AppIconProvider.cpp
     backup/BackupManager.cpp
     auth/PasswordHasher.cpp
+    auth/UserManager.cpp
     utils/FileUtil.cpp
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
@@ -43,6 +44,7 @@ set(HEADERS
     backup/BackupManager.h
     auth/AuthTypes.h
     auth/PasswordHasher.h
+    auth/UserManager.h
     utils/FileUtil.h
     utils/TimeUtil.h
     utils/StringUtil.h
