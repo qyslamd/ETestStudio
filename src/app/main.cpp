@@ -10,6 +10,7 @@
 #include "editor/EditorFactory.h"
 #include "logger/Logger.h"
 #include "main_window.h"
+#include <QTranslator>
 
 
 using namespace etest::core::config;
@@ -46,6 +47,15 @@ int main(int argc, char* argv[]) {
 
   // 初始化 SARibbon 静态资源
   Q_INIT_RESOURCE(SARibbonResource);
+
+  // 加载翻译
+  QTranslator adsTrans;
+  adsTrans.load("ads_zh_CN.qm", QCoreApplication::applicationDirPath());
+  app.installTranslator(&adsTrans);
+
+  QTranslator saribbonTrans;
+  saribbonTrans.load("SARibbon_zh_CN.qm", QCoreApplication::applicationDirPath());
+  app.installTranslator(&saribbonTrans);
 
   // 初始化崩溃捕获模块
   auto crashHandler = CrashHandler::create();

@@ -124,6 +124,25 @@ target_link_libraries(${TARGET_NAME}
     SARibbonBar::SARibbonBar
     )
 
+
+find_package(Qt5 COMPONENTS LinguistTools CONFIG)
+if(Qt5LinguistTools_FOUND)
+    message(STATUS "Qt5LinguistTools found, enabling translations")
+    set(TS_FILES
+        translations/ads_zh_CN.ts
+        translations/SARibbon_zh_CN.ts
+    )
+    qt5_add_translation(QM_FILES ${TS_FILES})
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_BINARY_DIR}/ads_zh_CN.qm"
+        "$<TARGET_FILE_DIR:${TARGET_NAME}>/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_BINARY_DIR}/SARibbon_zh_CN.qm"
+        "$<TARGET_FILE_DIR:${TARGET_NAME}>/"
+    )
+endif()
+
 #=======================================
 # 生成运行脚本，自动设置Qt运行时环境变量
 if(WIN32)
