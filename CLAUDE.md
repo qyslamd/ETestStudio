@@ -78,7 +78,8 @@ format_code.bat
    - 当你生成 git commit 信息时：
    - 使用 Co-Authored-By 信息（如果需要）：Co-Authored-By: claude code 助手 <zhouyohu@163.com>
    - 不使用默认的 Claude 署名
-   - 提交信息信息的开始和结束不能有 `@` 符号
+   - 提交信息必须通过 Bash heredoc (cat <<'EOF') 传入，禁止使用 PowerShell here-string (@'...'@)，避免 @ 与邮箱等内容的冲突
+   - 提交信息的开始和结束不能有 @ 符号
 10.  Qt 界面样式禁止在 C++ 代码中通过 `setStyleSheet` 硬编码，所有样式统一写入 `src/app/resources/styles/` 下的 QSS 文件中，通过 `setObjectName` 选择器定位控件
 11.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
 12.  每次会话开始时先读取 `ideas.md`，了解待办想法的最新进度
