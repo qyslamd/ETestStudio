@@ -32,7 +32,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 if(WIN32)
     configure_file(
         "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
-        "${CMAKE_SOURCE_DIR}/scripts/run_${TARGET_NAME}.bat"
+        "${CMAKE_BINARY_DIR}/bin/run_${TARGET_NAME}.bat"
         @ONLY
     )
 endif()

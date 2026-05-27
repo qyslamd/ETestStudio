@@ -22,7 +22,7 @@ function(_patch_example_run_script example_target)
     set(_configure_block_template [=[
 # generate run script
 if(WIN32)
-    file(GENERATE OUTPUT "@CMAKE_SOURCE_DIR@/scripts/run_@EXAMPLE_NAME@.bat" CONTENT
+    file(GENERATE OUTPUT "@CMAKE_BINARY_DIR@/bin/run_@EXAMPLE_NAME@.bat" CONTENT
 "@echo off
 setlocal
 
@@ -30,14 +30,16 @@ set \"PATH=@QT_BIN_DIR@;%PATH%\"
 set \"QT_PLUGIN_PATH=@QT_PLUGINS_DIR@\"
 
 chcp 65001 >nul
+pushd \"@CMAKE_RUNTIME_OUTPUT_DIRECTORY@\"
 
 $<TARGET_FILE_DIR:@EXAMPLE_NAME@>/$<TARGET_FILE_NAME:@EXAMPLE_NAME@>
+popd
 ")
 endif()
 ]=])
     # 先替换 @EXAMPLE_NAME@（string(CONFIGURE 会吃掉未知的 @VAR@）
     string(REPLACE "@EXAMPLE_NAME@" "${example_target}" _configure_block "${_configure_block_template}")
-    # 再替换 @QT_BIN_DIR@, @QT_PLUGINS_DIR@, @CMAKE_SOURCE_DIR@
+    # 再替换 @QT_BIN_DIR@, @QT_PLUGINS_DIR@, @CMAKE_BINARY_DIR@
     string(CONFIGURE "${_configure_block}" _configure_block @ONLY)
 
     set(_install_pattern "install(TARGETS ${example_target}")
