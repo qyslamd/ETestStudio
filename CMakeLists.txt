@@ -234,6 +234,7 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/saribbon-demo)
     add_subdirectory(examples/penguin-demo)
     add_subdirectory(examples/penguin-demo2)
+    add_subdirectory(examples/tux-console-saver)
 endif()
 
 

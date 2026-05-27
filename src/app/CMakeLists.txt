@@ -74,6 +74,8 @@ add_executable(${TARGET_NAME}
     resource.qrc
     EyeWidget.h
     EyeWidget.cpp
+    TuxSaverOverlay.h
+    TuxSaverOverlay.cpp
 )
 
 #=======================================
@@ -124,6 +126,7 @@ target_link_libraries(${TARGET_NAME}
     QXlsx::QXlsx
     qsci
     SARibbonBar::SARibbonBar
+    etest_tuxsaver
     )
 
 
@@ -148,7 +151,7 @@ if(WIN32)
     # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
     configure_file(
         "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
-        "${CMAKE_BINARY_DIR}/bin/run_${TARGET_NAME}.bat"
+        "${CMAKE_BINARY_DIR}/bin/run_app.bat"
         @ONLY
     )
 endif()

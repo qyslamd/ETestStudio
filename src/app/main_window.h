@@ -4,10 +4,15 @@
 #include "SARibbonMainWindow.h"
 #include "DockManager.h"
 
+#include <QElapsedTimer>
+
+#include "TuxSaverOverlay.h"
+
 class QMenu;
 class QAction;
 class QLabel;
 class QSplitter;
+class QTimer;
 
 namespace etest::app {
 
@@ -30,6 +35,7 @@ class MainWindow : public SARibbonMainWindow {
 
  protected:
   void closeEvent(QCloseEvent* event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
  private:
   void initUi();
@@ -144,6 +150,11 @@ class MainWindow : public SARibbonMainWindow {
 
   // 剪贴板
   QClipboard* clipboard_ = nullptr;
+
+  // Tux 屏保
+  TuxSaverOverlay* tux_overlay_ = nullptr;
+  QElapsedTimer tux_idle_timer_;
+  QTimer* tux_idle_check_timer_ = nullptr;
 
   // 登录认证
   QAction* login_action_ = nullptr;

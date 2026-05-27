@@ -46,6 +46,7 @@
 #include "TestProgramManagerWidget.h"
 #include "TextEditorWidget.h"
 #include "ThemeManager.h"
+#include "TuxSaverOverlay.h"
 #include "WelcomeWidget.h"
 #include "api/IEditor.h"
 #include "backup/BackupManager.h"
@@ -93,6 +94,36 @@ MainWindow::MainWindow(QWidget* parent)
   sidebar_->hardwareTree()->refreshTree();
 
   LOG_INFO("MAIN", "主窗口初始化完成");
+
+  // ── Tux 屏保 ──
+  tux_overlay_ = new TuxSaverOverlay(this);
+  connect(tux_overlay_, &TuxSaverOverlay::closed, this, [this]() {
+    tux_idle_timer_.restart();
+  });
+  tux_idle_timer_.start();
+  tux_idle_check_timer_ = new QTimer(this);
+  connect(tux_idle_check_timer_, &QTimer::timeout, this, [this]() {
+    if (!tux_overlay_->isVisible() &&
+        tux_idle_timer_.elapsed() > 5000) {
+      tux_overlay_->activate();
+    }
+  });
+  tux_idle_check_timer_->start(1000);
+  qApp->installEventFilter(this);
+}
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
+  switch (event->type()) {
+    case QEvent::MouseMove:
+    case QEvent::MouseButtonPress:
+    case QEvent::KeyPress:
+    case QEvent::Wheel:
+      tux_idle_timer_.restart();
+      break;
+    default:
+      break;
+  }
+  return false;
 }
 
 MainWindow::~MainWindow() {
@@ -1122,6 +1153,11 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   if (!editor_manager_->closeAllFiles()) {
     event->ignore();
     return;
+  }
+
+  // 关闭屏保
+  if (tux_overlay_ && tux_overlay_->isVisible()) {
+    tux_overlay_->deactivate();
   }
 
   // 关闭项目
