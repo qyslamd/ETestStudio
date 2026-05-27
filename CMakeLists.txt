@@ -233,6 +233,7 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/testprogram-demo)
     add_subdirectory(examples/saribbon-demo)
     add_subdirectory(examples/penguin-demo)
+    add_subdirectory(examples/penguin-demo2)
 endif()
 
 
