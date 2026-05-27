@@ -12,6 +12,7 @@
 #include <QPixmap>
 
 #include "EyeWidget.h"
+#include "common/ThemeManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "project/ProjectManager.h"
@@ -112,6 +113,18 @@ void WelcomeWidget::initUi() {
   eye_row->addStretch();
   auto* eye_widget = new EyeWidget(this);
   eye_widget->setFixedSize(240, 120);
+  // 根据主题设置眼睛配色
+  if (ThemeManager::instance().isDarkTheme()) {
+    eye_widget->setBgColor(QColor(0x1E, 0x1E, 0x1E));  // 与欢迎页背景一致
+    eye_widget->setOutlineColor(QColor(0xCC, 0xCC, 0xCC));
+    eye_widget->setPupilColor(QColor(0x2C, 0x2C, 0x2C));
+    eye_widget->setEyebrowColor(QColor(0x88, 0x88, 0x99));
+  } else {
+    eye_widget->setBgColor(QColor(0xF0, 0xF0, 0xF0));
+    eye_widget->setOutlineColor(QColor(0xB0, 0xB0, 0xB0));
+    eye_widget->setPupilColor(QColor(0x44, 0x44, 0x44));
+    eye_widget->setEyebrowColor(QColor(0x77, 0x77, 0x77));
+  }
   eye_row->addWidget(eye_widget);
   eye_row->addStretch();
   layout->addLayout(eye_row);

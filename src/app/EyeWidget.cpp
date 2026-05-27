@@ -81,12 +81,39 @@ void EyeWidget::scheduleNextBlink() {
   blink_scheduler_->start(interval);
 }
 
+// ---- color setters ----
+
+void EyeWidget::setBgColor(const QColor& c) {
+  bg_color_ = c;
+  update();
+}
+
+void EyeWidget::setScleraColor(const QColor& c) {
+  sclera_color_ = c;
+  update();
+}
+
+void EyeWidget::setOutlineColor(const QColor& c) {
+  outline_color_ = c;
+  update();
+}
+
+void EyeWidget::setPupilColor(const QColor& c) {
+  pupil_color_ = c;
+  update();
+}
+
+void EyeWidget::setEyebrowColor(const QColor& c) {
+  eyebrow_color_ = c;
+  update();
+}
+
 void EyeWidget::paintEvent(QPaintEvent*) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
   // background
-  p.fillRect(rect(), QColor(0x1e, 0x1e, 0x2e));
+  p.fillRect(rect(), bg_color_);
 
   // eye geometry
   double cx = width() / 2.0;
@@ -120,7 +147,7 @@ void EyeWidget::paintEvent(QPaintEvent*) {
     QPainterPath path;
     path.moveTo(ec.x() - bw, by);
     path.quadTo(ec.x(), by - eyeR * 0.3 + browRaise * 0.3, ec.x() + bw, by);
-    p.setPen(QPen(QColor(0x88, 0x88, 0x99), 2.5));
+    p.setPen(QPen(eyebrow_color_, 2.5));
     p.setBrush(Qt::NoBrush);
     p.drawPath(path);
   };
@@ -130,15 +157,15 @@ void EyeWidget::paintEvent(QPaintEvent*) {
   // eyes
   auto drawEye = [&](const QPointF& ec, const QPointF& off) {
     // eye white
-    p.setBrush(QColor(0xff, 0xff, 0xff));
-    p.setPen(QPen(QColor(0xcc, 0xcc, 0xcc), 2));
+    p.setBrush(sclera_color_);
+    p.setPen(QPen(outline_color_, 2));
     p.drawEllipse(ec, eyeR, eyeR * scaleY);
 
     // pupil
     double pupilR = eyeR * 0.35 * qMax(0.3, scaleY);
     double pupilY = ec.y() + off.y() * scaleY - closeFactor * eyeR * 0.15;
     QPointF pupilPos(ec.x() + off.x(), pupilY);
-    p.setBrush(QColor(0x2c, 0x2c, 0x2c));
+    p.setBrush(pupil_color_);
     p.setPen(Qt::NoPen);
     p.drawEllipse(pupilPos, pupilR, pupilR * scaleY);
   };
@@ -148,7 +175,7 @@ void EyeWidget::paintEvent(QPaintEvent*) {
   // eyelid line when partially closed
   if (closeFactor > 0.3) {
     double lineY = cy - closeFactor * eyeR * 0.2;
-    p.setPen(QPen(QColor(0x1e, 0x1e, 0x2e), 2));
+    p.setPen(QPen(bg_color_, 2));
     p.drawLine(QPointF(cx - eyeSpacing - eyeR, lineY),
                QPointF(cx + eyeSpacing + eyeR, lineY));
   }
