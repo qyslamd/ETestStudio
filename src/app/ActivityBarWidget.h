@@ -1,6 +1,7 @@
 #ifndef ETEST_APP_ACTIVITY_BAR_WIDGET_H_
 #define ETEST_APP_ACTIVITY_BAR_WIDGET_H_
 
+#include <QEvent>
 #include <QIcon>
 #include <QPushButton>
 #include <QString>
@@ -38,6 +39,7 @@ class ActivityBarWidget : public QWidget {
   void setupUi();
   QPushButton* createButton(const QString& tooltip);
   void updateActiveIconSize();
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
   enum { kNormalIconSize = 24, kActiveIconSize = 36 };
 

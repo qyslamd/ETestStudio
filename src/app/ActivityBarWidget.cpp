@@ -110,6 +110,8 @@ QPushButton* ActivityBarWidget::createButton(const QString& tooltip) {
   btn->setCheckable(true);
   btn->setFlat(true);
   btn->setFocusPolicy(Qt::NoFocus);
+  btn->setObjectName(QStringLiteral("ActivityBarBtn"));
+  btn->installEventFilter(this);
   return btn;
 }
 
@@ -123,6 +125,30 @@ void ActivityBarWidget::setActivePageId(const QString& id) {
 
 QString ActivityBarWidget::activePageId() const {
   return active_page_id_;
+}
+
+bool ActivityBarWidget::eventFilter(QObject* obj, QEvent* event) {
+  auto* btn = qobject_cast<QPushButton*>(obj);
+  if (!btn)
+    return QWidget::eventFilter(obj, event);
+
+  if (event->type() == QEvent::HoverEnter) {
+    btn->setIconSize(QSize(kActiveIconSize, kActiveIconSize));
+    return true;
+  }
+
+  if (event->type() == QEvent::HoverLeave) {
+    // 检查是否为页面按钮（根据 active 状态恢复）
+    int idx = buttons_.indexOf(btn);
+    if (idx >= 0 && pages_[idx].id == active_page_id_) {
+      btn->setIconSize(QSize(kActiveIconSize, kActiveIconSize));
+    } else {
+      btn->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
+    }
+    return true;
+  }
+
+  return QWidget::eventFilter(obj, event);
 }
 
 }  // namespace etest::app
