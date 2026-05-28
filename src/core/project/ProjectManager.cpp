@@ -6,6 +6,7 @@
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "logger/Logger.h"
+#include "common/FileException.h"
 #include "utils/FileUtil.h"
 
 namespace etest::core::project {
@@ -83,27 +84,33 @@ bool ProjectManager::createProject(const QString& name,
     return false;
   }
 
-  // 创建目录结构
-  if (!m_impl->createProjectStructure(projectDir)) {
-    LOG_ERROR("PROJECT", "创建项目目录结构失败");
+  try {
+    // 创建目录结构
+    if (!m_impl->createProjectStructure(projectDir)) {
+      LOG_ERROR("PROJECT", "创建项目目录结构失败");
+      return false;
+    }
+
+    // 生成项目信息
+    auto info = std::make_unique<ProjectInfo>();
+    info->setVersion("1.0");
+    info->setName(name);
+    info->setCreateTime(QDateTime::currentDateTime());
+    info->setRootPath(projectDir);
+    info->setProjectFilePath(etprojPath);
+
+    // 写入.etproj文件
+    if (!info->saveToFile()) {
+      LOG_ERROR("PROJECT", "写入项目文件失败：{}", etprojPath.toStdString());
+      return false;
+    }
+
+    m_impl->current_project = std::move(info);
+  } catch (const etest::core::common::FileException& e) {
+    LOG_ERROR("PROJECT", "创建项目文件操作失败：{}", e.what());
+    utils::FileUtil::remove(projectDir);
     return false;
   }
-
-  // 生成项目信息
-  auto info = std::make_unique<ProjectInfo>();
-  info->setVersion("1.0");
-  info->setName(name);
-  info->setCreateTime(QDateTime::currentDateTime());
-  info->setRootPath(projectDir);
-  info->setProjectFilePath(etprojPath);
-
-  // 写入.etproj文件
-  if (!info->saveToFile()) {
-    LOG_ERROR("PROJECT", "写入项目文件失败：{}", etprojPath.toStdString());
-    return false;
-  }
-
-  m_impl->current_project = std::move(info);
   addToRecentProjects(etprojPath);
 
   LOG_INFO("PROJECT", "项目创建成功：{}", projectDir.toStdString());
