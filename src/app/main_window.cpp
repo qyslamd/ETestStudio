@@ -3,8 +3,8 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QCloseEvent>
-#include <QDateTime>
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
@@ -12,15 +12,14 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
-#include "dialogs/AboutDialog.h"
-#include "dialogs/LoginDialog.h"
-#include "dialogs/UserManagerDialog.h"
 #include <QScrollBar>
 #include <QShortcut>
 #include <QSplitter>
 #include <QStatusBar>
 #include <QToolButton>
-
+#include "dialogs/AboutDialog.h"
+#include "dialogs/LoginDialog.h"
+#include "dialogs/UserManagerDialog.h"
 
 #include "SARibbonBar.h"
 #include "SARibbonCategory.h"
@@ -50,10 +49,10 @@
 #include "TuxSaverOverlay.h"
 #include "WelcomeWidget.h"
 #include "api/IEditor.h"
+#include "auth/AuthService.h"
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "auth/AuthService.h"
 #include "dialogs/NewProjectDialog.h"
 #include "dialogs/SettingsDialog.h"
 #include "logger/Logger.h"
@@ -62,7 +61,6 @@
 #include "project/ProjectManager.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
-
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -98,17 +96,18 @@ MainWindow::MainWindow(QWidget* parent)
 
   // ── Tux 屏保 ──
   tux_overlay_ = new TuxSaverOverlay(this);
-  connect(tux_overlay_, &TuxSaverOverlay::closed, this, [this]() {
-    tux_idle_timer_.restart();
-  });
+  connect(tux_overlay_, &TuxSaverOverlay::closed, this,
+          [this]() { tux_idle_timer_.restart(); });
   tux_idle_timer_.start();
   tux_idle_check_timer_ = new QTimer(this);
   connect(tux_idle_check_timer_, &QTimer::timeout, this, [this]() {
     if (!tux_overlay_->isVisible() &&
         ConfigManager::instance().get<bool>(CONFIG_TUXSAVER_ENABLED,
                                             CONFIG_TUXSAVER_DEFAULT_ENABLED)) {
-      int timeoutMs = ConfigManager::instance().get<int>(
-          CONFIG_TUXSAVER_IDLE_TIMEOUT, CONFIG_TUXSAVER_DEFAULT_TIMEOUT) * 1000;
+      int timeoutMs =
+          ConfigManager::instance().get<int>(CONFIG_TUXSAVER_IDLE_TIMEOUT,
+                                             CONFIG_TUXSAVER_DEFAULT_TIMEOUT) *
+          1000;
       if (tux_idle_timer_.elapsed() > timeoutMs)
         tux_overlay_->activate();
     }
@@ -184,7 +183,8 @@ void MainWindow::initUi() {
 
   // ── 注册侧边栏页面（按活动栏顺序） ──
   // 项目概览 → 后续替换为 ProjectStructureWidget
-  sidebar_->addPage(PageId::kProjectOverview, new ProjectStructureWidget(sidebar_),
+  sidebar_->addPage(PageId::kProjectOverview,
+                    new ProjectStructureWidget(sidebar_),
                     QStringLiteral("项目概览"));
   // 拓扑 → 占位，待 TopologyManagerWidget 实现
   sidebar_->addPage(PageId::kTopology, new QWidget(sidebar_),
@@ -196,7 +196,8 @@ void MainWindow::initUi() {
   sidebar_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_),
                     QStringLiteral("协议"));
   // 用例管理器
-  sidebar_->addPage(PageId::kTestProgram, new TestProgramManagerWidget(sidebar_),
+  sidebar_->addPage(PageId::kTestProgram,
+                    new TestProgramManagerWidget(sidebar_),
                     QStringLiteral("用例"));
   // 运行 → 占位，待实现
   sidebar_->addPage(PageId::kRun, new QWidget(sidebar_),
@@ -212,8 +213,8 @@ void MainWindow::initUi() {
                     QStringLiteral("Git"));
 
   // ── 注册活动栏按钮 ──
-  activity_bar_->addPage(PageId::kProjectOverview,
-                         QStringLiteral("项目概览"), QStringLiteral("project"));
+  activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
+                         QStringLiteral("project"));
   activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
                          QStringLiteral("topo_tap"));
   activity_bar_->addPage(PageId::kHardware, QStringLiteral("硬件"),
@@ -734,23 +735,20 @@ void MainWindow::initSignals() {
     }
   });
 
-  connect(&AuthService::instance(), &AuthService::loginSucceeded,
-          this, [this](const User& user) {
-    QString roleStr = (user.role == UserRole::Admin)
-                          ? QStringLiteral("Admin")
-                          : QStringLiteral("User");
-    activity_bar_->setLoginState(true, user.userName, roleStr);
+  connect(
+      &AuthService::instance(), &AuthService::loginSucceeded, this,
+      [this](const User& user) {
+        QString roleStr = (user.role == UserRole::Admin)
+                              ? QStringLiteral("Admin")
+                              : QStringLiteral("User");
+        activity_bar_->setLoginState(true, user.userName, roleStr);
 
-    login_user_info_action_->setText(
-        QStringLiteral("%1 (%2)")
-            .arg(user.userName)
-            .arg(roleStr));
-    login_manage_users_action_->setVisible(
-        user.role == UserRole::Admin);
-  });
+        login_user_info_action_->setText(
+            QStringLiteral("%1 (%2)").arg(user.userName).arg(roleStr));
+        login_manage_users_action_->setVisible(user.role == UserRole::Admin);
+      });
 
-  connect(&AuthService::instance(), &AuthService::loggedOut,
-          this, [this]() {
+  connect(&AuthService::instance(), &AuthService::loggedOut, this, [this]() {
     activity_bar_->setLoginState(false, QString(), QString());
   });
 }
@@ -829,6 +827,17 @@ void MainWindow::onOpenProject() {
       QMessageBox::warning(
           this, QStringLiteral("打开项目失败"),
           QStringLiteral("无法打开项目文件：%1").arg(filePath));
+    } else {
+	      sidebar_->switchPage(PageId::kProjectOverview);
+	      if (!sidebar_->isContentVisible()) {
+	        sidebar_->showContent();
+	        auto sizes = h_splitter_->sizes();
+	        if (!sizes.isEmpty()) {
+	          sizes[0] = sidebar_expanded_width_;
+	          h_splitter_->setSizes(sizes);
+	        }
+	      }
+	      activity_bar_->setActivePageId(PageId::kProjectOverview);
     }
   }
 }
@@ -839,8 +848,19 @@ void MainWindow::openRecentProject(const QString& path) {
   }
 
   auto& pm = etest::core::project::ProjectManager::instance();
-  if (pm.openProject(path))
+  if (pm.openProject(path)) {
+	    sidebar_->switchPage(PageId::kProjectOverview);
+	    if (!sidebar_->isContentVisible()) {
+	      sidebar_->showContent();
+	      auto sizes = h_splitter_->sizes();
+	      if (!sizes.isEmpty()) {
+	        sizes[0] = sidebar_expanded_width_;
+	        h_splitter_->setSizes(sizes);
+	      }
+	    }
+	    activity_bar_->setActivePageId(PageId::kProjectOverview);
     return;
+  }
 
   QFileInfo fi(path);
   QString msg = fi.exists() ? QStringLiteral("无法打开项目文件：%1").arg(path)
@@ -1287,20 +1307,20 @@ void MainWindow::setupRibbon() {
 
   // ── 登录菜单 ──
   login_menu_ = new QMenu(this);
-  login_user_info_action_ = login_menu_->addAction(QStringLiteral("admin (Admin)"));
+  login_user_info_action_ =
+      login_menu_->addAction(QStringLiteral("admin (Admin)"));
   login_user_info_action_->setEnabled(false);
   login_menu_->addSeparator();
-  login_manage_users_action_ = login_menu_->addAction(
-      QStringLiteral("用户管理"));
+  login_manage_users_action_ =
+      login_menu_->addAction(QStringLiteral("用户管理"));
   connect(login_manage_users_action_, &QAction::triggered, this, [this]() {
     UserManagerDialog dlg(this);
     dlg.exec();
   });
   login_menu_->addSeparator();
   auto* logoutAction = login_menu_->addAction(QStringLiteral("退出登录"));
-  connect(logoutAction, &QAction::triggered, this, [this]() {
-    AuthService::instance().logout();
-  });
+  connect(logoutAction, &QAction::triggered, this,
+          [this]() { AuthService::instance().logout(); });
 
   // ---- Application Button ----
   ribbon->applicationButton()->setIcon(
@@ -1510,7 +1530,8 @@ void MainWindow::restoreWindowState() {
   if (!sidebarVisible) {
     activity_bar_->clearActivePage();
   } else {
-    QString activePage = cfg.get<QString>(CONFIG_SIDEBAR_ACTIVE_PAGE, PageId::kProjectOverview);
+    QString activePage =
+        cfg.get<QString>(CONFIG_SIDEBAR_ACTIVE_PAGE, PageId::kProjectOverview);
     if (sidebar_->pageById(activePage)) {
       sidebar_->switchPage(activePage);
       activity_bar_->setActivePageId(activePage);
