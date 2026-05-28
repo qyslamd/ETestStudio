@@ -27,10 +27,12 @@ class ActivityBarWidget : public QWidget {
   void setActivePageId(const QString& id);
   QString activePageId() const;
   void reloadIcons();
+  void setLoginState(bool loggedIn, const QString& userName, const QString& role);
 
  signals:
   void pageClicked(const QString& id);
   void settingsTriggered();
+  void loginTriggered();
 
  private:
   void setupUi();
@@ -43,6 +45,7 @@ class ActivityBarWidget : public QWidget {
   QVector<QPushButton*> buttons_;
   QVBoxLayout* top_layout_ = nullptr;
   QPushButton* settings_btn_ = nullptr;
+  QPushButton* login_btn_ = nullptr;
   QString active_page_id_;
 };
 

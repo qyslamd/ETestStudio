@@ -706,7 +706,7 @@ void MainWindow::initSignals() {
           });
 
   // 登录认证
-  connect(login_action_, &QAction::triggered, this, [this]() {
+  connect(activity_bar_, &ActivityBarWidget::loginTriggered, this, [this]() {
     if (AuthService::instance().isLoggedIn()) {
       login_menu_->exec(QCursor::pos());
     } else {
@@ -718,38 +718,22 @@ void MainWindow::initSignals() {
 
   connect(&AuthService::instance(), &AuthService::loginSucceeded,
           this, [this](const User& user) {
-    login_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("account")));
-    login_action_->setToolTip(
-        QStringLiteral("当前用户：%1 (%2)")
-            .arg(user.userName)
-            .arg(user.role == UserRole::Admin
-                     ? QStringLiteral("Admin")
-                     : QStringLiteral("User")));
-    login_action_->setText(
-        QStringLiteral("%1 (%2)")
-            .arg(user.userName)
-            .arg(user.role == UserRole::Admin
-                     ? QStringLiteral("Admin")
-                     : QStringLiteral("User")));
+    QString roleStr = (user.role == UserRole::Admin)
+                          ? QStringLiteral("Admin")
+                          : QStringLiteral("User");
+    activity_bar_->setLoginState(true, user.userName, roleStr);
 
     login_user_info_action_->setText(
         QStringLiteral("%1 (%2)")
             .arg(user.userName)
-            .arg(user.role == UserRole::Admin
-                     ? QStringLiteral("Admin")
-                     : QStringLiteral("User")));
+            .arg(roleStr));
     login_manage_users_action_->setVisible(
         user.role == UserRole::Admin);
   });
 
   connect(&AuthService::instance(), &AuthService::loggedOut,
           this, [this]() {
-    login_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("account")));
-    login_action_->setToolTip(QStringLiteral("登录"));
-    login_action_->setText(QStringLiteral("登录"));
-    login_action_->setMenu(nullptr);
+    activity_bar_->setLoginState(false, QString(), QString());
   });
 }
 
@@ -1277,14 +1261,7 @@ void MainWindow::setupRibbon() {
       AppIconProvider::instance().icon(QStringLiteral("file_redo")));
   qab->addAction(edit_redo_action_);
 
-  // ── 登录按钮 ──
-  login_action_ = new QAction(
-      AppIconProvider::instance().icon(QStringLiteral("account")),
-      QStringLiteral("登录"), this);
-  login_action_->setToolTip(QStringLiteral("登录"));
-  qab->addAction(login_action_);
-
-  // 登录后的菜单
+  // ── 登录菜单 ──
   login_menu_ = new QMenu(this);
   login_user_info_action_ = login_menu_->addAction(QStringLiteral("admin (Admin)"));
   login_user_info_action_->setEnabled(false);

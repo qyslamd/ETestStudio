@@ -157,7 +157,6 @@ class MainWindow : public SARibbonMainWindow {
   QTimer* tux_idle_check_timer_ = nullptr;
 
   // 登录认证
-  QAction* login_action_ = nullptr;
   QMenu* login_menu_ = nullptr;
   QAction* login_user_info_action_ = nullptr;
   QAction* login_manage_users_action_ = nullptr;
