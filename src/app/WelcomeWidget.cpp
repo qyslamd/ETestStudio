@@ -106,7 +106,8 @@ void WelcomeWidget::initUi() {
 
   QPixmap source(":/resources/icons/app_icon.svg");
   if (!source.isNull()) {
-    source = source.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    source =
+        source.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     QPixmap rounded(48, 48);
     rounded.fill(Qt::transparent);
     QPainter painter(&rounded);
@@ -223,25 +224,26 @@ void WelcomeWidget::initSignals() {
 
   // 卡片点击：事件过滤器由 rebuildRecentCards 安装
   // 右键菜单：从列表中移除
-  connect(recent_container_, &QWidget::customContextMenuRequested, this,
-          [this](const QPoint& pos) {
-            auto* child = recent_container_->childAt(pos);
-            if (!child || !child->property("projectPath").isValid())
-              return;
+  connect(
+      recent_container_, &QWidget::customContextMenuRequested, this,
+      [this](const QPoint& pos) {
+        auto* child = recent_container_->childAt(pos);
+        if (!child || !child->property("projectPath").isValid())
+          return;
 
-            QString path = child->property("projectPath").toString();
-            auto* menu = new QMenu(this);
-            menu->setObjectName("WelcomeContextMenu");
-            auto* removeAction = menu->addAction(QStringLiteral("从列表中移除"));
-            connect(removeAction, &QAction::triggered, this, [this, path]() {
-              QStringList recentList = ConfigManager::instance().get<QStringList>(
-                  CONFIG_RECENT_PROJECT_LIST);
-              recentList.removeAll(path);
-              ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST, recentList);
-              refreshRecentProjects();
-            });
-            menu->exec(recent_container_->mapToGlobal(pos));
-          });
+        QString path = child->property("projectPath").toString();
+        auto* menu = new QMenu(this);
+        menu->setObjectName("WelcomeContextMenu");
+        auto* removeAction = menu->addAction(QStringLiteral("从列表中移除"));
+        connect(removeAction, &QAction::triggered, this, [this, path]() {
+          QStringList recentList = ConfigManager::instance().get<QStringList>(
+              CONFIG_RECENT_PROJECT_LIST);
+          recentList.removeAll(path);
+          ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST, recentList);
+          refreshRecentProjects();
+        });
+        menu->exec(recent_container_->mapToGlobal(pos));
+      });
 
   // 点击每日提示切换下一条
   tip_label_->installEventFilter(this);
@@ -293,11 +295,12 @@ void WelcomeWidget::rebuildRecentCards() {
       ConfigManager::instance().get<QStringList>(CONFIG_RECENT_PROJECT_LIST);
 
   // 获取时间戳
-  QVariantMap timestamps =
-      ConfigManager::instance().get<QVariantMap>(CONFIG_RECENT_PROJECT_TIMESTAMPS);
+  QVariantMap timestamps = ConfigManager::instance().get<QVariantMap>(
+      CONFIG_RECENT_PROJECT_TIMESTAMPS);
 
   if (recentList.isEmpty()) {
-    auto* emptyLabel = new QLabel(QStringLiteral("暂无最近项目"), recent_container_);
+    auto* emptyLabel =
+        new QLabel(QStringLiteral("暂无最近项目"), recent_container_);
     emptyLabel->setObjectName("WelcomeEmptyHint");
     auto* l = new QVBoxLayout(recent_container_);
     l->setContentsMargins(0, 0, 0, 0);
@@ -332,6 +335,7 @@ void WelcomeWidget::rebuildRecentCards() {
     nameLabel->setObjectName("WelcomeCardName");
 
     auto* pathLabel = new QLabel(fi.absolutePath(), card);
+    pathLabel->setWordWrap(true);
     pathLabel->setObjectName("WelcomeCardPath");
 
     // 时间戳
@@ -381,7 +385,8 @@ void WelcomeWidget::loadBackground() {
   if (!bg_dir_path_.isEmpty()) {
     // 目录模式：随机选一张图
     QDir dir(bg_dir_path_);
-    QStringList entries = dir.entryList(image_filters_, QDir::Files, QDir::Name);
+    QStringList entries =
+        dir.entryList(image_filters_, QDir::Files, QDir::Name);
     if (!entries.isEmpty()) {
       int idx = QRandomGenerator::global()->bounded(entries.size());
       QString fullPath = dir.absoluteFilePath(entries[idx]);
