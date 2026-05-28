@@ -105,12 +105,27 @@ MainWindow::MainWindow(QWidget* parent)
   tux_idle_check_timer_ = new QTimer(this);
   connect(tux_idle_check_timer_, &QTimer::timeout, this, [this]() {
     if (!tux_overlay_->isVisible() &&
-        tux_idle_timer_.elapsed() > 5000) {
-      tux_overlay_->activate();
+        ConfigManager::instance().get<bool>(CONFIG_TUXSAVER_ENABLED,
+                                            CONFIG_TUXSAVER_DEFAULT_ENABLED)) {
+      int timeoutMs = ConfigManager::instance().get<int>(
+          CONFIG_TUXSAVER_IDLE_TIMEOUT, CONFIG_TUXSAVER_DEFAULT_TIMEOUT) * 1000;
+      if (tux_idle_timer_.elapsed() > timeoutMs)
+        tux_overlay_->activate();
     }
   });
   tux_idle_check_timer_->start(1000);
   qApp->installEventFilter(this);
+
+  // 设置中关闭屏保时立即隐藏
+  connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
+          [this](const QString& key) {
+            if (key == QString::fromLatin1(CONFIG_TUXSAVER_ENABLED) &&
+                !ConfigManager::instance().get<bool>(
+                    CONFIG_TUXSAVER_ENABLED, CONFIG_TUXSAVER_DEFAULT_ENABLED) &&
+                tux_overlay_->isVisible()) {
+              tux_overlay_->deactivate();
+            }
+          });
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
@@ -584,6 +599,7 @@ void MainWindow::initSignals() {
         h_splitter_->setSizes(sizes);
       }
       sidebar_->hideContent();
+      activity_bar_->clearActivePage();
     } else {
       sidebar_->showContent();
       auto sizes = h_splitter_->sizes();
@@ -676,6 +692,7 @@ void MainWindow::initSignals() {
                 h_splitter_->setSizes(sizes);
               }
               sidebar_->hideContent();
+              activity_bar_->clearActivePage();
               return;
             }
 
@@ -1489,11 +1506,15 @@ void MainWindow::restoreWindowState() {
     sidebar_->hideContent();
   }
 
-  // 侧边栏活动页面
-  QString activePage = cfg.get<QString>(CONFIG_SIDEBAR_ACTIVE_PAGE, PageId::kProjectOverview);
-  if (sidebar_->pageById(activePage)) {
-    sidebar_->switchPage(activePage);
-    activity_bar_->setActivePageId(activePage);
+  // 侧边栏活动页面（仅侧边栏可见时激活）
+  if (!sidebarVisible) {
+    activity_bar_->clearActivePage();
+  } else {
+    QString activePage = cfg.get<QString>(CONFIG_SIDEBAR_ACTIVE_PAGE, PageId::kProjectOverview);
+    if (sidebar_->pageById(activePage)) {
+      sidebar_->switchPage(activePage);
+      activity_bar_->setActivePageId(activePage);
+    }
   }
 
   // 底部面板

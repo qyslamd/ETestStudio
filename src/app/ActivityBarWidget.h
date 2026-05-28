@@ -26,6 +26,7 @@ class ActivityBarWidget : public QWidget {
 
   void addPage(const QString& id, const QString& tooltip, const QString& iconName);
   void setActivePageId(const QString& id);
+  void clearActivePage();
   QString activePageId() const;
   void reloadIcons();
   void setLoginState(bool loggedIn, const QString& userName, const QString& role);

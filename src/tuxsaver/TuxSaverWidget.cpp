@@ -3,9 +3,9 @@
 #include <QApplication>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QShowEvent>
 #include <QPainterPath>
 #include <QRandomGenerator>
+#include <QShowEvent>
 #include <QtMath>
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -30,7 +30,8 @@ TuxSaverWidget::TuxSaverWidget(QWidget* parent) : QWidget(parent) {
         candidates.append(i);
     }
     if (!candidates.isEmpty()) {
-      int idx = candidates[QRandomGenerator::global()->bounded(candidates.size())];
+      int idx =
+          candidates[QRandomGenerator::global()->bounded(candidates.size())];
       penguins_[idx].blink = 0.001;
       penguins_[idx].blink_closing = true;
     }
@@ -44,14 +45,11 @@ TuxSaverWidget::TuxSaverWidget(QWidget* parent) : QWidget(parent) {
 
   // 默认说的话
   phrases_ = QStringList{
-    QStringLiteral("好无聊啊..."),
-    QStringLiteral("Zzz..."),
-    QStringLiteral("看什么呢？"),
-    QStringLiteral("今天天气不错"),
-    QStringLiteral("咕..."),
-    QStringLiteral("想出去走走"),
-    QStringLiteral("代码写完了吗？"),
-    QStringLiteral("嘿！"),
+      QStringLiteral("好无聊啊..."),    QStringLiteral("Zzz..."),
+      QStringLiteral("看什么呢？"),     QStringLiteral("今天天气不错"),
+      QStringLiteral("咕..."),          QStringLiteral("咕咕嘎嘎..."),
+      QStringLiteral("我的刀盾..."),    QStringLiteral("想出去走走"),
+      QStringLiteral("代码写完了吗？"), QStringLiteral("嘿！"),
   };
 
   blink_sched_->start(QRandomGenerator::global()->bounded(2000, 6000));
@@ -119,9 +117,10 @@ void TuxSaverWidget::tick() {
     if (d.state == State::IDLE || d.state == State::LOOKING ||
         d.state == State::SCRATCHING) {
       if (d.speech_text.isEmpty()) {
-        if (d.state_elapsed > QRandomGenerator::global()->bounded(50, 110)
-            && !phrases_.isEmpty()) {
-          d.speech_text = phrases_[QRandomGenerator::global()->bounded(phrases_.size())];
+        if (d.state_elapsed > QRandomGenerator::global()->bounded(50, 110) &&
+            !phrases_.isEmpty()) {
+          d.speech_text =
+              phrases_[QRandomGenerator::global()->bounded(phrases_.size())];
           d.speech_elapsed = 0;
         }
       } else {
@@ -221,7 +220,8 @@ void TuxSaverWidget::tick() {
       const double speed = 0.07;
       if (d.blink_closing) {
         d.blink = qMin(1.0, d.blink + speed);
-        if (d.blink >= 1.0) d.blink_closing = false;
+        if (d.blink >= 1.0)
+          d.blink_closing = false;
       } else {
         d.blink = qMax(0.0, d.blink - speed);
         if (d.blink <= 0) {
@@ -256,7 +256,8 @@ void TuxSaverWidget::setState(PenguinData& d, State s) {
 
   switch (s) {
     case State::WALKING:
-      d.flee_target_x = QRandomGenerator::global()->bounded(80, qMax(81, width() - 80));
+      d.flee_target_x =
+          QRandomGenerator::global()->bounded(80, qMax(81, width() - 80));
       break;
     case State::SLEEPING:
       d.anim_phase = 0;
@@ -273,15 +274,24 @@ void TuxSaverWidget::setState(PenguinData& d, State s) {
 QString TuxSaverWidget::stateName() const {
   State s = penguins_.isEmpty() ? State::HIDDEN : penguins_[0].state;
   switch (s) {
-    case State::HIDDEN:     return QStringLiteral("隐藏");
-    case State::IDLE:       return QStringLiteral("发呆");
-    case State::WALKING:    return QStringLiteral("散步");
-    case State::LOOKING:    return QStringLiteral("张望");
-    case State::SCRATCHING: return QStringLiteral("挠头");
-    case State::YAWNING:    return QStringLiteral("打哈欠");
-    case State::SLEEPING:   return QStringLiteral("打盹");
-    case State::SURPRISED:  return QStringLiteral("吓了一跳");
-    case State::FLEEING:    return QStringLiteral("逃跑");
+    case State::HIDDEN:
+      return QStringLiteral("隐藏");
+    case State::IDLE:
+      return QStringLiteral("发呆");
+    case State::WALKING:
+      return QStringLiteral("散步");
+    case State::LOOKING:
+      return QStringLiteral("张望");
+    case State::SCRATCHING:
+      return QStringLiteral("挠头");
+    case State::YAWNING:
+      return QStringLiteral("打哈欠");
+    case State::SLEEPING:
+      return QStringLiteral("打盹");
+    case State::SURPRISED:
+      return QStringLiteral("吓了一跳");
+    case State::FLEEING:
+      return QStringLiteral("逃跑");
   }
   return QString();
 }
@@ -294,7 +304,8 @@ void TuxSaverWidget::pickRandomState(PenguinData& d) {
   int r = QRandomGenerator::global()->bounded(100);
   if (r < 35) {
     setState(d, State::WALKING);
-    d.flee_target_x = QRandomGenerator::global()->bounded(80, qMax(81, width() - 80));
+    d.flee_target_x =
+        QRandomGenerator::global()->bounded(80, qMax(81, width() - 80));
   } else if (r < 55) {
     setState(d, State::LOOKING);
   } else if (r < 70) {
@@ -329,7 +340,8 @@ void TuxSaverWidget::mousePressEvent(QMouseEvent* event) {
 
 void TuxSaverWidget::resizeEvent(QResizeEvent* event) {
   QWidget::resizeEvent(event);
-  for (auto& d : penguins_) clampX(d);
+  for (auto& d : penguins_)
+    clampX(d);
 }
 
 void TuxSaverWidget::showEvent(QShowEvent* event) {
@@ -380,8 +392,11 @@ void TuxSaverWidget::drawBackground(QPainter&) const {
 //  Penguin drawing — Tux-style (side profile)
 // ═════════════════════════════════════════════════════════════════════════════
 
-void TuxSaverWidget::drawPenguin(QPainter& p, qreal px, qreal py,
-                                  bool mirror, const PenguinData& d) const {
+void TuxSaverWidget::drawPenguin(QPainter& p,
+                                 qreal px,
+                                 qreal py,
+                                 bool mirror,
+                                 const PenguinData& d) const {
   const QColor bodyClr(0x22, 0x22, 0x28);
   const QColor bellyClr(0xFF, 0xFF, 0xFF);
   const QColor faceClr(0xF0, 0xF0, 0xF0);
@@ -463,7 +478,8 @@ void TuxSaverWidget::drawPenguin(QPainter& p, qreal px, qreal py,
   p.setBrush(QColor(0xBB, 0x80, 0x20));
   p.save();
   p.translate(-1 + farFX, 21 - farFY);
-  if (walking) p.rotate(tiptoeAngle * 0.6);
+  if (walking)
+    p.rotate(tiptoeAngle * 0.6);
   p.drawRoundedRect(QRectF(-4, 0, 8, 4), 2, 2);
   p.restore();
 
@@ -471,7 +487,8 @@ void TuxSaverWidget::drawPenguin(QPainter& p, qreal px, qreal py,
   p.setBrush(footClr);
   p.save();
   p.translate(-3 + nearFX, 23 - nearFY);
-  if (walking) p.rotate(tiptoeAngle);
+  if (walking)
+    p.rotate(tiptoeAngle);
   p.drawRoundedRect(QRectF(-5, 0, 10, 4), 2, 2);
   p.restore();
 
@@ -509,8 +526,10 @@ void TuxSaverWidget::drawPenguin(QPainter& p, qreal px, qreal py,
 
   // ── Head ──
   qreal headY = -20;
-  if (scratching) headY = -19;
-  if (sleeping) headY = -17;
+  if (scratching)
+    headY = -19;
+  if (sleeping)
+    headY = -17;
 
   p.setBrush(bodyClr);
   p.drawEllipse(QPointF(2, headY), 11, 11);
@@ -524,7 +543,8 @@ void TuxSaverWidget::drawPenguin(QPainter& p, qreal px, qreal py,
   p.drawEllipse(QPointF(8, headY + 3), 3, 2.5);
 
   // ── Eye ──
-  bool eyesClosed = (d.blink > 0.5 || sleeping || (yawning && d.beak_open > 0.7));
+  bool eyesClosed =
+      (d.blink > 0.5 || sleeping || (yawning && d.beak_open > 0.7));
   if (eyesClosed) {
     p.setPen(QPen(eyeClr, 2));
     p.setBrush(Qt::NoBrush);
@@ -547,7 +567,8 @@ void TuxSaverWidget::drawPenguin(QPainter& p, qreal px, qreal py,
     QPainterPath openBeak;
     openBeak.moveTo(11, headY + 2);
     openBeak.lineTo(20, headY + 1);
-    openBeak.quadTo(19, headY + 3 + d.beak_open * 6, 11, headY + 4 + d.beak_open * 5);
+    openBeak.quadTo(19, headY + 3 + d.beak_open * 6, 11,
+                    headY + 4 + d.beak_open * 5);
     p.drawPath(openBeak);
     p.setBrush(QColor(0x44, 0x22, 0x00));
     p.drawEllipse(QPointF(14, headY + 3 + d.beak_open * 3), 2.5, 1.5);
@@ -580,9 +601,9 @@ void TuxSaverWidget::drawPenguin(QPainter& p, qreal px, qreal py,
     p.drawEllipse(QPointF(12.5, headY + 2), 1.2, 1.2);
   }
 
-  p.restore(); // crouch+lean
-  p.restore(); // squash
-  p.restore(); // mirror + translate
+  p.restore();  // crouch+lean
+  p.restore();  // squash
+  p.restore();  // mirror + translate
 
   // ── 对话气泡（屏幕坐标，不受 mirror 影响） ──
   if (!d.speech_text.isEmpty()) {
@@ -597,22 +618,22 @@ void TuxSaverWidget::drawPenguin(QPainter& p, qreal px, qreal py,
     const qreal kMinBubbleW = 50;  // 最小气泡宽度
 
     // 测量换行文字尺寸
-    QRectF textBound = fm.boundingRect(
-        QRect(0, 0, static_cast<int>(kMaxW), 999),
-        Qt::AlignLeft | Qt::TextWordWrap, d.speech_text);
+    QRectF textBound =
+        fm.boundingRect(QRect(0, 0, static_cast<int>(kMaxW), 999),
+                        Qt::AlignLeft | Qt::TextWordWrap, d.speech_text);
     qreal tw = textBound.width();
     qreal th = textBound.height();
 
     qreal bw = qMax(tw + kPad * 2, kMinBubbleW);  // 气泡宽
-    qreal bh = th + kPad * 2;                       // 气泡高
+    qreal bh = th + kPad * 2;                     // 气泡高
 
     // 头部顶部屏幕坐标（尾巴尖端指向这里）
     qreal headCX = px + (mirror ? -2 : 2);
     qreal headTopY = py + headY - 11;
 
-    qreal bx = headCX - bw / 2.0;            // 气泡左边缘
-    qreal by = headTopY - bh - kTailH;       // 气泡顶边缘
-    qreal tailBaseY = by + bh;                // 尾巴根部 y
+    qreal bx = headCX - bw / 2.0;       // 气泡左边缘
+    qreal by = headTopY - bh - kTailH;  // 气泡顶边缘
+    qreal tailBaseY = by + bh;          // 尾巴根部 y
 
     // 限定不超出左右边界
     bx = qBound(2.0, bx, static_cast<qreal>(width()) - bw - 2.0);

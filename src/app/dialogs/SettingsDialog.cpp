@@ -136,6 +136,17 @@ QWidget* SettingsDialog::createGeneralPage() {
   addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,
                  CONFIG_TOOLBAR_DEFAULT_VISIBLE);
   addButtonRow(page, QStringLiteral("窗口布局"), QStringLiteral("恢复默认"));
+
+  layout->addSpacing(12);
+
+  // --- 屏保 section ---
+  layout->addWidget(createSectionHeader(QStringLiteral("屏保")));
+  addCheckBoxRow(page, QStringLiteral("空闲时显示 Tux 屏保"),
+                 CONFIG_TUXSAVER_ENABLED,
+                 CONFIG_TUXSAVER_DEFAULT_ENABLED);
+  addSpinBoxRow(page, QStringLiteral("触发时间(秒)"),
+                CONFIG_TUXSAVER_IDLE_TIMEOUT, 1, 60, 1,
+                CONFIG_TUXSAVER_DEFAULT_TIMEOUT);
   layout->addStretch();
 
   return page;

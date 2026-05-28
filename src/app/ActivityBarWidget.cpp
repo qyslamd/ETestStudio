@@ -123,6 +123,18 @@ void ActivityBarWidget::setActivePageId(const QString& id) {
   updateActiveIconSize();
 }
 
+void ActivityBarWidget::clearActivePage() {
+  active_page_id_.clear();
+  for (auto* btn : buttons_) {
+    btn->setChecked(false);
+    btn->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
+  }
+  if (login_btn_)
+    login_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
+  if (settings_btn_)
+    settings_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
+}
+
 QString ActivityBarWidget::activePageId() const {
   return active_page_id_;
 }
