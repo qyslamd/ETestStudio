@@ -924,7 +924,8 @@ QWidget#WelcomeWidget {
     background-color: #1E1E1E;
 }
 QWidget#WelcomeCenter {
-    background-color: #1E1E1E;
+    background-color: rgba(30, 30, 30, 160);
+    border-radius: 12px;
 }
 QLabel#WelcomeLogo {
     color: #CCCCCC;
@@ -954,23 +955,49 @@ QPushButton#WelcomeActionButton:hover {
 QPushButton#WelcomeActionButton:pressed {
     background-color: #0D5A8F;
 }
-QListWidget#WelcomeRecentList {
-    background-color: #252526;
+QScrollArea#WelcomeRecentScroll {
+    background-color: transparent;
     border: 1px solid #3C3C3C;
     border-radius: 3px;
-    color: #CCCCCC;
+}
+QScrollArea#WelcomeRecentScroll > QWidget > QWidget {
+    background-color: transparent;
+}
+QWidget#WelcomeRecentContainer {
+    background-color: #252526;
+}
+QFrame#WelcomeProjectCard {
+    background-color: #2D2D2D;
+    border: 1px solid #3C3C3C;
+    border-radius: 6px;
+}
+QFrame#WelcomeProjectCard:hover {
+    background-color: #383838;
+    border-color: #007ACC;
+}
+QLabel#WelcomeCardName {
+    color: #E0E0E0;
     font-size: 13px;
-    outline: none;
+    font-weight: bold;
 }
-QListWidget#WelcomeRecentList::item {
-    padding: 6px 10px;
-    border-bottom: 1px solid #2D2D2D;
+QLabel#WelcomeCardPath {
+    color: #888888;
+    font-size: 11px;
 }
-QListWidget#WelcomeRecentList::item:hover {
-    background-color: #2A2D2E;
+QLabel#WelcomeCardTime {
+    color: #666666;
+    font-size: 10px;
 }
-QListWidget#WelcomeRecentList::item:selected {
-    background-color: #094771;
+QLabel#WelcomeEmptyHint {
+    color: #888888;
+    font-size: 13px;
+}
+QLabel#WelcomeTipLabel {
+    color: #999999;
+    font-size: 12px;
+    padding: 8px;
+    background-color: #2A2A2A;
+    border-radius: 4px;
 }
 QLabel#WelcomeShortcutKey {
     color: #888888;

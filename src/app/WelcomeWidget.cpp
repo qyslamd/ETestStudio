@@ -1,15 +1,18 @@
 #include "WelcomeWidget.h"
 
+#include <QDateTime>
+#include <QDir>
 #include <QFileInfo>
+#include <QFrame>
+#include <QGridLayout>
 #include <QHBoxLayout>
-#include <QHeaderView>
 #include <QMenu>
-#include <QScrollBar>
-#include <QVBoxLayout>
-
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
+#include <QRandomGenerator>
+#include <QShowEvent>
+#include <QVBoxLayout>
 
 #include "EyeWidget.h"
 #include "common/ThemeManager.h"
@@ -26,22 +29,67 @@ using namespace core::project;
 WelcomeWidget::WelcomeWidget(QWidget* parent) : QWidget(parent) {
   initUi();
   initSignals();
+  loadBackground();
+  showRandomTip();
+}
+
+void WelcomeWidget::paintEvent(QPaintEvent* /*event*/) {
+  QPainter p(this);
+  p.setRenderHint(QPainter::SmoothPixmapTransform);
+
+  if (!bg_pixmap_.isNull()) {
+    switch (bg_mode_) {
+      case 0:  // center
+      {
+        int x = (width() - bg_pixmap_.width()) / 2;
+        int y = (height() - bg_pixmap_.height()) / 2;
+        p.drawPixmap(x, y, bg_pixmap_);
+        break;
+      }
+      case 1:  // tile
+        p.drawTiledPixmap(rect(), bg_pixmap_);
+        break;
+      case 2:  // stretch
+        p.drawPixmap(rect(), bg_pixmap_);
+        break;
+    }
+  }
 }
 
 void WelcomeWidget::initUi() {
   setObjectName("WelcomeWidget");
 
-  auto* outerLayout = new QHBoxLayout(this);
-  outerLayout->setContentsMargins(0, 0, 0, 0);
+  // 每日提示
+  tips_ << QStringLiteral("按 Ctrl+N 快速新建项目")
+        << QStringLiteral("按 Ctrl+Shift+F 进行全局搜索")
+        << QStringLiteral("在拓扑编辑器中双击设备可配置端口")
+        << QStringLiteral("ICD 位视图支持逐位编辑信号定义")
+        << QStringLiteral("测试用例支持 Lua 脚本编写")
+        << QStringLiteral("右键单击最近项目可从列表中移除")
+        << QStringLiteral("硬件面板显示当前连接的测试设备")
+        << QStringLiteral("输出面板支持多级日志过滤")
+        << QStringLiteral("协议编辑器支持导入标准 ICD 格式")
+        << QStringLiteral("报告可导出为 PDF 格式")
+        << QStringLiteral("按 Ctrl+Tab 快速切换编辑器标签页")
+        << QStringLiteral("项目备份默认每 5 分钟自动保存")
+        << QStringLiteral("终端面板支持 cmd、PowerShell、bash")
+        << QStringLiteral("在设置中可切换暗色/亮色主题")
+        << QStringLiteral("活动栏按钮支持自定义页面顺序");
+
+  auto* outerLayout = new QVBoxLayout(this);
+  outerLayout->setContentsMargins(40, 40, 40, 40);
 
   // 居中容器，固定宽度
-  auto* centerWidget = new QWidget(this);
-  centerWidget->setFixedWidth(600);
-  centerWidget->setObjectName("WelcomeCenter");
+  center_widget_ = new QWidget(this);
+  center_widget_->setFixedWidth(600);
+  center_widget_->setObjectName("WelcomeCenter");
 
-  auto* layout = new QVBoxLayout(centerWidget);
+  auto* layout = new QVBoxLayout(center_widget_);
   layout->setContentsMargins(40, 40, 40, 40);
   layout->setSpacing(12);
+
+  // 上下弹性空间使内容垂直居中
+  layout->addStretch();
 
   // === 标题行：Logo + 图标 ===
   auto* titleRow = new QWidget(this);
@@ -58,8 +106,7 @@ void WelcomeWidget::initUi() {
 
   QPixmap source(":/resources/icons/app_icon.svg");
   if (!source.isNull()) {
-    source =
-        source.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    source = source.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     QPixmap rounded(48, 48);
     rounded.fill(Qt::transparent);
     QPainter painter(&rounded);
@@ -113,14 +160,11 @@ void WelcomeWidget::initUi() {
   eye_row->addStretch();
   auto* eye_widget = new EyeWidget(this);
   eye_widget->setFixedSize(240, 120);
-  // 根据主题设置眼睛配色
   if (ThemeManager::instance().isDarkTheme()) {
-    eye_widget->setBgColor(QColor(0x1E, 0x1E, 0x1E));  // 与欢迎页背景一致
     eye_widget->setOutlineColor(QColor(0xCC, 0xCC, 0xCC));
     eye_widget->setPupilColor(QColor(0x2C, 0x2C, 0x2C));
     eye_widget->setEyebrowColor(QColor(0x88, 0x88, 0x99));
   } else {
-    eye_widget->setBgColor(QColor(0xF0, 0xF0, 0xF0));
     eye_widget->setOutlineColor(QColor(0xB0, 0xB0, 0xB0));
     eye_widget->setPupilColor(QColor(0x44, 0x44, 0x44));
     eye_widget->setEyebrowColor(QColor(0x77, 0x77, 0x77));
@@ -134,56 +178,37 @@ void WelcomeWidget::initUi() {
   recentHeader->setObjectName("WelcomeSectionHeader");
   layout->addWidget(recentHeader);
 
-  recent_list_ = new QListWidget(this);
-  recent_list_->setObjectName("WelcomeRecentList");
-  recent_list_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  recent_list_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  recent_list_->setContextMenuPolicy(Qt::CustomContextMenu);
-  recent_list_->setMaximumHeight(200);
-  layout->addWidget(recent_list_);
+  recent_scroll_ = new QScrollArea(this);
+  recent_scroll_->setObjectName("WelcomeRecentScroll");
+  recent_scroll_->setWidgetResizable(true);
+  recent_scroll_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  recent_scroll_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  recent_scroll_->setMaximumHeight(240);
 
-  // === 常用快捷键 ===
-  auto* shortcutHeader = new QLabel(QStringLiteral("常用快捷键"), this);
-  shortcutHeader->setObjectName("WelcomeSectionHeader");
-  layout->addWidget(shortcutHeader);
+  recent_container_ = new QWidget(this);
+  recent_container_->setObjectName("WelcomeRecentContainer");
+  recent_container_->setContextMenuPolicy(Qt::CustomContextMenu);
+  recent_scroll_->setWidget(recent_container_);
 
-  struct ShortcutItem {
-    QString key;
-    QString desc;
-  };
+  layout->addWidget(recent_scroll_);
 
-  QList<ShortcutItem> shortcuts = {
-      {"Ctrl+N", QStringLiteral("新建项目")},
-      {"Ctrl+O", QStringLiteral("打开项目")},
-      {"Ctrl+S", QStringLiteral("保存文件")},
-      {"Ctrl+W", QStringLiteral("关闭文件")},
-      {"Ctrl+Shift+F", QStringLiteral("全局搜索")},
-      {"Ctrl+P", QStringLiteral("关闭项目")},
-  };
-
-  for (const auto& item : shortcuts) {
-    auto* row = new QWidget(this);
-    auto* rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(0, 2, 0, 2);
-
-    auto* keyLabel = new QLabel(item.key, row);
-    keyLabel->setObjectName("WelcomeShortcutKey");
-    keyLabel->setFixedWidth(120);
-
-    auto* descLabel = new QLabel(item.desc, row);
-    descLabel->setObjectName("WelcomeShortcutDesc");
-
-    rowLayout->addWidget(keyLabel);
-    rowLayout->addWidget(descLabel);
-    rowLayout->addStretch();
-
-    layout->addWidget(row);
-  }
+  // === 每日提示 ===
+  tip_label_ = new QLabel(this);
+  tip_label_->setObjectName("WelcomeTipLabel");
+  tip_label_->setWordWrap(true);
+  tip_label_->setCursor(Qt::PointingHandCursor);
+  layout->addWidget(tip_label_);
 
   layout->addStretch();
 
   outerLayout->addStretch();
-  outerLayout->addWidget(centerWidget);
+
+  auto* hCenter = new QHBoxLayout();
+  hCenter->addStretch();
+  hCenter->addWidget(center_widget_);
+  hCenter->addStretch();
+  outerLayout->addLayout(hCenter);
+
   outerLayout->addStretch();
 
   // 初始加载最近项目
@@ -196,42 +221,96 @@ void WelcomeWidget::initSignals() {
   connect(btn_open_project_, &QPushButton::clicked, this,
           &WelcomeWidget::openProjectRequested);
 
-  connect(recent_list_, &QListWidget::itemClicked, this,
-          [this](QListWidgetItem* item) {
-            QString path = item->data(Qt::UserRole).toString();
-            if (!path.isEmpty()) {
-              emit projectOpenRequested(path);
-            }
+  // 卡片点击：事件过滤器由 rebuildRecentCards 安装
+  // 右键菜单：从列表中移除
+  connect(recent_container_, &QWidget::customContextMenuRequested, this,
+          [this](const QPoint& pos) {
+            auto* child = recent_container_->childAt(pos);
+            if (!child || !child->property("projectPath").isValid())
+              return;
+
+            QString path = child->property("projectPath").toString();
+            auto* menu = new QMenu(this);
+            menu->setObjectName("WelcomeContextMenu");
+            auto* removeAction = menu->addAction(QStringLiteral("从列表中移除"));
+            connect(removeAction, &QAction::triggered, this, [this, path]() {
+              QStringList recentList = ConfigManager::instance().get<QStringList>(
+                  CONFIG_RECENT_PROJECT_LIST);
+              recentList.removeAll(path);
+              ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST, recentList);
+              refreshRecentProjects();
+            });
+            menu->exec(recent_container_->mapToGlobal(pos));
           });
 
-  // 右键菜单：从列表移除
-  connect(
-      recent_list_, &QListWidget::customContextMenuRequested, this,
-      [this](const QPoint& pos) {
-        auto* item = recent_list_->itemAt(pos);
-        if (!item)
-          return;
+  // 点击每日提示切换下一条
+  tip_label_->installEventFilter(this);
 
-        auto* menu = new QMenu(this);
-        menu->setObjectName("WelcomeContextMenu");
-        auto* removeAction = menu->addAction(QStringLiteral("从列表中移除"));
-        connect(removeAction, &QAction::triggered, this, [item, this]() {
-          QString path = item->data(Qt::UserRole).toString();
-          QStringList recentList = ConfigManager::instance().get<QStringList>(
-              CONFIG_RECENT_PROJECT_LIST);
-          recentList.removeAll(path);
-          ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST, recentList);
-          refreshRecentProjects();
-        });
-        menu->exec(recent_list_->mapToGlobal(pos));
-      });
+  // 配置变更：背景图片/模式
+  connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
+          [this](const QString& key) {
+            if (key == QString::fromLatin1(CONFIG_WELCOME_BG_IMAGE) ||
+                key == QString::fromLatin1(CONFIG_WELCOME_BG_DIR) ||
+                key == QString::fromLatin1(CONFIG_WELCOME_BG_MODE)) {
+              loadBackground();
+            }
+          });
 }
 
-void WelcomeWidget::refreshRecentProjects() {
-  recent_list_->clear();
+bool WelcomeWidget::eventFilter(QObject* obj, QEvent* event) {
+  if (obj == tip_label_ && event->type() == QEvent::MouseButtonPress) {
+    showRandomTip();
+    return true;
+  }
+  // 卡片点击: 检查是否是我们的卡片
+  if (event->type() == QEvent::MouseButtonPress) {
+    auto* w = qobject_cast<QWidget*>(obj);
+    if (w && w->property("projectPath").isValid()) {
+      QString path = w->property("projectPath").toString();
+      if (!path.isEmpty()) {
+        emit projectOpenRequested(path);
+        return true;
+      }
+    }
+  }
+  return QWidget::eventFilter(obj, event);
+}
+
+void WelcomeWidget::rebuildRecentCards() {
+  // 清除旧卡片
+  QLayout* grid = recent_container_->layout();
+  if (grid) {
+    QLayoutItem* item;
+    while ((item = grid->takeAt(0)) != nullptr) {
+      if (item->widget())
+        item->widget()->deleteLater();
+      delete item;
+    }
+    delete grid;
+  }
 
   QStringList recentList =
       ConfigManager::instance().get<QStringList>(CONFIG_RECENT_PROJECT_LIST);
+
+  // 获取时间戳
+  QVariantMap timestamps =
+      ConfigManager::instance().get<QVariantMap>(CONFIG_RECENT_PROJECT_TIMESTAMPS);
+
+  if (recentList.isEmpty()) {
+    auto* emptyLabel = new QLabel(QStringLiteral("暂无最近项目"), recent_container_);
+    emptyLabel->setObjectName("WelcomeEmptyHint");
+    auto* l = new QVBoxLayout(recent_container_);
+    l->setContentsMargins(0, 0, 0, 0);
+    l->addWidget(emptyLabel, 0, Qt::AlignCenter);
+    return;
+  }
+
+  auto* gridLayout = new QGridLayout(recent_container_);
+  gridLayout->setContentsMargins(0, 0, 0, 0);
+  gridLayout->setSpacing(8);
+
+  int cols = qMax(1, qMin(2, recentList.size()));
+  int row = 0, col = 0;
 
   for (const QString& path : recentList) {
     QFileInfo fi(path);
@@ -239,17 +318,95 @@ void WelcomeWidget::refreshRecentProjects() {
     if (displayName.isEmpty())
       continue;
 
-    auto* item = new QListWidgetItem(
-        QString("%1  —  %2").arg(displayName, fi.absolutePath()), recent_list_);
-    item->setData(Qt::UserRole, path);
-    item->setToolTip(path);
+    auto* card = new QFrame(recent_container_);
+    card->setObjectName("WelcomeProjectCard");
+    card->setCursor(Qt::PointingHandCursor);
+    card->setProperty("projectPath", path);
+    card->installEventFilter(this);
+
+    auto* cardLayout = new QVBoxLayout(card);
+    cardLayout->setContentsMargins(12, 10, 12, 10);
+    cardLayout->setSpacing(4);
+
+    auto* nameLabel = new QLabel(displayName, card);
+    nameLabel->setObjectName("WelcomeCardName");
+
+    auto* pathLabel = new QLabel(fi.absolutePath(), card);
+    pathLabel->setObjectName("WelcomeCardPath");
+
+    // 时间戳
+    QString timeStr;
+    if (timestamps.contains(path)) {
+      QDateTime dt = timestamps[path].toDateTime();
+      timeStr = dt.toString("yyyy-MM-dd hh:mm");
+    }
+    auto* timeLabel = new QLabel(timeStr, card);
+    timeLabel->setObjectName("WelcomeCardTime");
+
+    cardLayout->addWidget(nameLabel);
+    cardLayout->addWidget(pathLabel);
+    cardLayout->addWidget(timeLabel);
+
+    gridLayout->addWidget(card, row, col);
+    col++;
+    if (col >= cols) {
+      col = 0;
+      row++;
+    }
   }
 
-  if (recent_list_->count() == 0) {
-    auto* emptyItem =
-        new QListWidgetItem(QStringLiteral("暂无最近项目"), recent_list_);
-    emptyItem->setFlags(emptyItem->flags() & ~Qt::ItemIsEnabled);
+  // 填充剩余空间
+  if (recentList.size() <= cols) {
+    gridLayout->setRowStretch(row, 1);
+    gridLayout->setColumnStretch(cols, 1);
   }
+}
+
+void WelcomeWidget::refreshRecentProjects() {
+  rebuildRecentCards();
+}
+
+void WelcomeWidget::showEvent(QShowEvent* event) {
+  QWidget::showEvent(event);
+  // 每次显示时重新加载，确保目录模式随机选图
+  loadBackground();
+}
+
+void WelcomeWidget::loadBackground() {
+  auto& cm = ConfigManager::instance();
+  bg_dir_path_ = cm.get<QString>(CONFIG_WELCOME_BG_DIR);
+  bg_image_path_ = cm.get<QString>(CONFIG_WELCOME_BG_IMAGE);
+  bg_mode_ = cm.get<int>(CONFIG_WELCOME_BG_MODE, 0);
+
+  if (!bg_dir_path_.isEmpty()) {
+    // 目录模式：随机选一张图
+    QDir dir(bg_dir_path_);
+    QStringList entries = dir.entryList(image_filters_, QDir::Files, QDir::Name);
+    if (!entries.isEmpty()) {
+      int idx = QRandomGenerator::global()->bounded(entries.size());
+      QString fullPath = dir.absoluteFilePath(entries[idx]);
+      bg_pixmap_ = QPixmap(fullPath);
+      if (bg_pixmap_.isNull())
+        bg_pixmap_.load(fullPath, "JPG");
+    } else {
+      bg_pixmap_ = QPixmap();
+    }
+  } else if (!bg_image_path_.isEmpty()) {
+    bg_pixmap_ = QPixmap(bg_image_path_);
+    if (bg_pixmap_.isNull())
+      bg_pixmap_.load(bg_image_path_, "JPG");
+  } else {
+    bg_pixmap_ = QPixmap();
+  }
+
+  update();
+}
+
+void WelcomeWidget::showRandomTip() {
+  if (tips_.isEmpty())
+    return;
+  int idx = QRandomGenerator::global()->bounded(tips_.size());
+  tip_label_->setText(QStringLiteral("\xE2\x96\xB6 %1").arg(tips_[idx]));
 }
 
 }  // namespace etest::app

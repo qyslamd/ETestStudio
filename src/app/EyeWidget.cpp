@@ -112,9 +112,6 @@ void EyeWidget::paintEvent(QPaintEvent*) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
-  // background
-  p.fillRect(rect(), bg_color_);
-
   // eye geometry
   double cx = width() / 2.0;
   double cy = height() / 2.0;
@@ -175,7 +172,7 @@ void EyeWidget::paintEvent(QPaintEvent*) {
   // eyelid line when partially closed
   if (closeFactor > 0.3) {
     double lineY = cy - closeFactor * eyeR * 0.2;
-    p.setPen(QPen(bg_color_, 2));
+    p.setPen(QPen(outline_color_, 2));
     p.drawLine(QPointF(cx - eyeSpacing - eyeR, lineY),
                QPointF(cx + eyeSpacing + eyeR, lineY));
   }

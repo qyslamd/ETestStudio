@@ -1,8 +1,10 @@
 #include "dialogs/SettingsDialog.h"
 
+#include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QVBoxLayout>
 
 #include "backup/BackupManager.h"
@@ -227,6 +229,132 @@ QWidget* SettingsDialog::createAppearancePage() {
   addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,
                  CONFIG_TOOLBAR_DEFAULT_VISIBLE);
   addButtonRow(page, QStringLiteral("窗口布局"), QStringLiteral("恢复默认"));
+
+  layout->addSpacing(16);
+  layout->addWidget(createSectionHeader(QStringLiteral("欢迎页背景")));
+
+  // --- 提示：目录优先于固定图片 ---
+  {
+    auto* hint = new QLabel(QStringLiteral("设置了图片目录则优先从目录中随机选图"), page);
+    hint->setObjectName("SettingsHint");
+    page->layout()->addWidget(hint);
+  }
+
+  // 背景图片目录
+  {
+    auto* row = new QWidget(page);
+    auto* rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(0, 2, 0, 2);
+
+    auto* lbl = new QLabel(QStringLiteral("图片目录"), row);
+    lbl->setFixedWidth(120);
+
+    auto* dirEdit = new QLineEdit(row);
+    dirEdit->setReadOnly(true);
+    dirEdit->setPlaceholderText(QStringLiteral("未设置（随机选图）"));
+    QString curDir = ConfigManager::instance().get<QString>(
+        CONFIG_WELCOME_BG_DIR);
+    dirEdit->setText(curDir);
+    dirEdit->setFixedWidth(260);
+
+    auto* browseDirBtn = new QPushButton(QStringLiteral("选择目录..."), row);
+    auto* clearDirBtn = new QPushButton(QStringLiteral("清除"), row);
+
+    rowLayout->addWidget(lbl);
+    rowLayout->addWidget(dirEdit);
+    rowLayout->addWidget(browseDirBtn);
+    rowLayout->addWidget(clearDirBtn);
+    rowLayout->addStretch();
+    page->layout()->addWidget(row);
+
+    connect(browseDirBtn, &QPushButton::clicked, this, [dirEdit]() {
+      QString dir = QFileDialog::getExistingDirectory(
+          nullptr, QStringLiteral("选择背景图片目录"));
+      if (!dir.isEmpty()) {
+        dirEdit->setText(dir);
+        ConfigManager::instance().set(CONFIG_WELCOME_BG_DIR, dir);
+      }
+    });
+    connect(clearDirBtn, &QPushButton::clicked, this, [dirEdit]() {
+      dirEdit->clear();
+      ConfigManager::instance().set(CONFIG_WELCOME_BG_DIR, QString());
+    });
+  }
+
+  // 背景图片路径（固定图片）
+  {
+    auto* row = new QWidget(page);
+    auto* rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(0, 2, 0, 2);
+
+    auto* lbl = new QLabel(QStringLiteral("固定图片"), row);
+    lbl->setFixedWidth(120);
+
+    auto* pathEdit = new QLineEdit(row);
+    pathEdit->setReadOnly(true);
+    pathEdit->setPlaceholderText(QStringLiteral("未设置"));
+    QString curPath = ConfigManager::instance().get<QString>(
+        CONFIG_WELCOME_BG_IMAGE);
+    pathEdit->setText(curPath);
+    pathEdit->setFixedWidth(260);
+
+    auto* browseBtn = new QPushButton(QStringLiteral("浏览..."), row);
+    auto* clearBtn = new QPushButton(QStringLiteral("清除"), row);
+
+    rowLayout->addWidget(lbl);
+    rowLayout->addWidget(pathEdit);
+    rowLayout->addWidget(browseBtn);
+    rowLayout->addWidget(clearBtn);
+    rowLayout->addStretch();
+    page->layout()->addWidget(row);
+
+    connect(browseBtn, &QPushButton::clicked, this, [pathEdit]() {
+      QString file = QFileDialog::getOpenFileName(
+          nullptr, QStringLiteral("选择背景图片"), {},
+          QStringLiteral("图片文件 (*.png *.jpg *.jpeg *.jfif *.bmp *.gif *.svg)"));
+      if (!file.isEmpty()) {
+        pathEdit->setText(file);
+        ConfigManager::instance().set(CONFIG_WELCOME_BG_IMAGE, file);
+      }
+    });
+    connect(clearBtn, &QPushButton::clicked, this, [pathEdit]() {
+      pathEdit->clear();
+      ConfigManager::instance().set(CONFIG_WELCOME_BG_IMAGE, QString());
+    });
+  }
+
+  // 填充模式
+  {
+    auto* row = new QWidget(page);
+    auto* rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(0, 2, 0, 2);
+
+    auto* lbl = new QLabel(QStringLiteral("填充方式"), row);
+    lbl->setFixedWidth(120);
+
+    auto* combo = new QComboBox(row);
+    combo->addItem(QStringLiteral("居中"), 0);
+    combo->addItem(QStringLiteral("平铺"), 1);
+    combo->addItem(QStringLiteral("拉伸"), 2);
+    combo->setFixedWidth(160);
+
+    int curMode = ConfigManager::instance().get<int>(CONFIG_WELCOME_BG_MODE, 0);
+    combo->setCurrentIndex(combo->findData(curMode));
+
+    rowLayout->addWidget(lbl);
+    rowLayout->addWidget(combo);
+    rowLayout->addStretch();
+    page->layout()->addWidget(row);
+
+    combo_map_.insert(QString::fromLatin1(CONFIG_WELCOME_BG_MODE), combo);
+
+    connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [combo]() {
+              ConfigManager::instance().set<int>(
+                  CONFIG_WELCOME_BG_MODE, combo->currentData().toInt());
+            });
+  }
+
   layout->addStretch();
   return page;
 }
@@ -413,8 +541,9 @@ void SettingsDialog::comboBoxToConfig(const QString& key, QComboBox* combo) {
 }
 
 void SettingsDialog::onConfigChanged(const QString& key) {
-  // 主题选择使用 userData 而非 displayText，需特殊处理
-  if (key == QString::fromLatin1(CONFIG_APPEARANCE_THEME)) {
+  // 以下配置使用 userData 而非 displayText，需特殊处理
+  if (key == QString::fromLatin1(CONFIG_APPEARANCE_THEME) ||
+      key == QString::fromLatin1(CONFIG_WELCOME_BG_MODE)) {
     if (combo_map_.contains(key)) {
       auto* combo = combo_map_[key];
       QString val = ConfigManager::instance().get<QString>(key);

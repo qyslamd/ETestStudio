@@ -40,6 +40,7 @@ constexpr bool CONFIG_WINDOW_DEFAULT_MAXIMIZED = false;
 
 // 最近项目配置组
 constexpr const char* CONFIG_RECENT_PROJECT_LIST = "recent/project_list";
+constexpr const char* CONFIG_RECENT_PROJECT_TIMESTAMPS = "recent/project_timestamps";
 constexpr const char* CONFIG_RECENT_LAST_OPEN_PATH = "recent/last_open_path";
 constexpr int CONFIG_RECENT_MAX_COUNT = 10;  // 最近项目保留10个
 
@@ -86,6 +87,11 @@ constexpr const char* CONFIG_AUTH_REMEMBER_PASSWORD = "auth/remember_password";
 
 // 外观配置组
 constexpr const char* CONFIG_APPEARANCE_THEME = "appearance/theme";
+
+// 欢迎页背景配置
+constexpr const char* CONFIG_WELCOME_BG_IMAGE = "welcome/background_image";
+constexpr const char* CONFIG_WELCOME_BG_DIR = "welcome/background_dir";
+constexpr const char* CONFIG_WELCOME_BG_MODE = "welcome/background_mode";
 
 // 外观默认值
 constexpr const char* CONFIG_APPEARANCE_DEFAULT_THEME = "default";

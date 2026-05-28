@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QCloseEvent>
+#include <QDateTime>
 #include <QCoreApplication>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -889,6 +890,12 @@ void MainWindow::onCloseProject() {
 
 void MainWindow::onProjectOpened(const QString& projectPath) {
   close_project_action_->setEnabled(true);
+
+  // 记录项目打开时间戳
+  QVariantMap timestamps = ConfigManager::instance().get<QVariantMap>(
+      CONFIG_RECENT_PROJECT_TIMESTAMPS);
+  timestamps[projectPath] = QDateTime::currentDateTime();
+  ConfigManager::instance().set(CONFIG_RECENT_PROJECT_TIMESTAMPS, timestamps);
 
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   auto* project = projectMgr.currentProject();
