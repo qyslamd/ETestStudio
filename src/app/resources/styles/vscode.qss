@@ -963,6 +963,28 @@ QScrollArea#WelcomeRecentScroll {
 QScrollArea#WelcomeRecentScroll > QWidget > QWidget {
     background-color: transparent;
 }
+#WelcomeRecentScroll QScrollBar:vertical {
+    width: 6px;
+    background: transparent;
+    margin: 0;
+}
+#WelcomeRecentScroll QScrollBar::handle:vertical {
+    background: #555555;
+    border-radius: 3px;
+    min-height: 30px;
+}
+#WelcomeRecentScroll QScrollBar::handle:vertical:hover {
+    background: #777777;
+}
+#WelcomeRecentScroll QScrollBar::add-line:vertical,
+#WelcomeRecentScroll QScrollBar::sub-line:vertical {
+    height: 0;
+    background: none;
+}
+#WelcomeRecentScroll QScrollBar::add-page:vertical,
+#WelcomeRecentScroll QScrollBar::sub-page:vertical {
+    background: none;
+}
 QWidget#WelcomeRecentContainer {
     background-color: #252526;
 }

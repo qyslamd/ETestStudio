@@ -184,7 +184,7 @@ void WelcomeWidget::initUi() {
   recent_scroll_->setWidgetResizable(true);
   recent_scroll_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   recent_scroll_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  recent_scroll_->setMaximumHeight(240);
+  recent_scroll_->setMaximumHeight(320);
 
   recent_container_ = new QWidget(this);
   recent_container_->setObjectName("WelcomeRecentContainer");
@@ -324,19 +324,23 @@ void WelcomeWidget::rebuildRecentCards() {
     auto* card = new QFrame(recent_container_);
     card->setObjectName("WelcomeProjectCard");
     card->setCursor(Qt::PointingHandCursor);
+    card->setMinimumWidth(220);
     card->setProperty("projectPath", path);
     card->installEventFilter(this);
 
     auto* cardLayout = new QVBoxLayout(card);
-    cardLayout->setContentsMargins(12, 10, 12, 10);
-    cardLayout->setSpacing(4);
+    cardLayout->setContentsMargins(12, 8, 12, 8);
+    cardLayout->setSpacing(2);
 
     auto* nameLabel = new QLabel(displayName, card);
+    nameLabel->setWordWrap(true);
     nameLabel->setObjectName("WelcomeCardName");
+    nameLabel->setToolTip(
+        QStringLiteral("项目名称: %1\n路径: %2").arg(displayName).arg(fi.absolutePath()));
 
     auto* pathLabel = new QLabel(fi.absolutePath(), card);
-    pathLabel->setWordWrap(true);
     pathLabel->setObjectName("WelcomeCardPath");
+    pathLabel->setToolTip(fi.absolutePath());
 
     // 时间戳
     QString timeStr;
@@ -346,6 +350,8 @@ void WelcomeWidget::rebuildRecentCards() {
     }
     auto* timeLabel = new QLabel(timeStr, card);
     timeLabel->setObjectName("WelcomeCardTime");
+    if (timeStr.isEmpty())
+        timeLabel->hide();
 
     cardLayout->addWidget(nameLabel);
     cardLayout->addWidget(pathLabel);
@@ -411,7 +417,14 @@ void WelcomeWidget::showRandomTip() {
   if (tips_.isEmpty())
     return;
   int idx = QRandomGenerator::global()->bounded(tips_.size());
-  tip_label_->setText(QStringLiteral("\xE2\x96\xB6 %1").arg(tips_[idx]));
+  bool dark = ThemeManager::instance().isDarkTheme();
+  QString icon = dark ? QStringLiteral("lightbulb_light")
+                      : QStringLiteral("lightbulb_dark");
+  tip_label_->setTextFormat(Qt::RichText);
+  tip_label_->setText(
+      QStringLiteral("<img src=':/resources/icons/svg/%1.svg' width='16' "
+                     "height='16' style='vertical-align:middle'>&nbsp;%2")
+          .arg(icon, tips_[idx]));
 }
 
 }  // namespace etest::app

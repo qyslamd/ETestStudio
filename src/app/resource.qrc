@@ -103,6 +103,8 @@
         <file>resources/icons/svg/chevron_down_light.svg</file>
         <file>resources/icons/svg/account_dark.svg</file>
         <file>resources/icons/svg/account_light.svg</file>
+        <file>resources/icons/svg/lightbulb_dark.svg</file>
+        <file>resources/icons/svg/lightbulb_light.svg</file>
         <file>resources/icons/svg/file_new_dark.svg</file>
         <file>resources/icons/svg/file_new_light.svg</file>
         <file>resources/icons/svg/file_open_dark.svg</file>
