@@ -35,6 +35,7 @@ conversations/
 .vs/
 .opencode/
 .claude/
+.qtcreator/
 .superpowers/
 *.vcxproj*
 *.sln

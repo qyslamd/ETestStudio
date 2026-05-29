@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QRandomGenerator>
 #include <QtMath>
+#include <QPainterPath>
 
 // ============================================================================
 //  Construction
