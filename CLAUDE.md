@@ -15,21 +15,6 @@ scripts/build_ninja.bat
 - 构建输出目录：`build/ninja-debug/`
 - 可执行文件输出到：`build/ninja-debug/bin/`
 
-### 运行程序
-#### 主程序
-```batch
-rem 自动配置Qt环境变量
-rem 启动编译好的etest_demo.exe
-scripts/run_app.bat
-```
-#### 其它程序
-```batch
-rem 自动配置Qt环境变量
-rem <xxxx> 是cmake自动通过config_file生成的
-rem 启动编译好的可执行程序
-scripts/run_<xxxx>.bat
-```
-
 ## 代码风格
 - 所有生成的代码需要遵循clang-format的Google C++风格规范
 
