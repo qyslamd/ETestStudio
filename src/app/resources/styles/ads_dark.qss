@@ -94,20 +94,20 @@ QScrollArea#dockWidgetScrollArea {
 
 #tabCloseButton {
     margin-top: 2px;
-    background: none;
+    background: transparent;
     border: none;
-    padding: 0px -2px;
+    border-radius: 3px;
+    padding: 2px;
     qproperty-icon: url(:/resources/icons/svg/close_light.svg);
-    qproperty-iconSize: 16px;
+    qproperty-iconSize: 12px;
 }
 
 #tabCloseButton:hover {
-    border: 1px solid rgba(255, 255, 255, 32);
-    background: rgba(255, 255, 255, 16);
+    background-color: rgba(255, 255, 255, 0.12);
 }
 
 #tabCloseButton:pressed {
-    background: rgba(255, 255, 255, 32);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 #tabsMenuButton::menu-indicator {

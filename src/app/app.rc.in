@@ -16,7 +16,7 @@ BEGIN
         BLOCK "080404B0"
         BEGIN
             VALUE "CompanyName",      "etest-demo"
-            VALUE "FileDescription",  "etest-demo - KernelYun ETest-like Test System"
+            VALUE "FileDescription",  "etest-demo - Enpht Auto Test System"
             VALUE "FileVersion",      "@APP_VERSION_MAJOR@.@APP_VERSION_MINOR@.@APP_VERSION_PATCH@.@APP_VERSION_TWEAK@"
             VALUE "InternalName",     "etest_demo"
             VALUE "LegalCopyright",   "Copyright 2026"

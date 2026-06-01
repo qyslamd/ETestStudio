@@ -42,6 +42,14 @@
   PreStep/PostStep/onSetup/onCleanup 生命周期管理
   -> [NI 分析报告](docs/02-研究/NI_VeriStand_TestStand_分析与对比.md) 7.3 节
 
+- [ ] **CentralWidget → QStackedWidget 改造**
+  主窗口 centralWidget 替换为 QStackedWidget，每页完全独立布局，Ribbon 由页面自行管理。
+  - 方案：QStackedWidget 直接 setCentralWidget，每页拥有自定义 chrome
+  - Page 0: 设计模式（当前布局 — activity_bar + sidebar + dock + bottom panel）
+  - Page 1+: 调试运行、监控/报表、CEF 嵌入式浏览器等
+  - Ribbon 策略：IRibbonPage 接口，页面切换时 setup/teardown Ribbon category
+  - 切换开销：低频操作（秒级），懒加载 category 缓存可避免重复构造
+
 ## 已完成
 
 - [x] **NI VeriStand + TestStand 拆解分析**

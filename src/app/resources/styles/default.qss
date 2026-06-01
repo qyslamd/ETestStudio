@@ -402,6 +402,23 @@ QWidget#sidebarActivityBar QPushButton:hover {
     background-color: #E0E0E0;
     color: #222222;
 }
+/* ==================== Tab Close Button ==================== */
+#tabCloseButton {
+    margin-top: 2px;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 2px;
+    qproperty-icon: url(:/resources/icons/svg/close_dark.svg);
+    qproperty-iconSize: 12px;
+}
+#tabCloseButton:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+#tabCloseButton:pressed {
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
 QWidget#sidebarActivityBar QPushButton:checked {
     border-left: 2px solid #0078D4;
     color: #222222;

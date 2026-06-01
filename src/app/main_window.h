@@ -93,8 +93,7 @@ class MainWindow : public SARibbonMainWindow {
   QSplitter* h_splitter_;  // 水平：Sidebar / 垂直区域 / AuxSidebar
   QSplitter* v_splitter_;  // 垂直：ContainerWidget / BottomContainer
 
-  // 编辑器容器（HintBar + CDockManager）
-  QWidget* container_widget_;
+  // 提示栏
   HintBarWidget* hint_bar_;
 
   // 编辑器管理

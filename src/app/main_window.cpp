@@ -166,17 +166,27 @@ void MainWindow::initUi() {
   // ==================== 中央容器 ====================
   auto* centralContainer = new QWidget(this);
   centralContainer->setObjectName("centralContainer");
-  auto* main_layout = new QHBoxLayout(centralContainer);
+  auto* main_layout = new QVBoxLayout(centralContainer);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
+  // ===== 提示栏（全宽，顶部） =====
+  hint_bar_ = new HintBarWidget(centralContainer);
+  main_layout->addWidget(hint_bar_);
+
+  // ==================== 水平布局（活动栏 + 水平分割器） ====================
+  auto* horizontal_layout = new QHBoxLayout;
+  horizontal_layout->setContentsMargins(0, 0, 0, 0);
+  horizontal_layout->setSpacing(0);
+
   // ==================== 活动栏 ====================
   activity_bar_ = new ActivityBarWidget(centralContainer);
-  main_layout->addWidget(activity_bar_);
+  horizontal_layout->addWidget(activity_bar_);
 
   // ==================== 水平分割器 ====================
   h_splitter_ = new QSplitter(Qt::Horizontal, centralContainer);
   h_splitter_->setChildrenCollapsible(true);
+  horizontal_layout->addWidget(h_splitter_, 1);
 
   // ===== 侧边栏 =====
   sidebar_ = new SidebarWidget(h_splitter_);
@@ -238,15 +248,6 @@ void MainWindow::initUi() {
   v_splitter_->setChildrenCollapsible(true);
   h_splitter_->addWidget(v_splitter_);
 
-  // ===== 容器包装（提示栏 + 编辑器区域） =====
-  container_widget_ = new QWidget(v_splitter_);
-  auto* container_layout = new QVBoxLayout(container_widget_);
-  container_layout->setContentsMargins(0, 0, 0, 0);
-  container_layout->setSpacing(0);
-
-  hint_bar_ = new HintBarWidget(container_widget_);
-  container_layout->addWidget(hint_bar_);
-
   // 测试提示消息
   hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
   hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
@@ -263,8 +264,9 @@ void MainWindow::initUi() {
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   ads::CDockManager::setConfigFlag(
       ads::CDockManager::MiddleMouseButtonClosesTab, true);
-  dock_manager_ = new ads::CDockManager(container_widget_);
-  container_layout->addWidget(dock_manager_, 1);
+  ads::CDockManager::setConfigFlag(
+      ads::CDockManager::AllTabsHaveCloseButton, true);
+  dock_manager_ = new ads::CDockManager(v_splitter_);
 
   // 中央编辑区：Welcome页面
   welcome_widget_ = new WelcomeWidget(this);
@@ -312,7 +314,7 @@ void MainWindow::initUi() {
   h_splitter_->setSizes({280, 800, 0});  // sidebar / 垂直区域 / aux
   v_splitter_->setSizes({600, 200});     // 编辑器 / 底部面板
 
-  main_layout->addWidget(h_splitter_);
+  main_layout->addLayout(horizontal_layout, 1);
   setCentralWidget(centralContainer);
 
   // 恢复窗口状态
