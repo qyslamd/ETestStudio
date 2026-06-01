@@ -360,6 +360,8 @@ void MainWindow::initSignals() {
 
   // 项目管理信号
   auto& projectMgr = etest::core::project::ProjectManager::instance();
+  connect(&projectMgr, &etest::core::project::ProjectManager::projectCreated,
+          this, &MainWindow::onProjectOpened);
   connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
           this, &MainWindow::onProjectOpened);
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
@@ -673,7 +675,10 @@ void MainWindow::initSignals() {
       settings_dialog_ = new SettingsDialog(this);
       // QDialog 作为独立窗口，需要主动继承 MainWindow 的样式表
       settings_dialog_->setStyleSheet(styleSheet());
+      connect(settings_dialog_, &QDialog::finished, this,
+              [this]() { activity_bar_->setSettingsActive(false); });
     }
+    activity_bar_->setSettingsActive(true);
     settings_dialog_->show();
     settings_dialog_->raise();
     settings_dialog_->activateWindow();
@@ -730,8 +735,11 @@ void MainWindow::initSignals() {
       login_menu_->exec(QCursor::pos());
     } else {
       auto* dlg = new LoginDialog(this);
+      connect(dlg, &QDialog::finished, this,
+              [this]() { activity_bar_->setLoginActive(false); });
       connect(dlg, &QDialog::finished, dlg, &QObject::deleteLater);
       dlg->show();
+      activity_bar_->setLoginActive(true);
     }
   });
 
@@ -828,16 +836,16 @@ void MainWindow::onOpenProject() {
           this, QStringLiteral("打开项目失败"),
           QStringLiteral("无法打开项目文件：%1").arg(filePath));
     } else {
-	      sidebar_->switchPage(PageId::kProjectOverview);
-	      if (!sidebar_->isContentVisible()) {
-	        sidebar_->showContent();
-	        auto sizes = h_splitter_->sizes();
-	        if (!sizes.isEmpty()) {
-	          sizes[0] = sidebar_expanded_width_;
-	          h_splitter_->setSizes(sizes);
-	        }
-	      }
-	      activity_bar_->setActivePageId(PageId::kProjectOverview);
+      sidebar_->switchPage(PageId::kProjectOverview);
+      if (!sidebar_->isContentVisible()) {
+        sidebar_->showContent();
+        auto sizes = h_splitter_->sizes();
+        if (!sizes.isEmpty()) {
+          sizes[0] = sidebar_expanded_width_;
+          h_splitter_->setSizes(sizes);
+        }
+      }
+      activity_bar_->setActivePageId(PageId::kProjectOverview);
     }
   }
 }
@@ -849,16 +857,16 @@ void MainWindow::openRecentProject(const QString& path) {
 
   auto& pm = etest::core::project::ProjectManager::instance();
   if (pm.openProject(path)) {
-	    sidebar_->switchPage(PageId::kProjectOverview);
-	    if (!sidebar_->isContentVisible()) {
-	      sidebar_->showContent();
-	      auto sizes = h_splitter_->sizes();
-	      if (!sizes.isEmpty()) {
-	        sizes[0] = sidebar_expanded_width_;
-	        h_splitter_->setSizes(sizes);
-	      }
-	    }
-	    activity_bar_->setActivePageId(PageId::kProjectOverview);
+    sidebar_->switchPage(PageId::kProjectOverview);
+    if (!sidebar_->isContentVisible()) {
+      sidebar_->showContent();
+      auto sizes = h_splitter_->sizes();
+      if (!sizes.isEmpty()) {
+        sizes[0] = sidebar_expanded_width_;
+        h_splitter_->setSizes(sizes);
+      }
+    }
+    activity_bar_->setActivePageId(PageId::kProjectOverview);
     return;
   }
 
@@ -943,6 +951,18 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   updateWindowTitle();
   status_message_label_->setText(
       QStringLiteral("项目已打开：%1").arg(projectPath));
+
+  // 切换到侧边栏项目管理页面
+  sidebar_->switchPage(PageId::kProjectOverview);
+  if (!sidebar_->isContentVisible()) {
+    sidebar_->showContent();
+    auto sizes = h_splitter_->sizes();
+    if (!sizes.isEmpty()) {
+      sizes[0] = sidebar_expanded_width_;
+      h_splitter_->setSizes(sizes);
+    }
+  }
+  activity_bar_->setActivePageId(PageId::kProjectOverview);
 }
 
 void MainWindow::onProjectClosed() {
@@ -1429,7 +1449,10 @@ void MainWindow::setupRibbon() {
       if (!settings_dialog_) {
         settings_dialog_ = new SettingsDialog(this);
         settings_dialog_->setStyleSheet(styleSheet());
+        connect(settings_dialog_, &QDialog::finished, this,
+                [this]() { activity_bar_->setSettingsActive(false); });
       }
+      activity_bar_->setSettingsActive(true);
       settings_dialog_->show();
       settings_dialog_->raise();
       settings_dialog_->activateWindow();

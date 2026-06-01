@@ -30,6 +30,8 @@ class ActivityBarWidget : public QWidget {
   QString activePageId() const;
   void reloadIcons();
   void setLoginState(bool loggedIn, const QString& userName, const QString& role);
+  void setLoginActive(bool active);
+  void setSettingsActive(bool active);
 
  signals:
   void pageClicked(const QString& id);

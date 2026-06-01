@@ -95,6 +95,18 @@ void ActivityBarWidget::setLoginState(bool loggedIn, const QString& userName,
   }
 }
 
+void ActivityBarWidget::setLoginActive(bool active) {
+  login_btn_->setChecked(active);
+  login_btn_->setIconSize(active ? QSize(kActiveIconSize, kActiveIconSize)
+                                 : QSize(kNormalIconSize, kNormalIconSize));
+}
+
+void ActivityBarWidget::setSettingsActive(bool active) {
+  settings_btn_->setChecked(active);
+  settings_btn_->setIconSize(active ? QSize(kActiveIconSize, kActiveIconSize)
+                                    : QSize(kNormalIconSize, kNormalIconSize));
+}
+
 void ActivityBarWidget::updateActiveIconSize() {
   for (int i = 0; i < buttons_.size(); ++i) {
     bool active = (pages_[i].id == active_page_id_);
