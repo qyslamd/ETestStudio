@@ -30,11 +30,8 @@ rem 启动编译好的可执行程序
 scripts/run_<xxxx>.bat
 ```
 
-### 代码格式化
-```bash
-format_code.bat
-```
-- 使用clang-format格式化代码，遵循Google C++风格规范
+## 代码风格
+- 所有生成的代码需要遵循clang-format的Google C++风格规范
 
 ## 代码架构
 项目采用分层架构设计：

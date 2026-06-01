@@ -57,7 +57,8 @@ bool SingleInstance::connectToExistingInstance(const QStringList& arguments) {
     return false;
   }
 
-  LOG_INFO("SingleInstance", "转发参数到已有实例, 参数数: {}", arguments.size());
+  LOG_INFO("SingleInstance", "转发参数到已有实例, 参数数: {}",
+           arguments.size());
 
   QByteArray message;
   QDataStream stream(&message, QIODevice::WriteOnly);
@@ -124,7 +125,8 @@ void SingleInstance::handleNewConnection() {
     connect(socket, &QLocalSocket::disconnected, socket,
             &QLocalSocket::deleteLater);
     connect(socket,
-            QOverload<QLocalSocket::LocalSocketError>::of(&QLocalSocket::error),
+            QOverload<QLocalSocket::LocalSocketError>::of(
+                &QLocalSocket::errorOccurred),
             this, &SingleInstance::handleSocketError);
   }
 }
