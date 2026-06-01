@@ -33,6 +33,7 @@
 #include "ActivityBarWidget.h"
 #include "AppIconProvider.h"
 #include "BottomContainerWidget.h"
+#include "HintBarWidget.h"
 #include "EditorManager.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
@@ -237,11 +238,33 @@ void MainWindow::initUi() {
   v_splitter_->setChildrenCollapsible(true);
   h_splitter_->addWidget(v_splitter_);
 
-  // ===== 编辑器区域 =====
+  // ===== 容器包装（提示栏 + 编辑器区域） =====
+  container_widget_ = new QWidget(v_splitter_);
+  auto* container_layout = new QVBoxLayout(container_widget_);
+  container_layout->setContentsMargins(0, 0, 0, 0);
+  container_layout->setSpacing(0);
+
+  hint_bar_ = new HintBarWidget(container_widget_);
+  container_layout->addWidget(hint_bar_);
+
+  // 测试提示消息
+  hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
+  hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
+  hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
+                      QStringLiteral("更新"),
+                      [] { /* 占位：触发更新检查 */ });
+  hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
+                      QStringLiteral("查看"),
+                      [] { /* 占位：跳转到文件 */ });
+  hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
+                      QStringLiteral("重试"),
+                      [] { /* 占位：重试连接 */ });
+
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   ads::CDockManager::setConfigFlag(
       ads::CDockManager::MiddleMouseButtonClosesTab, true);
-  dock_manager_ = new ads::CDockManager(v_splitter_);
+  dock_manager_ = new ads::CDockManager(container_widget_);
+  container_layout->addWidget(dock_manager_, 1);
 
   // 中央编辑区：Welcome页面
   welcome_widget_ = new WelcomeWidget(this);

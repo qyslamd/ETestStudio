@@ -1403,3 +1403,42 @@ SettingsDialog QPushButton:pressed {
 #userMgrCloseBtn:hover {
   color: #eee;
 }
+
+/* ==================== HintBar ==================== */
+QWidget#HintBar {
+    background-color: #252526;
+    border-bottom: 1px solid #3C3C3C;
+}
+QWidget#HintItem {
+    background-color: #3D3200;
+    border-bottom: 1px solid #665500;
+}
+QLabel#HintIndicator {
+    color: #569CD6;
+    font-size: 10px;
+}
+QLabel#HintText {
+    color: #CCCCCC;
+    font-size: 12px;
+}
+QPushButton#HintActionBtn {
+    background-color: #2D2D2D;
+    color: #75BEFF;
+    border: 1px solid #3C3C3C;
+    border-radius: 3px;
+    font-size: 11px;
+    padding: 0 8px;
+}
+QPushButton#HintActionBtn:hover {
+    background-color: #383838;
+    border-color: #569CD6;
+}
+QPushButton#HintCloseBtn {
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 12px;
+}
+QPushButton#HintCloseBtn:hover {
+    color: #FFFFFF;
+}

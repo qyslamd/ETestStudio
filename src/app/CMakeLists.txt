@@ -17,6 +17,8 @@ add_executable(${TARGET_NAME}
     main.cpp
     main_window.h
     main_window.cpp
+    HintBarWidget.h
+    HintBarWidget.cpp
     ActivityBarWidget.h
     ActivityBarWidget.cpp
     SidebarWidget.h

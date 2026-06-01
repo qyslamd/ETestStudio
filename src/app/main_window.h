@@ -24,6 +24,7 @@ class SettingsDialog;
 class TerminalPanel;
 class BottomContainerWidget;
 class EditorManager;
+class HintBarWidget;
 class WelcomeWidget;
 
 class MainWindow : public SARibbonMainWindow {
@@ -90,7 +91,11 @@ class MainWindow : public SARibbonMainWindow {
 
   // 水平/垂直分割器
   QSplitter* h_splitter_;  // 水平：Sidebar / 垂直区域 / AuxSidebar
-  QSplitter* v_splitter_;  // 垂直：CDockManager / BottomContainer
+  QSplitter* v_splitter_;  // 垂直：ContainerWidget / BottomContainer
+
+  // 编辑器容器（HintBar + CDockManager）
+  QWidget* container_widget_;
+  HintBarWidget* hint_bar_;
 
   // 编辑器管理
   EditorManager* editor_manager_;
