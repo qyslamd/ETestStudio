@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <!-- Google Green lighter variant (for dark theme icon) -->
+    <linearGradient id="bgGreen" x1="0" y1="0" x2="256" y2="256">
+      <stop offset="0%" stop-color="#81C784"/>
+      <stop offset="100%" stop-color="#66BB6A"/>
+    </linearGradient>
+    <linearGradient id="termFrost" x1="0" y1="0" x2="0" y2="204">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.40"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="64" ry="64" fill="url(#bgGreen)"/>
+  <rect x="40" y="48" width="176" height="160" rx="14" ry="14" fill="url(#termFrost)"/>
+  <rect x="40" y="48" width="176" height="30" rx="14" ry="14" fill="rgba(255,255,255,0.22)"/>
+  <rect x="40" y="72" width="176" height="6" fill="rgba(255,255,255,0.22)"/>
+  <circle cx="62" cy="63" r="5" fill="#E57373"/>
+  <circle cx="80" cy="63" r="5" fill="#FFD54F"/>
+  <circle cx="98" cy="63" r="5" fill="#66BB6A"/>
+  <rect x="60" y="96" width="108" height="6" rx="3" fill="rgba(255,255,255,0.55)"/>
+  <rect x="60" y="116" width="136" height="6" rx="3" fill="rgba(255,255,255,0.40)"/>
+  <rect x="60" y="136" width="88" height="6" rx="3" fill="rgba(255,255,255,0.55)"/>
+  <path d="M60 158 L70 164 L60 170" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="76" y="162" width="64" height="4" rx="2" fill="rgba(255,255,255,0.50)"/>
+</svg>

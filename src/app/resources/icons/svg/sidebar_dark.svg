@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <!-- Google Blue standard variant (for light theme icon) -->
+    <linearGradient id="blueSide" x1="0" y1="0" x2="128" y2="256">
+      <stop offset="0%" stop-color="#5B9CF6"/>
+      <stop offset="100%" stop-color="#4285F4"/>
+    </linearGradient>
+    <!-- Google Red standard variant -->
+    <linearGradient id="redSide" x1="128" y1="0" x2="256" y2="256">
+      <stop offset="0%" stop-color="#EA4335"/>
+      <stop offset="100%" stop-color="#D33426"/>
+    </linearGradient>
+    <linearGradient id="panelFrost" x1="0" y1="0" x2="0" y2="256">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.08"/>
+    </linearGradient>
+    <clipPath id="baseClip">
+      <rect x="16" y="16" width="224" height="224" rx="64" ry="64"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#baseClip)">
+    <rect x="16" y="16" width="128" height="224" fill="url(#blueSide)"/>
+    <rect x="128" y="16" width="128" height="224" fill="url(#redSide)"/>
+  </g>
+  <rect x="36" y="44" width="96" height="168" rx="12" ry="12" fill="url(#panelFrost)"/>
+  <rect x="52" y="66" width="64" height="6" rx="3" fill="rgba(255,255,255,0.45)"/>
+  <rect x="52" y="86" width="44" height="6" rx="3" fill="rgba(255,255,255,0.30)"/>
+  <rect x="52" y="110" width="64" height="6" rx="3" fill="rgba(255,255,255,0.45)"/>
+  <rect x="52" y="130" width="44" height="6" rx="3" fill="rgba(255,255,255,0.30)"/>
+  <rect x="52" y="154" width="64" height="6" rx="3" fill="rgba(255,255,255,0.45)"/>
+  <rect x="150" y="44" width="70" height="168" rx="8" ry="8" fill="rgba(255,255,255,0.14)"/>
+  <rect x="160" y="66" width="50" height="4" rx="2" fill="rgba(255,255,255,0.35)"/>
+  <rect x="160" y="82" width="38" height="4" rx="2" fill="rgba(255,255,255,0.22)"/>
+  <rect x="160" y="102" width="50" height="4" rx="2" fill="rgba(255,255,255,0.35)"/>
+  <rect x="160" y="118" width="38" height="4" rx="2" fill="rgba(255,255,255,0.22)"/>
+  <rect x="160" y="138" width="50" height="4" rx="2" fill="rgba(255,255,255,0.35)"/>
+  <rect x="160" y="154" width="38" height="4" rx="2" fill="rgba(255,255,255,0.22)"/>
+</svg>

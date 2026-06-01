@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <!-- Google Blue standard variant (for light theme icon) -->
+    <linearGradient id="bgBlue" x1="0" y1="0" x2="256" y2="256">
+      <stop offset="0%" stop-color="#5B9CF6"/>
+      <stop offset="100%" stop-color="#4285F4"/>
+    </linearGradient>
+    <linearGradient id="screenFrost" x1="0" y1="0" x2="0" y2="192">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.10"/>
+    </linearGradient>
+    <!-- Google Yellow standard variant -->
+    <linearGradient id="starYellow" x1="0" y1="0" x2="64" y2="64">
+      <stop offset="0%" stop-color="#FDE16D"/>
+      <stop offset="100%" stop-color="#FBBC05"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="64" ry="64" fill="url(#bgBlue)"/>
+  <rect x="48" y="60" width="160" height="136" rx="14" ry="14" fill="url(#screenFrost)"/>
+  <rect x="48" y="60" width="160" height="28" rx="14" ry="14" fill="rgba(255,255,255,0.20)"/>
+  <rect x="48" y="82" width="160" height="6" fill="rgba(255,255,255,0.20)"/>
+  <circle cx="70" cy="74" r="4.5" fill="rgba(255,255,255,0.55)"/>
+  <circle cx="88" cy="74" r="4.5" fill="rgba(255,255,255,0.55)"/>
+  <circle cx="106" cy="74" r="4.5" fill="rgba(255,255,255,0.55)"/>
+  <path d="M128 96 L133.5 118.5 L156 124 L133.5 129.5 L128 152 L122.5 129.5 L100 124 L122.5 118.5 Z" fill="url(#starYellow)"/>
+</svg>

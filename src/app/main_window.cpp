@@ -1412,6 +1412,7 @@ void MainWindow::setupRibbon() {
     auto* panel_panels = cat->addPanel(QStringLiteral("面板"));
 
     auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
+    act_welcome->setIcon(AppIconProvider::instance().icon(QStringLiteral("welcome")));
     connect(act_welcome, &QAction::triggered, this, [this]() {
       auto* centralDock = dock_manager_->findDockWidget("CentralDock");
       if (!centralDock)
@@ -1424,12 +1425,14 @@ void MainWindow::setupRibbon() {
     panel_panels->addLargeAction(act_welcome);
 
     view_panel_action_ = new QAction(QStringLiteral("输出面板"), this);
+    view_panel_action_->setIcon(AppIconProvider::instance().icon(QStringLiteral("output_panel")));
     view_panel_action_->setCheckable(true);
     view_panel_action_->setChecked(true);
     view_panel_action_->setShortcut(QStringLiteral("Ctrl+J"));
     panel_panels->addLargeAction(view_panel_action_);
 
     view_aux_sidebar_action_ = new QAction(QStringLiteral("辅助侧边栏"), this);
+    view_aux_sidebar_action_->setIcon(AppIconProvider::instance().icon(QStringLiteral("sidebar")));
     view_aux_sidebar_action_->setCheckable(true);
     view_aux_sidebar_action_->setChecked(false);
     panel_panels->addLargeAction(view_aux_sidebar_action_);
@@ -1443,7 +1446,7 @@ void MainWindow::setupRibbon() {
 
     auto* panel_tools = cat->addPanel(QStringLiteral("工具"));
     auto* act_settings =
-        new QAction(style()->standardIcon(QStyle::SP_FileDialogNewFolder),
+        new QAction(AppIconProvider::instance().icon(QStringLiteral("ribbon_settings")),
                     QStringLiteral("设置"), this);
     connect(act_settings, &QAction::triggered, this, [this]() {
       if (!settings_dialog_) {
@@ -1467,7 +1470,9 @@ void MainWindow::setupRibbon() {
     auto* cat = ribbon->addCategoryPage(QStringLiteral("帮助"));
 
     auto* panel_about = cat->addPanel(QStringLiteral("关于"));
-    auto* act_about = new QAction(QStringLiteral("关于 ETest Demo"), this);
+    auto* act_about = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("ribbon_about")),
+        QStringLiteral("关于 ETest Demo"), this);
     connect(act_about, &QAction::triggered, this, [this]() {
       AboutDialog dlg(this);
       dlg.exec();

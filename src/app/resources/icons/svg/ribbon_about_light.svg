@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <!-- Google Blue lighter variant (for dark theme icon) -->
+    <linearGradient id="bgBlue" x1="0" y1="0" x2="256" y2="256">
+      <stop offset="0%" stop-color="#64B5F6"/>
+      <stop offset="100%" stop-color="#42A5F5"/>
+    </linearGradient>
+    <linearGradient id="badgeFrost" x1="0" y1="0" x2="0" y2="256">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.40"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="64" ry="64" fill="url(#bgBlue)"/>
+  <!-- Info badge circle -->
+  <circle cx="128" cy="128" r="50" fill="url(#badgeFrost)"/>
+  <!-- "i" dot -->
+  <circle cx="128" cy="100" r="10" fill="rgba(255,255,255,0.90)"/>
+  <!-- "i" stem -->
+  <rect x="122" y="122" width="12" height="42" rx="6" fill="rgba(255,255,255,0.90)"/>
+</svg>

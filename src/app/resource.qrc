@@ -121,6 +121,16 @@
         <file>resources/icons/svg/file_copy_light.svg</file>
         <file>resources/icons/svg/file_paste_dark.svg</file>
         <file>resources/icons/svg/file_paste_light.svg</file>
+        <file>resources/icons/svg/welcome_light.svg</file>
+        <file>resources/icons/svg/welcome_dark.svg</file>
+        <file>resources/icons/svg/output_panel_light.svg</file>
+        <file>resources/icons/svg/output_panel_dark.svg</file>
+        <file>resources/icons/svg/sidebar_light.svg</file>
+        <file>resources/icons/svg/sidebar_dark.svg</file>
+        <file>resources/icons/svg/ribbon_settings_light.svg</file>
+        <file>resources/icons/svg/ribbon_settings_dark.svg</file>
+        <file>resources/icons/svg/ribbon_about_light.svg</file>
+        <file>resources/icons/svg/ribbon_about_dark.svg</file>
         <file alias="translations/ads_zh_CN.qm">resources/translations/ads_zh_CN.qm</file>
         <file alias="translations/SARibbon_zh_CN.qm">resources/translations/SARibbon_zh_CN.qm</file>
     </qresource>
