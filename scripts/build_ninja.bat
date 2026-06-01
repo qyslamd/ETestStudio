@@ -4,10 +4,10 @@ setlocal enabledelayedexpansion
 chcp 65001 >nul
 
 :: 调用 Visual Studio 的 x64 Native Tools Command Prompt 环境变量设置脚本
-call "D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+call "%ETest_VS2019_x64_Native_Bat%"
 
 :: 配置CMake环境变量
-set PATH=%PATH%;"D:\Program Files\CMake\bin"
+set PATH=%PATH%;"%ETest_CMake_Path%"
 
 set PROJECT_ROOT=%~dp0
 cd /d "%PROJECT_ROOT%.."

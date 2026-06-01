@@ -89,14 +89,36 @@ void AboutDialog::initUi() {
   chips_grid->setSpacing(8);
 
   const char* tech_list[] = {
-      "Qt 5.14.2",    "C++17",      "Lua 5.4.4",   "spdlog",
-      "QScintilla",   "QXlsx",      "libharu",     "Googletest",
-      "SARibbon",     "QWindowKit", "libpng",      "zlib",
+      "C++17",        "Lua 5.4.4",   "spdlog",
+      "QScintilla",   "QXlsx",       "libharu",
+      "Googletest",   "SARibbon",    "QWindowKit",
+      "libpng",       "zlib",
   };
   constexpr int kChipsPerRow = 3;
-  int chip_count = sizeof(tech_list) / sizeof(tech_list[0]);
 
-  for (int i = 0; i < chip_count; i += kChipsPerRow) {
+  // First row: Qt (runtime version via qVersion()) + C++17 + Lua
+  {
+    auto* row = new QHBoxLayout;
+    row->setSpacing(8);
+
+    auto* qt_chip = new QLabel(QString("Qt %1").arg(QLatin1String(qVersion())));
+    qt_chip->setObjectName(QStringLiteral("aboutTechChip"));
+    qt_chip->setAlignment(Qt::AlignCenter);
+    row->addWidget(qt_chip);
+
+    for (int j = 0; j < 2; ++j) {
+      auto* chip = new QLabel(QString::fromLatin1(tech_list[j]));
+      chip->setObjectName(QStringLiteral("aboutTechChip"));
+      chip->setAlignment(Qt::AlignCenter);
+      row->addWidget(chip);
+    }
+    row->addStretch();
+    chips_grid->addLayout(row);
+  }
+
+  // Remaining rows (9 items × 3 per row)
+  int chip_count = sizeof(tech_list) / sizeof(tech_list[0]);
+  for (int i = 2; i < chip_count; i += kChipsPerRow) {
     auto* row = new QHBoxLayout;
     row->setSpacing(8);
     for (int j = 0; j < kChipsPerRow && i + j < chip_count; ++j) {
