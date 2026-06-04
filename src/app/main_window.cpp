@@ -47,7 +47,7 @@
 #include "TestProgramManagerWidget.h"
 #include "TextEditorWidget.h"
 #include "ThemeManager.h"
-#include "TuxSaverOverlay.h"
+#include "widgets/TuxSaverOverlay.h"
 #include "WelcomeWidget.h"
 #include "api/IEditor.h"
 #include "auth/AuthService.h"
@@ -153,7 +153,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::initUi() {
-  setWindowTitle("ETest Demo");
+  setWindowTitle(QStringLiteral("欢迎使用XXXX自动测试平台"));
   setMinimumSize(900, 600);
   setWindowIcon(QIcon(":/resources/icons/app_icon.ico"));
 
@@ -1005,10 +1005,10 @@ void MainWindow::updateWindowTitle() {
     if (projectMgr.hasUnsavedChanges()) {
       title.prepend("* ");
     }
-    title += " - ETest Demo";
+    title += " - 欢迎使用XXXX自动测试平台";
     setWindowTitle(title);
   } else {
-    setWindowTitle(QStringLiteral("ETest Demo"));
+    setWindowTitle(QStringLiteral("欢迎使用XXXX自动测试平台"));
   }
 }
 

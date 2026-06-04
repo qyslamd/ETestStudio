@@ -6,7 +6,7 @@
 
 #include <QElapsedTimer>
 
-#include "TuxSaverOverlay.h"
+#include "widgets/TuxSaverOverlay.h"
 
 class QMenu;
 class QAction;

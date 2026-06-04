@@ -237,37 +237,75 @@
 QWidget#WelcomeWidget {
     background-color: #F5F5F5;
 }
-QWidget#WelcomeCenter {
-    background-color: rgba(245, 245, 245, 160);
-    border-radius: 12px;
-}
-QLabel#WelcomeLogo {
-    color: #333333;
+
+/* --- Action Tiles (新建/打开项目, 1x1) --- */
+QLabel#WelcomeActionIcon {
+    color: #0078D4;
     font-size: 28px;
-    font-weight: bold;
 }
-QLabel#WelcomeVersion {
-    color: #999999;
-    font-size: 13px;
-}
-QLabel#WelcomeSectionHeader {
+QLabel#WelcomeActionText {
     color: #444444;
     font-size: 14px;
     font-weight: bold;
 }
-QPushButton#WelcomeActionButton {
-    background-color: #0078D4;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 3px;
-    padding: 6px 20px;
+
+/* --- Eye Widget Tile (4x1) --- */
+QWidget#WelcomeEyeContent {
+    background: transparent;
+}
+QWidget#WelcomeEyeTopBar {
+    background: transparent;
+}
+QLabel#WelcomeEyeLogoLabel {
+    color: #333333;
+    font-size: 15px;
+    font-weight: bold;
+    background: transparent;
+}
+QLabel#WelcomeEyeVersionLabel {
+    color: #999999;
+    font-size: 11px;
+    background: transparent;
+}
+QLabel#WelcomeEyeIconLabel {
+    background: transparent;
+}
+
+/* --- Recent Project Tiles (1x1) --- */
+QWidget#WelcomeProjectCardContent {
+    background-color: #FAFAFA;
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+}
+QWidget#WelcomeProjectCardContent:hover {
+    background-color: #F0F0F0;
+    border-color: #0078D4;
+}
+QLabel#WelcomeCardName {
+    color: #222222;
     font-size: 13px;
+    font-weight: bold;
 }
-QPushButton#WelcomeActionButton:hover {
-    background-color: #106EBE;
+QLabel#WelcomeCardPath {
+    color: #888888;
+    font-size: 11px;
 }
-QPushButton#WelcomeActionButton:pressed {
-    background-color: #005A9E;
+QLabel#WelcomeCardTime {
+    color: #AAAAAA;
+    font-size: 10px;
+}
+
+/* --- Clock Tile (2x2) --- */
+QLabel#WelcomeClockDigital {
+    color: #444444;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* --- Tile Name Labels (generic, used by tip tile etc.) --- */
+QLabel#gridTileName {
+    color: #888888;
+    font-size: 11px;
 }
 
 /* ==================== HintBar ==================== */
@@ -308,82 +346,6 @@ QPushButton#HintCloseBtn {
 QPushButton#HintCloseBtn:hover {
     color: #333;
 }
-QScrollArea#WelcomeRecentScroll {
-    background-color: transparent;
-    border: 1px solid #D0D0D0;
-    border-radius: 3px;
-}
-QScrollArea#WelcomeRecentScroll > QWidget > QWidget {
-    background-color: transparent;
-}
-#WelcomeRecentScroll QScrollBar:vertical {
-    width: 6px;
-    background: transparent;
-    margin: 0;
-}
-#WelcomeRecentScroll QScrollBar::handle:vertical {
-    background: #C0C0C0;
-    border-radius: 3px;
-    min-height: 30px;
-}
-#WelcomeRecentScroll QScrollBar::handle:vertical:hover {
-    background: #909090;
-}
-#WelcomeRecentScroll QScrollBar::add-line:vertical,
-#WelcomeRecentScroll QScrollBar::sub-line:vertical {
-    height: 0;
-    background: none;
-}
-#WelcomeRecentScroll QScrollBar::add-page:vertical,
-#WelcomeRecentScroll QScrollBar::sub-page:vertical {
-    background: none;
-}
-QWidget#WelcomeRecentContainer {
-    background-color: #FFFFFF;
-}
-QFrame#WelcomeProjectCard {
-    background-color: #FAFAFA;
-    border: 1px solid #E0E0E0;
-    border-radius: 6px;
-}
-QFrame#WelcomeProjectCard:hover {
-    background-color: #F0F0F0;
-    border-color: #0078D4;
-}
-QLabel#WelcomeCardName {
-    color: #222222;
-    font-size: 13px;
-    font-weight: bold;
-}
-QLabel#WelcomeCardPath {
-    color: #888888;
-    font-size: 11px;
-}
-QLabel#WelcomeCardTime {
-    color: #AAAAAA;
-    font-size: 10px;
-}
-QLabel#WelcomeEmptyHint {
-    color: #999999;
-    font-size: 13px;
-}
-QLabel#WelcomeTipLabel {
-    color: #888888;
-    font-size: 12px;
-    padding: 8px;
-    background-color: #EEEEEE;
-    border-radius: 4px;
-}
-QLabel#WelcomeShortcutKey {
-    color: #888888;
-    font-family: "Consolas", "Courier New", monospace;
-    font-size: 12px;
-}
-QLabel#WelcomeShortcutDesc {
-    color: #444444;
-    font-size: 12px;
-}
-
 /* ==================== 侧边栏活动按钮栏 ==================== */
 QWidget#sidebarActivityBar {
     background-color: #F0F0F0;

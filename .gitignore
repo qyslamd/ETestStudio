@@ -37,6 +37,7 @@ conversations/
 .claude/
 .qtcreator/
 .superpowers/
+.brainstorm/
 *.vcxproj*
 *.sln
 

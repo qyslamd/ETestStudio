@@ -923,77 +923,47 @@ ProtocalEditorWidget #sectionHeader {
 QWidget#WelcomeWidget {
     background-color: #1E1E1E;
 }
-QWidget#WelcomeCenter {
-    background-color: rgba(30, 30, 30, 160);
-    border-radius: 12px;
-}
-QLabel#WelcomeLogo {
-    color: #CCCCCC;
+
+/* --- Action Tiles (新建/打开项目, 1x1) --- */
+QLabel#WelcomeActionIcon {
+    color: #0E639C;
     font-size: 28px;
-    font-weight: bold;
 }
-QLabel#WelcomeVersion {
-    color: #888888;
-    font-size: 13px;
-}
-QLabel#WelcomeSectionHeader {
-    color: #BBBBBB;
+QLabel#WelcomeActionText {
+    color: #CCCCCC;
     font-size: 14px;
     font-weight: bold;
 }
-QPushButton#WelcomeActionButton {
-    background-color: #0E639C;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 3px;
-    padding: 6px 20px;
-    font-size: 13px;
-}
-QPushButton#WelcomeActionButton:hover {
-    background-color: #1177BB;
-}
-QPushButton#WelcomeActionButton:pressed {
-    background-color: #0D5A8F;
-}
-QScrollArea#WelcomeRecentScroll {
-    background-color: transparent;
-    border: 1px solid #3C3C3C;
-    border-radius: 3px;
-}
-QScrollArea#WelcomeRecentScroll > QWidget > QWidget {
-    background-color: transparent;
-}
-#WelcomeRecentScroll QScrollBar:vertical {
-    width: 6px;
+
+/* --- Eye Widget Tile (4x1) --- */
+QWidget#WelcomeEyeContent {
     background: transparent;
-    margin: 0;
 }
-#WelcomeRecentScroll QScrollBar::handle:vertical {
-    background: #555555;
-    border-radius: 3px;
-    min-height: 30px;
+QWidget#WelcomeEyeTopBar {
+    background: transparent;
 }
-#WelcomeRecentScroll QScrollBar::handle:vertical:hover {
-    background: #777777;
+QLabel#WelcomeEyeLogoLabel {
+    color: #CCCCCC;
+    font-size: 15px;
+    font-weight: bold;
+    background: transparent;
 }
-#WelcomeRecentScroll QScrollBar::add-line:vertical,
-#WelcomeRecentScroll QScrollBar::sub-line:vertical {
-    height: 0;
-    background: none;
+QLabel#WelcomeEyeVersionLabel {
+    color: #888888;
+    font-size: 11px;
+    background: transparent;
 }
-#WelcomeRecentScroll QScrollBar::add-page:vertical,
-#WelcomeRecentScroll QScrollBar::sub-page:vertical {
-    background: none;
+QLabel#WelcomeEyeIconLabel {
+    background: transparent;
 }
-QWidget#WelcomeRecentContainer {
-    background-color: #252526;
-}
-QFrame#WelcomeProjectCard {
+
+/* --- Recent Project Tiles (1x1) --- */
+QWidget#WelcomeProjectCardContent {
     background-color: #2D2D2D;
     border: 1px solid #3C3C3C;
     border-radius: 6px;
 }
-QFrame#WelcomeProjectCard:hover {
+QWidget#WelcomeProjectCardContent:hover {
     background-color: #383838;
     border-color: #007ACC;
 }
@@ -1010,25 +980,18 @@ QLabel#WelcomeCardTime {
     color: #666666;
     font-size: 10px;
 }
-QLabel#WelcomeEmptyHint {
-    color: #888888;
-    font-size: 13px;
-}
-QLabel#WelcomeTipLabel {
-    color: #999999;
-    font-size: 12px;
-    padding: 8px;
-    background-color: #2A2A2A;
-    border-radius: 4px;
-}
-QLabel#WelcomeShortcutKey {
-    color: #888888;
-    font-family: "Consolas", "Courier New", monospace;
-    font-size: 12px;
-}
-QLabel#WelcomeShortcutDesc {
+
+/* --- Clock Tile (2x2) --- */
+QLabel#WelcomeClockDigital {
     color: #CCCCCC;
-    font-size: 12px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* --- Tile Name Labels (generic, used by tip tile etc.) --- */
+QLabel#gridTileName {
+    color: #999999;
+    font-size: 11px;
 }
 
 /* ==================== SettingsDialog ==================== */

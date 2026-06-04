@@ -21,6 +21,7 @@ set(SOURCES
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
     utils/ByteUtil.cpp
+    utils/PixmapUtil.cpp
     plugin/PluginManager.cpp
     project/ProjectInfo.cpp
     project/ProjectManager.cpp
@@ -51,6 +52,7 @@ set(HEADERS
     utils/TimeUtil.h
     utils/StringUtil.h
     utils/ByteUtil.h
+    utils/PixmapUtil.h
     plugin/IPlugin.h
     plugin/IDevicePlugin.h
     plugin/IADevicePlugin.h

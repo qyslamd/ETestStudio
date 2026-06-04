@@ -59,6 +59,26 @@ add_executable(${TARGET_NAME}
     SearchWidget.cpp
     WelcomeWidget.h
     WelcomeWidget.cpp
+    grid/grid_layout.h
+    grid/grid_layout.cpp
+    grid/grid_tile.h
+    grid/grid_tile.cpp
+    grid/gradientpainter.h
+    grid/gradientpainter.cpp
+    grid/layout_calculator_base.h
+    grid/layout_calculator_base.cpp
+    grid/layout_calculator_v1.h
+    grid/layout_calculator_v1.cpp
+    grid/layout_calculator_v3.h
+    grid/layout_calculator_v3.cpp
+    grid/grid_animator.h
+    grid/grid_animator.cpp
+    widgets/PaintedClockWidget.h
+    widgets/PaintedClockWidget.cpp
+    widgets/EyeWidget.h
+    widgets/EyeWidget.cpp
+    widgets/TuxSaverOverlay.h
+    widgets/TuxSaverOverlay.cpp
     dialogs/AnimationDialog.h
     dialogs/AnimationDialog.cpp
     dialogs/NewProjectDialog.h
@@ -74,10 +94,6 @@ add_executable(${TARGET_NAME}
     utils/eph_qt_switch_button.h
     utils/eph_qt_switch_button.cpp
     resource.qrc
-    EyeWidget.h
-    EyeWidget.cpp
-    TuxSaverOverlay.h
-    TuxSaverOverlay.cpp
 )
 
 #=======================================

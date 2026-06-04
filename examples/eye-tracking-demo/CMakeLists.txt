@@ -2,12 +2,13 @@ set(TARGET_NAME "eye-tracking-demo")
 
 add_executable(${TARGET_NAME}
     main.cpp
-    ${CMAKE_SOURCE_DIR}/src/app/EyeWidget.h
-    ${CMAKE_SOURCE_DIR}/src/app/EyeWidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/app/widgets/EyeWidget.h
+    ${CMAKE_SOURCE_DIR}/src/app/widgets/EyeWidget.cpp
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src/app
+    ${CMAKE_SOURCE_DIR}/src/app/widgets
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
