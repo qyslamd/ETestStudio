@@ -181,7 +181,7 @@ void WelcomeWidget::initUi() {
   grid_layout_->addWidget(openProjectTile);
 
   // === Tile 4: 时钟 (1x2) ===
-  auto* clockWidget = new grid::PaintedClockWidget(this);
+  auto* clockWidget = new PaintedClockWidget(this);
   clockWidget->setMinimumSize(100, 100);
 
   {
@@ -488,13 +488,10 @@ void WelcomeWidget::mouseMoveEvent(QMouseEvent* event) {
   if (dragTile == tip_tile_) return;
 
   auto pixmap = dragTile->grab();
-  auto type = dragTile->type();
-  auto pos = dragTile->pos();
 
   QByteArray itemData;
   QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-  dataStream << reinterpret_cast<qintptr>(dragTile) << type << pos
-             << etest::core::utils::PixmapUtil::grayOpacityImg(pixmap) << event->pos();
+  dataStream << etest::core::utils::PixmapUtil::grayOpacityImg(pixmap);
 
   auto* mimeData = new QMimeData;
   mimeData->setData(grid::MimeType, itemData);
@@ -529,21 +526,17 @@ void WelcomeWidget::dragMoveEvent(QDragMoveEvent* event) {
     return;
   }
 
+  auto dragItem = qobject_cast<grid::GridTile*>(event->source());
+  if (!dragItem) return;
+
   QByteArray itemData = event->mimeData()->data(grid::MimeType);
   QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-
-  qintptr child = 0;
-  int type = 0x11;
-  QPoint pos, startDragPos;
   QPixmap pix;
-  dataStream >> child >> type >> pos >> pix >> startDragPos;
+  dataStream >> pix;
 
   auto trend = grid::getDragingTrend(drag_start_pos_, event->pos());
-  auto dragItem = reinterpret_cast<grid::GridTile*>(child);
-  if (dragItem) {
-    best_drop_rect_ = grid_layout_->dealWithDragMove(dragItem, event->pos(), trend);
-    drop_pixmap_ = pix;
-  }
+  best_drop_rect_ = grid_layout_->dealWithDragMove(dragItem, event->pos(), trend);
+  drop_pixmap_ = pix;
 
   event->setDropAction(Qt::MoveAction);
   event->accept();
@@ -555,27 +548,20 @@ void WelcomeWidget::dropEvent(QDropEvent* event) {
     return;
   }
 
-  QByteArray itemData = event->mimeData()->data(grid::MimeType);
-  QDataStream dataStream(&itemData, QIODevice::ReadOnly);
+  auto dragItem = qobject_cast<grid::GridTile*>(event->source());
+  if (!dragItem) return;
 
-  qintptr child = 0;
-  int type = 0;
-  QPoint oldPos;
-  dataStream >> child >> type >> oldPos;
-
-  if (auto dragItem = reinterpret_cast<grid::GridTile*>(child)) {
-    if (best_drop_rect_.isEmpty()) {
-      dragItem->setDragingState(false);
-      dragItem->posResetAnimation(this->rect(), event->pos(), oldPos);
-      grid_layout_->dropApplied(false);
-    } else {
-      dragItem->move(best_drop_rect_.first().toRect().topLeft());
-      grid_layout_->dropApplied(true);
-    }
-    best_drop_rect_.clear();
-    drop_pixmap_ = QPixmap();
-    update();
+  if (best_drop_rect_.isEmpty()) {
+    dragItem->setDragingState(false);
+    dragItem->posResetAnimation(this->rect(), event->pos(), dragItem->pos());
+    grid_layout_->dropApplied(false);
+  } else {
+    dragItem->move(best_drop_rect_.first().toRect().topLeft());
+    grid_layout_->dropApplied(true);
   }
+  best_drop_rect_.clear();
+  drop_pixmap_ = QPixmap();
+  update();
 
   event->setDropAction(Qt::MoveAction);
   event->accept();

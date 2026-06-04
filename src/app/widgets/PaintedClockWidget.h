@@ -3,8 +3,6 @@
 
 #include <QWidget>
 
-namespace etest::app::grid {
-
 class PaintedClockWidget : public QWidget {
   Q_OBJECT
  public:
@@ -13,7 +11,5 @@ class PaintedClockWidget : public QWidget {
  protected:
   void paintEvent(QPaintEvent* event) override;
 };
-
-}  // namespace etest::app::grid
 
 #endif  // ETEST_APP_PAINTED_CLOCK_WIDGET_H_

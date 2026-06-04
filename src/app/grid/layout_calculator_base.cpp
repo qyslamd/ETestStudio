@@ -7,6 +7,7 @@
 #include "grid_animator.h"
 #include "grid_tile.h"
 #include "grid_layout.h"
+#include "grid_tile_span.h"
 
 namespace etest::app::grid {
 

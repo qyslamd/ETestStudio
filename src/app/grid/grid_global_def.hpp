@@ -7,10 +7,6 @@
 #include <QtMath>
 #include <cmath>
 
-#include <iomanip>
-#include <sstream>
-#include <string>
-
 namespace etest::app::grid {
 
 enum TileSpan {
@@ -111,21 +107,6 @@ inline void TypeGetRowCol(int type, int& rows, int& cols) {
     case _4_4: rows = 4; cols = 4; break;
     default: break;
   }
-}
-
-inline QString decima2hex(int num) {
-  std::stringstream ioss;
-  ioss << std::setiosflags(std::ios::uppercase) << std::hex << num;
-  std::string temp;
-  ioss >> temp;
-  return QString::fromStdString(temp).toUpper();
-}
-
-inline QList<QString> decima2HexStringList(int num) {
-  QList<QString> ret;
-  auto str = decima2hex(num);
-  for (auto ch : str) ret << ch;
-  return ret;
 }
 
 }  // namespace etest::app::grid

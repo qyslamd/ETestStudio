@@ -5,8 +5,6 @@
 #include <QTimer>
 #include <QtMath>
 
-namespace etest::app::grid {
-
 PaintedClockWidget::PaintedClockWidget(QWidget* parent) : QWidget(parent) {
   auto* timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, [this]() { update(); });
@@ -78,4 +76,4 @@ void PaintedClockWidget::paintEvent(QPaintEvent*) {
              QDateTime::currentDateTime().toString("HH:mm:ss"));
 }
 
-}  // namespace etest::app::grid
+

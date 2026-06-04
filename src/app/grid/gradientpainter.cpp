@@ -5,9 +5,6 @@
 
 namespace etest::app::grid {
 
-GradientPainter::GradientPainter(QObject* parent)
-    : QObject(parent) {}
-
 qreal GradientPainter::ParseAngle(const QString& css_code) {
   QRegularExpression re(R"((\d+(?:\.\d+)?)\s*deg)");
   QRegularExpressionMatch match = re.match(css_code);

@@ -1,7 +1,6 @@
 #ifndef ETEST_APP_GRID_GRADIENT_PAINTER_H_
 #define ETEST_APP_GRID_GRADIENT_PAINTER_H_
 
-#include <QObject>
 #include <QPointF>
 #include <QRectF>
 #include <QLinearGradient>
@@ -16,11 +15,9 @@ struct GradientColorStop {
   QColor color;
 };
 
-class GradientPainter : public QObject {
-  Q_OBJECT
-
+class GradientPainter {
  public:
-  explicit GradientPainter(QObject* parent = nullptr);
+  GradientPainter() = delete;
 
   static bool ParseCssGradient(const QString& css_code,
                                qreal& angle,

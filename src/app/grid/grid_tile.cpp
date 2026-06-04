@@ -18,6 +18,7 @@
 #include "gradientpainter.h"
 #include "grid_gradient_data.h"
 #include "grid_global_def.hpp"
+#include "grid_tile_span.h"
 
 namespace etest::app::grid {
 
