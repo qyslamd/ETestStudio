@@ -676,53 +676,65 @@ void MainWindow::lazyInit() {
   QCoreApplication::processEvents();  // 立即渲染覆盖层
   LOG_INFO("LAZY", "  [1/12] LoadingOverlay: {} ms", step_timer.elapsed());
 
-  // 2. 注册活动栏按钮
+  // 2. 注册活动栏按钮 + 侧边栏页面 + 立即恢复页面选中状态
+  // （三者合一，避免 addPage 自动选中第一页后又切换的闪烁）
   step_timer.restart();
-  activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
-                         QStringLiteral("project"));
-  activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
-                         QStringLiteral("topo_tap"));
-  activity_bar_->addPage(PageId::kHardware, QStringLiteral("硬件"),
-                         QStringLiteral("hardware"));
-  activity_bar_->addPage(PageId::kProtocol, QStringLiteral("协议"),
-                         QStringLiteral("protocol"));
-  activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("用例"),
-                         QStringLiteral("testprogram"));
-  activity_bar_->addPage(PageId::kRun, QStringLiteral("运行"),
-                         QStringLiteral("debug"));
-  activity_bar_->addPage(PageId::kReport, QStringLiteral("报告"),
-                         QStringLiteral("project"));
-  activity_bar_->addPage(PageId::kSearch, QStringLiteral("搜索"),
-                         QStringLiteral("search"));
-  activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
-                         QStringLiteral("git"));
-  LOG_INFO("LAZY", "  [2/12] 活动栏按钮: {} ms", step_timer.elapsed());
+  {
+    activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
+                           QStringLiteral("project"));
+    activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
+                           QStringLiteral("topo_tap"));
+    activity_bar_->addPage(PageId::kHardware, QStringLiteral("硬件"),
+                           QStringLiteral("hardware"));
+    activity_bar_->addPage(PageId::kProtocol, QStringLiteral("协议"),
+                           QStringLiteral("protocol"));
+    activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("用例"),
+                           QStringLiteral("testprogram"));
+    activity_bar_->addPage(PageId::kRun, QStringLiteral("运行"),
+                           QStringLiteral("debug"));
+    activity_bar_->addPage(PageId::kReport, QStringLiteral("报告"),
+                           QStringLiteral("project"));
+    activity_bar_->addPage(PageId::kSearch, QStringLiteral("搜索"),
+                           QStringLiteral("search"));
+    activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
+                           QStringLiteral("git"));
 
-  // 3. 注册侧边栏页面
-  step_timer.restart();
-  sidebar_->addPage(PageId::kProjectOverview,
-                    new ProjectStructureWidget(sidebar_),
-                    QStringLiteral("项目概览"));
-  sidebar_->addPage(PageId::kTopology, new QWidget(sidebar_),
-                    QStringLiteral("拓扑"));
-  sidebar_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_),
-                    QStringLiteral("硬件"));
-  sidebar_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_),
-                    QStringLiteral("协议"));
-  sidebar_->addPage(PageId::kTestProgram,
-                    new TestProgramManagerWidget(sidebar_),
-                    QStringLiteral("用例"));
-  sidebar_->addPage(PageId::kRun, new QWidget(sidebar_),
-                    QStringLiteral("运行"));
-  sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
-                    QStringLiteral("报告"));
-  sidebar_->addPage(PageId::kSearch, new SearchWidget(sidebar_),
-                    QStringLiteral("搜索"));
-  sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
-                    QStringLiteral("Git"));
-  LOG_INFO("LAZY", "  [3/12] 侧边栏页面: {} ms", step_timer.elapsed());
+    sidebar_->addPage(PageId::kProjectOverview,
+                      new ProjectStructureWidget(sidebar_),
+                      QStringLiteral("项目概览"));
+    sidebar_->addPage(PageId::kTopology, new QWidget(sidebar_),
+                      QStringLiteral("拓扑"));
+    sidebar_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_),
+                      QStringLiteral("硬件"));
+    sidebar_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_),
+                      QStringLiteral("协议"));
+    sidebar_->addPage(PageId::kTestProgram,
+                      new TestProgramManagerWidget(sidebar_),
+                      QStringLiteral("用例"));
+    sidebar_->addPage(PageId::kRun, new QWidget(sidebar_),
+                      QStringLiteral("运行"));
+    sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
+                      QStringLiteral("报告"));
+    sidebar_->addPage(PageId::kSearch, new SearchWidget(sidebar_),
+                      QStringLiteral("搜索"));
+    sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
+                      QStringLiteral("Git"));
 
-  // 4. 创建底部面板
+    // 立即覆盖 addPage 的自动选中，恢复保存的页面
+    auto& cfg = ConfigManager::instance();
+    bool sidebarVisible = cfg.get<bool>(CONFIG_SIDEBAR_VISIBLE, true);
+    QString activePage =
+        cfg.get<QString>(CONFIG_SIDEBAR_ACTIVE_PAGE, PageId::kProjectOverview);
+    if (sidebarVisible && sidebar_->pageById(activePage)) {
+      sidebar_->switchPage(activePage);
+      activity_bar_->setActivePageId(activePage);
+    } else if (!sidebarVisible) {
+      activity_bar_->clearActivePage();
+    }
+  }
+  LOG_INFO("LAZY", "  [2/12] 活动栏+侧边栏+恢复: {} ms", step_timer.elapsed());
+
+  // 4. 创建底部面板（显隐/尺寸在 lazyInit 末尾由 restoreLazyState 恢复）
   step_timer.restart();
   output_panel_ = new OutputPanel(this);
   problems_panel_ = new ProblemsPanel(this);
@@ -730,36 +742,32 @@ void MainWindow::lazyInit() {
   bottom_container_->addPanel(QStringLiteral("输出"), output_panel_);
   bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_);
   bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_);
-  if (!bottom_container_->isVisible()) {
-    bottom_container_->show();
-    v_splitter_->setSizes({600, 200});
-  }
-  LOG_INFO("LAZY", "  [4/12] 底部面板: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [3/12] 底部面板: {} ms", step_timer.elapsed());
 
-  // 5. 创建 EditorManager
+  // 4. 创建 EditorManager
   step_timer.restart();
   editor_manager_ = new EditorManager(dock_manager_, this);
-  LOG_INFO("LAZY", "  [5/12] EditorManager: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
 
-  // 6. 创建 WelcomeWidget 替换中央占位
+  // 5. 创建 WelcomeWidget 替换中央占位
   step_timer.restart();
   welcome_widget_ = new WelcomeWidget(this);
   central_dock_->setWidget(welcome_widget_);
   welcome_widget_->refreshRecentProjects();
-  LOG_INFO("LAZY", "  [6/12] WelcomeWidget: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [5/12] WelcomeWidget: {} ms", step_timer.elapsed());
 
-  // 7. 连接跨组件信号（此时所有子控件已就绪）
+  // 6. 连接跨组件信号（此时所有子控件已就绪）
   step_timer.restart();
   initSignalsLate();
-  LOG_INFO("LAZY", "  [7/12] initSignalsLate: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [6/12] initSignalsLate: {} ms", step_timer.elapsed());
 
-  // 8. 初始化认证服务
+  // 7. 初始化认证服务
   step_timer.restart();
   AuthService::instance();
   updateWindowTitle();
-  LOG_INFO("LAZY", "  [8/12] AuthService: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [7/12] AuthService: {} ms", step_timer.elapsed());
 
-  // 9. 加载插件并刷新硬件树
+  // 8. 加载插件并刷新硬件树
   step_timer.restart();
   {
     auto& pluginMgr = etest::core::plugin::PluginManager::instance();
@@ -767,9 +775,9 @@ void MainWindow::lazyInit() {
     pluginMgr.loadAll();
     sidebar_->hardwareTree()->refreshTree();
   }
-  LOG_INFO("LAZY", "  [9/12] 插件+硬件: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [8/12] 插件+硬件: {} ms", step_timer.elapsed());
 
-  // 10. 发布提示消息
+  // 9. 发布提示消息
   step_timer.restart();
   hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
   hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
@@ -779,7 +787,29 @@ void MainWindow::lazyInit() {
                       QStringLiteral("查看"), [] { /* 占位 */ });
   hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
                       QStringLiteral("重试"), [] { /* 占位 */ });
-  LOG_INFO("LAZY", "  [10/12] 提示消息: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [9/12] 提示消息: {} ms", step_timer.elapsed());
+
+  // 10. 恢复底部面板状态（侧边栏页面已在 step [2/12] 恢复）
+  step_timer.restart();
+  {
+    auto& cfg = ConfigManager::instance();
+    bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
+    bool bottomVisible = cfg.get<bool>(CONFIG_BOTTOM_PANEL_VISIBLE, true);
+    if (bottomVisible) {
+      bottom_container_->show();
+      auto vSizes = v_splitter_->sizes();
+      if (vSizes.size() >= 2 && vSizes[1] <= 0) {
+        vSizes[1] = bottom_container_height_;
+        v_splitter_->setSizes(vSizes);
+      }
+    } else {
+      bottom_container_->hide();
+    }
+    if (view_panel_action_) {
+      view_panel_action_->setChecked(bottomVisible);
+    }
+  }
+  LOG_INFO("LAZY", "  [10/12] 恢复底部面板: {} ms", step_timer.elapsed());
 
   // 11. 延迟移除覆盖层 — 给脉冲动画留出显示时间
   step_timer.restart();
@@ -1589,8 +1619,14 @@ void MainWindow::saveWindowState() {
   cfg.set(CONFIG_WINDOW_H_SPLITTER_STATE, h_splitter_->saveState());
   cfg.set(CONFIG_WINDOW_V_SPLITTER_STATE, v_splitter_->saveState());
 
-  // sidebar state
-  cfg.set(CONFIG_SIDEBAR_ACTIVE_PAGE, activity_bar_->activePageId());
+  // sidebar state — 保存侧边栏内部页面 ID（即使用户折叠了侧边栏也有有效值）
+  cfg.set(CONFIG_SIDEBAR_ACTIVE_PAGE, sidebar_->currentPageId());
+
+  // 侧边栏显隐状态（独立于 splitter 尺寸，避免 restoreState 布局时机问题）
+  cfg.set(CONFIG_SIDEBAR_VISIBLE, sidebar_->isContentVisible());
+
+  // 侧边栏展开宽度（会话间记忆）
+  cfg.set(CONFIG_SIDEBAR_EXPANDED_WIDTH, sidebar_expanded_width_);
 
   // 底部面板状态
   cfg.set(CONFIG_BOTTOM_PANEL_HEIGHT, bottom_container_height_);
@@ -1626,43 +1662,17 @@ void MainWindow::restoreWindowState() {
     v_splitter_->restoreState(vState);
   }
 
-  // sidebar visibility from h_splitter_ restoreState
-  auto sizes = h_splitter_->sizes();
-  bool sidebarVisible = sizes.isEmpty() || sizes[0] > 0;
+  // 侧边栏显隐 — 使用显式配置（比 splitter 尺寸推断更可靠）
+  bool sidebarVisible = cfg.get<bool>(CONFIG_SIDEBAR_VISIBLE, true);
   if (sidebarVisible) {
     sidebar_->showContent();
   } else {
     sidebar_->hideContent();
   }
+  // 恢复侧边栏展开宽度
+  sidebar_expanded_width_ = cfg.get<int>(CONFIG_SIDEBAR_EXPANDED_WIDTH, 280);
 
-  // 侧边栏活动页面（仅侧边栏可见时激活）
-  if (!sidebarVisible) {
-    activity_bar_->clearActivePage();
-  } else {
-    QString activePage =
-        cfg.get<QString>(CONFIG_SIDEBAR_ACTIVE_PAGE, PageId::kProjectOverview);
-    if (sidebar_->pageById(activePage)) {
-      sidebar_->switchPage(activePage);
-      activity_bar_->setActivePageId(activePage);
-    }
-  }
-
-  // 底部面板
-  bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
-  bool bottomVisible = cfg.get<bool>(CONFIG_BOTTOM_PANEL_VISIBLE, true);
-  if (bottomVisible) {
-    bottom_container_->show();
-    auto sizes = v_splitter_->sizes();
-    if (sizes.size() >= 2 && sizes[1] <= 0) {
-      sizes[1] = bottom_container_height_;
-      v_splitter_->setSizes(sizes);
-    }
-  } else {
-    bottom_container_->hide();
-  }
-  if (view_panel_action_) {
-    view_panel_action_->setChecked(bottomVisible);
-  }
+  // 注：侧边栏活动页、底部面板状态在 lazyInit 完成后恢复（部件尚不存在）
 
   // 辅助侧边栏：从 h_splitter_ restoreState 恢复的尺寸判断可见性
   auto hSizes = h_splitter_->sizes();

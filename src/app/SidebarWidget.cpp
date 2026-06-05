@@ -105,15 +105,15 @@ int SidebarWidget::pageCount() const {
 }
 
 void SidebarWidget::showContent() {
-  content_panel_->show();
+  show();  // QSplitter 自动恢复布局空间
 }
 
 void SidebarWidget::hideContent() {
-  content_panel_->hide();
+  hide();  // QSplitter 自动缩至 0 宽
 }
 
 bool SidebarWidget::isContentVisible() const {
-  return content_panel_->isVisible();
+  return !isHidden();
 }
 
 HardwareTreeWidget* SidebarWidget::hardwareTree() const {
