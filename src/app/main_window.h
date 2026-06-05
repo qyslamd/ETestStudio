@@ -41,7 +41,6 @@ class MainWindow : public SARibbonMainWindow {
 
  private:
   void initUi();
-  void initSignals();
   void initSignalsEarly();
   void initSignalsLate();
   void lazyInit();

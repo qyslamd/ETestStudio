@@ -1,4 +1,4 @@
-#include "main_window.h"
+﻿#include "main_window.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -213,7 +213,7 @@ void MainWindow::initUi() {
 }
 
 void MainWindow::initSignalsEarly() {
-  // 主题切换：连接 ThemeManager 信号
+  // 主题切换
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
           &MainWindow::onThemeChanged);
 
@@ -224,166 +224,64 @@ void MainWindow::initSignalsEarly() {
                 CONFIG_RIBBON_MINIMIZED,
                 mode == SARibbonBar::MinimumRibbonMode);
           });
+
+  // 活动栏：设置对话框
+  connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
+    if (!settings_dialog_) {
+      settings_dialog_ = new SettingsDialog(this);
+      settings_dialog_->setStyleSheet(styleSheet());
+      connect(settings_dialog_, &QDialog::finished, this,
+              [this]() { activity_bar_->setSettingsActive(false); });
+    }
+    activity_bar_->setSettingsActive(true);
+    settings_dialog_->show();
+    settings_dialog_->raise();
+    settings_dialog_->activateWindow();
+  });
+
+  // 活动栏：页面切换
+  connect(activity_bar_, &ActivityBarWidget::pageClicked, this,
+          [this](const QString& id) {
+            bool samePage = (id == activity_bar_->activePageId());
+            if (samePage && sidebar_->isContentVisible()) {
+              auto sizes = h_splitter_->sizes();
+              if (!sizes.isEmpty()) {
+                sidebar_expanded_width_ = sizes[0];
+                sizes[0] = 0;
+                h_splitter_->setSizes(sizes);
+              }
+              sidebar_->hideContent();
+              activity_bar_->clearActivePage();
+              return;
+            }
+            if (!sidebar_->isContentVisible()) {
+              sidebar_->showContent();
+              auto sizes = h_splitter_->sizes();
+              if (!sizes.isEmpty()) {
+                sizes[0] = sidebar_expanded_width_;
+                h_splitter_->setSizes(sizes);
+              }
+            }
+            sidebar_->switchPage(id);
+            activity_bar_->setActivePageId(id);
+          });
+
+  // 活动栏：登录触发
+  connect(activity_bar_, &ActivityBarWidget::loginTriggered, this, [this]() {
+    if (AuthService::instance().isLoggedIn()) {
+      login_menu_->exec(QCursor::pos());
+    } else {
+      auto* dlg = new LoginDialog(this);
+      connect(dlg, &QDialog::finished, this,
+              [this]() { activity_bar_->setLoginActive(false); });
+      connect(dlg, &QDialog::finished, dlg, &QObject::deleteLater);
+      dlg->show();
+      activity_bar_->setLoginActive(true);
+    }
+  });
 }
 
 void MainWindow::initSignalsLate() {
-  initSignals();  // 委托给原 initSignals，Task 4 将拆分
-}
-
-void MainWindow::lazyInit() {
-  // 1. 创建 LoadingOverlay 盖住内容区，启动脉冲
-  loading_overlay_ = new LoadingOverlay(v_splitter_);
-  loading_overlay_->startWithTimeout(10000);
-  QCoreApplication::processEvents();  // 立即渲染覆盖层
-
-  // 2. 注册活动栏按钮
-  activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
-                         QStringLiteral("project"));
-  activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
-                         QStringLiteral("topo_tap"));
-  activity_bar_->addPage(PageId::kHardware, QStringLiteral("硬件"),
-                         QStringLiteral("hardware"));
-  activity_bar_->addPage(PageId::kProtocol, QStringLiteral("协议"),
-                         QStringLiteral("protocol"));
-  activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("用例"),
-                         QStringLiteral("testprogram"));
-  activity_bar_->addPage(PageId::kRun, QStringLiteral("运行"),
-                         QStringLiteral("debug"));
-  activity_bar_->addPage(PageId::kReport, QStringLiteral("报告"),
-                         QStringLiteral("project"));
-  activity_bar_->addPage(PageId::kSearch, QStringLiteral("搜索"),
-                         QStringLiteral("search"));
-  activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
-                         QStringLiteral("git"));
-
-  // 3. 注册侧边栏页面
-  sidebar_->addPage(PageId::kProjectOverview,
-                    new ProjectStructureWidget(sidebar_),
-                    QStringLiteral("项目概览"));
-  sidebar_->addPage(PageId::kTopology, new QWidget(sidebar_),
-                    QStringLiteral("拓扑"));
-  sidebar_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_),
-                    QStringLiteral("硬件"));
-  sidebar_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_),
-                    QStringLiteral("协议"));
-  sidebar_->addPage(PageId::kTestProgram,
-                    new TestProgramManagerWidget(sidebar_),
-                    QStringLiteral("用例"));
-  sidebar_->addPage(PageId::kRun, new QWidget(sidebar_),
-                    QStringLiteral("运行"));
-  sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
-                    QStringLiteral("报告"));
-  sidebar_->addPage(PageId::kSearch, new SearchWidget(sidebar_),
-                    QStringLiteral("搜索"));
-  sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
-                    QStringLiteral("Git"));
-
-  // 4. 创建底部面板
-  output_panel_ = new OutputPanel(this);
-  problems_panel_ = new ProblemsPanel(this);
-  terminal_panel_ = new TerminalPanel(this);
-  bottom_container_->addPanel(QStringLiteral("输出"), output_panel_);
-  bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_);
-  bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_);
-  if (!bottom_container_->isVisible()) {
-    bottom_container_->show();
-    v_splitter_->setSizes({600, 200});
-  }
-
-  // 5. 创建 EditorManager
-  editor_manager_ = new EditorManager(dock_manager_, this);
-
-  // 6. 创建 WelcomeWidget 替换中央占位
-  welcome_widget_ = new WelcomeWidget(this);
-  central_dock_->setWidget(welcome_widget_);
-  welcome_widget_->refreshRecentProjects();
-
-  // 7. 连接跨组件信号（此时所有子控件已就绪）
-  initSignalsLate();
-
-  // 8. 初始化认证服务
-  AuthService::instance();
-  updateWindowTitle();
-
-  // 9. 加载插件并刷新硬件树
-  auto& pluginMgr = etest::core::plugin::PluginManager::instance();
-  pluginMgr.addSearchPath(QCoreApplication::applicationDirPath() + "/plugins");
-  pluginMgr.loadAll();
-  sidebar_->hardwareTree()->refreshTree();
-
-  // 10. 发布提示消息
-  hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
-  hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
-  hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
-                      QStringLiteral("更新"), [] { /* 占位 */ });
-  hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
-                      QStringLiteral("查看"), [] { /* 占位 */ });
-  hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
-                      QStringLiteral("重试"), [] { /* 占位 */ });
-
-  // 11. 移除覆盖层（淡出）
-  connect(loading_overlay_, &LoadingOverlay::finished, this, [this]() {
-    LOG_INFO("MAIN", "懒加载完成");
-  });
-  loading_overlay_->finish();
-
-  // 12. Tux 屏保（独立创建，不影响主流程）
-  tux_overlay_ = new TuxSaverOverlay(this);
-  connect(tux_overlay_, &TuxSaverOverlay::closed, this,
-          [this]() { tux_idle_timer_.restart(); });
-  tux_idle_timer_.start();
-  tux_idle_check_timer_ = new QTimer(this);
-  connect(tux_idle_check_timer_, &QTimer::timeout, this, [this]() {
-    if (!tux_overlay_->isVisible() &&
-        ConfigManager::instance().get<bool>(CONFIG_TUXSAVER_ENABLED,
-                                            CONFIG_TUXSAVER_DEFAULT_ENABLED)) {
-      int timeoutMs =
-          ConfigManager::instance().get<int>(CONFIG_TUXSAVER_IDLE_TIMEOUT,
-                                             CONFIG_TUXSAVER_DEFAULT_TIMEOUT) *
-          1000;
-      if (tux_idle_timer_.elapsed() > timeoutMs)
-        tux_overlay_->activate();
-    }
-  });
-  tux_idle_check_timer_->start(1000);
-  qApp->installEventFilter(this);
-
-  connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
-          [this](const QString& key) {
-            if (key == QString::fromLatin1(CONFIG_TUXSAVER_ENABLED) &&
-                !ConfigManager::instance().get<bool>(
-                    CONFIG_TUXSAVER_ENABLED, CONFIG_TUXSAVER_DEFAULT_ENABLED) &&
-                tux_overlay_->isVisible()) {
-              tux_overlay_->deactivate();
-            }
-          });
-
-  LOG_INFO("MAIN", "mainwindow 懒加载完成");
-}
-
-void MainWindow::onThemeChanged(bool isDark) {
-  // 同步设置对话框样式（QSS 已由 ThemeManager 全局加载到 qApp）
-  // ADS dock manager 样式跟随全局 QSS，无需单独设置
-  if (settings_dialog_) {
-    settings_dialog_->setStyleSheet(qApp->styleSheet());
-  }
-  setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
-                        : SARibbonTheme::RibbonThemeOffice2021Blue);
-}
-
-void MainWindow::initSignals() {
-  // 主题切换：连接 ThemeManager 信号
-  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
-          &MainWindow::onThemeChanged);
-
-  // Ribbon 展开/收起状态持久化
-  connect(ribbonBar(), &SARibbonBar::ribbonModeChanged, this,
-          [](SARibbonBar::RibbonMode mode) {
-            ConfigManager::instance().set<bool>(
-                CONFIG_RIBBON_MINIMIZED,
-                mode == SARibbonBar::MinimumRibbonMode);
-          });
-
   // 视图菜单：输出面板显隐
   connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
     if (checked) {
@@ -734,53 +632,6 @@ void MainWindow::initSignals() {
             &OutputPanel::appendLog);
   }
 
-  // 活动栏：设置对话框
-  connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
-    if (!settings_dialog_) {
-      settings_dialog_ = new SettingsDialog(this);
-      // QDialog 作为独立窗口，需要主动继承 MainWindow 的样式表
-      settings_dialog_->setStyleSheet(styleSheet());
-      connect(settings_dialog_, &QDialog::finished, this,
-              [this]() { activity_bar_->setSettingsActive(false); });
-    }
-    activity_bar_->setSettingsActive(true);
-    settings_dialog_->show();
-    settings_dialog_->raise();
-    settings_dialog_->activateWindow();
-  });
-
-  // 活动栏：页面切换
-  connect(activity_bar_, &ActivityBarWidget::pageClicked, this,
-          [this](const QString& id) {
-            bool samePage = (id == activity_bar_->activePageId());
-
-            if (samePage && sidebar_->isContentVisible()) {
-              // 再次点击同一按钮，隐藏侧边栏
-              auto sizes = h_splitter_->sizes();
-              if (!sizes.isEmpty()) {
-                sidebar_expanded_width_ = sizes[0];
-                sizes[0] = 0;
-                h_splitter_->setSizes(sizes);
-              }
-              sidebar_->hideContent();
-              activity_bar_->clearActivePage();
-              return;
-            }
-
-            // 确保侧边栏可见
-            if (!sidebar_->isContentVisible()) {
-              sidebar_->showContent();
-              auto sizes = h_splitter_->sizes();
-              if (!sizes.isEmpty()) {
-                sizes[0] = sidebar_expanded_width_;
-                h_splitter_->setSizes(sizes);
-              }
-            }
-
-            sidebar_->switchPage(id);
-            activity_bar_->setActivePageId(id);
-          });
-
   // 底部面板关闭按钮
   connect(bottom_container_, &BottomContainerWidget::panelClosed, this,
           [this]() {
@@ -794,20 +645,7 @@ void MainWindow::initSignals() {
             }
           });
 
-  // 登录认证
-  connect(activity_bar_, &ActivityBarWidget::loginTriggered, this, [this]() {
-    if (AuthService::instance().isLoggedIn()) {
-      login_menu_->exec(QCursor::pos());
-    } else {
-      auto* dlg = new LoginDialog(this);
-      connect(dlg, &QDialog::finished, this,
-              [this]() { activity_bar_->setLoginActive(false); });
-      connect(dlg, &QDialog::finished, dlg, &QObject::deleteLater);
-      dlg->show();
-      activity_bar_->setLoginActive(true);
-    }
-  });
-
+  // 登录认证成功/登出
   connect(
       &AuthService::instance(), &AuthService::loginSucceeded, this,
       [this](const User& user) {
@@ -825,6 +663,148 @@ void MainWindow::initSignals() {
     activity_bar_->setLoginState(false, QString(), QString());
   });
 }
+
+void MainWindow::lazyInit() {
+  // 1. 创建 LoadingOverlay 盖住内容区，启动脉冲
+  loading_overlay_ = new LoadingOverlay(v_splitter_);
+  loading_overlay_->startWithTimeout(10000);
+  QCoreApplication::processEvents();  // 立即渲染覆盖层
+
+  // 2. 注册活动栏按钮
+  activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
+                         QStringLiteral("project"));
+  activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
+                         QStringLiteral("topo_tap"));
+  activity_bar_->addPage(PageId::kHardware, QStringLiteral("硬件"),
+                         QStringLiteral("hardware"));
+  activity_bar_->addPage(PageId::kProtocol, QStringLiteral("协议"),
+                         QStringLiteral("protocol"));
+  activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("用例"),
+                         QStringLiteral("testprogram"));
+  activity_bar_->addPage(PageId::kRun, QStringLiteral("运行"),
+                         QStringLiteral("debug"));
+  activity_bar_->addPage(PageId::kReport, QStringLiteral("报告"),
+                         QStringLiteral("project"));
+  activity_bar_->addPage(PageId::kSearch, QStringLiteral("搜索"),
+                         QStringLiteral("search"));
+  activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
+                         QStringLiteral("git"));
+
+  // 3. 注册侧边栏页面
+  sidebar_->addPage(PageId::kProjectOverview,
+                    new ProjectStructureWidget(sidebar_),
+                    QStringLiteral("项目概览"));
+  sidebar_->addPage(PageId::kTopology, new QWidget(sidebar_),
+                    QStringLiteral("拓扑"));
+  sidebar_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_),
+                    QStringLiteral("硬件"));
+  sidebar_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_),
+                    QStringLiteral("协议"));
+  sidebar_->addPage(PageId::kTestProgram,
+                    new TestProgramManagerWidget(sidebar_),
+                    QStringLiteral("用例"));
+  sidebar_->addPage(PageId::kRun, new QWidget(sidebar_),
+                    QStringLiteral("运行"));
+  sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
+                    QStringLiteral("报告"));
+  sidebar_->addPage(PageId::kSearch, new SearchWidget(sidebar_),
+                    QStringLiteral("搜索"));
+  sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
+                    QStringLiteral("Git"));
+
+  // 4. 创建底部面板
+  output_panel_ = new OutputPanel(this);
+  problems_panel_ = new ProblemsPanel(this);
+  terminal_panel_ = new TerminalPanel(this);
+  bottom_container_->addPanel(QStringLiteral("输出"), output_panel_);
+  bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_);
+  bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_);
+  if (!bottom_container_->isVisible()) {
+    bottom_container_->show();
+    v_splitter_->setSizes({600, 200});
+  }
+
+  // 5. 创建 EditorManager
+  editor_manager_ = new EditorManager(dock_manager_, this);
+
+  // 6. 创建 WelcomeWidget 替换中央占位
+  welcome_widget_ = new WelcomeWidget(this);
+  central_dock_->setWidget(welcome_widget_);
+  welcome_widget_->refreshRecentProjects();
+
+  // 7. 连接跨组件信号（此时所有子控件已就绪）
+  initSignalsLate();
+
+  // 8. 初始化认证服务
+  AuthService::instance();
+  updateWindowTitle();
+
+  // 9. 加载插件并刷新硬件树
+  auto& pluginMgr = etest::core::plugin::PluginManager::instance();
+  pluginMgr.addSearchPath(QCoreApplication::applicationDirPath() + "/plugins");
+  pluginMgr.loadAll();
+  sidebar_->hardwareTree()->refreshTree();
+
+  // 10. 发布提示消息
+  hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
+  hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
+  hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
+                      QStringLiteral("更新"), [] { /* 占位 */ });
+  hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
+                      QStringLiteral("查看"), [] { /* 占位 */ });
+  hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
+                      QStringLiteral("重试"), [] { /* 占位 */ });
+
+  // 11. 移除覆盖层（淡出）
+  connect(loading_overlay_, &LoadingOverlay::finished, this, [this]() {
+    LOG_INFO("MAIN", "懒加载完成");
+  });
+  loading_overlay_->finish();
+
+  // 12. Tux 屏保（独立创建，不影响主流程）
+  tux_overlay_ = new TuxSaverOverlay(this);
+  connect(tux_overlay_, &TuxSaverOverlay::closed, this,
+          [this]() { tux_idle_timer_.restart(); });
+  tux_idle_timer_.start();
+  tux_idle_check_timer_ = new QTimer(this);
+  connect(tux_idle_check_timer_, &QTimer::timeout, this, [this]() {
+    if (!tux_overlay_->isVisible() &&
+        ConfigManager::instance().get<bool>(CONFIG_TUXSAVER_ENABLED,
+                                            CONFIG_TUXSAVER_DEFAULT_ENABLED)) {
+      int timeoutMs =
+          ConfigManager::instance().get<int>(CONFIG_TUXSAVER_IDLE_TIMEOUT,
+                                             CONFIG_TUXSAVER_DEFAULT_TIMEOUT) *
+          1000;
+      if (tux_idle_timer_.elapsed() > timeoutMs)
+        tux_overlay_->activate();
+    }
+  });
+  tux_idle_check_timer_->start(1000);
+  qApp->installEventFilter(this);
+
+  connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
+          [this](const QString& key) {
+            if (key == QString::fromLatin1(CONFIG_TUXSAVER_ENABLED) &&
+                !ConfigManager::instance().get<bool>(
+                    CONFIG_TUXSAVER_ENABLED, CONFIG_TUXSAVER_DEFAULT_ENABLED) &&
+                tux_overlay_->isVisible()) {
+              tux_overlay_->deactivate();
+            }
+          });
+
+  LOG_INFO("MAIN", "mainwindow 懒加载完成");
+}
+
+void MainWindow::onThemeChanged(bool isDark) {
+  // 同步设置对话框样式（QSS 已由 ThemeManager 全局加载到 qApp）
+  // ADS dock manager 样式跟随全局 QSS，无需单独设置
+  if (settings_dialog_) {
+    settings_dialog_->setStyleSheet(qApp->styleSheet());
+  }
+  setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
+                        : SARibbonTheme::RibbonThemeOffice2021Blue);
+}
+
 
 void MainWindow::createStatusBar() {
   // 状态栏样式已由全局QSS覆盖，无需内联设置
