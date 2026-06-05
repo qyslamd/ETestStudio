@@ -84,8 +84,8 @@ add_executable(${TARGET_NAME}
     widgets/EyeWidget.cpp
     widgets/TuxSaverOverlay.h
     widgets/TuxSaverOverlay.cpp
-    LoadingOverlay.h
-    LoadingOverlay.cpp
+    widgets/LoadingOverlay.h
+    widgets/LoadingOverlay.cpp
     dialogs/AnimationDialog.h
     dialogs/AnimationDialog.cpp
     dialogs/NewProjectDialog.h

@@ -1,7 +1,7 @@
 #include "LoadingOverlay.h"
 
+#include <QEvent>
 #include <QPainter>
-#include <QResizeEvent>
 
 #include "ThemeManager.h"
 
@@ -11,7 +11,6 @@ LoadingOverlay::LoadingOverlay(QWidget* parent)
     : QWidget(parent) {
     setAttribute(Qt::WA_TranslucentBackground);
     setAttribute(Qt::WA_TransparentForMouseEvents, false);
-    raise();
 
     // 脉冲定时器
     pulse_timer_ = new QTimer(this);
@@ -28,24 +27,14 @@ LoadingOverlay::LoadingOverlay(QWidget* parent)
     connect(timeout_timer_, &QTimer::timeout, this, [this]() {
         finish();
     });
-
-    // 安装事件过滤器拦截交互
-    if (parent) {
-        parent->installEventFilter(this);
-        // 同步父窗口大小
-        setGeometry(parent->rect());
-    }
 }
 
-LoadingOverlay::~LoadingOverlay() {
-    if (parent()) {
-        parent()->removeEventFilter(this);
-    }
-}
+LoadingOverlay::~LoadingOverlay() = default;
 
 void LoadingOverlay::startWithTimeout(int timeoutMs) {
     pulse_phase_ = 0.0;
-    pulse_alpha_ = 180;
+    pulse_val_ = 0.0;
+    pulse_alpha_ = 140;
     pulse_timer_->start(30);
     show();
     raise();
@@ -61,16 +50,18 @@ void LoadingOverlay::finish() {
 }
 
 void LoadingOverlay::onPulseTick() {
-    // 正弦呼吸：相位 0→2π 循环，周期约 4.2s
+    // 正弦呼吸：相位 0→2π 循环，周期约 1.3s
     constexpr double kTwoPi = 6.283185307179586;
     constexpr double kPhaseStep = 0.15;
-    constexpr int kAlphaBase = 190;
-    constexpr int kAlphaRange = 30;
+    // alpha 大幅振荡 60→220，肉眼明显可见
+    constexpr int kAlphaBase = 140;
+    constexpr int kAlphaRange = 80;
     pulse_phase_ += kPhaseStep;
     if (pulse_phase_ > kTwoPi)
         pulse_phase_ -= kTwoPi;
     double val = std::sin(pulse_phase_);
     pulse_alpha_ = kAlphaBase + static_cast<int>(val * kAlphaRange);
+    pulse_val_ = val;  // 供 paintEvent 驱动半径缩放
     update();
 }
 
@@ -107,14 +98,15 @@ void LoadingOverlay::paintEvent(QPaintEvent*) {
         circleColor.setAlpha(pulse_alpha_);
 
         QPointF center = rect().center();
-        qreal radius = 30.0;
+        // 半径随正弦波缩放：22→38，肉眼明显可见
+        qreal radius = 30.0 + 8.0 * pulse_val_;
         // 外圈
         p.setBrush(Qt::NoBrush);
         QPen pen(circleColor, 3);
         p.setPen(pen);
         p.drawEllipse(center, radius, radius);
 
-        // 内圈（透明度更高）
+        // 内圈（透明度更高，半径同步缩放）
         circleColor.setAlpha(pulse_alpha_ - 60);
         pen.setColor(circleColor);
         pen.setWidth(2);
@@ -152,13 +144,6 @@ bool LoadingOverlay::eventFilter(QObject* obj, QEvent* event) {
         }
     }
     return QWidget::eventFilter(obj, event);
-}
-
-void LoadingOverlay::resizeEvent(QResizeEvent*) {
-    if (auto* p = parentWidget()) {
-        setGeometry(p->rect());
-    }
-    QWidget::resizeEvent(nullptr);
 }
 
 }  // namespace etest::app

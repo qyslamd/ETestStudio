@@ -36,6 +36,7 @@ class MainWindow : public SARibbonMainWindow {
   ~MainWindow() override;
 
  protected:
+  void resizeEvent(QResizeEvent* event) override;
   void closeEvent(QCloseEvent* event) override;
   bool eventFilter(QObject* obj, QEvent* event) override;
 

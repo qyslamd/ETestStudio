@@ -38,7 +38,7 @@
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "HintBarWidget.h"
-#include "LoadingOverlay.h"
+#include "widgets/LoadingOverlay.h"
 #include "OutputPanel.h"
 #include "ProblemsPanel.h"
 #include "ProjectStructureWidget.h"
@@ -669,9 +669,14 @@ void MainWindow::lazyInit() {
   total_timer.start();
 
   // 1. 创建 LoadingOverlay 盖住内容区，启动脉冲
+  // 注意：parent = this (MainWindow)，手动定位到 v_splitter_ 区域
+  // 若 parent 为 v_splitter_，QSplitter 会将其作为 splitter child 布局，覆盖层不会浮在内容区之上
   QElapsedTimer step_timer;
   step_timer.start();
-  loading_overlay_ = new LoadingOverlay(v_splitter_);
+  loading_overlay_ = new LoadingOverlay(this);
+  loading_overlay_->setGeometry(
+      QRect(v_splitter_->mapTo(this, QPoint(0, 0)), v_splitter_->size()));
+  v_splitter_->installEventFilter(loading_overlay_);
   loading_overlay_->startWithTimeout(10000);
   QCoreApplication::processEvents();  // 立即渲染覆盖层
   LOG_INFO("LAZY", "  [1/12] LoadingOverlay: {} ms", step_timer.elapsed());
@@ -733,8 +738,9 @@ void MainWindow::lazyInit() {
     }
   }
   LOG_INFO("LAZY", "  [2/12] 活动栏+侧边栏+恢复: {} ms", step_timer.elapsed());
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 4. 创建底部面板（显隐/尺寸在 lazyInit 末尾由 restoreLazyState 恢复）
+  // 3. 创建底部面板（显隐/尺寸在 lazyInit 末尾由 restoreLazyState 恢复）
   step_timer.restart();
   output_panel_ = new OutputPanel(this);
   problems_panel_ = new ProblemsPanel(this);
@@ -743,11 +749,13 @@ void MainWindow::lazyInit() {
   bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_);
   bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_);
   LOG_INFO("LAZY", "  [3/12] 底部面板: {} ms", step_timer.elapsed());
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
   // 4. 创建 EditorManager
   step_timer.restart();
   editor_manager_ = new EditorManager(dock_manager_, this);
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
   // 5. 创建 WelcomeWidget 替换中央占位
   step_timer.restart();
@@ -755,6 +763,7 @@ void MainWindow::lazyInit() {
   central_dock_->setWidget(welcome_widget_);
   welcome_widget_->refreshRecentProjects();
   LOG_INFO("LAZY", "  [5/12] WelcomeWidget: {} ms", step_timer.elapsed());
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
   // 6. 连接跨组件信号（此时所有子控件已就绪）
   step_timer.restart();
@@ -776,6 +785,7 @@ void MainWindow::lazyInit() {
     sidebar_->hardwareTree()->refreshTree();
   }
   LOG_INFO("LAZY", "  [8/12] 插件+硬件: {} ms", step_timer.elapsed());
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
   // 9. 发布提示消息
   step_timer.restart();
@@ -810,10 +820,12 @@ void MainWindow::lazyInit() {
     }
   }
   LOG_INFO("LAZY", "  [10/12] 恢复底部面板: {} ms", step_timer.elapsed());
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
   // 11. 延迟移除覆盖层 — 给脉冲动画留出显示时间
   step_timer.restart();
   connect(loading_overlay_, &LoadingOverlay::finished, this, [this]() {
+    loading_overlay_ = nullptr;
     LOG_INFO("MAIN", "懒加载覆盖层已关闭");
   });
   // 延迟 1.5 秒让用户看到脉冲动画后再淡出
@@ -1301,6 +1313,15 @@ void MainWindow::onGoToLine() {
   if (ok) {
     textEditor->editor()->setCursorPosition(lineNumber - 1, 0);
     textEditor->editor()->ensureLineVisible(lineNumber - 1);
+  }
+}
+
+void MainWindow::resizeEvent(QResizeEvent* event) {
+  SARibbonMainWindow::resizeEvent(event);
+  if (loading_overlay_ && loading_overlay_->isVisible()) {
+    loading_overlay_->setGeometry(
+        QRect(v_splitter_->mapTo(this, QPoint(0, 0)), v_splitter_->size()));
+    loading_overlay_->raise();
   }
 }
 
