@@ -164,6 +164,7 @@ class MainWindow : public SARibbonMainWindow {
   QElapsedTimer tux_idle_timer_;
   QTimer* tux_idle_check_timer_ = nullptr;
 
+  // 懒加载覆盖层
   LoadingOverlay* loading_overlay_ = nullptr;
 
   // 登录认证
