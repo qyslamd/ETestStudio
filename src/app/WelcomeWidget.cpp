@@ -157,7 +157,7 @@ void WelcomeWidget::initUi() {
           &WelcomeWidget::newProjectRequested);
   grid_layout_->addWidget(newProjectTile);
 
-  // === Tile 3: 打开项目 (1x1) ===
+  // === Tile 2: 打开项目 (1x1) ===
   auto* openProjectContent = new QWidget;
   openProjectContent->setObjectName("WelcomeActionContent");
   auto* opLayout = new QVBoxLayout(openProjectContent);
@@ -180,19 +180,23 @@ void WelcomeWidget::initUi() {
           &WelcomeWidget::openProjectRequested);
   grid_layout_->addWidget(openProjectTile);
 
-  // === Tile 4: 时钟 (1x2) ===
-  auto* clockWidget = new PaintedClockWidget(this);
-  clockWidget->setMinimumSize(100, 100);
-
+  // === Tile 3: 每日提示 (1x2) ===
+  tip_tile_ = new grid::GridTile(grid::_1_2, this);
+  tip_tile_->setObjectName("WelcomeTileTip");
+  tip_tile_->setCursor(Qt::PointingHandCursor);
   {
-    auto* clockTile = new grid::GridTile(grid::_1_2, this);
-    clockTile->setObjectName("WelcomeTileClock");
-    clockTile->setContentWidget(clockWidget);
-    clockTile->setNameText("");
-    grid_layout_->addWidget(clockTile);
+    auto tip_content = new QLabel(tip_tile_);
+    tip_content->setAlignment(Qt::AlignCenter);
+    tip_content->setWordWrap(true);
+    tip_content->setObjectName("WelcomeTipContent");
+    tip_tile_->setContentWidget(tip_content);
   }
+  tip_tile_->setNameText(QString());  // 隐藏底部 label
+  connect(tip_tile_, &grid::GridTile::clicked, this,
+          &WelcomeWidget::showRandomTip);
+  grid_layout_->addWidget(tip_tile_);
 
-  // === Tile 3: EyeWidget + Logo (2x2) ===
+  // === Tile 4: EyeWidget + Logo (2x2) ===
   eye_widget_ = new EyeWidget(this);
   eye_widget_->setObjectName("WelcomeEyeWidget");
   eye_widget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -263,24 +267,20 @@ void WelcomeWidget::initUi() {
   eyeTile->setNameText("");
   grid_layout_->addWidget(eyeTile);
 
-  // === Tile 5-8: 最近项目 (动态, 1x1 each) ===
-  rebuildRecentTiles();
-
-  // === Tile 9: 每日提示 (4x1) ===
-  tip_tile_ = new grid::GridTile(grid::_1_4, this);
-  tip_tile_->setObjectName("WelcomeTileTip");
-  tip_tile_->setCursor(Qt::PointingHandCursor);
+  // === Tile 5: 时钟 (2x2) ===
   {
-    auto tip_content = new QLabel(tip_tile_);
-    tip_content->setAlignment(Qt::AlignCenter);
-    tip_content->setWordWrap(true);
-    tip_content->setObjectName("WelcomeTipContent");
-    tip_tile_->setContentWidget(tip_content);
+    auto* clockWidget = new PaintedClockWidget(this);
+    clockWidget->setMinimumSize(100, 100);
+
+    auto* clockTile = new grid::GridTile(grid::_2_2, this);
+    clockTile->setObjectName("WelcomeTileClock");
+    clockTile->setContentWidget(clockWidget);
+    clockTile->setNameText("");
+    grid_layout_->addWidget(clockTile);
   }
-  tip_tile_->setNameText(QString());  // 隐藏底部 label
-  connect(tip_tile_, &grid::GridTile::clicked, this,
-          &WelcomeWidget::showRandomTip);
-  grid_layout_->addWidget(tip_tile_);
+
+  // === Tile 6-9: 最近项目 (动态, 1x1 each) ===
+  rebuildRecentTiles();
 }
 
 void WelcomeWidget::initSignals() {

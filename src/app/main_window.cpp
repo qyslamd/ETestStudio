@@ -5,6 +5,7 @@
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
@@ -33,10 +34,10 @@
 #include "ActivityBarWidget.h"
 #include "AppIconProvider.h"
 #include "BottomContainerWidget.h"
-#include "HintBarWidget.h"
 #include "EditorManager.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
+#include "HintBarWidget.h"
 #include "OutputPanel.h"
 #include "ProblemsPanel.h"
 #include "ProjectStructureWidget.h"
@@ -47,7 +48,6 @@
 #include "TestProgramManagerWidget.h"
 #include "TextEditorWidget.h"
 #include "ThemeManager.h"
-#include "widgets/TuxSaverOverlay.h"
 #include "WelcomeWidget.h"
 #include "api/IEditor.h"
 #include "auth/AuthService.h"
@@ -62,6 +62,7 @@
 #include "project/ProjectManager.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
+#include "widgets/TuxSaverOverlay.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -81,6 +82,8 @@ MainWindow::MainWindow(QWidget* parent)
       output_panel_(nullptr),
       problems_panel_(nullptr),
       terminal_panel_(nullptr) {
+  QElapsedTimer timer;
+  timer.start();
   initUi();
   initSignals();
   // 加载用户数据（首次运行自动创建 admin 默认用户）
@@ -126,6 +129,7 @@ MainWindow::MainWindow(QWidget* parent)
               tux_overlay_->deactivate();
             }
           });
+  LOG_INFO("MAIN", "mainwindow 初始化耗时: {} ms", timer.elapsed());
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
@@ -252,20 +256,17 @@ void MainWindow::initUi() {
   hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
   hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
   hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
-                      QStringLiteral("更新"),
-                      [] { /* 占位：触发更新检查 */ });
+                      QStringLiteral("更新"), [] { /* 占位：触发更新检查 */ });
   hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
-                      QStringLiteral("查看"),
-                      [] { /* 占位：跳转到文件 */ });
+                      QStringLiteral("查看"), [] { /* 占位：跳转到文件 */ });
   hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
-                      QStringLiteral("重试"),
-                      [] { /* 占位：重试连接 */ });
+                      QStringLiteral("重试"), [] { /* 占位：重试连接 */ });
 
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   ads::CDockManager::setConfigFlag(
       ads::CDockManager::MiddleMouseButtonClosesTab, true);
-  ads::CDockManager::setConfigFlag(
-      ads::CDockManager::AllTabsHaveCloseButton, true);
+  ads::CDockManager::setConfigFlag(ads::CDockManager::AllTabsHaveCloseButton,
+                                   true);
   dock_manager_ = new ads::CDockManager(v_splitter_);
 
   // 中央编辑区：Welcome页面
@@ -1437,7 +1438,8 @@ void MainWindow::setupRibbon() {
     auto* panel_panels = cat->addPanel(QStringLiteral("面板"));
 
     auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
-    act_welcome->setIcon(AppIconProvider::instance().icon(QStringLiteral("welcome")));
+    act_welcome->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("welcome")));
     connect(act_welcome, &QAction::triggered, this, [this]() {
       auto* centralDock = dock_manager_->findDockWidget("CentralDock");
       if (!centralDock)
@@ -1450,14 +1452,16 @@ void MainWindow::setupRibbon() {
     panel_panels->addLargeAction(act_welcome);
 
     view_panel_action_ = new QAction(QStringLiteral("输出面板"), this);
-    view_panel_action_->setIcon(AppIconProvider::instance().icon(QStringLiteral("output_panel")));
+    view_panel_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("output_panel")));
     view_panel_action_->setCheckable(true);
     view_panel_action_->setChecked(true);
     view_panel_action_->setShortcut(QStringLiteral("Ctrl+J"));
     panel_panels->addLargeAction(view_panel_action_);
 
     view_aux_sidebar_action_ = new QAction(QStringLiteral("辅助侧边栏"), this);
-    view_aux_sidebar_action_->setIcon(AppIconProvider::instance().icon(QStringLiteral("sidebar")));
+    view_aux_sidebar_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("sidebar")));
     view_aux_sidebar_action_->setCheckable(true);
     view_aux_sidebar_action_->setChecked(false);
     panel_panels->addLargeAction(view_aux_sidebar_action_);
@@ -1470,9 +1474,9 @@ void MainWindow::setupRibbon() {
     auto* cat = ribbon->addCategoryPage(QStringLiteral("工具"));
 
     auto* panel_tools = cat->addPanel(QStringLiteral("工具"));
-    auto* act_settings =
-        new QAction(AppIconProvider::instance().icon(QStringLiteral("ribbon_settings")),
-                    QStringLiteral("设置"), this);
+    auto* act_settings = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("ribbon_settings")),
+        QStringLiteral("设置"), this);
     connect(act_settings, &QAction::triggered, this, [this]() {
       if (!settings_dialog_) {
         settings_dialog_ = new SettingsDialog(this);
