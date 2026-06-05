@@ -26,6 +26,7 @@ class BottomContainerWidget;
 class EditorManager;
 class HintBarWidget;
 class WelcomeWidget;
+class LoadingOverlay;
 
 class MainWindow : public SARibbonMainWindow {
   Q_OBJECT
@@ -41,6 +42,9 @@ class MainWindow : public SARibbonMainWindow {
  private:
   void initUi();
   void initSignals();
+  void initSignalsEarly();
+  void initSignalsLate();
+  void lazyInit();
   void onThemeChanged(bool isDark);
 
   void saveWindowState();
@@ -159,6 +163,8 @@ class MainWindow : public SARibbonMainWindow {
   TuxSaverOverlay* tux_overlay_ = nullptr;
   QElapsedTimer tux_idle_timer_;
   QTimer* tux_idle_check_timer_ = nullptr;
+
+  LoadingOverlay* loading_overlay_ = nullptr;
 
   // 登录认证
   QMenu* login_menu_ = nullptr;
