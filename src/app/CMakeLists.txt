@@ -73,6 +73,11 @@ add_executable(${TARGET_NAME}
     grid/layout_calculator_v3.cpp
     grid/grid_animator.h
     grid/grid_animator.cpp
+    widgets/clock_renderer.h
+    widgets/modern_clock_renderer.h
+    widgets/modern_clock_renderer.cpp
+    widgets/minimal_clock_renderer.h
+    widgets/minimal_clock_renderer.cpp
     widgets/PaintedClockWidget.h
     widgets/PaintedClockWidget.cpp
     widgets/EyeWidget.h
