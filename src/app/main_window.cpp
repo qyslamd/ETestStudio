@@ -665,12 +665,19 @@ void MainWindow::initSignalsLate() {
 }
 
 void MainWindow::lazyInit() {
+  QElapsedTimer total_timer;
+  total_timer.start();
+
   // 1. 创建 LoadingOverlay 盖住内容区，启动脉冲
+  QElapsedTimer step_timer;
+  step_timer.start();
   loading_overlay_ = new LoadingOverlay(v_splitter_);
   loading_overlay_->startWithTimeout(10000);
   QCoreApplication::processEvents();  // 立即渲染覆盖层
+  LOG_INFO("LAZY", "  [1/12] LoadingOverlay: {} ms", step_timer.elapsed());
 
   // 2. 注册活动栏按钮
+  step_timer.restart();
   activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
                          QStringLiteral("project"));
   activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
@@ -689,8 +696,10 @@ void MainWindow::lazyInit() {
                          QStringLiteral("search"));
   activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
                          QStringLiteral("git"));
+  LOG_INFO("LAZY", "  [2/12] 活动栏按钮: {} ms", step_timer.elapsed());
 
   // 3. 注册侧边栏页面
+  step_timer.restart();
   sidebar_->addPage(PageId::kProjectOverview,
                     new ProjectStructureWidget(sidebar_),
                     QStringLiteral("项目概览"));
@@ -711,8 +720,10 @@ void MainWindow::lazyInit() {
                     QStringLiteral("搜索"));
   sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
                     QStringLiteral("Git"));
+  LOG_INFO("LAZY", "  [3/12] 侧边栏页面: {} ms", step_timer.elapsed());
 
   // 4. 创建底部面板
+  step_timer.restart();
   output_panel_ = new OutputPanel(this);
   problems_panel_ = new ProblemsPanel(this);
   terminal_panel_ = new TerminalPanel(this);
@@ -723,29 +734,43 @@ void MainWindow::lazyInit() {
     bottom_container_->show();
     v_splitter_->setSizes({600, 200});
   }
+  LOG_INFO("LAZY", "  [4/12] 底部面板: {} ms", step_timer.elapsed());
 
   // 5. 创建 EditorManager
+  step_timer.restart();
   editor_manager_ = new EditorManager(dock_manager_, this);
+  LOG_INFO("LAZY", "  [5/12] EditorManager: {} ms", step_timer.elapsed());
 
   // 6. 创建 WelcomeWidget 替换中央占位
+  step_timer.restart();
   welcome_widget_ = new WelcomeWidget(this);
   central_dock_->setWidget(welcome_widget_);
   welcome_widget_->refreshRecentProjects();
+  LOG_INFO("LAZY", "  [6/12] WelcomeWidget: {} ms", step_timer.elapsed());
 
   // 7. 连接跨组件信号（此时所有子控件已就绪）
+  step_timer.restart();
   initSignalsLate();
+  LOG_INFO("LAZY", "  [7/12] initSignalsLate: {} ms", step_timer.elapsed());
 
   // 8. 初始化认证服务
+  step_timer.restart();
   AuthService::instance();
   updateWindowTitle();
+  LOG_INFO("LAZY", "  [8/12] AuthService: {} ms", step_timer.elapsed());
 
   // 9. 加载插件并刷新硬件树
-  auto& pluginMgr = etest::core::plugin::PluginManager::instance();
-  pluginMgr.addSearchPath(QCoreApplication::applicationDirPath() + "/plugins");
-  pluginMgr.loadAll();
-  sidebar_->hardwareTree()->refreshTree();
+  step_timer.restart();
+  {
+    auto& pluginMgr = etest::core::plugin::PluginManager::instance();
+    pluginMgr.addSearchPath(QCoreApplication::applicationDirPath() + "/plugins");
+    pluginMgr.loadAll();
+    sidebar_->hardwareTree()->refreshTree();
+  }
+  LOG_INFO("LAZY", "  [9/12] 插件+硬件: {} ms", step_timer.elapsed());
 
   // 10. 发布提示消息
+  step_timer.restart();
   hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
   hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
   hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
@@ -754,14 +779,21 @@ void MainWindow::lazyInit() {
                       QStringLiteral("查看"), [] { /* 占位 */ });
   hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
                       QStringLiteral("重试"), [] { /* 占位 */ });
+  LOG_INFO("LAZY", "  [10/12] 提示消息: {} ms", step_timer.elapsed());
 
-  // 11. 移除覆盖层（淡出）
+  // 11. 延迟移除覆盖层 — 给脉冲动画留出显示时间
+  step_timer.restart();
   connect(loading_overlay_, &LoadingOverlay::finished, this, [this]() {
-    LOG_INFO("MAIN", "懒加载完成");
+    LOG_INFO("MAIN", "懒加载覆盖层已关闭");
   });
-  loading_overlay_->finish();
+  // 延迟 1.5 秒让用户看到脉冲动画后再淡出
+  QTimer::singleShot(1500, loading_overlay_, &LoadingOverlay::finish);
+  LOG_INFO("LAZY", "  [11/12] 调度覆盖层移除: {} ms", step_timer.elapsed());
+
+  LOG_INFO("LAZY", "[总计] 懒加载核心步骤: {} ms", total_timer.elapsed());
 
   // 12. Tux 屏保（独立创建，不影响主流程）
+  step_timer.restart();
   tux_overlay_ = new TuxSaverOverlay(this);
   connect(tux_overlay_, &TuxSaverOverlay::closed, this,
           [this]() { tux_idle_timer_.restart(); });
@@ -791,8 +823,9 @@ void MainWindow::lazyInit() {
               tux_overlay_->deactivate();
             }
           });
+  LOG_INFO("LAZY", "  [12/12] Tux屏保: {} ms", step_timer.elapsed());
 
-  LOG_INFO("MAIN", "mainwindow 懒加载完成");
+  LOG_INFO("LAZY", "[最终] 懒加载全部完成, 总计: {} ms", total_timer.elapsed());
 }
 
 void MainWindow::onThemeChanged(bool isDark) {
