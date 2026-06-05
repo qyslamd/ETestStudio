@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>ISI-01#A429_IN1(050) 发送数据</Name>
+			<Description>发送的32位数据</Description>
+			<GroupName>ISI-01#A429_IN1(050)</GroupName>
+			<IsScaled>0</IsScaled>
+			<Childs>
+				<Item>
+					<Offset>0</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>8</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) LABEL</Name>
+					<Description>8bit有效,八进制,50</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>40</Tag>
+					<ValueTextList>40</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>3</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) System</Name>
+					<Description>3bit有效,内容:SBAS=0,GLONASS(Reserved)=1,Galileo(Reserved)=2,Beidou(Reserved)=3,Reserved=4,Reserved=5,Reserved=6,Reserved=7</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>SBAS=0,GLONASS(Reserved)=1,Galileo(Reserved)=2,Beidou(Reserved)=3,Reserved1=4,Reserved2=5,Reserved3=6,Reserved4=7</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>3</StartBit>
+					<BitWidth>6</BitWidth>
+					<Type>word</Type>
+					<Name>ISI-01#A429_IN1(050) C_N0</Name>
+					<Description>6bit有效</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>2</Offset>
+					<StartBit>1</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) Frequency_or_Satellite_Position_Data_Used</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>2</Offset>
+					<StartBit>2</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) User_Clock_Update</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>2</Offset>
+					<StartBit>3</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) Delta_Range_Status</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>2</Offset>
+					<StartBit>4</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) SVID_Status_Isolation</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>2</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>7</BitWidth>
+					<Type>word</Type>
+					<Name>ISI-01#A429_IN1(050) SVID_PRN_Code</Name>
+					<Description>7bit有效</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>4</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) PAD</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) SSM</Name>
+					<Description>2bit有效,内容:Normal_Operation=0,NCD=1,Functional_Test=2,Not_Used=3</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>Normal_Operation=0,NCD=1,Functional_Test=2,Not_Used=3</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>7</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_IN1(050) PARITY</Name>
+					<Description>1bit有效,Set to obtain odd word parity</Description>
+					<GroupName>ISI-01#A429_IN1(050)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+			</Childs>
+			<SystemName>ARINC429总线通讯模块</SystemName>
+		</Item>
+	</Data>
+</ICDData>
