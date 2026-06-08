@@ -15,14 +15,15 @@ class QComboBox;
 namespace etest::protocal {
 
 // ============================================================
-// BitBlockItem — 每个信号对应的色块
+// FieldSectionItem — 每个信号对应的竖排区块
 // ============================================================
-class BitBlockItem : public QGraphicsObject {
+class FieldSectionItem : public QGraphicsObject {
   Q_OBJECT
  public:
-  BitBlockItem(const QString& name, int byte_offset, int start_bit,
-               int bit_width, const QColor& color, int cell_size,
-               QGraphicsItem* parent = nullptr);
+  FieldSectionItem(const QString& name, int byte_offset, int start_bit,
+                   int bit_width, const QColor& color, int cell_size,
+                   int bits_per_row = 8,
+                   QGraphicsItem* parent = nullptr);
 
   QRectF boundingRect() const override;
   void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
@@ -31,6 +32,10 @@ class BitBlockItem : public QGraphicsObject {
   QString name() const { return name_; }
   int cellSize() const { return cell_size_; }
   void setHighlighted(bool on);
+  void setHovered(bool on);
+
+  int totalHeight() const;
+  int sectionWidth() const;
 
  signals:
   void clicked(const QString& name);
@@ -50,21 +55,22 @@ class BitBlockItem : public QGraphicsObject {
   int bit_width_;
   QColor color_;
   int cell_size_;
+  int bits_per_row_;
   bool hovered_ = false;
   bool highlighted_ = false;
+  static constexpr int kHeaderHeight = 28;
 };
 
 // ============================================================
-// IcdBitLayoutScene — 管理网格和所有色块
+// IcdBitLayoutScene — 管理所有 FieldSectionItem，纵向排列
 // ============================================================
 class IcdBitLayoutScene : public QGraphicsScene {
   Q_OBJECT
  public:
   explicit IcdBitLayoutScene(QObject* parent = nullptr);
 
-  void setFrame(int length_bytes, int bits_per_row = 32);
-  BitBlockItem* addBlock(const QString& name, int byte_offset,
-                         int start_bit, int bit_width, const QColor& color);
+  FieldSectionItem* addBlock(const QString& name, int byte_offset,
+                             int start_bit, int bit_width, const QColor& color);
   void clearBlocks();
   void highlightBlock(const QString& name);
 
@@ -78,15 +84,11 @@ class IcdBitLayoutScene : public QGraphicsScene {
   void contextMenuAction(const QString& name, const QString& action);
   void blockHovered(const QString& name, bool on);
 
- protected:
-  void drawBackground(QPainter* painter, const QRectF& rect) override;
-
  private:
-  int frame_length_ = 16;
-  int bits_per_row_ = 32;
-  int cell_size_ = 34;
-  int margin_left_ = 52;
-  int margin_top_ = 32;
+  int cell_size_ = 38;
+  int left_margin_ = 16;
+  int section_spacing_ = 12;
+  int next_y_ = 16;
   QString selected_name_;
 };
 
@@ -98,10 +100,9 @@ class IcdBitLayoutView : public QWidget {
  public:
   explicit IcdBitLayoutView(QWidget* parent = nullptr);
 
-  void setFrameData(int length_bytes, int bits_per_row = 32);
   void loadFromFrame(const icd::Frame& frame);
-  BitBlockItem* addBlock(const QString& name, int byte_offset,
-                         int start_bit, int bit_width, const QColor& color);
+  FieldSectionItem* addBlock(const QString& name, int byte_offset,
+                             int start_bit, int bit_width, const QColor& color);
   void clearBlocks();
   void highlightBlock(const QString& name);
 
@@ -116,11 +117,9 @@ class IcdBitLayoutView : public QWidget {
  private:
   void initUi();
   void collectLeafNodes(const icd::Node& node, QVector<const icd::Node*>& leaves);
-  void fitToContent();
 
   IcdBitLayoutScene* scene_ = nullptr;
   QGraphicsView* view_ = nullptr;
-  QComboBox* mode_combo_ = nullptr;
   const icd::Frame* last_frame_ = nullptr;
 };
 

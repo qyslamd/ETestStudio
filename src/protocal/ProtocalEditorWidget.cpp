@@ -119,7 +119,7 @@ void ProtocalEditorWidget::setEditorId(const QString& id) {
 // ── Load .eproto JSON ─────────────────────────────────────────
 bool ProtocalEditorWidget::loadEproto(const QString& path) {
   auto result = icd::format::deserialize_repository(
-      std::filesystem::path(path.toStdString()));
+      std::filesystem::path(path.toStdWString()));
   if (!result) return false;
 
   clearAll();
@@ -135,7 +135,8 @@ bool ProtocalEditorWidget::loadEproto(const QString& path) {
 
 // ── Save .eproto JSON ─────────────────────────────────────────
 bool ProtocalEditorWidget::saveEproto(const QString& path) {
-  auto result = icd::format::serialize_repository(path.toStdString(), repo_);
+  auto result = icd::format::serialize_repository(
+      std::filesystem::path(path.toStdWString()), repo_);
   return result.has_value();
 }
 
