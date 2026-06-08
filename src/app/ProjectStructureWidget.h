@@ -10,6 +10,7 @@
 class QFileSystemWatcher;
 class QMenu;
 class QPoint;
+class QScrollArea;
 class QTreeView;
 class QTimer;
 
@@ -49,6 +50,17 @@ class ProjectStructureWidget : public QWidget {
   void fileRenamed(const QString& oldPath, const QString& newPath);
   void missingDirectoryDetected(const QString& categoryId);
 
+  // 占位页操作
+  void newProjectRequested();
+  void openProjectRequested();
+  void projectOpenRequested(const QString& projectPath);
+
+ public:
+  void refreshRecentProjects();
+
+ protected:
+  bool eventFilter(QObject* obj, QEvent* event) override;
+
  private slots:
   void onCustomContextMenu(const QPoint& pos);
   void onItemDoubleClicked(const QModelIndex& index);
@@ -81,6 +93,7 @@ class ProjectStructureWidget : public QWidget {
   QTreeView* tree_view_;
   QStandardItemModel* model_;
   QWidget* placeholder_widget_ = nullptr;
+  QWidget* recent_container_ = nullptr;
   QFileSystemWatcher* file_watcher_ = nullptr;
   QTimer* debounce_timer_ = nullptr;
 

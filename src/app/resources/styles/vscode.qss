@@ -1416,3 +1416,33 @@ QPushButton#HintCloseBtn {
 QPushButton#HintCloseBtn:hover {
     color: #FFFFFF;
 }
+
+/* ==================== ProjectStructureWidget Placeholder ==================== */
+/* Section headers (项目管理/最近项目) */
+QLabel#PhSectionLabel {
+    color: #888888;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 0;
+    background: transparent;
+}
+
+/* Project action buttons (新建项目/打开项目) */
+QPushButton#PhProjectBtn {
+    background-color: #2D2D2D;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 4px;
+    text-align: left;
+    padding: 0 12px;
+    font-size: 12px;
+}
+QPushButton#PhProjectBtn:hover {
+    background-color: #383838;
+    border-color: #007ACC;
+}
+QPushButton#PhProjectBtn:pressed {
+    background-color: #094771;
+}

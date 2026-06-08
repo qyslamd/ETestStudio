@@ -357,6 +357,18 @@ void MainWindow::initSignalsLate() {
             &EditorManager::onFileDeleted);
     connect(psWidget, &ProjectStructureWidget::fileRenamed, editor_manager_,
             &EditorManager::onFileRenamed);
+
+    // 占位页：项目操作
+    connect(psWidget, &ProjectStructureWidget::newProjectRequested, this,
+            &MainWindow::onNewProject);
+    connect(psWidget, &ProjectStructureWidget::openProjectRequested, this,
+            &MainWindow::onOpenProject);
+    connect(psWidget, &ProjectStructureWidget::projectOpenRequested, this,
+            &MainWindow::openRecentProject);
+    // 最近项目变更时刷新占位页
+    connect(&projectMgr,
+            &etest::core::project::ProjectManager::recentProjectsChanged,
+            psWidget, &ProjectStructureWidget::refreshRecentProjects);
   }
 
   // 搜索组件：项目打开/关闭时设置搜索根目录

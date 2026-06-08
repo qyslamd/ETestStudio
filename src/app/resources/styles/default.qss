@@ -397,3 +397,30 @@ QWidget#sidebarActivityBar QPushButton:checked {
     color: #222222;
     background-color: #E0E0E0;
 }
+
+/* ==================== ProjectStructureWidget Placeholder ==================== */
+QLabel#PhSectionLabel {
+    color: #999999;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 0;
+    background: transparent;
+}
+QPushButton#PhProjectBtn {
+    background-color: #FFFFFF;
+    color: #333333;
+    border: 1px solid #D0D0D0;
+    border-radius: 4px;
+    text-align: left;
+    padding: 0 12px;
+    font-size: 12px;
+}
+QPushButton#PhProjectBtn:hover {
+    background-color: #F0F0F0;
+    border-color: #0078D4;
+}
+QPushButton#PhProjectBtn:pressed {
+    background-color: #E0E0E0;
+}
