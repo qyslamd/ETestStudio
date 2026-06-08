@@ -62,6 +62,7 @@ class WelcomeWidget : public QWidget {
 
   grid::GridLayout* grid_layout_ = nullptr;
   grid::GridTile* tip_tile_ = nullptr;
+  QLabel* tip_content_label_ = nullptr;
   EyeWidget* eye_widget_ = nullptr;
 
   QList<grid::GridTile*> recent_tiles_;

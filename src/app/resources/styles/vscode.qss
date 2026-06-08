@@ -967,16 +967,16 @@ QWidget#WelcomeProjectCardContent:hover {
     background-color: #383838;
     border-color: #007ACC;
 }
-QLabel#WelcomeCardName {
+QLabel#WelcomeRecentCardName {
     color: #E0E0E0;
     font-size: 13px;
     font-weight: bold;
 }
-QLabel#WelcomeCardPath {
-    color: #888888;
+QLabel#WelcomeRecentCardPath {
+    color: #aaaaaa;
     font-size: 11px;
 }
-QLabel#WelcomeCardTime {
+QLabel#WelcomeRecentCardTime {
     color: #666666;
     font-size: 10px;
 }
@@ -992,6 +992,17 @@ QLabel#WelcomeClockDigital {
 QLabel#gridTileName {
     color: #999999;
     font-size: 11px;
+}
+
+/* --- Daily Tip Tile --- */
+QLabel#WelcomeTipTitle {
+    color: #cccccc;
+    font-size: 14px;
+    font-weight: bold;
+}
+QLabel#WelcomeTipContent {
+    color: #aaaaaa;
+    font-size: 12px;
 }
 
 /* ==================== SettingsDialog ==================== */

@@ -18,18 +18,18 @@
 #include <QShowEvent>
 #include <QVBoxLayout>
 
-#include "widgets/EyeWidget.h"
 #include "common/ThemeManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "widgets/PaintedClockWidget.h"
-#include "grid/grid_global_def.hpp"
-#include "grid/grid_tile.h"
 #include "core/utils/PixmapUtil.h"
 #include "grid/grid_global_def.hpp"
 #include "grid/grid_layout.h"
+#include "grid/grid_tile.h"
 #include "project/ProjectManager.h"
 #include "version.h"
+#include "widgets/EyeWidget.h"
+#include "widgets/PaintedClockWidget.h"
+
 
 namespace etest::app {
 
@@ -82,7 +82,8 @@ void WelcomeWidget::paintEvent(QPaintEvent*) {
   if (!best_drop_rect_.isEmpty()) {
     p.setRenderHint(QPainter::Antialiasing, true);
     QRectF largeRect;
-    for (auto& r : best_drop_rect_) largeRect = largeRect.united(r);
+    for (auto& r : best_drop_rect_)
+      largeRect = largeRect.united(r);
 
     switch (drag_preview_style_) {
       case None:
@@ -185,11 +186,26 @@ void WelcomeWidget::initUi() {
   tip_tile_->setObjectName("WelcomeTileTip");
   tip_tile_->setCursor(Qt::PointingHandCursor);
   {
-    auto tip_content = new QLabel(tip_tile_);
-    tip_content->setAlignment(Qt::AlignCenter);
-    tip_content->setWordWrap(true);
-    tip_content->setObjectName("WelcomeTipContent");
-    tip_tile_->setContentWidget(tip_content);
+    auto* tipContainer = new QWidget;
+    auto* tipLayout = new QVBoxLayout(tipContainer);
+    tipLayout->setContentsMargins(16, 12, 16, 12);
+    tipLayout->setSpacing(6);
+
+    auto* tipTitle =
+        new QLabel(QStringLiteral("\xF0\x9F\x92\xA1"
+                                  "每日提示："));
+    tipTitle->setObjectName("WelcomeTipTitle");
+    tipTitle->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+    tip_content_label_ = new QLabel;
+    tip_content_label_->setObjectName("WelcomeTipContent");
+    tip_content_label_->setAlignment(Qt::AlignLeft);
+    tip_content_label_->setWordWrap(true);
+
+    tipLayout->addWidget(tipTitle);
+    tipLayout->addWidget(tip_content_label_);
+
+    tip_tile_->setContentWidget(tipContainer);
   }
   tip_tile_->setNameText(QString());  // 隐藏底部 label
   connect(tip_tile_, &grid::GridTile::clicked, this,
@@ -236,7 +252,8 @@ void WelcomeWidget::initUi() {
   {
     QPixmap source(":/resources/icons/app_icon.svg");
     if (!source.isNull()) {
-      source = source.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+      source =
+          source.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
       QPixmap rounded(20, 20);
       rounded.fill(Qt::transparent);
       QPainter p2(&rounded);
@@ -249,7 +266,8 @@ void WelcomeWidget::initUi() {
       eyeIconLabel->setPixmap(rounded);
     } else {
       eyeIconLabel->setText("E");
-      eyeIconLabel->setStyleSheet("font-size:12px; font-weight:bold; background:transparent;");
+      eyeIconLabel->setStyleSheet(
+          "font-size:12px; font-weight:bold; background:transparent;");
     }
   }
 
@@ -315,7 +333,8 @@ void WelcomeWidget::rebuildRecentTiles() {
   for (const QString& path : recentList) {
     QFileInfo fi(path);
     QString displayName = fi.completeBaseName();
-    if (displayName.isEmpty()) continue;
+    if (displayName.isEmpty())
+      continue;
 
     auto* card = new QWidget;
     card->setObjectName("WelcomeProjectCardContent");
@@ -325,11 +344,13 @@ void WelcomeWidget::rebuildRecentTiles() {
     cardLayout->setSpacing(2);
 
     auto* nameLabel = new QLabel(displayName);
-    nameLabel->setObjectName("WelcomeCardName");
+    nameLabel->setObjectName("WelcomeRecentCardName");
     nameLabel->setWordWrap(true);
 
     auto* pathLabel = new QLabel(fi.absolutePath());
-    pathLabel->setObjectName("WelcomeCardPath");
+    pathLabel->setObjectName("WelcomeRecentCardPath");
+    pathLabel->setAlignment(Qt::AlignLeft);
+    pathLabel->setWordWrap(true);
 
     QString timeStr;
     if (timestamps.contains(path)) {
@@ -337,51 +358,58 @@ void WelcomeWidget::rebuildRecentTiles() {
       timeStr = dt.toString("yyyy-MM-dd hh:mm");
     }
     auto* timeLabel = new QLabel(timeStr);
-    timeLabel->setObjectName("WelcomeCardTime");
-    if (timeStr.isEmpty()) timeLabel->hide();
+    timeLabel->setObjectName("WelcomeRecentCardTime");
+    if (timeStr.isEmpty())
+      timeLabel->hide();
 
     cardLayout->addWidget(nameLabel);
     cardLayout->addWidget(pathLabel);
     cardLayout->addStretch();
     cardLayout->addWidget(timeLabel);
 
-    auto tile = new grid::GridTile(grid::_1_1, this);
+    auto tile = new grid::GridTile(grid::_1_2, this);
     tile->setObjectName("WelcomeTileRecent");
     tile->setContentWidget(card);
     tile->setNameText("");
     tile->setProperty("projectPath", path);
     tile->setCursor(Qt::PointingHandCursor);
 
-    connect(tile, &grid::GridTile::clicked, this,
-            [this, tile]() {
-              QString p = tile->property("projectPath").toString();
-              if (!p.isEmpty()) emit projectOpenRequested(p);
-            });
-    connect(tile, &grid::GridTile::contextMenuRequested, this,
-            [this](const QPoint& pos, int) {
-              auto* tile = qobject_cast<grid::GridTile*>(QObject::sender());
-              if (!tile) return;
-              QString path = tile->property("projectPath").toString();
-              if (path.isEmpty()) return;
-              auto* menu = new QMenu(this);
-              menu->setObjectName("WelcomeContextMenu");
-              auto* removeAction = menu->addAction(QStringLiteral("从列表中移除"));
-              connect(removeAction, &QAction::triggered, this, [this, path]() {
-                QStringList recentList = ConfigManager::instance().get<QStringList>(
-                    CONFIG_RECENT_PROJECT_LIST);
-                recentList.removeAll(path);
-                ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST, recentList);
-                refreshRecentProjects();
-              });
-              menu->exec(pos);
-            });
+    connect(tile, &grid::GridTile::clicked, this, [this, tile]() {
+      QString p = tile->property("projectPath").toString();
+      if (!p.isEmpty())
+        emit projectOpenRequested(p);
+    });
+    connect(
+        tile, &grid::GridTile::contextMenuRequested, this,
+        [this](const QPoint& pos, int) {
+          auto* tile = qobject_cast<grid::GridTile*>(QObject::sender());
+          if (!tile)
+            return;
+          QString path = tile->property("projectPath").toString();
+          if (path.isEmpty())
+            return;
+          auto* menu = new QMenu(this);
+          menu->setObjectName("WelcomeContextMenu");
+          auto* removeAction = menu->addAction(QStringLiteral("从列表中移除"));
+          connect(removeAction, &QAction::triggered, this, [this, path]() {
+            QStringList recentList = ConfigManager::instance().get<QStringList>(
+                CONFIG_RECENT_PROJECT_LIST);
+            recentList.removeAll(path);
+            ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST,
+                                          recentList);
+            refreshRecentProjects();
+          });
+          menu->exec(pos);
+        });
 
     recent_tiles_.append(tile);
     grid_layout_->addWidget(tile);
   }
 }
 
-void WelcomeWidget::refreshRecentProjects() { rebuildRecentTiles(); }
+void WelcomeWidget::refreshRecentProjects() {
+  rebuildRecentTiles();
+}
 
 void WelcomeWidget::showEvent(QShowEvent* event) {
   QWidget::showEvent(event);
@@ -402,13 +430,15 @@ void WelcomeWidget::loadBackground() {
       int idx = QRandomGenerator::global()->bounded(entries.size());
       QString fullPath = dir.absoluteFilePath(entries[idx]);
       bg_pixmap_ = QPixmap(fullPath);
-      if (bg_pixmap_.isNull()) bg_pixmap_.load(fullPath, "JPG");
+      if (bg_pixmap_.isNull())
+        bg_pixmap_.load(fullPath, "JPG");
     } else {
       bg_pixmap_ = QPixmap();
     }
   } else if (!bg_image_path_.isEmpty()) {
     bg_pixmap_ = QPixmap(bg_image_path_);
-    if (bg_pixmap_.isNull()) bg_pixmap_.load(bg_image_path_, "JPG");
+    if (bg_pixmap_.isNull())
+      bg_pixmap_.load(bg_image_path_, "JPG");
   } else {
     bg_pixmap_ = QPixmap();
   }
@@ -416,15 +446,12 @@ void WelcomeWidget::loadBackground() {
 }
 
 void WelcomeWidget::showRandomTip() {
-  if (tips_.isEmpty()) return;
+  if (tips_.isEmpty())
+    return;
   int idx = QRandomGenerator::global()->bounded(tips_.size());
 
-  // 将提示文字设到 content_widget_ 上（居中显示）
-  auto tipContent = qobject_cast<QLabel*>(tip_tile_->contentWidget());
-  if (tipContent) {
-    tipContent->setText(QStringLiteral("%1  %2")
-                            .arg(QString::fromUtf8("\xF0\x9F\x92\xA1"))
-                            .arg(tips_[idx]));
+  if (tip_content_label_) {
+    tip_content_label_->setText(tips_[idx]);
   }
 }
 
@@ -434,14 +461,18 @@ void WelcomeWidget::setGridOverlayVisible(bool visible) {
   draw_grid_overlay_ = visible;
   update();
 }
-bool WelcomeWidget::gridOverlayVisible() const { return draw_grid_overlay_; }
+bool WelcomeWidget::gridOverlayVisible() const {
+  return draw_grid_overlay_;
+}
 void WelcomeWidget::setGridColor(const QColor& c) {
   grid_color_ = c;
-  if (draw_grid_overlay_) update();
+  if (draw_grid_overlay_)
+    update();
 }
 void WelcomeWidget::setOccupiedGridColor(const QColor& c) {
   occupied_grid_color_ = c;
-  if (draw_grid_overlay_) update();
+  if (draw_grid_overlay_)
+    update();
 }
 void WelcomeWidget::setDragPreviewStyle(DragPreviewStyle style) {
   drag_preview_style_ = style;
@@ -453,12 +484,14 @@ WelcomeWidget::DragPreviewStyle WelcomeWidget::dragPreviewStyle() const {
 // ==================== 拖拽重排 ====================
 
 grid::GridTile* WelcomeWidget::getTileUnderMouse(QWidget* child) const {
-  if (!child) return nullptr;
+  if (!child)
+    return nullptr;
   auto widget = child->parentWidget();
   if (auto tile = qobject_cast<grid::GridTile*>(widget)) {
     return (tile->parentWidget() == this) ? tile : nullptr;
   }
-  if (widget == this) return nullptr;
+  if (widget == this)
+    return nullptr;
   return getTileUnderMouse(widget);
 }
 
@@ -480,12 +513,15 @@ void WelcomeWidget::mouseMoveEvent(QMouseEvent* event) {
   }
 
   auto child = childAt(event->pos());
-  if (!child) return;
+  if (!child)
+    return;
 
   auto dragTile = getTileUnderMouse(child);
-  if (!dragTile) return;
+  if (!dragTile)
+    return;
   // 不拖拽提示磁贴
-  if (dragTile == tip_tile_) return;
+  if (dragTile == tip_tile_)
+    return;
 
   auto pixmap = dragTile->grab();
 
@@ -527,7 +563,8 @@ void WelcomeWidget::dragMoveEvent(QDragMoveEvent* event) {
   }
 
   auto dragItem = qobject_cast<grid::GridTile*>(event->source());
-  if (!dragItem) return;
+  if (!dragItem)
+    return;
 
   QByteArray itemData = event->mimeData()->data(grid::MimeType);
   QDataStream dataStream(&itemData, QIODevice::ReadOnly);
@@ -535,7 +572,8 @@ void WelcomeWidget::dragMoveEvent(QDragMoveEvent* event) {
   dataStream >> pix;
 
   auto trend = grid::getDragingTrend(drag_start_pos_, event->pos());
-  best_drop_rect_ = grid_layout_->dealWithDragMove(dragItem, event->pos(), trend);
+  best_drop_rect_ =
+      grid_layout_->dealWithDragMove(dragItem, event->pos(), trend);
   drop_pixmap_ = pix;
 
   event->setDropAction(Qt::MoveAction);
@@ -549,7 +587,8 @@ void WelcomeWidget::dropEvent(QDropEvent* event) {
   }
 
   auto dragItem = qobject_cast<grid::GridTile*>(event->source());
-  if (!dragItem) return;
+  if (!dragItem)
+    return;
 
   if (best_drop_rect_.isEmpty()) {
     dragItem->setDragingState(false);
