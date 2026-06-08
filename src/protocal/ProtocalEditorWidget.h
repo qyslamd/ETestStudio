@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QJsonObject>
+#include <QByteArray>
 #include <QVector>
 #include <QWidget>
 
@@ -59,7 +59,7 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   void setCurrentFrame(const icd::Frame* frame);
   void populateFrames();
   void saveSnapshot();
-  void restoreSnapshot(const QJsonObject& obj);
+  void restoreSnapshot(const QByteArray& data);
 
   QSplitter* splitter_ = nullptr;
   IcdNodeTreeWidget* node_tree_ = nullptr;
@@ -79,7 +79,7 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
 
   QString current_file_;
   bool modified_ = false;
-  QVector<QJsonObject> snapshots_;
+  QVector<QByteArray> snapshots_;
   int snapshot_index_ = -1;
 };
 

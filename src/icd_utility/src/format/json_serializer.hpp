@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
 #include <tl/expected.hpp>
 
 #include <filesystem>
@@ -13,6 +14,9 @@ class Frame;
 class Node;
 
 namespace format {
+
+// Serialize full repository to JSON object (for undo snapshots, etc.)
+nlohmann::json serialize_repository_to_json(const Repository& repo);
 
 // Serialize full repository (as .eproto JSON format)
 tl::expected<void, Error> serialize_repository(const std::filesystem::path& path, const Repository& repo);

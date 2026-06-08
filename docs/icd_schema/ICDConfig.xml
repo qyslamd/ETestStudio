@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ICDConfig>
+  <Files>
+    <FileInfo>
+      <Name>1033_自检</Name>
+      <Path>1033_自检.xml</Path>
+      <Description>1033 自检帧</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>5121A_自检_发送</Name>
+      <Path>5121A_自检_发送.xml</Path>
+      <Description>5121A 自检发送帧</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>5V导光板电源_发送电流设定值</Name>
+      <Path>5V导光板电源_发送电流设定值_ComCHH50W_COM1.xml</Path>
+      <Description>5V导光板电源 — 发送电流设定值 (COM1)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>5V导光板电源_接收显示电流</Name>
+      <Path>5V导光板电源_接收显示电流_ComCHH50W_COM1.xml</Path>
+      <Description>5V导光板电源 — 接收显示电流 (COM1)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>A429_00_ISI_01_发送_Label050</Name>
+      <Path>A429_00_ISI_01_发送_Label050_5272_00.xml</Path>
+      <Description>A429 总线 00 — ISI_01 发送 Label 050 (5272_00)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>A429_03_ISI_01_配置</Name>
+      <Path>A429_03_ISI_01_配置_6272T_03.xml</Path>
+      <Description>A429 总线 03 — ISI_01 配置 (6272T_03)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>A429_08_ISI_02_接收_Label156</Name>
+      <Path>A429_08_ISI_02_接收_Label156_6272T_08.xml</Path>
+      <Description>A429 总线 08 — ISI_02 接收 Label 156 (6272T_08)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>串口自检_发送_5276H_00</Name>
+      <Path>串口自检_发送_5276H_00.xml</Path>
+      <Description>串口自检发送帧 (5276H_00)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>串口自检_发送_5276H_00_COM6</Name>
+      <Path>串口自检_发送_5276H_00_COM6.xml</Path>
+      <Description>串口自检发送帧 (5276H_00, COM6)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>串口自检_接收_5276H_01</Name>
+      <Path>串口自检_接收_5276H_01.xml</Path>
+      <Description>串口自检接收帧 (5276H_01)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>串口自检_接收_5276H_01_COM7</Name>
+      <Path>串口自检_接收_5276H_01_COM7.xml</Path>
+      <Description>串口自检接收帧 (5276H_01, COM7)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>压力给定_发送静压总压</Name>
+      <Path>压力给定_发送静压总压_ComADTS300H_COM2.xml</Path>
+      <Description>压力给定 — 发送静压/总压 (ADTS300H, COM2)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>压力给定_接收当前控制模式</Name>
+      <Path>压力给定_接收当前控制模式_ComADTS300H_COM2.xml</Path>
+      <Description>压力给定 — 接收当前控制模式 (ADTS300H, COM2)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>压力给定_接收当前航空单位</Name>
+      <Path>压力给定_接收当前航空单位_ComADTS300H_COM2.xml</Path>
+      <Description>压力给定 — 接收当前航空单位 (ADTS300H, COM2)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>大华电源_发送电压</Name>
+      <Path>大华电源_发送电压_ComPower_COM1.xml</Path>
+      <Description>大华电源 — 发送电压指令 (COM1)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>大华电源_接收电源状态</Name>
+      <Path>大华电源_接收电源状态_ComPower_COM3.xml</Path>
+      <Description>大华电源 — 接收电源状态 (COM3)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>大华电源_过流允许</Name>
+      <Path>大华电源_过流允许_ComPower_COM1.xml</Path>
+      <Description>大华电源 — 过流允许 (COM1)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>摄像头_控制指令</Name>
+      <Path>摄像头_控制指令_LanTLIPC342_0.xml</Path>
+      <Description>摄像头控制指令 (LanTLIPC342)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>示波器_接收A429信号_数据_波特率_发送周期</Name>
+      <Path>示波器_接收A429信号_数据_波特率_发送周期_UsbDP07504_0.xml</Path>
+      <Description>示波器 — 接收 A429 信号数据/波特率/发送周期 (UsbDP07504)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>示波器_接收发送速率</Name>
+      <Path>示波器_接收发送速率_UsbDP07504_0.xml</Path>
+      <Description>示波器 — 接收发送速率 (UsbDP07504)</Description>
+    </FileInfo>
+    <FileInfo>
+      <Name>示波器_接收更新周期</Name>
+      <Path>示波器_接收更新周期_UsbDP07504_0.xml</Path>
+      <Description>示波器 — 接收更新周期 (UsbDP07504)</Description>
+    </FileInfo>
+  </Files>
+</ICDConfig>

@@ -38,7 +38,6 @@
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "HintBarWidget.h"
-#include "widgets/LoadingOverlay.h"
 #include "OutputPanel.h"
 #include "ProblemsPanel.h"
 #include "ProjectStructureWidget.h"
@@ -63,6 +62,7 @@
 #include "project/ProjectManager.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
+#include "widgets/LoadingOverlay.h"
 #include "widgets/TuxSaverOverlay.h"
 
 using namespace etest::core::config;
@@ -157,12 +157,10 @@ void MainWindow::initUi() {
   sidebar_ = new SidebarWidget(h_splitter_);
   h_splitter_->addWidget(sidebar_);
 
-
   // ===== 垂直分割器（编辑器 + 底部面板） =====
   v_splitter_ = new QSplitter(Qt::Vertical, h_splitter_);
   v_splitter_->setChildrenCollapsible(true);
   h_splitter_->addWidget(v_splitter_);
-
 
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   ads::CDockManager::setConfigFlag(
@@ -203,7 +201,7 @@ void MainWindow::initUi() {
 
   // 设置 splitter 初始尺寸
   h_splitter_->setSizes({280, 800, 0});  // sidebar / 垂直区域 / aux
-  v_splitter_->setSizes({800, 0});         // 底部面板初始大小为 0（后续恢复）
+  v_splitter_->setSizes({800, 0});       // 底部面板初始大小为 0（后续恢复）
 
   main_layout->addLayout(horizontal_layout, 1);
   setCentralWidget(centralContainer);
@@ -670,7 +668,8 @@ void MainWindow::lazyInit() {
 
   // 1. 创建 LoadingOverlay 盖住内容区，启动脉冲
   // 注意：parent = this (MainWindow)，手动定位到 v_splitter_ 区域
-  // 若 parent 为 v_splitter_，QSplitter 会将其作为 splitter child 布局，覆盖层不会浮在内容区之上
+  // 若 parent 为 v_splitter_，QSplitter 会将其作为 splitter child
+  // 布局，覆盖层不会浮在内容区之上
   QElapsedTimer step_timer;
   step_timer.start();
   loading_overlay_ = new LoadingOverlay(this);
@@ -780,24 +779,27 @@ void MainWindow::lazyInit() {
   step_timer.restart();
   {
     auto& pluginMgr = etest::core::plugin::PluginManager::instance();
-    pluginMgr.addSearchPath(QCoreApplication::applicationDirPath() + "/plugins");
+    pluginMgr.addSearchPath(QCoreApplication::applicationDirPath() +
+                            "/plugins");
     pluginMgr.loadAll();
     sidebar_->hardwareTree()->refreshTree();
   }
   LOG_INFO("LAZY", "  [8/12] 插件+硬件: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 9. 发布提示消息
-  step_timer.restart();
-  hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
-  hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
-  hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
-                      QStringLiteral("更新"), [] { /* 占位 */ });
-  hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
-                      QStringLiteral("查看"), [] { /* 占位 */ });
-  hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
-                      QStringLiteral("重试"), [] { /* 占位 */ });
-  LOG_INFO("LAZY", "  [9/12] 提示消息: {} ms", step_timer.elapsed());
+  // 9. 发布提示消息（当前演示用，不必打开）
+  if (0) {
+    step_timer.restart();
+    hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
+    hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
+    hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
+                        QStringLiteral("更新"), [] { /* 占位 */ });
+    hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
+                        QStringLiteral("查看"), [] { /* 占位 */ });
+    hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
+                        QStringLiteral("重试"), [] { /* 占位 */ });
+    LOG_INFO("LAZY", "  [9/12] 提示消息: {} ms", step_timer.elapsed());
+  }
 
   // 10. 恢复底部面板状态（侧边栏页面已在 step [2/12] 恢复）
   step_timer.restart();
@@ -879,7 +881,6 @@ void MainWindow::onThemeChanged(bool isDark) {
   setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
                         : SARibbonTheme::RibbonThemeOffice2021Blue);
 }
-
 
 void MainWindow::createStatusBar() {
   // 状态栏样式已由全局QSS覆盖，无需内联设置

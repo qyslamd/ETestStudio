@@ -140,7 +140,7 @@ tl::expected<void, Error> write_json(const json& document, const std::filesystem
 
 } // namespace
 
-tl::expected<void, Error> serialize_repository(const std::filesystem::path& path, const Repository& repo) {
+nlohmann::json serialize_repository_to_json(const Repository& repo) {
     json document;
     document["version"] = "1.0";
 
@@ -150,7 +150,11 @@ tl::expected<void, Error> serialize_repository(const std::filesystem::path& path
     }
     document["frames"] = std::move(frames);
 
-    return write_json(document, path);
+    return document;
+}
+
+tl::expected<void, Error> serialize_repository(const std::filesystem::path& path, const Repository& repo) {
+    return write_json(serialize_repository_to_json(repo), path);
 }
 
 tl::expected<void, Error> serialize_frame(const std::filesystem::path& path, const Frame& frame) {

@@ -3,8 +3,13 @@
 #include <nlohmann/json.hpp>
 
 #include <fstream>
+#include <memory>
 #include <string>
 #include <utility>
+
+#include <icd/node.hpp>
+#include <icd/frame.hpp>
+#include <icd/repository.hpp>
 
 namespace icd::format {
 namespace {
@@ -115,7 +120,122 @@ tl::expected<schema::SchemaNodeDef, Error> parse_node(const json& item, const st
     return node;
 }
 
+// ── .eproto format helpers (nested "attrs" sub-object, "children" array) ──
+ValueType parse_eproto_value_type(const std::string& s) noexcept {
+    if (s == "boolean")  return ValueType::boolean;
+    if (s == "uint8")    return ValueType::byte_;
+    if (s == "bytes")    return ValueType::bytes;
+    if (s == "uint16")   return ValueType::word;
+    if (s == "int16")    return ValueType::shortint;
+    if (s == "smallint") return ValueType::smallint;
+    if (s == "uint32")   return ValueType::longword;
+    if (s == "int32")    return ValueType::integer;
+    if (s == "uint64")   return ValueType::ulong_;
+    if (s == "float")    return ValueType::single;
+    if (s == "double")   return ValueType::double_;
+    if (s == "string")   return ValueType::string_;
+    return ValueType::unknown;
+}
+
+FrameType parse_eproto_frame_type(const std::string& s) noexcept {
+    if (s == "cmd")      return FrameType::cmd;
+    if (s == "data")     return FrameType::data;
+    if (s == "dataCfg")  return FrameType::data_cmd;
+    return FrameType::data;
+}
+
+ByteOrder parse_eproto_byte_order(const std::string& s) noexcept {
+    return (s == "bigEndian") ? ByteOrder::big_endian
+                              : ByteOrder::little_endian;
+}
+
+std::unique_ptr<Node> parse_eproto_node(const json& j) {
+    auto value_type = parse_eproto_value_type(
+        j.value("valueType", std::string("unknown")));
+
+    NodeAttrs attrs;
+    if (auto it = j.find("attrs"); it != j.end() && it->is_object()) {
+        const auto& a = *it;
+        attrs.system_name     = a.value("systemName", std::string());
+        attrs.group_name      = a.value("groupName", std::string());
+        attrs.unit            = a.value("unit", std::string());
+        attrs.value_text_list = a.value("valueTextList", std::string());
+        attrs.scale_formula   = a.value("scaleFormula", std::string());
+        attrs.scale_convertor = a.value("scaleConveror", std::string());
+        attrs.link_to         = a.value("linkTo", std::string());
+        attrs.is_scaled       = a.value("isScaled", false);
+        if (auto v = a.find("scaleA"); v != a.end() && v->is_number())
+            attrs.scale_a = v->get<float>();
+        if (auto v = a.find("scaleB"); v != a.end() && v->is_number())
+            attrs.scale_b = v->get<float>();
+        if (auto v = a.find("min"); v != a.end() && v->is_number())
+            attrs.min = v->get<float>();
+        if (auto v = a.find("max"); v != a.end() && v->is_number())
+            attrs.max = v->get<float>();
+    }
+
+    auto tag = static_cast<Tag>(j.value("tag", 0));
+
+    auto node = std::make_unique<Node>(
+        j.value("name", std::string()),
+        j.value("description", std::string()),
+        j.value("offset", 0),
+        j.value("startBit", 0),
+        j.value("bitWidth", 8),
+        value_type, tag, std::move(attrs));
+
+    if (auto it = j.find("children"); it != j.end() && it->is_array()) {
+        for (const auto& child : *it) {
+            node->add_child(parse_eproto_node(child));
+        }
+    }
+
+    return node;
+}
+
 } // namespace
+
+// ── .eproto deserialization ──────────────────────────────────────
+tl::expected<Repository, Error> deserialize_repository(const json& j) {
+    if (!j.contains("frames") || !j["frames"].is_array()) {
+        return tl::make_unexpected(
+            Error{ErrorCode::schema_error,
+                  "missing frames array", {}, "frames"});
+    }
+
+    Repository repo;
+
+    for (const auto& frame_json : j["frames"]) {
+        int id      = frame_json.value("id", 0);
+        auto name   = frame_json.value("name", std::string());
+        auto desc   = frame_json.value("description", std::string());
+        auto type   = parse_eproto_frame_type(
+            frame_json.value("type", std::string("data")));
+        auto order  = parse_eproto_byte_order(
+            frame_json.value("byteOrder", std::string("littleEndian")));
+
+        auto frame = std::make_unique<Frame>(id, name, desc, type, order);
+
+        if (auto nodes_it = frame_json.find("nodes");
+            nodes_it != frame_json.end() && nodes_it->is_array()) {
+            for (const auto& node_json : *nodes_it) {
+                frame->add_root(parse_eproto_node(node_json));
+            }
+        }
+
+        repo.add_frame(std::move(frame));
+    }
+
+    return repo;
+}
+
+tl::expected<Repository, Error> deserialize_repository(const std::filesystem::path& path) {
+    auto document = load_json_document(path);
+    if (!document) {
+        return tl::make_unexpected(document.error());
+    }
+    return deserialize_repository(*document);
+}
 
 tl::expected<schema::SchemaConfig, Error> parse_json_config(const std::filesystem::path& path) {
     auto document = load_json_document(path);

@@ -5,6 +5,20 @@ package.json
 yarn.lock
 
 
+# ========== Office编辑中间文件 ==========
+# Office 临时文件（最重要）
+~$*
+*.~vsdx
+*.~docx
+*.~xlsx
+*.~pptx
+*.~vsd
+*.~doc
+*.~xls
+*.~ppt
+
+# Office 自动恢复文件
+*.asd
 
 # ========== CMake 构建中间产物 ==========
 CMakeFiles/

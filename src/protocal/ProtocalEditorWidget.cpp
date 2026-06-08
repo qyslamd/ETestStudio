@@ -1,25 +1,20 @@
 #include "ProtocalEditorWidget.h"
 
-#pragma push_macro("slots")
-#undef slots
-#include <nlohmann/json.hpp>
-#pragma pop_macro("slots")
-
 #include <QComboBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
-#include <QJsonDocument>
 #include <QLabel>
 #include <QMessageBox>
 #include <QSplitter>
 #include <QToolButton>
 #include <QVBoxLayout>
 
-#include <fstream>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "format/json_serializer.hpp"
+#include "format/json_parser.hpp"
 #include "IcdBitLayoutView.h"
 #include "IcdNodeTreeWidget.h"
 #include "IcdPropertyPanel.h"
@@ -27,142 +22,6 @@
 namespace etest::protocal {
 namespace {
 
-using json = nlohmann::json;
-
-// ── ValueType string → enum ──────────────────────────────────
-icd::ValueType valueTypeFromString(const std::string& s) {
-  if (s == "boolean") return icd::ValueType::boolean;
-  if (s == "uint8")   return icd::ValueType::byte_;
-  if (s == "bytes")   return icd::ValueType::bytes;
-  if (s == "uint16")  return icd::ValueType::word;
-  if (s == "int16")   return icd::ValueType::shortint;
-  if (s == "smallint") return icd::ValueType::smallint;
-  if (s == "uint32")  return icd::ValueType::longword;
-  if (s == "int32")   return icd::ValueType::integer;
-  if (s == "uint64")  return icd::ValueType::ulong_;
-  if (s == "float")   return icd::ValueType::single;
-  if (s == "double")  return icd::ValueType::double_;
-  if (s == "string")  return icd::ValueType::string_;
-  return icd::ValueType::unknown;
-}
-
-// ── FrameType string → enum ──────────────────────────────────
-icd::FrameType frameTypeFromString(const std::string& s) {
-  if (s == "cmd")      return icd::FrameType::cmd;
-  if (s == "data")     return icd::FrameType::data;
-  if (s == "dataCfg")  return icd::FrameType::data_cmd;
-  return icd::FrameType::data;
-}
-
-// ── ByteOrder string → enum ─────────────────────────────────
-icd::ByteOrder byteOrderFromString(const std::string& s) {
-  return (s == "bigEndian") ? icd::ByteOrder::big_endian
-                            : icd::ByteOrder::little_endian;
-}
-
-// ── ValueType enum → string ──────────────────────────────────
-std::string valueTypeToString(icd::ValueType vt) {
-  switch (vt) {
-  case icd::ValueType::boolean:  return "boolean";
-  case icd::ValueType::byte_:    return "uint8";
-  case icd::ValueType::bytes:    return "bytes";
-  case icd::ValueType::word:     return "uint16";
-  case icd::ValueType::shortint: return "int16";
-  case icd::ValueType::smallint: return "smallint";
-  case icd::ValueType::longword: return "uint32";
-  case icd::ValueType::integer:  return "int32";
-  case icd::ValueType::ulong_:   return "uint64";
-  case icd::ValueType::single:   return "float";
-  case icd::ValueType::double_:  return "double";
-  case icd::ValueType::string_:  return "string";
-  case icd::ValueType::unknown:  return "unknown";
-  }
-  return "unknown";
-}
-
-// ── Recursive node JSON serializer ──────────────────────────
-json serializeNode(const icd::Node& n) {
-  json obj;
-  obj["name"]        = std::string(n.name());
-  obj["description"] = std::string(n.description());
-  obj["offset"]      = n.offset();
-  obj["startBit"]    = n.bit_offset();
-  obj["bitWidth"]    = n.bit_width();
-  obj["valueType"]   = valueTypeToString(n.value_type());
-  obj["tag"]         = static_cast<int>(n.tag());
-
-  json attrs_obj;
-  const auto& a = n.attrs();
-  attrs_obj["systemName"]    = a.system_name;
-  attrs_obj["groupName"]     = a.group_name;
-  attrs_obj["unit"]          = a.unit;
-  attrs_obj["valueTextList"] = a.value_text_list;
-  attrs_obj["scaleFormula"]  = a.scale_formula;
-  attrs_obj["scaleConveror"] = a.scale_convertor;
-  attrs_obj["linkTo"]        = a.link_to;
-  attrs_obj["isScaled"]      = a.is_scaled;
-  if (a.scale_a.has_value()) attrs_obj["scaleA"] = *a.scale_a;
-  if (a.scale_b.has_value()) attrs_obj["scaleB"] = *a.scale_b;
-  if (a.min.has_value())     attrs_obj["min"]    = *a.min;
-  if (a.max.has_value())     attrs_obj["max"]    = *a.max;
-  obj["attrs"] = std::move(attrs_obj);
-
-  if (!n.children().empty()) {
-    json children = json::array();
-    for (const auto& child : n.children())
-      children.push_back(serializeNode(*child));
-    obj["children"] = std::move(children);
-  }
-  return obj;
-}
-
-// ── Recursive node JSON parser ───────────────────────────────
-std::unique_ptr<icd::Node> parseNode(const json& j) {
-  auto value_type = valueTypeFromString(
-      j.value("valueType", std::string("unknown")));
-
-  icd::NodeAttrs attrs;
-  if (auto it = j.find("attrs"); it != j.end()) {
-    const auto& a = *it;
-    attrs.system_name      = a.value("systemName", std::string());
-    attrs.group_name       = a.value("groupName", std::string());
-    attrs.unit             = a.value("unit", std::string());
-    attrs.value_text_list  = a.value("valueTextList", std::string());
-    attrs.scale_formula    = a.value("scaleFormula", std::string());
-    attrs.scale_convertor  = a.value("scaleConveror", std::string());
-    attrs.link_to          = a.value("linkTo", std::string());
-    attrs.is_scaled        = a.value("isScaled", false);
-    if (auto v = a.find("scaleA"); v != a.end() && v->is_number())
-      attrs.scale_a = v->get<float>();
-    if (auto v = a.find("scaleB"); v != a.end() && v->is_number())
-      attrs.scale_b = v->get<float>();
-    if (auto v = a.find("min"); v != a.end() && v->is_number())
-      attrs.min = v->get<float>();
-    if (auto v = a.find("max"); v != a.end() && v->is_number())
-      attrs.max = v->get<float>();
-  }
-
-  auto tag = static_cast<icd::Tag>(j.value("tag", 0));
-
-  auto node = std::make_unique<icd::Node>(
-      j.value("name", std::string()),
-      j.value("description", std::string()),
-      j.value("offset", 0),
-      j.value("startBit", 0),
-      j.value("bitWidth", 8),
-      value_type, tag, std::move(attrs));
-
-  // Parse children recursively
-  if (auto it = j.find("children"); it != j.end() && it->is_array()) {
-    for (const auto& child : *it) {
-      node->add_child(parseNode(child));
-    }
-  }
-
-  return node;
-}
-
-// ── JSON node recursion for frame length calc ───────────────
 void updateMaxBits(const icd::Node& node, int& max_bits) {
   int end = (node.offset() * 8) + node.bit_offset() + node.bit_width();
   if (end > max_bits) max_bits = end;
@@ -259,44 +118,16 @@ void ProtocalEditorWidget::setEditorId(const QString& id) {
 
 // ── Load .eproto JSON ─────────────────────────────────────────
 bool ProtocalEditorWidget::loadEproto(const QString& path) {
-  std::ifstream stream(path.toStdString());
-  if (!stream.is_open()) return false;
-
-  json document;
-  try {
-    stream >> document;
-  } catch (...) {
-    return false;
-  }
+  auto result = icd::format::deserialize_repository(
+      std::filesystem::path(path.toStdString()));
+  if (!result) return false;
 
   clearAll();
-
-  if (auto it = document.find("frames"); it != document.end() && it->is_array()) {
-    for (const auto& frame_json : *it) {
-      int id = frame_json.value("id", 0);
-      std::string name = frame_json.value("name", std::string());
-      std::string desc = frame_json.value("description", std::string());
-      auto type = frameTypeFromString(frame_json.value("type", std::string("data")));
-      auto order = byteOrderFromString(frame_json.value("byteOrder", std::string("littleEndian")));
-
-      auto frame = std::make_unique<icd::Frame>(id, name, desc, type, order);
-
-      if (auto nodes_it = frame_json.find("nodes"); nodes_it != frame_json.end() && nodes_it->is_array()) {
-        for (const auto& node_json : *nodes_it) {
-          frame->add_root(parseNode(node_json));
-        }
-      }
-
-      repo_.add_frame(std::move(frame));
-    }
-  }
-
+  repo_ = std::move(*result);
   populateFrames();
 
-  // Select first frame if available
-  if (!repo_.frames().empty()) {
+  if (!repo_.frames().empty())
     setCurrentFrame(repo_.frames()[0].get());
-  }
 
   saveSnapshot();
   return true;
@@ -304,103 +135,8 @@ bool ProtocalEditorWidget::loadEproto(const QString& path) {
 
 // ── Save .eproto JSON ─────────────────────────────────────────
 bool ProtocalEditorWidget::saveEproto(const QString& path) {
-  json document;
-  document["version"] = "1.0";
-
-  json frames = json::array();
-  for (const auto& f : repo_.frames()) {
-    json frame_obj;
-    frame_obj["id"] = f->id();
-    frame_obj["name"] = std::string(f->name());
-    frame_obj["description"] = std::string(f->description());
-
-    switch (f->type()) {
-    case icd::FrameType::cmd:      frame_obj["type"] = "cmd";     break;
-    case icd::FrameType::data:     frame_obj["type"] = "data";    break;
-    case icd::FrameType::data_cmd: frame_obj["type"] = "dataCfg"; break;
-    }
-
-    frame_obj["byteOrder"] = (f->order() == icd::ByteOrder::little_endian)
-                                 ? "littleEndian" : "bigEndian";
-
-    frame_obj["length"] = calcFrameLength(*f);
-
-    json nodes = json::array();
-    // Use a lambda to serialize nodes since we need recursion
-    // and icd::Node has complex access patterns
-    struct Serializer {
-      static json serialize(const icd::Node& n) {
-        json obj;
-        obj["name"]        = std::string(n.name());
-        obj["description"] = std::string(n.description());
-        obj["offset"]      = n.offset();
-        obj["startBit"]    = n.bit_offset();
-        obj["bitWidth"]    = n.bit_width();
-        obj["valueType"]   = valueTypeToString(n.value_type());
-        obj["tag"]         = static_cast<int>(n.tag());
-
-        json attrs_obj;
-        const auto& a = n.attrs();
-        attrs_obj["systemName"]    = a.system_name;
-        attrs_obj["groupName"]     = a.group_name;
-        attrs_obj["unit"]          = a.unit;
-        attrs_obj["valueTextList"] = a.value_text_list;
-        attrs_obj["scaleFormula"]  = a.scale_formula;
-        attrs_obj["scaleConveror"] = a.scale_convertor;
-        attrs_obj["linkTo"]        = a.link_to;
-        attrs_obj["isScaled"]      = a.is_scaled;
-        if (a.scale_a.has_value()) attrs_obj["scaleA"] = *a.scale_a;
-        if (a.scale_b.has_value()) attrs_obj["scaleB"] = *a.scale_b;
-        if (a.min.has_value())     attrs_obj["min"]    = *a.min;
-        if (a.max.has_value())     attrs_obj["max"]    = *a.max;
-        obj["attrs"] = std::move(attrs_obj);
-
-        if (!n.children().empty()) {
-          json children = json::array();
-          for (const auto& child : n.children())
-            children.push_back(serialize(*child));
-          obj["children"] = std::move(children);
-        }
-
-        return obj;
-      }
-
-      static std::string valueTypeToString(icd::ValueType vt) {
-        switch (vt) {
-        case icd::ValueType::boolean:  return "boolean";
-        case icd::ValueType::byte_:    return "uint8";
-        case icd::ValueType::bytes:    return "bytes";
-        case icd::ValueType::word:     return "uint16";
-        case icd::ValueType::shortint: return "int16";
-        case icd::ValueType::smallint: return "smallint";
-        case icd::ValueType::longword: return "uint32";
-        case icd::ValueType::integer:  return "int32";
-        case icd::ValueType::ulong_:   return "uint64";
-        case icd::ValueType::single:   return "float";
-        case icd::ValueType::double_:  return "double";
-        case icd::ValueType::string_:  return "string";
-        case icd::ValueType::unknown:  return "unknown";
-        }
-        return "unknown";
-      }
-    };
-
-    for (const auto& root : f->roots())
-      nodes.push_back(Serializer::serialize(*root));
-    frame_obj["nodes"] = std::move(nodes);
-
-    frames.push_back(std::move(frame_obj));
-  }
-  document["frames"] = std::move(frames);
-
-  std::ofstream stream(path.toStdString());
-  if (!stream.is_open()) return false;
-  try {
-    stream << document.dump(2);
-  } catch (...) {
-    return false;
-  }
-  return true;
+  auto result = icd::format::serialize_repository(path.toStdString(), repo_);
+  return result.has_value();
 }
 
 // ── UI ─────────────────────────────────────────────────────────
@@ -868,77 +604,26 @@ void ProtocalEditorWidget::clearAll() {
 
 // ── Snapshot (undo/redo) ──────────────────────────────────────
 void ProtocalEditorWidget::saveSnapshot() {
-  json document;
-  document["version"] = "1.0";
-
-  json frames = json::array();
-  for (const auto& f : repo_.frames()) {
-    json frame_obj;
-    frame_obj["id"] = f->id();
-    frame_obj["name"] = std::string(f->name());
-    frame_obj["description"] = std::string(f->description());
-
-    switch (f->type()) {
-    case icd::FrameType::cmd:      frame_obj["type"] = "cmd";     break;
-    case icd::FrameType::data:     frame_obj["type"] = "data";    break;
-    case icd::FrameType::data_cmd: frame_obj["type"] = "dataCfg"; break;
-    }
-
-    frame_obj["byteOrder"] = (f->order() == icd::ByteOrder::little_endian)
-                                 ? "littleEndian" : "bigEndian";
-    frame_obj["length"] = calcFrameLength(*f);
-
-    json nodes = json::array();
-    for (const auto& root : f->roots())
-      nodes.push_back(serializeNode(*root));
-    frame_obj["nodes"] = std::move(nodes);
-
-    frames.push_back(std::move(frame_obj));
-  }
-  document["frames"] = std::move(frames);
-
-  // Convert nlohmann::json → QJsonObject
-  QString jsonStr = QString::fromStdString(document.dump());
-  QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8());
+  auto j = icd::format::serialize_repository_to_json(repo_);
+  QString jsonStr = QString::fromStdString(j.dump());
+  QByteArray bytes = jsonStr.toUtf8();
 
   // Truncate redo history
   if (snapshot_index_ < snapshots_.size() - 1) {
     snapshots_.resize(snapshot_index_ + 1);
   }
 
-  snapshots_.append(doc.object());
+  snapshots_.append(bytes);
   snapshot_index_ = snapshots_.size() - 1;
 }
 
-void ProtocalEditorWidget::restoreSnapshot(const QJsonObject& obj) {
-  QJsonDocument doc(obj);
-  QString jsonStr = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
-
-  json document = json::parse(jsonStr.toStdString());
+void ProtocalEditorWidget::restoreSnapshot(const QByteArray& data) {
+  auto j = nlohmann::json::parse(data.toStdString());
+  auto result = icd::format::deserialize_repository(j);
+  if (!result) return;
 
   current_frame_ = nullptr;
-  repo_ = icd::Repository();
-
-  if (auto it = document.find("frames"); it != document.end() && it->is_array()) {
-    for (const auto& frame_json : *it) {
-      int id = frame_json.value("id", 0);
-      std::string name = frame_json.value("name", std::string());
-      std::string desc = frame_json.value("description", std::string());
-      auto type = frameTypeFromString(frame_json.value("type", std::string("data")));
-      auto order = byteOrderFromString(frame_json.value("byteOrder", std::string("littleEndian")));
-
-      auto frame = std::make_unique<icd::Frame>(id, name, desc, type, order);
-
-      if (auto nodes_it = frame_json.find("nodes"); nodes_it != frame_json.end() && nodes_it->is_array()) {
-        for (const auto& node_json : *nodes_it) {
-          frame->add_root(parseNode(node_json));
-        }
-      }
-
-      repo_.add_frame(std::move(frame));
-    }
-  }
-
+  repo_ = std::move(*result);
   populateFrames();
 
   if (!repo_.frames().empty()) {
