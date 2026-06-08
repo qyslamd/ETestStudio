@@ -3,6 +3,9 @@
 #include <QPainterPath>
 #include <QtMath>
 
+// 面板半径，所有字号表达为它的百分比
+static constexpr int kFaceRadius = 190;
+
 void ModernClockRenderer::beginPaint(QPainter& painter,
                                      const QSize& widgetSize) const {
   int side = qMin(widgetSize.width(), widgetSize.height());
@@ -46,8 +49,12 @@ void ModernClockRenderer::drawTicks(QPainter& p) const {
 }
 
 void ModernClockRenderer::drawNumbers(QPainter& p) const {
+  const int numSize = static_cast<int>(kFaceRadius * 0.16);   // 30
+  const int boldSize = static_cast<int>(kFaceRadius * 0.20);  // 38
+  const int boxSize = boldSize + 6;                            // 44
+
   QFont f = p.font();
-  f.setPixelSize(22);
+  f.setPixelSize(numSize);
   f.setFamily(QStringLiteral("fantasy"));
   p.setFont(f);
 
@@ -57,10 +64,10 @@ void ModernClockRenderer::drawNumbers(QPainter& p) const {
     double x = radii * qSin(angle);
     double y = -radii * qCos(angle);
 
-    QRectF r(x - 16, y - 16, 32, 32);
+    QRectF r(x - boxSize / 2.0, y - boxSize / 2.0, boxSize, boxSize);
     if (i % 3 == 0) {
       QFont bold_f = f;
-      bold_f.setPixelSize(28);
+      bold_f.setPixelSize(boldSize);
       p.setFont(bold_f);
       p.setPen(QColor(0x33, 0x33, 0x33));
     } else {
@@ -132,7 +139,7 @@ void ModernClockRenderer::drawDateInfo(QPainter& p,
           .arg(week_day[now.date().dayOfWeek() % 7]);
 
   QFont f = p.font();
-  f.setPixelSize(14);
+  f.setPixelSize(static_cast<int>(kFaceRadius * 0.11));  // 20
   f.setBold(true);
   p.setFont(f);
   p.setPen(QColor(0x55, 0x55, 0x55));
@@ -146,7 +153,7 @@ void ModernClockRenderer::drawDigitalTime(QPainter& p,
   int s = now.time().second();
 
   QFont f = p.font();
-  f.setPixelSize(16);
+  f.setPixelSize(static_cast<int>(kFaceRadius * 0.12));  // 22
   f.setBold(true);
   p.setFont(f);
   p.setPen(Qt::white);

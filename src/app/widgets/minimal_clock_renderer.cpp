@@ -2,6 +2,9 @@
 
 #include <QtMath>
 
+// 面板半径，所有字号表达为它的百分比
+static constexpr int kFaceRadius = 98;
+
 void MinimalClockRenderer::beginPaint(QPainter& painter,
                                       const QSize& widgetSize) const {
   int side = qMin(widgetSize.width(), widgetSize.height());
@@ -73,7 +76,7 @@ void MinimalClockRenderer::drawDigitalTime(QPainter& p,
                                            const QDateTime& now) const {
   p.setPen(QColor(255, 255, 255, 200));
   QFont f = p.font();
-  f.setPixelSize(20);
+  f.setPixelSize(static_cast<int>(kFaceRadius * 0.20));  // 19
   f.setBold(true);
   p.setFont(f);
   p.drawText(QRect(-80, 30, 160, 30), Qt::AlignCenter,
