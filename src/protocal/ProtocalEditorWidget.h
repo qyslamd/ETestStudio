@@ -1,8 +1,11 @@
 #pragma once
 
 #include <QByteArray>
+#include <QFutureWatcher>
 #include <QVector>
 #include <QWidget>
+
+#include <memory>
 
 #include "api/IEditor.h"
 
@@ -13,6 +16,7 @@ class QComboBox;
 class QLabel;
 class QSplitter;
 class QToolButton;
+class QResizeEvent;
 
 namespace etest::protocal {
 
@@ -49,6 +53,13 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   void editorIdChanged(const QString& oldId, const QString& newId);
 
  private:
+  void showLoadingOverlay();
+  void hideLoadingOverlay();
+  void resizeEvent(QResizeEvent* event) override;
+
+  QWidget* loading_overlay_ = nullptr;
+  QFutureWatcher<std::shared_ptr<icd::Repository>>* load_watcher_ = nullptr;
+
   bool loadEproto(const QString& path);
   bool saveEproto(const QString& path);
   void initUi();

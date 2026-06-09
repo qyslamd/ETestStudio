@@ -5,9 +5,12 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QResizeEvent>
 #include <QSplitter>
 #include <QToolButton>
 #include <QVBoxLayout>
+
+#include <QtConcurrent/QtConcurrentRun>
 
 #include <memory>
 #include <string>
@@ -108,12 +111,84 @@ void ProtocalEditorWidget::redo() {
 void ProtocalEditorWidget::setEditorId(const QString& id) {
   if (id == current_file_) return;
   current_file_ = id;
-  if (QFileInfo::exists(id)) {
-    if (!loadEproto(id)) {
-      QMessageBox::warning(this, QStringLiteral("加载失败"),
-          QStringLiteral("无法加载协议文件: %1").arg(id));
-    }
+
+  if (!QFileInfo::exists(id)) return;
+
+  // 如果已有之前的异步加载未完成，取消它
+  if (load_watcher_) {
+    load_watcher_->cancel();
+    load_watcher_->deleteLater();
+    load_watcher_ = nullptr;
   }
+
+  // 先清空旧数据，显示空白 UI + loading 覆层
+  clearAll();
+  showLoadingOverlay();
+
+  // 后台解析 ICD 文件
+  load_watcher_ = new QFutureWatcher<std::shared_ptr<icd::Repository>>(this);
+  connect(load_watcher_, &QFutureWatcher<std::shared_ptr<icd::Repository>>::finished,
+          this, [this]() {
+    auto repoPtr = load_watcher_->result();
+    load_watcher_->deleteLater();
+    load_watcher_ = nullptr;
+
+    if (!repoPtr) {
+      hideLoadingOverlay();
+      QMessageBox::warning(this, QStringLiteral("加载失败"),
+          QStringLiteral("无法加载协议文件: %1").arg(current_file_));
+      return;
+    }
+
+    repo_ = std::move(*repoPtr);
+    populateFrames();
+
+    if (!repo_.frames().empty())
+      setCurrentFrame(repo_.frames()[0].get());
+
+    saveSnapshot();
+    hideLoadingOverlay();
+  });
+  load_watcher_->setFuture(QtConcurrent::run([id]() -> std::shared_ptr<icd::Repository> {
+    auto result = icd::format::deserialize_repository(
+        std::filesystem::path(id.toStdWString()));
+    if (!result) return nullptr;
+    return std::make_shared<icd::Repository>(std::move(*result));
+  }));
+}
+
+// ── Loading overlay ─────────────────────────────────────────
+
+void ProtocalEditorWidget::showLoadingOverlay() {
+  if (!loading_overlay_) {
+    loading_overlay_ = new QWidget(this);
+    loading_overlay_->setObjectName(QStringLiteral("PhLoadingOverlay"));
+    loading_overlay_->setAttribute(Qt::WA_TransparentForMouseEvents, false);
+    loading_overlay_->setStyleSheet(
+        QStringLiteral("background-color:%1;")
+            .arg(palette().window().color().name()));
+    auto* lay = new QVBoxLayout(loading_overlay_);
+    lay->setAlignment(Qt::AlignCenter);
+    lay->setAlignment(Qt::AlignCenter);
+    auto* label = new QLabel(QStringLiteral("正在加载协议文件..."), loading_overlay_);
+    label->setAlignment(Qt::AlignCenter);
+    label->setStyleSheet(
+        QStringLiteral("font-size:13px;color:#888;background:transparent;"));
+    lay->addWidget(label);
+  }
+  loading_overlay_->setGeometry(rect());
+  loading_overlay_->raise();
+  loading_overlay_->show();
+}
+
+void ProtocalEditorWidget::hideLoadingOverlay() {
+  if (loading_overlay_) loading_overlay_->hide();
+}
+
+void ProtocalEditorWidget::resizeEvent(QResizeEvent* event) {
+  QWidget::resizeEvent(event);
+  if (loading_overlay_ && loading_overlay_->isVisible())
+    loading_overlay_->setGeometry(rect());
 }
 
 // ── Load .eproto JSON ─────────────────────────────────────────

@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFrame>
@@ -16,11 +17,15 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QResizeEvent>
 #include <QShortcut>
 #include <QSplitter>
 #include <QMenu>
 #include <QToolButton>
 #include <QVBoxLayout>
+
+#include <QtConcurrent/QtConcurrentRun>
+
 #include "DevicePaletteWidget.h"
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
@@ -161,6 +166,75 @@ void TopologyEditorWidget::setEditorId(const QString& newId) {
   if (oldId != editorId()) {
     emit editorIdChanged(oldId, editorId());
   }
+
+  // 文件不存在或为临时 ID 时不加载
+  if (newId.startsWith("editor://") || !QFileInfo::exists(newId))
+    return;
+
+  // 取消之前的异步加载
+  if (load_watcher_) {
+    load_watcher_->cancel();
+    load_watcher_->deleteLater();
+    load_watcher_ = nullptr;
+  }
+
+  showLoadingOverlay();
+
+  // 后台读取并解析 JSON，主线程反序列化到文档 + 重建场景
+  load_watcher_ = new QFutureWatcher<QJsonDocument>(this);
+  connect(load_watcher_, &QFutureWatcher<QJsonDocument>::finished,
+          this, [this]() {
+    QJsonDocument jdoc = load_watcher_->result();
+    load_watcher_->deleteLater();
+    load_watcher_ = nullptr;
+
+    if (!jdoc.isNull()) {
+      etest::topology::TopologyJsonSerializer::deserialize(
+          jdoc.object(), doc_);
+      doc_->undoStack()->clear();
+      reloadScene();
+    }
+    hideLoadingOverlay();
+  });
+  load_watcher_->setFuture(QtConcurrent::run([newId]() -> QJsonDocument {
+    QFile file(newId);
+    if (!file.open(QIODevice::ReadOnly)) return {};
+    QJsonParseError err;
+    QJsonDocument jdoc = QJsonDocument::fromJson(file.readAll(), &err);
+    return (err.error == QJsonParseError::NoError) ? jdoc : QJsonDocument();
+  }));
+}
+
+// ── Loading overlay ─────────────────────────────────────────
+
+void TopologyEditorWidget::showLoadingOverlay() {
+  if (!loading_overlay_) {
+    loading_overlay_ = new QWidget(this);
+    loading_overlay_->setObjectName(QStringLiteral("PhLoadingOverlay"));
+    loading_overlay_->setStyleSheet(
+        QStringLiteral("background-color:%1;")
+            .arg(palette().window().color().name()));
+    auto* lay = new QVBoxLayout(loading_overlay_);
+    lay->setAlignment(Qt::AlignCenter);
+    auto* label = new QLabel(QStringLiteral("正在加载拓扑文件..."), loading_overlay_);
+    label->setAlignment(Qt::AlignCenter);
+    label->setStyleSheet(
+        QStringLiteral("font-size:13px;color:#888;background:transparent;"));
+    lay->addWidget(label);
+  }
+  loading_overlay_->setGeometry(rect());
+  loading_overlay_->raise();
+  loading_overlay_->show();
+}
+
+void TopologyEditorWidget::hideLoadingOverlay() {
+  if (loading_overlay_) loading_overlay_->hide();
+}
+
+void TopologyEditorWidget::resizeEvent(QResizeEvent* event) {
+  QFrame::resizeEvent(event);
+  if (loading_overlay_ && loading_overlay_->isVisible())
+    loading_overlay_->setGeometry(rect());
 }
 
 // ── Constructor helpers ────────────────────────────────────────

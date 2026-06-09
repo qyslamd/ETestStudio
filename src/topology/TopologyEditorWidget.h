@@ -1,10 +1,15 @@
 #pragma once
 
 #include <QFrame>
+#include <QFutureWatcher>
+#include <QJsonDocument>
+
+#include <memory>
 
 #include "api/IEditor.h"
 
 class QAction;
+class QResizeEvent;
 class QSplitter;
 class QGraphicsItem;
 class QLabel;
@@ -78,6 +83,14 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   void initSignals();
   void buildDefaultDocument();
   void rebuildSceneAndRestoreSelection();
+
+  // 异步加载
+  void showLoadingOverlay();
+  void hideLoadingOverlay();
+  void resizeEvent(QResizeEvent* event) override;
+
+  QWidget* loading_overlay_ = nullptr;
+  QFutureWatcher<QJsonDocument>* load_watcher_ = nullptr;
 
   TopologyDocument* doc_;
   TopologyScene* scene_;

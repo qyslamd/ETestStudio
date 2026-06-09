@@ -97,19 +97,7 @@ void EditorManager::registerEditorTypes() {
       "topology", [](const QString& id, QWidget* parent) {
         auto* editor = new etest::topology::TopologyEditorWidget(parent);
         if (!id.startsWith("editor://") && QFileInfo::exists(id)) {
-          QFile file(id);
-          if (file.open(QIODevice::ReadOnly)) {
-            QJsonParseError err;
-            QJsonDocument jdoc = QJsonDocument::fromJson(file.readAll(), &err);
-            file.close();
-            if (err.error == QJsonParseError::NoError) {
-              etest::topology::TopologyJsonSerializer::deserialize(
-                  jdoc.object(), editor->document());
-              editor->document()->undoStack()->clear();
-            }
-            editor->reloadScene();
-          }
-          editor->setEditorId(id);
+          editor->setEditorId(id);  // 异步加载
         }
         return editor;
       });
