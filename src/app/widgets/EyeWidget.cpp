@@ -29,18 +29,26 @@ EyeWidget::EyeWidget(QWidget* parent) : QWidget(parent) {
 }
 
 void EyeWidget::tick() {
+  bool needs_repaint = false;
+
   // smooth tracking
   smooth_pos_ += (target_pos_ - smooth_pos_) * 0.12;
+  if (QLineF(smooth_pos_, target_pos_).length() > 0.5)
+    needs_repaint = true;
 
   // idle → drowsy
   qint64 idle = last_move_elapsed_.elapsed();
   if (idle > 3000) {
+    double old = drowsy_level_;
     drowsy_level_ = qMin(1.0, drowsy_level_ + 0.003);
+    if (qAbs(drowsy_level_ - old) > 0.001)
+      needs_repaint = true;
   }
 
   // cross-eyed animation
   if (cross_eye_phase_ > 0) {
     cross_eye_phase_ = qMax(0.0, cross_eye_phase_ - 0.025);
+    needs_repaint = true;
   }
 
   // blink animation
@@ -64,15 +72,17 @@ void EyeWidget::tick() {
           scheduleNextBlink();
       }
     }
+    needs_repaint = true;
   }
 
-  // mouse nearness for eyebrows
-  QPointF center = rect().center();
-  double dist = qMax(1.0, QLineF(smooth_pos_, center).length());
-  double maxDist = qMax(width(), height()) * 0.7;
-  mouse_nearness_ = qBound(0.0, 1.0 - dist / maxDist, 1.0);
-
-  update();
+  if (needs_repaint) {
+    // mouse nearness for eyebrows
+    QPointF center = rect().center();
+    double dist = qMax(1.0, QLineF(smooth_pos_, center).length());
+    double maxDist = qMax(width(), height()) * 0.7;
+    mouse_nearness_ = qBound(0.0, 1.0 - dist / maxDist, 1.0);
+    update();
+  }
 }
 
 void EyeWidget::scheduleNextBlink() {
@@ -179,6 +189,9 @@ void EyeWidget::paintEvent(QPaintEvent*) {
 }
 
 bool EyeWidget::eventFilter(QObject* obj, QEvent* event) {
+  if (!isVisible())
+    return QWidget::eventFilter(obj, event);
+
   if (event->type() == QEvent::MouseMove) {
     auto* me = static_cast<QMouseEvent*>(event);
     target_pos_ = mapFromGlobal(me->globalPos());

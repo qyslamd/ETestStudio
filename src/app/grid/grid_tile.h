@@ -1,11 +1,12 @@
 #ifndef ETEST_APP_GRID_GRID_TILE_H_
 #define ETEST_APP_GRID_GRID_TILE_H_
 
+#include <QLinearGradient>
+#include <QRectF>
 #include <QWidget>
 
 #include "grid_global_def.hpp"
 
-class QGraphicsDropShadowEffect;
 class QLabel;
 class QPropertyAnimation;
 class QVBoxLayout;
@@ -46,7 +47,6 @@ class GridTile : public QWidget {
   void calcFixedSize();
   void doMouseHoverEnterLeave(bool enter);
 
-  QGraphicsDropShadowEffect* effect_ = nullptr;
   bool draging_ = false;
   QVBoxLayout* layout_ = nullptr;
   QWidget* content_widget_ = nullptr;
@@ -56,6 +56,10 @@ class GridTile : public QWidget {
 
   QPropertyAnimation* shake_anime_ = nullptr;
   QPropertyAnimation* pos_anime_ = nullptr;
+
+  // 渐变缓存
+  QLinearGradient cached_gradient_;
+  QRectF cached_gradient_rect_;
 };
 
 }  // namespace etest::app::grid

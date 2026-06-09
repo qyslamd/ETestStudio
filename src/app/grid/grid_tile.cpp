@@ -2,7 +2,6 @@
 
 #include <QContextMenuEvent>
 #include <QEvent>
-#include <QGraphicsDropShadowEffect>
 #include <QHoverEvent>
 #include <QLabel>
 #include <QLinearGradient>
@@ -136,18 +135,22 @@ void GridTile::paintEvent(QPaintEvent* event) {
   QPainterPath path;
   path.addRoundedRect(r, Radius, Radius);
 
-  // 从 CSS 解析并绘制渐变色（带 0.45 透明度）
-  const auto& entry = kCuratedGradients[gradient_index_];
-  QVector<GradientColorStop> stops;
-  qreal angle;
-  if (GradientPainter::ParseCssGradient(entry.css_code, angle, stops)) {
-    for (auto& stop : stops) {
-      stop.color.setAlphaF(stop.color.alphaF() * 0.6f);
+  // 仅在矩形变化时重新计算渐变
+  QRectF rF(r);
+  if (cached_gradient_rect_ != rF) {
+    const auto& entry = kCuratedGradients[gradient_index_];
+    QVector<GradientColorStop> stops;
+    qreal angle;
+    if (GradientPainter::ParseCssGradient(entry.css_code, angle, stops)) {
+      for (auto& stop : stops) {
+        stop.color.setAlphaF(stop.color.alphaF() * 0.6f);
+      }
+      cached_gradient_ =
+          GradientPainter::CreateLinearGradient(rF, stops, angle);
+      cached_gradient_rect_ = rF;
     }
-    auto gradient =
-        GradientPainter::CreateLinearGradient(QRectF(r), stops, angle);
-    p.fillPath(path, gradient);
   }
+  p.fillPath(path, cached_gradient_);
 }
 
 void GridTile::showEvent(QShowEvent* event) {
@@ -171,12 +174,6 @@ void GridTile::initUi() {
 
   // 从策划的渐变色库中随机选取一个
   gradient_index_ = QRandomGenerator::global()->bounded(kGradientCount);
-
-  effect_ = new QGraphicsDropShadowEffect(this);
-  effect_->setOffset(0, 0);
-  effect_->setBlurRadius(12);
-  effect_->setColor(QColor(128, 128, 128));
-  setGraphicsEffect(effect_);
 
   layout_ = new QVBoxLayout(this);
   layout_->setSpacing(4);
@@ -214,14 +211,6 @@ void GridTile::calcFixedSize() {
 }
 
 void GridTile::doMouseHoverEnterLeave(bool enter) {
-  if (enter) {
-    effect_->setColor(Qt::black);
-    effect_->setBlurRadius(18);
-  } else {
-    effect_->setColor(QColor(128, 128, 128));
-    effect_->setBlurRadius(12);
-  }
-
   if (!shake_anime_) {
     shake_anime_ = new QPropertyAnimation(content_widget_, "pos", this);
     shake_anime_->setLoopCount(1);
