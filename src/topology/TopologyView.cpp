@@ -9,6 +9,8 @@
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPixmap>
+#include <QResizeEvent>
 #include <QScrollBar>
 #include <QWheelEvent>
 
@@ -18,7 +20,7 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
     : QGraphicsView(scene, parent) {
   setRenderHint(QPainter::Antialiasing);
   setDragMode(QGraphicsView::RubberBandDrag);
-  setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+  setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
   setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -37,50 +39,61 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
 void TopologyView::paintEvent(QPaintEvent* event) {
   QGraphicsView::paintEvent(event);
 
-  QPainter painter(viewport());
-  painter.setRenderHint(QPainter::Antialiasing);
+  // Blit cached legend — pixel copy only, no vector ops
+  if (!legend_cache_.isNull()) {
+    QPainter painter(viewport());
+    int x = viewport()->width() - legend_cache_.width() - 10;
+    int y = viewport()->height() - legend_cache_.height() - 10;
+    painter.drawPixmap(x, y, legend_cache_);
+  }
+}
 
-  int lw = 100, lh = 75;
-  int x = viewport()->width() - lw - 10;
-  int y = viewport()->height() - lh - 10;
+void TopologyView::resizeEvent(QResizeEvent* event) {
+  QGraphicsView::resizeEvent(event);
+  legend_cache_ = {};   // invalidate cache, re-render on next paint
+}
 
+void TopologyView::renderLegendCache() {
+  const int lw = 100, lh = 75;
   const auto& tc = topologyColors();
 
-  painter.setBrush(tc.legendBackground);
-  painter.setPen(QPen(tc.legendBorder, 0.5));
-  painter.translate(x, y);
-  painter.drawRoundedRect(0, 0, lw, lh, 4, 4);
+  legend_cache_ = QPixmap(lw, lh);
+  legend_cache_.fill(Qt::transparent);
 
-  QFont f = painter.font();
+  QPainter p(&legend_cache_);
+  p.setRenderHint(QPainter::Antialiasing);
+
+  // Background
+  p.setBrush(tc.legendBackground);
+  p.setPen(QPen(tc.legendBorder, 0.5));
+  p.drawRoundedRect(0, 0, lw - 1, lh - 1, 4, 4);
+
+  // Title
+  QFont f = p.font();
   f.setPointSize(9);
   f.setBold(true);
-  painter.setFont(f);
-  painter.setPen(tc.legendText);
-  painter.drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft,
-                   QStringLiteral("图例"));
+  p.setFont(f);
+  p.setPen(tc.legendText);
+  p.drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft, QStringLiteral("图例"));
 
+  // Entries
   f.setBold(false);
-  f.setPointSize(9);
-  painter.setFont(f);
-
-  struct Entry {
-    QColor color;
-    QString label;
-  };
+  p.setFont(f);
+  struct Entry { QColor color; QString label; };
   Entry entries[] = {
       {tc.directionInput, QStringLiteral("输入")},
       {tc.directionOutput, QStringLiteral("输出")},
       {tc.directionBidirectional, QStringLiteral("双向")},
   };
-
   for (int i = 0; i < 3; ++i) {
     qreal ey = 24 + i * 16;
-    painter.setBrush(entries[i].color);
-    painter.setPen(Qt::NoPen);
-    painter.drawEllipse(QPointF(14, ey + 4), 4, 4);
-    painter.setPen(tc.legendText);
-    painter.drawText(QRectF(24, ey, 70, 14), Qt::AlignLeft, entries[i].label);
+    p.setBrush(entries[i].color);
+    p.setPen(Qt::NoPen);
+    p.drawEllipse(QPointF(14, ey + 4), 4, 4);
+    p.setPen(tc.legendText);
+    p.drawText(QRectF(24, ey, 70, 14), Qt::AlignLeft, entries[i].label);
   }
+  p.end();
 }
 
 void TopologyView::zoomIn() {

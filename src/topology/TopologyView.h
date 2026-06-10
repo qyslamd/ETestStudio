@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QGraphicsView>
+#include <QPixmap>
 
 namespace etest::topology {
 
@@ -31,10 +32,15 @@ class TopologyView : public QGraphicsView {
   void mouseReleaseEvent(QMouseEvent* event) override;
   void contextMenuEvent(QContextMenuEvent* event) override;
 
+ protected:
+  void resizeEvent(QResizeEvent* event) override;
+
  private:
+  void renderLegendCache();
   qreal current_zoom_ = 1.0;
   bool panning_ = false;
   QPoint last_pan_point_;
+  QPixmap legend_cache_;
 };
 
 }  // namespace etest::topology

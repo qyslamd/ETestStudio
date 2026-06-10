@@ -445,7 +445,8 @@ void IcdBitLayoutView::initUi() {
   // QGraphicsView
   view_ = new QGraphicsView(this);
   view_->setRenderHint(QPainter::Antialiasing);
-  view_->setRenderHint(QPainter::SmoothPixmapTransform);
+  // 位视图只画色块/矩形/文字，不需要平滑缩放
+  // view_->setRenderHint(QPainter::SmoothPixmapTransform);
   view_->setDragMode(QGraphicsView::ScrollHandDrag);
   view_->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   view_->setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);

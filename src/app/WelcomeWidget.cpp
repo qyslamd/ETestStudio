@@ -45,7 +45,8 @@ WelcomeWidget::WelcomeWidget(QWidget* parent) : QWidget(parent) {
 
 void WelcomeWidget::paintEvent(QPaintEvent*) {
   QPainter p(this);
-  p.setRenderHint(QPainter::SmoothPixmapTransform);
+  // 背景图不需要平滑缩放——SmoothPixmapTransform 对全屏大图非常昂贵 (~20ms)
+  // p.setRenderHint(QPainter::SmoothPixmapTransform);
   if (!bg_pixmap_.isNull()) {
     switch (bg_mode_) {
       case 0: {
@@ -413,7 +414,7 @@ void WelcomeWidget::refreshRecentProjects() {
 
 void WelcomeWidget::showEvent(QShowEvent* event) {
   QWidget::showEvent(event);
-  loadBackground();
+  update();
 }
 
 void WelcomeWidget::loadBackground() {
