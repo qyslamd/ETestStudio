@@ -24,6 +24,9 @@ class IEditor {
   virtual bool canRedo() const = 0;
   virtual void undo() = 0;
   virtual void redo() = 0;
+
+  // 编辑器初始化（文件路径），默认空实现
+  virtual void setEditorId(const QString& id) { Q_UNUSED(id); }
 };
 
 }  // namespace etest::app

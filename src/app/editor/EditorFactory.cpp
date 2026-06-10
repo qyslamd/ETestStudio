@@ -7,6 +7,11 @@ QMap<QString, EditorFactory>& EditorFactoryRegistry::factories() {
   return instance;
 }
 
+QMap<QString, EditorSignalBinder>& EditorFactoryRegistry::binders() {
+  static QMap<QString, EditorSignalBinder> instance;
+  return instance;
+}
+
 QMap<QString, QString>& EditorFactoryRegistry::extensionMap() {
   static QMap<QString, QString> instance;
   return instance;
@@ -15,6 +20,15 @@ QMap<QString, QString>& EditorFactoryRegistry::extensionMap() {
 void EditorFactoryRegistry::registerFactory(const QString& editorType,
                                             EditorFactory factory) {
   factories()[editorType] = std::move(factory);
+}
+
+void EditorFactoryRegistry::registerFactory(const QString& editorType,
+                                            EditorFactory factory,
+                                            EditorSignalBinder binder) {
+  factories()[editorType] = std::move(factory);
+  if (binder) {
+    binders()[editorType] = std::move(binder);
+  }
 }
 
 void EditorFactoryRegistry::registerExtension(const QString& suffix,
@@ -31,6 +45,16 @@ IEditor* EditorFactoryRegistry::create(const QString& editorType,
     return it.value()(id, parent);
   }
   return nullptr;
+}
+
+EditorSignalBinder EditorFactoryRegistry::binderForType(
+    const QString& editorType) {
+  auto& b = binders();
+  auto it = b.find(editorType);
+  if (it != b.end()) {
+    return it.value();
+  }
+  return {};
 }
 
 QString EditorFactoryRegistry::typeForExtension(const QString& suffix) {

@@ -89,26 +89,71 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerExtension("ico", "image");
 
   EditorFactoryRegistry::registerFactory(
-      "text", [](const QString& path, QWidget* parent) {
+      "text",
+      [](const QString& path, QWidget* parent) {
         return new TextEditorWidget(path, parent);
+      },
+      [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
+        auto* te = qobject_cast<TextEditorWidget*>(editor->widget());
+        if (!te) return;
+        QObject::connect(te, &TextEditorWidget::modificationChanged, mgr,
+            [editor, dock, mgr](bool modified) {
+              dock->setWindowTitle(
+                  (modified ? QStringLiteral("* ") : QString())
+                      .append(editor->displayName()));
+              emit mgr->unsavedChangesChanged();
+              emit mgr->modificationChanged(modified);
+            });
       });
 
   EditorFactoryRegistry::registerFactory(
-      "topology", [](const QString& id, QWidget* parent) {
+      "topology",
+      [](const QString& id, QWidget* parent) {
         auto* editor = new etest::topology::TopologyEditorWidget(parent);
-        if (!id.startsWith("editor://") && QFileInfo::exists(id)) {
-          editor->setEditorId(id);  // 异步加载
-        }
         return editor;
+      },
+      [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
+        auto* te = qobject_cast<etest::topology::TopologyEditorWidget*>(editor->widget());
+        if (!te) return;
+        QObject::connect(te,
+            &etest::topology::TopologyEditorWidget::modificationChanged, mgr,
+            [editor, dock, mgr](bool modified) {
+              dock->setWindowTitle(
+                  (modified ? QStringLiteral("* ") : QString())
+                      .append(editor->displayName()));
+              emit mgr->unsavedChangesChanged();
+              emit mgr->modificationChanged(modified);
+            });
+        QObject::connect(te,
+            &etest::topology::TopologyEditorWidget::editorIdChanged, mgr,
+            [editor, mgr](const QString&, const QString& newId) {
+              mgr->updateEditorId(editor, newId);
+            });
       });
 
   EditorFactoryRegistry::registerFactory(
-      "protocal", [](const QString& id, QWidget* parent) {
+      "protocal",
+      [](const QString& id, QWidget* parent) {
         auto* editor = new etest::protocal::ProtocalEditorWidget(parent);
-        if (!id.startsWith("editor://") && QFileInfo::exists(id)) {
-          editor->setEditorId(id);
-        }
         return editor;
+      },
+      [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
+        auto* pe = qobject_cast<etest::protocal::ProtocalEditorWidget*>(editor->widget());
+        if (!pe) return;
+        QObject::connect(pe,
+            &etest::protocal::ProtocalEditorWidget::modificationChanged, mgr,
+            [editor, dock, mgr](bool modified) {
+              dock->setWindowTitle(
+                  (modified ? QStringLiteral("* ") : QString())
+                      .append(editor->displayName()));
+              emit mgr->unsavedChangesChanged();
+              emit mgr->modificationChanged(modified);
+            });
+        QObject::connect(pe,
+            &etest::protocal::ProtocalEditorWidget::editorIdChanged, mgr,
+            [editor, mgr](const QString&, const QString& newId) {
+              mgr->updateEditorId(editor, newId);
+            });
       });
 
   EditorFactoryRegistry::registerFactory(
@@ -117,12 +162,26 @@ void EditorManager::registerEditorTypes() {
       });
 
   EditorFactoryRegistry::registerFactory(
-      "testprogram", [](const QString& id, QWidget* parent) {
+      "testprogram",
+      [](const QString& id, QWidget* parent) {
         auto* editor = new TestProgramEditorWidget(id, parent);
-        if (!id.startsWith("editor://") && QFileInfo::exists(id)) {
-          editor->setEditorId(id);
-        }
         return editor;
+      },
+      [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
+        auto* te = qobject_cast<TestProgramEditorWidget*>(editor->widget());
+        if (!te) return;
+        QObject::connect(te, &TestProgramEditorWidget::modificationChanged, mgr,
+            [editor, dock, mgr](bool modified) {
+              dock->setWindowTitle(
+                  (modified ? QStringLiteral("* ") : QString())
+                      .append(editor->displayName()));
+              emit mgr->unsavedChangesChanged();
+              emit mgr->modificationChanged(modified);
+            });
+        QObject::connect(te, &TestProgramEditorWidget::editorIdChanged, mgr,
+            [editor, mgr](const QString&, const QString& newId) {
+              mgr->updateEditorId(editor, newId);
+            });
       });
 }
 
@@ -166,70 +225,11 @@ void EditorManager::openFile(const QString& filePath,
   connect(dock, &ads::CDockWidget::customContextMenuRequested, this,
           &EditorManager::onDockCustomContextMenuRequested);
 
-  auto* obj = editor->signalObject();
-  if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-    connect(textEditor, &TextEditorWidget::modificationChanged, this,
-            [this, editor, dock](bool modified) {
-              QString title = editor->displayName();
-              if (modified) {
-                title.prepend("* ");
-              }
-              dock->setWindowTitle(title);
-              emit unsavedChangesChanged();
-              emit modificationChanged(modified);
-            });
-  } else if (auto* topoEditor =
-                 dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
-    connect(topoEditor,
-            &etest::topology::TopologyEditorWidget::modificationChanged, this,
-            [this, editor, dock](bool modified) {
-              QString title = editor->displayName();
-              if (modified) {
-                title.prepend("* ");
-              }
-              dock->setWindowTitle(title);
-              emit unsavedChangesChanged();
-              emit modificationChanged(modified);
-            });
-    connect(topoEditor, &etest::topology::TopologyEditorWidget::editorIdChanged,
-            this, [this, editor](const QString&, const QString& newId) {
-              updateEditorId(editor, newId);
-            });
-  } else if (auto* protocalEditor =
-                 dynamic_cast<etest::protocal::ProtocalEditorWidget*>(editor)) {
-    connect(protocalEditor,
-            &etest::protocal::ProtocalEditorWidget::modificationChanged, this,
-            [this, editor, dock](bool modified) {
-              QString title = editor->displayName();
-              if (modified) {
-                title.prepend("* ");
-              }
-              dock->setWindowTitle(title);
-              emit unsavedChangesChanged();
-              emit modificationChanged(modified);
-            });
-    connect(protocalEditor,
-            &etest::protocal::ProtocalEditorWidget::editorIdChanged, this,
-            [this, editor](const QString&, const QString& newId) {
-              updateEditorId(editor, newId);
-            });
-  } else if (auto* tpEditor =
-                 dynamic_cast<TestProgramEditorWidget*>(editor)) {
-    connect(tpEditor, &TestProgramEditorWidget::modificationChanged, this,
-            [this, editor, dock](bool modified) {
-              QString title = editor->displayName();
-              if (modified) {
-                title.prepend("* ");
-              }
-              dock->setWindowTitle(title);
-              emit unsavedChangesChanged();
-              emit modificationChanged(modified);
-            });
-    connect(tpEditor, &TestProgramEditorWidget::editorIdChanged, this,
-            [this, editor](const QString&, const QString& newId) {
-              updateEditorId(editor, newId);
-            });
+  auto binder = EditorFactoryRegistry::binderForType(editorType);
+  if (binder) {
+    binder(editor, dock, this);
   }
+  editor->setEditorId(filePath);
 
   connect(dock, &ads::CDockWidget::closeRequested, this,
           [this, editorKey]() { closeFile(editorKey); });
@@ -535,67 +535,11 @@ void EditorManager::createEditor(const QString& editorType,
   connect(dock, &ads::CDockWidget::customContextMenuRequested, this,
           &EditorManager::onDockCustomContextMenuRequested);
 
-  auto* obj = editor->signalObject();
-  if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-    connect(textEditor, &TextEditorWidget::modificationChanged, this,
-            [this, editor, dock](bool modified) {
-              QString title = editor->displayName();
-              if (modified)
-                title.prepend("* ");
-              dock->setWindowTitle(title);
-              emit unsavedChangesChanged();
-              emit modificationChanged(modified);
-            });
-  } else if (auto* topoEditor =
-                 dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
-    connect(topoEditor,
-            &etest::topology::TopologyEditorWidget::modificationChanged, this,
-            [this, editor, dock](bool modified) {
-              QString title = editor->displayName();
-              if (modified)
-                title.prepend("* ");
-              dock->setWindowTitle(title);
-              emit unsavedChangesChanged();
-              emit modificationChanged(modified);
-            });
-    connect(topoEditor, &etest::topology::TopologyEditorWidget::editorIdChanged,
-            this, [this, editor](const QString&, const QString& newId) {
-              updateEditorId(editor, newId);
-            });
-  } else if (auto* protocalEditor =
-                 dynamic_cast<etest::protocal::ProtocalEditorWidget*>(editor)) {
-    connect(protocalEditor,
-            &etest::protocal::ProtocalEditorWidget::modificationChanged, this,
-            [this, editor, dock](bool modified) {
-              QString title = editor->displayName();
-              if (modified)
-                title.prepend("* ");
-              dock->setWindowTitle(title);
-              emit unsavedChangesChanged();
-              emit modificationChanged(modified);
-            });
-    connect(protocalEditor,
-            &etest::protocal::ProtocalEditorWidget::editorIdChanged, this,
-            [this, editor](const QString&, const QString& newId) {
-              updateEditorId(editor, newId);
-            });
-  } else if (auto* tpEditor =
-                 dynamic_cast<TestProgramEditorWidget*>(editor)) {
-    connect(tpEditor, &TestProgramEditorWidget::modificationChanged, this,
-            [this, editor, dock](bool modified) {
-              QString title = editor->displayName();
-              if (modified) {
-                title.prepend("* ");
-              }
-              dock->setWindowTitle(title);
-              emit unsavedChangesChanged();
-              emit modificationChanged(modified);
-            });
-    connect(tpEditor, &TestProgramEditorWidget::editorIdChanged, this,
-            [this, editor](const QString&, const QString& newId) {
-              updateEditorId(editor, newId);
-            });
+  auto binder = EditorFactoryRegistry::binderForType(editorType);
+  if (binder) {
+    binder(editor, dock, this);
   }
+  editor->setEditorId(id);
 
   connect(dock, &ads::CDockWidget::closeRequested, this,
           [this, id]() { closeFile(id); });
