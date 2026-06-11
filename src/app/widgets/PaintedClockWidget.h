@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class IClockRenderer;
+class QTimer;
 
 class PaintedClockWidget : public QWidget {
   Q_OBJECT
@@ -15,10 +16,13 @@ class PaintedClockWidget : public QWidget {
 
  protected:
   void paintEvent(QPaintEvent* event) override;
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
   void contextMenuEvent(QContextMenuEvent* event) override;
 
  private:
   IClockRenderer* renderer_ = nullptr;
+  QTimer* clock_timer_ = nullptr;
 };
 
 #endif  // ETEST_APP_PAINTED_CLOCK_WIDGET_H_

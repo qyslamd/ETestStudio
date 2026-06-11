@@ -24,6 +24,7 @@ namespace etest::app::grid {
 GridTile::GridTile(TileSpan type, QWidget* parent)
     : QWidget(parent), type_(type) {
   initUi();
+  calcFixedSize();
 }
 
 void GridTile::setContentWidget(QWidget* widget) {
@@ -155,7 +156,6 @@ void GridTile::paintEvent(QPaintEvent* event) {
 
 void GridTile::showEvent(QShowEvent* event) {
   QWidget::showEvent(event);
-  calcFixedSize();
 }
 
 void GridTile::mouseReleaseEvent(QMouseEvent* event) {

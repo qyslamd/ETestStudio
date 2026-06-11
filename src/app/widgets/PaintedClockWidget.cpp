@@ -12,9 +12,20 @@
 
 PaintedClockWidget::PaintedClockWidget(QWidget* parent)
     : QWidget(parent), renderer_(new ModernClockRenderer) {
-  auto* timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, [this]() { update(); });
-  timer->start(1000);
+  clock_timer_ = new QTimer(this);
+  connect(clock_timer_, &QTimer::timeout, this, [this]() { update(); });
+  // 定时器默认不启动，等 showEvent 时再启动
+}
+
+void PaintedClockWidget::showEvent(QShowEvent* event) {
+  QWidget::showEvent(event);
+  if (!clock_timer_->isActive())
+    clock_timer_->start(1000);
+}
+
+void PaintedClockWidget::hideEvent(QHideEvent* event) {
+  QWidget::hideEvent(event);
+  clock_timer_->stop();
 }
 
 PaintedClockWidget::~PaintedClockWidget() { delete renderer_; }

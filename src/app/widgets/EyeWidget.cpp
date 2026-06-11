@@ -6,6 +6,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QRandomGenerator>
+#include <QShowEvent>
 #include <QTimer>
 #include <QtMath>
 
@@ -17,7 +18,7 @@ EyeWidget::EyeWidget(QWidget* parent) : QWidget(parent) {
 
   anim_timer_ = new QTimer(this);
   connect(anim_timer_, &QTimer::timeout, this, &EyeWidget::tick);
-  anim_timer_->start(16);
+  // 定时器不默认启动，等 showEvent 时再启动
 
   blink_scheduler_ = new QTimer(this);
   blink_scheduler_->setSingleShot(true);
@@ -26,6 +27,17 @@ EyeWidget::EyeWidget(QWidget* parent) : QWidget(parent) {
     blink_closing_ = true;
   });
   scheduleNextBlink();
+}
+
+void EyeWidget::showEvent(QShowEvent* event) {
+  QWidget::showEvent(event);
+  if (!anim_timer_->isActive())
+    anim_timer_->start(16);
+}
+
+void EyeWidget::hideEvent(QHideEvent* event) {
+  QWidget::hideEvent(event);
+  anim_timer_->stop();
 }
 
 void EyeWidget::tick() {

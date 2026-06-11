@@ -34,6 +34,8 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
 
   // Accept drops for device palette drag-and-drop
   setAcceptDrops(true);
+
+  renderLegendCache();
 }
 
 void TopologyView::paintEvent(QPaintEvent* event) {
@@ -50,7 +52,7 @@ void TopologyView::paintEvent(QPaintEvent* event) {
 
 void TopologyView::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
-  legend_cache_ = {};   // invalidate cache, re-render on next paint
+  renderLegendCache();   // rebuild cache at new size
 }
 
 void TopologyView::renderLegendCache() {

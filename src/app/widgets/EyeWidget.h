@@ -23,6 +23,8 @@ class EyeWidget : public QWidget {
 
  protected:
   void paintEvent(QPaintEvent* event) override;
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
   bool eventFilter(QObject* obj, QEvent* event) override;
 
  private:

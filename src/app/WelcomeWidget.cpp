@@ -414,7 +414,7 @@ void WelcomeWidget::refreshRecentProjects() {
 
 void WelcomeWidget::showEvent(QShowEvent* event) {
   QWidget::showEvent(event);
-  update();
+  // Qt 在 widget 变为可见时会自动调度重绘，无需显式调用 update()
 }
 
 void WelcomeWidget::loadBackground() {
