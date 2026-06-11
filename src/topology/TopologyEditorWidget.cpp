@@ -26,6 +26,8 @@
 
 #include <QtConcurrent/QtConcurrentRun>
 
+#include "core/config/ConfigManager.h"
+#include "core/config/ConfigDefs.h"
 #include "DevicePaletteWidget.h"
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
@@ -39,6 +41,8 @@
 #include "TopologyView.h"
 #include "UndoCommands.h"
 #include "topology_items.h"
+
+using namespace etest::core::config;
 
 namespace etest::topology {
 
@@ -62,6 +66,26 @@ TopologyEditorWidget::~TopologyEditorWidget() {
     if (stack)
       stack->disconnect(this);
   }
+}
+
+void TopologyEditorWidget::saveSplitterState() {
+  if (!splitter_ || !left_splitter_)
+    return;
+  auto& cfg = etest::core::config::ConfigManager::instance();
+  cfg.set(CONFIG_TOPOLOGY_SPLITTER_STATE, splitter_->saveState());
+  cfg.set(CONFIG_TOPOLOGY_LEFT_SPLITTER_STATE, left_splitter_->saveState());
+}
+
+void TopologyEditorWidget::restoreSplitterState() {
+  if (!splitter_ || !left_splitter_)
+    return;
+  auto& cfg = etest::core::config::ConfigManager::instance();
+  QByteArray state = cfg.get<QByteArray>(CONFIG_TOPOLOGY_SPLITTER_STATE);
+  if (!state.isEmpty())
+    splitter_->restoreState(state);
+  QByteArray leftState = cfg.get<QByteArray>(CONFIG_TOPOLOGY_LEFT_SPLITTER_STATE);
+  if (!leftState.isEmpty())
+    left_splitter_->restoreState(leftState);
 }
 
 // ── IEditor interface ──────────────────────────────────────────
@@ -423,13 +447,13 @@ void TopologyEditorWidget::initUi() {
   outline_widget_->setMinimumWidth(160);
   outline_widget_->setObjectName(QStringLiteral("topologyOutline"));
 
-  auto* leftSplitter = new QSplitter(Qt::Vertical, this);
-  leftSplitter->addWidget(device_palette_);
-  leftSplitter->addWidget(outline_widget_);
-  leftSplitter->setStretchFactor(0, 1);
-  leftSplitter->setStretchFactor(1, 1);
+  left_splitter_ = new QSplitter(Qt::Vertical, this);
+  left_splitter_->addWidget(device_palette_);
+  left_splitter_->addWidget(outline_widget_);
+  left_splitter_->setStretchFactor(0, 1);
+  left_splitter_->setStretchFactor(1, 1);
   // Subtle border for visual panel separation
-  leftSplitter->setStyleSheet(QStringLiteral(
+  left_splitter_->setStyleSheet(QStringLiteral(
       "QWidget#topologyDevicePalette, QWidget#topologyOutline {"
       "  border: 1px solid palette(mid);"
       "}"
@@ -445,7 +469,7 @@ void TopologyEditorWidget::initUi() {
       "}"));
 
   splitter_ = new QSplitter(Qt::Horizontal, this);
-  splitter_->addWidget(leftSplitter);
+  splitter_->addWidget(left_splitter_);
   splitter_->addWidget(view_);
   splitter_->addWidget(property_panel_);
   splitter_->setStretchFactor(0, 0);  // left panel — fixed width
@@ -453,6 +477,8 @@ void TopologyEditorWidget::initUi() {
   splitter_->setStretchFactor(2, 1);  // property panel — stretch less
   splitter_->setSizes({360, 800, 280});
   mainLayout->addWidget(splitter_, 1);
+
+  restoreSplitterState();
 
   auto* statusFrame = new QFrame(this);
   statusFrame->setObjectName(QStringLiteral("topologyStatusBar"));
@@ -462,6 +488,10 @@ void TopologyEditorWidget::initUi() {
   statusLayout->addWidget(status_label_);
   statusLayout->addStretch();
   mainLayout->addWidget(statusFrame);
+
+  // 拖动分割条时即时保存布局
+  connect(splitter_, &QSplitter::splitterMoved, this, [this]() { saveSplitterState(); });
+  connect(left_splitter_, &QSplitter::splitterMoved, this, [this]() { saveSplitterState(); });
 }
 
 void TopologyEditorWidget::initSignals() {

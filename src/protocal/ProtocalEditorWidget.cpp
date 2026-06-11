@@ -16,11 +16,16 @@
 #include <string>
 #include <vector>
 
+#include "core/config/ConfigManager.h"
+#include "core/config/ConfigDefs.h"
+
 #include "format/json_serializer.hpp"
 #include "format/json_parser.hpp"
 #include "IcdBitLayoutView.h"
 #include "IcdNodeTreeWidget.h"
 #include "IcdPropertyPanel.h"
+
+using namespace etest::core::config;
 
 namespace etest::protocal {
 namespace {
@@ -48,6 +53,25 @@ ProtocalEditorWidget::ProtocalEditorWidget(QWidget* parent)
     : QWidget(parent) {
   initUi();
   initSignals();
+}
+
+ProtocalEditorWidget::~ProtocalEditorWidget() {
+}
+
+void ProtocalEditorWidget::saveSplitterState() {
+  if (!splitter_)
+    return;
+  auto& cfg = etest::core::config::ConfigManager::instance();
+  cfg.set(CONFIG_PROTOCAL_SPLITTER_STATE, splitter_->saveState());
+}
+
+void ProtocalEditorWidget::restoreSplitterState() {
+  if (!splitter_)
+    return;
+  auto& cfg = etest::core::config::ConfigManager::instance();
+  QByteArray state = cfg.get<QByteArray>(CONFIG_PROTOCAL_SPLITTER_STATE);
+  if (!state.isEmpty())
+    splitter_->restoreState(state);
 }
 
 QString ProtocalEditorWidget::displayName() const {
@@ -310,6 +334,11 @@ void ProtocalEditorWidget::initUi() {
   status_layout->addWidget(hint_label);
 
   main_layout->addWidget(status_bar);
+
+  restoreSplitterState();
+
+  // 拖动分割条时即时保存布局
+  connect(splitter_, &QSplitter::splitterMoved, this, [this]() { saveSplitterState(); });
 }
 
 // ── Signals ───────────────────────────────────────────────────

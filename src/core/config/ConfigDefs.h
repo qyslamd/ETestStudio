@@ -130,6 +130,14 @@ constexpr bool CONFIG_EDITOR_DEFAULT_AUTO_INDENT = true;
 constexpr int CONFIG_EDITOR_DEFAULT_TAB_WIDTH = 4;
 constexpr bool CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB = true;
 
+// 编辑器 Splitter 布局状态
+constexpr const char* CONFIG_TOPOLOGY_SPLITTER_STATE =
+    "editor/topology_splitter";
+constexpr const char* CONFIG_TOPOLOGY_LEFT_SPLITTER_STATE =
+    "editor/topology_left_splitter";
+constexpr const char* CONFIG_PROTOCAL_SPLITTER_STATE =
+    "editor/protocal_splitter";
+
 // 终端配置组
 constexpr const char* CONFIG_TERMINAL_SHELL = "terminal/shell";
 constexpr const char* CONFIG_TERMINAL_FONT_SIZE = "terminal/font_size";

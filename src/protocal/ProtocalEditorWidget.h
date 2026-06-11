@@ -28,6 +28,7 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   Q_OBJECT
  public:
   explicit ProtocalEditorWidget(QWidget* parent = nullptr);
+  ~ProtocalEditorWidget() override;
 
   // IEditor interface
   QString displayName() const override;
@@ -56,6 +57,10 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   void showLoadingOverlay();
   void hideLoadingOverlay();
   void resizeEvent(QResizeEvent* event) override;
+
+  // Splitter 状态持久化
+  void saveSplitterState();
+  void restoreSplitterState();
 
   QWidget* loading_overlay_ = nullptr;
   QFutureWatcher<std::shared_ptr<icd::Repository>>* load_watcher_ = nullptr;

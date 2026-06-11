@@ -84,6 +84,10 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   void buildDefaultDocument();
   void rebuildSceneAndRestoreSelection();
 
+  // Splitter 状态持久化
+  void saveSplitterState();
+  void restoreSplitterState();
+
   // 异步加载
   void showLoadingOverlay();
   void hideLoadingOverlay();
@@ -100,6 +104,7 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   TopologyOutlineWidget* outline_widget_ = nullptr;
   QAction* outline_toggle_action_ = nullptr;
   QSplitter* splitter_;
+  QSplitter* left_splitter_ = nullptr;
   QLabel* status_label_ = nullptr;
 
   QAction* add_uut_action_ = nullptr;
