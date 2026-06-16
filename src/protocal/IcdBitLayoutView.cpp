@@ -11,6 +11,7 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
+#include <algorithm>
 #include <cmath>
 #include <icd/node.hpp>
 
@@ -488,21 +489,29 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
   last_frame_ = &frame;
   clearBlocks();
 
-  QVector<const icd::Node*> leaves;
+  QVector<const icd::Node*> nodes;
   for (const auto& root : frame.roots()) {
-    collectLeafNodes(*root, leaves);
+    collectAllNodes(*root, nodes);
   }
 
-  if (leaves.isEmpty()) return;
+  if (nodes.isEmpty()) return;
+
+  // Sort by (offset, start_bit, bit_width desc) for parent-before-child order
+  std::sort(nodes.begin(), nodes.end(),
+            [](const icd::Node* a, const icd::Node* b) {
+              if (a->offset() != b->offset())
+                return a->offset() < b->offset();
+              if (a->bit_offset() != b->bit_offset())
+                return a->bit_offset() < b->bit_offset();
+              return a->bit_width() > b->bit_width();
+            });
 
   bool dark = etest::app::ThemeManager::instance().isDarkTheme();
   int cycle_idx = 0;
 
-  for (auto* node : leaves) {
+  for (auto* node : nodes) {
     QColor color = resolveGroupColor(*node, dark);
 
-    // If the node's group/tag doesn't map to a known color →
-    // cycle through the vibrant palette instead.
     {
       QString g = QString::fromStdString(node->attrs().group_name);
       if (g.isEmpty()) g = tagToGroupName(node->tag());
@@ -524,14 +533,11 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
   view_->centerOn(0, 0);
 }
 
-void IcdBitLayoutView::collectLeafNodes(const icd::Node& node,
-                                         QVector<const icd::Node*>& leaves) {
-  if (node.children().empty()) {
-    leaves.push_back(&node);
-  } else {
-    for (const auto& child : node.children()) {
-      collectLeafNodes(*child, leaves);
-    }
+void IcdBitLayoutView::collectAllNodes(const icd::Node& node,
+                                        QVector<const icd::Node*>& out) {
+  out.push_back(&node);
+  for (const auto& child : node.children()) {
+    collectAllNodes(*child, out);
   }
 }
 
@@ -542,7 +548,10 @@ FieldSectionItem* IcdBitLayoutView::addBlock(const QString& name,
   return scene_->addBlock(name, byte_offset, start_bit, bit_width, color);
 }
 
-void IcdBitLayoutView::clearBlocks() { scene_->clearBlocks(); }
+void IcdBitLayoutView::clearBlocks() {
+  last_frame_ = nullptr;
+  scene_->clearBlocks();
+}
 
 void IcdBitLayoutView::highlightBlock(const QString& name) {
   scene_->highlightBlock(name);

@@ -22,7 +22,7 @@ class IcdPropertyPanel : public QWidget {
   explicit IcdPropertyPanel(QWidget* parent = nullptr);
 
   void showNode(icd::Node& node);
-  void showFrame(const icd::Frame& frame);
+  void showFrame(icd::Frame& frame);
   void clear();
 
  signals:
@@ -72,6 +72,7 @@ class IcdPropertyPanel : public QWidget {
   QComboBox* combo_byte_order_ = nullptr;
 
   icd::Node* current_node_ = nullptr;
+  icd::Frame* current_frame_ = nullptr;
   QVector<QMetaObject::Connection> node_connections_;
 };
 

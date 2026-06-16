@@ -1,4 +1,5 @@
 #include "IcdPropertyPanel.h"
+#include "IcdProtocolUtils.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -13,102 +14,7 @@
 
 namespace etest::protocal {
 
-// ---------------------------------------------------------------------------
-// Anonymous-namespace helpers: ValueType/Tag/FrameType/ByteOrder <-> display
-// ---------------------------------------------------------------------------
-namespace {
-
-const char* valueTypeName(icd::ValueType vt) {
-  switch (vt) {
-    case icd::ValueType::unknown:   return "unknown";
-    case icd::ValueType::boolean:   return "boolean";
-    case icd::ValueType::byte_:     return "uint8";
-    case icd::ValueType::bytes:     return "bytes";
-    case icd::ValueType::word:      return "uint16";
-    case icd::ValueType::shortint:  return "int16";
-    case icd::ValueType::smallint:  return "int16";
-    case icd::ValueType::longword:  return "uint32";
-    case icd::ValueType::integer:   return "int32";
-    case icd::ValueType::ulong_:    return "uint64";
-    case icd::ValueType::single:    return "float";
-    case icd::ValueType::double_:   return "double";
-    case icd::ValueType::string_:   return "string";
-  }
-  return "unknown";
-}
-
-icd::ValueType valueTypeFromName(const QString& name) {
-  if (name == QLatin1String("uint8"))   return icd::ValueType::byte_;
-  if (name == QLatin1String("uint16"))  return icd::ValueType::word;
-  if (name == QLatin1String("int16"))   return icd::ValueType::shortint;
-  if (name == QLatin1String("uint32"))  return icd::ValueType::longword;
-  if (name == QLatin1String("int32"))   return icd::ValueType::integer;
-  if (name == QLatin1String("uint64"))  return icd::ValueType::ulong_;
-  if (name == QLatin1String("float"))   return icd::ValueType::single;
-  if (name == QLatin1String("double"))  return icd::ValueType::double_;
-  if (name == QLatin1String("boolean")) return icd::ValueType::boolean;
-  if (name == QLatin1String("bytes"))   return icd::ValueType::bytes;
-  if (name == QLatin1String("string"))  return icd::ValueType::string_;
-  return icd::ValueType::unknown;
-}
-
-const char* tagName(icd::Tag tag) {
-  switch (tag) {
-    case icd::Tag::none:             return "none";
-    case icd::Tag::head:             return "head";
-    case icd::Tag::length:           return "length";
-    case icd::Tag::count:            return "count";
-    case icd::Tag::sum:              return "sum";
-    case icd::Tag::sum2:             return "sum";
-    case icd::Tag::xor_:             return "xor";
-    case icd::Tag::xor1:             return "xor";
-    case icd::Tag::xor2:             return "xor";
-    case icd::Tag::init_value:       return "init_value";
-    case icd::Tag::signal_in_value:  return "signal_in_value";
-    case icd::Tag::big_endian_value: return "big_endian_value";
-  }
-  return "none";
-}
-
-icd::Tag tagFromName(const QString& name) {
-  if (name == QLatin1String("head"))            return icd::Tag::head;
-  if (name == QLatin1String("length"))           return icd::Tag::length;
-  if (name == QLatin1String("count"))            return icd::Tag::count;
-  if (name == QLatin1String("sum"))              return icd::Tag::sum;
-  if (name == QLatin1String("xor"))              return icd::Tag::xor_;
-  if (name == QLatin1String("signal_in_value"))  return icd::Tag::signal_in_value;
-  return icd::Tag::none;
-}
-
-int frameTypeIndex(icd::FrameType ft) {
-  switch (ft) {
-    case icd::FrameType::data:     return 0;
-    case icd::FrameType::cmd:      return 1;
-    case icd::FrameType::data_cmd: return 2;
-  }
-  return 0;
-}
-
-icd::FrameType frameTypeFromIndex(int idx) {
-  static constexpr icd::FrameType types[] = {
-      icd::FrameType::data, icd::FrameType::cmd, icd::FrameType::data_cmd};
-  if (idx >= 0 && idx < 3) return types[idx];
-  return icd::FrameType::data;
-}
-
-int byteOrderIndex(icd::ByteOrder bo) {
-  switch (bo) {
-    case icd::ByteOrder::little_endian: return 0;
-    case icd::ByteOrder::big_endian:    return 1;
-  }
-  return 0;
-}
-
-icd::ByteOrder byteOrderFromIndex(int idx) {
-  return idx == 1 ? icd::ByteOrder::big_endian : icd::ByteOrder::little_endian;
-}
-
-}  // anonymous namespace
+using namespace utils;
 
 // ===========================================================================
 // Constructor & UI construction
@@ -325,6 +231,7 @@ void IcdPropertyPanel::clearNodeConnections() {
 void IcdPropertyPanel::clearForm() {
   clearNodeConnections();
   current_node_ = nullptr;
+  current_frame_ = nullptr;
 
   // Reset all widget values to defaults
   edit_name_->clear();
@@ -463,7 +370,7 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
   cn(combo_type_, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int /*idx*/) {
     if (current_node_) {
       current_node_
-          ->setValueType(valueTypeFromName(combo_type_->currentText()));
+          ->setValueType(valueTypeFromName(combo_type_->currentText().toStdString()));
       emit nodeModified();
     }
   });
@@ -471,7 +378,7 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
   cn(combo_tag_, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int /*idx*/) {
     if (current_node_) {
       current_node_
-          ->setTag(tagFromName(combo_tag_->currentText()));
+          ->setTag(tagFromName(combo_tag_->currentText().toStdString()));
       emit nodeModified();
     }
   });
@@ -594,8 +501,9 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
 // Public API: populate form from an icd::Frame  (read-only display for now)
 // ===========================================================================
 
-void IcdPropertyPanel::showFrame(const icd::Frame& frame) {
+void IcdPropertyPanel::showFrame(icd::Frame& frame) {
   clearForm();
+  current_frame_ = &frame;
 
   // ---- Populate basic info ----
   edit_name_->setText(QString::fromStdString(std::string(frame.name())));
@@ -603,16 +511,37 @@ void IcdPropertyPanel::showFrame(const icd::Frame& frame) {
 
   // ---- Populate frame-specific fields ----
   spin_frame_id_->setValue(frame.id());
-  spin_frame_id_->setReadOnly(true);
+  spin_frame_id_->setReadOnly(true);  // ID change requires repo re-index; keep read-only
+
   combo_frame_type_->setCurrentIndex(frameTypeIndex(frame.type()));
-  combo_frame_type_->setEnabled(false);
   combo_byte_order_->setCurrentIndex(byteOrderIndex(frame.order()));
-  combo_byte_order_->setEnabled(false);
 
   // ---- Show only frame-relevant groups ----
   basic_group_->show();
   frame_group_->show();
-  // node_group_, scale_group_, ext_group_ stay hidden
+
+  // ---- Wire editing signals ----
+  clearNodeConnections();
+
+  auto cn = [this](auto* sender, auto signal, auto&& lambda) {
+    node_connections_.append(
+        connect(sender, signal, this, std::forward<decltype(lambda)>(lambda)));
+  };
+
+  cn(combo_frame_type_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+     [this](int idx) {
+       if (current_frame_) {
+         current_frame_->setType(frameTypeFromIndex(idx));
+         emit nodeModified();
+       }
+     });
+  cn(combo_byte_order_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+     [this](int idx) {
+       if (current_frame_) {
+         current_frame_->setOrder(byteOrderFromIndex(idx));
+         emit nodeModified();
+       }
+     });
 }
 
 // ===========================================================================

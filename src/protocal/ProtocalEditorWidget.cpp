@@ -53,6 +53,16 @@ ProtocalEditorWidget::ProtocalEditorWidget(QWidget* parent)
     : QWidget(parent) {
   initUi();
   initSignals();
+
+  // Debounce timer coalesces rapid property edits into one refresh
+  modified_debounce_ = new QTimer(this);
+  modified_debounce_->setSingleShot(true);
+  modified_debounce_->setInterval(0);
+  connect(modified_debounce_, &QTimer::timeout, this, [this]() {
+    if (current_frame_) {
+      bit_view_->loadFromFrame(*current_frame_);
+    }
+  });
 }
 
 ProtocalEditorWidget::~ProtocalEditorWidget() {
@@ -138,6 +148,9 @@ void ProtocalEditorWidget::setEditorId(const QString& id) {
 
   if (!QFileInfo::exists(id)) return;
 
+  // Bump generation; any stale lambda with an older generation discards its result
+  int thisGeneration = ++load_generation_;
+
   // 如果已有之前的异步加载未完成，取消它
   if (load_watcher_) {
     load_watcher_->cancel();
@@ -152,7 +165,10 @@ void ProtocalEditorWidget::setEditorId(const QString& id) {
   // 后台解析 ICD 文件
   load_watcher_ = new QFutureWatcher<std::shared_ptr<icd::Repository>>(this);
   connect(load_watcher_, &QFutureWatcher<std::shared_ptr<icd::Repository>>::finished,
-          this, [this]() {
+          this, [this, thisGeneration]() {
+    // Stale result — a newer load has superceded this one
+    if (thisGeneration != load_generation_) return;
+
     auto repoPtr = load_watcher_->result();
     load_watcher_->deleteLater();
     load_watcher_ = nullptr;
@@ -223,10 +239,7 @@ bool ProtocalEditorWidget::loadEproto(const QString& path) {
 
   clearAll();
   repo_ = std::move(*result);
-  populateFrames();
-
-  if (!repo_.frames().empty())
-    setCurrentFrame(repo_.frames()[0].get());
+  refreshAndSelectFrame(!repo_.frames().empty() ? repo_.frames()[0].get() : nullptr);
 
   saveSnapshot();
   return true;
@@ -260,9 +273,9 @@ void ProtocalEditorWidget::initUi() {
   frame_name_label_->setObjectName(QStringLiteral("frameNameLabel"));
 
   frame_type_combo_ = new QComboBox(this);
-  frame_type_combo_->addItem(QStringLiteral("发送 (Cmd)"));
-  frame_type_combo_->addItem(QStringLiteral("接收 (Data)"));
-  frame_type_combo_->addItem(QStringLiteral("配置 (DataCfg)"));
+  frame_type_combo_->addItem(QStringLiteral("数据 (Data)"));
+  frame_type_combo_->addItem(QStringLiteral("命令 (Cmd)"));
+  frame_type_combo_->addItem(QStringLiteral("数据/命令 (DataCfg)"));
   frame_type_combo_->setEnabled(false);
 
   byte_order_combo_ = new QComboBox(this);
@@ -345,13 +358,15 @@ void ProtocalEditorWidget::initUi() {
 void ProtocalEditorWidget::initSignals() {
   // Frame selection from tree
   connect(node_tree_, &IcdNodeTreeWidget::frameSelected,
-          this, &ProtocalEditorWidget::setCurrentFrame);
+          this, [this](icd::Frame* frame) {
+    setCurrentFrame(frame);
+  });
 
   // Node selection from tree → property panel + bit view highlight
   connect(node_tree_, &IcdNodeTreeWidget::nodeSelected,
-          this, [this](const icd::Node* node) {
+          this, [this](icd::Node* node) {
     if (node) {
-      property_panel_->showNode(const_cast<icd::Node&>(*node));
+      property_panel_->showNode(*node);
       bit_view_->highlightBlock(
           QString::fromStdString(std::string(node->name())));
       status_label_->setText(
@@ -368,9 +383,9 @@ void ProtocalEditorWidget::initSignals() {
           this, [this](const QString& name) {
     if (!current_frame_) return;
     bit_view_->highlightBlock(name);
-    const auto* node = current_frame_->find(name.toStdString());
+    auto* node = const_cast<icd::Node*>(current_frame_->find(name.toStdString()));
     if (node) {
-      property_panel_->showNode(const_cast<icd::Node&>(*node));
+      property_panel_->showNode(*node);
       node_tree_->selectNode(node);
       status_label_->setText(
           QStringLiteral("Node: %1  |  Offset: %2  |  Bit: %3~%4")
@@ -395,7 +410,7 @@ void ProtocalEditorWidget::initSignals() {
   connect(bit_view_, &IcdBitLayoutView::contextMenuAction,
           this, [this](const QString& name, const QString& action) {
     if (!current_frame_) return;
-    auto* frame = const_cast<icd::Frame*>(current_frame_);
+    auto* frame = current_frame_;
 
     if (action == QStringLiteral("delete")) {
       const auto* node = current_frame_->find(name.toStdString());
@@ -422,8 +437,7 @@ void ProtocalEditorWidget::initSignals() {
           }
         }
       }
-      populateFrames();
-      setCurrentFrame(frame);
+      refreshAndSelectFrame(frame);
       setModified(true);
       status_label_->setText(QStringLiteral("已删除信号: %1").arg(name));
 
@@ -459,22 +473,18 @@ void ProtocalEditorWidget::initSignals() {
           }
         }
       }
-      populateFrames();
-      setCurrentFrame(frame);
+      refreshAndSelectFrame(frame);
       setModified(true);
       status_label_->setText(
           QStringLiteral("已插入信号 (相邻: %1)").arg(name));
     }
   });
 
-  // Node property modified
+  // Node property modified (debounced to avoid signal storm)
   connect(property_panel_, &IcdPropertyPanel::nodeModified,
           this, [this]() {
     setModified(true);
-    // Refresh bit view to reflect changes
-    if (current_frame_) {
-      bit_view_->loadFromFrame(*current_frame_);
-    }
+    modified_debounce_->start();
   });
 
   // New frame
@@ -494,8 +504,7 @@ void ProtocalEditorWidget::initSignals() {
         icd::ByteOrder::little_endian);
     auto* frame_ptr = frame.get();
     repo_.add_frame(std::move(frame));
-    populateFrames();
-    setCurrentFrame(frame_ptr);
+    refreshAndSelectFrame(frame_ptr);
     setModified(true);
   });
 
@@ -522,12 +531,12 @@ void ProtocalEditorWidget::initSignals() {
     saveSnapshot();
     icd::FrameType new_type;
     switch (index) {
-    case 0: new_type = icd::FrameType::cmd; break;
-    case 1: new_type = icd::FrameType::data; break;
+    case 0: new_type = icd::FrameType::data; break;
+    case 1: new_type = icd::FrameType::cmd; break;
     case 2: new_type = icd::FrameType::data_cmd; break;
     default: return;
     }
-    const_cast<icd::Frame*>(current_frame_)->setType(new_type);
+    current_frame_->setType(new_type);
     setModified(true);
   });
 
@@ -538,7 +547,7 @@ void ProtocalEditorWidget::initSignals() {
     saveSnapshot();
     auto order = (index == 0) ? icd::ByteOrder::little_endian
                               : icd::ByteOrder::big_endian;
-    const_cast<icd::Frame*>(current_frame_)->setOrder(order);
+    current_frame_->setOrder(order);
     setModified(true);
   });
 
@@ -557,8 +566,7 @@ void ProtocalEditorWidget::initSignals() {
         icd::ByteOrder::little_endian);
     auto* frame_ptr = frame.get();
     repo_.add_frame(std::move(frame));
-    populateFrames();
-    setCurrentFrame(frame_ptr);
+    refreshAndSelectFrame(frame_ptr);
     setModified(true);
   });
 
@@ -577,17 +585,20 @@ void ProtocalEditorWidget::initSignals() {
   });
 
   connect(node_tree_, &IcdNodeTreeWidget::addNodeRequested,
-          this, [this](int frameId) {
+          this, [this](int frameId, const icd::Node* parentNode) {
     saveSnapshot();
     for (const auto& frame_ptr : repo_.frames()) {
       if (frame_ptr->id() == frameId) {
-        auto* frame = const_cast<icd::Frame*>(frame_ptr.get());
+        icd::Frame* frame = frame_ptr.get();
         auto node = std::make_unique<icd::Node>(
             "NewNode", "", 0, 0, 8,
             icd::ValueType::byte_, icd::Tag::none, icd::NodeAttrs{});
-        frame->add_root(std::move(node));
-        populateFrames();
-        setCurrentFrame(frame);
+        if (parentNode) {
+          const_cast<icd::Node*>(parentNode)->add_child(std::move(node));
+        } else {
+          frame->add_root(std::move(node));
+        }
+        refreshAndSelectFrame(frame);
         setModified(true);
         break;
       }
@@ -600,15 +611,14 @@ void ProtocalEditorWidget::initSignals() {
     saveSnapshot();
     for (const auto& frame_ptr : repo_.frames()) {
       if (frame_ptr->id() != frameId) continue;
-      auto* frame = const_cast<icd::Frame*>(frame_ptr.get());
+      auto* frame = frame_ptr.get();
 
       // Check root nodes
       const auto& roots = frame->roots();
       for (std::size_t i = 0; i < roots.size(); ++i) {
         if (roots[i].get() == node) {
           frame->remove_root(i);
-          populateFrames();
-          setCurrentFrame(frame);
+          refreshAndSelectFrame(frame);
           setModified(true);
           return;
         }
@@ -621,8 +631,7 @@ void ProtocalEditorWidget::initSignals() {
         for (std::size_t i = 0; i < children.size(); ++i) {
           if (children[i].get() == node) {
             n->remove_child(i);
-            populateFrames();
-            setCurrentFrame(frame);
+            refreshAndSelectFrame(frame);
             setModified(true);
             return;
           }
@@ -644,8 +653,8 @@ void ProtocalEditorWidget::updateToolbar() {
     // Block signals to avoid recursive modification
     frame_type_combo_->blockSignals(true);
     switch (current_frame_->type()) {
-    case icd::FrameType::cmd:      frame_type_combo_->setCurrentIndex(0); break;
-    case icd::FrameType::data:     frame_type_combo_->setCurrentIndex(1); break;
+    case icd::FrameType::data:     frame_type_combo_->setCurrentIndex(0); break;
+    case icd::FrameType::cmd:      frame_type_combo_->setCurrentIndex(1); break;
     case icd::FrameType::data_cmd: frame_type_combo_->setCurrentIndex(2); break;
     }
     frame_type_combo_->blockSignals(false);
@@ -677,7 +686,7 @@ void ProtocalEditorWidget::populateFrames() {
 }
 
 // ── Set current frame ────────────────────────────────────────
-void ProtocalEditorWidget::setCurrentFrame(const icd::Frame* frame) {
+void ProtocalEditorWidget::setCurrentFrame(icd::Frame* frame) {
   current_frame_ = frame;
   if (frame) {
     bit_view_->loadFromFrame(*frame);
@@ -694,6 +703,12 @@ void ProtocalEditorWidget::setCurrentFrame(const icd::Frame* frame) {
   updateToolbar();
 }
 
+// ── Refresh tree + select frame ──────────────────────────────
+void ProtocalEditorWidget::refreshAndSelectFrame(icd::Frame* frame) {
+  populateFrames();
+  setCurrentFrame(frame);
+}
+
 // ── Clear all data ───────────────────────────────────────────
 void ProtocalEditorWidget::clearAll() {
   current_frame_ = nullptr;
@@ -704,6 +719,7 @@ void ProtocalEditorWidget::clearAll() {
   property_panel_->clear();
   updateToolbar();
   snapshots_.clear();
+  snapshot_frame_ids_.clear();
   snapshot_index_ = -1;
 }
 
@@ -713,29 +729,58 @@ void ProtocalEditorWidget::saveSnapshot() {
   QString jsonStr = QString::fromStdString(j.dump());
   QByteArray bytes = jsonStr.toUtf8();
 
+  int frameId = current_frame_ ? current_frame_->id() : -1;
+
   // Truncate redo history
   if (snapshot_index_ < snapshots_.size() - 1) {
     snapshots_.resize(snapshot_index_ + 1);
+    snapshot_frame_ids_.resize(snapshot_index_ + 1);
   }
 
-  snapshots_.append(bytes);
+  snapshots_.append(qCompress(bytes, 9));
+  snapshot_frame_ids_.append(frameId);
   snapshot_index_ = snapshots_.size() - 1;
+
+  // Enforce max history: discard oldest entries
+  while (snapshots_.size() > kMaxSnapshots) {
+    snapshots_.removeFirst();
+    snapshot_frame_ids_.removeFirst();
+    --snapshot_index_;
+  }
 }
 
 void ProtocalEditorWidget::restoreSnapshot(const QByteArray& data) {
-  auto j = nlohmann::json::parse(data.toStdString());
+  QByteArray raw = qUncompress(data);
+  if (raw.isEmpty()) return;
+  auto j = nlohmann::json::parse(raw.toStdString());
   auto result = icd::format::deserialize_repository(j);
   if (!result) return;
 
+  // Save the target frame ID before anything is invalidated
+  int targetFrameId = (snapshot_index_ >= 0 && snapshot_index_ < snapshot_frame_ids_.size())
+                          ? snapshot_frame_ids_[snapshot_index_]
+                          : -1;
+
+  // Clear dangling refs BEFORE repo_ is reassigned
+  bit_view_->clearBlocks();
+  property_panel_->clear();
   current_frame_ = nullptr;
+
   repo_ = std::move(*result);
   populateFrames();
 
-  if (!repo_.frames().empty()) {
-    setCurrentFrame(repo_.frames()[0].get());
+  // Restore the previously selected frame by ID, not blindly frames[0]
+  icd::Frame* target = nullptr;
+  if (targetFrameId >= 0) {
+    target = const_cast<icd::Frame*>(repo_.find(targetFrameId));
+  }
+  if (!target && !repo_.frames().empty()) {
+    target = repo_.frames()[0].get();
+  }
+
+  if (target) {
+    setCurrentFrame(target);
   } else {
-    bit_view_->clearBlocks();
-    property_panel_->clear();
     updateToolbar();
   }
 }

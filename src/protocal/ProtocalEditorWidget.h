@@ -2,6 +2,7 @@
 
 #include <QByteArray>
 #include <QFutureWatcher>
+#include <QTimer>
 #include <QVector>
 #include <QWidget>
 
@@ -64,6 +65,7 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
 
   QWidget* loading_overlay_ = nullptr;
   QFutureWatcher<std::shared_ptr<icd::Repository>>* load_watcher_ = nullptr;
+  QTimer* modified_debounce_ = nullptr;
 
   bool loadEproto(const QString& path);
   bool saveEproto(const QString& path);
@@ -72,10 +74,13 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   void updateToolbar();
   void clearAll();
   void setModified(bool modified);
-  void setCurrentFrame(const icd::Frame* frame);
+  void setCurrentFrame(icd::Frame* frame);
   void populateFrames();
+  void refreshAndSelectFrame(icd::Frame* frame);
   void saveSnapshot();
   void restoreSnapshot(const QByteArray& data);
+
+  static constexpr int kMaxSnapshots = 64;
 
   QSplitter* splitter_ = nullptr;
   IcdNodeTreeWidget* node_tree_ = nullptr;
@@ -91,11 +96,14 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   QToolButton* delete_frame_btn_ = nullptr;
 
   icd::Repository repo_;
-  const icd::Frame* current_frame_ = nullptr;
+  icd::Frame* current_frame_ = nullptr;
+
+  int load_generation_ = 0;
 
   QString current_file_;
   bool modified_ = false;
   QVector<QByteArray> snapshots_;
+  QVector<int> snapshot_frame_ids_;
   int snapshot_index_ = -1;
 };
 

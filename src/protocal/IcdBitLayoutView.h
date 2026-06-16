@@ -116,7 +116,7 @@ class IcdBitLayoutView : public QWidget {
 
  private:
   void initUi();
-  void collectLeafNodes(const icd::Node& node, QVector<const icd::Node*>& leaves);
+  void collectAllNodes(const icd::Node& node, QVector<const icd::Node*>& out);
 
   IcdBitLayoutScene* scene_ = nullptr;
   QGraphicsView* view_ = nullptr;

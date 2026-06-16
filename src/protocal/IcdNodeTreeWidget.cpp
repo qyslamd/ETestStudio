@@ -1,4 +1,5 @@
 #include "IcdNodeTreeWidget.h"
+#include "IcdProtocolUtils.h"
 
 #include <QAction>
 #include <QHeaderView>
@@ -6,6 +7,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QSortFilterProxyModel>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QTreeView>
@@ -17,6 +19,7 @@
 #include <functional>
 
 namespace etest::protocal {
+using namespace utils;
 namespace {
 
 // ---------------------------------------------------------------------------
@@ -28,45 +31,14 @@ static QVariant ptrToVariant(const T* ptr) {
 }
 
 template <typename T>
-static const T* variantToPtr(const QVariant& v) {
-    return reinterpret_cast<const T*>(
+static T* variantToPtr(const QVariant& v) {
+    return reinterpret_cast<T*>(
         static_cast<uintptr_t>(v.value<quintptr>()));
 }
 
 // ---------------------------------------------------------------------------
-// ValueType to display string
+// ValueType to display string  (delegated to IcdProtocolUtils.h)
 // ---------------------------------------------------------------------------
-static std::string valueTypeToString(icd::ValueType vt) {
-    switch (vt) {
-    case icd::ValueType::boolean:
-        return "bool";
-    case icd::ValueType::byte_:
-        return "uint8";
-    case icd::ValueType::bytes:
-        return "bytes";
-    case icd::ValueType::word:
-        return "uint16";
-    case icd::ValueType::shortint:
-        return "int16";
-    case icd::ValueType::smallint:
-        return "int16";
-    case icd::ValueType::longword:
-        return "uint32";
-    case icd::ValueType::integer:
-        return "int32";
-    case icd::ValueType::ulong_:
-        return "uint64";
-    case icd::ValueType::single:
-        return "float";
-    case icd::ValueType::double_:
-        return "double";
-    case icd::ValueType::string_:
-        return "string";
-    case icd::ValueType::unknown:
-        return "unknown";
-    }
-    return "unknown";
-}
 
 // ---------------------------------------------------------------------------
 // FrameType to display string
@@ -99,7 +71,7 @@ static std::string byteOrderToString(icd::ByteOrder bo) {
 // ---------------------------------------------------------------------------
 // Custom data roles
 // ---------------------------------------------------------------------------
-enum { PtrRole = Qt::UserRole + 1 };
+enum { PtrRole = Qt::UserRole + 1, FrameIdRole = Qt::UserRole + 2 };
 
 }  // anonymous namespace
 
@@ -134,9 +106,17 @@ void IcdNodeTreeWidget::initUi() {
     tree_view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
     model_ = new QStandardItemModel(this);
+    proxy_ = new QSortFilterProxyModel(this);
+    proxy_->setSourceModel(model_);
+    proxy_->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    proxy_->setRecursiveFilteringEnabled(true);
+    proxy_->setFilterRole(Qt::DisplayRole);
+    tree_view_->setModel(proxy_);
 
     connect(tree_view_, &QTreeView::customContextMenuRequested,
             this, &IcdNodeTreeWidget::onContextMenu);
+    connect(filter_input_, &QLineEdit::textChanged,
+            this, &IcdNodeTreeWidget::applyFilter);
 
     layout->addWidget(header);
     layout->addWidget(filter_input_);
@@ -161,7 +141,9 @@ void IcdNodeTreeWidget::selectNode(const icd::Node* node) {
             auto* child = item->child(i);
             if (auto* stored = variantToPtr<icd::Node>(child->data(PtrRole))) {
                 if (stored == node) {
-                    tree_view_->setCurrentIndex(model_->indexFromItem(child));
+                    QModelIndex srcIdx = model_->indexFromItem(child);
+                    QModelIndex proxyIdx = proxy_->mapFromSource(srcIdx);
+                    tree_view_->setCurrentIndex(proxyIdx);
                     return;
                 }
             }
@@ -185,7 +167,9 @@ void IcdNodeTreeWidget::revealNode(const icd::Node* node) {
             auto* child = item->child(i);
             if (auto* stored = variantToPtr<icd::Node>(child->data(PtrRole))) {
                 if (stored == node) {
-                    tree_view_->scrollTo(model_->indexFromItem(child));
+                    QModelIndex srcIdx = model_->indexFromItem(child);
+                    QModelIndex proxyIdx = proxy_->mapFromSource(srcIdx);
+                    tree_view_->scrollTo(proxyIdx);
                     return;
                 }
             }
@@ -198,33 +182,43 @@ void IcdNodeTreeWidget::revealNode(const icd::Node* node) {
     }
 }
 
+void IcdNodeTreeWidget::applyFilter(const QString& text) {
+    proxy_->setFilterFixedString(text);
+    if (!text.isEmpty()) {
+        tree_view_->expandAll();
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Load frames and nodes from an icd::Repository
 // ---------------------------------------------------------------------------
-void IcdNodeTreeWidget::loadFromRepository(const icd::Repository& repo) {
+void IcdNodeTreeWidget::loadFromRepository(icd::Repository& repo) {
+    // Disconnect BEFORE clear to avoid dangling selectionModel
+    if (selection_conn_) {
+        disconnect(selection_conn_);
+        selection_conn_ = {};
+    }
+
     model_->clear();
 
     for (const auto& frame_ptr : repo.frames()) {
         model_->appendRow(createFrameItem(*frame_ptr));
     }
 
-    tree_view_->setModel(model_);
     tree_view_->expandAll();
 
-    // Disconnect previous selection connection before reconnecting
-    if (selection_conn_) {
-        disconnect(selection_conn_);
-    }
-
-    // Connect selection model — valid only after setModel()
-    selection_conn_ = connect(
-        tree_view_->selectionModel(),
-        &QItemSelectionModel::currentChanged,
+    // Connect selection model (valid after setModel via proxy)
+    QItemSelectionModel* selModel = tree_view_->selectionModel();
+    if (selModel) {
+        selection_conn_ = connect(
+            selModel,
+            &QItemSelectionModel::currentChanged,
         this,
         [this](const QModelIndex& current, const QModelIndex& /*previous*/) {
             if (!current.isValid())
                 return;
-            auto* item = model_->itemFromIndex(current);
+            QModelIndex srcIdx = proxy_->mapToSource(current);
+            auto* item = model_->itemFromIndex(srcIdx);
             if (!item)
                 return;
 
@@ -242,12 +236,13 @@ void IcdNodeTreeWidget::loadFromRepository(const icd::Repository& repo) {
                 }
             }
         });
+    }
 }
 
 // ---------------------------------------------------------------------------
 // Create a tree item for an icd::Frame
 // ---------------------------------------------------------------------------
-QStandardItem* IcdNodeTreeWidget::createFrameItem(const icd::Frame& frame) {
+QStandardItem* IcdNodeTreeWidget::createFrameItem(icd::Frame& frame) {
     auto display =
         QStringLiteral("%1 (ID: %2)")
             .arg(QString::fromUtf8(frame.name().data(),
@@ -268,9 +263,12 @@ QStandardItem* IcdNodeTreeWidget::createFrameItem(const icd::Frame& frame) {
                                    static_cast<int>(frame.description().size())));
     item->setToolTip(tooltip);
 
+    // Store frame ID for pointer validation
+    item->setData(frame.id(), FrameIdRole);
+
     // Root nodes
     for (const auto& root_ptr : frame.roots()) {
-        item->appendRow(createNodeItem(*root_ptr));
+        item->appendRow(createNodeItem(*root_ptr, frame.id()));
     }
 
     return item;
@@ -279,7 +277,8 @@ QStandardItem* IcdNodeTreeWidget::createFrameItem(const icd::Frame& frame) {
 // ---------------------------------------------------------------------------
 // Create a tree item for an icd::Node (recursive)
 // ---------------------------------------------------------------------------
-QStandardItem* IcdNodeTreeWidget::createNodeItem(const icd::Node& node) {
+QStandardItem* IcdNodeTreeWidget::createNodeItem(icd::Node& node,
+                                                   int frameId) {
     auto display =
         QStringLiteral("%1 (O:%2, B:%3~%4)")
             .arg(QString::fromUtf8(node.name().data(),
@@ -291,6 +290,7 @@ QStandardItem* IcdNodeTreeWidget::createNodeItem(const icd::Node& node) {
     auto* item = new QStandardItem(display);
     item->setEditable(false);
     item->setData(ptrToVariant(&node), PtrRole);
+    item->setData(frameId, FrameIdRole);
 
     // Tooltip: value type, bit width, description
     auto tooltip =
@@ -303,7 +303,7 @@ QStandardItem* IcdNodeTreeWidget::createNodeItem(const icd::Node& node) {
 
     // Children (recursive)
     for (const auto& child_ptr : node.children()) {
-        item->appendRow(createNodeItem(*child_ptr));
+        item->appendRow(createNodeItem(*child_ptr, frameId));
     }
 
     return item;
@@ -351,8 +351,8 @@ void IcdNodeTreeWidget::onContextMenu(const QPoint& pos) {
             if (!frame) return;
 
             auto* addChildAction = menu.addAction(QStringLiteral("添加子节点"));
-            connect(addChildAction, &QAction::triggered, this, [this, frame]() {
-                emit addNodeRequested(frame->id());
+            connect(addChildAction, &QAction::triggered, this, [this, frame, node]() {
+                emit addNodeRequested(frame->id(), node);
             });
 
             menu.addSeparator();
