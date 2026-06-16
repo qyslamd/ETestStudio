@@ -442,6 +442,84 @@ void RemoveDevicePortCommand::redo() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  AddProductPortCommand
+// ═══════════════════════════════════════════════════════════════
+
+AddProductPortCommand::AddProductPortCommand(TopologyDocument* doc,
+                                             int productIndex,
+                                             const TopologyPort& port,
+                                             QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), product_index_(productIndex),
+      port_(port) {
+  setText(QStringLiteral("添加 UUT 端口"));
+}
+
+void AddProductPortCommand::undo() {
+  if (port_index_ >= 0) {
+    doc_->removeProductPort(product_index_, port_index_);
+  }
+}
+
+void AddProductPortCommand::redo() {
+  doc_->addProductPort(product_index_, port_);
+  // Record the actual index where the port was inserted
+  const auto* prod = doc_->product(product_index_);
+  if (prod) {
+    port_index_ = prod->ports.size() - 1;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RemoveProductPortCommand
+// ═══════════════════════════════════════════════════════════════
+
+RemoveProductPortCommand::RemoveProductPortCommand(TopologyDocument* doc,
+                                                   int productIndex,
+                                                   int portIndex,
+                                                   QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), product_index_(productIndex),
+      port_index_(portIndex) {
+  const auto* prod = doc_->product(productIndex);
+  if (prod && portIndex >= 0 && portIndex < prod->ports.size()) {
+    port_ = prod->ports[portIndex];
+    // 级联清理：找到引用此端口的连线
+    for (int i = 0; i < doc_->connectionCount(); ++i) {
+      const auto* c = doc_->connection(i);
+      if (c->productName == prod->name && c->portName == port_.name) {
+        saved_connections_.append(
+            {c->productName, c->portName, c->deviceName, c->devicePort});
+      }
+    }
+  }
+  setText(QStringLiteral("删除 UUT 端口"));
+}
+
+void RemoveProductPortCommand::undo() {
+  doc_->addProductPort(product_index_, port_);
+  // 恢复被级联清理的连线
+  for (const auto& ce : saved_connections_) {
+    TopologyConnection conn;
+    conn.productName = ce.productName;
+    conn.portName = ce.portName;
+    conn.deviceName = ce.deviceName;
+    conn.devicePort = ce.devicePort;
+    doc_->addConnection(conn);
+  }
+}
+
+void RemoveProductPortCommand::redo() {
+  // 先移除引用此端口的所有连线
+  for (int i = doc_->connectionCount() - 1; i >= 0; --i) {
+    const auto* c = doc_->connection(i);
+    if (c->portName == port_.name &&
+        c->productName == doc_->product(product_index_)->name) {
+      doc_->removeConnection(i);
+    }
+  }
+  doc_->removeProductPort(product_index_, port_index_);
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  TapConnectionCommand
 // ═══════════════════════════════════════════════════════════════
 

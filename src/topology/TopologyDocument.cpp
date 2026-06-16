@@ -172,6 +172,37 @@ void TopologyDocument::addDevicePort(int deviceIndex,
   emit deviceChanged(deviceIndex);
 }
 
+void TopologyDocument::addProductPort(int productIndex,
+                                      const TopologyPort& port) {
+  if (productIndex < 0 || productIndex >= products_.size())
+    return;
+  int portIndex = products_[productIndex].ports.size();
+  products_[productIndex].ports.append(port);
+  emit productPortAdded(productIndex, portIndex);
+}
+
+void TopologyDocument::removeProductPort(int productIndex, int portIndex) {
+  if (productIndex < 0 || productIndex >= products_.size())
+    return;
+  auto& prod = products_[productIndex];
+  if (portIndex < 0 || portIndex >= prod.ports.size())
+    return;
+  prod.ports.removeAt(portIndex);
+  emit productPortRemoved(productIndex, portIndex);
+}
+
+int TopologyDocument::findProductPortIndex(int productIndex,
+                                           const QString& name) const {
+  if (productIndex < 0 || productIndex >= products_.size())
+    return -1;
+  const auto& prod = products_[productIndex];
+  for (int i = 0; i < prod.ports.size(); ++i) {
+    if (prod.ports[i].name == name)
+      return i;
+  }
+  return -1;
+}
+
 void TopologyDocument::removeDevicePort(int deviceIndex, int portIndex) {
   if (deviceIndex < 0 || deviceIndex >= devices_.size())
     return;

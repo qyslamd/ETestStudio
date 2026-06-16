@@ -109,6 +109,11 @@ class TopologyDocument : public QObject {
   int deviceCount() const;
   int findDeviceIndex(const QString& name) const;
 
+  // Product (UUT) port management
+  void addProductPort(int productIndex, const TopologyPort& port);
+  void removeProductPort(int productIndex, int portIndex);
+  int findProductPortIndex(int productIndex, const QString& name) const;
+
   void addDevicePort(int deviceIndex, const TopologyDevicePort& port);
   void removeDevicePort(int deviceIndex, int portIndex);
   int findDevicePortIndex(int deviceIndex, const QString& name) const;
@@ -146,6 +151,8 @@ class TopologyDocument : public QObject {
   void productAdded(int index);
   void productRemoved(int index);
   void productChanged(int index);
+  void productPortAdded(int productIndex, int portIndex);
+  void productPortRemoved(int productIndex, int portIndex);
   void deviceAdded(int index);
   void deviceRemoved(int index);
   void deviceChanged(int index);

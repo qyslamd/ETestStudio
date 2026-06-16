@@ -76,6 +76,7 @@ class UutItem : public TopologyBlockItem {
   int productIndex() const { return product_index_; }
 
   void layoutPorts();
+  void clearPorts();
   PortItem* portItem(int portIndex) const;
   QPointF portScenePos(int portIndex) const;
 

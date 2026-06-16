@@ -435,6 +435,12 @@ void TopologyEditorWidget::initUi() {
   property_dock_->setWidget(property_panel_);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
 
+  // 禁止悬浮，但保留自由停靠/拖拽/标签页组合
+  for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
+    dock->setFeatures(QDockWidget::DockWidgetClosable |
+                      QDockWidget::DockWidgetMovable);
+  }
+
   // 中央视图
   setCentralWidget(view_);
 
@@ -540,6 +546,8 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onAddUut);
   connect(view_, &TopologyView::addDeviceRequested, this,
           &TopologyEditorWidget::onAddDevice);
+  connect(view_, &TopologyView::addUutPortRequested, this,
+          &TopologyEditorWidget::onAddUutPort);
   connect(view_, &TopologyView::deleteItemRequested, this,
           &TopologyEditorWidget::onDeleteItem);
   connect(view_, &TopologyView::saveTemplateRequested, this,
@@ -572,6 +580,22 @@ void TopologyEditorWidget::initSignals() {
 
   connect(doc_, &TopologyDocument::monitorChanged, this,
           [this](int) { scene_->updateTapVisuals(); });
+
+  // ── Product port changes: refresh UUT ports ──
+  connect(doc_, &TopologyDocument::productPortAdded, this,
+          [this](int prodIdx, int) {
+    if (auto* uut = scene_->findUutItem(prodIdx)) {
+      uut->clearPorts();
+      uut->layoutPorts();
+    }
+  });
+  connect(doc_, &TopologyDocument::productPortRemoved, this,
+          [this](int prodIdx, int) {
+    if (auto* uut = scene_->findUutItem(prodIdx)) {
+      uut->clearPorts();
+      uut->layoutPorts();
+    }
+  });
 
   auto* undoStack = doc_->undoStack();
   connect(undoStack, &QUndoStack::indexChanged, this, [this]() {
@@ -762,6 +786,19 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
   }
 }
 
+void TopologyEditorWidget::onAddUutPort(int productIndex) {
+  auto* prod = doc_->product(productIndex);
+  if (!prod) return;
+  int n = prod->ports.size() + 1;
+  TopologyPort port;
+  port.name = QStringLiteral("Port_%1").arg(n, 2, 10, QChar('0'));
+  port.direction = TopologyPort::Input;
+  port.functionType = FunctionType::CUSTOM;
+  auto* cmd = new AddProductPortCommand(doc_, productIndex, port);
+  doc_->undoStack()->push(cmd);
+  showStatusMessage(QStringLiteral("已添加端口: %1").arg(port.name));
+}
+
 void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
   int n = doc_->deviceCount() + 1;
   TopologyDevice dev;
@@ -853,6 +890,10 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
     auto* cmd = new RemoveMonitorCommand(doc_, mon->monitorIndex());
     doc_->undoStack()->push(cmd);
     showStatusMessage(QStringLiteral("已删除监听器"));
+  } else if (auto* uutPort = qgraphicsitem_cast<PortItem*>(item)) {
+    doc_->undoStack()->push(new RemoveProductPortCommand(
+        doc_, uutPort->productIndex(), uutPort->portIndex()));
+    showStatusMessage(QStringLiteral("已删除 UUT 端口"));
   } else if (auto* devPort = qgraphicsitem_cast<DevicePortItem*>(item)) {
     doc_->undoStack()->push(new RemoveDevicePortCommand(
         doc_, devPort->deviceIndex(), devPort->portIndex()));

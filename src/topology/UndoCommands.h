@@ -245,6 +245,44 @@ class RemoveDevicePortCommand : public QUndoCommand {
   TopologyDevicePort port_;
 };
 
+// ── AddProductPortCommand ──
+class AddProductPortCommand : public QUndoCommand {
+ public:
+  AddProductPortCommand(TopologyDocument* doc, int productIndex,
+                        const TopologyPort& port,
+                        QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int product_index_;
+  TopologyPort port_;
+  int port_index_ = -1;
+};
+
+// ── RemoveProductPortCommand ──
+class RemoveProductPortCommand : public QUndoCommand {
+ public:
+  RemoveProductPortCommand(TopologyDocument* doc, int productIndex,
+                           int portIndex, QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int product_index_;
+  int port_index_;
+  TopologyPort port_;
+  struct ConnEntry {
+    QString productName;
+    QString portName;
+    QString deviceName;
+    QString devicePort;
+  };
+  QVector<ConnEntry> saved_connections_;
+};
+
 // ── TapConnectionCommand ──
 class TapConnectionCommand : public QUndoCommand {
  public:

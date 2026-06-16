@@ -297,6 +297,16 @@ QPointF UutItem::portScenePos(int portIndex) const {
   return pi ? pi->sceneCenter() : QPointF();
 }
 
+void UutItem::clearPorts() {
+  for (auto* port : ports_) {
+    if (port->scene())
+      port->scene()->removeItem(port);
+    delete port;
+  }
+  ports_.clear();
+  clearChildPorts();
+}
+
 void UutItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
   auto* prod = doc_->product(product_index_);
   if (!prod)

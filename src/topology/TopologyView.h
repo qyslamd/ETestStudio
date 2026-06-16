@@ -19,6 +19,7 @@ class TopologyView : public QGraphicsView {
  signals:
   void addUutRequested(QPointF scenePos);
   void addDeviceRequested(QPointF scenePos);
+  void addUutPortRequested(int productIndex);
   void deleteItemRequested(QGraphicsItem* item);
   void saveTemplateRequested(QGraphicsItem* item);
   void addDeviceFromTemplateRequested(QPointF scenePos);

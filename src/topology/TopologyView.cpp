@@ -215,6 +215,10 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     connect(triAct, &QAction::triggered, this,
             [devPort]() { devPort->setPortStyle(PortStyle::Triangle); });
   } else if (uutPort) {
+    auto* delUutPortAct = menu.addAction(QStringLiteral("删除端口"));
+    connect(delUutPortAct, &QAction::triggered, this,
+            [this, uutPort]() { emit deleteItemRequested(uutPort); });
+    menu.addSeparator();
     auto* portStyleMenu = menu.addMenu(QStringLiteral("端口样式"));
     auto* portGroup = new QActionGroup(portStyleMenu);
     portGroup->setExclusive(true);
@@ -231,6 +235,10 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     connect(triAct, &QAction::triggered, this,
             [uutPort]() { uutPort->setPortStyle(PortStyle::Triangle); });
   } else if (uut) {
+    auto* addPortAct = menu.addAction(QStringLiteral("添加端口"));
+    connect(addPortAct, &QAction::triggered, this,
+            [this, uut]() { emit addUutPortRequested(uut->productIndex()); });
+    menu.addSeparator();
     auto* act = menu.addAction(QStringLiteral("删除 UUT"));
     connect(act, &QAction::triggered, this,
             [this, uut]() { emit deleteItemRequested(uut); });

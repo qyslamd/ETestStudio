@@ -80,6 +80,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   void onDropMonitor(const QString& deviceType,
                      const QPointF& scenePos);
   void onOutlineNavigate(int itemType, int mainIndex, int subIndex);
+  void onAddUutPort(int productIndex);
 
  private:
   void initUi();

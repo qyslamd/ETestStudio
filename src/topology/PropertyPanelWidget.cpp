@@ -7,6 +7,7 @@
 
 #include <QFormLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMenu>
@@ -65,6 +66,12 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
     }
   }
 
+  // Save pending UUT port edits when leaving UUT page
+  if (editing_uut_index_ >= 0 && uut_dirty_) {
+    applyUutPorts(editing_uut_index_);
+    uut_dirty_ = false;
+  }
+
   editing_uut_index_ = -1;
   editing_port_product_ = -1;
   editing_port_index_ = -1;
@@ -82,9 +89,39 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
     editing_uut_index_ = uut->productIndex();
     auto* prod = doc_->product(editing_uut_index_);
     if (prod) {
+      // 基本信息
       uut_name_edit_->blockSignals(true);
       uut_name_edit_->setText(prod->name);
       uut_name_edit_->blockSignals(false);
+
+      // 尺寸
+      uut_width_spin_->blockSignals(true);
+      uut_width_spin_->setValue(static_cast<int>(prod->size.width()));
+      uut_width_spin_->blockSignals(false);
+      uut_height_spin_->blockSignals(true);
+      uut_height_spin_->setValue(static_cast<int>(prod->size.height()));
+      uut_height_spin_->blockSignals(false);
+
+      // 端口列表 — 保存当前状态供 undo，加载到表格
+      uut_dirty_ = false;
+      saved_uut_ports_ = prod->ports;
+      const QStringList dirNames = {QStringLiteral("Input"),
+                                    QStringLiteral("Output"),
+                                    QStringLiteral("Bidirectional")};
+      uut_port_table_->setUpdatesEnabled(false);
+      uut_port_table_->blockSignals(true);
+      uut_port_table_->setRowCount(prod->ports.size());
+      for (int r = 0; r < prod->ports.size(); ++r) {
+        const auto& p = prod->ports[r];
+        uut_port_table_->setItem(r, 0, new QTableWidgetItem(p.name));
+        uut_port_table_->setItem(r, 1, new QTableWidgetItem(
+            dirNames[static_cast<int>(p.direction)]));
+        uut_port_table_->setItem(r, 2, new QTableWidgetItem(
+            functionTypeToString(p.functionType)));
+      }
+      uut_port_table_->blockSignals(false);
+      uut_port_table_->resizeColumnsToContents();
+      uut_port_table_->setUpdatesEnabled(true);
     }
     stack_->setCurrentIndex(PageUut);
     return;
@@ -271,12 +308,72 @@ void PropertyPanelWidget::buildEmptyPage() {
 void PropertyPanelWidget::buildUutPage() {
   auto* w = new QWidget(this);
   w->setObjectName("uutPage");
-  auto* lay = new QFormLayout(w);
+  auto* scrollLay = new QVBoxLayout(w);
+  scrollLay->setContentsMargins(0, 0, 0, 0);
 
+  // ── 基本信息 ──
+  auto* infoGroup = new QGroupBox(QStringLiteral("基本信息"), w);
+  auto* infoLay = new QFormLayout(infoGroup);
   uut_name_edit_ = new QLineEdit(w);
   connect(uut_name_edit_, &QLineEdit::editingFinished, this,
           &PropertyPanelWidget::onUutNameChanged);
-  lay->addRow(QStringLiteral("名称"), uut_name_edit_);
+  infoLay->addRow(QStringLiteral("名称"), uut_name_edit_);
+  scrollLay->addWidget(infoGroup);
+
+  // ── 尺寸 ──
+  auto* sizeGroup = new QGroupBox(QStringLiteral("尺寸"), w);
+  auto* sizeLay = new QFormLayout(sizeGroup);
+  uut_width_spin_ = new QSpinBox(w);
+  uut_width_spin_->setRange(0, 9999);
+  uut_width_spin_->setSuffix(QStringLiteral(" px (0=自动)"));
+  connect(uut_width_spin_, QOverload<int>::of(&QSpinBox::valueChanged),
+          this, &PropertyPanelWidget::onUutWidthChanged);
+  sizeLay->addRow(QStringLiteral("宽度"), uut_width_spin_);
+
+  uut_height_spin_ = new QSpinBox(w);
+  uut_height_spin_->setRange(0, 9999);
+  uut_height_spin_->setSuffix(QStringLiteral(" px (0=自动)"));
+  connect(uut_height_spin_, QOverload<int>::of(&QSpinBox::valueChanged),
+          this, &PropertyPanelWidget::onUutHeightChanged);
+  sizeLay->addRow(QStringLiteral("高度"), uut_height_spin_);
+  scrollLay->addWidget(sizeGroup);
+
+  // ── 端口列表 ──
+  auto* portGroup = new QGroupBox(QStringLiteral("端口列表"), w);
+  auto* portLay = new QVBoxLayout(portGroup);
+
+  uut_port_table_ = new QTableWidget(0, 3, w);
+  uut_port_table_->setHorizontalHeaderLabels(
+      {QStringLiteral("名称"), QStringLiteral("方向"), QStringLiteral("功能类型")});
+  uut_port_table_->horizontalHeader()->setStretchLastSection(true);
+  uut_port_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
+  uut_port_table_->setAlternatingRowColors(true);
+  // 方向列和功能类型列使用 ComboBoxDelegate
+  QStringList dirItems = {QStringLiteral("Input"), QStringLiteral("Output"),
+                          QStringLiteral("Bidirectional")};
+  QStringList funcItems;
+  for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft)
+    funcItems << functionTypeToString(static_cast<FunctionType>(ft));
+  uut_port_table_->setItemDelegateForColumn(1, new ComboBoxDelegate(dirItems, this));
+  uut_port_table_->setItemDelegateForColumn(2, new ComboBoxDelegate(funcItems, this));
+  connect(uut_port_table_, &QTableWidget::itemChanged, this,
+          [this]() { uut_dirty_ = true; });
+  portLay->addWidget(uut_port_table_);
+
+  auto* btnLay = new QHBoxLayout();
+  uut_add_port_btn_ = new QPushButton(QStringLiteral("+"), w);
+  connect(uut_add_port_btn_, &QPushButton::clicked, this,
+          &PropertyPanelWidget::onUutAddPort);
+  uut_remove_port_btn_ = new QPushButton(QStringLiteral("-"), w);
+  connect(uut_remove_port_btn_, &QPushButton::clicked, this,
+          &PropertyPanelWidget::onUutRemovePort);
+  btnLay->addWidget(uut_add_port_btn_);
+  btnLay->addWidget(uut_remove_port_btn_);
+  btnLay->addStretch();
+  portLay->addLayout(btnLay);
+
+  scrollLay->addWidget(portGroup);
+  scrollLay->addStretch();
 
   stack_->addWidget(w);
 }
@@ -544,6 +641,174 @@ void PropertyPanelWidget::onUutNameChanged() {
         QStringLiteral("修改 UUT 名称"));
     doc_->undoStack()->push(cmd);
   }
+}
+
+// ── UUT size ──
+
+void PropertyPanelWidget::onUutWidthChanged() {
+  auto* prod = doc_->product(editing_uut_index_);
+  if (!prod) return;
+  int val = uut_width_spin_->value();
+  int idx = editing_uut_index_;
+  QSizeF oldSize = prod->size;
+  QSizeF newSize(static_cast<qreal>(val), prod->size.height());
+  auto* cmd = new PropertyCommand(
+      doc_,
+      [doc = doc_, idx, oldSize]() {
+        if (auto* p = doc->product(idx))
+          p->size = oldSize;
+      },
+      [doc = doc_, idx, newSize]() {
+        if (auto* p = doc->product(idx))
+          p->size = newSize;
+      },
+      QStringLiteral("修改 UUT 宽度"));
+  doc_->undoStack()->push(cmd);
+  emit documentChanged();
+}
+
+void PropertyPanelWidget::onUutHeightChanged() {
+  auto* prod = doc_->product(editing_uut_index_);
+  if (!prod) return;
+  int val = uut_height_spin_->value();
+  int idx = editing_uut_index_;
+  QSizeF oldSize = prod->size;
+  QSizeF newSize(prod->size.width(), static_cast<qreal>(val));
+  auto* cmd = new PropertyCommand(
+      doc_,
+      [doc = doc_, idx, oldSize]() {
+        if (auto* p = doc->product(idx))
+          p->size = oldSize;
+      },
+      [doc = doc_, idx, newSize]() {
+        if (auto* p = doc->product(idx))
+          p->size = newSize;
+      },
+      QStringLiteral("修改 UUT 高度"));
+  doc_->undoStack()->push(cmd);
+  emit documentChanged();
+}
+
+// ── UUT port table operations ──
+
+void PropertyPanelWidget::onUutAddPort() {
+  auto* prod = doc_->product(editing_uut_index_);
+  if (!prod) return;
+  int n = prod->ports.size() + 1;
+  TopologyPort port;
+  port.name = QStringLiteral("Port_%1").arg(n, 2, 10, QChar('0'));
+  port.direction = TopologyPort::Input;
+  port.functionType = FunctionType::CUSTOM;
+  auto* cmd = new AddProductPortCommand(doc_, editing_uut_index_, port);
+  doc_->undoStack()->push(cmd);
+  // 场景刷新后，重新加载表格
+  prod = doc_->product(editing_uut_index_);
+  if (prod) {
+    const QStringList dirNames = {QStringLiteral("Input"),
+                                  QStringLiteral("Output"),
+                                  QStringLiteral("Bidirectional")};
+    uut_port_table_->blockSignals(true);
+    uut_port_table_->setRowCount(prod->ports.size());
+    int r = prod->ports.size() - 1;
+    const auto& p = prod->ports[r];
+    uut_port_table_->setItem(r, 0, new QTableWidgetItem(p.name));
+    uut_port_table_->setItem(r, 1, new QTableWidgetItem(
+        dirNames[static_cast<int>(p.direction)]));
+    uut_port_table_->setItem(r, 2, new QTableWidgetItem(
+        functionTypeToString(p.functionType)));
+    uut_port_table_->blockSignals(false);
+    uut_port_table_->resizeColumnsToContents();
+  }
+}
+
+void PropertyPanelWidget::onUutRemovePort() {
+  int row = uut_port_table_->currentRow();
+  if (row < 0 || editing_uut_index_ < 0) return;
+  auto* prod = doc_->product(editing_uut_index_);
+  if (!prod || row >= prod->ports.size()) return;
+  auto* cmd = new RemoveProductPortCommand(doc_, editing_uut_index_, row);
+  doc_->undoStack()->push(cmd);
+  // 场景刷新后，重新加载表格
+  prod = doc_->product(editing_uut_index_);
+  if (prod) {
+    const QStringList dirNames = {QStringLiteral("Input"),
+                                  QStringLiteral("Output"),
+                                  QStringLiteral("Bidirectional")};
+    uut_port_table_->blockSignals(true);
+    uut_port_table_->setRowCount(prod->ports.size());
+    for (int r = 0; r < prod->ports.size(); ++r) {
+      const auto& p = prod->ports[r];
+      uut_port_table_->setItem(r, 0, new QTableWidgetItem(p.name));
+      uut_port_table_->setItem(r, 1, new QTableWidgetItem(
+          dirNames[static_cast<int>(p.direction)]));
+      uut_port_table_->setItem(r, 2, new QTableWidgetItem(
+          functionTypeToString(p.functionType)));
+    }
+    uut_port_table_->blockSignals(false);
+    uut_port_table_->resizeColumnsToContents();
+  }
+}
+
+void PropertyPanelWidget::applyUutPorts(int productIndex) {
+  if (!uut_dirty_) return;
+  auto* prod = doc_->product(productIndex);
+  if (!prod) return;
+
+  // Build new ports from table
+  QVector<TopologyPort> newPorts;
+  for (int r = 0; r < uut_port_table_->rowCount(); ++r) {
+    auto* nameItem = uut_port_table_->item(r, 0);
+    if (!nameItem || nameItem->text().isEmpty()) continue;
+    auto* dirItem = uut_port_table_->item(r, 1);
+    auto* funcItem = uut_port_table_->item(r, 2);
+    TopologyPort port;
+    port.name = nameItem->text();
+    port.direction = dirItem && dirItem->text() == QStringLiteral("Output")
+                         ? TopologyPort::Output
+                     : dirItem && dirItem->text() == QStringLiteral("Bidirectional")
+                         ? TopologyPort::Bidirectional
+                         : TopologyPort::Input;
+    port.functionType = FunctionType::CUSTOM;
+    if (funcItem) {
+      for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
+        if (functionTypeToString(static_cast<FunctionType>(ft)) == funcItem->text()) {
+          port.functionType = static_cast<FunctionType>(ft);
+          break;
+        }
+      }
+    }
+    newPorts.append(port);
+  }
+
+  // Compare with saved ports
+  bool equal = newPorts.size() == saved_uut_ports_.size();
+  if (equal) {
+    for (int i = 0; i < newPorts.size(); ++i) {
+      if (newPorts[i].name != saved_uut_ports_[i].name ||
+          newPorts[i].direction != saved_uut_ports_[i].direction ||
+          newPorts[i].functionType != saved_uut_ports_[i].functionType) {
+        equal = false;
+        break;
+      }
+    }
+  }
+  if (equal) return;
+
+  auto oldPorts = saved_uut_ports_;
+  int idx = productIndex;
+  auto* cmd = new PropertyCommand(
+      doc_,
+      [doc = doc_, idx, oldPorts]() {
+        if (auto* p = doc->product(idx))
+          p->ports = oldPorts;
+      },
+      [doc = doc_, idx, newPorts]() {
+        if (auto* p = doc->product(idx))
+          p->ports = newPorts;
+      },
+      QStringLiteral("修改 UUT 端口"));
+  doc_->undoStack()->push(cmd);
+  uut_dirty_ = false;
 }
 
 void PropertyPanelWidget::onPortNameChanged() {
