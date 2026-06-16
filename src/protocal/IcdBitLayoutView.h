@@ -5,6 +5,7 @@
 #include <QWidget>
 
 #include <QColor>
+#include <QFont>
 #include <QPoint>
 #include <QString>
 
@@ -59,6 +60,8 @@ class FieldSectionItem : public QGraphicsObject {
   bool hovered_ = false;
   bool highlighted_ = false;
   static constexpr int kHeaderHeight = 28;
+  QFont header_font_;
+  QFont cell_font_;
 };
 
 // ============================================================
@@ -90,6 +93,7 @@ class IcdBitLayoutScene : public QGraphicsScene {
   int section_spacing_ = 12;
   int next_y_ = 16;
   QString selected_name_;
+  QVector<FieldSectionItem*> blocks_;
 };
 
 // ============================================================

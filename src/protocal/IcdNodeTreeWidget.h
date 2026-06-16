@@ -23,7 +23,7 @@ class IcdNodeTreeWidget : public QWidget {
  public:
   explicit IcdNodeTreeWidget(QWidget* parent = nullptr);
 
-  void loadFromRepository(icd::Repository& repo);
+  void loadFromRepository(const icd::Repository& repo);
   void clear();
   void selectNode(const icd::Node* node);
   void revealNode(const icd::Node* node);
@@ -40,8 +40,8 @@ class IcdNodeTreeWidget : public QWidget {
   void initUi();
   void onContextMenu(const QPoint& pos);
   void applyFilter(const QString& text);
-  QStandardItem* createFrameItem(icd::Frame& frame);
-  QStandardItem* createNodeItem(icd::Node& node, int frameId = -1);
+  QStandardItem* createFrameItem(const icd::Frame& frame);
+  QStandardItem* createNodeItem(const icd::Node& node, int frameId = -1);
 
   QLineEdit* filter_input_ = nullptr;
   QTreeView* tree_view_ = nullptr;

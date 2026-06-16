@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QResizeEvent>
+#include <QHideEvent>
 #include <QSplitter>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -38,6 +39,7 @@ void updateMaxBits(const icd::Node& node, int& max_bits) {
 }
 
 int calcFrameLength(const icd::Frame& frame) {
+  if (frame.roots().empty()) return 0;
   int max_bits = 0;
   for (const auto& root : frame.roots())
     updateMaxBits(*root, max_bits);
@@ -133,13 +135,13 @@ void ProtocalEditorWidget::undo() {
   if (!canUndo()) return;
   --snapshot_index_;
   restoreSnapshot(snapshots_[snapshot_index_]);
-  emit modificationChanged(modified_);
+  setModified(snapshot_index_ != 0);
 }
 void ProtocalEditorWidget::redo() {
   if (!canRedo()) return;
   ++snapshot_index_;
   restoreSnapshot(snapshots_[snapshot_index_]);
-  emit modificationChanged(modified_);
+  setModified(snapshot_index_ != 0);
 }
 
 void ProtocalEditorWidget::setEditorId(const QString& id) {
@@ -209,7 +211,6 @@ void ProtocalEditorWidget::showLoadingOverlay() {
             .arg(palette().window().color().name()));
     auto* lay = new QVBoxLayout(loading_overlay_);
     lay->setAlignment(Qt::AlignCenter);
-    lay->setAlignment(Qt::AlignCenter);
     auto* label = new QLabel(QStringLiteral("正在加载协议文件..."), loading_overlay_);
     label->setAlignment(Qt::AlignCenter);
     label->setStyleSheet(
@@ -231,18 +232,9 @@ void ProtocalEditorWidget::resizeEvent(QResizeEvent* event) {
     loading_overlay_->setGeometry(rect());
 }
 
-// ── Load .eproto JSON ─────────────────────────────────────────
-bool ProtocalEditorWidget::loadEproto(const QString& path) {
-  auto result = icd::format::deserialize_repository(
-      std::filesystem::path(path.toStdWString()));
-  if (!result) return false;
-
-  clearAll();
-  repo_ = std::move(*result);
-  refreshAndSelectFrame(!repo_.frames().empty() ? repo_.frames()[0].get() : nullptr);
-
-  saveSnapshot();
-  return true;
+void ProtocalEditorWidget::hideEvent(QHideEvent* event) {
+  QWidget::hideEvent(event);
+  saveSplitterState();
 }
 
 // ── Save .eproto JSON ─────────────────────────────────────────
@@ -485,6 +477,13 @@ void ProtocalEditorWidget::initSignals() {
           this, [this]() {
     setModified(true);
     modified_debounce_->start();
+  });
+
+  // Frame property modified (type/byte order) — update toolbar only
+  connect(property_panel_, &IcdPropertyPanel::frameModified,
+          this, [this]() {
+    setModified(true);
+    updateToolbar();
   });
 
   // New frame

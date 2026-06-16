@@ -186,13 +186,15 @@ void IcdNodeTreeWidget::applyFilter(const QString& text) {
     proxy_->setFilterFixedString(text);
     if (!text.isEmpty()) {
         tree_view_->expandAll();
+    } else {
+        tree_view_->collapseAll();
     }
 }
 
 // ---------------------------------------------------------------------------
 // Load frames and nodes from an icd::Repository
 // ---------------------------------------------------------------------------
-void IcdNodeTreeWidget::loadFromRepository(icd::Repository& repo) {
+void IcdNodeTreeWidget::loadFromRepository(const icd::Repository& repo) {
     // Disconnect BEFORE clear to avoid dangling selectionModel
     if (selection_conn_) {
         disconnect(selection_conn_);
@@ -242,7 +244,7 @@ void IcdNodeTreeWidget::loadFromRepository(icd::Repository& repo) {
 // ---------------------------------------------------------------------------
 // Create a tree item for an icd::Frame
 // ---------------------------------------------------------------------------
-QStandardItem* IcdNodeTreeWidget::createFrameItem(icd::Frame& frame) {
+QStandardItem* IcdNodeTreeWidget::createFrameItem(const icd::Frame& frame) {
     auto display =
         QStringLiteral("%1 (ID: %2)")
             .arg(QString::fromUtf8(frame.name().data(),
@@ -277,7 +279,7 @@ QStandardItem* IcdNodeTreeWidget::createFrameItem(icd::Frame& frame) {
 // ---------------------------------------------------------------------------
 // Create a tree item for an icd::Node (recursive)
 // ---------------------------------------------------------------------------
-QStandardItem* IcdNodeTreeWidget::createNodeItem(icd::Node& node,
+QStandardItem* IcdNodeTreeWidget::createNodeItem(const icd::Node& node,
                                                    int frameId) {
     auto display =
         QStringLiteral("%1 (O:%2, B:%3~%4)")

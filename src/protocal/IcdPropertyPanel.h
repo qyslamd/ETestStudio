@@ -27,6 +27,7 @@ class IcdPropertyPanel : public QWidget {
 
  signals:
   void nodeModified();
+  void frameModified();
 
  private:
   void initUi();

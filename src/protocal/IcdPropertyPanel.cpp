@@ -188,10 +188,14 @@ void IcdPropertyPanel::initUi() {
   dspin_min_ = new QDoubleSpinBox(ext_group_);
   dspin_min_->setRange(-1e9, 1e9);
   dspin_min_->setDecimals(6);
+  dspin_min_->setSpecialValueText(QStringLiteral("(预留)"));
+  dspin_min_->setReadOnly(true);
 
   dspin_max_ = new QDoubleSpinBox(ext_group_);
   dspin_max_->setRange(-1e9, 1e9);
   dspin_max_->setDecimals(6);
+  dspin_max_->setSpecialValueText(QStringLiteral("(预留)"));
+  dspin_max_->setReadOnly(true);
 
   edit_value_text_ = new QLineEdit(ext_group_);
   edit_link_to_ = new QLineEdit(ext_group_);
@@ -450,33 +454,16 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
       emit nodeModified();
     }
   });
-  // Group name (editable QComboBox: fires on both dropdown select and typed edit)
-  cn(combo_group_, &QComboBox::currentTextChanged, [this](const QString& text) {
+  // Group name (editable QComboBox: use editingFinished to avoid per-char trigger)
+  cn(combo_group_->lineEdit(), &QLineEdit::editingFinished, [this]() {
     if (current_node_) {
       auto a = current_node_->attrs();
-      a.group_name = text.toStdString();
+      a.group_name = combo_group_->currentText().toStdString();
       current_node_->setAttrs(std::move(a));
       emit nodeModified();
     }
   });
-  // Min
-  cn(dspin_min_, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this](double val) {
-    if (current_node_) {
-      auto a = current_node_->attrs();
-      a.min = static_cast<float>(val);
-      current_node_->setAttrs(std::move(a));
-      emit nodeModified();
-    }
-  });
-  // Max
-  cn(dspin_max_, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this](double val) {
-    if (current_node_) {
-      auto a = current_node_->attrs();
-      a.max = static_cast<float>(val);
-      current_node_->setAttrs(std::move(a));
-      emit nodeModified();
-    }
-  });
+  // Min/Max are reserved fields — read-only, no signal connection
   // Value text list
   cn(edit_value_text_, &QLineEdit::editingFinished, [this]() {
     if (current_node_) {
@@ -532,14 +519,14 @@ void IcdPropertyPanel::showFrame(icd::Frame& frame) {
      [this](int idx) {
        if (current_frame_) {
          current_frame_->setType(frameTypeFromIndex(idx));
-         emit nodeModified();
+         emit frameModified();
        }
      });
   cn(combo_byte_order_, QOverload<int>::of(&QComboBox::currentIndexChanged),
      [this](int idx) {
        if (current_frame_) {
          current_frame_->setOrder(byteOrderFromIndex(idx));
-         emit nodeModified();
+         emit frameModified();
        }
      });
 }

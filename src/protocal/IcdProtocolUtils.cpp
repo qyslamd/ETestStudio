@@ -4,7 +4,7 @@ namespace etest::protocal::utils {
 
 std::string valueTypeToString(icd::ValueType vt) {
   switch (vt) {
-    case icd::ValueType::boolean:   return "bool";
+    case icd::ValueType::boolean:   return "boolean";
     case icd::ValueType::byte_:     return "uint8";
     case icd::ValueType::bytes:     return "bytes";
     case icd::ValueType::word:      return "uint16";
@@ -80,6 +80,8 @@ icd::Tag tagFromName(const std::string& name) {
   if (name == "sum")              return icd::Tag::sum;
   if (name == "xor")              return icd::Tag::xor_;
   if (name == "signal_in_value")  return icd::Tag::signal_in_value;
+  if (name == "init_value")       return icd::Tag::init_value;
+  if (name == "big_endian_value") return icd::Tag::big_endian_value;
   return icd::Tag::none;
 }
 

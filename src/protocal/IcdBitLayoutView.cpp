@@ -122,6 +122,10 @@ FieldSectionItem::FieldSectionItem(const QString& name, int byte_offset,
       bits_per_row_(bits_per_row) {
   setAcceptHoverEvents(true);
   setCursor(Qt::PointingHandCursor);
+
+  header_font_.setPointSize(10);
+  header_font_.setBold(true);
+  cell_font_.setPointSize(7);
 }
 
 int FieldSectionItem::totalHeight() const {
@@ -232,10 +236,7 @@ void FieldSectionItem::paint(QPainter* painter,
       .arg(name_).arg(range_str);
 
   painter->setPen(highlighted_ ? Qt::white : c_bright);
-  QFont hf = painter->font();
-  hf.setPointSize(10);
-  hf.setBold(true);
-  painter->setFont(hf);
+  painter->setFont(header_font_);
   painter->drawText(QRectF(14, 0, sec_w - 14, sec_hdr),
                     Qt::AlignVCenter | Qt::AlignLeft, header_text);
 
@@ -269,9 +270,7 @@ void FieldSectionItem::paint(QPainter* painter,
       // Bit index text
       int global_bit = global_base + local_idx;
       painter->setPen(dark ? QColor(160, 160, 165) : QColor(130, 130, 135));
-      QFont cell_font = painter->font();
-      cell_font.setPointSize(7);
-      painter->setFont(cell_font);
+      painter->setFont(cell_font_);
       painter->drawText(QRectF(cell_x + 1, cell_y + 1,
                                 cell_size_ - 2, cell_size_ - 2),
                         Qt::AlignCenter, QString::number(global_bit));
@@ -367,13 +366,14 @@ IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent)
 }
 
 FieldSectionItem* IcdBitLayoutScene::addBlock(const QString& name,
-                                               int byte_offset, int start_bit,
-                                               int bit_width,
-                                               const QColor& color) {
+                                                int byte_offset, int start_bit,
+                                                int bit_width,
+                                                const QColor& color) {
   auto* item = new FieldSectionItem(name, byte_offset, start_bit,
                                      bit_width, color, cell_size_, 8);
   item->setPos(left_margin_, next_y_);
   addItem(item);
+  blocks_.append(item);
   next_y_ += item->totalHeight() + section_spacing_;
 
   connect(item, &FieldSectionItem::clicked,
@@ -387,33 +387,28 @@ FieldSectionItem* IcdBitLayoutScene::addBlock(const QString& name,
 }
 
 void IcdBitLayoutScene::clearBlocks() {
-  for (auto* item : items()) {
-    if (auto* block = dynamic_cast<FieldSectionItem*>(item)) {
-      removeItem(block);
-      delete block;
-    }
+  for (auto* block : blocks_) {
+    removeItem(block);
+    delete block;
   }
+  blocks_.clear();
   next_y_ = left_margin_;
+  section_spacing_ = 12;
   selected_name_.clear();
   setSceneRect(0, 0, 100, 100);
 }
 
 void IcdBitLayoutScene::highlightBlock(const QString& name) {
   selected_name_ = name;
-  for (auto* item : items()) {
-    if (auto* block = dynamic_cast<FieldSectionItem*>(item)) {
-      block->setHighlighted(block->name() == name);
-    }
+  for (auto* block : blocks_) {
+    block->setHighlighted(block->name() == name);
   }
 }
 
 void IcdBitLayoutScene::onBlockHovered(const QString& name, bool on) {
-  // Toggle hover state on matching items — never touches highlighted_
-  for (auto* item : items()) {
-    if (auto* block = dynamic_cast<FieldSectionItem*>(item)) {
-      if (block->name() == name) {
-        block->setHovered(on);
-      }
+  for (auto* block : blocks_) {
+    if (block->name() == name) {
+      block->setHovered(on);
     }
   }
   emit blockHovered(name, on);
@@ -439,7 +434,7 @@ void IcdBitLayoutView::initUi() {
 
   tb_layout->addStretch();
   tb_layout->addWidget(
-      new QLabel(QStringLiteral("滚轮缩放 · 中键平移"), this));
+      new QLabel(QStringLiteral("滚轮缩放 · 中键平移 · 右键菜单"), this));
 
   layout->addWidget(toolbar);
 
@@ -551,6 +546,8 @@ FieldSectionItem* IcdBitLayoutView::addBlock(const QString& name,
 void IcdBitLayoutView::clearBlocks() {
   last_frame_ = nullptr;
   scene_->clearBlocks();
+  view_->resetTransform();
+  view_->centerOn(0, 0);
 }
 
 void IcdBitLayoutView::highlightBlock(const QString& name) {
@@ -560,7 +557,7 @@ void IcdBitLayoutView::highlightBlock(const QString& name) {
 bool IcdBitLayoutView::eventFilter(QObject* obj, QEvent* event) {
   if (obj == view_ && event->type() == QEvent::Wheel) {
     auto* wheel = static_cast<QWheelEvent*>(event);
-    double factor = wheel->delta() > 0 ? 1.15 : 1.0 / 1.15;
+    double factor = wheel->angleDelta().y() > 0 ? 1.15 : 1.0 / 1.15;
     view_->scale(factor, factor);
     return true;
   }

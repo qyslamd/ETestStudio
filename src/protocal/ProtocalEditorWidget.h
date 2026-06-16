@@ -58,6 +58,7 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   void showLoadingOverlay();
   void hideLoadingOverlay();
   void resizeEvent(QResizeEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
   // Splitter 状态持久化
   void saveSplitterState();
@@ -67,7 +68,6 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   QFutureWatcher<std::shared_ptr<icd::Repository>>* load_watcher_ = nullptr;
   QTimer* modified_debounce_ = nullptr;
 
-  bool loadEproto(const QString& path);
   bool saveEproto(const QString& path);
   void initUi();
   void initSignals();
@@ -80,7 +80,7 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   void saveSnapshot();
   void restoreSnapshot(const QByteArray& data);
 
-  static constexpr int kMaxSnapshots = 64;
+  static constexpr int kMaxSnapshots = 32;
 
   QSplitter* splitter_ = nullptr;
   IcdNodeTreeWidget* node_tree_ = nullptr;
