@@ -120,8 +120,6 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QLabel* zoom_label_ = nullptr;
 
   QAction* outline_toggle_action_ = nullptr;
-  QAction* add_uut_action_ = nullptr;
-  QAction* add_device_action_ = nullptr;
   QAction* undo_action_ = nullptr;
   QAction* redo_action_ = nullptr;
   QAction* copy_action_ = nullptr;

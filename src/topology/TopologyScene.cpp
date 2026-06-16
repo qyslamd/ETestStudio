@@ -25,7 +25,9 @@ TopologyScene::TopologyScene(TopologyDocument* doc, QObject* parent)
 }
 
 void TopologyScene::loadFromDocument() {
+  bool wasMonitorView = monitor_view_active_;
   clearScene();
+  monitor_view_active_ = wasMonitorView;
 
   for (int i = 0; i < doc_->productCount(); ++i) {
     const auto* prod = doc_->product(i);

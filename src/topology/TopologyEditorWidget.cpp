@@ -295,17 +295,6 @@ void TopologyEditorWidget::initUi() {
   toolbar->setMovable(false);
   toolbar->setFloatable(false);
 
-  // ── 添加组 ──
-  add_uut_action_ = new QAction(topoIcon(QStringLiteral("topo_uut")), QStringLiteral("+ UUT"), this);
-  add_uut_action_->setToolTip(QStringLiteral("添加被测产品"));
-  toolbar->addAction(add_uut_action_);
-
-  add_device_action_ = new QAction(topoIcon(QStringLiteral("topo_device")), QStringLiteral("+ 设备"), this);
-  add_device_action_->setToolTip(QStringLiteral("添加激励设备"));
-  toolbar->addAction(add_device_action_);
-
-  toolbar->addSeparator();
-
   // ── 撤销组（MenuButtonPopup: 主按钮撤销，下拉箭头重做）──
   undo_action_ = new QAction(topoIcon(QStringLiteral("topo_undo")), QStringLiteral("撤销"), this);
   undo_action_->setEnabled(false);
@@ -453,10 +442,6 @@ void TopologyEditorWidget::initUi() {
 }
 
 void TopologyEditorWidget::initSignals() {
-  connect(add_uut_action_, &QAction::triggered, this, [this]() { onAddUut(); });
-  connect(add_device_action_, &QAction::triggered, this,
-          [this]() { onAddDevice(); });
-
   connect(zoom_in_action_, &QAction::triggered, view_, &TopologyView::zoomIn);
   connect(zoom_out_action_, &QAction::triggered, view_, &TopologyView::zoomOut);
   connect(zoom_reset_action_, &QAction::triggered, view_,
@@ -585,6 +570,9 @@ void TopologyEditorWidget::initSignals() {
     doc_->undoStack()->push(new UnTapConnectionCommand(doc_, monIdx, tapIdx));
   });
 
+  connect(doc_, &TopologyDocument::monitorChanged, this,
+          [this](int) { scene_->updateTapVisuals(); });
+
   auto* undoStack = doc_->undoStack();
   connect(undoStack, &QUndoStack::indexChanged, this, [this]() {
     // Save selection indices before rebuild
@@ -658,9 +646,6 @@ void TopologyEditorWidget::reloadToolbarIcons() {
   auto icon = [](const QString& name) {
     return etest::app::AppIconProvider::instance().icon(name);
   };
-  add_uut_action_->setIcon(icon(QStringLiteral("topo_uut")));
-  add_device_action_->setIcon(icon(QStringLiteral("topo_device")));
-
   align_left_action_->setIcon(icon(QStringLiteral("topo_align_left")));
   align_hcenter_action_->setIcon(icon(QStringLiteral("topo_align_center")));
   align_right_action_->setIcon(icon(QStringLiteral("topo_align_right")));
