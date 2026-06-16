@@ -3,24 +3,27 @@
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
+#include <QDockWidget>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QFrame>
-#include <QHBoxLayout>
+#include <QHideEvent>
 #include <QIcon>
+#include <QMenuBar>
+#include <QStatusBar>
 #include <QImage>
 #include <QJsonArray>
 #include <QPainter>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QMainWindow>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QResizeEvent>
 #include <QShortcut>
-#include <QSplitter>
 #include <QMenu>
+#include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -46,7 +49,8 @@ using namespace etest::core::config;
 
 namespace etest::topology {
 
-TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QFrame(parent) {
+TopologyEditorWidget::TopologyEditorWidget(QWidget* parent)
+    : QMainWindow(parent) {
   setAutoFillBackground(true);
 
   doc_ = new TopologyDocument(this);
@@ -60,6 +64,7 @@ TopologyEditorWidget::TopologyEditorWidget(QWidget* parent) : QFrame(parent) {
 }
 
 TopologyEditorWidget::~TopologyEditorWidget() {
+  saveWindowLayout();
   // 断开 undoStack 信号，防止在析构过程中触发回调访问已释放的数据
   if (doc_) {
     auto* stack = doc_->undoStack();
@@ -68,24 +73,40 @@ TopologyEditorWidget::~TopologyEditorWidget() {
   }
 }
 
-void TopologyEditorWidget::saveSplitterState() {
-  if (!splitter_ || !left_splitter_)
-    return;
-  auto& cfg = etest::core::config::ConfigManager::instance();
-  cfg.set(CONFIG_TOPOLOGY_SPLITTER_STATE, splitter_->saveState());
-  cfg.set(CONFIG_TOPOLOGY_LEFT_SPLITTER_STATE, left_splitter_->saveState());
+void TopologyEditorWidget::setEmbeddedMode(bool embedded) {
+  embedded_ = embedded;
+  if (embedded) {
+    menuBar()->hide();
+  } else {
+    menuBar()->show();
+  }
 }
 
-void TopologyEditorWidget::restoreSplitterState() {
-  if (!splitter_ || !left_splitter_)
-    return;
-  auto& cfg = etest::core::config::ConfigManager::instance();
-  QByteArray state = cfg.get<QByteArray>(CONFIG_TOPOLOGY_SPLITTER_STATE);
+void TopologyEditorWidget::showStatusMessage(const QString& msg) {
+  if (embedded_) {
+    auto* w = window();
+    if (auto* mainWin = qobject_cast<QMainWindow*>(w))
+      mainWin->statusBar()->showMessage(msg, 3000);
+  } else {
+    statusBar()->showMessage(msg, 3000);
+  }
+}
+
+void TopologyEditorWidget::saveWindowLayout() {
+  auto& cfg = ConfigManager::instance();
+  cfg.set(CONFIG_TOPOLOGY_WINDOW_STATE, saveState());
+}
+
+void TopologyEditorWidget::restoreWindowLayout() {
+  auto& cfg = ConfigManager::instance();
+  QByteArray state = cfg.get<QByteArray>(CONFIG_TOPOLOGY_WINDOW_STATE);
   if (!state.isEmpty())
-    splitter_->restoreState(state);
-  QByteArray leftState = cfg.get<QByteArray>(CONFIG_TOPOLOGY_LEFT_SPLITTER_STATE);
-  if (!leftState.isEmpty())
-    left_splitter_->restoreState(leftState);
+    restoreState(state);
+}
+
+void TopologyEditorWidget::hideEvent(QHideEvent* event) {
+  QMainWindow::hideEvent(event);
+  saveWindowLayout();
 }
 
 // ── IEditor interface ──────────────────────────────────────────
@@ -256,9 +277,9 @@ void TopologyEditorWidget::hideLoadingOverlay() {
 }
 
 void TopologyEditorWidget::resizeEvent(QResizeEvent* event) {
-  QFrame::resizeEvent(event);
+  QMainWindow::resizeEvent(event);
   if (loading_overlay_ && loading_overlay_->isVisible())
-    loading_overlay_->setGeometry(rect());
+    loading_overlay_->setGeometry(centralWidget()->rect());
 }
 
 // ── Constructor helpers ────────────────────────────────────────
@@ -268,230 +289,167 @@ void TopologyEditorWidget::initUi() {
     return etest::app::AppIconProvider::instance().icon(name);
   };
 
-  auto* mainLayout = new QVBoxLayout(this);
-  mainLayout->setContentsMargins(0, 0, 0, 0);
-  mainLayout->setSpacing(0);
+  // ── QToolBar ──
+  auto* toolbar = addToolBar(QStringLiteral("拓扑工具栏"));
+  toolbar->setObjectName(QStringLiteral("topologyToolbar"));
+  toolbar->setMovable(false);
+  toolbar->setFloatable(false);
 
-  auto* toolbarFrame = new QFrame(this);
-  toolbarFrame->setObjectName(QStringLiteral("topologyToolbar"));
-  auto* toolbarLayout = new QHBoxLayout(toolbarFrame);
-  toolbarLayout->setContentsMargins(4, 4, 4, 4);
-
-  add_uut_action_ = new QAction(QStringLiteral("+ UUT"), this);
-  add_uut_action_->setIcon(topoIcon(QStringLiteral("topo_uut")));
+  // ── 添加组 ──
+  add_uut_action_ = new QAction(topoIcon(QStringLiteral("topo_uut")), QStringLiteral("+ UUT"), this);
   add_uut_action_->setToolTip(QStringLiteral("添加被测产品"));
-  auto* addUutBtn = new QToolButton(toolbarFrame);
-  addUutBtn->setDefaultAction(add_uut_action_);
-  toolbarLayout->addWidget(addUutBtn);
+  toolbar->addAction(add_uut_action_);
 
-  add_device_action_ = new QAction(QStringLiteral("+ 设备"), this);
-  add_device_action_->setIcon(topoIcon(QStringLiteral("topo_device")));
+  add_device_action_ = new QAction(topoIcon(QStringLiteral("topo_device")), QStringLiteral("+ 设备"), this);
   add_device_action_->setToolTip(QStringLiteral("添加激励设备"));
-  auto* addDeviceBtn = new QToolButton(toolbarFrame);
-  addDeviceBtn->setDefaultAction(add_device_action_);
-  toolbarLayout->addWidget(addDeviceBtn);
+  toolbar->addAction(add_device_action_);
 
-  // ── 排列 (Align) ──
-  auto* alignBtn = new QToolButton(toolbarFrame);
-  alignBtn->setText(QStringLiteral("排列"));
-  alignBtn->setPopupMode(QToolButton::InstantPopup);
-  auto* alignMenu = new QMenu(alignBtn);
-  align_left_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_left")), QStringLiteral("左对齐"));
-  align_hcenter_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_center")), QStringLiteral("水平居中"));
-  align_right_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_right")), QStringLiteral("右对齐"));
-  alignMenu->addSeparator();
-  align_top_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_top")), QStringLiteral("顶端对齐"));
-  align_vcenter_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_middle")), QStringLiteral("垂直居中"));
-  align_bottom_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_bottom")), QStringLiteral("底端对齐"));
-  alignBtn->setMenu(alignMenu);
-  toolbarLayout->addWidget(alignBtn);
+  toolbar->addSeparator();
 
-  // ── 位置 (Distribute) ──
-  auto* distributeBtn = new QToolButton(toolbarFrame);
-  distributeBtn->setText(QStringLiteral("位置"));
-  distributeBtn->setPopupMode(QToolButton::InstantPopup);
-  auto* distributeMenu = new QMenu(distributeBtn);
-  distribute_horizontal_action_ = distributeMenu->addAction(topoIcon(QStringLiteral("topo_distribute_horizontal")), QStringLiteral("横向分布"));
-  distribute_vertical_action_ = distributeMenu->addAction(topoIcon(QStringLiteral("topo_distribute_vertical")), QStringLiteral("纵向分布"));
-  distributeBtn->setMenu(distributeMenu);
-  toolbarLayout->addWidget(distributeBtn);
+  // ── 撤销组（MenuButtonPopup: 主按钮撤销，下拉箭头重做）──
+  undo_action_ = new QAction(topoIcon(QStringLiteral("topo_undo")), QStringLiteral("撤销"), this);
+  undo_action_->setEnabled(false);
+  redo_action_ = new QAction(topoIcon(QStringLiteral("topo_redo")), QStringLiteral("重做"), this);
+  redo_action_->setEnabled(false);
+  {
+    auto* undoBtn = new QToolButton(toolbar);
+    undoBtn->setDefaultAction(undo_action_);
+    undoBtn->setPopupMode(QToolButton::MenuButtonPopup);
+    auto* undoMenu = new QMenu(undoBtn);
+    undoMenu->addAction(redo_action_);
+    undoBtn->setMenu(undoMenu);
+    toolbar->addWidget(undoBtn);
+  }
 
-  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
+  toolbar->addSeparator();
 
+  // ── 编辑组（暂用文字按钮）──
+  copy_action_ = new QAction(QStringLiteral("复制"), this);
+  copy_action_->setToolTip(QStringLiteral("复制选中元素 (Ctrl+C)"));
+  copy_action_->setEnabled(false);
+  toolbar->addAction(copy_action_);
+
+  paste_action_ = new QAction(QStringLiteral("粘贴"), this);
+  paste_action_->setToolTip(QStringLiteral("粘贴 (Ctrl+V)"));
+  paste_action_->setEnabled(false);
+  toolbar->addAction(paste_action_);
+
+  delete_action_ = new QAction(QStringLiteral("删除"), this);
+  delete_action_->setToolTip(QStringLiteral("删除选中元素 (Delete)"));
+  delete_action_->setEnabled(false);
+  toolbar->addAction(delete_action_);
+
+  toolbar->addSeparator();
+
+  // ── 排列/分布组 ──
+  {
+    auto* alignBtn = new QToolButton(toolbar);
+    alignBtn->setText(QStringLiteral("排列"));
+    alignBtn->setPopupMode(QToolButton::InstantPopup);
+    auto* alignMenu = new QMenu(alignBtn);
+    align_left_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_left")), QStringLiteral("左对齐"));
+    align_hcenter_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_center")), QStringLiteral("水平居中"));
+    align_right_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_right")), QStringLiteral("右对齐"));
+    alignMenu->addSeparator();
+    align_top_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_top")), QStringLiteral("顶端对齐"));
+    align_vcenter_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_middle")), QStringLiteral("垂直居中"));
+    align_bottom_action_ = alignMenu->addAction(topoIcon(QStringLiteral("topo_align_bottom")), QStringLiteral("底端对齐"));
+    alignBtn->setMenu(alignMenu);
+    toolbar->addWidget(alignBtn);
+  }
+  {
+    auto* distributeBtn = new QToolButton(toolbar);
+    distributeBtn->setText(QStringLiteral("分布"));
+    distributeBtn->setPopupMode(QToolButton::InstantPopup);
+    auto* distributeMenu = new QMenu(distributeBtn);
+    distribute_horizontal_action_ = distributeMenu->addAction(topoIcon(QStringLiteral("topo_distribute_horizontal")), QStringLiteral("横向分布"));
+    distribute_vertical_action_ = distributeMenu->addAction(topoIcon(QStringLiteral("topo_distribute_vertical")), QStringLiteral("纵向分布"));
+    distributeBtn->setMenu(distributeMenu);
+    toolbar->addWidget(distributeBtn);
+  }
+
+  toolbar->addSeparator();
+
+  // ── 缩放组 ──
   zoom_in_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_in")), QStringLiteral("放大"), this);
-  auto* zoomInBtn = new QToolButton(toolbarFrame);
-  zoomInBtn->setDefaultAction(zoom_in_action_);
-  toolbarLayout->addWidget(zoomInBtn);
-
+  toolbar->addAction(zoom_in_action_);
   zoom_out_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_out")), QStringLiteral("缩小"), this);
-  auto* zoomOutBtn = new QToolButton(toolbarFrame);
-  zoomOutBtn->setDefaultAction(zoom_out_action_);
-  toolbarLayout->addWidget(zoomOutBtn);
-
+  toolbar->addAction(zoom_out_action_);
   zoom_reset_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_reset")), QStringLiteral("重置"), this);
-  auto* zoomResetBtn = new QToolButton(toolbarFrame);
-  zoomResetBtn->setDefaultAction(zoom_reset_action_);
-  toolbarLayout->addWidget(zoomResetBtn);
+  toolbar->addAction(zoom_reset_action_);
 
-  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
+  // 缩放比例标签
+  zoom_label_ = new QLabel(QStringLiteral("100%"), this);
+  zoom_label_->setObjectName(QStringLiteral("topologyZoomLabel"));
+  toolbar->addWidget(zoom_label_);
 
-  // ── Monitor view toggle ──
+  toolbar->addSeparator();
+
+  // ── 监听器组（MenuButtonPopup: 主按钮视图切换，下拉挂载）──
   monitor_view_action_ = new QAction(topoIcon(QStringLiteral("topo_tap")),
-                                     QStringLiteral("监听器视图"), this);
+                                     QStringLiteral("监听器"), this);
   monitor_view_action_->setToolTip(QStringLiteral("显示/隐藏监听器挂载虚线"));
   monitor_view_action_->setCheckable(true);
-  monitor_view_action_->setEnabled(true);
-  auto* monitorViewBtn = new QToolButton(toolbarFrame);
-  monitorViewBtn->setDefaultAction(monitor_view_action_);
-  toolbarLayout->addWidget(monitorViewBtn);
-
-  // Mount-to-connection button (only active when monitor view ON + MonitorItem selected)
   mount_action_ = new QAction(topoIcon(QStringLiteral("topo_tap")),
                               QStringLiteral("挂载到连线"), this);
   mount_action_->setToolTip(QStringLiteral("将选中监听器挂载到连线"));
   mount_action_->setEnabled(false);
-  auto* mountBtn = new QToolButton(toolbarFrame);
-  mountBtn->setDefaultAction(mount_action_);
-  toolbarLayout->addWidget(mountBtn);
+  {
+    auto* monitorBtn = new QToolButton(toolbar);
+    monitorBtn->setDefaultAction(monitor_view_action_);
+    monitorBtn->setPopupMode(QToolButton::MenuButtonPopup);
+    auto* monitorMenu = new QMenu(monitorBtn);
+    monitorMenu->addAction(mount_action_);
+    monitorBtn->setMenu(monitorMenu);
+    toolbar->addWidget(monitorBtn);
+  }
 
-  // Monitor view toggle → show/hide tap lines
-  connect(monitor_view_action_, &QAction::triggered, this, [this](bool checked) {
-    scene_->setMonitorViewActive(checked);
-    if (!checked) {
-      mount_action_->setEnabled(false);
-      if (scene_->isTapModeActive())
-        scene_->cancelTapMode();
-      status_label_->setText(QStringLiteral("监听器视图已关闭"));
-    } else {
-      status_label_->setText(QStringLiteral("监听器视图已开启 — 选中监听器后可挂载"));
-      // Refresh mount state in case a MonitorItem is already selected
-      bool hasMonitor = false;
-      for (auto* item : scene_->selectedItems()) {
-        if (qgraphicsitem_cast<MonitorItem*>(item)) {
-          hasMonitor = true;
-          break;
-        }
-      }
-      mount_action_->setEnabled(hasMonitor);
-    }
-  });
+  toolbar->addSeparator();
 
-  // Mount button → start tap mode
-  connect(mount_action_, &QAction::triggered, this, [this]() {
-    auto selected = scene_->selectedItems();
-    for (auto* item : selected) {
-      if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
-        scene_->startTapMode(mon->monitorIndex());
-        status_label_->setText(QStringLiteral("点击一条连线来挂载监听器"));
-        return;
-      }
-    }
-  });
-
-  // Selection/state changes update button enabled states
-  connect(scene_, &QGraphicsScene::selectionChanged, this, [this]() {
-    bool viewOn = scene_->isMonitorViewActive();
-    bool hasSelectedMonitor = false;
-    if (viewOn) {
-      auto selected = scene_->selectedItems();
-      for (auto* item : selected) {
-        if (qgraphicsitem_cast<MonitorItem*>(item)) {
-          hasSelectedMonitor = true;
-          break;
-        }
-      }
-    }
-    mount_action_->setEnabled(viewOn && hasSelectedMonitor && !scene_->isTapModeActive());
-  });
-
-  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
-
+  // ── 导出 ──
   export_image_action_ = new QAction(topoIcon(QStringLiteral("topo_export")), QStringLiteral("导出图片"), this);
   export_image_action_->setToolTip(QStringLiteral("导出拓扑图为 PNG"));
-  auto* exportBtn = new QToolButton(toolbarFrame);
-  exportBtn->setDefaultAction(export_image_action_);
-  toolbarLayout->addWidget(exportBtn);
+  toolbar->addAction(export_image_action_);
 
-  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
-
-  undo_action_ = new QAction(topoIcon(QStringLiteral("topo_undo")), QStringLiteral("撤销"), this);
-  // 主窗口通过 IEditor 接口统一管理撤销/重做快捷键
-  undo_action_->setEnabled(false);
-  auto* undoBtn = new QToolButton(toolbarFrame);
-  undoBtn->setDefaultAction(undo_action_);
-  toolbarLayout->addWidget(undoBtn);
-
-  redo_action_ = new QAction(topoIcon(QStringLiteral("topo_redo")), QStringLiteral("重做"), this);
-  redo_action_->setEnabled(false);
-  auto* redoBtn = new QToolButton(toolbarFrame);
-  redoBtn->setDefaultAction(redo_action_);
-  toolbarLayout->addWidget(redoBtn);
-
-  toolbarLayout->addWidget(new QLabel(QStringLiteral("  |  "), toolbarFrame));
+  // ── 弹簧 + 大纲（右对齐）──
+  auto* spacer = new QWidget(toolbar);
+  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(spacer);
 
   outline_toggle_action_ = new QAction(topoIcon(QStringLiteral("topo_uut")),
                                        QStringLiteral("大纲"), this);
   outline_toggle_action_->setCheckable(true);
   outline_toggle_action_->setChecked(true);
   outline_toggle_action_->setToolTip(QStringLiteral("显示/隐藏导航大纲"));
-  auto* outlineBtn = new QToolButton(toolbarFrame);
-  outlineBtn->setDefaultAction(outline_toggle_action_);
-  toolbarLayout->addWidget(outlineBtn);
+  toolbar->addAction(outline_toggle_action_);
 
-  toolbarLayout->addStretch();
-  mainLayout->addWidget(toolbarFrame);
-
+  // ── Dock Widgets ──
   device_palette_ = new DevicePaletteWidget(this);
   device_palette_->setObjectName(QStringLiteral("topologyDevicePalette"));
+
+  device_palette_dock_ = new QDockWidget(QStringLiteral("设备面板"), this);
+  device_palette_dock_->setObjectName(QStringLiteral("topologyDevicePaletteDock"));
+  device_palette_dock_->setWidget(device_palette_);
+  addDockWidget(Qt::LeftDockWidgetArea, device_palette_dock_);
+
   outline_widget_ = new TopologyOutlineWidget(this);
   outline_widget_->setMinimumWidth(160);
   outline_widget_->setObjectName(QStringLiteral("topologyOutline"));
 
-  left_splitter_ = new QSplitter(Qt::Vertical, this);
-  left_splitter_->addWidget(device_palette_);
-  left_splitter_->addWidget(outline_widget_);
-  left_splitter_->setStretchFactor(0, 1);
-  left_splitter_->setStretchFactor(1, 1);
-  // Subtle border for visual panel separation
-  left_splitter_->setStyleSheet(QStringLiteral(
-      "QWidget#topologyDevicePalette, QWidget#topologyOutline {"
-      "  border: 1px solid palette(mid);"
-      "}"
-      "QWidget#topologyDevicePalette:focus, QWidget#topologyOutline:focus {"
-      "  border: 1px solid palette(highlight);"
-      "}"
-      "QLineEdit {"
-      "  border: 1px solid palette(mid);"
-      "  padding: 2px 4px;"
-      "}"
-      "QLineEdit:focus {"
-      "  border: 1px solid palette(highlight);"
-      "}"));
+  outline_dock_ = new QDockWidget(QStringLiteral("导航大纲"), this);
+  outline_dock_->setObjectName(QStringLiteral("topologyOutlineDock"));
+  outline_dock_->setWidget(outline_widget_);
+  addDockWidget(Qt::LeftDockWidgetArea, outline_dock_);
 
-  splitter_ = new QSplitter(Qt::Horizontal, this);
-  splitter_->addWidget(left_splitter_);
-  splitter_->addWidget(view_);
-  splitter_->addWidget(property_panel_);
-  splitter_->setStretchFactor(0, 0);  // left panel — fixed width
-  splitter_->setStretchFactor(1, 4);  // view — stretch
-  splitter_->setStretchFactor(2, 1);  // property panel — stretch less
-  splitter_->setSizes({360, 800, 280});
-  mainLayout->addWidget(splitter_, 1);
+  property_dock_ = new QDockWidget(QStringLiteral("属性面板"), this);
+  property_dock_->setObjectName(QStringLiteral("topologyPropertyDock"));
+  property_dock_->setWidget(property_panel_);
+  addDockWidget(Qt::RightDockWidgetArea, property_dock_);
 
-  restoreSplitterState();
+  // 中央视图
+  setCentralWidget(view_);
 
-  auto* statusFrame = new QFrame(this);
-  statusFrame->setObjectName(QStringLiteral("topologyStatusBar"));
-  auto* statusLayout = new QHBoxLayout(statusFrame);
-  statusLayout->setContentsMargins(8, 2, 8, 2);
-  status_label_ = new QLabel(QStringLiteral("缩放: 100%"), statusFrame);
-  statusLayout->addWidget(status_label_);
-  statusLayout->addStretch();
-  mainLayout->addWidget(statusFrame);
-
-  // 拖动分割条时即时保存布局
-  connect(splitter_, &QSplitter::splitterMoved, this, [this]() { saveSplitterState(); });
-  connect(left_splitter_, &QSplitter::splitterMoved, this, [this]() { saveSplitterState(); });
+  restoreWindowLayout();
 }
 
 void TopologyEditorWidget::initSignals() {
@@ -509,8 +467,8 @@ void TopologyEditorWidget::initSignals() {
 
   connect(view_, &TopologyView::zoomChanged, this,
           [this](qreal zoom) {
-            status_label_->setText(
-                QStringLiteral("缩放: %1%").arg(static_cast<int>(zoom * 100)));
+            zoom_label_->setText(
+                QStringLiteral("%1%").arg(static_cast<int>(zoom * 100)));
           });
 
   connect(undo_action_, &QAction::triggered, this,
@@ -538,6 +496,61 @@ void TopologyEditorWidget::initSignals() {
   connect(scene_, &QGraphicsScene::selectionChanged, this,
           &TopologyEditorWidget::updateAlignDistributeActions);
 
+  // 编辑按钮 enable 状态 + 监听器挂载按钮状态
+  connect(scene_, &QGraphicsScene::selectionChanged, this, [this]() {
+    auto selected = scene_->selectedItems();
+    bool hasSelection = !selected.isEmpty();
+    // 可删除：选中了非 PortItem/DevicePortItem 的元素，或有端口选中
+    delete_action_->setEnabled(hasSelection);
+    // 可复制：有选中元素
+    copy_action_->setEnabled(hasSelection);
+    // 监听器挂载状态
+    bool viewOn = scene_->isMonitorViewActive();
+    bool hasSelectedMonitor = false;
+    if (viewOn) {
+      for (auto* item : selected) {
+        if (qgraphicsitem_cast<MonitorItem*>(item)) {
+          hasSelectedMonitor = true;
+          break;
+        }
+      }
+    }
+    mount_action_->setEnabled(viewOn && hasSelectedMonitor && !scene_->isTapModeActive());
+  });
+
+  // 监听器视图切换
+  connect(monitor_view_action_, &QAction::triggered, this, [this](bool checked) {
+    scene_->setMonitorViewActive(checked);
+    if (!checked) {
+      mount_action_->setEnabled(false);
+      if (scene_->isTapModeActive())
+        scene_->cancelTapMode();
+      showStatusMessage(QStringLiteral("监听器视图已关闭"));
+    } else {
+      showStatusMessage(QStringLiteral("监听器视图已开启 — 选中监听器后可挂载"));
+      bool hasMonitor = false;
+      for (auto* item : scene_->selectedItems()) {
+        if (qgraphicsitem_cast<MonitorItem*>(item)) {
+          hasMonitor = true;
+          break;
+        }
+      }
+      mount_action_->setEnabled(hasMonitor);
+    }
+  });
+
+  // 挂载到连线
+  connect(mount_action_, &QAction::triggered, this, [this]() {
+    auto selected = scene_->selectedItems();
+    for (auto* item : selected) {
+      if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
+        scene_->startTapMode(mon->monitorIndex());
+        showStatusMessage(QStringLiteral("点击一条连线来挂载监听器"));
+        return;
+      }
+    }
+  });
+
   connect(view_, &TopologyView::addUutRequested, this,
           &TopologyEditorWidget::onAddUut);
   connect(view_, &TopologyView::addDeviceRequested, this,
@@ -563,8 +576,10 @@ void TopologyEditorWidget::initSignals() {
   // ── Outline navigation ──
   connect(outline_widget_, &TopologyOutlineWidget::navigateRequested, this,
           &TopologyEditorWidget::onOutlineNavigate);
-  connect(outline_toggle_action_, &QAction::toggled, outline_widget_,
+  connect(outline_toggle_action_, &QAction::toggled, outline_dock_,
           &QWidget::setVisible);
+  connect(outline_dock_, &QDockWidget::visibilityChanged,
+          outline_toggle_action_, &QAction::setChecked);
   connect(outline_widget_, &TopologyOutlineWidget::unmountRequested, this,
           [this](int monIdx, int tapIdx) {
     doc_->undoStack()->push(new UnTapConnectionCommand(doc_, monIdx, tapIdx));
@@ -619,6 +634,17 @@ void TopologyEditorWidget::initSignals() {
   auto* pasteShortcut = new QShortcut(QKeySequence::Paste, this);
   connect(pasteShortcut, &QShortcut::activated, this,
           &TopologyEditorWidget::onPaste);
+
+  // 编辑按钮信号连接
+  connect(copy_action_, &QAction::triggered, this,
+          &TopologyEditorWidget::onCopy);
+  connect(paste_action_, &QAction::triggered, this,
+          &TopologyEditorWidget::onPaste);
+  connect(delete_action_, &QAction::triggered, this, [this]() {
+    auto selected = scene_->selectedItems();
+    if (!selected.isEmpty())
+      onDeleteItem(selected.first());
+  });
 
   updateAlignDistributeActions();
 
@@ -742,7 +768,7 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
 
   auto* cmd = new AddProductCommand(doc_, prod);
   doc_->undoStack()->push(cmd);
-  status_label_->setText(QStringLiteral("已添加 UUT: %1").arg(prod.name));
+  showStatusMessage(QStringLiteral("已添加 UUT: %1").arg(prod.name));
 
   // 居中到新添加的 Item
   if (auto* uut = scene_->findUutItem(cmd->productIndex())) {
@@ -764,7 +790,7 @@ void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
 
   auto* cmd = new AddDeviceCommand(doc_, dev);
   doc_->undoStack()->push(cmd);
-  status_label_->setText(QStringLiteral("已添加设备: %1").arg(dev.name));
+  showStatusMessage(QStringLiteral("已添加设备: %1").arg(dev.name));
 
   // 居中到新添加的 Item
   if (auto* devItem = scene_->findDeviceItem(cmd->deviceIndex())) {
@@ -795,7 +821,7 @@ void TopologyEditorWidget::onDropDevice(const QString& deviceType,
 
   auto* cmd = new AddDeviceCommand(doc_, dev);
   doc_->undoStack()->push(cmd);
-  status_label_->setText(
+  showStatusMessage(
       QStringLiteral("已拖放添加设备: %1").arg(dev.name));
 
   // 居中到新添加的 Item
@@ -816,7 +842,7 @@ void TopologyEditorWidget::onDropMonitor(const QString& deviceType,
 
   auto* cmd = new AddMonitorCommand(doc_, mon);
   doc_->undoStack()->push(cmd);
-  status_label_->setText(
+  showStatusMessage(
       QStringLiteral("已拖放添加监听器: %1").arg(mon.name));
 
   // 居中到新添加的 Monitor
@@ -833,19 +859,19 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
   if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
     auto* cmd = new RemoveProductCommand(doc_, uut->productIndex());
     doc_->undoStack()->push(cmd);
-    status_label_->setText(QStringLiteral("已删除 UUT"));
+    showStatusMessage(QStringLiteral("已删除 UUT"));
   } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
     auto* cmd = new RemoveDeviceCommand(doc_, dev->deviceIndex());
     doc_->undoStack()->push(cmd);
-    status_label_->setText(QStringLiteral("已删除设备"));
+    showStatusMessage(QStringLiteral("已删除设备"));
   } else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
     auto* cmd = new RemoveMonitorCommand(doc_, mon->monitorIndex());
     doc_->undoStack()->push(cmd);
-    status_label_->setText(QStringLiteral("已删除监听器"));
+    showStatusMessage(QStringLiteral("已删除监听器"));
   } else if (auto* devPort = qgraphicsitem_cast<DevicePortItem*>(item)) {
     doc_->undoStack()->push(new RemoveDevicePortCommand(
         doc_, devPort->deviceIndex(), devPort->portIndex()));
-    status_label_->setText(QStringLiteral("已删除设备端口"));
+    showStatusMessage(QStringLiteral("已删除设备端口"));
   } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
     auto* src = conn->sourcePort();
     auto* tgt = conn->targetDevice();
@@ -865,7 +891,7 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
         }
       }
     }
-    status_label_->setText(QStringLiteral("已删除连线"));
+    showStatusMessage(QStringLiteral("已删除连线"));
   }
 }
 
@@ -881,7 +907,7 @@ void TopologyEditorWidget::onSaveTemplate(QGraphicsItem* item) {
     return;
 
   if (DeviceTemplateManager::saveTemplate(doc_, dev->deviceIndex(), path)) {
-    status_label_->setText(QStringLiteral("模板已保存: %1").arg(path));
+    showStatusMessage(QStringLiteral("模板已保存: %1").arg(path));
   } else {
     QMessageBox::warning(this, QStringLiteral("错误"),
                          QStringLiteral("保存模板失败"));
@@ -1135,7 +1161,7 @@ void TopologyEditorWidget::onCopy() {
   auto* mime = new QMimeData();
   mime->setData(QLatin1String(kClipboardMime), data);
   clip->setMimeData(mime);
-  status_label_->setText(QStringLiteral("已复制 %1 个 UUT, %2 个设备, %3 个监听器")
+  showStatusMessage(QStringLiteral("已复制 %1 个 UUT, %2 个设备, %3 个监听器")
                              .arg(prodsArr.size())
                              .arg(devsArr.size())
                              .arg(monsArr.size()));
@@ -1271,7 +1297,7 @@ void TopologyEditorWidget::onPaste() {
     doc_->undoStack()->push(cmd);
   }
 
-  status_label_->setText(
+  showStatusMessage(
       QStringLiteral("已粘贴 %1 个 UUT, %2 个设备, %3 个监听器")
           .arg(prodsArr.size())
           .arg(devsArr.size())
@@ -1353,7 +1379,7 @@ void TopologyEditorWidget::onExportImage() {
   painter.end();
 
   if (image.save(path, "PNG")) {
-    status_label_->setText(QStringLiteral("拓扑图已导出: %1").arg(path));
+    showStatusMessage(QStringLiteral("拓扑图已导出: %1").arg(path));
   } else {
     QMessageBox::warning(this, QStringLiteral("错误"),
                          QStringLiteral("导出图片失败"));
@@ -1411,7 +1437,7 @@ void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
 
   auto* cmd = new AddDeviceCommand(doc_, dev);
   doc_->undoStack()->push(cmd);
-  status_label_->setText(QStringLiteral("已从模板添加设备: %1").arg(dev.name));
+  showStatusMessage(QStringLiteral("已从模板添加设备: %1").arg(dev.name));
 }
 
 // ── Align / Distribute ──────────────────────────────────────────
@@ -1504,7 +1530,7 @@ void TopologyEditorWidget::doAlign(Align alignType) {
 
   if (macro->childCount() > 0) {
     doc_->undoStack()->push(macro);
-    status_label_->setText(
+    showStatusMessage(
         QStringLiteral("排列: %1").arg(macro->text()));
   } else {
     delete macro;
@@ -1597,7 +1623,7 @@ void TopologyEditorWidget::doDistribute(Distribute distType) {
 
   if (macro->childCount() > 0) {
     doc_->undoStack()->push(macro);
-    status_label_->setText(distType == Distribute::Horizontal ? QStringLiteral("横向分布")
+    showStatusMessage(distType == Distribute::Horizontal ? QStringLiteral("横向分布")
                                          : QStringLiteral("纵向分布"));
   } else {
     delete macro;

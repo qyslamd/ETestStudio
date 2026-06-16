@@ -110,6 +110,7 @@ void EditorManager::registerEditorTypes() {
       "topology",
       [](const QString& id, QWidget* parent) {
         auto* editor = new etest::topology::TopologyEditorWidget(parent);
+        editor->setEmbeddedMode(true);
         return editor;
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {

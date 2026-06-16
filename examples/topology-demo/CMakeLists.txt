@@ -7,8 +7,6 @@ endif()
 
 add_executable(${TARGET_NAME}
     main.cpp
-    MainWindow.h
-    MainWindow.cpp
     ${CMAKE_SOURCE_DIR}/src/app/resource.qrc
 )
 

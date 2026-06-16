@@ -1,16 +1,16 @@
 #pragma once
 
-#include <QFrame>
 #include <QFutureWatcher>
 #include <QJsonDocument>
+#include <QMainWindow>
 
 #include <memory>
 
 #include "api/IEditor.h"
 
 class QAction;
+class QDockWidget;
 class QResizeEvent;
-class QSplitter;
 class QGraphicsItem;
 class QLabel;
 
@@ -23,7 +23,7 @@ class PropertyPanelWidget;
 class TopologyOutlineWidget;
 class DevicePaletteWidget;
 
-class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
+class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   Q_OBJECT
  public:
   explicit TopologyEditorWidget(QWidget* parent = nullptr);
@@ -50,6 +50,9 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   TopologyDocument* document() const;
   void reloadScene();
   void setEditorId(const QString& newId);
+
+  // 嵌入模式（IDE 中隐藏 menuBar）
+  void setEmbeddedMode(bool embedded);
 
  signals:
   void editorTitleChanged(const QString& title);
@@ -84,15 +87,20 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   void buildDefaultDocument();
   void rebuildSceneAndRestoreSelection();
 
-  // Splitter 状态持久化
-  void saveSplitterState();
-  void restoreSplitterState();
+  // 窗口布局持久化
+  void saveWindowLayout();
+  void restoreWindowLayout();
+
+  // 状态消息
+  void showStatusMessage(const QString& msg);
 
   // 异步加载
   void showLoadingOverlay();
   void hideLoadingOverlay();
   void resizeEvent(QResizeEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
+  bool embedded_ = false;
   QWidget* loading_overlay_ = nullptr;
   QFutureWatcher<QJsonDocument>* load_watcher_ = nullptr;
 
@@ -102,15 +110,23 @@ class TopologyEditorWidget : public QFrame, public etest::app::IEditor {
   PropertyPanelWidget* property_panel_;
   DevicePaletteWidget* device_palette_ = nullptr;
   TopologyOutlineWidget* outline_widget_ = nullptr;
-  QAction* outline_toggle_action_ = nullptr;
-  QSplitter* splitter_;
-  QSplitter* left_splitter_ = nullptr;
-  QLabel* status_label_ = nullptr;
 
+  // Dock widgets
+  QDockWidget* device_palette_dock_ = nullptr;
+  QDockWidget* outline_dock_ = nullptr;
+  QDockWidget* property_dock_ = nullptr;
+
+  // Toolbar
+  QLabel* zoom_label_ = nullptr;
+
+  QAction* outline_toggle_action_ = nullptr;
   QAction* add_uut_action_ = nullptr;
   QAction* add_device_action_ = nullptr;
   QAction* undo_action_ = nullptr;
   QAction* redo_action_ = nullptr;
+  QAction* copy_action_ = nullptr;
+  QAction* paste_action_ = nullptr;
+  QAction* delete_action_ = nullptr;
   QAction* zoom_in_action_ = nullptr;
   QAction* zoom_out_action_ = nullptr;
   QAction* zoom_reset_action_ = nullptr;

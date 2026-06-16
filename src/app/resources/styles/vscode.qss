@@ -873,15 +873,16 @@ TerminalPanel QPlainTextEdit {
 /* ==================== TopologyEditorWidget ==================== */
 etest--topology--TopologyEditorWidget {
     background-color: #1E1E1E;
-    border: 1px solid #3C3C3C;
 }
-#topologyToolbar {
+QToolBar#topologyToolbar {
     background-color: #2D2D2D;
     border-bottom: 1px solid #252526;
+    spacing: 2px;
+    padding: 2px;
 }
-#topologyStatusBar {
-    background-color: #252526;
-    border-top: 1px solid #3C3C3C;
+QLabel#topologyZoomLabel {
+    padding: 0 4px;
+    color: #CCCCCC;
 }
 QLabel#topologySectionHeader {
     font-weight: bold;
