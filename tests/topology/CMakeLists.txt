@@ -6,3 +6,12 @@ add_etest(
     QT_MODULES Core Test
     LABELS TOPOLOGY
 )
+
+# 场景渲染导出测试
+add_etest(
+    NAME test_topology_scene_renderer
+    SOURCES scene_renderer_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test Widgets
+    LABELS TOPOLOGY
+)

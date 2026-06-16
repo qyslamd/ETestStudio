@@ -10,7 +10,6 @@
 #include <QFileInfo>
 #include <QHideEvent>
 #include <QIcon>
-#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -20,7 +19,6 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMimeData>
-#include <QPainter>
 #include <QResizeEvent>
 #include <QShortcut>
 #include <QStatusBar>
@@ -38,6 +36,7 @@
 #include "AppIconProvider.h"
 #include "ConnectionCleanup.h"
 #include "DevicePaletteWidget.h"
+#include "TopologySceneRenderer.h"
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
 #include "ThemeManager.h"
@@ -1436,35 +1435,22 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
 // ── Export Image ──────────────────────────────────────────────
 
 void TopologyEditorWidget::onExportImage() {
+  QString filter =
+      QStringLiteral("PNG 图片 (*.png);;SVG 矢量图 (*.svg);;PDF 文档 (*.pdf)");
   QString path = QFileDialog::getSaveFileName(
-      this, QStringLiteral("导出拓扑图"), QString(),
-      QStringLiteral("PNG 图片 (*.png);;所有文件 (*)"));
+      this, QStringLiteral("导出拓扑图"), QString(), filter);
   if (path.isEmpty())
     return;
 
-  if (!path.endsWith(QStringLiteral(".png"), Qt::CaseInsensitive))
+  // 无后缀时按第一个过滤器追加 .png
+  if (QFileInfo(path).suffix().isEmpty())
     path += QStringLiteral(".png");
 
-  QRectF sceneRect = scene_->sceneRect();
-  if (sceneRect.isEmpty())
-    return;
-
-  // Add padding
-  sceneRect.adjust(-30, -30, 30, 30);
-
-  QImage image(sceneRect.size().toSize(), QImage::Format_ARGB32_Premultiplied);
-  image.fill(topologyColors().sceneBackground);
-
-  QPainter painter(&image);
-  painter.setRenderHint(QPainter::Antialiasing);
-  scene_->render(&painter, QRectF(), sceneRect);
-  painter.end();
-
-  if (image.save(path, "PNG")) {
+  if (renderSceneToFile(scene_, path)) {
     showStatusMessage(QStringLiteral("拓扑图已导出: %1").arg(path));
   } else {
     QMessageBox::warning(this, QStringLiteral("错误"),
-                         QStringLiteral("导出图片失败"));
+                         QStringLiteral("导出失败"));
   }
 }
 
