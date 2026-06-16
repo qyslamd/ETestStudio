@@ -40,7 +40,10 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/ninja-debug/bin/topology-demo.exe",
-            "args": [],
+            "args": [
+                "-f",
+                "${workspaceFolder}/temp/projects/Demo_Project3/topology/啥啊.etopo"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/ninja-debug/bin",
             "environment": [

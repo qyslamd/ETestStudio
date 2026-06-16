@@ -88,10 +88,6 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   void buildDefaultDocument();
   void rebuildSceneAndRestoreSelection();
 
-  // 窗口布局持久化
-  void saveWindowLayout();
-  void restoreWindowLayout();
-
   // 状态消息
   void showStatusMessage(const QString& msg);
 
@@ -99,7 +95,6 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   void showLoadingOverlay();
   void hideLoadingOverlay();
   void resizeEvent(QResizeEvent* event) override;
-  void hideEvent(QHideEvent* event) override;
 
   bool embedded_ = false;
   QWidget* loading_overlay_ = nullptr;
@@ -121,6 +116,8 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QLabel* zoom_label_ = nullptr;
 
   QAction* outline_toggle_action_ = nullptr;
+  QAction* device_palette_toggle_action_ = nullptr;
+  QAction* property_toggle_action_ = nullptr;
   QAction* undo_action_ = nullptr;
   QAction* redo_action_ = nullptr;
   QAction* copy_action_ = nullptr;

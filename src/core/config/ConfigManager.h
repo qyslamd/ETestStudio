@@ -29,6 +29,9 @@ class ConfigManager : public QObject {
   bool exportToJson(const QString& filePath) const;
   bool importFromJson(const QString& filePath, bool overrideExisting = true);
 
+  // 立即同步到磁盘
+  void sync();
+
   // 重置功能
   void resetAllToDefault();
   void resetKeyToDefault(const QString& key);

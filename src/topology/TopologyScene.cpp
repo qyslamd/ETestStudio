@@ -455,7 +455,7 @@ void TopologyScene::onItemMoved() {
 }
 
 DeviceItem* TopologyScene::deviceItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+  auto items = this->items(scenePos, Qt::IntersectsItemShape,
                            Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
@@ -472,7 +472,7 @@ DeviceItem* TopologyScene::deviceItemAt(QPointF scenePos) const {
 }
 
 DevicePortItem* TopologyScene::devicePortItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+  auto items = this->items(scenePos, Qt::IntersectsItemShape,
                            Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(item)) {
@@ -483,7 +483,7 @@ DevicePortItem* TopologyScene::devicePortItemAt(QPointF scenePos) const {
 }
 
 PortItem* TopologyScene::portItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+  auto items = this->items(scenePos, Qt::IntersectsItemShape,
                            Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
@@ -510,7 +510,7 @@ DeviceItem* TopologyScene::findDeviceItem(int deviceIndex) const {
 }
 
 ConnectionItem* TopologyScene::connectionItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+  auto items = this->items(scenePos, Qt::IntersectsItemShape,
                            Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
@@ -537,7 +537,7 @@ MonitorItem* TopologyScene::findMonitorItem(int monitorIndex) const {
 }
 
 UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+  auto items = this->items(scenePos, Qt::IntersectsItemShape,
                            Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {

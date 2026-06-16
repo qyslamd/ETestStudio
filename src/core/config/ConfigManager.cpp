@@ -138,6 +138,10 @@ void ConfigManager::set<QVariant>(const QString& key, const QVariant& value) {
   Q_EMIT configChanged(key);
 }
 
+void ConfigManager::sync() {
+  m_impl->m_settings->sync();
+}
+
 bool ConfigManager::exportToJson(const QString& filePath) const {
   QFile file(filePath);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Text |
