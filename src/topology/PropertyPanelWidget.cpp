@@ -627,16 +627,32 @@ void PropertyPanelWidget::onUutNameChanged() {
   if (prod) {
     QString oldName = prod->name;
     QString newName = uut_name_edit_->text();
+    if (oldName == newName)
+      return;
     int idx = editing_uut_index_;
     auto* cmd = new PropertyCommand(
         doc_,
-        [doc = doc_, idx, oldName]() {
-          if (auto* p = doc->product(idx))
+        // Undo: 恢复名称 + 更新连线中的 productName 回旧值
+        [doc = doc_, idx, oldName, newName]() {
+          if (auto* p = doc->product(idx)) {
             p->name = oldName;
+            for (int i = 0; i < doc->connectionCount(); ++i) {
+              auto* c = doc->connection(i);
+              if (c && c->productName == newName)
+                c->productName = oldName;
+            }
+          }
         },
-        [doc = doc_, idx, newName]() {
-          if (auto* p = doc->product(idx))
+        // Redo: 设置新名称 + 更新连线中的 productName 为新值
+        [doc = doc_, idx, oldName, newName]() {
+          if (auto* p = doc->product(idx)) {
             p->name = newName;
+            for (int i = 0; i < doc->connectionCount(); ++i) {
+              auto* c = doc->connection(i);
+              if (c && c->productName == oldName)
+                c->productName = newName;
+            }
+          }
         },
         QStringLiteral("修改 UUT 名称"));
     doc_->undoStack()->push(cmd);

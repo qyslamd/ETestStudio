@@ -121,3 +121,4 @@ endif()
 
 add_subdirectory(icd_utility)
 add_subdirectory(core)
+add_subdirectory(topology)

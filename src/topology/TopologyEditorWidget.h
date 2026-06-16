@@ -81,6 +81,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
                      const QPointF& scenePos);
   void onOutlineNavigate(int itemType, int mainIndex, int subIndex);
   void onAddUutPort(int productIndex);
+  void onCleanupInvalidConnections();
 
  private:
   void initUi();
@@ -127,6 +128,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QAction* zoom_out_action_ = nullptr;
   QAction* zoom_reset_action_ = nullptr;
   QAction* export_image_action_ = nullptr;
+  QAction* cleanup_action_ = nullptr;
   QAction* monitor_view_action_ = nullptr;
   QAction* mount_action_ = nullptr;
 

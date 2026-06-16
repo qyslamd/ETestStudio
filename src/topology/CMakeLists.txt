@@ -15,6 +15,7 @@ add_library(${TARGET_NAME} STATIC
     DevicePaletteWidget.h DevicePaletteWidget.cpp
     UndoCommands.h UndoCommands.cpp
     TopologyTheme.h TopologyTheme.cpp
+    ConnectionCleanup.h ConnectionCleanup.cpp
 )
 target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

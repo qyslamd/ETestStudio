@@ -280,8 +280,10 @@ bool TopologyDocument::canConnect(const QString& productName,
       if (!isDirectionCompatible(port.direction, devPort.direction))
         return false;
 
-      return port.allowedDeviceTypes.contains(
-          functionTypeToString(devPort.functionType));
+      // 支持设备类型名（如 "EPH6272T"）或功能类型名（如 "A429"）
+      return port.allowedDeviceTypes.contains(dev.deviceType) ||
+             port.allowedDeviceTypes.contains(
+                 functionTypeToString(devPort.functionType));
     }
   }
   return false;

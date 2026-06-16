@@ -1,6 +1,8 @@
 #include "TopologyEditorWidget.h"
 #include <QAction>
 #include <QApplication>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QClipboard>
 #include <QDockWidget>
 #include <QFile>
@@ -22,6 +24,8 @@
 #include <QResizeEvent>
 #include <QShortcut>
 #include <QStatusBar>
+#include <QTableWidget>
+#include <QHeaderView>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -32,6 +36,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 
 #include "AppIconProvider.h"
+#include "ConnectionCleanup.h"
 #include "DevicePaletteWidget.h"
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
@@ -408,6 +413,14 @@ void TopologyEditorWidget::initUi() {
   export_image_action_->setToolTip(QStringLiteral("导出拓扑图为 PNG"));
   toolbar->addAction(export_image_action_);
 
+  toolbar->addSeparator();
+
+  // ── 清理无效连线 ──
+  cleanup_action_ = new QAction(topoIcon(QStringLiteral("topo_export")),
+                                QStringLiteral("清理无效连线"), this);
+  cleanup_action_->setToolTip(QStringLiteral("检测并移除无效的连线和监听器挂载"));
+  toolbar->addAction(cleanup_action_);
+
   // ── 弹簧 + 面板开关（右对齐）──
   auto* spacer = new QWidget(toolbar);
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -472,6 +485,8 @@ void TopologyEditorWidget::initSignals() {
 
   connect(export_image_action_, &QAction::triggered, this,
           &TopologyEditorWidget::onExportImage);
+  connect(cleanup_action_, &QAction::triggered, this,
+          &TopologyEditorWidget::onCleanupInvalidConnections);
 
   connect(view_, &TopologyView::zoomChanged, this, [this](qreal zoom) {
     zoom_label_->setText(
@@ -725,6 +740,7 @@ void TopologyEditorWidget::reloadToolbarIcons() {
   mount_action_->setIcon(icon(QStringLiteral("topo_tap")));
 
   export_image_action_->setIcon(icon(QStringLiteral("topo_export")));
+  cleanup_action_->setIcon(icon(QStringLiteral("topo_cleanup")));
   undo_action_->setIcon(icon(QStringLiteral("topo_undo")));
   redo_action_->setIcon(icon(QStringLiteral("topo_redo")));
   outline_toggle_action_->setIcon(icon(QStringLiteral("topo_uut")));
@@ -1448,6 +1464,69 @@ void TopologyEditorWidget::onExportImage() {
     QMessageBox::warning(this, QStringLiteral("错误"),
                          QStringLiteral("导出图片失败"));
   }
+}
+
+// ── Cleanup Invalid Connections ───────────────────────────────
+
+void TopologyEditorWidget::onCleanupInvalidConnections() {
+  QVector<InvalidEntry> invalid = ConnectionCleanup::findInvalid(doc_);
+
+  if (invalid.isEmpty()) {
+    QMessageBox::information(this, QStringLiteral("清理无效连线"),
+                             QStringLiteral("未发现无效的连线或监听器挂载。"));
+    return;
+  }
+
+  // 弹出对话框展示无效列表
+  QDialog dlg(this);
+  dlg.setWindowTitle(QStringLiteral("发现 %1 个无效项").arg(invalid.size()));
+  dlg.resize(600, 350);
+  auto* dlgLay = new QVBoxLayout(&dlg);
+
+  auto* label = new QLabel(QStringLiteral("以下项目将被移除："), &dlg);
+  dlgLay->addWidget(label);
+
+  auto* table = new QTableWidget(invalid.size(), 1, &dlg);
+  table->setHorizontalHeaderLabels({QStringLiteral("描述")});
+  table->horizontalHeader()->setStretchLastSection(true);
+  table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  table->setSelectionBehavior(QAbstractItemView::SelectRows);
+  for (int r = 0; r < invalid.size(); ++r) {
+    auto* item = new QTableWidgetItem(invalid[r].description);
+    if (invalid[r].type == InvalidEntry::Connection)
+      item->setIcon(style()->standardIcon(QStyle::SP_MessageBoxWarning));
+    else
+      item->setIcon(style()->standardIcon(QStyle::SP_MessageBoxInformation));
+    table->setItem(r, 0, item);
+  }
+  dlgLay->addWidget(table);
+
+  auto* btnBox = new QDialogButtonBox(
+      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+  connect(btnBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+  connect(btnBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+  dlgLay->addWidget(btnBox);
+
+  if (dlg.exec() != QDialog::Accepted)
+    return;
+
+  // 用户确认，批量移除（用父命令支持一次撤销）
+  auto* batchCmd = new QUndoCommand(QStringLiteral("清理无效连线"));
+
+  for (int r = invalid.size() - 1; r >= 0; --r) {
+    const auto& entry = invalid[r];
+    switch (entry.type) {
+      case InvalidEntry::Connection:
+        new RemoveConnectionCommand(doc_, entry.index, batchCmd);
+        break;
+      case InvalidEntry::MonitorTap:
+        new UnTapConnectionCommand(doc_, entry.monIdx, entry.index, batchCmd);
+        break;
+    }
+  }
+
+  doc_->undoStack()->push(batchCmd);
+  showStatusMessage(QStringLiteral("已移除 %1 个无效项").arg(invalid.size()));
 }
 
 // ── Add Device From Template ──────────────────────────────────
