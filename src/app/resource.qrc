@@ -79,6 +79,10 @@
         <file>resources/icons/svg/topo_export_light.svg</file>
         <file>resources/icons/svg/topo_tap_dark.svg</file>
         <file>resources/icons/svg/topo_tap_light.svg</file>
+        <file>resources/icons/svg/topo_property_dark.svg</file>
+        <file>resources/icons/svg/topo_property_light.svg</file>
+        <file>resources/icons/svg/topo_cleanup_dark.svg</file>
+        <file>resources/icons/svg/topo_cleanup_light.svg</file>
         <file>resources/icons/svg/protocol_dark.svg</file>
         <file>resources/icons/svg/protocol_light.svg</file>
         <file>resources/icons/svg/testprogram_dark.svg</file>

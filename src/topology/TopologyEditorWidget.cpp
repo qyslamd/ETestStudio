@@ -416,7 +416,7 @@ void TopologyEditorWidget::initUi() {
   toolbar->addSeparator();
 
   // ── 清理无效连线 ──
-  cleanup_action_ = new QAction(topoIcon(QStringLiteral("topo_export")),
+  cleanup_action_ = new QAction(topoIcon(QStringLiteral("topo_cleanup")),
                                 QStringLiteral("清理无效连线"), this);
   cleanup_action_->setToolTip(QStringLiteral("检测并移除无效的连线和监听器挂载"));
   toolbar->addAction(cleanup_action_);
@@ -426,8 +426,10 @@ void TopologyEditorWidget::initUi() {
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(spacer);
 
-  auto makeToggleAction = [&](const QString& text, const QString& tip) {
-    auto* act = new QAction(topoIcon(QStringLiteral("topo_uut")), text, this);
+  auto makeToggleAction = [&](const QString& iconName,
+                              const QString& text,
+                              const QString& tip) {
+    auto* act = new QAction(topoIcon(iconName), text, this);
     act->setCheckable(true);
     act->setChecked(true);
     act->setToolTip(tip);
@@ -435,13 +437,13 @@ void TopologyEditorWidget::initUi() {
     return act;
   };
   device_palette_toggle_action_ =
-      makeToggleAction(QStringLiteral("面板"),
+      makeToggleAction(QStringLiteral("topo_device"), QStringLiteral("面板"),
                        QStringLiteral("显示/隐藏设备面板"));
   outline_toggle_action_ =
-      makeToggleAction(QStringLiteral("大纲"),
+      makeToggleAction(QStringLiteral("topo_uut"), QStringLiteral("大纲"),
                        QStringLiteral("显示/隐藏导航大纲"));
   property_toggle_action_ =
-      makeToggleAction(QStringLiteral("属性"),
+      makeToggleAction(QStringLiteral("topo_property"), QStringLiteral("属性"),
                        QStringLiteral("显示/隐藏属性面板"));
 
   // ── Dock Widgets ──
