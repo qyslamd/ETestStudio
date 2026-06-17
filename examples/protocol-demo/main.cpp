@@ -6,11 +6,11 @@
 #include <QMessageBox>
 
 #include "ThemeManager.h"
-#include "protocol/ProtocalEditorWidget.h"
+#include "protocol/ProtocolEditorWidget.h"
 
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
-  app.setApplicationName(QStringLiteral("protocal-demo"));
+  app.setApplicationName(QStringLiteral("protocol-demo"));
 
   // ── 命令行参数 ──
   QCommandLineParser parser;
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
   // 使用 light 主题（demo 不依赖持久化配置）
   etest::app::ThemeManager::instance().setTheme(QStringLiteral("default"));
 
-  etest::protocal::ProtocalEditorWidget editor;
+  etest::protocol::ProtocolEditorWidget editor;
   editor.resize(1200, 800);
 
   // 命令行指定文件则直接加载
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
   };
   updateTitle();
   QObject::connect(&editor,
-                   &etest::protocal::ProtocalEditorWidget::modificationChanged,
+                   &etest::protocol::ProtocolEditorWidget::modificationChanged,
                    &editor, updateTitle);
 
   editor.show();

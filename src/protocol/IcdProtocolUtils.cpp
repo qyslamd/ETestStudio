@@ -1,6 +1,6 @@
 #include "IcdProtocolUtils.h"
 
-namespace etest::protocal::utils {
+namespace etest::protocol::utils {
 
 std::string valueTypeToString(icd::ValueType vt) {
   switch (vt) {
@@ -113,4 +113,4 @@ icd::ByteOrder byteOrderFromIndex(int idx) {
   return idx == 1 ? icd::ByteOrder::big_endian : icd::ByteOrder::little_endian;
 }
 
-}  // namespace etest::protocal::utils
+}  // namespace etest::protocol::utils

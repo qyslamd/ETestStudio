@@ -842,12 +842,12 @@ TerminalPanel QPlainTextEdit {
     selection-color: #FFFFFF;
 }
 
-/* ==================== ProtocalEditorWidget ==================== */
-#protocalToolbar {
+/* ==================== ProtocolEditorWidget ==================== */
+#protocolToolbar {
     background-color: #2d2d2d;
     border-bottom: 1px solid #3c3c3c;
 }
-#protocalTitleLabel {
+#protocolTitleLabel {
     font-weight: bold;
     color: #cccccc;
     padding-right: 12px;
@@ -864,7 +864,7 @@ TerminalPanel QPlainTextEdit {
     color: #888888;
     padding-right: 8px;
 }
-#protocalStatusBar {
+#protocolStatusBar {
     background-color: #007acc;
     color: white;
     font-size: 12px;
@@ -909,8 +909,8 @@ GitWidget QLabel#gitTitleLabel {
     background: transparent;
 }
 
-/* ==================== ProtocalEditor Section Header (IcdNodeTreeWidget / IcdPropertyPanel) ==================== */
-ProtocalEditorWidget #sectionHeader {
+/* ==================== ProtocolEditor Section Header (IcdNodeTreeWidget / IcdPropertyPanel) ==================== */
+ProtocolEditorWidget #sectionHeader {
     font-weight: bold;
     padding: 4px 8px;
 }

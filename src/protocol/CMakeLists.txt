@@ -1,8 +1,8 @@
 set(TARGET_NAME "etest_protocol")
 
 add_library(${TARGET_NAME} STATIC
-    ProtocalEditorWidget.h
-    ProtocalEditorWidget.cpp
+    ProtocolEditorWidget.h
+    ProtocolEditorWidget.cpp
     IcdNodeTreeWidget.h
     IcdNodeTreeWidget.cpp
     IcdBitLayoutView.h

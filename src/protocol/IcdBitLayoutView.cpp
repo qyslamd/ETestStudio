@@ -104,7 +104,7 @@ static QColor gradientPartner(const QColor& base) {
 
 }  // anonymous namespace
 
-namespace etest::protocal {
+namespace etest::protocol {
 
 // ============================================================
 // FieldSectionItem
@@ -561,7 +561,7 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
 
     QString qname = QString::fromStdString(std::string(node->name()));
     QString qtype = QString::fromLatin1(
-        etest::protocal::utils::valueTypeName(node->value_type()));
+        etest::protocol::utils::valueTypeName(node->value_type()));
     addBlock(qname, qtype, node->offset(), node->bit_offset(), node->bit_width(),
              color);
   }
@@ -609,4 +609,4 @@ bool IcdBitLayoutView::eventFilter(QObject* obj, QEvent* event) {
   return QWidget::eventFilter(obj, event);
 }
 
-}  // namespace etest::protocal
+}  // namespace etest::protocol

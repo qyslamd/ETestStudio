@@ -5,7 +5,7 @@
 #include <icd/frame.hpp>
 #include <icd/node.hpp>
 
-namespace etest::protocal::utils {
+namespace etest::protocol::utils {
 
 std::string valueTypeToString(icd::ValueType vt);
 const char* valueTypeName(icd::ValueType vt);
@@ -20,4 +20,4 @@ icd::FrameType frameTypeFromIndex(int idx);
 int byteOrderIndex(icd::ByteOrder bo);
 icd::ByteOrder byteOrderFromIndex(int idx);
 
-}  // namespace etest::protocal::utils
+}  // namespace etest::protocol::utils

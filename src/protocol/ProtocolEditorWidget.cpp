@@ -1,4 +1,4 @@
-#include "protocalEditorWidget.h"
+#include "ProtocolEditorWidget.h"
 
 #include <QComboBox>
 #include <QDockWidget>
@@ -26,7 +26,7 @@
 #include "format/json_parser.hpp"
 #include "format/json_serializer.hpp"
 
-namespace etest::protocal {
+namespace etest::protocol {
 namespace {
 
 void updateMaxBits(const icd::Node& node, int& max_bits) {
@@ -49,9 +49,9 @@ int calcFrameLength(const icd::Frame& frame) {
 }  // namespace
 
 // ──────────────────────────────────────────────────────────────
-// ProtocalEditorWidget
+// ProtocolEditorWidget
 // ──────────────────────────────────────────────────────────────
-ProtocalEditorWidget::ProtocalEditorWidget(QWidget* parent)
+ProtocolEditorWidget::ProtocolEditorWidget(QWidget* parent)
     : QMainWindow(parent) {
   setAutoFillBackground(true);
 
@@ -69,10 +69,10 @@ ProtocalEditorWidget::ProtocalEditorWidget(QWidget* parent)
   });
 }
 
-ProtocalEditorWidget::~ProtocalEditorWidget() {}
+ProtocolEditorWidget::~ProtocolEditorWidget() {}
 
 // ── Embedded mode ──────────────────────────────────────────────
-void ProtocalEditorWidget::setEmbeddedMode(bool embedded) {
+void ProtocolEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded) {
     menuBar()->hide();
@@ -86,7 +86,7 @@ void ProtocalEditorWidget::setEmbeddedMode(bool embedded) {
 }
 
 // ── Status message routing ─────────────────────────────────────
-void ProtocalEditorWidget::showStatusMessage(const QString& msg) {
+void ProtocolEditorWidget::showStatusMessage(const QString& msg) {
   if (embedded_) {
     auto* w = window();
     if (auto* mainWin = qobject_cast<QMainWindow*>(w))
@@ -96,17 +96,17 @@ void ProtocalEditorWidget::showStatusMessage(const QString& msg) {
   }
 }
 
-QString ProtocalEditorWidget::displayName() const {
+QString ProtocolEditorWidget::displayName() const {
   if (current_file_.isEmpty())
     return QStringLiteral("未命名协议");
   return QFileInfo(current_file_).fileName();
 }
 
-bool ProtocalEditorWidget::isModified() const {
+bool ProtocolEditorWidget::isModified() const {
   return modified_;
 }
 
-bool ProtocalEditorWidget::save() {
+bool ProtocolEditorWidget::save() {
   if (current_file_.isEmpty())
     return false;
   if (saveEproto(current_file_)) {
@@ -116,7 +116,7 @@ bool ProtocalEditorWidget::save() {
   return false;
 }
 
-bool ProtocalEditorWidget::saveAs(const QString& path) {
+bool ProtocolEditorWidget::saveAs(const QString& path) {
   QString old = current_file_;
   current_file_ = path;
   if (saveEproto(path)) {
@@ -128,42 +128,42 @@ bool ProtocalEditorWidget::saveAs(const QString& path) {
   return false;
 }
 
-QString ProtocalEditorWidget::filePath() const {
+QString ProtocolEditorWidget::filePath() const {
   return current_file_;
 }
 
-QString ProtocalEditorWidget::editorId() const {
+QString ProtocolEditorWidget::editorId() const {
   if (current_file_.isEmpty())
-    return QStringLiteral("editor://protocal/new");
+    return QStringLiteral("editor://protocol/new");
   return current_file_;
 }
 
-QWidget* ProtocalEditorWidget::widget() {
+QWidget* ProtocolEditorWidget::widget() {
   return this;
 }
 
-QString ProtocalEditorWidget::editorType() const {
-  return QStringLiteral("protocal");
+QString ProtocolEditorWidget::editorType() const {
+  return QStringLiteral("protocol");
 }
 
-QObject* ProtocalEditorWidget::signalObject() {
+QObject* ProtocolEditorWidget::signalObject() {
   return this;
 }
 
-bool ProtocalEditorWidget::canUndo() const {
+bool ProtocolEditorWidget::canUndo() const {
   return snapshot_index_ > 0;
 }
-bool ProtocalEditorWidget::canRedo() const {
+bool ProtocolEditorWidget::canRedo() const {
   return snapshot_index_ < snapshots_.size() - 1;
 }
-void ProtocalEditorWidget::undo() {
+void ProtocolEditorWidget::undo() {
   if (!canUndo())
     return;
   --snapshot_index_;
   restoreSnapshot(snapshots_[snapshot_index_]);
   setModified(snapshot_index_ != 0);
 }
-void ProtocalEditorWidget::redo() {
+void ProtocolEditorWidget::redo() {
   if (!canRedo())
     return;
   ++snapshot_index_;
@@ -171,7 +171,7 @@ void ProtocalEditorWidget::redo() {
   setModified(snapshot_index_ != 0);
 }
 
-void ProtocalEditorWidget::setEditorId(const QString& id) {
+void ProtocolEditorWidget::setEditorId(const QString& id) {
   if (id == current_file_)
     return;
   current_file_ = id;
@@ -236,7 +236,7 @@ void ProtocalEditorWidget::setEditorId(const QString& id) {
 
 // ── Loading overlay ─────────────────────────────────────────
 
-void ProtocalEditorWidget::showLoadingOverlay() {
+void ProtocolEditorWidget::showLoadingOverlay() {
   if (!loading_overlay_) {
     loading_overlay_ = new QWidget(this);
     loading_overlay_->setObjectName(QStringLiteral("PhLoadingOverlay"));
@@ -258,35 +258,35 @@ void ProtocalEditorWidget::showLoadingOverlay() {
   loading_overlay_->show();
 }
 
-void ProtocalEditorWidget::hideLoadingOverlay() {
+void ProtocolEditorWidget::hideLoadingOverlay() {
   if (loading_overlay_)
     loading_overlay_->hide();
 }
 
-void ProtocalEditorWidget::resizeEvent(QResizeEvent* event) {
+void ProtocolEditorWidget::resizeEvent(QResizeEvent* event) {
   QMainWindow::resizeEvent(event);
   if (loading_overlay_ && loading_overlay_->isVisible())
     loading_overlay_->setGeometry(centralWidget()->rect());
 }
 
-void ProtocalEditorWidget::hideEvent(QHideEvent* event) {
+void ProtocolEditorWidget::hideEvent(QHideEvent* event) {
   QMainWindow::hideEvent(event);
 }
 
 // ── Save .eproto JSON ─────────────────────────────────────────
-bool ProtocalEditorWidget::saveEproto(const QString& path) {
+bool ProtocolEditorWidget::saveEproto(const QString& path) {
   auto result = icd::format::serialize_repository(
       std::filesystem::path(path.toStdWString()), repo_);
   return result.has_value();
 }
 
 // ── UI ─────────────────────────────────────────────────────────
-void ProtocalEditorWidget::initUi() {
+void ProtocolEditorWidget::initUi() {
   setAutoFillBackground(true);
 
   // ── QToolBar (帧操作 + 帧属性) ──
   auto* toolbar = addToolBar(QStringLiteral("帧工具栏"));
-  toolbar->setObjectName(QStringLiteral("protocalToolbar"));
+  toolbar->setObjectName(QStringLiteral("protocolToolbar"));
   toolbar->setMovable(false);
   toolbar->setFloatable(false);
 
@@ -305,7 +305,7 @@ void ProtocalEditorWidget::initUi() {
 
   // 帧属性区
   auto* title_label = new QLabel(QStringLiteral("帧属性"), toolbar);
-  title_label->setObjectName(QStringLiteral("protocalTitleLabel"));
+  title_label->setObjectName(QStringLiteral("protocolTitleLabel"));
   toolbar->addWidget(title_label);
 
   frame_name_label_ = new QLabel(QStringLiteral("(无帧)"), toolbar);
@@ -357,20 +357,20 @@ void ProtocalEditorWidget::initUi() {
   // ── Dock: 节点列表 (左侧) ──
   node_tree_ = new IcdNodeTreeWidget(this);
   node_tree_->setMinimumWidth(200);
-  node_tree_->setObjectName(QStringLiteral("protocalNodeTree"));
+  node_tree_->setObjectName(QStringLiteral("protocolNodeTree"));
 
   node_tree_dock_ = new QDockWidget(QStringLiteral("节点列表"), this);
-  node_tree_dock_->setObjectName(QStringLiteral("protocalNodeTreeDock"));
+  node_tree_dock_->setObjectName(QStringLiteral("protocolNodeTreeDock"));
   node_tree_dock_->setWidget(node_tree_);
   addDockWidget(Qt::LeftDockWidgetArea, node_tree_dock_);
 
   // ── Dock: 属性面板 (右侧) ──
   property_panel_ = new IcdPropertyPanel(this);
   property_panel_->setMinimumWidth(220);
-  property_panel_->setObjectName(QStringLiteral("protocalPropertyPanel"));
+  property_panel_->setObjectName(QStringLiteral("protocolPropertyPanel"));
 
   property_dock_ = new QDockWidget(QStringLiteral("属性面板"), this);
-  property_dock_->setObjectName(QStringLiteral("protocalPropertyDock"));
+  property_dock_->setObjectName(QStringLiteral("protocolPropertyDock"));
   property_dock_->setWidget(property_panel_);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
 
@@ -388,7 +388,7 @@ void ProtocalEditorWidget::initUi() {
 }
 
 // ── Signals ───────────────────────────────────────────────────
-void ProtocalEditorWidget::initSignals() {
+void ProtocolEditorWidget::initSignals() {
   // Frame selection from tree
   connect(node_tree_, &IcdNodeTreeWidget::frameSelected, this,
           [this](icd::Frame* frame) { setCurrentFrame(frame); });
@@ -719,7 +719,7 @@ void ProtocalEditorWidget::initSignals() {
 }
 
 // ── Toolbar update ────────────────────────────────────────────
-void ProtocalEditorWidget::updateToolbar() {
+void ProtocolEditorWidget::updateToolbar() {
   if (current_frame_) {
     frame_name_label_->setText(
         QString::fromStdString(std::string(current_frame_->name())));
@@ -763,12 +763,12 @@ void ProtocalEditorWidget::updateToolbar() {
 }
 
 // ── Populate tree from repo ──────────────────────────────────
-void ProtocalEditorWidget::populateFrames() {
+void ProtocolEditorWidget::populateFrames() {
   node_tree_->loadFromRepository(repo_);
 }
 
 // ── Set current frame ────────────────────────────────────────
-void ProtocalEditorWidget::setCurrentFrame(icd::Frame* frame) {
+void ProtocolEditorWidget::setCurrentFrame(icd::Frame* frame) {
   current_frame_ = frame;
   if (frame) {
     bit_view_->loadFromFrame(*frame);
@@ -786,13 +786,13 @@ void ProtocalEditorWidget::setCurrentFrame(icd::Frame* frame) {
 }
 
 // ── Refresh tree + select frame ──────────────────────────────
-void ProtocalEditorWidget::refreshAndSelectFrame(icd::Frame* frame) {
+void ProtocolEditorWidget::refreshAndSelectFrame(icd::Frame* frame) {
   populateFrames();
   setCurrentFrame(frame);
 }
 
 // ── Clear all data ───────────────────────────────────────────
-void ProtocalEditorWidget::clearAll() {
+void ProtocolEditorWidget::clearAll() {
   current_frame_ = nullptr;
   // Cannot directly clear icd::Repository — but we can assign a new one
   repo_ = icd::Repository();
@@ -806,7 +806,7 @@ void ProtocalEditorWidget::clearAll() {
 }
 
 // ── Snapshot (undo/redo) ──────────────────────────────────────
-void ProtocalEditorWidget::saveSnapshot() {
+void ProtocolEditorWidget::saveSnapshot() {
   auto j = icd::format::serialize_repository_to_json(repo_);
   QString jsonStr = QString::fromStdString(j.dump());
   QByteArray bytes = jsonStr.toUtf8();
@@ -831,7 +831,7 @@ void ProtocalEditorWidget::saveSnapshot() {
   }
 }
 
-void ProtocalEditorWidget::restoreSnapshot(const QByteArray& data) {
+void ProtocolEditorWidget::restoreSnapshot(const QByteArray& data) {
   QByteArray raw = qUncompress(data);
   if (raw.isEmpty())
     return;
@@ -871,11 +871,11 @@ void ProtocalEditorWidget::restoreSnapshot(const QByteArray& data) {
 }
 
 // ── Modified flag ────────────────────────────────────────────
-void ProtocalEditorWidget::setModified(bool modified) {
+void ProtocolEditorWidget::setModified(bool modified) {
   if (modified_ != modified) {
     modified_ = modified;
     emit modificationChanged(modified);
   }
 }
 
-}  // namespace etest::protocal
+}  // namespace etest::protocol

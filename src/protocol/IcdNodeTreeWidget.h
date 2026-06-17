@@ -16,7 +16,7 @@ namespace icd {
 class Repository;
 }
 
-namespace etest::protocal {
+namespace etest::protocol {
 
 class IcdNodeTreeWidget : public QWidget {
   Q_OBJECT
@@ -50,4 +50,4 @@ class IcdNodeTreeWidget : public QWidget {
   QMetaObject::Connection selection_conn_;
 };
 
-}  // namespace etest::protocal
+}  // namespace etest::protocol

@@ -14,7 +14,7 @@ class QGroupBox;
 class QLineEdit;
 class QSpinBox;
 
-namespace etest::protocal {
+namespace etest::protocol {
 
 class IcdPropertyPanel : public QWidget {
   Q_OBJECT
@@ -77,4 +77,4 @@ class IcdPropertyPanel : public QWidget {
   QVector<QMetaObject::Connection> node_connections_;
 };
 
-}  // namespace etest::protocal
+}  // namespace etest::protocol

@@ -13,7 +13,7 @@
 
 class QComboBox;
 
-namespace etest::protocal {
+namespace etest::protocol {
 
 // ============================================================
 // FieldSectionItem — 每个信号对应的竖排区块
@@ -131,4 +131,4 @@ class IcdBitLayoutView : public QWidget {
   const icd::Frame* last_frame_ = nullptr;
 };
 
-}  // namespace etest::protocal
+}  // namespace etest::protocol

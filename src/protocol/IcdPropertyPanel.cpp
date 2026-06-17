@@ -12,7 +12,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
-namespace etest::protocal {
+namespace etest::protocol {
 
 using namespace utils;
 
@@ -539,4 +539,4 @@ void IcdPropertyPanel::clear() {
   clearForm();
 }
 
-}  // namespace etest::protocal
+}  // namespace etest::protocol

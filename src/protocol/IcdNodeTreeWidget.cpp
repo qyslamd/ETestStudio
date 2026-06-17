@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <functional>
 
-namespace etest::protocal {
+namespace etest::protocol {
 using namespace utils;
 namespace {
 
@@ -369,4 +369,4 @@ void IcdNodeTreeWidget::onContextMenu(const QPoint& pos) {
     menu.exec(tree_view_->viewport()->mapToGlobal(pos));
 }
 
-}  // namespace etest::protocal
+}  // namespace etest::protocol

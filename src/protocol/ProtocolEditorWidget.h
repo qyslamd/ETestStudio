@@ -20,17 +20,17 @@ class QAction;
 class QToolBar;
 class QResizeEvent;
 
-namespace etest::protocal {
+namespace etest::protocol {
 
 class IcdNodeTreeWidget;
 class IcdBitLayoutView;
 class IcdPropertyPanel;
 
-class ProtocalEditorWidget : public QMainWindow, public etest::app::IEditor {
+class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   Q_OBJECT
  public:
-  explicit ProtocalEditorWidget(QWidget* parent = nullptr);
-  ~ProtocalEditorWidget() override;
+  explicit ProtocolEditorWidget(QWidget* parent = nullptr);
+  ~ProtocolEditorWidget() override;
 
   // IEditor interface
   QString displayName() const override;
@@ -118,4 +118,4 @@ class ProtocalEditorWidget : public QMainWindow, public etest::app::IEditor {
   int snapshot_index_ = -1;
 };
 
-}  // namespace etest::protocal
+}  // namespace etest::protocol

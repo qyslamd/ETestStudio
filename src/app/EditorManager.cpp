@@ -20,7 +20,7 @@
 #include "TextEditorWidget.h"
 #include "editor/EditorFactory.h"
 #include "logger/Logger.h"
-#include "protocol/ProtocalEditorWidget.h"
+#include "protocol/ProtocolEditorWidget.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
 #include "topology/TopologyJsonSerializer.h"
@@ -77,7 +77,7 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerExtension("cmake", "text");
   EditorFactoryRegistry::registerExtension("txt", "text");
   EditorFactoryRegistry::registerExtension("etopo", "topology");
-  EditorFactoryRegistry::registerExtension("eproto", "protocal");
+  EditorFactoryRegistry::registerExtension("eproto", "protocol");
   EditorFactoryRegistry::registerExtension("tcase", "testprogram");
 
   EditorFactoryRegistry::registerExtension("png", "image");
@@ -135,18 +135,18 @@ void EditorManager::registerEditorTypes() {
       });
 
   EditorFactoryRegistry::registerFactory(
-      "protocal",
+      "protocol",
       [](const QString& id, QWidget* parent) {
-        auto* editor = new etest::protocal::ProtocalEditorWidget(parent);
+        auto* editor = new etest::protocol::ProtocolEditorWidget(parent);
         return editor;
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
-        auto* pe = qobject_cast<etest::protocal::ProtocalEditorWidget*>(
+        auto* pe = qobject_cast<etest::protocol::ProtocolEditorWidget*>(
             editor->widget());
         if (!pe)
           return;
         QObject::connect(
-            pe, &etest::protocal::ProtocalEditorWidget::modificationChanged,
+            pe, &etest::protocol::ProtocolEditorWidget::modificationChanged,
             mgr, [editor, dock, mgr](bool modified) {
               dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
                                        .append(editor->displayName()));
@@ -154,7 +154,7 @@ void EditorManager::registerEditorTypes() {
               emit mgr->modificationChanged(modified);
             });
         QObject::connect(
-            pe, &etest::protocal::ProtocalEditorWidget::editorIdChanged, mgr,
+            pe, &etest::protocol::ProtocolEditorWidget::editorIdChanged, mgr,
             [editor, mgr](const QString&, const QString& newId) {
               mgr->updateEditorId(editor, newId);
             });
@@ -702,9 +702,9 @@ void EditorManager::onFileRenamed(const QString& oldPath,
 
   if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
     textEditor->setFilePath(newPath);
-  } else if (auto* protocalEditor =
-                 dynamic_cast<etest::protocal::ProtocalEditorWidget*>(editor)) {
-    protocalEditor->setEditorId(newPath);
+  } else if (auto* protocolEditor =
+                 dynamic_cast<etest::protocol::ProtocolEditorWidget*>(editor)) {
+    protocolEditor->setEditorId(newPath);
   } else if (auto* topoEditor =
                  dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
     topoEditor->setEditorId(newPath);
