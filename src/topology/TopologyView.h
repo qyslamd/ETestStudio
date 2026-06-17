@@ -3,6 +3,9 @@
 #include <QGraphicsView>
 #include <QPixmap>
 
+#include "TopologyPathRouter.h"
+#include "topology_items.h"
+
 namespace etest::topology {
 
 class TopologyScene;
@@ -23,6 +26,11 @@ class TopologyView : public QGraphicsView {
   void deleteItemRequested(QGraphicsItem* item);
   void saveTemplateRequested(QGraphicsItem* item);
   void addDeviceFromTemplateRequested(QPointF scenePos);
+  void productPortStyleChangeRequested(int productIndex, int portIndex,
+                                       PortStyle style);
+  void devicePortStyleChangeRequested(int deviceIndex, int portIndex,
+                                      PortStyle style);
+  void connectionStyleChangeRequested(int connectionIndex, PathStyle style);
   void zoomChanged(qreal zoomFactor);
 
  protected:

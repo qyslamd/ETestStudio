@@ -39,7 +39,7 @@ RemoveProductCommand::RemoveProductCommand(TopologyDocument* doc,
       const auto* c = doc_->connection(i);
       if (c->productName == prod->name) {
         saved_connections_.append(
-            {c->productName, c->portName, c->deviceName, c->devicePort});
+            {c->productName, c->portName, c->deviceName, c->devicePort, c->style});
       }
     }
   }
@@ -54,6 +54,7 @@ void RemoveProductCommand::undo() {
     conn.portName = ce.portName;
     conn.deviceName = ce.deviceName;
     conn.devicePort = ce.devicePort;
+    conn.style = ce.style;
     doc_->addConnection(conn);
   }
 }
@@ -104,7 +105,7 @@ RemoveDeviceCommand::RemoveDeviceCommand(TopologyDocument* doc,
       const auto* c = doc_->connection(i);
       if (c->deviceName == dev->name) {
         saved_connections_.append(
-            {c->productName, c->portName, c->deviceName, c->devicePort});
+            {c->productName, c->portName, c->deviceName, c->devicePort, c->style});
       }
     }
   }
@@ -119,6 +120,7 @@ void RemoveDeviceCommand::undo() {
     conn.portName = ce.portName;
     conn.deviceName = ce.deviceName;
     conn.devicePort = ce.devicePort;
+    conn.style = ce.style;
     doc_->addConnection(conn);
   }
 }
@@ -312,6 +314,93 @@ void PropertyCommand::redo() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  Style commands
+// ═══════════════════════════════════════════════════════════════
+
+SetProductPortStyleCommand::SetProductPortStyleCommand(
+    TopologyDocument* doc, int productIndex, int portIndex, PortStyle newStyle,
+    QUndoCommand* parent)
+    : QUndoCommand(parent),
+      doc_(doc),
+      product_index_(productIndex),
+      port_index_(portIndex),
+      old_style_(static_cast<int>(PortStyle::Circle)),
+      new_style_(static_cast<int>(newStyle)) {
+  if (auto* product = doc_->product(product_index_)) {
+    if (port_index_ >= 0 && port_index_ < product->ports.size())
+      old_style_ = product->ports[port_index_].portStyle;
+  }
+  setText(QStringLiteral("修改 UUT 端口样式"));
+}
+
+void SetProductPortStyleCommand::undo() {
+  if (auto* product = doc_->product(product_index_)) {
+    if (port_index_ >= 0 && port_index_ < product->ports.size())
+      product->ports[port_index_].portStyle = old_style_;
+  }
+}
+
+void SetProductPortStyleCommand::redo() {
+  if (auto* product = doc_->product(product_index_)) {
+    if (port_index_ >= 0 && port_index_ < product->ports.size())
+      product->ports[port_index_].portStyle = new_style_;
+  }
+}
+
+SetDevicePortStyleCommand::SetDevicePortStyleCommand(
+    TopologyDocument* doc, int deviceIndex, int portIndex, PortStyle newStyle,
+    QUndoCommand* parent)
+    : QUndoCommand(parent),
+      doc_(doc),
+      device_index_(deviceIndex),
+      port_index_(portIndex),
+      old_style_(static_cast<int>(PortStyle::Circle)),
+      new_style_(static_cast<int>(newStyle)) {
+  if (auto* device = doc_->device(device_index_)) {
+    if (port_index_ >= 0 && port_index_ < device->ports.size())
+      old_style_ = device->ports[port_index_].portStyle;
+  }
+  setText(QStringLiteral("修改设备端口样式"));
+}
+
+void SetDevicePortStyleCommand::undo() {
+  if (auto* device = doc_->device(device_index_)) {
+    if (port_index_ >= 0 && port_index_ < device->ports.size())
+      device->ports[port_index_].portStyle = old_style_;
+  }
+}
+
+void SetDevicePortStyleCommand::redo() {
+  if (auto* device = doc_->device(device_index_)) {
+    if (port_index_ >= 0 && port_index_ < device->ports.size())
+      device->ports[port_index_].portStyle = new_style_;
+  }
+}
+
+SetConnectionStyleCommand::SetConnectionStyleCommand(
+    TopologyDocument* doc, int connectionIndex, PathStyle newStyle,
+    QUndoCommand* parent)
+    : QUndoCommand(parent),
+      doc_(doc),
+      connection_index_(connectionIndex),
+      old_style_(PathStyle::Bezier),
+      new_style_(newStyle) {
+  if (auto* connection = doc_->connection(connection_index_))
+    old_style_ = connection->style;
+  setText(QStringLiteral("修改连线样式"));
+}
+
+void SetConnectionStyleCommand::undo() {
+  if (auto* connection = doc_->connection(connection_index_))
+    connection->style = old_style_;
+}
+
+void SetConnectionStyleCommand::redo() {
+  if (auto* connection = doc_->connection(connection_index_))
+    connection->style = new_style_;
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  ResizeItemCommand
 // ═══════════════════════════════════════════════════════════════
 
@@ -487,7 +576,7 @@ RemoveProductPortCommand::RemoveProductPortCommand(TopologyDocument* doc,
       const auto* c = doc_->connection(i);
       if (c->productName == prod->name && c->portName == port_.name) {
         saved_connections_.append(
-            {c->productName, c->portName, c->deviceName, c->devicePort});
+            {c->productName, c->portName, c->deviceName, c->devicePort, c->style});
       }
     }
   }
@@ -503,6 +592,7 @@ void RemoveProductPortCommand::undo() {
     conn.portName = ce.portName;
     conn.deviceName = ce.deviceName;
     conn.devicePort = ce.devicePort;
+    conn.style = ce.style;
     doc_->addConnection(conn);
   }
 }

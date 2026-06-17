@@ -3,6 +3,8 @@
 #include "TopologyTheme.h"
 #include "topology_items.h"
 
+#include "ThemeManager.h"
+
 #include <QAction>
 #include <QActionGroup>
 #include <QMenu>
@@ -36,6 +38,13 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
   setAcceptDrops(true);
 
   renderLegendCache();
+
+  connect(&etest::app::ThemeManager::instance(),
+          &etest::app::ThemeManager::themeChanged, this, [this](bool) {
+            setBackgroundBrush(topologyColors().sceneBackground);
+            renderLegendCache();
+            viewport()->update();
+          });
 }
 
 void TopologyView::paintEvent(QPaintEvent* event) {
@@ -210,10 +219,16 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     triAct->setCheckable(true);
     triAct->setChecked(devPort->portStyle() == PortStyle::Triangle);
     portGroup->addAction(triAct);
-    connect(circAct, &QAction::triggered, this,
-            [devPort]() { devPort->setPortStyle(PortStyle::Circle); });
-    connect(triAct, &QAction::triggered, this,
-            [devPort]() { devPort->setPortStyle(PortStyle::Triangle); });
+    connect(circAct, &QAction::triggered, this, [this, devPort]() {
+      emit devicePortStyleChangeRequested(devPort->deviceIndex(),
+                                          devPort->portIndex(),
+                                          PortStyle::Circle);
+    });
+    connect(triAct, &QAction::triggered, this, [this, devPort]() {
+      emit devicePortStyleChangeRequested(devPort->deviceIndex(),
+                                          devPort->portIndex(),
+                                          PortStyle::Triangle);
+    });
   } else if (uutPort) {
     auto* delUutPortAct = menu.addAction(QStringLiteral("删除端口"));
     connect(delUutPortAct, &QAction::triggered, this,
@@ -230,10 +245,16 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     triAct->setCheckable(true);
     triAct->setChecked(uutPort->portStyle() == PortStyle::Triangle);
     portGroup->addAction(triAct);
-    connect(circAct, &QAction::triggered, this,
-            [uutPort]() { uutPort->setPortStyle(PortStyle::Circle); });
-    connect(triAct, &QAction::triggered, this,
-            [uutPort]() { uutPort->setPortStyle(PortStyle::Triangle); });
+    connect(circAct, &QAction::triggered, this, [this, uutPort]() {
+      emit productPortStyleChangeRequested(uutPort->productIndex(),
+                                           uutPort->portIndex(),
+                                           PortStyle::Circle);
+    });
+    connect(triAct, &QAction::triggered, this, [this, uutPort]() {
+      emit productPortStyleChangeRequested(uutPort->productIndex(),
+                                           uutPort->portIndex(),
+                                           PortStyle::Triangle);
+    });
   } else if (uut) {
     auto* addPortAct = menu.addAction(QStringLiteral("添加端口"));
     connect(addPortAct, &QAction::triggered, this,
@@ -275,12 +296,18 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     lineAct->setChecked(conn->style() == PathStyle::Straight);
     group->addAction(lineAct);
 
-    connect(bezierAct, &QAction::triggered, this,
-            [conn]() { conn->setStyle(PathStyle::Bezier); });
-    connect(polyAct, &QAction::triggered, this,
-            [conn]() { conn->setStyle(PathStyle::Polyline); });
-    connect(lineAct, &QAction::triggered, this,
-            [conn]() { conn->setStyle(PathStyle::Straight); });
+    connect(bezierAct, &QAction::triggered, this, [this, conn]() {
+      emit connectionStyleChangeRequested(conn->connectionIndex(),
+                                          PathStyle::Bezier);
+    });
+    connect(polyAct, &QAction::triggered, this, [this, conn]() {
+      emit connectionStyleChangeRequested(conn->connectionIndex(),
+                                          PathStyle::Polyline);
+    });
+    connect(lineAct, &QAction::triggered, this, [this, conn]() {
+      emit connectionStyleChangeRequested(conn->connectionIndex(),
+                                          PathStyle::Straight);
+    });
   } else {
     auto* addUutAct = menu.addAction(QStringLiteral("添加 UUT"));
     connect(addUutAct, &QAction::triggered, this,

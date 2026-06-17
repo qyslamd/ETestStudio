@@ -2,6 +2,7 @@
 
 #include "topology/TopologyDocument.h"
 #include "topology/UndoCommands.h"
+#include "topology/topology_items.h"
 
 using namespace etest::topology;
 
@@ -168,4 +169,77 @@ TEST(UndoCommandsTest, UnTapRedoDeletesOriginalTapAfterUndo) {
   doc.undoStack()->redo();
   ASSERT_EQ(doc.monitor(0)->taps.size(), 1);
   EXPECT_EQ(doc.monitor(0)->taps[0].productName, QStringLiteral("P2"));
+}
+
+TEST(UndoCommandsTest, SetProductPortStyleSupportsUndoRedo) {
+  TopologyDocument doc;
+  doc.addProduct(makeProduct(QStringLiteral("UUT")));
+
+  doc.undoStack()->push(new SetProductPortStyleCommand(
+      &doc, 0, 0, PortStyle::Triangle));
+  EXPECT_EQ(doc.product(0)->ports[0].portStyle,
+            static_cast<int>(PortStyle::Triangle));
+
+  doc.undoStack()->undo();
+  EXPECT_EQ(doc.product(0)->ports[0].portStyle,
+            static_cast<int>(PortStyle::Circle));
+
+  doc.undoStack()->redo();
+  EXPECT_EQ(doc.product(0)->ports[0].portStyle,
+            static_cast<int>(PortStyle::Triangle));
+}
+
+TEST(UndoCommandsTest, SetDevicePortStyleSupportsUndoRedo) {
+  TopologyDocument doc;
+  doc.addDevice(makeDevice(QStringLiteral("Device")));
+
+  doc.undoStack()->push(new SetDevicePortStyleCommand(
+      &doc, 0, 0, PortStyle::Triangle));
+  EXPECT_EQ(doc.device(0)->ports[0].portStyle,
+            static_cast<int>(PortStyle::Triangle));
+
+  doc.undoStack()->undo();
+  EXPECT_EQ(doc.device(0)->ports[0].portStyle,
+            static_cast<int>(PortStyle::Circle));
+
+  doc.undoStack()->redo();
+  EXPECT_EQ(doc.device(0)->ports[0].portStyle,
+            static_cast<int>(PortStyle::Triangle));
+}
+
+TEST(UndoCommandsTest, SetConnectionStyleSupportsUndoRedo) {
+  TopologyDocument doc;
+  doc.addConnection(makeConnection(QStringLiteral("P"), QStringLiteral("P1"),
+                                   QStringLiteral("D"), QStringLiteral("D1")));
+
+  doc.undoStack()->push(new SetConnectionStyleCommand(
+      &doc, 0, PathStyle::Straight));
+  EXPECT_EQ(doc.connection(0)->style, PathStyle::Straight);
+
+  doc.undoStack()->undo();
+  EXPECT_EQ(doc.connection(0)->style, PathStyle::Bezier);
+
+  doc.undoStack()->redo();
+  EXPECT_EQ(doc.connection(0)->style, PathStyle::Straight);
+}
+
+TEST(UndoCommandsTest, RemoveProductRestoresConnectionStyleOnUndo) {
+  TopologyDocument doc;
+  TopologyProduct product = makeProduct(QStringLiteral("UUT"));
+  product.ports[0].name = QStringLiteral("P1");
+  doc.addProduct(product);
+  doc.addDevice(makeDevice(QStringLiteral("Device")));
+  TopologyConnection conn = makeConnection(QStringLiteral("UUT"),
+                                           QStringLiteral("P1"),
+                                           QStringLiteral("Device"),
+                                           QStringLiteral("D1"));
+  conn.style = PathStyle::Straight;
+  doc.addConnection(conn);
+
+  doc.undoStack()->push(new RemoveProductCommand(&doc, 0));
+  ASSERT_EQ(doc.connectionCount(), 0);
+
+  doc.undoStack()->undo();
+  ASSERT_EQ(doc.connectionCount(), 1);
+  EXPECT_EQ(doc.connection(0)->style, PathStyle::Straight);
 }

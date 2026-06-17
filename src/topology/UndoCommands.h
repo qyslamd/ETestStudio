@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "TopologyDocument.h"
+#include "topology_items.h"
 
 namespace etest::topology {
 
@@ -43,6 +44,7 @@ class RemoveProductCommand : public QUndoCommand {
     QString portName;
     QString deviceName;
     QString devicePort;
+    PathStyle style = PathStyle::Bezier;
   };
   QVector<ConnEntry> saved_connections_;
 };
@@ -79,6 +81,7 @@ class RemoveDeviceCommand : public QUndoCommand {
     QString portName;
     QString deviceName;
     QString devicePort;
+    PathStyle style = PathStyle::Bezier;
   };
   QVector<ConnEntry> saved_connections_;
 };
@@ -177,6 +180,56 @@ class PropertyCommand : public QUndoCommand {
   TopologyDocument* doc_;
   ApplyFn undo_fn_;
   ApplyFn redo_fn_;
+};
+
+// ── SetProductPortStyleCommand ──
+class SetProductPortStyleCommand : public QUndoCommand {
+ public:
+  SetProductPortStyleCommand(TopologyDocument* doc, int productIndex,
+                             int portIndex, PortStyle newStyle,
+                             QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int product_index_;
+  int port_index_;
+  int old_style_;
+  int new_style_;
+};
+
+// ── SetDevicePortStyleCommand ──
+class SetDevicePortStyleCommand : public QUndoCommand {
+ public:
+  SetDevicePortStyleCommand(TopologyDocument* doc, int deviceIndex,
+                            int portIndex, PortStyle newStyle,
+                            QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int device_index_;
+  int port_index_;
+  int old_style_;
+  int new_style_;
+};
+
+// ── SetConnectionStyleCommand ──
+class SetConnectionStyleCommand : public QUndoCommand {
+ public:
+  SetConnectionStyleCommand(TopologyDocument* doc, int connectionIndex,
+                            PathStyle newStyle,
+                            QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int connection_index_;
+  PathStyle old_style_;
+  PathStyle new_style_;
 };
 
 // ── ResizeItemCommand ──
@@ -279,6 +332,7 @@ class RemoveProductPortCommand : public QUndoCommand {
     QString portName;
     QString deviceName;
     QString devicePort;
+    PathStyle style = PathStyle::Bezier;
   };
   QVector<ConnEntry> saved_connections_;
 };

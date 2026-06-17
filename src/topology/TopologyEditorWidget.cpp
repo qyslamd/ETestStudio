@@ -589,6 +589,21 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onSaveTemplate);
   connect(view_, &TopologyView::addDeviceFromTemplateRequested, this,
           &TopologyEditorWidget::onAddDeviceFromTemplate);
+  connect(view_, &TopologyView::productPortStyleChangeRequested, this,
+          [this](int productIndex, int portIndex, PortStyle style) {
+            doc_->undoStack()->push(new SetProductPortStyleCommand(
+                doc_, productIndex, portIndex, style));
+          });
+  connect(view_, &TopologyView::devicePortStyleChangeRequested, this,
+          [this](int deviceIndex, int portIndex, PortStyle style) {
+            doc_->undoStack()->push(new SetDevicePortStyleCommand(
+                doc_, deviceIndex, portIndex, style));
+          });
+  connect(view_, &TopologyView::connectionStyleChangeRequested, this,
+          [this](int connectionIndex, PathStyle style) {
+            doc_->undoStack()->push(new SetConnectionStyleCommand(
+                doc_, connectionIndex, style));
+          });
 
   connect(scene_, &TopologyScene::itemSelected, this,
           &TopologyEditorWidget::onSelectionChanged);
@@ -1228,6 +1243,7 @@ void TopologyEditorWidget::onCopy() {
   auto* mime = new QMimeData();
   mime->setData(QLatin1String(kClipboardMime), data);
   clip->setMimeData(mime);
+  paste_action_->setEnabled(true);
   showStatusMessage(QStringLiteral("已复制 %1 个 UUT, %2 个设备, %3 个监听器")
                         .arg(prodsArr.size())
                         .arg(devsArr.size())
@@ -1423,14 +1439,20 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
 void TopologyEditorWidget::onExportImage() {
   QString filter =
       QStringLiteral("PNG 图片 (*.png);;SVG 矢量图 (*.svg);;PDF 文档 (*.pdf)");
+  QString selectedFilter;
   QString path = QFileDialog::getSaveFileName(
-      this, QStringLiteral("导出拓扑图"), QString(), filter);
+      this, QStringLiteral("导出拓扑图"), QString(), filter, &selectedFilter);
   if (path.isEmpty())
     return;
 
-  // 无后缀时按第一个过滤器追加 .png
-  if (QFileInfo(path).suffix().isEmpty())
-    path += QStringLiteral(".png");
+  if (QFileInfo(path).suffix().isEmpty()) {
+    if (selectedFilter.contains(QStringLiteral("SVG")))
+      path += QStringLiteral(".svg");
+    else if (selectedFilter.contains(QStringLiteral("PDF")))
+      path += QStringLiteral(".pdf");
+    else
+      path += QStringLiteral(".png");
+  }
 
   if (renderSceneToFile(scene_, path)) {
     showStatusMessage(QStringLiteral("拓扑图已导出: %1").arg(path));

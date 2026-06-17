@@ -62,7 +62,6 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
 
         emit documentChanged();
       }
-      return;
     }
   }
 

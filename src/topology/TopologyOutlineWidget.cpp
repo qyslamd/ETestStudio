@@ -221,7 +221,7 @@ bool TopologyOutlineWidget::applyFilter(QTreeWidgetItem* item,
   if (filter.isEmpty()) {
     item->setHidden(false);
     for (int i = 0; i < item->childCount(); ++i)
-      item->child(i)->setHidden(false);
+      applyFilter(item->child(i), filter);
     // keep category items expanded
     auto tag = static_cast<ItemTag>(item->data(0, kRoleTag).toInt());
     if (tag == ItemTag::Category)
