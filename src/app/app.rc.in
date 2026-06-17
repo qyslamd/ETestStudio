@@ -15,13 +15,13 @@ BEGIN
     BEGIN
         BLOCK "080404B0"
         BEGIN
-            VALUE "CompanyName",      "etest-demo"
-            VALUE "FileDescription",  "etest-demo - Enpht Auto Test System"
+            VALUE "CompanyName",      "ETestStudio"
+            VALUE "FileDescription",  "ETestStudio - Automated Test System"
             VALUE "FileVersion",      "@APP_VERSION_MAJOR@.@APP_VERSION_MINOR@.@APP_VERSION_PATCH@.@APP_VERSION_TWEAK@"
-            VALUE "InternalName",     "etest_demo"
+            VALUE "InternalName",     "ETestStudio"
             VALUE "LegalCopyright",   "Copyright 2026"
-            VALUE "OriginalFilename", "etest_demo.exe"
-            VALUE "ProductName",      "etest-demo"
+            VALUE "OriginalFilename", "ETestStudio.exe"
+            VALUE "ProductName",      "ETestStudio"
             VALUE "ProductVersion",   "@APP_VERSION_MAJOR@.@APP_VERSION_MINOR@.@APP_VERSION_PATCH@.@APP_VERSION_TWEAK@"
         END
     END

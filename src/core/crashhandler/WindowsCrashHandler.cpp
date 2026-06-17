@@ -20,7 +20,7 @@ WindowsCrashHandler* WindowsCrashHandler::s_instance = nullptr;
 WindowsCrashHandler::WindowsCrashHandler() 
     : m_prevFilter(nullptr) {
     s_instance = this;
-    // 默认崩溃日志路径：AppData/Local/etest_demo/crash/
+    // 默认崩溃日志路径：AppData/Local/ETestStudio/crash/
     QString localPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     m_dumpPath = localPath + "/crash/";
     QDir().mkpath(m_dumpPath);

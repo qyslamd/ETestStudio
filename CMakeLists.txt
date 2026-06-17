@@ -9,9 +9,9 @@
 # 注意：这个文件中的路径和配置可能需要根据实际环境进行调整，例如Qt库的路径和版本号。
 
 cmake_minimum_required(VERSION 3.19)
-project(etest_demo
+project(ETestStudio
     VERSION 1.0.0
-    DESCRIPTION "Use Qt to a app like ETest"
+    DESCRIPTION "ETestStudio - Automated Test System"
     LANGUAGES CXX C)
 
 #=======================================

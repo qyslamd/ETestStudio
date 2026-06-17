@@ -41,7 +41,7 @@ void AboutDialog::initUi() {
   logo_label_->setAlignment(Qt::AlignCenter);
   logo_label_->setFixedSize(64, 64);
 
-  name_label_ = new QLabel(QStringLiteral("ETest Demo"), header);
+  name_label_ = new QLabel(QStringLiteral("ETestStudio"), header);
   name_label_->setObjectName(QStringLiteral("aboutName"));
   name_label_->setAlignment(Qt::AlignCenter);
 

@@ -28,7 +28,7 @@ REM   --by-percent X        Scale results by X percent
 REM   Full list: cloc --help
 
 echo ========================================
-echo  etest-demo Code Line Count
+echo  ETestStudio Code Line Count
 echo ========================================
 echo.
 

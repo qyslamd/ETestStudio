@@ -118,7 +118,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::initUi() {
-  setWindowTitle(QStringLiteral("欢迎使用XXXX自动测试平台"));
+  setWindowTitle(QStringLiteral("ETestStudio"));
   setMinimumSize(900, 600);
   setWindowIcon(QIcon(":/resources/icons/app_icon.ico"));
 
@@ -1113,10 +1113,10 @@ void MainWindow::updateWindowTitle() {
     if (projectMgr.hasUnsavedChanges()) {
       title.prepend("* ");
     }
-    title += " - 欢迎使用XXXX自动测试平台";
+    title += " - ETestStudio";
     setWindowTitle(title);
   } else {
-    setWindowTitle(QStringLiteral("欢迎使用XXXX自动测试平台"));
+    setWindowTitle(QStringLiteral("ETestStudio"));
   }
 }
 

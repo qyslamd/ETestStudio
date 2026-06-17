@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "etest_demo",
+            "name": "ETestStudio",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ninja-debug/bin/etest_demo.exe",
+            "program": "${workspaceFolder}/build/ninja-debug/bin/ETestStudio.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/ninja-debug/bin",

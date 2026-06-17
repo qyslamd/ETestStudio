@@ -1,4 +1,4 @@
-# etest-demo
+# ETestStudio
 
 基于 Qt/C++ 的学习研究项目，仿照凯云 ETest 测试系统实现其核心功能。
 
@@ -62,8 +62,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://gitee.com/你的仓库地址/etest-demo.git
-cd etest-demo
+git clone https://gitee.com/你的仓库地址/ETestStudio.git
+cd ETestStudio
 
 # 构建项目（首次执行会自动下载第三方依赖，需要联网）
 scripts/build_ninja.bat
@@ -97,7 +97,7 @@ scripts/run_app.bat
 2. 按 `Ctrl+Shift+P`，运行 `CMake: Select Configure Preset`，选择 **ninja-debug**
 3. 按 `Ctrl+Shift+P`，运行 `CMake: Select Build Preset`，选择 **ninja-debug-build**
 4. 底部状态栏点击 `[Build]` 或按 `F7` 编译
-5. 可执行文件输出到 `build/ninja-debug/bin/etest_demo.exe`
+5. 可执行文件输出到 `build/ninja-debug/bin/ETestStudio.exe`
 
 **注意**：需要在 x64 Native Tools Command Prompt for VS2019 中启动 VSCode，或者手动执行 `scripts/build_ninja.bat` 完成首次配置。CMake Tools 会自动识别 `ninja-debug` 预设。
 

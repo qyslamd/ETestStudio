@@ -23,7 +23,7 @@ void Logger::init() {
     return;
   }
 
-  // 创建日志存储目录：AppData/Local/etest_demo/logs/
+  // 创建日志存储目录：AppData/Local/ETestStudio/logs/
   QString localPath =
       QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
   QString logDir = localPath + "/logs";

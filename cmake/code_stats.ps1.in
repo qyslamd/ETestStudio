@@ -1,4 +1,4 @@
-﻿# etest-demo 代码行数统计脚本
+﻿# ETestStudio 代码行数统计脚本
 # 由 CMake configure_file 生成，自动填充 cloc 路径
 
 # 设置控制台输出编码为 UTF-8，确保中文能正常显示
@@ -37,7 +37,7 @@ if (-not (Test-Path $cloc)) {
 #>
 
 Write-Host "========================================"
-Write-Host " etest-demo 代码行数统计"
+Write-Host " ETestStudio 代码行数统计"
 Write-Host "========================================"
 Write-Host ""
 

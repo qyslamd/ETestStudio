@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
   EditorManager::registerEditorTypes();
 
   // 单实例检测
-  SingleInstance singleInstance("etest_demo");
+  SingleInstance singleInstance("ETestStudio");
   if (singleInstance.isAppAlreadyRunning()) {
     singleInstance.connectToExistingInstance(QCoreApplication::arguments());
     return 0;
