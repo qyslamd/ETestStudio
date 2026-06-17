@@ -36,6 +36,7 @@
 #include "AppIconProvider.h"
 #include "ConnectionCleanup.h"
 #include "DevicePaletteWidget.h"
+#include "TopologyCleanupController.h"
 #include "TopologyExportController.h"
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
@@ -1487,21 +1488,8 @@ void TopologyEditorWidget::onCleanupInvalidConnections() {
     return;
 
   // 用户确认，批量移除（用父命令支持一次撤销）
-  ConnectionCleanup::sortForRemoval(&invalid);
-  auto* batchCmd = new QUndoCommand(QStringLiteral("清理无效连线"));
-
-  for (const auto& entry : invalid) {
-    switch (entry.type) {
-      case InvalidEntry::Connection:
-        new RemoveConnectionCommand(doc_, entry.index, batchCmd);
-        break;
-      case InvalidEntry::MonitorTap:
-        new UnTapConnectionCommand(doc_, entry.monIdx, entry.index, batchCmd);
-        break;
-    }
-  }
-
-  doc_->undoStack()->push(batchCmd);
+  doc_->undoStack()->push(
+      TopologyCleanupController::createCleanupCommand(doc_, invalid));
   showStatusMessage(QStringLiteral("已移除 %1 个无效项").arg(invalid.size()));
 }
 

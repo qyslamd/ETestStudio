@@ -69,3 +69,12 @@ add_etest(
     QT_MODULES Core Test Widgets
     LABELS TOPOLOGY
 )
+
+# 拓扑清理控制器测试
+add_etest(
+    NAME test_topology_cleanup_controller
+    SOURCES cleanup_controller_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test
+    LABELS TOPOLOGY
+)

@@ -18,6 +18,7 @@ add_library(${TARGET_NAME} STATIC
     ConnectionCleanup.h ConnectionCleanup.cpp
     TopologySceneRenderer.h TopologySceneRenderer.cpp
     TopologyExportController.h TopologyExportController.cpp
+    TopologyCleanupController.h TopologyCleanupController.cpp
 )
 target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
