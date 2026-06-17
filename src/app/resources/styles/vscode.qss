@@ -884,12 +884,6 @@ QLabel#topologyZoomLabel {
     padding: 0 4px;
     color: #CCCCCC;
 }
-QLabel#topologySectionHeader {
-    font-weight: bold;
-    padding: 4px 8px;
-    background-color: #2D2D2D;
-    border-bottom: 1px solid #252526;
-}
 QWidget#PhLoadingOverlay {
     background-color: #1E1E1E;
 }

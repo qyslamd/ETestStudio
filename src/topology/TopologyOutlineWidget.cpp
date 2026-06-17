@@ -2,7 +2,6 @@
 #include "TopologyDocument.h"
 
 #include <QHeaderView>
-#include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QTreeWidget>
@@ -15,10 +14,6 @@ TopologyOutlineWidget::TopologyOutlineWidget(QWidget* parent)
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
-
-  auto* title = new QLabel(QStringLiteral("导航大纲"), this);
-  title->setObjectName(QStringLiteral("topologySectionHeader"));
-  layout->addWidget(title);
 
   filter_input_ = new QLineEdit(this);
   filter_input_->setPlaceholderText(QStringLiteral("搜索..."));

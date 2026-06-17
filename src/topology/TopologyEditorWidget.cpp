@@ -297,18 +297,21 @@ void TopologyEditorWidget::initUi() {
 
   toolbar->addSeparator();
 
-  // ── 编辑组（暂用文字按钮）──
-  copy_action_ = new QAction(QStringLiteral("复制"), this);
+  // ── 编辑组 ──
+  copy_action_ = new QAction(topoIcon(QStringLiteral("topo_copy")),
+                             QStringLiteral("复制"), this);
   copy_action_->setToolTip(QStringLiteral("复制选中元素 (Ctrl+C)"));
   copy_action_->setEnabled(false);
   toolbar->addAction(copy_action_);
 
-  paste_action_ = new QAction(QStringLiteral("粘贴"), this);
+  paste_action_ = new QAction(topoIcon(QStringLiteral("topo_paste")),
+                              QStringLiteral("粘贴"), this);
   paste_action_->setToolTip(QStringLiteral("粘贴 (Ctrl+V)"));
   paste_action_->setEnabled(false);
   toolbar->addAction(paste_action_);
 
-  delete_action_ = new QAction(QStringLiteral("删除"), this);
+  delete_action_ = new QAction(topoIcon(QStringLiteral("topo_delete")),
+                               QStringLiteral("删除"), this);
   delete_action_->setToolTip(QStringLiteral("删除选中元素 (Delete)"));
   delete_action_->setEnabled(false);
   toolbar->addAction(delete_action_);
@@ -317,8 +320,10 @@ void TopologyEditorWidget::initUi() {
 
   // ── 排列/分布组 ──
   {
+    align_action_ = new QAction(
+        topoIcon(QStringLiteral("topo_align")), QStringLiteral("排列"), this);
     auto* alignBtn = new QToolButton(toolbar);
-    alignBtn->setText(QStringLiteral("排列"));
+    alignBtn->setDefaultAction(align_action_);
     alignBtn->setPopupMode(QToolButton::InstantPopup);
     auto* alignMenu = new QMenu(alignBtn);
     align_left_action_ = alignMenu->addAction(
@@ -341,8 +346,10 @@ void TopologyEditorWidget::initUi() {
     toolbar->addWidget(alignBtn);
   }
   {
+    distribute_action_ = new QAction(
+        topoIcon(QStringLiteral("topo_distribute")), QStringLiteral("分布"), this);
     auto* distributeBtn = new QToolButton(toolbar);
-    distributeBtn->setText(QStringLiteral("分布"));
+    distributeBtn->setDefaultAction(distribute_action_);
     distributeBtn->setPopupMode(QToolButton::InstantPopup);
     auto* distributeMenu = new QMenu(distributeBtn);
     distribute_horizontal_action_ = distributeMenu->addAction(
@@ -744,6 +751,12 @@ void TopologyEditorWidget::reloadToolbarIcons() {
 
   monitor_view_action_->setIcon(icon(QStringLiteral("topo_tap")));
   mount_action_->setIcon(icon(QStringLiteral("topo_tap")));
+
+  copy_action_->setIcon(icon(QStringLiteral("topo_copy")));
+  paste_action_->setIcon(icon(QStringLiteral("topo_paste")));
+  delete_action_->setIcon(icon(QStringLiteral("topo_delete")));
+  align_action_->setIcon(icon(QStringLiteral("topo_align")));
+  distribute_action_->setIcon(icon(QStringLiteral("topo_distribute")));
 
   export_image_action_->setIcon(icon(QStringLiteral("topo_export")));
   cleanup_action_->setIcon(icon(QStringLiteral("topo_cleanup")));

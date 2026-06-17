@@ -147,6 +147,8 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QAction* align_top_action_ = nullptr;
   QAction* align_vcenter_action_ = nullptr;
   QAction* align_bottom_action_ = nullptr;
+  QAction* align_action_ = nullptr;
+  QAction* distribute_action_ = nullptr;
   QAction* distribute_horizontal_action_ = nullptr;
   QAction* distribute_vertical_action_ = nullptr;
 

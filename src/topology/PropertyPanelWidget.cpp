@@ -23,10 +23,6 @@ PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc, QWidget* parent)
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
-  auto* title = new QLabel(QStringLiteral("属性面板"), this);
-  title->setObjectName(QStringLiteral("topologySectionHeader"));
-  layout->addWidget(title);
-
   stack_ = new QStackedWidget(this);
   layout->addWidget(stack_);
 

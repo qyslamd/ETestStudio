@@ -3,7 +3,6 @@
 #include <QDrag>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QLabel>
 #include <QLineEdit>
 #include <QListWidgetItem>
 #include <QMimeData>
@@ -131,10 +130,6 @@ DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QWidget(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
-
-  auto* title = new QLabel(QStringLiteral("设备面板"), this);
-  title->setObjectName(QStringLiteral("topologySectionHeader"));
-  layout->addWidget(title);
 
   filter_input_ = new QLineEdit(this);
   filter_input_->setPlaceholderText(QStringLiteral("搜索设备类型..."));
