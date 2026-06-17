@@ -95,6 +95,15 @@ int TopologyDocument::addProduct(const TopologyProduct& product) {
   return index;
 }
 
+int TopologyDocument::insertProduct(int index,
+                                    const TopologyProduct& product) {
+  if (index < 0 || index > products_.size())
+    return -1;
+  products_.insert(index, product);
+  emit productAdded(index);
+  return index;
+}
+
 void TopologyDocument::removeProduct(int index) {
   if (index < 0 || index >= products_.size())
     return;
@@ -129,6 +138,14 @@ int TopologyDocument::findProductIndex(const QString& name) const {
 int TopologyDocument::addDevice(const TopologyDevice& device) {
   int index = devices_.size();
   devices_.append(device);
+  emit deviceAdded(index);
+  return index;
+}
+
+int TopologyDocument::insertDevice(int index, const TopologyDevice& device) {
+  if (index < 0 || index > devices_.size())
+    return -1;
+  devices_.insert(index, device);
   emit deviceAdded(index);
   return index;
 }
@@ -172,6 +189,18 @@ void TopologyDocument::addDevicePort(int deviceIndex,
   emit deviceChanged(deviceIndex);
 }
 
+int TopologyDocument::insertDevicePort(int deviceIndex, int portIndex,
+                                       const TopologyDevicePort& port) {
+  if (deviceIndex < 0 || deviceIndex >= devices_.size())
+    return -1;
+  auto& dev = devices_[deviceIndex];
+  if (portIndex < 0 || portIndex > dev.ports.size())
+    return -1;
+  dev.ports.insert(portIndex, port);
+  emit deviceChanged(deviceIndex);
+  return portIndex;
+}
+
 void TopologyDocument::addProductPort(int productIndex,
                                       const TopologyPort& port) {
   if (productIndex < 0 || productIndex >= products_.size())
@@ -179,6 +208,18 @@ void TopologyDocument::addProductPort(int productIndex,
   int portIndex = products_[productIndex].ports.size();
   products_[productIndex].ports.append(port);
   emit productPortAdded(productIndex, portIndex);
+}
+
+int TopologyDocument::insertProductPort(int productIndex, int portIndex,
+                                        const TopologyPort& port) {
+  if (productIndex < 0 || productIndex >= products_.size())
+    return -1;
+  auto& prod = products_[productIndex];
+  if (portIndex < 0 || portIndex > prod.ports.size())
+    return -1;
+  prod.ports.insert(portIndex, port);
+  emit productPortAdded(productIndex, portIndex);
+  return portIndex;
 }
 
 void TopologyDocument::removeProductPort(int productIndex, int portIndex) {
@@ -228,6 +269,15 @@ int TopologyDocument::findDevicePortIndex(int deviceIndex,
 int TopologyDocument::addConnection(const TopologyConnection& conn) {
   int index = connections_.size();
   connections_.append(conn);
+  emit connectionAdded(index);
+  return index;
+}
+
+int TopologyDocument::insertConnection(int index,
+                                       const TopologyConnection& conn) {
+  if (index < 0 || index > connections_.size())
+    return -1;
+  connections_.insert(index, conn);
   emit connectionAdded(index);
   return index;
 }
@@ -299,6 +349,15 @@ int TopologyDocument::addMonitor(const TopologyMonitor& monitor) {
   return index;
 }
 
+int TopologyDocument::insertMonitor(int index,
+                                    const TopologyMonitor& monitor) {
+  if (index < 0 || index > monitors_.size())
+    return -1;
+  monitors_.insert(index, monitor);
+  emit monitorAdded(index);
+  return index;
+}
+
 void TopologyDocument::removeMonitor(int index) {
   if (index < 0 || index >= monitors_.size())
     return;
@@ -334,6 +393,18 @@ void TopologyDocument::addTap(int monitorIndex,
     return;
   monitors_[monitorIndex].taps.append(tap);
   emit monitorChanged(monitorIndex);
+}
+
+int TopologyDocument::insertTap(int monitorIndex, int tapIndex,
+                                const TopologyMonitorTap& tap) {
+  if (monitorIndex < 0 || monitorIndex >= monitors_.size())
+    return -1;
+  auto& mon = monitors_[monitorIndex];
+  if (tapIndex < 0 || tapIndex > mon.taps.size())
+    return -1;
+  mon.taps.insert(tapIndex, tap);
+  emit monitorChanged(monitorIndex);
+  return tapIndex;
 }
 
 void TopologyDocument::removeTap(int monitorIndex, int tapIndex) {

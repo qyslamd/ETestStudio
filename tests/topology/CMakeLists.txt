@@ -15,3 +15,12 @@ add_etest(
     QT_MODULES Core Test Widgets
     LABELS TOPOLOGY
 )
+
+# 撤销命令回归测试
+add_etest(
+    NAME test_topology_undo_commands
+    SOURCES undo_commands_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test
+    LABELS TOPOLOGY
+)

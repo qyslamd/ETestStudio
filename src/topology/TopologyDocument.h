@@ -96,6 +96,7 @@ class TopologyDocument : public QObject {
   explicit TopologyDocument(QObject* parent = nullptr);
 
   int addProduct(const TopologyProduct& product);
+  int insertProduct(int index, const TopologyProduct& product);
   void removeProduct(int index);
   TopologyProduct* product(int index);
   const TopologyProduct* product(int index) const;
@@ -103,6 +104,7 @@ class TopologyDocument : public QObject {
   int findProductIndex(const QString& name) const;
 
   int addDevice(const TopologyDevice& device);
+  int insertDevice(int index, const TopologyDevice& device);
   void removeDevice(int index);
   TopologyDevice* device(int index);
   const TopologyDevice* device(int index) const;
@@ -111,14 +113,19 @@ class TopologyDocument : public QObject {
 
   // Product (UUT) port management
   void addProductPort(int productIndex, const TopologyPort& port);
+  int insertProductPort(int productIndex, int portIndex,
+                        const TopologyPort& port);
   void removeProductPort(int productIndex, int portIndex);
   int findProductPortIndex(int productIndex, const QString& name) const;
 
   void addDevicePort(int deviceIndex, const TopologyDevicePort& port);
+  int insertDevicePort(int deviceIndex, int portIndex,
+                       const TopologyDevicePort& port);
   void removeDevicePort(int deviceIndex, int portIndex);
   int findDevicePortIndex(int deviceIndex, const QString& name) const;
 
   int addConnection(const TopologyConnection& conn);
+  int insertConnection(int index, const TopologyConnection& conn);
   void removeConnection(int index);
   TopologyConnection* connection(int index);
   const TopologyConnection* connection(int index) const;
@@ -126,6 +133,7 @@ class TopologyDocument : public QObject {
 
   // Monitor management
   int addMonitor(const TopologyMonitor& monitor);
+  int insertMonitor(int index, const TopologyMonitor& monitor);
   void removeMonitor(int index);
   TopologyMonitor* monitor(int index);
   const TopologyMonitor* monitor(int index) const;
@@ -134,6 +142,7 @@ class TopologyDocument : public QObject {
 
   // Tap management
   void addTap(int monitorIndex, const TopologyMonitorTap& tap);
+  int insertTap(int monitorIndex, int tapIndex, const TopologyMonitorTap& tap);
   void removeTap(int monitorIndex, int tapIndex);
 
   bool canConnect(const QString& productName,

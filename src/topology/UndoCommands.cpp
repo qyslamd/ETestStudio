@@ -47,7 +47,7 @@ RemoveProductCommand::RemoveProductCommand(TopologyDocument* doc,
 }
 
 void RemoveProductCommand::undo() {
-  doc_->addProduct(product_);
+  doc_->insertProduct(index_, product_);
   for (const auto& ce : saved_connections_) {
     TopologyConnection conn;
     conn.productName = ce.productName;
@@ -112,7 +112,7 @@ RemoveDeviceCommand::RemoveDeviceCommand(TopologyDocument* doc,
 }
 
 void RemoveDeviceCommand::undo() {
-  doc_->addDevice(device_);
+  doc_->insertDevice(index_, device_);
   for (const auto& ce : saved_connections_) {
     TopologyConnection conn;
     conn.productName = ce.productName;
@@ -183,7 +183,7 @@ RemoveConnectionCommand::RemoveConnectionCommand(TopologyDocument* doc,
 }
 
 void RemoveConnectionCommand::undo() {
-  doc_->addConnection(conn_);
+  doc_->insertConnection(index_, conn_);
   // 恢复所有被级联清理的 tap
   for (const auto& st : saved_taps_) {
     doc_->addTap(st.monitorIndex, st.tap);
@@ -410,7 +410,7 @@ RemoveMonitorCommand::RemoveMonitorCommand(TopologyDocument* doc,
 }
 
 void RemoveMonitorCommand::undo() {
-  doc_->addMonitor(monitor_);
+  doc_->insertMonitor(index_, monitor_);
 }
 
 void RemoveMonitorCommand::redo() {
@@ -434,7 +434,7 @@ RemoveDevicePortCommand::RemoveDevicePortCommand(TopologyDocument* doc,
 }
 
 void RemoveDevicePortCommand::undo() {
-  doc_->addDevicePort(device_index_, port_);
+  doc_->insertDevicePort(device_index_, port_index_, port_);
 }
 
 void RemoveDevicePortCommand::redo() {
@@ -495,7 +495,7 @@ RemoveProductPortCommand::RemoveProductPortCommand(TopologyDocument* doc,
 }
 
 void RemoveProductPortCommand::undo() {
-  doc_->addProductPort(product_index_, port_);
+  doc_->insertProductPort(product_index_, port_index_, port_);
   // 恢复被级联清理的连线
   for (const auto& ce : saved_connections_) {
     TopologyConnection conn;
@@ -568,7 +568,7 @@ UnTapConnectionCommand::UnTapConnectionCommand(TopologyDocument* doc,
 }
 
 void UnTapConnectionCommand::undo() {
-  doc_->addTap(monitor_index_, tap_);
+  doc_->insertTap(monitor_index_, tap_index_, tap_);
 }
 
 void UnTapConnectionCommand::redo() {
