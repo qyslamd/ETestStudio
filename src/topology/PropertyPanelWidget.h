@@ -94,8 +94,10 @@ class PropertyPanelWidget : public QWidget {
   QComboBox* port_direction_combo_ = nullptr;
   QComboBox* port_allowed_types_edit_ = nullptr;
   QComboBox* port_function_combo_ = nullptr;
+  QComboBox* port_style_combo_ = nullptr;
   int editing_port_product_ = -1;
   int editing_port_index_ = -1;
+  void onPortStyleChanged();
 
   // Device page widgets
   QLineEdit* device_name_edit_ = nullptr;
@@ -124,8 +126,10 @@ class PropertyPanelWidget : public QWidget {
   QLineEdit* devport_name_edit_ = nullptr;
   QComboBox* devport_direction_combo_ = nullptr;
   QComboBox* devport_function_combo_ = nullptr;
+  QComboBox* devport_style_combo_ = nullptr;
   int editing_device_port_device_ = -1;
   int editing_device_port_index_ = -1;
+  void onDevicePortStyleChanged();
 
   // Monitor page widgets
   QLineEdit* monitor_name_edit_ = nullptr;

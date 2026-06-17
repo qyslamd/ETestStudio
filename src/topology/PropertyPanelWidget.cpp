@@ -145,6 +145,10 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       port_function_combo_->blockSignals(true);
       port_function_combo_->setCurrentIndex(static_cast<int>(p.functionType));
       port_function_combo_->blockSignals(false);
+      port_style_combo_->blockSignals(true);
+      port_style_combo_->setCurrentIndex(
+          port_style_combo_->findData(static_cast<int>(p.portStyle)));
+      port_style_combo_->blockSignals(false);
     }
     stack_->setCurrentIndex(PagePort);
     return;
@@ -218,6 +222,10 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       devport_function_combo_->setCurrentIndex(
           static_cast<int>(dp.functionType));
       devport_function_combo_->blockSignals(false);
+      devport_style_combo_->blockSignals(true);
+      devport_style_combo_->setCurrentIndex(
+          devport_style_combo_->findData(static_cast<int>(dp.portStyle)));
+      devport_style_combo_->blockSignals(false);
     }
     stack_->setCurrentIndex(PageDevicePort);
     return;
@@ -390,6 +398,13 @@ void PropertyPanelWidget::buildPortPage() {
           [this](const QString&) { onPortFunctionTypeChanged(); });
   lay->addRow(QStringLiteral("功能类型"), port_function_combo_);
 
+  port_style_combo_ = new QComboBox(w);
+  port_style_combo_->addItem(QStringLiteral("圆形"), static_cast<int>(PortStyle::Circle));
+  port_style_combo_->addItem(QStringLiteral("三角形"), static_cast<int>(PortStyle::Triangle));
+  connect(port_style_combo_, &QComboBox::currentTextChanged, this,
+          &PropertyPanelWidget::onPortStyleChanged);
+  lay->addRow(QStringLiteral("端口样式"), port_style_combo_);
+
   stack_->addWidget(w);
 }
 
@@ -515,6 +530,24 @@ void PropertyPanelWidget::onConnStyleChanged() {
       new SetConnectionStyleCommand(doc_, editing_conn_index_, style));
 }
 
+void PropertyPanelWidget::onPortStyleChanged() {
+  if (editing_port_product_ < 0 || editing_port_index_ < 0)
+    return;
+  auto style = static_cast<PortStyle>(
+      port_style_combo_->currentData().toInt());
+  doc_->undoStack()->push(new SetProductPortStyleCommand(
+      doc_, editing_port_product_, editing_port_index_, style));
+}
+
+void PropertyPanelWidget::onDevicePortStyleChanged() {
+  if (editing_device_port_device_ < 0 || editing_device_port_index_ < 0)
+    return;
+  auto style = static_cast<PortStyle>(
+      devport_style_combo_->currentData().toInt());
+  doc_->undoStack()->push(new SetDevicePortStyleCommand(
+      doc_, editing_device_port_device_, editing_device_port_index_, style));
+}
+
 void PropertyPanelWidget::buildDevicePortPage() {
   auto* w = new QWidget(this);
   w->setObjectName("devicePortPage");
@@ -541,6 +574,13 @@ void PropertyPanelWidget::buildDevicePortPage() {
   connect(devport_function_combo_, &QComboBox::currentTextChanged, this,
           [this](const QString&) { onDevicePortFunctionTypeChanged(); });
   lay->addRow(QStringLiteral("功能类型"), devport_function_combo_);
+
+  devport_style_combo_ = new QComboBox(w);
+  devport_style_combo_->addItem(QStringLiteral("圆形"), static_cast<int>(PortStyle::Circle));
+  devport_style_combo_->addItem(QStringLiteral("三角形"), static_cast<int>(PortStyle::Triangle));
+  connect(devport_style_combo_, &QComboBox::currentTextChanged, this,
+          &PropertyPanelWidget::onDevicePortStyleChanged);
+  lay->addRow(QStringLiteral("端口样式"), devport_style_combo_);
 
   stack_->addWidget(w);
 }
