@@ -314,7 +314,10 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
     if (devPort) {
       const auto* prod = doc_->product(srcPort->productIndex());
       const auto* dev = doc_->device(devPort->deviceIndex());
-      if (prod && dev && devPort->portIndex() < dev->ports.size()) {
+      if (prod && dev && srcPort->portIndex() >= 0 &&
+          srcPort->portIndex() < prod->ports.size() &&
+          devPort->portIndex() >= 0 &&
+          devPort->portIndex() < dev->ports.size()) {
         const auto& port = prod->ports[srcPort->portIndex()];
         const auto& dp = dev->ports[devPort->portIndex()];
         if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
@@ -328,7 +331,10 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
     if (uutPort) {
       const auto* dev = doc_->device(srcDevPort->deviceIndex());
       const auto* prod = doc_->product(uutPort->productIndex());
-      if (dev && prod && uutPort->portIndex() < prod->ports.size()) {
+      if (dev && prod && srcDevPort->portIndex() >= 0 &&
+          srcDevPort->portIndex() < dev->ports.size() &&
+          uutPort->portIndex() >= 0 &&
+          uutPort->portIndex() < prod->ports.size()) {
         const auto& dp = dev->ports[srcDevPort->portIndex()];
         const auto& port = prod->ports[uutPort->portIndex()];
         if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {

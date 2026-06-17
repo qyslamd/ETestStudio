@@ -33,3 +33,12 @@ add_etest(
     QT_MODULES Core Test
     LABELS TOPOLOGY
 )
+
+# 属性面板端口应用测试
+add_etest(
+    NAME test_topology_property_panel_apply
+    SOURCES property_panel_apply_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test Widgets
+    LABELS TOPOLOGY
+)

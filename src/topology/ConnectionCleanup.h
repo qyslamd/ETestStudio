@@ -21,6 +21,9 @@ class ConnectionCleanup {
  public:
   /// 扫描 doc 并返回所有无效项
   static QVector<InvalidEntry> findInvalid(const TopologyDocument* doc);
+
+  /// 按安全删除顺序排序：连接和 tap 都按易失下标降序
+  static void sortForRemoval(QVector<InvalidEntry>* entries);
 };
 
 }  // namespace etest::topology

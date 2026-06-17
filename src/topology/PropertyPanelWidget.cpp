@@ -758,6 +758,8 @@ void PropertyPanelWidget::applyUutPorts(int productIndex) {
     auto* dirItem = uut_port_table_->item(r, 1);
     auto* funcItem = uut_port_table_->item(r, 2);
     TopologyPort port;
+    if (r < saved_uut_ports_.size())
+      port = saved_uut_ports_[r];
     port.name = nameItem->text();
     port.direction = dirItem && dirItem->text() == QStringLiteral("Output")
                          ? TopologyPort::Output
@@ -992,6 +994,8 @@ void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
     auto funcText =
         device_port_model_->index(r, 2).data(Qt::DisplayRole).toString();
     TopologyDevicePort dp;
+    if (r < saved_device_ports_.size())
+      dp = saved_device_ports_[r];
     dp.name = name;
     dp.direction = dirText == QStringLiteral("Bidirectional")
                        ? TopologyPort::Bidirectional

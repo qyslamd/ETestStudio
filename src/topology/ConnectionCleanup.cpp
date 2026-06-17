@@ -1,6 +1,8 @@
 #include "ConnectionCleanup.h"
 #include "TopologyDocument.h"
 
+#include <algorithm>
+
 namespace etest::topology {
 
 QVector<InvalidEntry> ConnectionCleanup::findInvalid(
@@ -80,6 +82,22 @@ QVector<InvalidEntry> ConnectionCleanup::findInvalid(
   }
 
   return invalid;
+}
+
+void ConnectionCleanup::sortForRemoval(QVector<InvalidEntry>* entries) {
+  if (!entries)
+    return;
+
+  std::sort(entries->begin(), entries->end(), [](const InvalidEntry& a,
+                                                 const InvalidEntry& b) {
+    if (a.type != b.type)
+      return a.type == InvalidEntry::Connection;
+    if (a.type == InvalidEntry::Connection)
+      return a.index > b.index;
+    if (a.monIdx != b.monIdx)
+      return a.monIdx > b.monIdx;
+    return a.index > b.index;
+  });
 }
 
 }  // namespace etest::topology

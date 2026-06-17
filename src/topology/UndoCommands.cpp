@@ -508,11 +508,14 @@ void RemoveProductPortCommand::undo() {
 }
 
 void RemoveProductPortCommand::redo() {
+  auto* prod = doc_->product(product_index_);
+  if (!prod)
+    return;
+
   // 先移除引用此端口的所有连线
   for (int i = doc_->connectionCount() - 1; i >= 0; --i) {
     const auto* c = doc_->connection(i);
-    if (c->portName == port_.name &&
-        c->productName == doc_->product(product_index_)->name) {
+    if (c && c->portName == port_.name && c->productName == prod->name) {
       doc_->removeConnection(i);
     }
   }

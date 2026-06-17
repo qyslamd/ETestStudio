@@ -184,6 +184,32 @@ TEST(ConnectionCleanupTest, InvalidMonitorTaps) {
   EXPECT_EQ(result[0].type, InvalidEntry::MonitorTap);
 }
 
+TEST(ConnectionCleanupTest, SortForRemovalDeletesUnstableIndexesSafely) {
+  QVector<InvalidEntry> entries;
+  entries.append({InvalidEntry::MonitorTap, 1, 0, QStringLiteral("tap 1")});
+  entries.append({InvalidEntry::Connection, 2, -1, QStringLiteral("conn 2")});
+  entries.append({InvalidEntry::MonitorTap, 4, 0, QStringLiteral("tap 4")});
+  entries.append({InvalidEntry::Connection, 5, -1, QStringLiteral("conn 5")});
+  entries.append({InvalidEntry::MonitorTap, 3, 1, QStringLiteral("tap 3")});
+
+  ConnectionCleanup::sortForRemoval(&entries);
+
+  ASSERT_EQ(entries.size(), 5);
+  EXPECT_EQ(entries[0].type, InvalidEntry::Connection);
+  EXPECT_EQ(entries[0].index, 5);
+  EXPECT_EQ(entries[1].type, InvalidEntry::Connection);
+  EXPECT_EQ(entries[1].index, 2);
+  EXPECT_EQ(entries[2].type, InvalidEntry::MonitorTap);
+  EXPECT_EQ(entries[2].monIdx, 1);
+  EXPECT_EQ(entries[2].index, 3);
+  EXPECT_EQ(entries[3].type, InvalidEntry::MonitorTap);
+  EXPECT_EQ(entries[3].monIdx, 0);
+  EXPECT_EQ(entries[3].index, 4);
+  EXPECT_EQ(entries[4].type, InvalidEntry::MonitorTap);
+  EXPECT_EQ(entries[4].monIdx, 0);
+  EXPECT_EQ(entries[4].index, 1);
+}
+
 TEST(ConnectionCleanupTest, NullDoc) {
   auto result = ConnectionCleanup::findInvalid(nullptr);
   EXPECT_TRUE(result.isEmpty());

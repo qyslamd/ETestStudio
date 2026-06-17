@@ -954,25 +954,11 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
         doc_, devPort->deviceIndex(), devPort->portIndex()));
     showStatusMessage(QStringLiteral("已删除设备端口"));
   } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
-    auto* src = conn->sourcePort();
-    auto* tgt = conn->targetDevice();
-    if (src && tgt) {
-      auto* prod = doc_->product(src->productIndex());
-      auto* dev = doc_->device(tgt->deviceIndex());
-      if (prod && dev) {
-        for (int i = 0; i < doc_->connectionCount(); ++i) {
-          const auto* c = doc_->connection(i);
-          if (c->productName == prod->name &&
-              c->portName == prod->ports[src->portIndex()].name &&
-              c->deviceName == dev->name &&
-              c->devicePort == conn->devicePort()) {
-            doc_->undoStack()->push(new RemoveConnectionCommand(doc_, i));
-            break;
-          }
-        }
-      }
+    int index = conn->connectionIndex();
+    if (index >= 0 && index < doc_->connectionCount()) {
+      doc_->undoStack()->push(new RemoveConnectionCommand(doc_, index));
+      showStatusMessage(QStringLiteral("已删除连线"));
     }
-    showStatusMessage(QStringLiteral("已删除连线"));
   }
 }
 
@@ -1499,10 +1485,10 @@ void TopologyEditorWidget::onCleanupInvalidConnections() {
     return;
 
   // 用户确认，批量移除（用父命令支持一次撤销）
+  ConnectionCleanup::sortForRemoval(&invalid);
   auto* batchCmd = new QUndoCommand(QStringLiteral("清理无效连线"));
 
-  for (int r = invalid.size() - 1; r >= 0; --r) {
-    const auto& entry = invalid[r];
+  for (const auto& entry : invalid) {
     switch (entry.type) {
       case InvalidEntry::Connection:
         new RemoveConnectionCommand(doc_, entry.index, batchCmd);
