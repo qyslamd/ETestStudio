@@ -60,3 +60,12 @@ add_etest(
     QT_MODULES Core Test
     LABELS TOPOLOGY
 )
+
+# 拓扑导出控制器测试
+add_etest(
+    NAME test_topology_export_controller
+    SOURCES export_controller_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test Widgets
+    LABELS TOPOLOGY
+)

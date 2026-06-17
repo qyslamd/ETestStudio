@@ -36,7 +36,7 @@
 #include "AppIconProvider.h"
 #include "ConnectionCleanup.h"
 #include "DevicePaletteWidget.h"
-#include "TopologySceneRenderer.h"
+#include "TopologyExportController.h"
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
 #include "ThemeManager.h"
@@ -1433,26 +1433,10 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
 // ── Export Image ──────────────────────────────────────────────
 
 void TopologyEditorWidget::onExportImage() {
-  QString filter =
-      QStringLiteral("PNG 图片 (*.png);;SVG 矢量图 (*.svg);;PDF 文档 (*.pdf)");
-  QString selectedFilter;
-  QString path = QFileDialog::getSaveFileName(
-      this, QStringLiteral("导出拓扑图"), QString(), filter, &selectedFilter);
-  if (path.isEmpty())
-    return;
-
-  if (QFileInfo(path).suffix().isEmpty()) {
-    if (selectedFilter.contains(QStringLiteral("SVG")))
-      path += QStringLiteral(".svg");
-    else if (selectedFilter.contains(QStringLiteral("PDF")))
-      path += QStringLiteral(".pdf");
-    else
-      path += QStringLiteral(".png");
-  }
-
-  if (renderSceneToFile(scene_, path)) {
+  QString path;
+  if (TopologyExportController::exportScene(this, scene_, &path)) {
     showStatusMessage(QStringLiteral("拓扑图已导出: %1").arg(path));
-  } else {
+  } else if (!path.isEmpty()) {
     QMessageBox::warning(this, QStringLiteral("错误"),
                          QStringLiteral("导出失败"));
   }
