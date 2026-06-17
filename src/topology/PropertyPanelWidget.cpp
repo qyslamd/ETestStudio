@@ -93,14 +93,6 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       uut_name_edit_->setText(prod->name);
       uut_name_edit_->blockSignals(false);
 
-      // 尺寸
-      uut_width_spin_->blockSignals(true);
-      uut_width_spin_->setValue(static_cast<int>(prod->size.width()));
-      uut_width_spin_->blockSignals(false);
-      uut_height_spin_->blockSignals(true);
-      uut_height_spin_->setValue(static_cast<int>(prod->size.height()));
-      uut_height_spin_->blockSignals(false);
-
       // 端口列表 — 保存当前状态供 undo，加载到表格
       uut_dirty_ = false;
       saved_uut_ports_ = prod->ports;
@@ -318,24 +310,6 @@ void PropertyPanelWidget::buildUutPage() {
           &PropertyPanelWidget::onUutNameChanged);
   infoLay->addRow(QStringLiteral("名称"), uut_name_edit_);
   scrollLay->addWidget(infoGroup);
-
-  // ── 尺寸 ──
-  auto* sizeGroup = new QGroupBox(QStringLiteral("尺寸"), w);
-  auto* sizeLay = new QFormLayout(sizeGroup);
-  uut_width_spin_ = new QSpinBox(w);
-  uut_width_spin_->setRange(0, 9999);
-  uut_width_spin_->setSuffix(QStringLiteral(" px (0=自动)"));
-  connect(uut_width_spin_, QOverload<int>::of(&QSpinBox::valueChanged),
-          this, &PropertyPanelWidget::onUutWidthChanged);
-  sizeLay->addRow(QStringLiteral("宽度"), uut_width_spin_);
-
-  uut_height_spin_ = new QSpinBox(w);
-  uut_height_spin_->setRange(0, 9999);
-  uut_height_spin_->setSuffix(QStringLiteral(" px (0=自动)"));
-  connect(uut_height_spin_, QOverload<int>::of(&QSpinBox::valueChanged),
-          this, &PropertyPanelWidget::onUutHeightChanged);
-  sizeLay->addRow(QStringLiteral("高度"), uut_height_spin_);
-  scrollLay->addWidget(sizeGroup);
 
   // ── 端口列表 ──
   auto* portGroup = new QGroupBox(QStringLiteral("端口列表"), w);
@@ -636,52 +610,6 @@ void PropertyPanelWidget::onUutNameChanged() {
         QStringLiteral("修改 UUT 名称"));
     doc_->undoStack()->push(cmd);
   }
-}
-
-// ── UUT size ──
-
-void PropertyPanelWidget::onUutWidthChanged() {
-  auto* prod = doc_->product(editing_uut_index_);
-  if (!prod) return;
-  int val = uut_width_spin_->value();
-  int idx = editing_uut_index_;
-  QSizeF oldSize = prod->size;
-  QSizeF newSize(static_cast<qreal>(val), prod->size.height());
-  auto* cmd = new PropertyCommand(
-      doc_,
-      [doc = doc_, idx, oldSize]() {
-        if (auto* p = doc->product(idx))
-          p->size = oldSize;
-      },
-      [doc = doc_, idx, newSize]() {
-        if (auto* p = doc->product(idx))
-          p->size = newSize;
-      },
-      QStringLiteral("修改 UUT 宽度"));
-  doc_->undoStack()->push(cmd);
-  emit documentChanged();
-}
-
-void PropertyPanelWidget::onUutHeightChanged() {
-  auto* prod = doc_->product(editing_uut_index_);
-  if (!prod) return;
-  int val = uut_height_spin_->value();
-  int idx = editing_uut_index_;
-  QSizeF oldSize = prod->size;
-  QSizeF newSize(prod->size.width(), static_cast<qreal>(val));
-  auto* cmd = new PropertyCommand(
-      doc_,
-      [doc = doc_, idx, oldSize]() {
-        if (auto* p = doc->product(idx))
-          p->size = oldSize;
-      },
-      [doc = doc_, idx, newSize]() {
-        if (auto* p = doc->product(idx))
-          p->size = newSize;
-      },
-      QStringLiteral("修改 UUT 高度"));
-  doc_->undoStack()->push(cmd);
-  emit documentChanged();
 }
 
 // ── UUT port table operations ──

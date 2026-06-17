@@ -4,7 +4,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QSpinBox>
 #include <QStackedWidget>
 #include <QTableWidget>
 #include <QTableView>
@@ -39,8 +38,6 @@ class PropertyPanelWidget : public QWidget {
   void buildMonitorPage();
 
   void onUutNameChanged();
-  void onUutWidthChanged();
-  void onUutHeightChanged();
   void onUutAddPort();
   void onUutRemovePort();
   void applyUutPorts(int productIndex);
@@ -85,8 +82,6 @@ class PropertyPanelWidget : public QWidget {
 
   // UUT page widgets
   QLineEdit* uut_name_edit_ = nullptr;
-  QSpinBox* uut_width_spin_ = nullptr;
-  QSpinBox* uut_height_spin_ = nullptr;
   QTableWidget* uut_port_table_ = nullptr;
   QPushButton* uut_add_port_btn_ = nullptr;
   QPushButton* uut_remove_port_btn_ = nullptr;
