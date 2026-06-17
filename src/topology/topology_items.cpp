@@ -104,12 +104,13 @@ QRectF UutPortItem::boundingRect() const {
 
 QPainterPath UutPortItem::shape() const {
   QPainterPath p;
+  p.addEllipse(-kRadius, -kRadius, kRadius * 2, kRadius * 2);
   p.addEllipse(-kLineLength - kRadius, -kRadius, kRadius * 2, kRadius * 2);
   QPainterPath line;
   line.moveTo(0, 0);
   line.lineTo(-kLineLength, 0);
   QPainterPathStroker stroker;
-  stroker.setWidth(8.0);
+  stroker.setWidth(18.0);
   p.addPath(stroker.createStroke(line));
   return p;
 }
@@ -488,12 +489,13 @@ QRectF DevicePortItem::boundingRect() const {
 
 QPainterPath DevicePortItem::shape() const {
   QPainterPath p;
+  p.addEllipse(-kRadius, -kRadius, kRadius * 2, kRadius * 2);
   p.addEllipse(kLineLength - kRadius, -kRadius, kRadius * 2, kRadius * 2);
   QPainterPath line;
   line.moveTo(0, 0);
   line.lineTo(kLineLength, 0);
   QPainterPathStroker stroker;
-  stroker.setWidth(8.0);
+  stroker.setWidth(18.0);
   p.addPath(stroker.createStroke(line));
   return p;
 }

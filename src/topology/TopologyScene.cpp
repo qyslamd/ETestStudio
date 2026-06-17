@@ -478,7 +478,7 @@ DeviceItem* TopologyScene::deviceItemAt(QPointF scenePos) const {
 }
 
 DevicePortItem* TopologyScene::devicePortItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemShape,
+  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
                            Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(item)) {
@@ -489,7 +489,7 @@ DevicePortItem* TopologyScene::devicePortItemAt(QPointF scenePos) const {
 }
 
 UutPortItem* TopologyScene::portItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemShape,
+  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
                            Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* p = qgraphicsitem_cast<UutPortItem*>(item)) {

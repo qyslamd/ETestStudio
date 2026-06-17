@@ -194,6 +194,10 @@ TopologyDocument* TopologyEditorWidget::document() const {
 void TopologyEditorWidget::reloadScene() {
   scene_->loadFromDocument();
   outline_widget_->rebuildTree(doc_);
+  // 强制 viewport 刷新，否则异步加载后在 MinimalViewportUpdate 模式下
+  // 不会自动重绘，需要缩放才可见
+  if (view_ && view_->viewport())
+    view_->viewport()->update();
 }
 
 void TopologyEditorWidget::setEditorId(const QString& newId) {
@@ -225,10 +229,15 @@ void TopologyEditorWidget::setEditorId(const QString& newId) {
             load_watcher_ = nullptr;
 
             if (!jdoc.isNull()) {
-              etest::topology::TopologyJsonSerializer::deserialize(
-                  jdoc.object(), doc_);
-              doc_->undoStack()->clear();
-              reloadScene();
+              if (etest::topology::TopologyJsonSerializer::deserialize(
+                      jdoc.object(), doc_)) {
+                doc_->undoStack()->clear();
+                reloadScene();
+              } else {
+                showStatusMessage(
+                    QStringLiteral("拓扑文件解析失败: %1")
+                        .arg(etest::topology::TopologyJsonSerializer::lastError()));
+              }
             }
             hideLoadingOverlay();
           });
