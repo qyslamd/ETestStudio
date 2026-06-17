@@ -58,7 +58,35 @@ QVector<InvalidEntry> ConnectionCleanup::findInvalid(
     const auto* mon = doc->monitor(mi);
     if (!mon) continue;
 
-    for (int ti = mon->taps.size() - 1; ti >= 0; --ti) {
+    // 通道数不足的多余挂载标记为无效（旧的 .etopo 文件可能缺少 channelCount）
+    for (int ti = mon->channelCount; ti < mon->taps.size(); ++ti) {
+      const auto& tap = mon->taps[ti];
+      invalid.append({InvalidEntry::MonitorTap, ti, mi,
+          QStringLiteral("挂载: UUT \"%1/%2\" → 设备 \"%3/%4\" (超出通道数)")
+              .arg(tap.productName, tap.portName,
+                   tap.deviceName, tap.devicePort)});
+    }
+
+    // 检查未超限的挂载是否有重复
+    int maxTi = qMin(mon->channelCount, mon->taps.size());
+    for (int ti = 0; ti < maxTi; ++ti) {
+      const auto& tap = mon->taps[ti];
+      for (int tj = ti + 1; tj < maxTi; ++tj) {
+        const auto& tap2 = mon->taps[tj];
+        if (tap.productName == tap2.productName &&
+            tap.portName == tap2.portName &&
+            tap.deviceName == tap2.deviceName &&
+            tap.devicePort == tap2.devicePort) {
+          invalid.append({InvalidEntry::MonitorTap, tj, mi,
+              QStringLiteral("挂载: UUT \"%1/%2\" → 设备 \"%3/%4\" (重复挂载)")
+                  .arg(tap2.productName, tap2.portName,
+                       tap2.deviceName, tap2.devicePort)});
+          break;
+        }
+      }
+    }
+
+    for (int ti = 0; ti < maxTi; ++ti) {
       const auto& tap = mon->taps[ti];
 
       bool connFound = false;

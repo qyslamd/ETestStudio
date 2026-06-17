@@ -175,7 +175,7 @@ void TopologyScene::finishTap(QPointF scenePos) {
         }
       }
 
-      if (!alreadyTapped) {
+      if (!alreadyTapped && mon && mon->taps.size() < mon->channelCount) {
         auto* cmd = new TapConnectionCommand(doc_, tap_mode_monitor_, tap);
         doc_->undoStack()->push(cmd);
       }
@@ -334,8 +334,23 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
     auto* conn = connectionItemAt(scenePos);
     if (conn) {
       int monIdx = srcMonPort->monitorIndex();
+      const auto* mon = doc_->monitor(monIdx);
+      if (!mon)
+        return;
+      if (mon->taps.size() >= mon->channelCount)
+        return;
       const auto* c = doc_->connection(conn->connectionIndex());
-      if (c) {
+      if (!c)
+        return;
+      // 检查是否重复挂载
+      for (const auto& t : mon->taps) {
+        if (t.productName == c->productName &&
+            t.portName == c->portName &&
+            t.deviceName == c->deviceName &&
+            t.devicePort == c->devicePort)
+          return;
+      }
+      {
         TopologyMonitorTap tap{c->productName, c->portName,
                                 c->deviceName, c->devicePort};
         doc_->undoStack()->push(new TapConnectionCommand(doc_, monIdx, tap));
@@ -434,6 +449,7 @@ void TopologyScene::dropEvent(QGraphicsSceneDragDropEvent* event) {
       QJsonObject obj = jdoc.object();
       if (obj["isMonitor"].toBool()) {
         emit monitorDropped(obj["deviceType"].toString(),
+                            obj["channelCount"].toInt(1),
                             event->scenePos());
       } else {
         emit deviceDropped(obj["deviceType"].toString(),

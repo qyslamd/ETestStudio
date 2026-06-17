@@ -85,6 +85,7 @@ struct TopologyMonitorTap {
 struct TopologyMonitor {
   QString name;
   QString deviceType;
+  int channelCount = 1;
   QPointF position{0, 0};
   QSizeF size{0, 0};
   QVector<TopologyMonitorTap> taps;

@@ -888,19 +888,23 @@ void MonitorItem::paintContent(QPainter* painter,
   painter->drawText(typeRect, Qt::AlignLeft | Qt::AlignVCenter,
                     QStringLiteral("[%1]").arg(mon->deviceType));
 
-  // Tap dot matrix at bottom
-  int tapCount = mon->taps.size();
-  if (tapCount > 0) {
-    qreal dotY = rect.bottom() - 10;
-    qreal dotSpacing = 14.0;
-    qreal totalW = qMin(tapCount, 12) * dotSpacing;
-    qreal startX = rect.center().x() - totalW / 2.0;
-    int maxDots = qMin(tapCount, 12);
-    for (int i = 0; i < maxDots; ++i) {
-      QColor dotColor = tc.directionBidirectional;
-      qreal dx = startX + i * dotSpacing + 4;
+  // Channel dot matrix: hollow = unused, filled = tapped
+  int maxCh = qMax(1, mon->channelCount);
+  int used = qMin(mon->taps.size(), maxCh);
+  qreal dotY = rect.bottom() - 10;
+  qreal dotSpacing = 14.0;
+  qreal totalW = maxCh * dotSpacing;
+  qreal startX = rect.center().x() - totalW / 2.0;
+  for (int i = 0; i < maxCh && i < 16; ++i) {
+    qreal dx = startX + i * dotSpacing + 4;
+    QColor dotColor = tc.directionBidirectional;
+    if (i < used) {
       painter->setBrush(dotColor);
       painter->setPen(Qt::NoPen);
+      painter->drawEllipse(QPointF(dx, dotY), 3, 3);
+    } else {
+      painter->setBrush(Qt::NoBrush);
+      painter->setPen(QPen(dotColor, 1.0));
       painter->drawEllipse(QPointF(dx, dotY), 3, 3);
     }
   }

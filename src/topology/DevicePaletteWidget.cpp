@@ -32,10 +32,11 @@ static const int kDeviceTypeCount =
 struct MonitorEntry {
   QString deviceType;
   QString displayName;
+  int channelCount;
 };
 
 static const MonitorEntry kMonitorTypes[] = {
-    {"Monitor-4CH", "Monitor-4CH (4通道监听器)"},
+    {"Monitor-4CH", "Monitor-4CH (4通道监听器)", 4},
 };
 
 static const int kMonitorTypeCount =
@@ -64,6 +65,12 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
   bool isMonitor = items.first()->data(Qt::UserRole + 1).toBool();
   if (isMonitor) {
     obj["isMonitor"] = true;
+    for (int i = 0; i < kMonitorTypeCount; ++i) {
+      if (dt == kMonitorTypes[i].deviceType) {
+        obj["channelCount"] = kMonitorTypes[i].channelCount;
+        break;
+      }
+    }
   } else {
     for (int i = 0; i < kDeviceTypeCount; ++i) {
       if (dt == kDeviceTypes[i].deviceType) {

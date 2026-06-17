@@ -548,7 +548,9 @@ void TopologyEditorWidget::initSignals() {
   connect(scene_, &TopologyScene::deviceDropped, this,
           &TopologyEditorWidget::onDropDevice);
   connect(scene_, &TopologyScene::monitorDropped, this,
-          &TopologyEditorWidget::onDropMonitor);
+          [this](const QString& type, int ch, const QPointF& pos) {
+            onDropMonitor(type, ch, pos);
+          });
 
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
           &TopologyEditorWidget::onDocumentChanged);
@@ -865,11 +867,13 @@ void TopologyEditorWidget::onDropDevice(const QString& deviceType,
 }
 
 void TopologyEditorWidget::onDropMonitor(const QString& deviceType,
+                                         int channelCount,
                                          const QPointF& scenePos) {
   int n = doc_->monitorCount() + 1;
   TopologyMonitor mon;
   mon.deviceType = deviceType;
   mon.name = QStringLiteral("%1_%2").arg(deviceType).arg(n, 2, 10, QChar('0'));
+  mon.channelCount = channelCount;
   mon.position = scenePos;
   mon.size = QSizeF(120, 60);
 
