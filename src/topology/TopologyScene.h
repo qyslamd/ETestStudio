@@ -13,7 +13,7 @@ class TopologyDocument;
 class UutItem;
 class DeviceItem;
 class DevicePortItem;
-class PortItem;
+class UutPortItem;
 class ConnectionItem;
 class MonitorItem;
 
@@ -35,7 +35,7 @@ class TopologyScene : public QGraphicsScene {
   ConnectionItem* addConnectionItem(int connIndex);
   MonitorItem* addMonitorItem(int monitorIndex, const QPointF& pos);
 
-  // Connection drag interaction (called from PortItem / DevicePortItem)
+  // Connection drag interaction (called from UutPortItem / DevicePortItem)
   void startConnectionDrag(QGraphicsItem* port, QPointF scenePos);
   void continueConnectionDrag(QPointF scenePos);
   void finishConnectionDrag(QPointF scenePos);
@@ -54,7 +54,7 @@ class TopologyScene : public QGraphicsScene {
   // Find items at scene position by type
   DeviceItem* deviceItemAt(QPointF scenePos) const;
   DevicePortItem* devicePortItemAt(QPointF scenePos) const;
-  PortItem* portItemAt(QPointF scenePos) const;
+  UutPortItem* portItemAt(QPointF scenePos) const;
   UutItem* uutItemAt(QPointF scenePos) const;
   ConnectionItem* connectionItemAt(QPointF scenePos) const;
 
@@ -101,7 +101,7 @@ class TopologyScene : public QGraphicsScene {
   QVector<ConnectionItem*> connection_items_;
   QVector<MonitorItem*> monitor_items_;
 
-  // Connection drag state (PortItem or DevicePortItem)
+  // Connection drag state (UutPortItem or DevicePortItem)
   QGraphicsItem* drag_source_ = nullptr;
   QGraphicsLineItem* drag_line_ = nullptr;
 

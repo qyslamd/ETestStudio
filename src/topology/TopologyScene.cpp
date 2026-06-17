@@ -86,7 +86,7 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
   if (!conn)
     return nullptr;
 
-  PortItem* sourcePort = nullptr;
+  UutPortItem* sourcePort = nullptr;
   DevicePortItem* targetPort = nullptr;
 
   // Find source port
@@ -286,7 +286,7 @@ void TopologyScene::startConnectionDrag(QGraphicsItem* port, QPointF scenePos) {
 void TopologyScene::continueConnectionDrag(QPointF scenePos) {
   if (drag_line_) {
     QPointF center;
-    if (auto* p = qgraphicsitem_cast<PortItem*>(drag_source_))
+    if (auto* p = qgraphicsitem_cast<UutPortItem*>(drag_source_))
       center = p->sceneCenter();
     else if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(drag_source_))
       center = dp->sceneCenter();
@@ -306,7 +306,7 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
     drag_line_ = nullptr;
   }
 
-  auto* srcPort = qgraphicsitem_cast<PortItem*>(drag_source_);
+  auto* srcPort = qgraphicsitem_cast<UutPortItem*>(drag_source_);
   auto* srcDevPort = qgraphicsitem_cast<DevicePortItem*>(drag_source_);
 
   if (srcPort) {
@@ -488,11 +488,11 @@ DevicePortItem* TopologyScene::devicePortItemAt(QPointF scenePos) const {
   return nullptr;
 }
 
-PortItem* TopologyScene::portItemAt(QPointF scenePos) const {
+UutPortItem* TopologyScene::portItemAt(QPointF scenePos) const {
   auto items = this->items(scenePos, Qt::IntersectsItemShape,
                            Qt::DescendingOrder);
   for (auto* item : items) {
-    if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+    if (auto* p = qgraphicsitem_cast<UutPortItem*>(item)) {
       return p;
     }
   }

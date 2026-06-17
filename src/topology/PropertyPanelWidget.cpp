@@ -114,7 +114,7 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
     return;
   }
 
-  if (auto* port = qgraphicsitem_cast<PortItem*>(item)) {
+  if (auto* port = qgraphicsitem_cast<UutPortItem*>(item)) {
     editing_port_product_ = port->productIndex();
     editing_port_index_ = port->portIndex();
     auto* prod = doc_->product(editing_port_product_);

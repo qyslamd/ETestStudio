@@ -29,15 +29,13 @@ constexpr qreal kEndRadius = 3.0;
 constexpr qreal kPortRadius = 6.0;
 
 // ═══════════════════════════════════════════════════════════════
-//  PortItem
+//  AbstractPortItem ── shared port node logic
 // ═══════════════════════════════════════════════════════════════
 
-PortItem::PortItem(int productIndex,
-                   int portIndex,
-                   TopologyDocument* doc,
-                   UutItem* parent)
+AbstractPortItem::AbstractPortItem(int portIndex,
+                                   TopologyDocument* doc,
+                                   QGraphicsItem* parent)
     : QGraphicsItem(parent),
-      product_index_(productIndex),
       port_index_(portIndex),
       doc_(doc) {
   setAcceptHoverEvents(true);
@@ -45,7 +43,52 @@ PortItem::PortItem(int productIndex,
   setFlag(ItemIsSelectable);
 }
 
-void PortItem::setPortStyle(PortStyle s) {
+void AbstractPortItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
+  hovered_ = true;
+  update();
+}
+
+void AbstractPortItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
+  hovered_ = false;
+  update();
+}
+
+void AbstractPortItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
+  QGraphicsItem::mousePressEvent(event);
+  press_pos_ = event->scenePos();
+  event->accept();
+}
+
+void AbstractPortItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
+  if ((event->scenePos() - press_pos_).manhattanLength() > 5) {
+    if (auto* s = qobject_cast<TopologyScene*>(scene())) {
+      s->startConnectionDrag(this, press_pos_);
+      s->continueConnectionDrag(event->scenePos());
+    }
+  }
+  event->accept();
+}
+
+void AbstractPortItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
+  if (auto* s = qobject_cast<TopologyScene*>(scene())) {
+    s->finishConnectionDrag(event->scenePos());
+  }
+  event->accept();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UutPortItem ── pin node on UUT edge
+// ═══════════════════════════════════════════════════════════════
+
+UutPortItem::UutPortItem(int productIndex,
+                          int portIndex,
+                          TopologyDocument* doc,
+                          UutItem* parent)
+    : AbstractPortItem(portIndex, doc, parent),
+      product_index_(productIndex) {
+}
+
+void UutPortItem::setPortStyle(PortStyle s) {
   port_style_ = s;
   if (auto* prod = doc_->product(product_index_)) {
     if (port_index_ < prod->ports.size())
@@ -54,12 +97,12 @@ void PortItem::setPortStyle(PortStyle s) {
   update();
 }
 
-QRectF PortItem::boundingRect() const {
+QRectF UutPortItem::boundingRect() const {
   return QRectF(-kLineLength - kEndRadius - 80, -16,
                 kLineLength * 2 + kEndRadius * 2 + 80 * 2, 30);
 }
 
-QPainterPath PortItem::shape() const {
+QPainterPath UutPortItem::shape() const {
   QPainterPath p;
   p.addEllipse(-kRadius, -kRadius, kRadius * 2, kRadius * 2);
   p.addEllipse(-kLineLength - kEndRadius, -kEndRadius, kEndRadius * 2,
@@ -86,19 +129,9 @@ static QColor directionColor(TopologyPort::Direction d) {
   return QColor(128, 128, 128);
 }
 
-void PortItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
-  hovered_ = true;
-  update();
-}
-
-void PortItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
-  hovered_ = false;
-  update();
-}
-
-void PortItem::paint(QPainter* painter,
-                     const QStyleOptionGraphicsItem* option,
-                     QWidget*) {
+void UutPortItem::paint(QPainter* painter,
+                        const QStyleOptionGraphicsItem* option,
+                        QWidget*) {
   painter->setRenderHint(QPainter::Antialiasing);
 
   const auto* prod = doc_->product(product_index_);
@@ -182,31 +215,8 @@ void PortItem::paint(QPainter* painter,
   painter->drawText(QPointF(midX - tw / 2.0, -8), label);
 }
 
-QPointF PortItem::sceneCenter() const {
+QPointF UutPortItem::sceneCenter() const {
   return mapToScene(QPointF(-kLineLength, 0));
-}
-
-void PortItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
-  QGraphicsItem::mousePressEvent(event);
-  press_pos_ = event->scenePos();
-  event->accept();
-}
-
-void PortItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
-  if ((event->scenePos() - press_pos_).manhattanLength() > 5) {
-    if (auto* s = qobject_cast<TopologyScene*>(scene())) {
-      s->startConnectionDrag(this, press_pos_);
-      s->continueConnectionDrag(event->scenePos());
-    }
-  }
-  event->accept();
-}
-
-void PortItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
-  if (auto* s = qobject_cast<TopologyScene*>(scene())) {
-    s->finishConnectionDrag(event->scenePos());
-  }
-  event->accept();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -271,7 +281,7 @@ void UutItem::layoutPorts() {
   qreal h = effectiveHeight();
   int n = prod->ports.size();
   for (int i = 0; i < n; ++i) {
-    auto* portItem = new PortItem(product_index_, i, doc_, this);
+    auto* portItem = new UutPortItem(product_index_, i, doc_, this);
     portItem->setPortStyle(static_cast<PortStyle>(prod->ports[i].portStyle));
     ports_.append(portItem);
     addChildPort(portItem);
@@ -286,7 +296,7 @@ void UutItem::layoutPorts() {
   }
 }
 
-PortItem* UutItem::portItem(int portIndex) const {
+UutPortItem* UutItem::portItem(int portIndex) const {
   if (portIndex < 0 || portIndex >= ports_.size())
     return nullptr;
   return ports_[portIndex];
@@ -474,13 +484,8 @@ DevicePortItem::DevicePortItem(int deviceIndex,
                                int portIndex,
                                TopologyDocument* doc,
                                DeviceItem* parent)
-    : QGraphicsItem(parent),
-      device_index_(deviceIndex),
-      port_index_(portIndex),
-      doc_(doc) {
-  setFlag(ItemIsSelectable);
-  setAcceptHoverEvents(true);
-  setCursor(Qt::CrossCursor);
+    : AbstractPortItem(portIndex, doc, parent),
+      device_index_(deviceIndex) {
 }
 
 void DevicePortItem::setPortStyle(PortStyle s) {
@@ -509,16 +514,6 @@ QPainterPath DevicePortItem::shape() const {
   stroker.setWidth(8.0);
   p.addPath(stroker.createStroke(line));
   return p;
-}
-
-void DevicePortItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
-  hovered_ = true;
-  update();
-}
-
-void DevicePortItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
-  hovered_ = false;
-  update();
 }
 
 void DevicePortItem::paint(QPainter* painter,
@@ -607,29 +602,6 @@ void DevicePortItem::paint(QPainter* painter,
   painter->drawText(QPointF(midX - tw / 2.0, -8), label);
 }
 
-void DevicePortItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
-  QGraphicsItem::mousePressEvent(event);
-  press_pos_ = event->scenePos();
-  event->accept();
-}
-
-void DevicePortItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
-  if ((event->scenePos() - press_pos_).manhattanLength() > 5) {
-    if (auto* s = qobject_cast<TopologyScene*>(scene())) {
-      s->startConnectionDrag(this, press_pos_);
-      s->continueConnectionDrag(event->scenePos());
-    }
-  }
-  event->accept();
-}
-
-void DevicePortItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
-  if (auto* s = qobject_cast<TopologyScene*>(scene())) {
-    s->finishConnectionDrag(event->scenePos());
-  }
-  event->accept();
-}
-
 DeviceItem* DevicePortItem::parentDeviceItem() const {
   return qgraphicsitem_cast<DeviceItem*>(parentItem());
 }
@@ -642,7 +614,7 @@ QPointF DevicePortItem::sceneCenter() const {
 //  ConnectionItem
 // ═══════════════════════════════════════════════════════════════
 
-ConnectionItem::ConnectionItem(PortItem* source,
+ConnectionItem::ConnectionItem(UutPortItem* source,
                                DevicePortItem* target,
                                const QString& devicePort,
                                TopologyDocument* doc,

@@ -520,7 +520,7 @@ void TopologyEditorWidget::initSignals() {
   connect(scene_, &QGraphicsScene::selectionChanged, this, [this]() {
     auto selected = scene_->selectedItems();
     bool hasSelection = !selected.isEmpty();
-    // 可删除：选中了非 PortItem/DevicePortItem 的元素，或有端口选中
+    // 可删除：选中了非 UutPortItem/DevicePortItem 的元素，或有端口选中
     delete_action_->setEnabled(hasSelection);
     // 可复制：有选中元素
     copy_action_->setEnabled(hasSelection);
@@ -667,7 +667,7 @@ void TopologyEditorWidget::initSignals() {
       } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
         selType = 1;
         selIdx1 = dev->deviceIndex();
-      } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+      } else if (auto* p = qgraphicsitem_cast<UutPortItem*>(item)) {
         selType = 3;
         selIdx1 = p->productIndex();
         selIdx2 = p->portIndex();
@@ -963,7 +963,7 @@ void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
     auto* cmd = new RemoveMonitorCommand(doc_, mon->monitorIndex());
     doc_->undoStack()->push(cmd);
     showStatusMessage(QStringLiteral("已删除监听器"));
-  } else if (auto* uutPort = qgraphicsitem_cast<PortItem*>(item)) {
+  } else if (auto* uutPort = qgraphicsitem_cast<UutPortItem*>(item)) {
     doc_->undoStack()->push(new RemoveProductPortCommand(
         doc_, uutPort->productIndex(), uutPort->portIndex()));
     showStatusMessage(QStringLiteral("已删除 UUT 端口"));
@@ -1021,7 +1021,7 @@ void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
     } else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
       type = 5;
       mainIdx = mon->monitorIndex();
-    } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+    } else if (auto* p = qgraphicsitem_cast<UutPortItem*>(item)) {
       type = 3;
       mainIdx = p->productIndex();
       subIdx = p->portIndex();
@@ -1052,7 +1052,7 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
     } else if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
       selType = 2;
       selIdx1 = conn->connectionIndex();
-    } else if (auto* p = qgraphicsitem_cast<PortItem*>(item)) {
+    } else if (auto* p = qgraphicsitem_cast<UutPortItem*>(item)) {
       selType = 3;
       selIdx1 = p->productIndex();
       selIdx2 = p->portIndex();

@@ -14,52 +14,62 @@ class TopologyDocument;
 class TopologyScene;
 class UutItem;
 class DeviceItem;
-class PortItem;
 
 enum class PortStyle { Circle, Triangle };
 
-// ── PortItem ── pin node on UUT edge ─────────────────────────────
+// ── AbstractPortItem ── common base for UUT and device port nodes ──
 
-class PortItem : public QGraphicsItem {
+class AbstractPortItem : public QGraphicsItem {
  public:
-  enum { Type = UserType + 1 };
-  int type() const override { return Type; }
-
-  PortItem(int productIndex,
-           int portIndex,
-           TopologyDocument* doc,
-           UutItem* parent);
-
-  QRectF boundingRect() const override;
-  void paint(QPainter* painter,
-             const QStyleOptionGraphicsItem* option,
-             QWidget* widget) override;
-  QPainterPath shape() const override;
-
-  int productIndex() const { return product_index_; }
   int portIndex() const { return port_index_; }
   bool isHovered() const { return hovered_; }
-
-  QPointF sceneCenter() const;
-
   PortStyle portStyle() const { return port_style_; }
-  void setPortStyle(PortStyle s);
+  virtual void setPortStyle(PortStyle s) { port_style_ = s; update(); }
+  virtual QPointF sceneCenter() const = 0;
 
  protected:
+  AbstractPortItem(int portIndex,
+                   TopologyDocument* doc,
+                   QGraphicsItem* parent = nullptr);
+
   void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
   void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
   void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
   void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
- private:
-  int product_index_;
   int port_index_;
   TopologyDocument* doc_;
   QPointF press_pos_;
   bool hovered_ = false;
   PortStyle port_style_ = PortStyle::Circle;
   static constexpr qreal kRadius = 6.0;
+};
+
+// ── UutPortItem ── pin node on UUT edge ────────────────────────────
+
+class UutPortItem : public AbstractPortItem {
+ public:
+  enum { Type = UserType + 1 };
+  int type() const override { return Type; }
+
+  UutPortItem(int productIndex,
+              int portIndex,
+              TopologyDocument* doc,
+              UutItem* parent);
+
+  QRectF boundingRect() const override;
+  QPainterPath shape() const override;
+  void setPortStyle(PortStyle s) override;
+  void paint(QPainter* painter,
+             const QStyleOptionGraphicsItem* option,
+             QWidget* widget) override;
+  QPointF sceneCenter() const override;
+
+  int productIndex() const { return product_index_; }
+
+ private:
+  int product_index_;
 };
 
 // ── UutItem ── product block ─────────────────────────────────────
@@ -77,7 +87,7 @@ class UutItem : public TopologyBlockItem {
 
   void layoutPorts();
   void clearPorts();
-  PortItem* portItem(int portIndex) const;
+  UutPortItem* portItem(int portIndex) const;
   QPointF portScenePos(int portIndex) const;
 
  protected:
@@ -92,7 +102,7 @@ class UutItem : public TopologyBlockItem {
 
  private:
   int product_index_;
-  QVector<PortItem*> ports_;
+  QVector<UutPortItem*> ports_;
 
   static constexpr qreal kWidth = 140.0;
   static constexpr qreal kBaseHeight = 60.0;
@@ -102,7 +112,7 @@ class UutItem : public TopologyBlockItem {
 
 // ── DevicePortItem ── connection point on device left edge ───────
 
-class DevicePortItem : public QGraphicsItem {
+class DevicePortItem : public AbstractPortItem {
  public:
   enum { Type = UserType + 5 };
   int type() const override { return Type; }
@@ -113,35 +123,18 @@ class DevicePortItem : public QGraphicsItem {
                  DeviceItem* parent);
 
   QRectF boundingRect() const override;
+  QPainterPath shape() const override;
+  void setPortStyle(PortStyle s) override;
   void paint(QPainter* painter,
              const QStyleOptionGraphicsItem* option,
              QWidget* widget) override;
-  QPainterPath shape() const override;
+  QPointF sceneCenter() const override;
 
   int deviceIndex() const { return device_index_; }
-  int portIndex() const { return port_index_; }
-  bool isHovered() const { return hovered_; }
   DeviceItem* parentDeviceItem() const;
-  QPointF sceneCenter() const;
-
-  PortStyle portStyle() const { return port_style_; }
-  void setPortStyle(PortStyle s);
-
- protected:
-  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
-  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
-  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
  private:
   int device_index_;
-  int port_index_;
-  TopologyDocument* doc_;
-  QPointF press_pos_;
-  bool hovered_ = false;
-  PortStyle port_style_ = PortStyle::Circle;
-  static constexpr qreal kRadius = 6.0;
 };
 
 // ── DeviceItem ── device block ───────────────────────────────────
@@ -189,7 +182,7 @@ class ConnectionItem : public QGraphicsPathItem {
   enum { Type = UserType + 4 };
   int type() const override { return Type; }
 
-  ConnectionItem(PortItem* source,
+  ConnectionItem(UutPortItem* source,
                  DevicePortItem* target,
                  const QString& devicePort,
                  TopologyDocument* doc,
@@ -206,7 +199,7 @@ class ConnectionItem : public QGraphicsPathItem {
              const QStyleOptionGraphicsItem* option,
              QWidget* widget) override;
 
-  PortItem* sourcePort() const { return source_; }
+  UutPortItem* sourcePort() const { return source_; }
   DevicePortItem* targetDevicePort() const { return target_port_; }
   DeviceItem* targetDevice() const;
   QString devicePort() const { return device_port_; }
@@ -215,7 +208,7 @@ class ConnectionItem : public QGraphicsPathItem {
   int connectionIndex() const { return conn_index_; }
 
  private:
-  PortItem* source_;
+  UutPortItem* source_;
   DevicePortItem* target_port_;
   QString device_port_;
   TopologyDocument* doc_;
