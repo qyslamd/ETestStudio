@@ -285,22 +285,15 @@ void TopologyEditorWidget::initUi() {
   toolbar->setMovable(false);
   toolbar->setFloatable(false);
 
-  // ── 撤销组（MenuButtonPopup: 主按钮撤销，下拉箭头重做）──
+  // ── 撤销 / 重做 ──
   undo_action_ = new QAction(topoIcon(QStringLiteral("topo_undo")),
                              QStringLiteral("撤销"), this);
   undo_action_->setEnabled(false);
+  toolbar->addAction(undo_action_);
   redo_action_ = new QAction(topoIcon(QStringLiteral("topo_redo")),
                              QStringLiteral("重做"), this);
   redo_action_->setEnabled(false);
-  {
-    auto* undoBtn = new QToolButton(toolbar);
-    undoBtn->setDefaultAction(undo_action_);
-    undoBtn->setPopupMode(QToolButton::MenuButtonPopup);
-    auto* undoMenu = new QMenu(undoBtn);
-    undoMenu->addAction(redo_action_);
-    undoBtn->setMenu(undoMenu);
-    toolbar->addWidget(undoBtn);
-  }
+  toolbar->addAction(redo_action_);
 
   toolbar->addSeparator();
 
@@ -1056,7 +1049,6 @@ void TopologyEditorWidget::rebuildSceneAndRestoreSelection() {
     }
   }
 
-  scene_->syncPositionsToDocument();
   scene_->loadFromDocument();
 
   QGraphicsItem* newItem = nullptr;

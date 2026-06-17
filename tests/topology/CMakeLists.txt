@@ -78,3 +78,12 @@ add_etest(
     QT_MODULES Core Test
     LABELS TOPOLOGY
 )
+
+# 拓扑编辑器移动撤销重做测试
+add_etest(
+    NAME test_topology_editor_move_undo
+    SOURCES editor_move_undo_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test Widgets
+    LABELS TOPOLOGY
+)
