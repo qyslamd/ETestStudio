@@ -1,5 +1,15 @@
 /* 默认主题 - 保持原生控件样式 */
 
+/* ==================== TopologyEditorWidget ==================== */
+QWidget#PhLoadingOverlay {
+    background-color: #FFFFFF;
+}
+QLabel#PhLoadingOverlayLabel {
+    font-size: 13px;
+    color: #888888;
+    background: transparent;
+}
+
 /* ==================== AboutDialog ==================== */
 #aboutContent {
     background-color: #FFFFFF;

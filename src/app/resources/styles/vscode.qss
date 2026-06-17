@@ -890,6 +890,14 @@ QLabel#topologySectionHeader {
     background-color: #2D2D2D;
     border-bottom: 1px solid #252526;
 }
+QWidget#PhLoadingOverlay {
+    background-color: #1E1E1E;
+}
+QLabel#PhLoadingOverlayLabel {
+    font-size: 13px;
+    color: #888888;
+    background: transparent;
+}
 
 /* ==================== PropertyPanelWidget ==================== */
 #emptyPage, #uutPage, #portPage, #devicePage, #connectionPage, #devicePortPage {

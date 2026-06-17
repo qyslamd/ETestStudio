@@ -247,16 +247,12 @@ void TopologyEditorWidget::showLoadingOverlay() {
   if (!loading_overlay_) {
     loading_overlay_ = new QWidget(this);
     loading_overlay_->setObjectName(QStringLiteral("PhLoadingOverlay"));
-    loading_overlay_->setStyleSheet(
-        QStringLiteral("background-color:%1;")
-            .arg(palette().window().color().name()));
     auto* lay = new QVBoxLayout(loading_overlay_);
     lay->setAlignment(Qt::AlignCenter);
     auto* label =
         new QLabel(QStringLiteral("正在加载拓扑文件..."), loading_overlay_);
+    label->setObjectName(QStringLiteral("PhLoadingOverlayLabel"));
     label->setAlignment(Qt::AlignCenter);
-    label->setStyleSheet(
-        QStringLiteral("font-size:13px;color:#888;background:transparent;"));
     lay->addWidget(label);
   }
   loading_overlay_->setGeometry(rect());
