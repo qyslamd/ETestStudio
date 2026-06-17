@@ -224,6 +224,7 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
   }
 
   if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
+    editing_conn_index_ = conn->connectionIndex();
     auto* src = conn->sourcePort();
     auto* tgt = conn->targetDevice();
     if (src) {
@@ -240,6 +241,10 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
             : QStringLiteral("?"));
     }
     conn_device_port_label_->setText(conn->devicePort());
+    conn_style_combo_->blockSignals(true);
+    conn_style_combo_->setCurrentIndex(
+        conn_style_combo_->findData(static_cast<int>(conn->style())));
+    conn_style_combo_->blockSignals(false);
     stack_->setCurrentIndex(PageConnection);
     return;
   }
@@ -490,7 +495,24 @@ void PropertyPanelWidget::buildConnectionPage() {
   conn_device_port_label_ = new QLabel(QStringLiteral("-"), w);
   lay->addRow(QStringLiteral("设备端口"), conn_device_port_label_);
 
+  conn_style_combo_ = new QComboBox(w);
+  conn_style_combo_->addItem(QStringLiteral("曲线"), static_cast<int>(PathStyle::Bezier));
+  conn_style_combo_->addItem(QStringLiteral("折线"), static_cast<int>(PathStyle::Polyline));
+  conn_style_combo_->addItem(QStringLiteral("直线"), static_cast<int>(PathStyle::Straight));
+  connect(conn_style_combo_, &QComboBox::currentTextChanged, this,
+          &PropertyPanelWidget::onConnStyleChanged);
+  lay->addRow(QStringLiteral("连线样式"), conn_style_combo_);
+
   stack_->addWidget(w);
+}
+
+void PropertyPanelWidget::onConnStyleChanged() {
+  if (editing_conn_index_ < 0)
+    return;
+  auto style = static_cast<PathStyle>(
+      conn_style_combo_->currentData().toInt());
+  doc_->undoStack()->push(
+      new SetConnectionStyleCommand(doc_, editing_conn_index_, style));
 }
 
 void PropertyPanelWidget::buildDevicePortPage() {

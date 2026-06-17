@@ -116,6 +116,9 @@ class PropertyPanelWidget : public QWidget {
   QLabel* conn_source_label_ = nullptr;
   QLabel* conn_target_label_ = nullptr;
   QLabel* conn_device_port_label_ = nullptr;
+  QComboBox* conn_style_combo_ = nullptr;
+  int editing_conn_index_ = -1;
+  void onConnStyleChanged();
 
   // DevicePort page widgets
   QLineEdit* devport_name_edit_ = nullptr;

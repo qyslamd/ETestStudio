@@ -1003,6 +1003,10 @@ void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
   if (item) {
     property_panel_->showPropertiesFor(item);
 
+    // 连线不支持复制
+    copy_action_->setEnabled(
+        qgraphicsitem_cast<ConnectionItem*>(item) == nullptr);
+
     // Sync outline tree selection
     int type = -1, mainIdx = -1, subIdx = -1;
     if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
