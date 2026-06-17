@@ -21,7 +21,8 @@ namespace etest::protocal {
 class FieldSectionItem : public QGraphicsObject {
   Q_OBJECT
  public:
-  FieldSectionItem(const QString& name, int byte_offset, int start_bit,
+  FieldSectionItem(const QString& name, const QString& value_type,
+                   int byte_offset, int start_bit,
                    int bit_width, const QColor& color, int cell_size,
                    int bits_per_row = 8,
                    QGraphicsItem* parent = nullptr);
@@ -51,6 +52,7 @@ class FieldSectionItem : public QGraphicsObject {
 
  private:
   QString name_;
+  QString value_type_;
   int byte_offset_;
   int start_bit_;
   int bit_width_;
@@ -67,13 +69,14 @@ class FieldSectionItem : public QGraphicsObject {
 // ============================================================
 // IcdBitLayoutScene — 管理所有 FieldSectionItem，纵向排列
 // ============================================================
-class IcdBitLayoutScene : public QGraphicsScene {
+ class IcdBitLayoutScene : public QGraphicsScene {
   Q_OBJECT
  public:
   explicit IcdBitLayoutScene(QObject* parent = nullptr);
 
-  FieldSectionItem* addBlock(const QString& name, int byte_offset,
-                             int start_bit, int bit_width, const QColor& color);
+  FieldSectionItem* addBlock(const QString& name, const QString& value_type,
+                             int byte_offset, int start_bit, int bit_width,
+                             const QColor& color);
   void clearBlocks();
   void highlightBlock(const QString& name);
 
@@ -105,8 +108,9 @@ class IcdBitLayoutView : public QWidget {
   explicit IcdBitLayoutView(QWidget* parent = nullptr);
 
   void loadFromFrame(const icd::Frame& frame);
-  FieldSectionItem* addBlock(const QString& name, int byte_offset,
-                             int start_bit, int bit_width, const QColor& color);
+  FieldSectionItem* addBlock(const QString& name, const QString& value_type,
+                             int byte_offset, int start_bit, int bit_width,
+                             const QColor& color);
   void clearBlocks();
   void highlightBlock(const QString& name);
 

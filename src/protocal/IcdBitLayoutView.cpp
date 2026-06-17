@@ -15,6 +15,7 @@
 #include <cmath>
 #include <icd/node.hpp>
 
+#include "IcdProtocolUtils.h"
 #include "ThemeManager.h"
 
 namespace {
@@ -108,12 +109,14 @@ namespace etest::protocal {
 // ============================================================
 // FieldSectionItem
 // ============================================================
-FieldSectionItem::FieldSectionItem(const QString& name, int byte_offset,
-                                   int start_bit, int bit_width,
-                                   const QColor& color, int cell_size,
-                                   int bits_per_row, QGraphicsItem* parent)
+FieldSectionItem::FieldSectionItem(const QString& name, const QString& value_type,
+                                   int byte_offset, int start_bit,
+                                   int bit_width, const QColor& color,
+                                   int cell_size, int bits_per_row,
+                                   QGraphicsItem* parent)
     : QGraphicsObject(parent),
       name_(name),
+      value_type_(value_type),
       byte_offset_(byte_offset),
       start_bit_(start_bit),
       bit_width_(bit_width),
@@ -235,10 +238,47 @@ void FieldSectionItem::paint(QPainter* painter,
   QString header_text = QStringLiteral("%1  [%2 bits]")
       .arg(name_).arg(range_str);
 
+  // Reserve space for badge on the right
+  int badge_reserved = 0;
+  if (!value_type_.isEmpty()) {
+    QFont badge_font_tmp;
+    badge_font_tmp.setPointSize(8);
+    badge_font_tmp.setBold(true);
+    QFontMetrics fm_tmp(badge_font_tmp);
+    badge_reserved = fm_tmp.horizontalAdvance(value_type_) + 16;
+  }
+
   painter->setPen(highlighted_ ? Qt::white : c_bright);
   painter->setFont(header_font_);
-  painter->drawText(QRectF(14, 0, sec_w - 14, sec_hdr),
-                    Qt::AlignVCenter | Qt::AlignLeft, header_text);
+  QRectF name_rect(14, 0, sec_w - 14 - badge_reserved, sec_hdr);
+  painter->drawText(name_rect, Qt::AlignVCenter | Qt::AlignLeft, header_text);
+
+  // Value type badge (right-aligned)
+  if (!value_type_.isEmpty()) {
+    QFont badge_font;
+    badge_font.setPointSize(8);
+    badge_font.setBold(true);
+    painter->setFont(badge_font);
+
+    QFontMetrics fm(badge_font);
+    int badge_text_w = fm.horizontalAdvance(value_type_);
+    int badge_pad = 6;
+    int badge_w = badge_text_w + badge_pad * 2;
+    int badge_h = fm.height() + 4;
+    int badge_x = sec_w - badge_w - 8;
+    int badge_y = (sec_hdr - badge_h) / 2;
+
+    QColor badge_bg = c_bright;
+    badge_bg.setAlpha(highlighted_ ? 80 : 50);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(badge_bg);
+    painter->drawRoundedRect(badge_x, badge_y, badge_w, badge_h, 4, 4);
+
+    painter->setPen(highlighted_ ? Qt::white : QColor(255, 255, 255, 220));
+    painter->setFont(badge_font);
+    painter->drawText(QRectF(badge_x, badge_y, badge_w, badge_h),
+                      Qt::AlignCenter, value_type_);
+  }
 
   // ── Bit cells ──
   int global_base = byte_offset_ * 8 + start_bit_;
@@ -366,10 +406,11 @@ IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent)
 }
 
 FieldSectionItem* IcdBitLayoutScene::addBlock(const QString& name,
+                                                const QString& value_type,
                                                 int byte_offset, int start_bit,
                                                 int bit_width,
                                                 const QColor& color) {
-  auto* item = new FieldSectionItem(name, byte_offset, start_bit,
+  auto* item = new FieldSectionItem(name, value_type, byte_offset, start_bit,
                                      bit_width, color, cell_size_, 8);
   item->setPos(left_margin_, next_y_);
   addItem(item);
@@ -519,7 +560,9 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
     }
 
     QString qname = QString::fromStdString(std::string(node->name()));
-    addBlock(qname, node->offset(), node->bit_offset(), node->bit_width(),
+    QString qtype = QString::fromLatin1(
+        etest::protocal::utils::valueTypeName(node->value_type()));
+    addBlock(qname, qtype, node->offset(), node->bit_offset(), node->bit_width(),
              color);
   }
 
@@ -537,10 +580,12 @@ void IcdBitLayoutView::collectAllNodes(const icd::Node& node,
 }
 
 FieldSectionItem* IcdBitLayoutView::addBlock(const QString& name,
+                                              const QString& value_type,
                                               int byte_offset, int start_bit,
                                               int bit_width,
                                               const QColor& color) {
-  return scene_->addBlock(name, byte_offset, start_bit, bit_width, color);
+  return scene_->addBlock(name, value_type, byte_offset, start_bit, bit_width,
+                          color);
 }
 
 void IcdBitLayoutView::clearBlocks() {
