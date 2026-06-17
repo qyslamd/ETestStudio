@@ -76,25 +76,25 @@ TEST(SceneRendererTest, RenderSvg) {
   EXPECT_GT(f.size(), 200);
 }
 
-// 已禁用：需要打印机驱动，部分环境会弹出系统等待对话框
-// TEST(SceneRendererTest, RenderPdf) {
-//   QTemporaryDir dir;
-//   ASSERT_TRUE(dir.isValid());
-//   QString path = dir.filePath("test.pdf");
-//
-//   auto* scene = makeTestScene();
-//   bool ok = renderSceneToFile(scene, path);
-//   delete scene;
-//
-//   ASSERT_TRUE(ok);
-//   QFile f(path);
-//   ASSERT_TRUE(f.exists());
-//   EXPECT_GT(f.size(), 200);
-//   ASSERT_TRUE(f.open(QIODevice::ReadOnly));
-//   QByteArray header = f.read(5);
-//   f.close();
-//   EXPECT_EQ(header, QByteArray("%PDF-"));
-// }
+// QPdfWriter 直接写 PDF 文件，不依赖打印机驱动
+TEST(SceneRendererTest, RenderPdf) {
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+  QString path = dir.filePath("test.pdf");
+
+  auto* scene = makeTestScene();
+  bool ok = renderSceneToFile(scene, path);
+  delete scene;
+
+  ASSERT_TRUE(ok);
+  QFile f(path);
+  ASSERT_TRUE(f.exists());
+  EXPECT_GT(f.size(), 200);
+  ASSERT_TRUE(f.open(QIODevice::ReadOnly));
+  QByteArray header = f.read(5);
+  f.close();
+  EXPECT_EQ(header, QByteArray("%PDF-"));
+}
 
 TEST(SceneRendererTest, EmptyScene) {
   QTemporaryDir dir;

@@ -4,7 +4,8 @@
 #include <QGraphicsScene>
 #include <QImage>
 #include <QPainter>
-#include <QPrinter>
+#include <QPageSize>
+#include <QPdfWriter>
 #include <QSvgGenerator>
 
 namespace etest::topology {
@@ -59,14 +60,16 @@ bool renderSceneToFile(QGraphicsScene* scene, const QString& filePath) {
   }
 
   if (suffix == QStringLiteral("pdf")) {
-    QPrinter printer(QPrinter::HighResolution);
-    printer.setOutputFormat(QPrinter::PdfFormat);
-    printer.setOutputFileName(filePath);
-    printer.setPageSizeMM(
-        QSizeF(sr.width() * 25.4 / printer.resolution(),
-               sr.height() * 25.4 / printer.resolution()));
+    // 使用 QPdfWriter 直接写 PDF 文件，不经过 Windows 打印后台处理程序，
+    // 避免在无打印机驱动环境下弹出「正在等待打印机连接」对话框。
+    QPdfWriter writer(filePath);
+    const int dpi = 120;
+    writer.setResolution(dpi);
+    // 按场景尺寸与分辨率换算页面毫米尺寸，与位图/SVG 比例一致
+    QSizeF sizeMM(sr.width() * 25.4 / dpi, sr.height() * 25.4 / dpi);
+    writer.setPageSize(QPageSize(sizeMM, QPageSize::Millimeter));
     {
-      QPainter painter(&printer);
+      QPainter painter(&writer);
       renderScene(scene, &painter, sr);
     }
     return true;
