@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#ffd54f" flood-opacity="0.3"/>
+    </filter>
+    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d2d2d" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#1e1e1e" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffe082"/>
+      <stop offset="40%" stop-color="#ffd54f"/>
+      <stop offset="100%" stop-color="#ffb300"/>
+    </linearGradient>
+    <linearGradient id="byteGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#81c784"/>
+      <stop offset="100%" stop-color="#4caf50"/>
+    </linearGradient>
+    <linearGradient id="byteGrad2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a5d6a7"/>
+      <stop offset="100%" stop-color="#66bb6a"/>
+    </linearGradient>
+  </defs>
+  <!-- Card -->
+  <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#cardBg)" filter="url(#shadow)" stroke="#3c3c3c" stroke-width="0.5"/>
+  <!-- Arrow left -->
+  <g transform="translate(1, 0) skewY(-6) skewX(3)">
+    <path d="M4 12l-3 3 3 3" fill="none" stroke="url(#arrowGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M1 15h7" fill="none" stroke="url(#arrowGrad)" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+  <!-- Arrow right -->
+  <g transform="translate(0, 0) skewY(-6) skewX(3)">
+    <path d="M20 12l3 3-3 3" fill="none" stroke="url(#arrowGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16 15h7" fill="none" stroke="url(#arrowGrad)" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+  <!-- Left byte box -->
+  <g transform="translate(4, 4) skewY(-6) skewX(3)">
+    <rect x="0" y="0" width="6" height="6" rx="1" fill="url(#byteGrad)" opacity="0.9"/>
+    <text x="3" y="4" text-anchor="middle" fill="#ffffff" font-size="3.5" font-weight="bold" font-family="monospace">01</text>
+  </g>
+  <!-- Right byte box -->
+  <g transform="translate(14, 10) skewY(-6) skewX(3)">
+    <rect x="0" y="0" width="6" height="6" rx="1" fill="url(#byteGrad2)" opacity="0.9"/>
+    <text x="3" y="4" text-anchor="middle" fill="#ffffff" font-size="3.5" font-weight="bold" font-family="monospace">10</text>
+  </g>
+</svg>

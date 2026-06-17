@@ -141,9 +141,9 @@ void MainWindow::setupRibbon() {
                   QStringLiteral("打开项目"), this);
   act_save_ = new QAction(ribbonIcon("file_save"),
                           QStringLiteral("保存"), this);
-  act_undo_ = new QAction(ribbonIcon("file_undo"),
+  act_undo_ = new QAction(ribbonIcon("undo"),
                           QStringLiteral("撤销"), this);
-  act_redo_ = new QAction(ribbonIcon("file_redo"),
+  act_redo_ = new QAction(ribbonIcon("redo"),
                           QStringLiteral("重做"), this);
 
   qab->addAction(act_new_project_);

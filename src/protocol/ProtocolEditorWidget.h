@@ -18,6 +18,7 @@ class QLabel;
 class QDockWidget;
 class QAction;
 class QToolBar;
+class QToolButton;
 class QResizeEvent;
 
 namespace etest::protocol {
@@ -53,6 +54,9 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
 
   // Embedded mode (hide menuBar/toolbar when hosted in IDE)
   void setEmbeddedMode(bool embedded);
+
+  // Reload toolbar icons (for theme switching)
+  void reloadToolbarIcons();
 
  signals:
   void modificationChanged(bool modified);
@@ -98,11 +102,13 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   QLabel* frame_id_label_ = nullptr;
   QLabel* frame_length_label_ = nullptr;
   QComboBox* frame_type_combo_ = nullptr;
-  QComboBox* byte_order_combo_ = nullptr;
+  QToolButton* byte_order_btn_ = nullptr;
 
   // Toolbar actions
   QAction* new_frame_action_ = nullptr;
   QAction* delete_frame_action_ = nullptr;
+  QAction* undo_action_ = nullptr;
+  QAction* redo_action_ = nullptr;
   QAction* node_tree_toggle_action_ = nullptr;
   QAction* property_toggle_action_ = nullptr;
 

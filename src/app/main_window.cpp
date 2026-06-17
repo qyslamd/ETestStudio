@@ -1461,10 +1461,10 @@ void MainWindow::setupRibbon() {
   qab->addSeparator();
 
   edit_undo_action_->setIcon(
-      AppIconProvider::instance().icon(QStringLiteral("file_undo")));
+      AppIconProvider::instance().icon(QStringLiteral("undo")));
   qab->addAction(edit_undo_action_);
   edit_redo_action_->setIcon(
-      AppIconProvider::instance().icon(QStringLiteral("file_redo")));
+      AppIconProvider::instance().icon(QStringLiteral("redo")));
   qab->addAction(edit_redo_action_);
 
   // ── 登录菜单 ──

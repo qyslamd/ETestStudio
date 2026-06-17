@@ -23,6 +23,8 @@
 #include "IcdBitLayoutView.h"
 #include "IcdNodeTreeWidget.h"
 #include "IcdPropertyPanel.h"
+#include "AppIconProvider.h"
+#include "ThemeManager.h"
 #include "format/json_parser.hpp"
 #include "format/json_serializer.hpp"
 
@@ -67,6 +69,11 @@ ProtocolEditorWidget::ProtocolEditorWidget(QWidget* parent)
       bit_view_->loadFromFrame(*current_frame_);
     }
   });
+
+  // Theme switch → reload toolbar icons
+  connect(&etest::app::ThemeManager::instance(),
+          &etest::app::ThemeManager::themeChanged, this,
+          &ProtocolEditorWidget::reloadToolbarIcons);
 }
 
 ProtocolEditorWidget::~ProtocolEditorWidget() {}
@@ -284,6 +291,11 @@ bool ProtocolEditorWidget::saveEproto(const QString& path) {
 void ProtocolEditorWidget::initUi() {
   setAutoFillBackground(true);
 
+  // ── Icon loader (theme-aware) ──
+  auto protoIcon = [](const QString& name) {
+    return etest::app::AppIconProvider::instance().icon(name);
+  };
+
   // ── QToolBar (帧操作 + 帧属性) ──
   auto* toolbar = addToolBar(QStringLiteral("帧工具栏"));
   toolbar->setObjectName(QStringLiteral("protocolToolbar"));
@@ -291,15 +303,36 @@ void ProtocolEditorWidget::initUi() {
   toolbar->setFloatable(false);
 
   // 新建帧
-  new_frame_action_ = new QAction(QStringLiteral("+帧"), this);
+  new_frame_action_ = new QAction(
+      protoIcon(QStringLiteral("protocol_new_frame")),
+      QStringLiteral("+帧"), this);
   new_frame_action_->setToolTip(QStringLiteral("新建帧"));
   toolbar->addAction(new_frame_action_);
 
   // 删除帧
-  delete_frame_action_ = new QAction(QStringLiteral("-帧"), this);
+  delete_frame_action_ = new QAction(
+      protoIcon(QStringLiteral("protocol_delete_frame")),
+      QStringLiteral("-帧"), this);
   delete_frame_action_->setToolTip(QStringLiteral("删除当前帧"));
   delete_frame_action_->setEnabled(false);
   toolbar->addAction(delete_frame_action_);
+
+  toolbar->addSeparator();
+
+  // 撤销 / 重做
+  undo_action_ = new QAction(
+      protoIcon(QStringLiteral("undo")),
+      QStringLiteral("撤销"), this);
+  undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
+  undo_action_->setEnabled(false);
+  toolbar->addAction(undo_action_);
+
+  redo_action_ = new QAction(
+      protoIcon(QStringLiteral("redo")),
+      QStringLiteral("重做"), this);
+  redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
+  redo_action_->setEnabled(false);
+  toolbar->addAction(redo_action_);
 
   toolbar->addSeparator();
 
@@ -319,11 +352,15 @@ void ProtocolEditorWidget::initUi() {
   frame_type_combo_->setEnabled(false);
   toolbar->addWidget(frame_type_combo_);
 
-  byte_order_combo_ = new QComboBox(toolbar);
-  byte_order_combo_->addItem(QStringLiteral("小端 (Little Endian)"));
-  byte_order_combo_->addItem(QStringLiteral("大端 (Big Endian)"));
-  byte_order_combo_->setEnabled(false);
-  toolbar->addWidget(byte_order_combo_);
+  // 字节序切换按钮（取代之前的 QComboBox）
+  byte_order_btn_ = new QToolButton(toolbar);
+  byte_order_btn_->setIcon(protoIcon(QStringLiteral("protocol_byte_order")));
+  byte_order_btn_->setText(QStringLiteral("LE"));
+  byte_order_btn_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  byte_order_btn_->setCheckable(true);
+  byte_order_btn_->setToolTip(QStringLiteral("切换字节序：小端(LE) / 大端(BE)"));
+  byte_order_btn_->setEnabled(false);
+  toolbar->addWidget(byte_order_btn_);
 
   frame_id_label_ = new QLabel(QStringLiteral("ID: -"), toolbar);
   frame_id_label_->setObjectName(QStringLiteral("idLabel"));
@@ -342,13 +379,17 @@ void ProtocolEditorWidget::initUi() {
   toolbar->addSeparator();
 
   // 面板开关 toggle actions
-  node_tree_toggle_action_ = new QAction(QStringLiteral("节点列表"), this);
+  node_tree_toggle_action_ = new QAction(
+      protoIcon(QStringLiteral("protocol_node_tree")),
+      QStringLiteral("节点列表"), this);
   node_tree_toggle_action_->setCheckable(true);
   node_tree_toggle_action_->setChecked(true);
   node_tree_toggle_action_->setToolTip(QStringLiteral("显示/隐藏节点列表"));
   toolbar->addAction(node_tree_toggle_action_);
 
-  property_toggle_action_ = new QAction(QStringLiteral("属性面板"), this);
+  property_toggle_action_ = new QAction(
+      protoIcon(QStringLiteral("protocol_property")),
+      QStringLiteral("属性面板"), this);
   property_toggle_action_->setCheckable(true);
   property_toggle_action_->setChecked(true);
   property_toggle_action_->setToolTip(QStringLiteral("显示/隐藏属性面板"));
@@ -592,18 +633,33 @@ void ProtocolEditorWidget::initSignals() {
             setModified(true);
           });
 
-  // Byte order combo changed
-  connect(byte_order_combo_,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this](int index) {
-            if (!current_frame_)
-              return;
-            saveSnapshot();
-            auto order = (index == 0) ? icd::ByteOrder::little_endian
-                                      : icd::ByteOrder::big_endian;
-            current_frame_->setOrder(order);
-            setModified(true);
-          });
+  // Byte order button toggled
+  connect(byte_order_btn_, &QToolButton::toggled, this, [this](bool checked) {
+    if (!current_frame_)
+      return;
+    saveSnapshot();
+    auto order = checked ? icd::ByteOrder::big_endian
+                         : icd::ByteOrder::little_endian;
+    current_frame_->setOrder(order);
+    byte_order_btn_->setText(checked ? QStringLiteral("BE")
+                                     : QStringLiteral("LE"));
+    setModified(true);
+  });
+
+  // ── Undo / Redo ──
+  connect(undo_action_, &QAction::triggered, this, [this]() {
+    undo();
+    updateToolbar();
+  });
+  connect(redo_action_, &QAction::triggered, this, [this]() {
+    redo();
+    updateToolbar();
+  });
+  // Update undo/redo enabled state after each edit
+  connect(this, &ProtocolEditorWidget::modificationChanged, this, [this]() {
+    undo_action_->setEnabled(canUndo());
+    redo_action_->setEnabled(canRedo());
+  });
 
   // ── Dock toggle actions ──
   connect(node_tree_toggle_action_, &QAction::toggled, this,
@@ -741,23 +797,27 @@ void ProtocolEditorWidget::updateToolbar() {
     }
     frame_type_combo_->blockSignals(false);
 
-    byte_order_combo_->blockSignals(true);
-    byte_order_combo_->setCurrentIndex(
-        current_frame_->order() == icd::ByteOrder::little_endian ? 0 : 1);
-    byte_order_combo_->blockSignals(false);
+    byte_order_btn_->blockSignals(true);
+    byte_order_btn_->setChecked(
+        current_frame_->order() == icd::ByteOrder::big_endian);
+    byte_order_btn_->setText(
+        current_frame_->order() == icd::ByteOrder::little_endian
+            ? QStringLiteral("LE")
+            : QStringLiteral("BE"));
+    byte_order_btn_->blockSignals(false);
 
     frame_length_label_->setText(
         QStringLiteral("长度: %1 bytes").arg(calcFrameLength(*current_frame_)));
 
     frame_type_combo_->setEnabled(true);
-    byte_order_combo_->setEnabled(true);
+    byte_order_btn_->setEnabled(true);
     delete_frame_action_->setEnabled(true);
   } else {
     frame_name_label_->setText(QStringLiteral("(无帧)"));
     frame_id_label_->setText(QStringLiteral("ID: -"));
     frame_length_label_->setText(QStringLiteral("长度: -"));
     frame_type_combo_->setEnabled(false);
-    byte_order_combo_->setEnabled(false);
+    byte_order_btn_->setEnabled(false);
     delete_frame_action_->setEnabled(false);
   }
 }
@@ -876,6 +936,20 @@ void ProtocolEditorWidget::setModified(bool modified) {
     modified_ = modified;
     emit modificationChanged(modified);
   }
+}
+
+// ── Reload toolbar icons (theme switch) ──────────────────────
+void ProtocolEditorWidget::reloadToolbarIcons() {
+  auto icon = [](const QString& name) {
+    return etest::app::AppIconProvider::instance().icon(name);
+  };
+  new_frame_action_->setIcon(icon(QStringLiteral("protocol_new_frame")));
+  delete_frame_action_->setIcon(icon(QStringLiteral("protocol_delete_frame")));
+  undo_action_->setIcon(icon(QStringLiteral("undo")));
+  redo_action_->setIcon(icon(QStringLiteral("redo")));
+  byte_order_btn_->setIcon(icon(QStringLiteral("protocol_byte_order")));
+  node_tree_toggle_action_->setIcon(icon(QStringLiteral("protocol_node_tree")));
+  property_toggle_action_->setIcon(icon(QStringLiteral("protocol_property")));
 }
 
 }  // namespace etest::protocol

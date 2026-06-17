@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#e53935" flood-opacity="0.2"/>
+    </filter>
+    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#f8f9fa" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="trashGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ef5350"/>
+      <stop offset="50%" stop-color="#e53935"/>
+      <stop offset="100%" stop-color="#c62828"/>
+    </linearGradient>
+    <linearGradient id="badgeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#ffebee"/>
+    </linearGradient>
+  </defs>
+  <!-- Card -->
+  <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#cardBg)" filter="url(#shadow)" stroke="#e0e0e0" stroke-width="0.5"/>
+  <!-- Trash can icon (isometric) -->
+  <g transform="translate(12, 11) skewY(-6) skewX(3)">
+    <g transform="translate(-5, -6)">
+      <!-- Lid -->
+      <rect x="2" y="0" width="6" height="1.5" rx="0.5" fill="url(#trashGrad)"/>
+      <rect x="0" y="1.5" width="10" height="1" rx="0.3" fill="url(#trashGrad)"/>
+      <!-- Body -->
+      <rect x="1.5" y="2.5" width="7" height="8.5" rx="1" fill="url(#trashGrad)" opacity="0.9"/>
+      <!-- Inner lines -->
+      <rect x="3.5" y="4" width="1" height="5" rx="0.3" fill="#ffffff" opacity="0.5"/>
+      <rect x="6" y="4" width="1" height="5" rx="0.3" fill="#ffffff" opacity="0.5"/>
+    </g>
+  </g>
+  <!-- × badge -->
+  <circle cx="17" cy="6" r="4.5" fill="#ffffff" stroke="#e53935" stroke-width="1.2"/>
+  <path d="M15 4l4 4M19 4l-4 4" stroke="#e53935" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

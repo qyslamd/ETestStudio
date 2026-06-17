@@ -295,11 +295,11 @@ void TopologyEditorWidget::initUi() {
   toolbar->setFloatable(false);
 
   // ── 撤销 / 重做 ──
-  undo_action_ = new QAction(topoIcon(QStringLiteral("topo_undo")),
+  undo_action_ = new QAction(topoIcon(QStringLiteral("undo")),
                              QStringLiteral("撤销"), this);
   undo_action_->setEnabled(false);
   toolbar->addAction(undo_action_);
-  redo_action_ = new QAction(topoIcon(QStringLiteral("topo_redo")),
+  redo_action_ = new QAction(topoIcon(QStringLiteral("redo")),
                              QStringLiteral("重做"), this);
   redo_action_->setEnabled(false);
   toolbar->addAction(redo_action_);
@@ -769,8 +769,8 @@ void TopologyEditorWidget::reloadToolbarIcons() {
 
   export_image_action_->setIcon(icon(QStringLiteral("topo_export")));
   cleanup_action_->setIcon(icon(QStringLiteral("topo_cleanup")));
-  undo_action_->setIcon(icon(QStringLiteral("topo_undo")));
-  redo_action_->setIcon(icon(QStringLiteral("topo_redo")));
+  undo_action_->setIcon(icon(QStringLiteral("undo")));
+  redo_action_->setIcon(icon(QStringLiteral("redo")));
   outline_toggle_action_->setIcon(icon(QStringLiteral("topo_uut")));
   device_palette_toggle_action_->setIcon(icon(QStringLiteral("topo_device")));
   property_toggle_action_->setIcon(icon(QStringLiteral("topo_property")));

@@ -71,10 +71,6 @@
         <file>resources/icons/svg/topo_zoom_out_light.svg</file>
         <file>resources/icons/svg/topo_zoom_reset_dark.svg</file>
         <file>resources/icons/svg/topo_zoom_reset_light.svg</file>
-        <file>resources/icons/svg/topo_undo_dark.svg</file>
-        <file>resources/icons/svg/topo_undo_light.svg</file>
-        <file>resources/icons/svg/topo_redo_dark.svg</file>
-        <file>resources/icons/svg/topo_redo_light.svg</file>
         <file>resources/icons/svg/topo_export_dark.svg</file>
         <file>resources/icons/svg/topo_export_light.svg</file>
         <file>resources/icons/svg/topo_tap_dark.svg</file>
@@ -95,6 +91,16 @@
         <file>resources/icons/svg/topo_distribute_light.svg</file>
         <file>resources/icons/svg/protocol_dark.svg</file>
         <file>resources/icons/svg/protocol_light.svg</file>
+        <file>resources/icons/svg/protocol_new_frame_dark.svg</file>
+        <file>resources/icons/svg/protocol_new_frame_light.svg</file>
+        <file>resources/icons/svg/protocol_delete_frame_dark.svg</file>
+        <file>resources/icons/svg/protocol_delete_frame_light.svg</file>
+        <file>resources/icons/svg/protocol_byte_order_dark.svg</file>
+        <file>resources/icons/svg/protocol_byte_order_light.svg</file>
+        <file>resources/icons/svg/protocol_node_tree_dark.svg</file>
+        <file>resources/icons/svg/protocol_node_tree_light.svg</file>
+        <file>resources/icons/svg/protocol_property_dark.svg</file>
+        <file>resources/icons/svg/protocol_property_light.svg</file>
         <file>resources/icons/svg/testprogram_dark.svg</file>
         <file>resources/icons/svg/testprogram_light.svg</file>
         <file>resources/icons/svg/topo_align_left_dark.svg</file>
@@ -125,10 +131,10 @@
         <file>resources/icons/svg/file_open_light.svg</file>
         <file>resources/icons/svg/file_save_dark.svg</file>
         <file>resources/icons/svg/file_save_light.svg</file>
-        <file>resources/icons/svg/file_undo_dark.svg</file>
-        <file>resources/icons/svg/file_undo_light.svg</file>
-        <file>resources/icons/svg/file_redo_dark.svg</file>
-        <file>resources/icons/svg/file_redo_light.svg</file>
+        <file>resources/icons/svg/undo_dark.svg</file>
+        <file>resources/icons/svg/undo_light.svg</file>
+        <file>resources/icons/svg/redo_dark.svg</file>
+        <file>resources/icons/svg/redo_light.svg</file>
         <file>resources/icons/svg/file_cut_dark.svg</file>
         <file>resources/icons/svg/file_cut_light.svg</file>
         <file>resources/icons/svg/file_copy_dark.svg</file>
