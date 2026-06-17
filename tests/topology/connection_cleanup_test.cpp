@@ -11,9 +11,9 @@ static TopologyProduct makeProduct(const QString& name) {
   TopologyProduct prod;
   prod.name = name;
   prod.position = QPointF(0, 0);
-  prod.ports.append({QStringLiteral("Port_IN"),  TopologyPort::Input,
+  prod.ports.append({QStringLiteral("Port_IN"),  TopologyPort::Direction::Input,
                      {QStringLiteral("A429")}});
-  prod.ports.append({QStringLiteral("Port_OUT"), TopologyPort::Output,
+  prod.ports.append({QStringLiteral("Port_OUT"), TopologyPort::Direction::Output,
                      {QStringLiteral("A429")}});
   return prod;
 }
@@ -25,9 +25,9 @@ static TopologyDevice makeDevice(const QString& name,
   dev.name = name;
   dev.deviceType = deviceType;
   dev.position = QPointF(0, 0);
-  dev.ports.append({QStringLiteral("CH01"), TopologyPort::Output,
+  dev.ports.append({QStringLiteral("CH01"), TopologyPort::Direction::Output,
                     FunctionType::A429});
-  dev.ports.append({QStringLiteral("CH02"), TopologyPort::Input,
+  dev.ports.append({QStringLiteral("CH02"), TopologyPort::Direction::Input,
                     FunctionType::A429});
   return dev;
 }

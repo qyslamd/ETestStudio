@@ -76,11 +76,11 @@ QPainterPath PortItem::shape() const {
 static QColor directionColor(TopologyPort::Direction d) {
   const auto& tc = topologyColors();
   switch (d) {
-    case TopologyPort::Input:
+    case TopologyPort::Direction::Input:
       return tc.directionInput;
-    case TopologyPort::Output:
+    case TopologyPort::Direction::Output:
       return tc.directionOutput;
-    case TopologyPort::Bidirectional:
+    case TopologyPort::Direction::Bidirectional:
       return tc.directionBidirectional;
   }
   return QColor(128, 128, 128);
@@ -140,7 +140,7 @@ void PortItem::paint(QPainter* painter,
     qreal hh = dotRadius * 0.85;
     qreal hw = dotRadius * 1.1;
     QPainterPath portPath;
-    if (port.direction == TopologyPort::Bidirectional) {
+    if (port.direction == TopologyPort::Direction::Bidirectional) {
       portPath.moveTo(hw, 0);
       portPath.lineTo(0, -hh);
       portPath.lineTo(-hw, 0);
@@ -148,7 +148,7 @@ void PortItem::paint(QPainter* painter,
       portPath.closeSubpath();
     } else {
       // Input: tip points into body (+x); Output: tip toward line (-x)
-      qreal tx = (port.direction == TopologyPort::Input) ? hw : -hw;
+      qreal tx = (port.direction == TopologyPort::Direction::Input) ? hw : -hw;
       portPath.moveTo(tx, 0);
       portPath.lineTo(-tx, -hh);
       portPath.lineTo(-tx, hh);
@@ -159,7 +159,7 @@ void PortItem::paint(QPainter* painter,
     painter->drawPath(portPath);
   }
 
-  if (port.direction == TopologyPort::Bidirectional) {
+  if (port.direction == TopologyPort::Direction::Bidirectional) {
     qreal as = 4.0;
     qreal gap = 3.0;
     qreal ex = lineEndX;
@@ -565,7 +565,7 @@ void DevicePortItem::paint(QPainter* painter,
     qreal hh = dotRadius * 0.85;
     qreal hw = dotRadius * 1.1;
     QPainterPath portPath;
-    if (port.direction == TopologyPort::Bidirectional) {
+    if (port.direction == TopologyPort::Direction::Bidirectional) {
       portPath.moveTo(hw, 0);
       portPath.lineTo(0, -hh);
       portPath.lineTo(-hw, 0);
@@ -573,7 +573,7 @@ void DevicePortItem::paint(QPainter* painter,
       portPath.closeSubpath();
     } else {
       // Input: tip points into body (-x); Output: tip toward line (+x)
-      qreal tx = (port.direction == TopologyPort::Input) ? -hw : hw;
+      qreal tx = (port.direction == TopologyPort::Direction::Input) ? -hw : hw;
       portPath.moveTo(tx, 0);
       portPath.lineTo(-tx, -hh);
       portPath.lineTo(-tx, hh);
@@ -584,7 +584,7 @@ void DevicePortItem::paint(QPainter* painter,
     painter->drawPath(portPath);
   }
 
-  if (port.direction == TopologyPort::Bidirectional) {
+  if (port.direction == TopologyPort::Direction::Bidirectional) {
     qreal as = 4.0;
     qreal gap = 3.0;
     qreal ex = lineEndX;
@@ -727,7 +727,7 @@ void ConnectionItem::updatePath() {
   auto dir = prod->ports[source_->portIndex()].direction;
 
   qreal as = 8.0;
-  if (dir == TopologyPort::Bidirectional) {
+  if (dir == TopologyPort::Direction::Bidirectional) {
     qreal gap = 8.0;
     qreal a = angle;
     QPointF fwdCenter = mid + QPointF(cos(a) * gap, sin(a) * gap);
@@ -746,7 +746,7 @@ void ConnectionItem::updatePath() {
                        QPointF(cos(a - 2.5) * as, sin(a - 2.5) * as));
     arrow_path_.closeSubpath();
   } else {
-    bool forward = (dir == TopologyPort::Input);
+    bool forward = (dir == TopologyPort::Direction::Input);
     qreal a = forward ? angle : angle + M_PI;
     arrow_path_.moveTo(mid + QPointF(cos(a) * as, sin(a) * as));
     arrow_path_.lineTo(mid + QPointF(cos(a + 2.5) * as, sin(a + 2.5) * as));

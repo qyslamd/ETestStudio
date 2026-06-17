@@ -772,16 +772,16 @@ void TopologyEditorWidget::buildDefaultDocument() {
   prod1.name = QStringLiteral("ISI-01");
   prod1.position = QPointF(450, 120);
   prod1.ports.append({QStringLiteral("A429_CH1"),
-                      TopologyPort::Bidirectional,
+                      TopologyPort::Direction::Bidirectional,
                       {QStringLiteral("A429")}});
   prod1.ports.append({QStringLiteral("A429_CH2"),
-                      TopologyPort::Bidirectional,
+                      TopologyPort::Direction::Bidirectional,
                       {QStringLiteral("A429")}});
   prod1.ports.append({QStringLiteral("A429_CH3"),
-                      TopologyPort::Bidirectional,
+                      TopologyPort::Direction::Bidirectional,
                       {QStringLiteral("A429")}});
   prod1.ports.append({QStringLiteral("离散量"),
-                      TopologyPort::Input,
+                      TopologyPort::Direction::Input,
                       {QStringLiteral("DISCRETE")}});
   doc_->addProduct(prod1);
 
@@ -789,7 +789,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
   prod2.name = QStringLiteral("ISI-02");
   prod2.position = QPointF(450, 320);
   prod2.ports.append({QStringLiteral("A429_CH1"),
-                      TopologyPort::Bidirectional,
+                      TopologyPort::Direction::Bidirectional,
                       {QStringLiteral("A429")}});
   doc_->addProduct(prod2);
 
@@ -800,9 +800,9 @@ void TopologyEditorWidget::buildDefaultDocument() {
   dev1.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                      {QStringLiteral("slot"), QStringLiteral("2")}};
   dev1.ports.append(
-      {QStringLiteral("ch0"), TopologyPort::Bidirectional, FunctionType::A429});
+      {QStringLiteral("ch0"), TopologyPort::Direction::Bidirectional, FunctionType::A429});
   dev1.ports.append(
-      {QStringLiteral("ch1"), TopologyPort::Bidirectional, FunctionType::A429});
+      {QStringLiteral("ch1"), TopologyPort::Direction::Bidirectional, FunctionType::A429});
   doc_->addDevice(dev1);
 
   TopologyDevice dev2;
@@ -812,9 +812,9 @@ void TopologyEditorWidget::buildDefaultDocument() {
   dev2.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                      {QStringLiteral("slot"), QStringLiteral("3")}};
   dev2.ports.append(
-      {QStringLiteral("ch0"), TopologyPort::Bidirectional, FunctionType::A429});
+      {QStringLiteral("ch0"), TopologyPort::Direction::Bidirectional, FunctionType::A429});
   dev2.ports.append(
-      {QStringLiteral("ch1"), TopologyPort::Bidirectional, FunctionType::A429});
+      {QStringLiteral("ch1"), TopologyPort::Direction::Bidirectional, FunctionType::A429});
   doc_->addDevice(dev2);
 
   TopologyDevice dev3;
@@ -823,7 +823,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
   dev3.position = QPointF(50, 350);
   dev3.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                      {QStringLiteral("slot"), QStringLiteral("5")}};
-  dev3.ports.append({QStringLiteral("ch0"), TopologyPort::Bidirectional,
+  dev3.ports.append({QStringLiteral("ch0"), TopologyPort::Direction::Bidirectional,
                      FunctionType::DISCRETE});
   doc_->addDevice(dev3);
 
@@ -844,10 +844,10 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
     prod.position = (center.isNull()) ? QPointF(0, 0) : center;
   }
   prod.ports.append({QStringLiteral("Port_IN1"),
-                     TopologyPort::Input,
+                     TopologyPort::Direction::Input,
                      {QStringLiteral("A429")}});
   prod.ports.append({QStringLiteral("Port_OUT1"),
-                     TopologyPort::Output,
+                     TopologyPort::Direction::Output,
                      {QStringLiteral("A429")}});
 
   auto* cmd = new AddProductCommand(doc_, prod);
@@ -868,7 +868,7 @@ void TopologyEditorWidget::onAddUutPort(int productIndex) {
   int n = prod->ports.size() + 1;
   TopologyPort port;
   port.name = QStringLiteral("Port_%1").arg(n, 2, 10, QChar('0'));
-  port.direction = TopologyPort::Input;
+  port.direction = TopologyPort::Direction::Input;
   port.functionType = FunctionType::CUSTOM;
   auto* cmd = new AddProductPortCommand(doc_, productIndex, port);
   doc_->undoStack()->push(cmd);
@@ -1547,7 +1547,7 @@ void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
       dev.ports.append(dp);
     }
   } else {
-    dev.ports.append({QStringLiteral("default"), TopologyPort::Bidirectional,
+    dev.ports.append({QStringLiteral("default"), TopologyPort::Direction::Bidirectional,
                       FunctionType::CUSTOM});
   }
 

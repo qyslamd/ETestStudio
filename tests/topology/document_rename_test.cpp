@@ -22,7 +22,7 @@ TopologyDevice makeDevice() {
   device.deviceType = QStringLiteral("DeviceType");
   TopologyDevicePort port;
   port.name = QStringLiteral("OldDevicePort");
-  port.direction = TopologyPort::Output;
+  port.direction = TopologyPort::Direction::Output;
   device.ports.append(port);
   return device;
 }

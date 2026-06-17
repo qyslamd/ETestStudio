@@ -16,11 +16,11 @@ static const char kTopologyDeviceMime[] = "application/x-topology-device";
 // ── Device palette entries ───────────────────────────────────
 
 static const DeviceEntry kDeviceTypes[] = {
-    {"EPH6272T", "EPH6272T ARINC429 4CH", 4, TopologyPort::Bidirectional,
+    {"EPH6272T", "EPH6272T ARINC429 4CH", 4, TopologyPort::Direction::Bidirectional,
      FunctionType::A429},
-    {"EPH6633A", "EPH6633A Analog 8CH", 8, TopologyPort::Bidirectional,
+    {"EPH6633A", "EPH6633A Analog 8CH", 8, TopologyPort::Direction::Bidirectional,
      FunctionType::AD},
-    {"EPH5121A", "EPH5121A Discrete 32CH", 32, TopologyPort::Bidirectional,
+    {"EPH5121A", "EPH5121A Discrete 32CH", 32, TopologyPort::Direction::Bidirectional,
      FunctionType::DISCRETE},
 };
 
@@ -30,8 +30,8 @@ static const int kDeviceTypeCount =
 // ── Monitor palette entries ──────────────────────────────────
 
 struct MonitorEntry {
-  const char* deviceType;
-  const char* displayName;
+  QString deviceType;
+  QString displayName;
 };
 
 static const MonitorEntry kMonitorTypes[] = {
@@ -66,7 +66,7 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
     obj["isMonitor"] = true;
   } else {
     for (int i = 0; i < kDeviceTypeCount; ++i) {
-      if (dt == QLatin1String(kDeviceTypes[i].deviceType)) {
+      if (dt == kDeviceTypes[i].deviceType) {
         obj["channelCount"] = kDeviceTypes[i].channelCount;
         obj["direction"] = static_cast<int>(kDeviceTypes[i].direction);
         obj["functionType"] = static_cast<int>(kDeviceTypes[i].functionType);
@@ -82,46 +82,6 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
   auto* drag = new QDrag(this);
   drag->setMimeData(mime);
   drag->exec(supportedActions);
-}
-
-// ── Direction/Function label helpers ─────────────────────────
-
-static const char* directionLabel(TopologyPort::Direction d) {
-  switch (d) {
-    case TopologyPort::Input:
-      return "Input";
-    case TopologyPort::Output:
-      return "Output";
-    case TopologyPort::Bidirectional:
-      return "Bidirectional";
-  }
-  return "Bidirectional";
-}
-
-static const char* functionLabel(FunctionType t) {
-  switch (t) {
-    case FunctionType::A429:
-      return "A429";
-    case FunctionType::AD:
-      return "AD";
-    case FunctionType::DA:
-      return "DA";
-    case FunctionType::DISCRETE:
-      return "Discrete";
-    case FunctionType::SERIAL:
-      return "Serial";
-    case FunctionType::MIL1553:
-      return "MIL1553";
-    case FunctionType::POWER:
-      return "Power";
-    case FunctionType::CAMERA:
-      return "Camera";
-    case FunctionType::OSCILLOSCOPE:
-      return "Oscilloscope";
-    case FunctionType::CUSTOM:
-      return "Custom";
-  }
-  return "Custom";
 }
 
 // ── DevicePaletteWidget ──────────────────────────────────────
@@ -149,15 +109,15 @@ void DevicePaletteWidget::populateDeviceTypes() {
   for (int i = 0; i < kDeviceTypeCount; ++i) {
     const auto& entry = kDeviceTypes[i];
 
-    auto* item = new QListWidgetItem(QString::fromUtf8(entry.displayName));
-    item->setData(Qt::UserRole, QString::fromUtf8(entry.deviceType));
+    auto* item = new QListWidgetItem(entry.displayName);
+    item->setData(Qt::UserRole, entry.deviceType);
 
     QString tip =
         QStringLiteral("%1\n%2ch %3 %4\n拖放至画布创建设备")
-            .arg(QString::fromUtf8(entry.displayName))
+            .arg(entry.displayName)
             .arg(entry.channelCount)
-            .arg(QString::fromUtf8(directionLabel(entry.direction)))
-            .arg(QString::fromUtf8(functionLabel(entry.functionType)));
+            .arg(directionToString(entry.direction))
+            .arg(functionTypeToString(entry.functionType));
     item->setToolTip(tip);
 
     item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
@@ -173,11 +133,11 @@ void DevicePaletteWidget::populateDeviceTypes() {
 
     for (int i = 0; i < kMonitorTypeCount; ++i) {
       const auto& entry = kMonitorTypes[i];
-      auto* item = new QListWidgetItem(QString::fromUtf8(entry.displayName));
-      item->setData(Qt::UserRole, QString::fromUtf8(entry.deviceType));
+      auto* item = new QListWidgetItem(entry.displayName);
+      item->setData(Qt::UserRole, entry.deviceType);
       item->setData(Qt::UserRole + 1, true);  // isMonitor flag
       item->setToolTip(QStringLiteral("%1\n拖放至画布添加监听器").arg(
-          QString::fromUtf8(entry.displayName)));
+          entry.displayName));
       item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
       list_widget_->addItem(item);
     }

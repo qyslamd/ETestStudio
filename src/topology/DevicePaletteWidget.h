@@ -12,8 +12,8 @@ namespace etest::topology {
 
 // Device type information used to populate the palette and create devices.
 struct DeviceEntry {
-  const char* deviceType;
-  const char* displayName;
+  QString deviceType;
+  QString displayName;
   int channelCount;
   TopologyPort::Direction direction;
   FunctionType functionType;

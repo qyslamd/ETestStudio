@@ -39,7 +39,7 @@ TEST(PropertyPanelApplyTest, ApplyUutPortsPreservesHiddenFields) {
   product.name = QStringLiteral("UUT");
   TopologyPort port;
   port.name = QStringLiteral("OldPort");
-  port.direction = TopologyPort::Input;
+  port.direction = TopologyPort::Direction::Input;
   port.functionType = FunctionType::A429;
   port.allowedDeviceTypes << QStringLiteral("EPH6272T")
                           << QStringLiteral("A429");
@@ -79,7 +79,7 @@ TEST(PropertyPanelApplyTest, ApplyDevicePortsPreservesHiddenFields) {
   device.name = QStringLiteral("Device");
   TopologyDevicePort port;
   port.name = QStringLiteral("OldPort");
-  port.direction = TopologyPort::Output;
+  port.direction = TopologyPort::Direction::Output;
   port.functionType = FunctionType::A429;
   port.positionHint = 5;
   port.portStyle = 1;

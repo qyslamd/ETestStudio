@@ -17,7 +17,7 @@ TEST(DeviceTemplateManagerTest, SaveTemplatePreservesPortLayoutAndStyle) {
   device.deviceType = QStringLiteral("EPH6272T");
   TopologyDevicePort port;
   port.name = QStringLiteral("CH01");
-  port.direction = TopologyPort::Output;
+  port.direction = TopologyPort::Direction::Output;
   port.functionType = FunctionType::A429;
   port.positionHint = 8;
   port.portStyle = 1;

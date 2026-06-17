@@ -31,7 +31,7 @@ FunctionType stringToFunctionType(const QString& s);
 
 struct TopologyPort {
   QString name;
-  enum Direction { Input, Output, Bidirectional } direction = Input;
+  enum class Direction { Input, Output, Bidirectional } direction = Direction::Input;
   QStringList allowedDeviceTypes;
   FunctionType functionType = FunctionType::CUSTOM;
   int positionHint = -1;
@@ -43,7 +43,7 @@ TopologyPort::Direction stringToDirection(const QString& s);
 
 struct TopologyDevicePort {
   QString name;
-  TopologyPort::Direction direction = TopologyPort::Output;
+  TopologyPort::Direction direction = TopologyPort::Direction::Output;
   FunctionType functionType = FunctionType::CUSTOM;
   int positionHint = -1;
   int portStyle = 0;  // PortStyle enum: 0=Circle, 1=Triangle

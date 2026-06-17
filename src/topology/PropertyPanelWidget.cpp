@@ -638,7 +638,7 @@ void PropertyPanelWidget::onUutAddPort() {
   int n = prod->ports.size() + 1;
   TopologyPort port;
   port.name = QStringLiteral("Port_%1").arg(n, 2, 10, QChar('0'));
-  port.direction = TopologyPort::Input;
+  port.direction = TopologyPort::Direction::Input;
   port.functionType = FunctionType::CUSTOM;
   auto* cmd = new AddProductPortCommand(doc_, editing_uut_index_, port);
   doc_->undoStack()->push(cmd);
@@ -707,10 +707,10 @@ void PropertyPanelWidget::applyUutPorts(int productIndex) {
       port = saved_uut_ports_[r];
     port.name = nameItem->text();
     port.direction = dirItem && dirItem->text() == QStringLiteral("Output")
-                         ? TopologyPort::Output
+                         ? TopologyPort::Direction::Output
                      : dirItem && dirItem->text() == QStringLiteral("Bidirectional")
-                         ? TopologyPort::Bidirectional
-                         : TopologyPort::Input;
+                         ? TopologyPort::Direction::Bidirectional
+                         : TopologyPort::Direction::Input;
     port.functionType = FunctionType::CUSTOM;
     if (funcItem) {
       for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
@@ -943,9 +943,9 @@ void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
       dp = saved_device_ports_[r];
     dp.name = name;
     dp.direction = dirText == QStringLiteral("Bidirectional")
-                       ? TopologyPort::Bidirectional
-                   : dirText == QStringLiteral("Output") ? TopologyPort::Output
-                                                         : TopologyPort::Input;
+                       ? TopologyPort::Direction::Bidirectional
+                   : dirText == QStringLiteral("Output") ? TopologyPort::Direction::Output
+                                                         : TopologyPort::Direction::Input;
     dp.functionType = FunctionType::CUSTOM;
     for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
       if (functionTypeToString(static_cast<FunctionType>(ft)) == funcText) {

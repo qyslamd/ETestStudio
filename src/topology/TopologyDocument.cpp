@@ -52,11 +52,11 @@ FunctionType stringToFunctionType(const QString& s) {
 
 QString directionToString(TopologyPort::Direction d) {
   switch (d) {
-    case TopologyPort::Input:
+    case TopologyPort::Direction::Input:
       return QStringLiteral("Input");
-    case TopologyPort::Output:
+    case TopologyPort::Direction::Output:
       return QStringLiteral("Output");
-    case TopologyPort::Bidirectional:
+    case TopologyPort::Direction::Bidirectional:
       return QStringLiteral("Bidirectional");
   }
   return QStringLiteral("Output");
@@ -65,10 +65,10 @@ QString directionToString(TopologyPort::Direction d) {
 TopologyPort::Direction stringToDirection(const QString& s) {
   QString lower = s.toLower();
   if (lower == QStringLiteral("input"))
-    return TopologyPort::Input;
+    return TopologyPort::Direction::Input;
   if (lower == QStringLiteral("bidirectional"))
-    return TopologyPort::Bidirectional;
-  return TopologyPort::Output;
+    return TopologyPort::Direction::Bidirectional;
+  return TopologyPort::Direction::Output;
 }
 
 TopologyDocument::TopologyDocument(QObject* parent)
@@ -77,8 +77,8 @@ TopologyDocument::TopologyDocument(QObject* parent)
 static bool isDirectionCompatible(TopologyPort::Direction portDir,
                                    TopologyPort::Direction devPortDir) {
   // Bidirectional is compatible with any direction
-  if (portDir == TopologyPort::Bidirectional ||
-      devPortDir == TopologyPort::Bidirectional)
+  if (portDir == TopologyPort::Direction::Bidirectional ||
+      devPortDir == TopologyPort::Direction::Bidirectional)
     return true;
   // Opposites connect: Input ↔ Output
   return portDir != devPortDir;
