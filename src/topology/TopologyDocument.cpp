@@ -135,6 +135,26 @@ int TopologyDocument::findProductIndex(const QString& name) const {
   return -1;
 }
 
+bool TopologyDocument::renameProduct(int index, const QString& newName) {
+  auto* product = this->product(index);
+  if (!product)
+    return false;
+  const QString oldName = product->name;
+  product->name = newName;
+  for (auto& connection : connections_) {
+    if (connection.productName == oldName)
+      connection.productName = newName;
+  }
+  for (auto& monitor : monitors_) {
+    for (auto& tap : monitor.taps) {
+      if (tap.productName == oldName)
+        tap.productName = newName;
+    }
+  }
+  emit productChanged(index);
+  return true;
+}
+
 int TopologyDocument::addDevice(const TopologyDevice& device) {
   int index = devices_.size();
   devices_.append(device);
@@ -179,6 +199,26 @@ int TopologyDocument::findDeviceIndex(const QString& name) const {
       return i;
   }
   return -1;
+}
+
+bool TopologyDocument::renameDevice(int index, const QString& newName) {
+  auto* dev = device(index);
+  if (!dev)
+    return false;
+  const QString oldName = dev->name;
+  dev->name = newName;
+  for (auto& connection : connections_) {
+    if (connection.deviceName == oldName)
+      connection.deviceName = newName;
+  }
+  for (auto& monitor : monitors_) {
+    for (auto& tap : monitor.taps) {
+      if (tap.deviceName == oldName)
+        tap.deviceName = newName;
+    }
+  }
+  emit deviceChanged(index);
+  return true;
 }
 
 void TopologyDocument::addDevicePort(int deviceIndex,
@@ -244,6 +284,27 @@ int TopologyDocument::findProductPortIndex(int productIndex,
   return -1;
 }
 
+bool TopologyDocument::renameProductPort(int productIndex, int portIndex,
+                                         const QString& newName) {
+  auto* prod = product(productIndex);
+  if (!prod || portIndex < 0 || portIndex >= prod->ports.size())
+    return false;
+  const QString oldName = prod->ports[portIndex].name;
+  prod->ports[portIndex].name = newName;
+  for (auto& connection : connections_) {
+    if (connection.productName == prod->name && connection.portName == oldName)
+      connection.portName = newName;
+  }
+  for (auto& monitor : monitors_) {
+    for (auto& tap : monitor.taps) {
+      if (tap.productName == prod->name && tap.portName == oldName)
+        tap.portName = newName;
+    }
+  }
+  emit productChanged(productIndex);
+  return true;
+}
+
 void TopologyDocument::removeDevicePort(int deviceIndex, int portIndex) {
   if (deviceIndex < 0 || deviceIndex >= devices_.size())
     return;
@@ -264,6 +325,27 @@ int TopologyDocument::findDevicePortIndex(int deviceIndex,
       return i;
   }
   return -1;
+}
+
+bool TopologyDocument::renameDevicePort(int deviceIndex, int portIndex,
+                                        const QString& newName) {
+  auto* dev = device(deviceIndex);
+  if (!dev || portIndex < 0 || portIndex >= dev->ports.size())
+    return false;
+  const QString oldName = dev->ports[portIndex].name;
+  dev->ports[portIndex].name = newName;
+  for (auto& connection : connections_) {
+    if (connection.deviceName == dev->name && connection.devicePort == oldName)
+      connection.devicePort = newName;
+  }
+  for (auto& monitor : monitors_) {
+    for (auto& tap : monitor.taps) {
+      if (tap.deviceName == dev->name && tap.devicePort == oldName)
+        tap.devicePort = newName;
+    }
+  }
+  emit deviceChanged(deviceIndex);
+  return true;
 }
 
 int TopologyDocument::addConnection(const TopologyConnection& conn) {

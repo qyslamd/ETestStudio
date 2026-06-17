@@ -102,6 +102,7 @@ class TopologyDocument : public QObject {
   const TopologyProduct* product(int index) const;
   int productCount() const;
   int findProductIndex(const QString& name) const;
+  bool renameProduct(int index, const QString& newName);
 
   int addDevice(const TopologyDevice& device);
   int insertDevice(int index, const TopologyDevice& device);
@@ -110,6 +111,7 @@ class TopologyDocument : public QObject {
   const TopologyDevice* device(int index) const;
   int deviceCount() const;
   int findDeviceIndex(const QString& name) const;
+  bool renameDevice(int index, const QString& newName);
 
   // Product (UUT) port management
   void addProductPort(int productIndex, const TopologyPort& port);
@@ -117,12 +119,16 @@ class TopologyDocument : public QObject {
                         const TopologyPort& port);
   void removeProductPort(int productIndex, int portIndex);
   int findProductPortIndex(int productIndex, const QString& name) const;
+  bool renameProductPort(int productIndex, int portIndex,
+                         const QString& newName);
 
   void addDevicePort(int deviceIndex, const TopologyDevicePort& port);
   int insertDevicePort(int deviceIndex, int portIndex,
                        const TopologyDevicePort& port);
   void removeDevicePort(int deviceIndex, int portIndex);
   int findDevicePortIndex(int deviceIndex, const QString& name) const;
+  bool renameDevicePort(int deviceIndex, int portIndex,
+                        const QString& newName);
 
   int addConnection(const TopologyConnection& conn);
   int insertConnection(int index, const TopologyConnection& conn);

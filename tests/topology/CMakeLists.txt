@@ -24,3 +24,12 @@ add_etest(
     QT_MODULES Core Test
     LABELS TOPOLOGY
 )
+
+# 文档重命名引用同步测试
+add_etest(
+    NAME test_topology_document_rename
+    SOURCES document_rename_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test
+    LABELS TOPOLOGY
+)

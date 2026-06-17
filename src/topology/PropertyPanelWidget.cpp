@@ -632,28 +632,8 @@ void PropertyPanelWidget::onUutNameChanged() {
     int idx = editing_uut_index_;
     auto* cmd = new PropertyCommand(
         doc_,
-        // Undo: 恢复名称 + 更新连线中的 productName 回旧值
-        [doc = doc_, idx, oldName, newName]() {
-          if (auto* p = doc->product(idx)) {
-            p->name = oldName;
-            for (int i = 0; i < doc->connectionCount(); ++i) {
-              auto* c = doc->connection(i);
-              if (c && c->productName == newName)
-                c->productName = oldName;
-            }
-          }
-        },
-        // Redo: 设置新名称 + 更新连线中的 productName 为新值
-        [doc = doc_, idx, oldName, newName]() {
-          if (auto* p = doc->product(idx)) {
-            p->name = newName;
-            for (int i = 0; i < doc->connectionCount(); ++i) {
-              auto* c = doc->connection(i);
-              if (c && c->productName == oldName)
-                c->productName = newName;
-            }
-          }
-        },
+        [doc = doc_, idx, oldName]() { doc->renameProduct(idx, oldName); },
+        [doc = doc_, idx, newName]() { doc->renameProduct(idx, newName); },
         QStringLiteral("修改 UUT 名称"));
     doc_->undoStack()->push(cmd);
   }
@@ -832,18 +812,16 @@ void PropertyPanelWidget::onPortNameChanged() {
   if (prod && editing_port_index_ < prod->ports.size()) {
     QString oldName = prod->ports[editing_port_index_].name;
     QString newName = port_name_edit_->text();
+    if (oldName == newName)
+      return;
     int pIdx = editing_port_product_, poIdx = editing_port_index_;
     auto* cmd = new PropertyCommand(
         doc_,
         [doc = doc_, pIdx, poIdx, oldName]() {
-          if (auto* p = doc->product(pIdx))
-            if (poIdx < p->ports.size())
-              p->ports[poIdx].name = oldName;
+          doc->renameProductPort(pIdx, poIdx, oldName);
         },
         [doc = doc_, pIdx, poIdx, newName]() {
-          if (auto* p = doc->product(pIdx))
-            if (poIdx < p->ports.size())
-              p->ports[poIdx].name = newName;
+          doc->renameProductPort(pIdx, poIdx, newName);
         },
         QStringLiteral("修改端口名称"));
     doc_->undoStack()->push(cmd);
@@ -929,17 +907,13 @@ void PropertyPanelWidget::onDeviceNameChanged() {
   if (dev) {
     QString oldName = dev->name;
     QString newName = device_name_edit_->text();
+    if (oldName == newName)
+      return;
     int idx = editing_device_index_;
     auto* cmd = new PropertyCommand(
         doc_,
-        [doc = doc_, idx, oldName]() {
-          if (auto* d = doc->device(idx))
-            d->name = oldName;
-        },
-        [doc = doc_, idx, newName]() {
-          if (auto* d = doc->device(idx))
-            d->name = newName;
-        },
+        [doc = doc_, idx, oldName]() { doc->renameDevice(idx, oldName); },
+        [doc = doc_, idx, newName]() { doc->renameDevice(idx, newName); },
         QStringLiteral("修改设备名称"));
     doc_->undoStack()->push(cmd);
   }
@@ -1099,18 +1073,16 @@ void PropertyPanelWidget::onDevicePortNameChanged() {
   if (dev && editing_device_port_index_ < dev->ports.size()) {
     QString oldName = dev->ports[editing_device_port_index_].name;
     QString newName = devport_name_edit_->text();
+    if (oldName == newName)
+      return;
     int dIdx = editing_device_port_device_, pIdx = editing_device_port_index_;
     auto* cmd = new PropertyCommand(
         doc_,
         [doc = doc_, dIdx, pIdx, oldName]() {
-          if (auto* d = doc->device(dIdx))
-            if (pIdx < d->ports.size())
-              d->ports[pIdx].name = oldName;
+          doc->renameDevicePort(dIdx, pIdx, oldName);
         },
         [doc = doc_, dIdx, pIdx, newName]() {
-          if (auto* d = doc->device(dIdx))
-            if (pIdx < d->ports.size())
-              d->ports[pIdx].name = newName;
+          doc->renameDevicePort(dIdx, pIdx, newName);
         },
         QStringLiteral("修改设备端口名称"));
     doc_->undoStack()->push(cmd);
