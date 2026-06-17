@@ -20,7 +20,7 @@
 #include "TextEditorWidget.h"
 #include "editor/EditorFactory.h"
 #include "logger/Logger.h"
-#include "protocal/ProtocalEditorWidget.h"
+#include "protocol/ProtocalEditorWidget.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
 #include "topology/TopologyJsonSerializer.h"
@@ -95,12 +95,13 @@ void EditorManager::registerEditorTypes() {
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
         auto* te = qobject_cast<TextEditorWidget*>(editor->widget());
-        if (!te) return;
-        QObject::connect(te, &TextEditorWidget::modificationChanged, mgr,
+        if (!te)
+          return;
+        QObject::connect(
+            te, &TextEditorWidget::modificationChanged, mgr,
             [editor, dock, mgr](bool modified) {
-              dock->setWindowTitle(
-                  (modified ? QStringLiteral("* ") : QString())
-                      .append(editor->displayName()));
+              dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
+                                       .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
               emit mgr->modificationChanged(modified);
             });
@@ -114,19 +115,20 @@ void EditorManager::registerEditorTypes() {
         return editor;
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
-        auto* te = qobject_cast<etest::topology::TopologyEditorWidget*>(editor->widget());
-        if (!te) return;
-        QObject::connect(te,
-            &etest::topology::TopologyEditorWidget::modificationChanged, mgr,
-            [editor, dock, mgr](bool modified) {
-              dock->setWindowTitle(
-                  (modified ? QStringLiteral("* ") : QString())
-                      .append(editor->displayName()));
+        auto* te = qobject_cast<etest::topology::TopologyEditorWidget*>(
+            editor->widget());
+        if (!te)
+          return;
+        QObject::connect(
+            te, &etest::topology::TopologyEditorWidget::modificationChanged,
+            mgr, [editor, dock, mgr](bool modified) {
+              dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
+                                       .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
               emit mgr->modificationChanged(modified);
             });
-        QObject::connect(te,
-            &etest::topology::TopologyEditorWidget::editorIdChanged, mgr,
+        QObject::connect(
+            te, &etest::topology::TopologyEditorWidget::editorIdChanged, mgr,
             [editor, mgr](const QString&, const QString& newId) {
               mgr->updateEditorId(editor, newId);
             });
@@ -139,19 +141,20 @@ void EditorManager::registerEditorTypes() {
         return editor;
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
-        auto* pe = qobject_cast<etest::protocal::ProtocalEditorWidget*>(editor->widget());
-        if (!pe) return;
-        QObject::connect(pe,
-            &etest::protocal::ProtocalEditorWidget::modificationChanged, mgr,
-            [editor, dock, mgr](bool modified) {
-              dock->setWindowTitle(
-                  (modified ? QStringLiteral("* ") : QString())
-                      .append(editor->displayName()));
+        auto* pe = qobject_cast<etest::protocal::ProtocalEditorWidget*>(
+            editor->widget());
+        if (!pe)
+          return;
+        QObject::connect(
+            pe, &etest::protocal::ProtocalEditorWidget::modificationChanged,
+            mgr, [editor, dock, mgr](bool modified) {
+              dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
+                                       .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
               emit mgr->modificationChanged(modified);
             });
-        QObject::connect(pe,
-            &etest::protocal::ProtocalEditorWidget::editorIdChanged, mgr,
+        QObject::connect(
+            pe, &etest::protocal::ProtocalEditorWidget::editorIdChanged, mgr,
             [editor, mgr](const QString&, const QString& newId) {
               mgr->updateEditorId(editor, newId);
             });
@@ -170,24 +173,25 @@ void EditorManager::registerEditorTypes() {
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
         auto* te = qobject_cast<TestProgramEditorWidget*>(editor->widget());
-        if (!te) return;
-        QObject::connect(te, &TestProgramEditorWidget::modificationChanged, mgr,
+        if (!te)
+          return;
+        QObject::connect(
+            te, &TestProgramEditorWidget::modificationChanged, mgr,
             [editor, dock, mgr](bool modified) {
-              dock->setWindowTitle(
-                  (modified ? QStringLiteral("* ") : QString())
-                      .append(editor->displayName()));
+              dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
+                                       .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
               emit mgr->modificationChanged(modified);
             });
         QObject::connect(te, &TestProgramEditorWidget::editorIdChanged, mgr,
-            [editor, mgr](const QString&, const QString& newId) {
-              mgr->updateEditorId(editor, newId);
-            });
+                         [editor, mgr](const QString&, const QString& newId) {
+                           mgr->updateEditorId(editor, newId);
+                         });
       });
 }
 
 void EditorManager::openFile(const QString& filePath,
-                              const QString& forcedEditorType) {
+                             const QString& forcedEditorType) {
   QString editorKey = filePath;
   if (editors_.contains(editorKey)) {
     auto* dock = dock_widgets_[editorKey];
@@ -203,8 +207,8 @@ void EditorManager::openFile(const QString& filePath,
 
   QString suffix = fi.suffix().toLower();
   QString editorType = forcedEditorType.isEmpty()
-      ? EditorFactoryRegistry::typeForExtension(suffix)
-      : forcedEditorType;
+                           ? EditorFactoryRegistry::typeForExtension(suffix)
+                           : forcedEditorType;
   if (editorType.isEmpty()) {
     editorType = QStringLiteral("text");
   }
@@ -670,10 +674,12 @@ void EditorManager::onFileDeleted(const QString& filePath) {
 
     if (ret == QMessageBox::Save) {
       QString newPath = QFileDialog::getSaveFileName(
-          parentWidget, QStringLiteral("保存文件到"),
-          editor->filePath(), QStringLiteral("所有文件 (*)"));
-      if (newPath.isEmpty()) return;
-      if (!editor->saveAs(newPath)) return;
+          parentWidget, QStringLiteral("保存文件到"), editor->filePath(),
+          QStringLiteral("所有文件 (*)"));
+      if (newPath.isEmpty())
+        return;
+      if (!editor->saveAs(newPath))
+        return;
     } else if (ret == QMessageBox::Discard) {
       if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
         textEditor->editor()->setModified(false);
@@ -702,8 +708,7 @@ void EditorManager::onFileRenamed(const QString& oldPath,
   } else if (auto* topoEditor =
                  dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
     topoEditor->setEditorId(newPath);
-  } else if (auto* tpEditor =
-                 dynamic_cast<TestProgramEditorWidget*>(editor)) {
+  } else if (auto* tpEditor = dynamic_cast<TestProgramEditorWidget*>(editor)) {
     tpEditor->setEditorId(newPath);
   }
 

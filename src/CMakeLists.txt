@@ -1,7 +1,7 @@
 add_subdirectory(core)
 add_subdirectory(api)
 add_subdirectory(topology)
-add_subdirectory(protocal)
+add_subdirectory(protocol)
 add_subdirectory(icd_utility)
 add_subdirectory(tuxsaver)
 add_subdirectory(app)

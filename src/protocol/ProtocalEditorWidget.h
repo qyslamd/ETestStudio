@@ -4,7 +4,7 @@
 #include <QFutureWatcher>
 #include <QTimer>
 #include <QVector>
-#include <QWidget>
+#include <QMainWindow>
 
 #include <memory>
 
@@ -15,8 +15,9 @@
 
 class QComboBox;
 class QLabel;
-class QSplitter;
-class QToolButton;
+class QDockWidget;
+class QAction;
+class QToolBar;
 class QResizeEvent;
 
 namespace etest::protocal {
@@ -25,7 +26,7 @@ class IcdNodeTreeWidget;
 class IcdBitLayoutView;
 class IcdPropertyPanel;
 
-class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
+class ProtocalEditorWidget : public QMainWindow, public etest::app::IEditor {
   Q_OBJECT
  public:
   explicit ProtocalEditorWidget(QWidget* parent = nullptr);
@@ -50,6 +51,9 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
 
   void setEditorId(const QString& id);
 
+  // Embedded mode (hide menuBar/toolbar when hosted in IDE)
+  void setEmbeddedMode(bool embedded);
+
  signals:
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);
@@ -59,14 +63,12 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
   void hideLoadingOverlay();
   void resizeEvent(QResizeEvent* event) override;
   void hideEvent(QHideEvent* event) override;
-
-  // Splitter 状态持久化
-  void saveSplitterState();
-  void restoreSplitterState();
+  void showStatusMessage(const QString& msg);
 
   QWidget* loading_overlay_ = nullptr;
   QFutureWatcher<std::shared_ptr<icd::Repository>>* load_watcher_ = nullptr;
   QTimer* modified_debounce_ = nullptr;
+  bool embedded_ = false;
 
   bool saveEproto(const QString& path);
   void initUi();
@@ -82,18 +84,27 @@ class ProtocalEditorWidget : public QWidget, public etest::app::IEditor {
 
   static constexpr int kMaxSnapshots = 32;
 
-  QSplitter* splitter_ = nullptr;
+  // Dock widgets
+  QDockWidget* node_tree_dock_ = nullptr;
+  QDockWidget* property_dock_ = nullptr;
+
+  // Panels (owned by docks)
   IcdNodeTreeWidget* node_tree_ = nullptr;
   IcdBitLayoutView* bit_view_ = nullptr;
   IcdPropertyPanel* property_panel_ = nullptr;
-  QLabel* status_label_ = nullptr;
+
+  // Toolbar widgets
   QLabel* frame_name_label_ = nullptr;
   QLabel* frame_id_label_ = nullptr;
   QLabel* frame_length_label_ = nullptr;
   QComboBox* frame_type_combo_ = nullptr;
   QComboBox* byte_order_combo_ = nullptr;
-  QToolButton* new_frame_btn_ = nullptr;
-  QToolButton* delete_frame_btn_ = nullptr;
+
+  // Toolbar actions
+  QAction* new_frame_action_ = nullptr;
+  QAction* delete_frame_action_ = nullptr;
+  QAction* node_tree_toggle_action_ = nullptr;
+  QAction* property_toggle_action_ = nullptr;
 
   icd::Repository repo_;
   icd::Frame* current_frame_ = nullptr;

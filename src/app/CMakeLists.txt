@@ -143,7 +143,7 @@ target_link_libraries(${TARGET_NAME}
     etest_core
     etest_api
     etest_topology
-    etest_protocal
+    etest_protocol
     # 已配置第三方依赖
     spdlog::spdlog
     hpdf

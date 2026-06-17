@@ -1,4 +1,4 @@
-set(TARGET_NAME "etest_protocal")
+set(TARGET_NAME "etest_protocol")
 
 add_library(${TARGET_NAME} STATIC
     ProtocalEditorWidget.h

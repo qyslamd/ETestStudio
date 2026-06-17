@@ -28,7 +28,7 @@
 - **决策**：从 `src/app/` 移至 `src/core/common/`，以静态库 `etest_core` 形式供所有模块链接
 - **冲突**：Qt-Advanced-Docking-System 自带 `IconProvider.h`，include 路径优先级冲突
 - **解决**：重命名 `IconProvider` → `AppIconProvider`（类名 + 文件名均改名，namespace 保持 `etest::app`）
-- **受影响的模块**: etest_core、etest_demo、etest_topology、etest_protocal 及其 demo
+- **受影响的模块**: etest_core、etest_demo、etest_topology、etest_protocol 及其 demo
 - **TopologyEditorWidget**: 替换 `topoIcon` lambda（硬编码路径+`isDarkTheme()`）→ `AppIconProvider::instance().icon(name)`，新增 `reloadToolbarIcons()` 响应 `themeChanged` 实时刷新
 - **IcdBitLayoutView**: 替换 `core::common::isDarkTheme()` → `ThemeManager::instance().isDarkTheme()`，新增 `themeChanged` 连接实时刷新块颜色和背景
 - **Cross-module limitation 已彻底解决**：拓扑/协议模块图标和主题均可实时切换

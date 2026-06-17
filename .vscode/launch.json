@@ -59,6 +59,31 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
+        },
+        {
+            "name": "protocol-demo",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ninja-debug/bin/protocol-demo.exe",
+            "args": [
+                "-f",
+                "${workspaceFolder}\\temp\\projects\\Demo_Project3\\protocol\\aaaaa.eproto"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/ninja-debug/bin",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "${env:ETest_Qt5_Path}bin;${env:PATH}"
+                },
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "${env:ETest_Qt5_Path}plugins"
+                }
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         }
     ]
 }
