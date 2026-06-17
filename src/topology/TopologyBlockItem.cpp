@@ -81,7 +81,7 @@ void TopologyBlockItem::paint(QPainter* painter,
 
   // Body
   painter->setBrush(fill);
-  painter->setPen(QPen(border, penWidth));
+  painter->setPen(blockBorderPen(penWidth));
   painter->drawRoundedRect(QRectF(0, 0, block_width_, h), corner_radius_,
                            corner_radius_);
 

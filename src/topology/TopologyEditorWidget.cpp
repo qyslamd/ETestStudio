@@ -391,25 +391,6 @@ void TopologyEditorWidget::initUi() {
 
   toolbar->addSeparator();
 
-  // ── 监听器组（MenuButtonPopup: 主按钮视图切换，下拉挂载）──
-  monitor_view_action_ = new QAction(topoIcon(QStringLiteral("topo_tap")),
-                                     QStringLiteral("监听器"), this);
-  monitor_view_action_->setToolTip(QStringLiteral("显示/隐藏监听器挂载虚线"));
-  monitor_view_action_->setCheckable(true);
-  mount_action_ = new QAction(topoIcon(QStringLiteral("topo_tap")),
-                              QStringLiteral("挂载到连线"), this);
-  mount_action_->setToolTip(QStringLiteral("将选中监听器挂载到连线"));
-  mount_action_->setEnabled(false);
-  {
-    auto* monitorBtn = new QToolButton(toolbar);
-    monitorBtn->setDefaultAction(monitor_view_action_);
-    monitorBtn->setPopupMode(QToolButton::MenuButtonPopup);
-    auto* monitorMenu = new QMenu(monitorBtn);
-    monitorMenu->addAction(mount_action_);
-    monitorBtn->setMenu(monitorMenu);
-    toolbar->addWidget(monitorBtn);
-  }
-
   toolbar->addSeparator();
 
   // ── 导出 ──
@@ -525,62 +506,12 @@ void TopologyEditorWidget::initSignals() {
   connect(scene_, &QGraphicsScene::selectionChanged, this,
           &TopologyEditorWidget::updateAlignDistributeActions);
 
-  // 编辑按钮 enable 状态 + 监听器挂载按钮状态
+  // 编辑按钮 enable 状态
   connect(scene_, &QGraphicsScene::selectionChanged, this, [this]() {
     auto selected = scene_->selectedItems();
     bool hasSelection = !selected.isEmpty();
-    // 可删除：选中了非 UutPortItem/DevicePortItem 的元素，或有端口选中
     delete_action_->setEnabled(hasSelection);
-    // 可复制：有选中元素
     copy_action_->setEnabled(hasSelection);
-    // 监听器挂载状态
-    bool viewOn = scene_->isMonitorViewActive();
-    bool hasSelectedMonitor = false;
-    if (viewOn) {
-      for (auto* item : selected) {
-        if (qgraphicsitem_cast<MonitorItem*>(item)) {
-          hasSelectedMonitor = true;
-          break;
-        }
-      }
-    }
-    mount_action_->setEnabled(viewOn && hasSelectedMonitor &&
-                              !scene_->isTapModeActive());
-  });
-
-  // 监听器视图切换
-  connect(monitor_view_action_, &QAction::triggered, this,
-          [this](bool checked) {
-            scene_->setMonitorViewActive(checked);
-            if (!checked) {
-              mount_action_->setEnabled(false);
-              if (scene_->isTapModeActive())
-                scene_->cancelTapMode();
-              showStatusMessage(QStringLiteral("监听器视图已关闭"));
-            } else {
-              showStatusMessage(
-                  QStringLiteral("监听器视图已开启 — 选中监听器后可挂载"));
-              bool hasMonitor = false;
-              for (auto* item : scene_->selectedItems()) {
-                if (qgraphicsitem_cast<MonitorItem*>(item)) {
-                  hasMonitor = true;
-                  break;
-                }
-              }
-              mount_action_->setEnabled(hasMonitor);
-            }
-          });
-
-  // 挂载到连线
-  connect(mount_action_, &QAction::triggered, this, [this]() {
-    auto selected = scene_->selectedItems();
-    for (auto* item : selected) {
-      if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
-        scene_->startTapMode(mon->monitorIndex());
-        showStatusMessage(QStringLiteral("点击一条连线来挂载监听器"));
-        return;
-      }
-    }
   });
 
   connect(view_, &TopologyView::addUutRequested, this,
@@ -757,9 +688,6 @@ void TopologyEditorWidget::reloadToolbarIcons() {
   zoom_in_action_->setIcon(icon(QStringLiteral("topo_zoom_in")));
   zoom_out_action_->setIcon(icon(QStringLiteral("topo_zoom_out")));
   zoom_reset_action_->setIcon(icon(QStringLiteral("topo_zoom_reset")));
-
-  monitor_view_action_->setIcon(icon(QStringLiteral("topo_tap")));
-  mount_action_->setIcon(icon(QStringLiteral("topo_tap")));
 
   copy_action_->setIcon(icon(QStringLiteral("topo_copy")));
   paste_action_->setIcon(icon(QStringLiteral("topo_paste")));

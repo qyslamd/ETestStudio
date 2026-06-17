@@ -825,14 +825,30 @@ MonitorItem::MonitorItem(int monitorIndex,
       monitor_index_(monitorIndex) {
   setFlag(ItemIsSelectable);
   setAcceptHoverEvents(true);
+  layoutPort();
+}
+
+void MonitorItem::layoutPort() {
+  if (port_)
+    return;
+  port_ = new MonitorPortItem(monitor_index_, doc_, this);
+  qreal h = effectiveHeight();
+  port_->setPos(-kPortRadius, h / 2.0);
+  addChildPort(port_);
 }
 
 QColor MonitorItem::blockFillColor() const {
-  return topologyColors().monitorFill;
+  QColor c = topologyColors().monitorFill;
+  c.setAlpha(160);
+  return c;
 }
 
 QColor MonitorItem::blockBorderColor() const {
   return topologyColors().monitorBorder;
+}
+
+QPen MonitorItem::blockBorderPen(qreal penWidth) const {
+  return QPen(blockBorderColor(), penWidth, Qt::DashLine);
 }
 
 void MonitorItem::paintContent(QPainter* painter,
@@ -842,33 +858,56 @@ void MonitorItem::paintContent(QPainter* painter,
   if (!mon)
     return;
 
-  painter->setPen(topologyColors().textPrimary);
+  const auto& tc = topologyColors();
+
+  // Waveform icon in top-left corner
+  qreal wx = rect.x() + 8;
+  qreal wy = rect.y() + 10;
+  painter->setPen(QPen(tc.textSecondary, 1.2));
+  QPainterPath wave;
+  wave.moveTo(wx, wy + 8);
+  wave.cubicTo(wx + 4, wy, wx + 6, wy + 14, wx + 10, wy + 6);
+  wave.cubicTo(wx + 12, wy + 2, wx + 14, wy + 10, wx + 16, wy + 6);
+  painter->drawPath(wave);
+
+  // Name
+  painter->setPen(tc.textPrimary);
   QFont f = painter->font();
   f.setPointSize(9);
   f.setBold(true);
   painter->setFont(f);
-  painter->drawText(QRectF(rect.x(), rect.y() + 6, rect.width(), 20),
-                    Qt::AlignCenter, mon->name);
+  QRectF nameRect(rect.x() + 22, rect.y() + 4, rect.width() - 26, 20);
+  painter->drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter, mon->name);
 
+  // Device type
   f.setPointSize(7);
   f.setBold(false);
   painter->setFont(f);
-  painter->setPen(topologyColors().textSecondary);
-  painter->drawText(QRectF(rect.x(), rect.y() + 26, rect.width(), 18),
-                    Qt::AlignCenter,
+  painter->setPen(tc.textSecondary);
+  QRectF typeRect(rect.x() + 22, rect.y() + 22, rect.width() - 26, 16);
+  painter->drawText(typeRect, Qt::AlignLeft | Qt::AlignVCenter,
                     QStringLiteral("[%1]").arg(mon->deviceType));
 
-  // Show tap count
-  f.setPointSize(7);
-  painter->setFont(f);
-  painter->setPen(topologyColors().textSecondary);
-  QString tapText = QStringLiteral("已挂载: %1 条连线").arg(mon->taps.size());
-  painter->drawText(QRectF(rect.x(), rect.y() + 42, rect.width(), 16),
-                    Qt::AlignCenter, tapText);
+  // Tap dot matrix at bottom
+  int tapCount = mon->taps.size();
+  if (tapCount > 0) {
+    qreal dotY = rect.bottom() - 10;
+    qreal dotSpacing = 14.0;
+    qreal totalW = qMin(tapCount, 12) * dotSpacing;
+    qreal startX = rect.center().x() - totalW / 2.0;
+    int maxDots = qMin(tapCount, 12);
+    for (int i = 0; i < maxDots; ++i) {
+      QColor dotColor = tc.directionBidirectional;
+      qreal dx = startX + i * dotSpacing + 4;
+      painter->setBrush(dotColor);
+      painter->setPen(Qt::NoPen);
+      painter->drawEllipse(QPointF(dx, dotY), 3, 3);
+    }
+  }
 }
 
 qreal MonitorItem::calcContentHeight() const {
-  return kBaseHeight;  // Fixed height, no ports to accommodate
+  return kBaseHeight;
 }
 
 int MonitorItem::tapCount() const {
@@ -897,6 +936,44 @@ void MonitorItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
     doc->undoStack()->push(new ResizeItemCommand(
         doc, idx, ResizeItemCommand::Monitor, oldSize, newSize, oldPos, newPos));
   });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MonitorPortItem ── drag anchor on monitor left edge
+// ═══════════════════════════════════════════════════════════════
+
+MonitorPortItem::MonitorPortItem(int monitorIndex,
+                                 TopologyDocument* doc,
+                                 MonitorItem* parent)
+    : AbstractPortItem(0, doc, parent),
+      monitor_index_(monitorIndex) {
+}
+
+QRectF MonitorPortItem::boundingRect() const {
+  return QRectF(-kRadius - 4, -kRadius - 4, (kRadius + 4) * 2,
+                (kRadius + 4) * 2);
+}
+
+QPainterPath MonitorPortItem::shape() const {
+  QPainterPath p;
+  p.addEllipse(-kRadius - 2, -kRadius - 2, (kRadius + 2) * 2,
+               (kRadius + 2) * 2);
+  return p;
+}
+
+void MonitorPortItem::paint(QPainter* painter,
+                             const QStyleOptionGraphicsItem* option,
+                             QWidget*) {
+  Q_UNUSED(option);
+  painter->setRenderHint(QPainter::Antialiasing);
+  const auto& tc = topologyColors();
+  painter->setBrush(tc.monitorFill);
+  painter->setPen(QPen(tc.monitorBorder, 1.5));
+  painter->drawEllipse(QPointF(0, 0), kRadius, kRadius);
+}
+
+QPointF MonitorPortItem::sceneCenter() const {
+  return mapToScene(QPointF(0, 0));
 }
 
 }  // namespace etest::topology

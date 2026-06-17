@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QGraphicsItem>
+#include <QPen>
 #include <QRectF>
 #include <QVector>
 
@@ -51,6 +52,10 @@ class TopologyBlockItem : public QGraphicsItem {
   // Subclass hooks — colors, content, layout
   virtual QColor blockFillColor() const = 0;
   virtual QColor blockBorderColor() const = 0;
+  // Override to change border pen style (e.g. dashed for monitors)
+  virtual QPen blockBorderPen(qreal penWidth) const {
+    return QPen(blockBorderColor(), penWidth);
+  }
   virtual void paintContent(QPainter* painter,
                             const QStyleOptionGraphicsItem* option,
                             const QRectF& rect) = 0;

@@ -14,6 +14,7 @@ class UutItem;
 class DeviceItem;
 class DevicePortItem;
 class UutPortItem;
+class MonitorPortItem;
 class ConnectionItem;
 class MonitorItem;
 
@@ -57,6 +58,7 @@ class TopologyScene : public QGraphicsScene {
   UutPortItem* portItemAt(QPointF scenePos) const;
   UutItem* uutItemAt(QPointF scenePos) const;
   ConnectionItem* connectionItemAt(QPointF scenePos) const;
+  MonitorPortItem* monitorPortItemAt(QPointF scenePos) const;
 
  signals:
   void itemSelected(QGraphicsItem* item);
@@ -78,10 +80,6 @@ class TopologyScene : public QGraphicsScene {
 
   // Refresh tap visual indicators (dotted lines)
   void updateTapVisuals();
-
-  // Monitor view mode — shows/hides all tap lines and gates tap operations
-  void setMonitorViewActive(bool active);
-  bool isMonitorViewActive() const { return monitor_view_active_; }
 
  protected:
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
@@ -112,9 +110,6 @@ class TopologyScene : public QGraphicsScene {
   // Move tracking
   QGraphicsItem* moving_item_ = nullptr;
   QPointF move_start_pos_;
-
-  // Monitor view mode
-  bool monitor_view_active_ = false;
 
   // Tap mode state
   int tap_mode_monitor_ = -1;

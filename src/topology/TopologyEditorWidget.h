@@ -129,8 +129,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QAction* zoom_reset_action_ = nullptr;
   QAction* export_image_action_ = nullptr;
   QAction* cleanup_action_ = nullptr;
-  QAction* monitor_view_action_ = nullptr;
-  QAction* mount_action_ = nullptr;
+  // mount_action_ removed — use MonitorPortItem drag instead
 
   void reloadToolbarIcons();
 

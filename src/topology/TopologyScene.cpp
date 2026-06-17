@@ -25,9 +25,7 @@ TopologyScene::TopologyScene(TopologyDocument* doc, QObject* parent)
 }
 
 void TopologyScene::loadFromDocument() {
-  bool wasMonitorView = monitor_view_active_;
   clearScene();
-  monitor_view_active_ = wasMonitorView;
 
   for (int i = 0; i < doc_->productCount(); ++i) {
     const auto* prod = doc_->product(i);
@@ -141,8 +139,6 @@ MonitorItem* TopologyScene::addMonitorItem(int monitorIndex, const QPointF& pos)
 // ── Tap mode ────────────────────────────────────────────────
 
 void TopologyScene::startTapMode(int monitorIndex) {
-  if (!monitor_view_active_)
-    return;
   tap_mode_monitor_ = monitorIndex;
   // Use cross cursor to indicate tap selection mode
   for (auto* view : views())
@@ -197,16 +193,6 @@ void TopologyScene::cancelTapMode() {
 
 // ── Tap visual indicators ────────────────────────────────────
 
-void TopologyScene::setMonitorViewActive(bool active) {
-  monitor_view_active_ = active;
-  if (!active) {
-    // Cancel any in-progress tap mode
-    if (tap_mode_monitor_ >= 0)
-      cancelTapMode();
-  }
-  updateTapVisuals();
-}
-
 void TopologyScene::updateTapVisuals() {
   // Remove old tap lines
   for (auto* line : tap_lines_) {
@@ -214,9 +200,6 @@ void TopologyScene::updateTapVisuals() {
     delete line;
   }
   tap_lines_.clear();
-
-  if (!monitor_view_active_)
-    return;
 
   // Build a lookup: connection endpoint → monitorItem + tap index
   for (auto* monItem : monitor_items_) {
@@ -290,6 +273,8 @@ void TopologyScene::continueConnectionDrag(QPointF scenePos) {
       center = p->sceneCenter();
     else if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(drag_source_))
       center = dp->sceneCenter();
+    else if (auto* mp = qgraphicsitem_cast<MonitorPortItem*>(drag_source_))
+      center = mp->sceneCenter();
     QLineF line(center, scenePos);
     drag_line_->setLine(line);
   }
@@ -308,6 +293,7 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
 
   auto* srcPort = qgraphicsitem_cast<UutPortItem*>(drag_source_);
   auto* srcDevPort = qgraphicsitem_cast<DevicePortItem*>(drag_source_);
+  auto* srcMonPort = qgraphicsitem_cast<MonitorPortItem*>(drag_source_);
 
   if (srcPort) {
     auto* devPort = devicePortItemAt(scenePos);
@@ -341,6 +327,18 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
           TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
           doc_->undoStack()->push(new AddConnectionCommand(doc_, conn));
         }
+      }
+    }
+  } else if (srcMonPort) {
+    // Drag from MonitorPortItem over a connection → tap that connection
+    auto* conn = connectionItemAt(scenePos);
+    if (conn) {
+      int monIdx = srcMonPort->monitorIndex();
+      const auto* c = doc_->connection(conn->connectionIndex());
+      if (c) {
+        TopologyMonitorTap tap{c->productName, c->portName,
+                                c->deviceName, c->devicePort};
+        doc_->undoStack()->push(new TapConnectionCommand(doc_, monIdx, tap));
       }
     }
   }
@@ -526,6 +524,17 @@ ConnectionItem* TopologyScene::connectionItemAt(QPointF scenePos) const {
   return nullptr;
 }
 
+MonitorPortItem* TopologyScene::monitorPortItemAt(QPointF scenePos) const {
+  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
+                           Qt::DescendingOrder);
+  for (auto* item : items) {
+    if (auto* mp = qgraphicsitem_cast<MonitorPortItem*>(item)) {
+      return mp;
+    }
+  }
+  return nullptr;
+}
+
 ConnectionItem* TopologyScene::findConnectionItem(int connIndex) const {
   for (auto* conn : connection_items_) {
     if (conn && conn->connectionIndex() == connIndex)
@@ -559,7 +568,6 @@ void TopologyScene::clearScene() {
   drag_preview_ = nullptr;
   moving_item_ = nullptr;
   tap_mode_monitor_ = -1;
-  monitor_view_active_ = false;
   tap_lines_.clear();  // Items will be deleted by clear()
   clear();
   uut_items_.clear();
