@@ -52,6 +52,7 @@ conversations/
 .qtcreator/
 .superpowers/
 .brainstorm/
+.mimocode/
 *.vcxproj*
 *.sln
 
