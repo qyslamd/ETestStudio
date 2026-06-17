@@ -49,14 +49,18 @@ bool renderSceneToFile(QGraphicsScene* scene, const QString& filePath) {
     gen.setSize(sr.size().toSize());
     gen.setTitle(QStringLiteral("拓扑图"));
     {
-      QPainter painter(&gen);
+      QPainter painter;
+      if (!painter.begin(&gen))
+        return false;
       painter.setRenderHint(QPainter::Antialiasing);
       // 白底
       painter.fillRect(QRectF(0, 0, sr.width(), sr.height()), Qt::white);
       // scene->render 自动将 sr 映射到 painter 设备坐标
       scene->render(&painter, QRectF(), sr);
+      painter.end();
     }
-    return true;
+    QFileInfo out(filePath);
+    return out.exists() && out.size() > 0;
   }
 
   if (suffix == QStringLiteral("pdf")) {
@@ -69,10 +73,14 @@ bool renderSceneToFile(QGraphicsScene* scene, const QString& filePath) {
     QSizeF sizeMM(sr.width() * 25.4 / dpi, sr.height() * 25.4 / dpi);
     writer.setPageSize(QPageSize(sizeMM, QPageSize::Millimeter));
     {
-      QPainter painter(&writer);
+      QPainter painter;
+      if (!painter.begin(&writer))
+        return false;
       renderScene(scene, &painter, sr);
+      painter.end();
     }
-    return true;
+    QFileInfo out(filePath);
+    return out.exists() && out.size() > 0;
   }
 
   return false;

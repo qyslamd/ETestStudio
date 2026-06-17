@@ -126,3 +126,29 @@ TEST(SceneRendererTest, UnknownExtension) {
 
   EXPECT_FALSE(ok);
 }
+
+TEST(SceneRendererTest, RenderSvgReturnsFalseWhenFileCannotBeWritten) {
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+  QString path = dir.filePath("missing-dir/test.svg");
+
+  auto* scene = makeTestScene();
+  bool ok = renderSceneToFile(scene, path);
+  delete scene;
+
+  EXPECT_FALSE(ok);
+  EXPECT_FALSE(QFile::exists(path));
+}
+
+TEST(SceneRendererTest, RenderPdfReturnsFalseWhenFileCannotBeWritten) {
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+  QString path = dir.filePath("missing-dir/test.pdf");
+
+  auto* scene = makeTestScene();
+  bool ok = renderSceneToFile(scene, path);
+  delete scene;
+
+  EXPECT_FALSE(ok);
+  EXPECT_FALSE(QFile::exists(path));
+}
