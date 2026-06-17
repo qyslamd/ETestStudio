@@ -42,3 +42,21 @@ add_etest(
     QT_MODULES Core Test Widgets
     LABELS TOPOLOGY
 )
+
+# 设备模板管理测试
+add_etest(
+    NAME test_topology_device_template_manager
+    SOURCES device_template_manager_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test
+    LABELS TOPOLOGY
+)
+
+# 拓扑 JSON 反序列化校验测试
+add_etest(
+    NAME test_topology_json_serializer_validation
+    SOURCES json_serializer_validation_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test
+    LABELS TOPOLOGY
+)

@@ -145,12 +145,43 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     return false;
   }
 
+  if (!json.contains(QStringLiteral("version")) ||
+      !json[QStringLiteral("version")].isDouble()) {
+    last_error_ = QStringLiteral("缺少拓扑文件版本号");
+    return false;
+  }
+
+  const QStringList arrayKeys = {QStringLiteral("products"),
+                                 QStringLiteral("devices"),
+                                 QStringLiteral("connections"),
+                                 QStringLiteral("monitors")};
+  for (const auto& key : arrayKeys) {
+    if (!json.contains(key) || !json[key].isArray()) {
+      last_error_ = QStringLiteral("字段 %1 不是数组").arg(key);
+      return false;
+    }
+  }
+
   doc->clear();
 
   // Products
   QJsonArray productsArr = json["products"].toArray();
   for (const auto& pVal : productsArr) {
+    if (!pVal.isObject()) {
+      last_error_ = QStringLiteral("UUT 节点不是对象");
+      return false;
+    }
     QJsonObject pObj = pVal.toObject();
+    if (!pObj.contains(QStringLiteral("name")) ||
+        !pObj[QStringLiteral("name")].isString()) {
+      last_error_ = QStringLiteral("UUT 缺少名称");
+      return false;
+    }
+    if (!pObj.contains(QStringLiteral("ports")) ||
+        !pObj[QStringLiteral("ports")].isArray()) {
+      last_error_ = QStringLiteral("UUT 端口列表无效");
+      return false;
+    }
     TopologyProduct product;
     product.name = pObj["name"].toString();
     product.position =

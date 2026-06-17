@@ -37,6 +37,8 @@ bool DeviceTemplateManager::saveTemplate(const TopologyDocument* doc,
     pObj["name"] = dp.name;
     pObj["direction"] = directionToString(dp.direction);
     pObj["functionType"] = functionTypeToString(dp.functionType);
+    pObj["positionHint"] = dp.positionHint;
+    pObj["portStyle"] = dp.portStyle;
     portsArr.append(pObj);
   }
   root["ports"] = portsArr;
@@ -47,7 +49,11 @@ bool DeviceTemplateManager::saveTemplate(const TopologyDocument* doc,
     last_error_ = QStringLiteral("无法写入文件");
     return false;
   }
-  file.write(jdoc.toJson(QJsonDocument::Indented));
+  QByteArray data = jdoc.toJson(QJsonDocument::Indented);
+  if (file.write(data) != data.size()) {
+    last_error_ = QStringLiteral("写入文件失败");
+    return false;
+  }
   file.close();
   return true;
 }
@@ -71,7 +77,28 @@ bool DeviceTemplateManager::loadTemplate(const QString& filePath,
     return false;
   }
 
+  if (!jdoc.isObject()) {
+    last_error_ = QStringLiteral("模板根节点不是对象");
+    return false;
+  }
+
   QJsonObject root = jdoc.object();
+  if (!root.contains(QStringLiteral("deviceType")) ||
+      !root[QStringLiteral("deviceType")].isString()) {
+    last_error_ = QStringLiteral("模板缺少设备类型");
+    return false;
+  }
+  if (!root.contains(QStringLiteral("properties")) ||
+      !root[QStringLiteral("properties")].isArray()) {
+    last_error_ = QStringLiteral("模板属性列表无效");
+    return false;
+  }
+  if (!root.contains(QStringLiteral("ports")) ||
+      !root[QStringLiteral("ports")].isArray()) {
+    last_error_ = QStringLiteral("模板端口列表无效");
+    return false;
+  }
+
   outDeviceType = root;
   outProperties = root["properties"].toArray();
   outPorts = root["ports"].toArray();
