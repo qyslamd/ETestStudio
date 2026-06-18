@@ -86,6 +86,8 @@ add_executable(${TARGET_NAME}
     widgets/TuxSaverOverlay.cpp
     widgets/LoadingOverlay.h
     widgets/LoadingOverlay.cpp
+    widgets/RecentProjectCard.h
+    widgets/RecentProjectCard.cpp
     dialogs/AnimationDialog.h
     dialogs/AnimationDialog.cpp
     dialogs/NewProjectDialog.h

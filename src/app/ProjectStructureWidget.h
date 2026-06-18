@@ -10,6 +10,7 @@
 class QFileSystemWatcher;
 class QMenu;
 class QPoint;
+class QPushButton;
 class QScrollArea;
 class QTreeView;
 class QTimer;
@@ -58,16 +59,14 @@ class ProjectStructureWidget : public QWidget {
  public:
   void refreshRecentProjects();
 
- protected:
-  bool eventFilter(QObject* obj, QEvent* event) override;
-
  private slots:
   void onCustomContextMenu(const QPoint& pos);
   void onItemDoubleClicked(const QModelIndex& index);
   void onItemChanged(QStandardItem* item);
 
  private:
-  void setupUi();
+  void initUi();
+  void initSignals();
   void buildTree();
   void refreshCategory(const QString& dirPath);
   void onDirectoryChanged(const QString& path);
@@ -75,6 +74,8 @@ class ProjectStructureWidget : public QWidget {
   // 文件操作
   void createNewFile(const QString& categoryId, const QString& extension,
                      const QString& baseName);
+  void createStandaloneFile(const QString& extension,
+                            const QString& baseName);
   void deleteSelectedFile();
   void copyFilePath();
   void copyRelativePath();
@@ -94,6 +95,8 @@ class ProjectStructureWidget : public QWidget {
   QStandardItemModel* model_;
   QWidget* placeholder_widget_ = nullptr;
   QWidget* recent_container_ = nullptr;
+  QPushButton* new_proj_btn_ = nullptr;
+  QPushButton* open_proj_btn_ = nullptr;
   QFileSystemWatcher* file_watcher_ = nullptr;
   QTimer* debounce_timer_ = nullptr;
 

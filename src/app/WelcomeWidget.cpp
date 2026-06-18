@@ -29,6 +29,7 @@
 #include "version.h"
 #include "widgets/EyeWidget.h"
 #include "widgets/PaintedClockWidget.h"
+#include "widgets/RecentProjectCard.h"
 
 
 namespace etest::app {
@@ -267,8 +268,6 @@ void WelcomeWidget::initUi() {
       eyeIconLabel->setPixmap(rounded);
     } else {
       eyeIconLabel->setText("E");
-      eyeIconLabel->setStyleSheet(
-          "font-size:12px; font-weight:bold; background:transparent;");
     }
   }
 
@@ -314,10 +313,6 @@ void WelcomeWidget::initSignals() {
           });
 }
 
-bool WelcomeWidget::eventFilter(QObject* obj, QEvent* event) {
-  return QWidget::eventFilter(obj, event);
-}
-
 void WelcomeWidget::rebuildRecentTiles() {
   // 移除旧的最近项目磁贴
   for (auto tile : recent_tiles_) {
@@ -337,71 +332,30 @@ void WelcomeWidget::rebuildRecentTiles() {
     if (displayName.isEmpty())
       continue;
 
-    auto* card = new QWidget;
-    card->setObjectName("WelcomeProjectCardContent");
-    card->setAttribute(Qt::WA_TranslucentBackground);
-    auto* cardLayout = new QVBoxLayout(card);
-    cardLayout->setContentsMargins(8, 6, 8, 6);
-    cardLayout->setSpacing(2);
-
-    auto* nameLabel = new QLabel(displayName);
-    nameLabel->setObjectName("WelcomeRecentCardName");
-    nameLabel->setWordWrap(true);
-
-    auto* pathLabel = new QLabel(fi.absolutePath());
-    pathLabel->setObjectName("WelcomeRecentCardPath");
-    pathLabel->setAlignment(Qt::AlignLeft);
-    pathLabel->setWordWrap(true);
-
     QString timeStr;
     if (timestamps.contains(path)) {
       QDateTime dt = timestamps[path].toDateTime();
       timeStr = dt.toString("yyyy-MM-dd hh:mm");
     }
-    auto* timeLabel = new QLabel(timeStr);
-    timeLabel->setObjectName("WelcomeRecentCardTime");
-    if (timeStr.isEmpty())
-      timeLabel->hide();
 
-    cardLayout->addWidget(nameLabel);
-    cardLayout->addWidget(pathLabel);
-    cardLayout->addStretch();
-    cardLayout->addWidget(timeLabel);
+    auto* card = new RecentProjectCard(path, displayName, fi.absolutePath(),
+                                       timeStr);
 
     auto tile = new grid::GridTile(grid::_1_2, this);
     tile->setObjectName("WelcomeTileRecent");
     tile->setContentWidget(card);
     tile->setNameText("");
-    tile->setProperty("projectPath", path);
     tile->setCursor(Qt::PointingHandCursor);
 
-    connect(tile, &grid::GridTile::clicked, this, [this, tile]() {
-      QString p = tile->property("projectPath").toString();
-      if (!p.isEmpty())
-        emit projectOpenRequested(p);
+    connect(card, &RecentProjectCard::openRequested, this,
+            &WelcomeWidget::projectOpenRequested);
+    connect(card, &RecentProjectCard::removeRequested, this, [this](const QString& p) {
+      QStringList recentList = ConfigManager::instance().get<QStringList>(
+          CONFIG_RECENT_PROJECT_LIST);
+      recentList.removeAll(p);
+      ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST, recentList);
+      refreshRecentProjects();
     });
-    connect(
-        tile, &grid::GridTile::contextMenuRequested, this,
-        [this](const QPoint& pos, int) {
-          auto* tile = qobject_cast<grid::GridTile*>(QObject::sender());
-          if (!tile)
-            return;
-          QString path = tile->property("projectPath").toString();
-          if (path.isEmpty())
-            return;
-          auto* menu = new QMenu(this);
-          menu->setObjectName("WelcomeContextMenu");
-          auto* removeAction = menu->addAction(QStringLiteral("从列表中移除"));
-          connect(removeAction, &QAction::triggered, this, [this, path]() {
-            QStringList recentList = ConfigManager::instance().get<QStringList>(
-                CONFIG_RECENT_PROJECT_LIST);
-            recentList.removeAll(path);
-            ConfigManager::instance().set(CONFIG_RECENT_PROJECT_LIST,
-                                          recentList);
-            refreshRecentProjects();
-          });
-          menu->exec(pos);
-        });
 
     recent_tiles_.append(tile);
     grid_layout_->addWidget(tile);

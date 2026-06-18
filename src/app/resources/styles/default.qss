@@ -279,6 +279,8 @@ QLabel#WelcomeEyeVersionLabel {
 }
 QLabel#WelcomeEyeIconLabel {
     background: transparent;
+    font-size: 12px;
+    font-weight: bold;
 }
 
 /* --- Recent Project Tiles (1x1) --- */
@@ -409,6 +411,20 @@ QWidget#sidebarActivityBar QPushButton:checked {
 }
 
 /* ==================== ProjectStructureWidget Placeholder ==================== */
+QWidget#PhPlaceholder {
+    background-color: #F5F5F5;
+}
+QScrollArea#PhScrollArea {
+    background-color: transparent;
+    border: none;
+}
+QScrollArea#PhScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+QWidget#PhScrollContent {
+    background-color: transparent;
+}
+
 QLabel#PhSectionLabel {
     color: #999999;
     font-size: 10px;
@@ -433,4 +449,49 @@ QPushButton#PhProjectBtn:hover {
 }
 QPushButton#PhProjectBtn:pressed {
     background-color: #E0E0E0;
+}
+
+QLabel#PhTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #888888;
+}
+QLabel#PhDesc {
+    font-size: 12px;
+    color: #AAAAAA;
+}
+QFrame#PhSeparator {
+    color: #3C3C3C;
+    max-height: 1px;
+}
+QLabel#PhRecentEmpty {
+    color: #666666;
+    font-size: 11px;
+    padding: 16px 0;
+}
+QPushButton#PhQuickBtn {
+    background-color: #FFFFFF;
+    color: #333333;
+    border: 1px solid #D0D0D0;
+    border-radius: 4px;
+    padding: 0 8px;
+    font-size: 12px;
+}
+QPushButton#PhQuickBtn:hover {
+    background-color: #F0F0F0;
+    border-color: #0078D4;
+}
+QPushButton#PhQuickBtn:pressed {
+    background-color: #E0E0E0;
+}
+
+/* --- RecentProjectCard in placeholder (narrow sidebar context) --- */
+QWidget#PhRecentCard {
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+}
+QWidget#PhRecentCard:hover {
+    background-color: #F0F4F8;
+    border-color: #0078D4;
 }

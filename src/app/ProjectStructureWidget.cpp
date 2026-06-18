@@ -28,6 +28,7 @@
 #include "AppIconProvider.h"
 #include "ConfigManager.h"
 #include "config/ConfigDefs.h"
+#include "widgets/RecentProjectCard.h"
 
 namespace etest::app {
 
@@ -35,10 +36,12 @@ namespace etest::app {
 static QString newFileBaseName(const QString& base, const QString& dir);
 
 ProjectStructureWidget::ProjectStructureWidget(QWidget* parent) : QWidget(parent) {
-  setupUi();
+  initUi();
+  initSignals();
+  refreshRecentProjects();
 }
 
-void ProjectStructureWidget::setupUi() {
+void ProjectStructureWidget::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
@@ -47,6 +50,7 @@ void ProjectStructureWidget::setupUi() {
 
   // ── 模式 0：无项目占位页（可滚动） ──
   placeholder_widget_ = new QWidget(this);
+  placeholder_widget_->setObjectName(QStringLiteral("PhPlaceholder"));
   auto* ph_layout = new QVBoxLayout(placeholder_widget_);
   ph_layout->setContentsMargins(0, 0, 0, 0);
   ph_layout->setSpacing(0);
@@ -71,85 +75,41 @@ void ProjectStructureWidget::setupUi() {
   sc_layout->addWidget(ph_icon);
 
   auto* ph_title = new QLabel(QStringLiteral("没有打开的项目"), scroll_content);
+  ph_title->setObjectName(QStringLiteral("PhTitle"));
   ph_title->setAlignment(Qt::AlignCenter);
-  ph_title->setStyleSheet(
-      QStringLiteral("font-size:14px;font-weight:600;color:#888;"));
   sc_layout->addWidget(ph_title);
 
   auto* ph_desc = new QLabel(
       QStringLiteral("创建或打开一个项目来管理测试资产\n"
                      "您也可以直接使用编辑器创建和编辑文件"),
       scroll_content);
+  ph_desc->setObjectName(QStringLiteral("PhDesc"));
   ph_desc->setAlignment(Qt::AlignCenter);
   ph_desc->setWordWrap(true);
-  ph_desc->setStyleSheet(
-      QStringLiteral("font-size:12px;color:#aaa;line-height:1.6;"));
   sc_layout->addWidget(ph_desc);
 
-  // 快捷操作 — 2×2 grid 适配侧边栏宽度
+  // 快捷操作 — 2×2 grid，复用 defaultCategories
   auto* btn_grid = new QGridLayout();
   btn_grid->setSpacing(8);
 
-  auto* new_proto_btn = new QPushButton(QStringLiteral("新建协议"), scroll_content);
-  auto* new_topo_btn = new QPushButton(QStringLiteral("新建拓扑"), scroll_content);
-  auto* new_tcase_btn = new QPushButton(QStringLiteral("新建用例"), scroll_content);
-  auto* new_script_btn = new QPushButton(QStringLiteral("新建脚本"), scroll_content);
-
-  // 快捷按钮：新建协议/拓扑/用例/脚本
-  struct ButtonDef {
-    const char* catId;
-    const char* ext;
-    const char* baseName;
-  };
-  static const ButtonDef kDefs[] = {
-      {"protocol", "eproto", "新建协议文件"},
-      {"topology", "etopo", "新建拓扑文件"},
-      {"testprog", "tcase", "新建测试用例"},
-      {"script", "lua", "新建脚本"},
-  };
-  QPushButton* btns[] = {new_proto_btn, new_topo_btn, new_tcase_btn,
-                         new_script_btn};
-  // 2×2 grid: row0=(proto,topo), row1=(tcase,script)
+  QList<CategoryInfo> quickCats;
+  for (const auto& cat : defaultCategories()) {
+    if (!cat.newFileExt.isEmpty()) {
+      quickCats.append(cat);
+      if (quickCats.size() >= 4) break;
+    }
+  }
   static const int kRows[] = {0, 0, 1, 1};
   static const int kCols[] = {0, 1, 0, 1};
-  for (int i = 0; i < 4; ++i) {
-    btns[i]->setFixedHeight(28);
-    btn_grid->addWidget(btns[i], kRows[i], kCols[i]);
-    connect(btns[i], &QPushButton::clicked, this, [this, d = kDefs[i]]() {
-      if (project_path_.isEmpty()) {
-        // 无项目模式：弹出文件保存对话框
-        auto& cfg = etest::core::config::ConfigManager::instance();
-        QString defaultDir = cfg.get<QString>(
-            etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH,
-            QStandardPaths::writableLocation(
-                QStandardPaths::DocumentsLocation));
-        QString defaultName =
-            QString::fromUtf8(d.baseName) + QStringLiteral(".") +
-            QString::fromLatin1(d.ext);
-        QString filePath = QFileDialog::getSaveFileName(
-            this, QString::fromUtf8(d.baseName), defaultDir,
-            QStringLiteral("%1 (*.%2)")
-                .arg(QString::fromUtf8(d.baseName))
-                .arg(QString::fromLatin1(d.ext)));
-        if (filePath.isEmpty()) return;
-
-        // 记住目录
-        QFileInfo fi(filePath);
-        cfg.set(etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH, fi.absolutePath());
-
-        // 创建空文件
-        QFile file(filePath);
-        if (!file.open(QIODevice::WriteOnly)) return;
-        file.close();
-
-        emit fileCreated(filePath);
-        emit fileOpenRequested(filePath);
-        return;
-      }
-      createNewFile(QString::fromLatin1(d.catId),
-                    QString::fromLatin1(d.ext),
-                    QString::fromUtf8(d.baseName));
-    });
+  for (int i = 0; i < quickCats.size(); ++i) {
+    const auto& cat = quickCats[i];
+    auto* btn = new QPushButton(cat.displayName, scroll_content);
+    btn->setObjectName(QStringLiteral("PhQuickBtn"));
+    btn->setFixedHeight(28);
+    btn->setProperty("catId", cat.id);
+    btn->setProperty("ext", cat.newFileExt);
+    btn->setProperty("baseName", cat.newFileLabel);
+    btn_grid->addWidget(btn, kRows[i], kCols[i]);
   }
 
   auto* btn_row = new QHBoxLayout();
@@ -160,8 +120,8 @@ void ProjectStructureWidget::setupUi() {
 
   // ── 分隔线 ──
   auto* sep1 = new QFrame(scroll_content);
+  sep1->setObjectName(QStringLiteral("PhSeparator"));
   sep1->setFrameShape(QFrame::HLine);
-  sep1->setStyleSheet(QStringLiteral("color:#3C3C3C;max-height:1px;"));
   sc_layout->addWidget(sep1);
 
   // ── 项目管理按钮组 ──
@@ -169,30 +129,26 @@ void ProjectStructureWidget::setupUi() {
   proj_section_label->setObjectName(QStringLiteral("PhSectionLabel"));
   sc_layout->addWidget(proj_section_label);
 
-  auto* new_proj_btn = new QPushButton(QStringLiteral("  新建项目"), scroll_content);
-  new_proj_btn->setObjectName(QStringLiteral("PhProjectBtn"));
-  new_proj_btn->setFixedHeight(32);
-  new_proj_btn->setCursor(Qt::PointingHandCursor);
-  connect(new_proj_btn, &QPushButton::clicked, this,
-          &ProjectStructureWidget::newProjectRequested);
+  new_proj_btn_ = new QPushButton(QStringLiteral("  新建项目"), scroll_content);
+  new_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
+  new_proj_btn_->setFixedHeight(32);
+  new_proj_btn_->setCursor(Qt::PointingHandCursor);
 
-  auto* open_proj_btn = new QPushButton(QStringLiteral("  打开项目"), scroll_content);
-  open_proj_btn->setObjectName(QStringLiteral("PhProjectBtn"));
-  open_proj_btn->setFixedHeight(32);
-  open_proj_btn->setCursor(Qt::PointingHandCursor);
-  connect(open_proj_btn, &QPushButton::clicked, this,
-          &ProjectStructureWidget::openProjectRequested);
+  open_proj_btn_ = new QPushButton(QStringLiteral("  打开项目"), scroll_content);
+  open_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
+  open_proj_btn_->setFixedHeight(32);
+  open_proj_btn_->setCursor(Qt::PointingHandCursor);
 
   auto* proj_btn_layout = new QHBoxLayout();
   proj_btn_layout->setSpacing(8);
-  proj_btn_layout->addWidget(new_proj_btn, 1);
-  proj_btn_layout->addWidget(open_proj_btn, 1);
+  proj_btn_layout->addWidget(new_proj_btn_, 1);
+  proj_btn_layout->addWidget(open_proj_btn_, 1);
   sc_layout->addLayout(proj_btn_layout);
 
   // ── 分隔线 ──
   auto* sep2 = new QFrame(scroll_content);
+  sep2->setObjectName(QStringLiteral("PhSeparator"));
   sep2->setFrameShape(QFrame::HLine);
-  sep2->setStyleSheet(QStringLiteral("color:#3C3C3C;max-height:1px;"));
   sc_layout->addWidget(sep2);
 
   // ── 最近项目 ──
@@ -210,7 +166,6 @@ void ProjectStructureWidget::setupUi() {
   ph_layout->addWidget(scroll_area);
 
   stack_->addWidget(placeholder_widget_);  // index 0
-  refreshRecentProjects();
 
   // ── 模式 1：领域分类树 ──
   tree_view_ = new QTreeView(this);
@@ -232,20 +187,52 @@ void ProjectStructureWidget::setupUi() {
 
   // ── 文件监视器 ──
   file_watcher_ = new QFileSystemWatcher(this);
-  connect(file_watcher_, &QFileSystemWatcher::directoryChanged, this,
-          &ProjectStructureWidget::onDirectoryChanged);
 
   // ── 防抖定时器 ──
   debounce_timer_ = new QTimer(this);
   debounce_timer_->setSingleShot(true);
   debounce_timer_->setInterval(200);
+
+  // 默认显示无项目模式
+  stack_->setCurrentIndex(0);
+}
+
+void ProjectStructureWidget::initSignals() {
+  // 快捷按钮
+  auto quickBtns = placeholder_widget_->findChildren<QPushButton*>(
+      QStringLiteral("PhQuickBtn"));
+  for (auto* btn : quickBtns) {
+    QString catId = btn->property("catId").toString();
+    QString ext = btn->property("ext").toString();
+    QString baseName = btn->property("baseName").toString();
+    connect(btn, &QPushButton::clicked, this,
+            [this, catId, ext, baseName]() {
+              if (project_path_.isEmpty()) {
+                createStandaloneFile(ext, baseName);
+              } else {
+                createNewFile(catId, ext, baseName);
+              }
+            });
+  }
+
+  // 项目管理按钮
+  connect(new_proj_btn_, &QPushButton::clicked, this,
+          &ProjectStructureWidget::newProjectRequested);
+  connect(open_proj_btn_, &QPushButton::clicked, this,
+          &ProjectStructureWidget::openProjectRequested);
+
+  // 文件监视器
+  connect(file_watcher_, &QFileSystemWatcher::directoryChanged, this,
+          &ProjectStructureWidget::onDirectoryChanged);
+
+  // 防抖定时器
   connect(debounce_timer_, &QTimer::timeout, this, [this]() {
     if (!debounce_timer_queued_path_.isEmpty()) {
       refreshCategory(debounce_timer_queued_path_);
     }
   });
 
-  // ── 信号连接 ──
+  // 树视图信号
   connect(tree_view_, &QTreeView::customContextMenuRequested, this,
           &ProjectStructureWidget::onCustomContextMenu);
   connect(tree_view_, &QTreeView::doubleClicked, this,
@@ -257,13 +244,11 @@ void ProjectStructureWidget::setupUi() {
   connect(&etest::core::config::ConfigManager::instance(),
           &etest::core::config::ConfigManager::configChanged, this,
           [this](const QString& key) {
-            if (key == QLatin1String(etest::core::config::CONFIG_RECENT_PROJECT_LIST)) {
+            if (key == QLatin1String(
+                    etest::core::config::CONFIG_RECENT_PROJECT_LIST)) {
               refreshRecentProjects();
             }
           });
-
-  // 默认显示无项目模式
-  stack_->setCurrentIndex(0);
 }
 
 void ProjectStructureWidget::setProjectPath(const QString& path) {
@@ -308,8 +293,8 @@ QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
       {QStringLiteral("topology"), QStringLiteral("拓扑"),
        QStringLiteral("topology/"), QStringLiteral("topo_tap"),
        QStringLiteral("etopo"), QStringLiteral("新建拓扑文件")},
-      {QStringLiteral("harware"), QStringLiteral("硬件"),
-       QStringLiteral("harware/"), QStringLiteral("hardware"), QString(),
+      {QStringLiteral("hardware"), QStringLiteral("硬件"),
+       QStringLiteral("hardware/"), QStringLiteral("hardware"), QString(),
        QString()},
       {QStringLiteral("testprog"), QStringLiteral("用例"),
        QStringLiteral("cases/"), QStringLiteral("testprogram"),
@@ -679,6 +664,30 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
   }
 }
 
+void ProjectStructureWidget::createStandaloneFile(const QString& extension,
+                                                   const QString& baseName) {
+  auto& cfg = etest::core::config::ConfigManager::instance();
+  QString defaultDir = cfg.get<QString>(
+      etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH,
+      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+  QString defaultName =
+      baseName + QStringLiteral(".") + extension;
+  QString filePath = QFileDialog::getSaveFileName(
+      this, baseName, defaultDir,
+      QStringLiteral("%1 (*.%2)").arg(baseName).arg(extension));
+  if (filePath.isEmpty()) return;
+
+  QFileInfo fi(filePath);
+  cfg.set(etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH, fi.absolutePath());
+
+  QFile file(filePath);
+  if (!file.open(QIODevice::WriteOnly)) return;
+  file.close();
+
+  emit fileCreated(filePath);
+  emit fileOpenRequested(filePath);
+}
+
 void ProjectStructureWidget::deleteSelectedFile() {
   QModelIndex index = tree_view_->currentIndex();
   if (!index.isValid()) return;
@@ -838,42 +847,6 @@ static QString newFileBaseName(const QString& base, const QString& dir) {
   return candidate;
 }
 
-// ── 占位页：事件过滤（处理最近项目点击/右键菜单） ──
-
-bool ProjectStructureWidget::eventFilter(QObject* obj, QEvent* event) {
-  if (event->type() == QEvent::MouseButtonPress) {
-    auto* me = static_cast<QMouseEvent*>(event);
-    if (me->button() == Qt::LeftButton) {
-      QString path = obj->property("recentPath").toString();
-      if (!path.isEmpty()) {
-        emit projectOpenRequested(path);
-        return true;
-      }
-    }
-  }
-  if (event->type() == QEvent::ContextMenu) {
-    auto* ce = static_cast<QContextMenuEvent*>(event);
-    QString path = obj->property("recentPath").toString();
-    if (!path.isEmpty()) {
-      QMenu menu(this);
-      menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
-      auto* removeAction = menu.addAction(QStringLiteral("从列表中移除"));
-      connect(removeAction, &QAction::triggered, this, [this, path]() {
-        auto& cfg = etest::core::config::ConfigManager::instance();
-        QStringList recentList =
-            cfg.get<QStringList>(
-                etest::core::config::CONFIG_RECENT_PROJECT_LIST);
-        recentList.removeAll(path);
-        cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST, recentList);
-        refreshRecentProjects();
-      });
-      menu.exec(ce->globalPos());
-      return true;
-    }
-  }
-  return QWidget::eventFilter(obj, event);
-}
-
 // ── 占位页：刷新最近项目列表 ──
 
 void ProjectStructureWidget::refreshRecentProjects() {
@@ -903,9 +876,8 @@ void ProjectStructureWidget::refreshRecentProjects() {
 
   if (recentList.isEmpty()) {
     auto* empty_label = new QLabel(QStringLiteral("暂无最近项目"), recent_container_);
+    empty_label->setObjectName(QStringLiteral("PhRecentEmpty"));
     empty_label->setAlignment(Qt::AlignCenter);
-    empty_label->setStyleSheet(
-        QStringLiteral("color:#666;font-size:11px;padding:16px 0;"));
     recent_layout->addWidget(empty_label);
     return;
   }
@@ -915,34 +887,26 @@ void ProjectStructureWidget::refreshRecentProjects() {
     QString displayName = fi.completeBaseName();
     if (displayName.isEmpty()) continue;
 
-    auto* card = new QWidget(recent_container_);
-    card->setObjectName(QStringLiteral("WelcomeProjectCardContent"));
-    card->setCursor(Qt::PointingHandCursor);
-    card->setProperty("recentPath", path);
-    card->installEventFilter(this);
-
-    auto* cardLayout = new QVBoxLayout(card);
-    cardLayout->setContentsMargins(10, 8, 10, 8);
-    cardLayout->setSpacing(2);
-
-    auto* nameLabel = new QLabel(displayName, card);
-    nameLabel->setObjectName(QStringLiteral("WelcomeRecentCardName"));
-    cardLayout->addWidget(nameLabel);
-
-    auto* pathLabel = new QLabel(fi.absolutePath(), card);
-    pathLabel->setObjectName(QStringLiteral("WelcomeRecentCardPath"));
-    pathLabel->setWordWrap(true);
-    cardLayout->addWidget(pathLabel);
-
     QString timeStr;
     if (timestamps.contains(path)) {
       QDateTime dt = timestamps[path].toDateTime();
       timeStr = dt.toString(QStringLiteral("yyyy-MM-dd hh:mm"));
     }
-    auto* timeLabel = new QLabel(timeStr, card);
-    timeLabel->setObjectName(QStringLiteral("WelcomeRecentCardTime"));
-    if (timeStr.isEmpty()) timeLabel->hide();
-    cardLayout->addWidget(timeLabel);
+
+    auto* card = new RecentProjectCard(path, displayName, fi.absolutePath(),
+                                       timeStr, recent_container_);
+    card->setObjectName(QStringLiteral("PhRecentCard"));
+    card->setAttribute(Qt::WA_StyledBackground);
+    connect(card, &RecentProjectCard::openRequested, this,
+            &ProjectStructureWidget::projectOpenRequested);
+    connect(card, &RecentProjectCard::removeRequested, this, [this](const QString& p) {
+      auto& cfg = etest::core::config::ConfigManager::instance();
+      QStringList recentList =
+          cfg.get<QStringList>(etest::core::config::CONFIG_RECENT_PROJECT_LIST);
+      recentList.removeAll(p);
+      cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST, recentList);
+      refreshRecentProjects();
+    });
 
     recent_layout->addWidget(card);
   }

@@ -44,7 +44,6 @@ class WelcomeWidget : public QWidget {
  protected:
   void paintEvent(QPaintEvent* event) override;
   void showEvent(QShowEvent* event) override;
-  bool eventFilter(QObject* obj, QEvent* event) override;
 
   // 拖拽重排
   void mousePressEvent(QMouseEvent* event) override;
