@@ -59,8 +59,21 @@ Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.i
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkablealone
 
 [Files]
+; ETestStudio 主程序与 Qt 运行时
 Source: "{#WhereAreFiles}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#WhereAreFiles}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb, *.ilk, *.bat"
+Source: "{#WhereAreFiles}\Qt5*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion
+
+; Qt 运行时插件目录
+Source: "{#WhereAreFiles}\bearer\*.dll"; DestDir: "{app}\bearer"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\iconengines\*.dll"; DestDir: "{app}\iconengines"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\imageformats\*.dll"; DestDir: "{app}\imageformats"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\platforms\*.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\styles\*.dll"; DestDir: "{app}\styles"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\translations\*.qm"; DestDir: "{app}\translations"; Flags: ignoreversion
+
+; 内置模拟设备插件
+Source: "{#WhereAreFiles}\plugins\*.dll"; DestDir: "{app}\plugins"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

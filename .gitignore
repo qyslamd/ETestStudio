@@ -52,6 +52,7 @@ conversations/
 .superpowers/
 .brainstorm/
 .mimocode/
+.reasonix/
 *.vcxproj*
 *.sln
 
