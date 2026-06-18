@@ -25,6 +25,7 @@
 #include "IcdPropertyPanel.h"
 #include "AppIconProvider.h"
 #include "ThemeManager.h"
+#include "libui/dock_title_bar/DockTitleBar.h"
 #include "format/json_parser.hpp"
 #include "format/json_serializer.hpp"
 
@@ -414,6 +415,12 @@ void ProtocolEditorWidget::initUi() {
   property_dock_->setObjectName(QStringLiteral("protocolPropertyDock"));
   property_dock_->setWidget(property_panel_);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
+
+  // Custom title bars for full control over button size and icon
+  node_tree_dock_->setTitleBarWidget(
+      new ::etest::ui::DockTitleBar(QStringLiteral("节点列表"), node_tree_dock_));
+  property_dock_->setTitleBarWidget(
+      new ::etest::ui::DockTitleBar(QStringLiteral("属性面板"), property_dock_));
 
   // Dock features: 允许关闭/浮动/拖拽/标签页组合
   for (auto* dock : {node_tree_dock_, property_dock_}) {

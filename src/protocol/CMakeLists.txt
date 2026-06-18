@@ -19,4 +19,4 @@ target_include_directories(${TARGET_NAME} PUBLIC
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES AUTOMOC ON)
-target_link_libraries(${TARGET_NAME} PUBLIC Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Concurrent etest_api etest_core icd_utility)
+target_link_libraries(${TARGET_NAME} PUBLIC Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Concurrent etest_api etest_core icd_utility etest_ui)

@@ -1,4 +1,5 @@
 add_subdirectory(core)
+add_subdirectory(libui)
 add_subdirectory(api)
 add_subdirectory(topology)
 add_subdirectory(protocol)

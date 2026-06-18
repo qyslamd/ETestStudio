@@ -495,3 +495,31 @@ QWidget#PhRecentCard:hover {
     background-color: #F0F4F8;
     border-color: #0078D4;
 }
+
+/* ==================== QDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */
+QDockWidget {
+    border: 1px solid #D0D0D0;
+}
+QDockWidget > QWidget {
+    background: #FAFAFA;
+}
+etest--ui--DockTitleBar {
+    background: #F0F0F0;
+    border-bottom: 1px solid #D0D0D0;
+}
+QLabel#dockTitleBarLabel {
+    color: #333333;
+    font-size: 12px;
+    background: transparent;
+}
+QPushButton#dockFloatButton, QPushButton#dockCloseButton {
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+}
+QPushButton#dockFloatButton:hover, QPushButton#dockCloseButton:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+QPushButton#dockFloatButton:pressed, QPushButton#dockCloseButton:pressed {
+    background: rgba(0, 0, 0, 0.15);
+}

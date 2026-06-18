@@ -36,6 +36,7 @@
 #include "AppIconProvider.h"
 #include "ConnectionCleanup.h"
 #include "DevicePaletteWidget.h"
+#include "libui/dock_title_bar/DockTitleBar.h"
 #include "TopologyCleanupController.h"
 #include "TopologyExportController.h"
 #include "DeviceTemplateManager.h"
@@ -456,7 +457,14 @@ void TopologyEditorWidget::initUi() {
   property_dock_->setWidget(property_panel_);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
 
-  // 禁止悬浮，但保留自由停靠/拖拽/标签页组合
+  // Custom title bars for full control over button size and icon
+  device_palette_dock_->setTitleBarWidget(
+      new ::etest::ui::DockTitleBar(QStringLiteral("设备面板"), device_palette_dock_));
+  outline_dock_->setTitleBarWidget(
+      new ::etest::ui::DockTitleBar(QStringLiteral("导航大纲"), outline_dock_));
+  property_dock_->setTitleBarWidget(
+      new ::etest::ui::DockTitleBar(QStringLiteral("属性面板"), property_dock_));
+
   for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
     dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
   }

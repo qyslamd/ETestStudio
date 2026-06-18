@@ -1,5 +1,8 @@
 set(TARGET_NAME "protocol-demo")
 
+if(NOT TARGET etest_ui)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/libui ${CMAKE_BINARY_DIR}/libui_build)
+endif()
 if(NOT TARGET etest_protocol)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/protocol ${CMAKE_BINARY_DIR}/protocol_build)
 endif()
@@ -11,6 +14,7 @@ add_executable(${TARGET_NAME}
 
 target_link_libraries(${TARGET_NAME} PRIVATE
     etest_protocol
+    etest_ui
     Qt5::Widgets
     Qt5::Core
     Qt5::Gui

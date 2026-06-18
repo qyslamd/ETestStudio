@@ -9,6 +9,10 @@
         <file>resources/styles/ads_dark.qss</file>
         <file>resources/icons/svg/close_light.svg</file>
         <file>resources/icons/svg/close_dark.svg</file>
+        <file>resources/icons/svg/dock_close_light.svg</file>
+        <file>resources/icons/svg/dock_close_dark.svg</file>
+        <file>resources/icons/svg/dock_float_light.svg</file>
+        <file>resources/icons/svg/dock_float_dark.svg</file>
         <file>resources/icons/svg/drop_down_arrow_light.svg</file>
         <file>resources/icons/svg/drop_down_arrow_dark.svg</file>
         <file>resources/icons/svg/project_dark.svg</file>
