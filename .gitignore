@@ -34,7 +34,6 @@ Makefile
 *.dll
 *.exe
 *.qm
-!3rdparty/cloc-2.06/cloc-2.06.exe   # cloc 工具需要被 git 管理
 
 # ========== 会话记录 ==========
 conversations/
@@ -128,4 +127,6 @@ version.txt
 3rdparty/SARibbon-2.5.7/
 3rdparty/qwindowkit-1.5.0/
 3rdparty/qmsetup-4a3ff82/
+!3rdparty/cloc-2.06/cloc-2.06.exe   # cloc 工具需要被 git 管理
+3rdparty/Inno Setup 6/
 docs/01-规划/分析设计.vsdx

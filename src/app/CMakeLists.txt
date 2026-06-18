@@ -183,3 +183,73 @@ if(WIN32)
         @ONLY
     )
 endif()
+
+#=======================================
+# 安装打包工具链
+#=======================================
+
+# 查找 windeployqt — 从 Qt5::qmake 目标推导 bin 目录
+get_target_property(_qt_qmake Qt5::qmake IMPORTED_LOCATION)
+get_filename_component(QT_BIN_DIR "${_qt_qmake}" DIRECTORY)
+
+find_program(WINDEPLOYQT_EXECUTABLE
+    NAMES windeployqt
+    HINTS "${QT_BIN_DIR}"
+    NO_DEFAULT_PATH
+)
+if(NOT EXISTS ${WINDEPLOYQT_EXECUTABLE})
+    message(WARNING "windeployqt.exe not found; Qt DLLs will not be auto-deployed")
+endif()
+
+# 查找 ISCC (Inno Setup Compiler)
+find_program(ISCC_EXECUTABLE
+    NAMES ISCC
+    HINTS "${CMAKE_SOURCE_DIR}/3rdparty/Inno Setup 6"
+)
+if(NOT EXISTS ${ISCC_EXECUTABLE})
+    message(WARNING "ISCC.exe not found; installer package target unavailable")
+endif()
+
+#=======================================
+# make_deploy target — 按需触发 windeployqt
+if(EXISTS ${WINDEPLOYQT_EXECUTABLE})
+    add_custom_target(make_deploy
+        COMMAND ${WINDEPLOYQT_EXECUTABLE}
+            --verbose 0
+            --no-angle
+            --no-opengl-sw
+            --no-system-d3d-compiler
+            --compiler-runtime
+            "$<TARGET_FILE:${TARGET_NAME}>"
+        COMMENT "Running windeployqt..."
+    )
+    add_dependencies(make_deploy ${TARGET_NAME})
+endif()
+
+#=======================================
+# make_package target — windeployqt + ISCC 打包
+if(EXISTS ${ISCC_EXECUTABLE})
+    set(PACKAGE_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/dist")
+    add_custom_target(make_package
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_OUTPUT_DIR}"
+        COMMAND ${WINDEPLOYQT_EXECUTABLE}
+            --verbose 0
+            --no-angle
+            --no-opengl-sw
+            --no-system-d3d-compiler
+            --compiler-runtime
+            "$<TARGET_FILE:${TARGET_NAME}>"
+        COMMAND ${ISCC_EXECUTABLE}
+            "/Qp"
+            "/DWhereAreFiles=$<TARGET_FILE_DIR:${TARGET_NAME}>"
+            "/DWhereToOutput=${PACKAGE_OUTPUT_DIR}"
+            "/DMyAppVersion=${APP_VERSION}"
+            "/DMyAppExeName=${TARGET_NAME}.exe"
+            "/DMySetupIcon=${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/app_icon.ico"
+            "/DMyProductName=${PROJECT_NAME}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/make_install_package.iss"
+        WORKING_DIRECTORY "$<TARGET_FILE_DIR:${TARGET_NAME}>"
+        COMMENT "Building installer package with Inno Setup..."
+    )
+    add_dependencies(make_package ${TARGET_NAME})
+endif()

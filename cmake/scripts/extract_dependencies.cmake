@@ -19,6 +19,7 @@ set(DEPENDENCY_ARCHIVES
     "SARibbon-2.5.7.zip"
     "qwindowkit-1.5.0.tar.gz"
     "qmsetup-4a3ff82.tar.gz"
+    "Inno Setup 6.7z"
 )
 
 # 检测tar解压命令是否可用
@@ -61,8 +62,8 @@ function(extract_if_needed archive_file)
         return()
     endif()
     
-    # 提取目录名（去掉.tar.gz或.zip后缀）
-    string(REGEX REPLACE "\\.(tar\\.gz|zip)$" "" dir_name "${archive_file}")
+    # 提取目录名（去掉.tar.gz、.zip或.7z后缀）
+    string(REGEX REPLACE "\\.(tar\\.gz|zip|7z)$" "" dir_name "${archive_file}")
     set(dir_path "${3RDPARTY_DIR}/${dir_name}")
     
     # 检查目录是否已存在
@@ -77,10 +78,29 @@ function(extract_if_needed archive_file)
     # 判断文件类型：
     # - .tar.gz 使用 tar 命令解压
     # - .zip 使用 CMake 内置的 file(ARCHIVE_EXTRACT) 解压
+    # - .7z 使用 7z 命令解压
     if("${archive_file}" MATCHES "\\.zip$")
         message(STATUS "  Detected zip format, using CMake built-in extract...")
         file(ARCHIVE_EXTRACT INPUT "${archive_path}" DESTINATION "${3RDPARTY_DIR}")
         set(extract_success TRUE)
+    elseif("${archive_file}" MATCHES "\\.7z$")
+        message(STATUS "  Detected 7z format, looking for 7z command...")
+        set(extract_success FALSE)
+        if(7Z_FOUND)
+            message(STATUS "  Extracting with 7z...")
+            execute_process(COMMAND 7z x "${archive_file}" -y
+                            WORKING_DIRECTORY "${3RDPARTY_DIR}"
+                            RESULT_VARIABLE extract_result
+                            OUTPUT_QUIET)
+            if(extract_result EQUAL 0)
+                set(extract_success TRUE)
+                message(STATUS "  Successfully extracted using 7z")
+            else()
+                message(STATUS "  7z finished with warnings (exit code ${extract_result}), checking directory...")
+            endif()
+        else()
+            message(FATAL_ERROR "  7z format requires 7z command, but 7z was not found. Please install 7-Zip.")
+        endif()
     else()
         set(extract_success FALSE)
 
@@ -137,12 +157,10 @@ message(STATUS "========================================")
 
 # 检测解压命令
 check_tar_command()
+check_7z_command()
 
-if(NOT TAR_FOUND)
-    check_7z_command()
-    if(NOT 7Z_FOUND)
-        message(FATAL_ERROR "No extraction tool found! Please install either tar (Windows 10+ built-in) or 7-Zip")
-    endif()
+if(NOT TAR_FOUND AND NOT 7Z_FOUND)
+    message(FATAL_ERROR "No extraction tool found! Please install either tar (Windows 10+ built-in) or 7-Zip")
 endif()
 
 # 遍历所有依赖库进行解压
