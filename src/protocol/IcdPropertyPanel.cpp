@@ -28,10 +28,6 @@ void IcdPropertyPanel::initUi() {
   auto* outer_layout = new QVBoxLayout(this);
   outer_layout->setContentsMargins(0, 0, 0, 0);
 
-  // -- Section header (styled via #sectionHeader in QSS) --
-  auto* header = new QLabel(QStringLiteral("信号属性"), this);
-  header->setObjectName(QStringLiteral("sectionHeader"));
-
   // -- Scrollable form container --
   auto* scroll = new QScrollArea(this);
   scroll->setWidgetResizable(true);
@@ -174,7 +170,8 @@ void IcdPropertyPanel::initUi() {
   edit_system_ = new QLineEdit(ext_group_);
   combo_group_ = new QComboBox(ext_group_);
   combo_group_->setEditable(true);
-  combo_group_->lineEdit()->setPlaceholderText(QStringLiteral("输入或选择分组..."));
+  combo_group_->lineEdit()->setPlaceholderText(
+      QStringLiteral("输入或选择分组..."));
   combo_group_->addItems({
       QStringLiteral(""),
       QStringLiteral("header"),
@@ -210,7 +207,6 @@ void IcdPropertyPanel::initUi() {
 
   // -- Assemble --
   scroll->setWidget(form_widget_);
-  outer_layout->addWidget(header);
   outer_layout->addWidget(scroll, 1);
 
   // Start in the "empty" state
@@ -293,12 +289,16 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
   spin_bit_width_->setValue(node.bit_width());
 
   {
-    const int idx = combo_type_->findText(QString::fromLatin1(valueTypeName(node.value_type())));
-    if (idx >= 0) combo_type_->setCurrentIndex(idx);
+    const int idx = combo_type_->findText(
+        QString::fromLatin1(valueTypeName(node.value_type())));
+    if (idx >= 0)
+      combo_type_->setCurrentIndex(idx);
   }
   {
-    const int idx = combo_tag_->findText(QString::fromLatin1(tagName(node.tag())));
-    if (idx >= 0) combo_tag_->setCurrentIndex(idx);
+    const int idx =
+        combo_tag_->findText(QString::fromLatin1(tagName(node.tag())));
+    if (idx >= 0)
+      combo_tag_->setCurrentIndex(idx);
   }
 
   // ---- Populate scale section ----
@@ -334,58 +334,61 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
   // Name
   cn(edit_name_, &QLineEdit::editingFinished, [this]() {
     if (current_node_) {
-      current_node_
-          ->setName(edit_name_->text().toStdString());
+      current_node_->setName(edit_name_->text().toStdString());
       emit nodeModified();
     }
   });
   // Description
   cn(edit_desc_, &QLineEdit::editingFinished, [this]() {
     if (current_node_) {
-      current_node_
-          ->setDescription(edit_desc_->text().toStdString());
+      current_node_->setDescription(edit_desc_->text().toStdString());
       emit nodeModified();
     }
   });
 
   // Offset
-  cn(spin_offset_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
-    if (current_node_) {
-      current_node_->setOffset(val);
-      emit nodeModified();
-    }
-  });
+  cn(spin_offset_, QOverload<int>::of(&QSpinBox::valueChanged),
+     [this](int val) {
+       if (current_node_) {
+         current_node_->setOffset(val);
+         emit nodeModified();
+       }
+     });
   // Start bit
-  cn(spin_start_bit_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
-    if (current_node_) {
-      current_node_->setBitOffset(val);
-      emit nodeModified();
-    }
-  });
+  cn(spin_start_bit_, QOverload<int>::of(&QSpinBox::valueChanged),
+     [this](int val) {
+       if (current_node_) {
+         current_node_->setBitOffset(val);
+         emit nodeModified();
+       }
+     });
   // Bit width
-  cn(spin_bit_width_, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
-    if (current_node_) {
-      current_node_->setBitWidth(val);
-      emit nodeModified();
-    }
-  });
+  cn(spin_bit_width_, QOverload<int>::of(&QSpinBox::valueChanged),
+     [this](int val) {
+       if (current_node_) {
+         current_node_->setBitWidth(val);
+         emit nodeModified();
+       }
+     });
 
   // Value type combo
-  cn(combo_type_, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int /*idx*/) {
-    if (current_node_) {
-      current_node_
-          ->setValueType(valueTypeFromName(combo_type_->currentText().toStdString()));
-      emit nodeModified();
-    }
-  });
+  cn(combo_type_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+     [this](int /*idx*/) {
+       if (current_node_) {
+         current_node_->setValueType(
+             valueTypeFromName(combo_type_->currentText().toStdString()));
+         emit nodeModified();
+       }
+     });
   // Tag combo
-  cn(combo_tag_, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int /*idx*/) {
-    if (current_node_) {
-      current_node_
-          ->setTag(tagFromName(combo_tag_->currentText().toStdString()));
-      emit nodeModified();
-    }
-  });
+  cn(combo_tag_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+     [this](int /*idx*/) {
+       if (current_node_) {
+         current_node_->setTag(
+             tagFromName(combo_tag_->currentText().toStdString()));
+         emit nodeModified();
+       }
+     });
 
   // Scaled checkbox
   cn(check_scaled_, &QCheckBox::toggled, [this](bool checked) {
@@ -454,7 +457,8 @@ void IcdPropertyPanel::showNode(icd::Node& node) {
       emit nodeModified();
     }
   });
-  // Group name (editable QComboBox: use editingFinished to avoid per-char trigger)
+  // Group name (editable QComboBox: use editingFinished to avoid per-char
+  // trigger)
   cn(combo_group_->lineEdit(), &QLineEdit::editingFinished, [this]() {
     if (current_node_) {
       auto a = current_node_->attrs();
@@ -498,7 +502,8 @@ void IcdPropertyPanel::showFrame(icd::Frame& frame) {
 
   // ---- Populate frame-specific fields ----
   spin_frame_id_->setValue(frame.id());
-  spin_frame_id_->setReadOnly(true);  // ID change requires repo re-index; keep read-only
+  spin_frame_id_->setReadOnly(
+      true);  // ID change requires repo re-index; keep read-only
 
   combo_frame_type_->setCurrentIndex(frameTypeIndex(frame.type()));
   combo_byte_order_->setCurrentIndex(byteOrderIndex(frame.order()));

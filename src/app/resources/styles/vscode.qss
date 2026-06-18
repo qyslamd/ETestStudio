@@ -909,12 +909,6 @@ GitWidget QLabel#gitTitleLabel {
     background: transparent;
 }
 
-/* ==================== ProtocolEditor Section Header (IcdNodeTreeWidget / IcdPropertyPanel) ==================== */
-ProtocolEditorWidget #sectionHeader {
-    font-weight: bold;
-    padding: 4px 8px;
-}
-
 /* ==================== NewProjectDialog ==================== */
 #dlg_contentWidget {
     background-color: white;
