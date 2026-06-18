@@ -114,7 +114,7 @@ class TopologyScene : public QGraphicsScene {
 
   // Tap mode state
   int tap_mode_monitor_ = -1;
-  QVector<QGraphicsLineItem*> tap_lines_;
+  QVector<QGraphicsItem*> tap_lines_;
 };
 
 }  // namespace etest::topology

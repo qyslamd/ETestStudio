@@ -218,6 +218,10 @@ constexpr const char* CONFIG_TERMINAL_DEFAULT_SHELL = "/bin/bash";
 constexpr int CONFIG_TERMINAL_DEFAULT_FONT_SIZE = 11;
 constexpr int CONFIG_TERMINAL_DEFAULT_SCROLLBACK = 10000;
 
+// 拓扑编辑器配置组
+constexpr const char* CONFIG_TOPOLOGY_RESIZE_HANDLES = "topology/resize_handles";
+constexpr bool CONFIG_TOPOLOGY_DEFAULT_RESIZE_HANDLES = false;
+
 }  // namespace config
 }  // namespace core
 }  // namespace etest

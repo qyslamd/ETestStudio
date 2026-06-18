@@ -195,9 +195,9 @@ void TopologyScene::cancelTapMode() {
 
 void TopologyScene::updateTapVisuals() {
   // Remove old tap lines
-  for (auto* line : tap_lines_) {
-    removeItem(line);
-    delete line;
+  for (auto* item : tap_lines_) {
+    removeItem(item);
+    delete item;
   }
   tap_lines_.clear();
 
@@ -234,26 +234,40 @@ void TopologyScene::updateTapVisuals() {
             c->deviceName == tap.deviceName &&
             c->devicePort == tap.devicePort) {
           // Find closest point on the connection path to the channel dot
-          QPainterPath path = connItem->path();
+          QPainterPath connPath = connItem->path();
           qreal bestParam = 0;
           qreal bestDist = 1e18;
           for (int i = 0; i <= 20; ++i) {
             qreal t = i / 20.0;
-            QPointF pt = path.pointAtPercent(t);
+            QPointF pt = connPath.pointAtPercent(t);
             qreal d = QLineF(pt, dotCenter).length();
             if (d < bestDist) {
               bestDist = d;
               bestParam = t;
             }
           }
-          QPointF tapPt = path.pointAtPercent(bestParam);
+          QPointF tapPt = connPath.pointAtPercent(bestParam);
 
-          // Draw dotted line from tap point to channel dot
-          auto* line = new QGraphicsLineItem(QLineF(tapPt, dotCenter));
-          line->setPen(QPen(QColor(180, 130, 255, 180), 1.5, Qt::DashLine));
-          line->setZValue(4);
-          addItem(line);
-          tap_lines_.append(line);
+          // Straight line from dot to tap point with diamond marker
+          QPainterPath tapPath;
+          tapPath.moveTo(dotCenter);
+          tapPath.lineTo(tapPt);
+
+          // Diamond marker at the tap point
+          constexpr qreal ds = 4.5;
+          tapPath.moveTo(tapPt.x(), tapPt.y() - ds);
+          tapPath.lineTo(tapPt.x() + ds, tapPt.y());
+          tapPath.lineTo(tapPt.x(), tapPt.y() + ds);
+          tapPath.lineTo(tapPt.x() - ds, tapPt.y());
+          tapPath.closeSubpath();
+
+          auto* pathItem = new QGraphicsPathItem(tapPath);
+          QColor tapColor(180, 130, 255, 200);
+          pathItem->setPen(QPen(tapColor, 1.5, Qt::DashLine));
+          pathItem->setBrush(tapColor.lighter(140));
+          pathItem->setZValue(4);
+          addItem(pathItem);
+          tap_lines_.append(pathItem);
           break;
         }
       }

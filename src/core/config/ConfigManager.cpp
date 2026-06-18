@@ -102,6 +102,9 @@ class ConfigManager::Impl {
     m_defaultValues[CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ]    = QStringLiteral("#D7BA7D");
     m_defaultValues[CONFIG_EDITOR_SYNTAX_PROPERTY]     = QStringLiteral("#DCDCAA");
     m_defaultValues[CONFIG_EDITOR_SYNTAX_OPERATOR]     = QStringLiteral("#CCCCCC");
+
+    // 拓扑编辑器配置
+    m_defaultValues[CONFIG_TOPOLOGY_RESIZE_HANDLES] = CONFIG_TOPOLOGY_DEFAULT_RESIZE_HANDLES;
   }
 
   QVariant getDefaultValue(const QString& key) const {

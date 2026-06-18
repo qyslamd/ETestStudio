@@ -2,6 +2,9 @@
 #include "TopologyScene.h"
 #include "TopologyTheme.h"
 
+#include "config/ConfigDefs.h"
+#include "config/ConfigManager.h"
+
 #include <QCursor>
 #include <QGraphicsScene>
 #include <QGraphicsSceneHoverEvent>
@@ -12,6 +15,14 @@
 namespace etest::topology {
 
 static constexpr qreal kHandleSize = 8.0;
+
+namespace {
+bool resizeHandlesEnabled() {
+  static bool enabled = etest::core::config::ConfigManager::instance().get<bool>(
+      etest::core::config::CONFIG_TOPOLOGY_RESIZE_HANDLES, false);
+  return enabled;
+}
+}  // namespace
 
 TopologyBlockItem::TopologyBlockItem(TopologyDocument* doc,
                                      qreal width,
@@ -88,8 +99,8 @@ void TopologyBlockItem::paint(QPainter* painter,
   // Delegate content to subclass
   paintContent(painter, option, QRectF(0, 0, block_width_, h));
 
-  // Resize handles when selected
-  if (option->state & QStyle::State_Selected) {
+  // Resize handles when selected (opt-in via config)
+  if ((option->state & QStyle::State_Selected) && resizeHandlesEnabled()) {
     painter->setBrush(tc.resizeHandleFill);
     painter->setPen(QPen(tc.resizeHandleBorder, 1.0));
     for (int i = 1; i <= 8; ++i) {
@@ -117,8 +128,8 @@ void TopologyBlockItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
 }
 
 void TopologyBlockItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
-  // Resize handle cursor feedback — only when selected
-  if (active_handle_ == ResizeHandle::None && isSelected()) {
+  // Resize handle cursor feedback — only when selected + config enabled
+  if (active_handle_ == ResizeHandle::None && isSelected() && resizeHandlesEnabled()) {
     ResizeHandle h = handleAt(event->pos());
     if (h != ResizeHandle::None) {
       updateCursorForHandle(h);
@@ -156,7 +167,7 @@ void TopologyBlockItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
 // ═══════════════════════════════════════════════════════════════
 
 void TopologyBlockItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
-  if (event->button() == Qt::LeftButton && isSelected()) {
+  if (event->button() == Qt::LeftButton && isSelected() && resizeHandlesEnabled()) {
     ResizeHandle h = handleAt(event->pos());
     if (h != ResizeHandle::None) {
       active_handle_ = h;

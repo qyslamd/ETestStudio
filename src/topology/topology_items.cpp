@@ -861,15 +861,17 @@ void MonitorItem::paintContent(QPainter* painter,
 
   const auto& tc = topologyColors();
 
-  // Waveform icon in top-left corner
-  qreal wx = rect.x() + 8;
-  qreal wy = rect.y() + 10;
-  painter->setPen(QPen(tc.textSecondary, 1.2));
-  QPainterPath wave;
-  wave.moveTo(wx, wy + 8);
-  wave.cubicTo(wx + 4, wy, wx + 6, wy + 14, wx + 10, wy + 6);
-  wave.cubicTo(wx + 12, wy + 2, wx + 14, wy + 10, wx + 16, wy + 6);
-  painter->drawPath(wave);
+  // Signal strength bars — monitoring indicator
+  {
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(tc.monitorBorder);
+    qreal sx = rect.x() + 8;
+    qreal sy = rect.y() + 16;
+    for (int i = 0; i < 5; ++i) {
+      qreal h = 3.5 + i * 2.5;   // 3.5, 6, 8.5, 11, 13.5
+      painter->drawRect(QRectF(sx + i * 5, sy - h, 3, h));
+    }
+  }
 
   // Name
   painter->setPen(tc.textPrimary);
@@ -877,7 +879,7 @@ void MonitorItem::paintContent(QPainter* painter,
   f.setPointSize(9);
   f.setBold(true);
   painter->setFont(f);
-  QRectF nameRect(rect.x() + 22, rect.y() + 4, rect.width() - 26, 20);
+  QRectF nameRect(rect.x() + 36, rect.y() + 4, rect.width() - 40, 20);
   painter->drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter, mon->name);
 
   // Device type
@@ -885,7 +887,7 @@ void MonitorItem::paintContent(QPainter* painter,
   f.setBold(false);
   painter->setFont(f);
   painter->setPen(tc.textSecondary);
-  QRectF typeRect(rect.x() + 22, rect.y() + 22, rect.width() - 26, 16);
+  QRectF typeRect(rect.x() + 36, rect.y() + 22, rect.width() - 40, 16);
   painter->drawText(typeRect, Qt::AlignLeft | Qt::AlignVCenter,
                     QStringLiteral("[%1]").arg(mon->deviceType));
 
