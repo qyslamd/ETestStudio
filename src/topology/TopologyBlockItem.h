@@ -41,9 +41,9 @@ class TopologyBlockItem : public QGraphicsItem {
   TopologyDocument* document() const { return doc_; }
 
  protected:
-  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override final;
-  void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override final;
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override final;
+  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+  void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override;
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override final;
   void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override final;

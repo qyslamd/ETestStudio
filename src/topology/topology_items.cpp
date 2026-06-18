@@ -13,6 +13,7 @@
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsSceneMouseEvent>
+#include <QLineF>
 #include <QMenu>
 #include <QPainter>
 #include <QPainterPathStroker>
@@ -898,14 +899,19 @@ void MonitorItem::paintContent(QPainter* painter,
   for (int i = 0; i < maxCh && i < 16; ++i) {
     qreal dx = startX + i * dotSpacing + 4;
     QColor dotColor = tc.directionBidirectional;
-    if (i < used) {
+    if (i < used && i == hovered_tap_index_) {
+      // Highlighted used dot on hover
+      painter->setBrush(dotColor.lighter(160));
+      painter->setPen(QPen(dotColor, 2.0));
+      painter->drawEllipse(QPointF(dx, dotY), 5, 5);
+    } else if (i < used) {
       painter->setBrush(dotColor);
       painter->setPen(Qt::NoPen);
-      painter->drawEllipse(QPointF(dx, dotY), 3, 3);
+      painter->drawEllipse(QPointF(dx, dotY), 4, 4);
     } else {
       painter->setBrush(Qt::NoBrush);
       painter->setPen(QPen(dotColor, 1.0));
-      painter->drawEllipse(QPointF(dx, dotY), 3, 3);
+      painter->drawEllipse(QPointF(dx, dotY), 4, 4);
     }
   }
 }
@@ -940,6 +946,69 @@ void MonitorItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
     doc->undoStack()->push(new ResizeItemCommand(
         doc, idx, ResizeItemCommand::Monitor, oldSize, newSize, oldPos, newPos));
   });
+}
+
+// ── MonitorItem hover: channel dot highlight + tooltip ───────────
+
+void MonitorItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
+  TopologyBlockItem::hoverMoveEvent(event);
+  updateDotHover(event->pos());
+}
+
+void MonitorItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
+  TopologyBlockItem::hoverLeaveEvent(event);
+  if (hovered_tap_index_ >= 0) {
+    hovered_tap_index_ = -1;
+    setToolTip(QString());
+    update();
+  }
+}
+
+void MonitorItem::updateDotHover(const QPointF& localPos) {
+  const auto* mon = doc_->monitor(monitor_index_);
+  if (!mon || mon->taps.isEmpty()) {
+    if (hovered_tap_index_ >= 0) {
+      hovered_tap_index_ = -1;
+      setToolTip(QString());
+      update();
+    }
+    return;
+  }
+
+  int maxCh = qMax(1, mon->channelCount);
+  int used = qMin(mon->taps.size(), maxCh);
+  qreal dotSpacing = 14.0;
+  qreal totalW = maxCh * dotSpacing;
+  // Local coordinate calculation — same formula as paintContent()
+  qreal dotStartX = block_width_ / 2.0 - totalW / 2.0;
+  qreal dotY = kBaseHeight - 10;
+
+  int oldHover = hovered_tap_index_;
+  hovered_tap_index_ = -1;
+
+  for (int ti = 0; ti < used; ++ti) {
+    QPointF dotCenter(dotStartX + ti * dotSpacing + 4, dotY);
+    if (QLineF(localPos, dotCenter).length() <= 8.0) {
+      hovered_tap_index_ = ti;
+      break;
+    }
+  }
+
+  if (hovered_tap_index_ != oldHover) {
+    if (hovered_tap_index_ >= 0 &&
+        hovered_tap_index_ < mon->taps.size()) {
+      const auto& tap = mon->taps[hovered_tap_index_];
+      setToolTip(QStringLiteral("挂载 %1: %2.%3 → %4.%5\n点击取消挂载")
+                     .arg(hovered_tap_index_ + 1)
+                     .arg(tap.productName, tap.portName, tap.deviceName,
+                          tap.devicePort));
+      setCursor(Qt::PointingHandCursor);
+    } else {
+      setToolTip(QString());
+      setCursor(Qt::SizeAllCursor);
+    }
+    update();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════

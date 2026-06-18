@@ -206,12 +206,22 @@ void TopologyScene::updateTapVisuals() {
     if (!monItem)
       continue;
     const auto* mon = doc_->monitor(monItem->monitorIndex());
-    if (!mon)
+    if (!mon || mon->taps.isEmpty())
       continue;
 
-    QPointF monCenter = monItem->sceneBoundingRect().center();
+    // Calculate channel dot positions matching MonitorItem::paintContent()
+    QRectF itemRect = monItem->sceneBoundingRect();
+    int maxCh = qMax(1, mon->channelCount);
+    int used = qMin(mon->taps.size(), maxCh);
+    qreal dotSpacing = 14.0;
+    qreal totalW = maxCh * dotSpacing;
+    qreal dotStartX = itemRect.center().x() - totalW / 2.0;
+    qreal dotY = itemRect.bottom() - 10;
 
-    for (const auto& tap : mon->taps) {
+    for (int ti = 0; ti < used; ++ti) {
+      const auto& tap = mon->taps[ti];
+      QPointF dotCenter(dotStartX + ti * dotSpacing + 4, dotY);
+
       // Find the ConnectionItem matching this tap
       for (auto* connItem : connection_items_) {
         if (!connItem)
@@ -223,15 +233,14 @@ void TopologyScene::updateTapVisuals() {
             c->portName == tap.portName &&
             c->deviceName == tap.deviceName &&
             c->devicePort == tap.devicePort) {
-          // Find closest point on the connection path to monitor center
+          // Find closest point on the connection path to the channel dot
           QPainterPath path = connItem->path();
           qreal bestParam = 0;
           qreal bestDist = 1e18;
-          // Sample the path at 20 points
           for (int i = 0; i <= 20; ++i) {
             qreal t = i / 20.0;
             QPointF pt = path.pointAtPercent(t);
-            qreal d = QLineF(pt, monCenter).length();
+            qreal d = QLineF(pt, dotCenter).length();
             if (d < bestDist) {
               bestDist = d;
               bestParam = t;
@@ -239,15 +248,12 @@ void TopologyScene::updateTapVisuals() {
           }
           QPointF tapPt = path.pointAtPercent(bestParam);
 
-          // Draw dotted line from tap point to monitor
-          auto* line = new QGraphicsLineItem(QLineF(tapPt, monCenter));
+          // Draw dotted line from tap point to channel dot
+          auto* line = new QGraphicsLineItem(QLineF(tapPt, dotCenter));
           line->setPen(QPen(QColor(180, 130, 255, 180), 1.5, Qt::DashLine));
           line->setZValue(4);
           addItem(line);
           tap_lines_.append(line);
-
-          // Draw a small diamond at the tap point
-          // (handled by painting a small marker — for now just the line suffices)
           break;
         }
       }
@@ -598,6 +604,41 @@ void TopologyScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
     finishTap(event->scenePos());
     event->accept();
     return;
+  }
+
+  // Channel dot click — remove tap on used dot
+  if (event->button() == Qt::LeftButton) {
+    QPointF scenePos = event->scenePos();
+    auto hitItems = items(scenePos, Qt::IntersectsItemShape,
+                          Qt::DescendingOrder);
+    for (auto* hit : hitItems) {
+      auto* monItem = qgraphicsitem_cast<MonitorItem*>(hit);
+      if (!monItem)
+        continue;
+      const auto* mon = doc_->monitor(monItem->monitorIndex());
+      if (!mon || mon->taps.isEmpty())
+        break;
+
+      // Channel dot layout — same formula as MonitorItem::paintContent()
+      QRectF itemRect = monItem->sceneBoundingRect();
+      int maxCh = qMax(1, mon->channelCount);
+      int used = qMin(mon->taps.size(), maxCh);
+      qreal dotSpacing = 14.0;
+      qreal totalW = maxCh * dotSpacing;
+      qreal dotStartX = itemRect.center().x() - totalW / 2.0;
+      qreal dotY = itemRect.bottom() - 10;
+
+      for (int ti = used - 1; ti >= 0; --ti) {
+        QPointF dotCenter(dotStartX + ti * dotSpacing + 4, dotY);
+        if (QLineF(scenePos, dotCenter).length() <= 8.0) {
+          doc_->undoStack()->push(
+              new UnTapConnectionCommand(doc_, monItem->monitorIndex(), ti));
+          event->accept();
+          return;
+        }
+      }
+      break;  // only the top-most MonitorItem
+    }
   }
 
   QGraphicsScene::mousePressEvent(event);
