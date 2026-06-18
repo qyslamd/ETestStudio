@@ -12,7 +12,7 @@
 //  Construction
 // ═════════════════════════════════════════════════════════════════════════════
 
-TuxSaverWidget::TuxSaverWidget(QWidget* parent) : QWidget(parent) {
+TuxSaverWidget::TuxSaverWidget(QWidget* parent) : SaverWidgetBase(parent) {
   setMouseTracking(true);
   setMinimumSize(400, 280);
   setAttribute(Qt::WA_TranslucentBackground);
@@ -60,6 +60,10 @@ TuxSaverWidget::TuxSaverWidget(QWidget* parent) : QWidget(parent) {
 }
 
 TuxSaverWidget::~TuxSaverWidget() = default;
+
+QString TuxSaverWidget::displayName() const {
+  return QStringLiteral("企鹅屏保");
+}
 
 void TuxSaverWidget::setPenguinCount(int n) {
   n = qBound(1, n, 20);

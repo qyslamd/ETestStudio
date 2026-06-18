@@ -4,6 +4,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include "SaverWidgetBase.h"
 #include "TuxSaverWidget.h"
 
 TuxSaverOverlay::TuxSaverOverlay(QWidget* parent)
@@ -44,6 +45,7 @@ void TuxSaverOverlay::activate() {
   background_ = p->grab();
   setGeometry(p->rect());
   saver_->setGeometry(rect());
+  saver_->onActivate();
   repositionCloseButton();
   show();
   raise();
@@ -52,6 +54,7 @@ void TuxSaverOverlay::activate() {
 }
 
 void TuxSaverOverlay::deactivate() {
+  saver_->onDeactivate();
   hide();
   background_ = QPixmap();
 }

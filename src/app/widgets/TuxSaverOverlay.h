@@ -4,9 +4,11 @@
 #include <QWidget>
 
 class QPushButton;
-class TuxSaverWidget;
+class SaverWidgetBase;
 
-/// 覆盖 MainWindow 客户区的叠加层，空闲时显示 Tux 企鹅动画
+/// 覆盖 MainWindow 客户区的叠加层，空闲时显示屏保内容
+///
+/// 通过 SaverWidgetBase 策略接口支持多种屏保模式切换。
 class TuxSaverOverlay : public QWidget {
   Q_OBJECT
  public:
@@ -25,7 +27,7 @@ class TuxSaverOverlay : public QWidget {
  private:
   void repositionCloseButton();
 
-  TuxSaverWidget* saver_ = nullptr;
+  SaverWidgetBase* saver_ = nullptr;
   QPushButton* close_btn_ = nullptr;
   QPixmap background_;
 };

@@ -5,7 +5,7 @@
 #include <QStringList>
 #include <QTimer>
 #include <QVector>
-#include <QWidget>
+#include "SaverWidgetBase.h"
 
 class QPainter;
 
@@ -13,7 +13,7 @@ class QPainter;
 ///
 /// 内置空闲检测和随机状态机（站、走、看、挠头、哈欠、睡、吓、逃）。
 /// 子类可覆盖 drawBackground() 绘制自定义背景。
-class TuxSaverWidget : public QWidget {
+class TuxSaverWidget : public SaverWidgetBase {
   Q_OBJECT
   struct PenguinData;  // forward declaration for protected method signatures
  public:
@@ -31,6 +31,9 @@ class TuxSaverWidget : public QWidget {
 
   /// 获取当前说的话列表
   QStringList phrases() const;
+
+  // ── SaverWidgetBase ──
+  QString displayName() const override;
 
  protected:
   void paintEvent(QPaintEvent* event) override;

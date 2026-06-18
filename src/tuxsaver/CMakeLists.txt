@@ -1,6 +1,8 @@
 set(TARGET_NAME "etest_tuxsaver")
 
 add_library(${TARGET_NAME} STATIC
+    SaverWidgetBase.h
+    SaverWidgetBase.cpp
     TuxSaverWidget.h
     TuxSaverWidget.cpp
 )
