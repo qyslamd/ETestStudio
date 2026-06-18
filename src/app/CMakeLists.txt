@@ -84,6 +84,13 @@ add_executable(${TARGET_NAME}
     widgets/EyeWidget.cpp
     widgets/TuxSaverOverlay.h
     widgets/TuxSaverOverlay.cpp
+    widgets/SaverWidgetBase.h
+    widgets/TuxSaverWidget.h
+    widgets/TuxSaverWidget.cpp
+    widgets/WisdomWidget.h
+    widgets/WisdomWidget.cpp
+    widgets/WisdomDatabase.h
+    widgets/WisdomDatabase.cpp
     widgets/LoadingOverlay.h
     widgets/LoadingOverlay.cpp
     widgets/RecentProjectCard.h
@@ -142,6 +149,7 @@ target_link_libraries(${TARGET_NAME}
     Qt5::Core
     Qt5::Gui
     Qt5::Widgets
+    Qt5::Sql
     etest_core
     etest_api
     etest_topology
@@ -154,7 +162,6 @@ target_link_libraries(${TARGET_NAME}
     QXlsx::QXlsx
     qsci
     SARibbonBar::SARibbonBar
-    etest_tuxsaver
     )
 
 

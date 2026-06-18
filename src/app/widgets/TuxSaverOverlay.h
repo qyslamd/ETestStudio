@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QPixmap>
+#include <QVector>
 #include <QWidget>
 
 class QPushButton;
@@ -25,9 +26,15 @@ class TuxSaverOverlay : public QWidget {
   void resizeEvent(QResizeEvent* event) override;
 
  private:
-  void repositionCloseButton();
+  void initModes();
+  void switchMode(int direction);
+  void repositionButtons();
 
+  QVector<SaverWidgetBase*> modes_;
+  int currentMode_ = 0;
   SaverWidgetBase* saver_ = nullptr;
   QPushButton* close_btn_ = nullptr;
+  QPushButton* prev_btn_ = nullptr;
+  QPushButton* next_btn_ = nullptr;
   QPixmap background_;
 };

@@ -9,7 +9,7 @@
 class SaverWidgetBase : public QWidget {
   Q_OBJECT
  public:
-  explicit SaverWidgetBase(QWidget* parent = nullptr);
+  explicit SaverWidgetBase(QWidget* parent = nullptr) : QWidget(parent) {}
   ~SaverWidgetBase() override = default;
 
   /// 覆盖层显示时调用
@@ -21,5 +21,5 @@ class SaverWidgetBase : public QWidget {
   virtual QString displayName() const = 0;
 
   /// 可选：如果屏保有自身的空闲检测，可覆盖此方法
-  virtual void setIdleThreshold(int sec);
+  virtual void setIdleThreshold(int) {}
 };

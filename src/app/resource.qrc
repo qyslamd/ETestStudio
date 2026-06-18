@@ -159,5 +159,6 @@
         <file>resources/icons/svg/ribbon_about_dark.svg</file>
         <file alias="translations/ads_zh_CN.qm">resources/translations/ads_zh_CN.qm</file>
         <file alias="translations/SARibbon_zh_CN.qm">resources/translations/SARibbon_zh_CN.qm</file>
+        <file>resources/data/poems.json</file>
     </qresource>
 </RCC>

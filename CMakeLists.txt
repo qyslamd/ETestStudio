@@ -39,7 +39,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
 # 第三方依赖本地源码编译
 #=======================================
 # 查找Qt库
-find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test Xml Svg network Concurrent
+find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test Xml Svg network Concurrent Sql
     CONFIG REQUIRED)
 
 if(Qt5_FOUND)
@@ -234,7 +234,6 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/saribbon-demo)
     add_subdirectory(examples/penguin-demo)
     add_subdirectory(examples/penguin-demo2)
-    add_subdirectory(examples/tux-console-saver)
 endif()
 
 
