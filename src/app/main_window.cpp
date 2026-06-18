@@ -46,6 +46,7 @@
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
 #include "TestProgramManagerWidget.h"
+#include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
 #include "ThemeManager.h"
 #include "WelcomeWidget.h"
@@ -1007,6 +1008,32 @@ void MainWindow::onOpenProject() {
   }
 }
 
+void MainWindow::onOpenFile() {
+  QStringList exts = EditorFactoryRegistry::registeredExtensions();
+  exts.sort();
+  QStringList patterns;
+  for (const auto& e : exts) {
+    patterns << (QStringLiteral("*.") + e);
+  }
+  QString filter =
+      QStringLiteral("所有支持的文件 (%1)").arg(patterns.join(QChar::Space));
+
+  auto& cfg = ConfigManager::instance();
+  QString lastPath = cfg.get<QString>(CONFIG_RECENT_LAST_OPEN_PATH);
+  if (lastPath.isEmpty()) {
+    lastPath = QDir::homePath();
+  }
+
+  QString filePath =
+      QFileDialog::getOpenFileName(this, QStringLiteral("打开文件"), lastPath,
+                                   filter);
+  if (filePath.isEmpty())
+    return;
+
+  cfg.set(CONFIG_RECENT_LAST_OPEN_PATH, QFileInfo(filePath).absolutePath());
+  editor_manager_->openFile(filePath);
+}
+
 void MainWindow::openRecentProject(const QString& path) {
   if (!tryCloseCurrentProject()) {
     return;
@@ -1092,6 +1119,7 @@ void MainWindow::onCloseProject() {
 
 void MainWindow::onProjectOpened(const QString& projectPath) {
   close_project_action_->setEnabled(true);
+  open_file_action_->setEnabled(false);
 
   // 记录项目打开时间戳
   QVariantMap timestamps = ConfigManager::instance().get<QVariantMap>(
@@ -1124,6 +1152,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
 
 void MainWindow::onProjectClosed() {
   close_project_action_->setEnabled(false);
+  open_file_action_->setEnabled(true);
   status_project_label_->setText(QStringLiteral("无打开项目"));
   updateWindowTitle();
   status_message_label_->setText(QStringLiteral("项目已关闭"));
@@ -1402,6 +1431,15 @@ void MainWindow::setupRibbon() {
   connect(open_project_action_, &QAction::triggered, this,
           &MainWindow::onOpenProject);
 
+  open_file_action_ = new QAction(QStringLiteral("打开文件"), this);
+  open_file_action_->setShortcut(QStringLiteral("Ctrl+Shift+O"));
+  open_file_action_->setShortcutContext(Qt::ApplicationShortcut);
+  open_file_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("file_open")));
+  open_file_action_->setEnabled(true);
+  connect(open_file_action_, &QAction::triggered, this,
+          &MainWindow::onOpenFile);
+
   close_project_action_ = new QAction(QStringLiteral("关闭项目"), this);
   close_project_action_->setEnabled(false);
   connect(close_project_action_, &QAction::triggered, this,
@@ -1477,7 +1515,7 @@ void MainWindow::setupRibbon() {
       AppIconProvider::instance().icon(QStringLiteral("file_new")));
   qab->addAction(new_project_action_);
   open_project_action_->setIcon(
-      AppIconProvider::instance().icon(QStringLiteral("file_open")));
+      AppIconProvider::instance().icon(QStringLiteral("project_open")));
   qab->addAction(open_project_action_);
   save_action_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("file_save")));
@@ -1545,6 +1583,7 @@ void MainWindow::setupRibbon() {
     auto* panel_file = cat->addPanel(QStringLiteral("文件"));
     panel_file->addLargeAction(new_project_action_);
     panel_file->addLargeAction(open_project_action_);
+    panel_file->addLargeAction(open_file_action_);
     panel_file->addLargeAction(save_action_);
 
     // 编辑 Panel

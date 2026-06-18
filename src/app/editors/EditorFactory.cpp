@@ -57,6 +57,10 @@ EditorSignalBinder EditorFactoryRegistry::binderForType(
   return {};
 }
 
+QStringList EditorFactoryRegistry::registeredExtensions() {
+  return extensionMap().keys();
+}
+
 QString EditorFactoryRegistry::typeForExtension(const QString& suffix) {
   auto& m = extensionMap();
   auto it = m.find(suffix.toLower());

@@ -2,6 +2,7 @@
 
 #include <QMap>
 #include <QString>
+#include <QStringList>
 #include <functional>
 
 #include "IEditor.h"
@@ -31,6 +32,7 @@ class EditorFactoryRegistry {
   static IEditor* create(const QString& editorType,
                           const QString& id,
                           QWidget* parent = nullptr);
+  static QStringList registeredExtensions();
   static QString typeForExtension(const QString& suffix);
   static EditorSignalBinder binderForType(const QString& editorType);
 

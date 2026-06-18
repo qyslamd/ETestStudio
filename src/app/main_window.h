@@ -58,6 +58,7 @@ class MainWindow : public SARibbonMainWindow {
   void openRecentProject(const QString& path);
   void onNewProject();
   void onOpenProject();
+  void onOpenFile();
   void onCloseProject();
   void onProjectOpened(const QString& projectPath);
   void onProjectClosed();
@@ -130,6 +131,7 @@ class MainWindow : public SARibbonMainWindow {
   QAction* view_aux_sidebar_action_ = nullptr;
   QAction* new_project_action_ = nullptr;
   QAction* open_project_action_ = nullptr;
+  QAction* open_file_action_ = nullptr;
   QAction* close_project_action_ = nullptr;
   QAction* save_action_ = nullptr;
   QAction* save_as_action_ = nullptr;

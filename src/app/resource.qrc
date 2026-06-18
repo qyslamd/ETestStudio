@@ -133,6 +133,8 @@
         <file>resources/icons/svg/file_new_light.svg</file>
         <file>resources/icons/svg/file_open_dark.svg</file>
         <file>resources/icons/svg/file_open_light.svg</file>
+        <file>resources/icons/svg/project_open_dark.svg</file>
+        <file>resources/icons/svg/project_open_light.svg</file>
         <file>resources/icons/svg/file_save_dark.svg</file>
         <file>resources/icons/svg/file_save_light.svg</file>
         <file>resources/icons/svg/undo_dark.svg</file>
