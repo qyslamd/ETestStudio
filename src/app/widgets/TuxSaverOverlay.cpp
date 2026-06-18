@@ -49,6 +49,10 @@ void TuxSaverOverlay::initModes() {
 
   currentMode_ = 0;
   saver_ = modes_[0];
+
+  for (int i = 0; i < modes_.size(); ++i) {
+    if (i != currentMode_) modes_[i]->hide();
+  }
 }
 
 void TuxSaverOverlay::switchMode(int direction) {

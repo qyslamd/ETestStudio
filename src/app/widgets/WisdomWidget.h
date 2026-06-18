@@ -2,9 +2,8 @@
 
 #include <QElapsedTimer>
 #include <QFrame>
-#include <QGraphicsOpacityEffect>
 #include <QLabel>
-#include <QPropertyAnimation>
+#include <QVariantAnimation>
 #include <QWidget>
 #include <random>
 
@@ -45,6 +44,8 @@ class WisdomWidget : public SaverWidgetBase {
   void startFadeOut();
   void startFadeIn();
   void floatUpCommentary();
+  void setFadeOpacity(qreal opacity);
+  void setCommentaryOpacity(qreal opacity);
 
   struct ThemeColors {
     QColor background;
@@ -71,11 +72,9 @@ class WisdomWidget : public SaverWidgetBase {
   QLabel* sourceLabel_ = nullptr;
 
   // Animations
-  QGraphicsOpacityEffect* fadeEffect_ = nullptr;
-  QPropertyAnimation* fadeOutAnim_ = nullptr;
-  QPropertyAnimation* fadeInAnim_ = nullptr;
-  QGraphicsOpacityEffect* commentaryFade_ = nullptr;
-  QPropertyAnimation* commentaryAppear_ = nullptr;
+  QVariantAnimation* fadeOutAnim_ = nullptr;
+  QVariantAnimation* fadeInAnim_ = nullptr;
+  QVariantAnimation* commentaryAppear_ = nullptr;
 
   bool animating_ = false;
 };

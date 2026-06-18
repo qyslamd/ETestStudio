@@ -15,7 +15,7 @@
 TuxSaverWidget::TuxSaverWidget(QWidget* parent) : SaverWidgetBase(parent) {
   setMouseTracking(true);
   setMinimumSize(400, 280);
-  setAttribute(Qt::WA_TranslucentBackground);
+  setAttribute(Qt::WA_NoSystemBackground);
 
   anim_timer_ = new QTimer(this);
   connect(anim_timer_, &QTimer::timeout, this, &TuxSaverWidget::tick);

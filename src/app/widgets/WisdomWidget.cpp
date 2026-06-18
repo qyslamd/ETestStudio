@@ -2,12 +2,10 @@
 
 #include <QApplication>
 #include <QFont>
-#include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
 #include <QMouseEvent>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
 #include <QStandardPaths>
+#include <QVariantAnimation>
 #include <QKeyEvent>
 #include <QVBoxLayout>
 #include <algorithm>
@@ -126,54 +124,48 @@ void WisdomWidget::initUi() {
 
   outerLayout->addWidget(container, 0, Qt::AlignCenter);
 
-  // ── Fade effect for sentence + source + divider ──
-  fadeEffect_ = new QGraphicsOpacityEffect(this);
-  fadeEffect_->setOpacity(1.0);
-  container->setGraphicsEffect(fadeEffect_);
-
-  fadeOutAnim_ = new QPropertyAnimation(fadeEffect_, "opacity", this);
+  // ── Fade animations (palette alpha, no QGraphicsOpacityEffect) ──
+  fadeOutAnim_ = new QVariantAnimation(this);
   fadeOutAnim_->setDuration(300);
   fadeOutAnim_->setStartValue(1.0);
   fadeOutAnim_->setEndValue(0.0);
   fadeOutAnim_->setEasingCurve(QEasingCurve::InOutQuad);
 
-  fadeInAnim_ = new QPropertyAnimation(fadeEffect_, "opacity", this);
+  fadeInAnim_ = new QVariantAnimation(this);
   fadeInAnim_->setDuration(600);
   fadeInAnim_->setStartValue(0.0);
   fadeInAnim_->setEndValue(1.0);
   fadeInAnim_->setEasingCurve(QEasingCurve::InOutQuad);
 
-  // ── Commentary separate fade ──
-  commentaryFade_ = new QGraphicsOpacityEffect(this);
-  commentaryFade_->setOpacity(0.0);
-  commentaryLabel_->setGraphicsEffect(commentaryFade_);
-
-  commentaryAppear_ = new QPropertyAnimation(commentaryFade_, "opacity", this);
+  commentaryAppear_ = new QVariantAnimation(this);
   commentaryAppear_->setDuration(800);
   commentaryAppear_->setStartValue(0.0);
   commentaryAppear_->setEndValue(1.0);
   commentaryAppear_->setEasingCurve(QEasingCurve::OutCubic);
+
+  connect(fadeOutAnim_, &QVariantAnimation::valueChanged, this,
+          [this](const QVariant& v) { setFadeOpacity(v.toReal()); });
+  connect(fadeInAnim_, &QVariantAnimation::valueChanged, this,
+          [this](const QVariant& v) { setFadeOpacity(v.toReal()); });
+  connect(commentaryAppear_, &QVariantAnimation::valueChanged, this,
+          [this](const QVariant& v) { setCommentaryOpacity(v.toReal()); });
 
   setFocusPolicy(Qt::StrongFocus);
   setFocus();
 }
 
 void WisdomWidget::initSignals() {
-  connect(fadeOutAnim_, &QPropertyAnimation::finished, this, [this]() {
-    // Advance to next poem
+  connect(fadeOutAnim_, &QVariantAnimation::finished, this, [this]() {
     currentIndex_++;
     if (currentIndex_ >= shuffledIds_.size()) {
       std::shuffle(shuffledIds_.begin(), shuffledIds_.end(), rng_);
       currentIndex_ = 0;
     }
     loadPoem(shuffledIds_[currentIndex_]);
-
-    // Start fade in
     startFadeIn();
   });
 
-  connect(fadeInAnim_, &QPropertyAnimation::finished, this, [this]() {
-    // Commentary floats up after fade in completes
+  connect(fadeInAnim_, &QVariantAnimation::finished, this, [this]() {
     floatUpCommentary();
     animating_ = false;
   });
@@ -190,7 +182,7 @@ void WisdomWidget::loadPoem(int index) {
   sentenceLabel_->setText(poem.sentence);
   sourceLabel_->setText(poem.source);
   commentaryLabel_->setText(poem.commentary);
-  commentaryFade_->setOpacity(0.0);
+  setCommentaryOpacity(0.0);
 
   emit poemChanged(poem.sentence, poem.source);
 }
@@ -217,6 +209,41 @@ void WisdomWidget::startFadeIn() {
 
 void WisdomWidget::floatUpCommentary() {
   commentaryAppear_->start();
+}
+
+void WisdomWidget::setFadeOpacity(qreal opacity) {
+  auto alphaColor = [](const QColor& c, qreal a) {
+    QColor r = c;
+    r.setAlphaF(a);
+    return r;
+  };
+
+  if (sentenceLabel_) {
+    QPalette sp = sentenceLabel_->palette();
+    sp.setColor(QPalette::WindowText, alphaColor(currentTheme_.text, opacity));
+    sentenceLabel_->setPalette(sp);
+  }
+  if (sourceLabel_) {
+    QPalette sp = sourceLabel_->palette();
+    sp.setColor(QPalette::WindowText,
+               alphaColor(currentTheme_.commentary, opacity));
+    sourceLabel_->setPalette(sp);
+  }
+  if (divider_) {
+    QPalette dp = divider_->palette();
+    dp.setColor(QPalette::Window, alphaColor(currentTheme_.accent, opacity));
+    divider_->setPalette(dp);
+  }
+}
+
+void WisdomWidget::setCommentaryOpacity(qreal opacity) {
+  if (commentaryLabel_) {
+    QPalette cp = commentaryLabel_->palette();
+    QColor c = currentTheme_.commentary;
+    c.setAlphaF(opacity);
+    cp.setColor(QPalette::WindowText, c);
+    commentaryLabel_->setPalette(cp);
+  }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
