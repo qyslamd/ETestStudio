@@ -2,12 +2,12 @@
 #include <QFont>
 
 #include "EditorManager.h"
-#include "TextEditorWidget.h"
+#include "editors/TextEditorWidget.h"
 #include "common/GlobalExceptionHandler.h"
 #include "common/SingleInstance.h"
 #include "config/ConfigManager.h"
 #include "crashhandler/CrashHandler.h"
-#include "editor/EditorFactory.h"
+#include "editors/EditorFactory.h"
 #include "logger/Logger.h"
 #include "main_window.h"
 #include <QTranslator>

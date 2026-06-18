@@ -6,8 +6,8 @@ add_executable(${TARGET_NAME}
     MainWindow.cpp
     ${CMAKE_SOURCE_DIR}/src/app/TestProgramData.h
     ${CMAKE_SOURCE_DIR}/src/app/TestProgramData.cpp
-    ${CMAKE_SOURCE_DIR}/src/app/TestProgramEditorWidget.h
-    ${CMAKE_SOURCE_DIR}/src/app/TestProgramEditorWidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/app/editors/TestProgramEditorWidget.h
+    ${CMAKE_SOURCE_DIR}/src/app/editors/TestProgramEditorWidget.cpp
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE

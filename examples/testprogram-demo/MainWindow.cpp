@@ -5,7 +5,7 @@
 #include <QMessageBox>
 #include <QStatusBar>
 
-#include "TestProgramEditorWidget.h"
+#include "editors/TestProgramEditorWidget.h"
 #include "api/IEditor.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {

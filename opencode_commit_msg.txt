@@ -1,0 +1,8 @@
+refactor(app): 重组 widgets 和 editors 目录结构
+
+- HintBarWidget/ProblemsPanel/OutputPanel/BottomContainerWidget 移入 widgets/
+- TextEditorWidget/TestProgramEditorWidget/ImageViewerWidget/EditorFactory 移入 editors/
+- 删除空的 editor/ 目录
+- 更新 CMakeLists.txt 及所有 include 路径
+
+Co-Authored-By: claude code 助手 <zhouyohu@163.com>

@@ -15,10 +15,10 @@
 #include <QMenu>
 #include <QMessageBox>
 
-#include "ImageViewerWidget.h"
-#include "TestProgramEditorWidget.h"
-#include "TextEditorWidget.h"
-#include "editor/EditorFactory.h"
+#include "editors/ImageViewerWidget.h"
+#include "editors/TestProgramEditorWidget.h"
+#include "editors/TextEditorWidget.h"
+#include "editors/EditorFactory.h"
 #include "logger/Logger.h"
 #include "protocol/ProtocolEditorWidget.h"
 #include "topology/TopologyDocument.h"

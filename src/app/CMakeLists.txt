@@ -17,8 +17,8 @@ add_executable(${TARGET_NAME}
     main.cpp
     main_window.h
     main_window.cpp
-    HintBarWidget.h
-    HintBarWidget.cpp
+    widgets/HintBarWidget.h
+    widgets/HintBarWidget.cpp
     ActivityBarWidget.h
     ActivityBarWidget.cpp
     SidebarWidget.h
@@ -35,22 +35,22 @@ add_executable(${TARGET_NAME}
     TestProgramData.cpp
     TestProgramManagerWidget.h
     TestProgramManagerWidget.cpp
-    TestProgramEditorWidget.h
-    TestProgramEditorWidget.cpp
-    TextEditorWidget.h
-    TextEditorWidget.cpp
-    ImageViewerWidget.h
-    ImageViewerWidget.cpp
+    editors/TestProgramEditorWidget.h
+    editors/TestProgramEditorWidget.cpp
+    editors/TextEditorWidget.h
+    editors/TextEditorWidget.cpp
+    editors/ImageViewerWidget.h
+    editors/ImageViewerWidget.cpp
     EditorManager.h
     EditorManager.cpp
-    editor/EditorFactory.h
-    editor/EditorFactory.cpp
-    OutputPanel.h
-    OutputPanel.cpp
-    BottomContainerWidget.h
-    BottomContainerWidget.cpp
-    ProblemsPanel.h
-    ProblemsPanel.cpp
+    editors/EditorFactory.h
+    editors/EditorFactory.cpp
+    widgets/OutputPanel.h
+    widgets/OutputPanel.cpp
+    widgets/BottomContainerWidget.h
+    widgets/BottomContainerWidget.cpp
+    widgets/ProblemsPanel.h
+    widgets/ProblemsPanel.cpp
     TerminalPanel.h
     TerminalPanel.cpp
     dialogs/SettingsDialog.h
