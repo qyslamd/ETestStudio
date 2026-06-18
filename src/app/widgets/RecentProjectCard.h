@@ -20,6 +20,7 @@ class RecentProjectCard : public QWidget {
                     QWidget* parent = nullptr);
 
   void setTimeStr(const QString& timeStr);
+  void setRemoveActionText(const QString& text);
 
  signals:
   void openRequested(const QString& projectPath);
@@ -35,6 +36,7 @@ class RecentProjectCard : public QWidget {
   void initSignals();
 
   QString project_path_;
+  QString remove_action_text_ = QStringLiteral("从列表中移除");
   QLabel* name_label_ = nullptr;
   QLabel* path_label_ = nullptr;
   QLabel* time_label_ = nullptr;

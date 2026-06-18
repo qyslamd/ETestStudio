@@ -8,10 +8,12 @@
 #include <QWidget>
 
 class QFileSystemWatcher;
+class QLabel;
 class QMenu;
 class QPoint;
 class QPushButton;
 class QScrollArea;
+class QToolButton;
 class QTreeView;
 class QTimer;
 
@@ -56,8 +58,15 @@ class ProjectStructureWidget : public QWidget {
   void openProjectRequested();
   void projectOpenRequested(const QString& projectPath);
 
+  // 已打开文件列表操作
+  void openFileActivateRequested(const QString& filePath);
+  void openFileCloseRequested(const QString& filePath);
+
  public:
   void refreshRecentProjects();
+  void setOpenFiles(const QStringList& paths);
+  void onFileOpened(const QString& path);
+  void onFileClosed(const QString& path);
 
  private slots:
   void onCustomContextMenu(const QPoint& pos);
@@ -90,6 +99,13 @@ class ProjectStructureWidget : public QWidget {
   QString absolutePath(const QString& relativePath) const;
   QString categoryDirPath(const QString& categoryId) const;
 
+  // 已打开文件列表
+  void toggleOpenFilesSection();
+  void addOpenFileItem(const QString& path);
+  void removeOpenFileItem(const QString& path);
+  void clearOpenFiles();
+  void updateOpenFilesCount();
+
   QStackedWidget* stack_;
   QTreeView* tree_view_;
   QStandardItemModel* model_;
@@ -99,6 +115,12 @@ class ProjectStructureWidget : public QWidget {
   QPushButton* open_proj_btn_ = nullptr;
   QFileSystemWatcher* file_watcher_ = nullptr;
   QTimer* debounce_timer_ = nullptr;
+
+  QWidget* tree_page_ = nullptr;
+  QWidget* open_files_widget_ = nullptr;
+  QToolButton* open_files_header_btn_ = nullptr;
+  QWidget* open_files_container_ = nullptr;
+  bool open_files_collapsed_ = false;
 
   QString project_path_;
   QStandardItem* root_item_ = nullptr;

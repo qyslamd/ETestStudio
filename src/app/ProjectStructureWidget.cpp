@@ -21,9 +21,10 @@
 #include <QSet>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QToolButton>
 #include <QTreeView>
-#include <QVBoxLayout>
 #include <QUrl>
+#include <QVBoxLayout>
 
 #include "AppIconProvider.h"
 #include "ConfigManager.h"
@@ -35,7 +36,8 @@ namespace etest::app {
 // ── 新建文件默认基名（自动递增） ──
 static QString newFileBaseName(const QString& base, const QString& dir);
 
-ProjectStructureWidget::ProjectStructureWidget(QWidget* parent) : QWidget(parent) {
+ProjectStructureWidget::ProjectStructureWidget(QWidget* parent)
+    : QWidget(parent) {
   initUi();
   initSignals();
   refreshRecentProjects();
@@ -79,10 +81,10 @@ void ProjectStructureWidget::initUi() {
   ph_title->setAlignment(Qt::AlignCenter);
   sc_layout->addWidget(ph_title);
 
-  auto* ph_desc = new QLabel(
-      QStringLiteral("创建或打开一个项目来管理测试资产\n"
-                     "您也可以直接使用编辑器创建和编辑文件"),
-      scroll_content);
+  auto* ph_desc =
+      new QLabel(QStringLiteral("创建或打开一个项目来管理测试资产\n"
+                                "您也可以直接使用编辑器创建和编辑文件"),
+                 scroll_content);
   ph_desc->setObjectName(QStringLiteral("PhDesc"));
   ph_desc->setAlignment(Qt::AlignCenter);
   ph_desc->setWordWrap(true);
@@ -96,7 +98,8 @@ void ProjectStructureWidget::initUi() {
   for (const auto& cat : defaultCategories()) {
     if (!cat.newFileExt.isEmpty()) {
       quickCats.append(cat);
-      if (quickCats.size() >= 4) break;
+      if (quickCats.size() >= 4)
+        break;
     }
   }
   static const int kRows[] = {0, 0, 1, 1};
@@ -125,7 +128,8 @@ void ProjectStructureWidget::initUi() {
   sc_layout->addWidget(sep1);
 
   // ── 项目管理按钮组 ──
-  auto* proj_section_label = new QLabel(QStringLiteral("项目管理"), scroll_content);
+  auto* proj_section_label =
+      new QLabel(QStringLiteral("项目管理"), scroll_content);
   proj_section_label->setObjectName(QStringLiteral("PhSectionLabel"));
   sc_layout->addWidget(proj_section_label);
 
@@ -134,15 +138,18 @@ void ProjectStructureWidget::initUi() {
   new_proj_btn_->setFixedHeight(32);
   new_proj_btn_->setCursor(Qt::PointingHandCursor);
 
-  open_proj_btn_ = new QPushButton(QStringLiteral("  打开项目"), scroll_content);
+  open_proj_btn_ =
+      new QPushButton(QStringLiteral("  打开项目"), scroll_content);
   open_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
   open_proj_btn_->setFixedHeight(32);
   open_proj_btn_->setCursor(Qt::PointingHandCursor);
 
   auto* proj_btn_layout = new QHBoxLayout();
   proj_btn_layout->setSpacing(8);
+  proj_btn_layout->addStretch();
   proj_btn_layout->addWidget(new_proj_btn_, 1);
   proj_btn_layout->addWidget(open_proj_btn_, 1);
+  proj_btn_layout->addStretch();
   sc_layout->addLayout(proj_btn_layout);
 
   // ── 分隔线 ──
@@ -152,7 +159,8 @@ void ProjectStructureWidget::initUi() {
   sc_layout->addWidget(sep2);
 
   // ── 最近项目 ──
-  auto* recent_section_label = new QLabel(QStringLiteral("最近项目"), scroll_content);
+  auto* recent_section_label =
+      new QLabel(QStringLiteral("最近项目"), scroll_content);
   recent_section_label->setObjectName(QStringLiteral("PhSectionLabel"));
   sc_layout->addWidget(recent_section_label);
 
@@ -167,8 +175,34 @@ void ProjectStructureWidget::initUi() {
 
   stack_->addWidget(placeholder_widget_);  // index 0
 
-  // ── 模式 1：领域分类树 ──
-  tree_view_ = new QTreeView(this);
+  // ── 模式 1：领域分类树 + 已打开文件列表 ──
+  tree_page_ = new QWidget(this);
+  auto* tree_page_layout = new QVBoxLayout(tree_page_);
+  tree_page_layout->setContentsMargins(0, 0, 0, 0);
+  tree_page_layout->setSpacing(0);
+
+  // 已打开文件区域（可折叠）
+  open_files_widget_ = new QWidget(tree_page_);
+  auto* of_layout = new QVBoxLayout(open_files_widget_);
+  of_layout->setContentsMargins(0, 0, 0, 0);
+  of_layout->setSpacing(0);
+
+  open_files_header_btn_ = new QToolButton(open_files_widget_);
+  open_files_header_btn_->setObjectName(QStringLiteral("PhOpenFilesHeaderBtn"));
+  open_files_header_btn_->setCheckable(false);
+  open_files_header_btn_->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  open_files_header_btn_->setText(QStringLiteral("\xE2\x96\xBC 已打开 (0)"));
+  open_files_header_btn_->setCursor(Qt::PointingHandCursor);
+  of_layout->addWidget(open_files_header_btn_);
+
+  open_files_container_ = new QWidget(open_files_widget_);
+  open_files_container_->setObjectName(QStringLiteral("PhOpenFilesContainer"));
+  auto* of_container_layout = new QVBoxLayout(open_files_container_);
+  of_container_layout->setContentsMargins(0, 0, 0, 0);
+  of_container_layout->setSpacing(0);
+  of_layout->addWidget(open_files_container_);
+
+  tree_view_ = new QTreeView(tree_page_);
   tree_view_->setHeaderHidden(true);
   tree_view_->setAnimated(true);
   tree_view_->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -181,7 +215,10 @@ void ProjectStructureWidget::initUi() {
   model_ = new QStandardItemModel(this);
   tree_view_->setModel(model_);
 
-  stack_->addWidget(tree_view_);  // index 1
+  tree_page_layout->addWidget(tree_view_, 1);
+  tree_page_layout->addWidget(open_files_widget_);
+
+  stack_->addWidget(tree_page_);  // index 1
 
   layout->addWidget(stack_);
 
@@ -205,14 +242,13 @@ void ProjectStructureWidget::initSignals() {
     QString catId = btn->property("catId").toString();
     QString ext = btn->property("ext").toString();
     QString baseName = btn->property("baseName").toString();
-    connect(btn, &QPushButton::clicked, this,
-            [this, catId, ext, baseName]() {
-              if (project_path_.isEmpty()) {
-                createStandaloneFile(ext, baseName);
-              } else {
-                createNewFile(catId, ext, baseName);
-              }
-            });
+    connect(btn, &QPushButton::clicked, this, [this, catId, ext, baseName]() {
+      if (project_path_.isEmpty()) {
+        createStandaloneFile(ext, baseName);
+      } else {
+        createNewFile(catId, ext, baseName);
+      }
+    });
   }
 
   // 项目管理按钮
@@ -245,14 +281,19 @@ void ProjectStructureWidget::initSignals() {
           &etest::core::config::ConfigManager::configChanged, this,
           [this](const QString& key) {
             if (key == QLatin1String(
-                    etest::core::config::CONFIG_RECENT_PROJECT_LIST)) {
+                           etest::core::config::CONFIG_RECENT_PROJECT_LIST)) {
               refreshRecentProjects();
             }
           });
+
+  // 已打开文件区域折叠/展开
+  connect(open_files_header_btn_, &QToolButton::clicked, this,
+          &ProjectStructureWidget::toggleOpenFilesSection);
 }
 
 void ProjectStructureWidget::setProjectPath(const QString& path) {
-  if (path == project_path_) return;
+  if (path == project_path_)
+    return;
   project_path_ = path;
 
   model_->clear();
@@ -275,6 +316,8 @@ void ProjectStructureWidget::clearProjectPath() {
 
   model_->clear();
   root_item_ = nullptr;
+
+  clearOpenFiles();
 
   stack_->setCurrentIndex(0);
 }
@@ -318,7 +361,8 @@ QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
 
 void ProjectStructureWidget::buildTree() {
   QDir projectDir(project_path_);
-  if (!projectDir.exists()) return;
+  if (!projectDir.exists())
+    return;
 
   // 根节点：项目名称
   root_item_ = new QStandardItem(projectDir.dirName());
@@ -327,7 +371,8 @@ void ProjectStructureWidget::buildTree() {
   QFont rootFont = root_item_->font();
   rootFont.setBold(true);
   root_item_->setFont(rootFont);
-  root_item_->setIcon(AppIconProvider::instance().icon(QStringLiteral("project")));
+  root_item_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("project")));
   model_->appendRow(root_item_);
 
   QStringList watchedDirs;
@@ -358,8 +403,7 @@ void ProjectStructureWidget::buildTree() {
     } else {
       // 目录缺失，灰色显示
       catItem = createCategoryItem(cat, 0);
-      QString displayText =
-          cat.displayName + QStringLiteral(" （目录缺失）");
+      QString displayText = cat.displayName + QStringLiteral(" （目录缺失）");
       catItem->setText(displayText);
       catItem->setForeground(QColor(0x99, 0x99, 0x99));
     }
@@ -369,9 +413,12 @@ void ProjectStructureWidget::buildTree() {
   }
 
   // "其他文件" 分类
-  CategoryInfo otherCat{
-      QStringLiteral("other"), QStringLiteral("其他文件"), QString(),
-      QStringLiteral("file_generic"), QString(), QString()};
+  CategoryInfo otherCat{QStringLiteral("other"),
+                        QStringLiteral("其他文件"),
+                        QString(),
+                        QStringLiteral("file_generic"),
+                        QString(),
+                        QString()};
   auto* otherItem = createCategoryItem(otherCat, 0);
   otherItem->setEditable(false);
 
@@ -396,7 +443,8 @@ void ProjectStructureWidget::buildTree() {
         break;
       }
     }
-    if (inStandardDir) continue;
+    if (inStandardDir)
+      continue;
 
     QFileInfo fi = it.fileInfo();
     QString relPath = projectDir.relativeFilePath(fi.absoluteFilePath());
@@ -404,9 +452,8 @@ void ProjectStructureWidget::buildTree() {
     ++otherCount;
   }
 
-  QString otherText = otherCat.displayName +
-      QStringLiteral(" (") + QString::number(otherCount) +
-      QStringLiteral(")");
+  QString otherText = otherCat.displayName + QStringLiteral(" (") +
+                      QString::number(otherCount) + QStringLiteral(")");
   if (otherCount == 0) {
     otherItem->setForeground(QColor(0xbb, 0xbb, 0xbb));
   }
@@ -423,10 +470,12 @@ void ProjectStructureWidget::buildTree() {
 }
 
 void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
-  if (project_path_.isEmpty() || !root_item_) return;
+  if (project_path_.isEmpty() || !root_item_)
+    return;
 
   QDir dir(dirPath);
-  if (!dir.exists()) return;
+  if (!dir.exists())
+    return;
 
   // 找到对应的分类 item
   QStandardItem* catItem = nullptr;
@@ -439,7 +488,8 @@ void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
     }
   }
 
-  if (catId.isEmpty()) return;
+  if (catId.isEmpty())
+    return;
 
   for (int i = 0; i < root_item_->rowCount(); ++i) {
     auto* child = root_item_->child(i);
@@ -449,15 +499,16 @@ void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
     }
   }
 
-  if (!catItem) return;
+  if (!catItem)
+    return;
 
   catItem->removeRows(0, catItem->rowCount());
 
-  QFileInfoList entries =
-      dir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
+  QFileInfoList entries = dir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
   int fileCount = 0;
   for (const auto& fi : entries) {
-    QString relPath = QDir(project_path_).relativeFilePath(fi.absoluteFilePath());
+    QString relPath =
+        QDir(project_path_).relativeFilePath(fi.absoluteFilePath());
     catItem->appendRow(createFileItem(fi.fileName(), relPath));
     ++fileCount;
   }
@@ -484,10 +535,12 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
 
   if (!index.isValid()) {
     // 空白区域右键
-    auto* newFileAction = menu.addAction(QIcon::fromTheme(QStringLiteral("document-new")),
-                                         QStringLiteral("新建文件"));
-    auto* newDirAction = menu.addAction(QIcon::fromTheme(QStringLiteral("folder-new")),
-                                        QStringLiteral("新建文件夹"));
+    auto* newFileAction =
+        menu.addAction(QIcon::fromTheme(QStringLiteral("document-new")),
+                       QStringLiteral("新建文件"));
+    auto* newDirAction =
+        menu.addAction(QIcon::fromTheme(QStringLiteral("folder-new")),
+                       QStringLiteral("新建文件夹"));
     menu.addSeparator();
     auto* openInFileManagerAction =
         menu.addAction(QStringLiteral("在文件系统中打开"));
@@ -498,7 +551,8 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
       createNewFile(QString(), QString(), QStringLiteral("新建文件"));
     } else if (chosen == newDirAction) {
       // 在项目根创建新目录
-      QString dirName = newFileBaseName(QStringLiteral("新建文件夹"), project_path_);
+      QString dirName =
+          newFileBaseName(QStringLiteral("新建文件夹"), project_path_);
       QDir(project_path_).mkdir(dirName);
     } else if (chosen == openInFileManagerAction) {
       QDesktopServices::openUrl(QUrl::fromLocalFile(project_path_));
@@ -517,10 +571,11 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
     for (const auto& cat : defaultCategories()) {
       if (cat.id == catId && !cat.newFileExt.isEmpty()) {
         hasNewAction = true;
-        auto* newAction = menu.addAction(AppIconProvider::instance().icon(cat.iconName),
-                                         cat.newFileLabel);
+        auto* newAction = menu.addAction(
+            AppIconProvider::instance().icon(cat.iconName), cat.newFileLabel);
         menu.addSeparator();
-        auto* openInFmAction = menu.addAction(QStringLiteral("在文件系统中打开"));
+        auto* openInFmAction =
+            menu.addAction(QStringLiteral("在文件系统中打开"));
 
         QAction* chosen = menu.exec(tree_view_->viewport()->mapToGlobal(pos));
         if (chosen == newAction) {
@@ -536,13 +591,14 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
     if (!hasNewAction) {
       // 不支持新建的分类（硬件、报告、备份、"其他文件"）
       auto* openInFmAction = menu.addAction(QStringLiteral("在文件系统中打开"));
-      if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) == openInFmAction) {
+      if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) ==
+          openInFmAction) {
         QString dirPath = categoryDirPath(catId);
         if (dirPath.isEmpty()) {
           QDesktopServices::openUrl(QUrl::fromLocalFile(project_path_));
         } else {
-          QDesktopServices::openUrl(
-              QUrl::fromLocalFile(QDir(project_path_).absoluteFilePath(dirPath)));
+          QDesktopServices::openUrl(QUrl::fromLocalFile(
+              QDir(project_path_).absoluteFilePath(dirPath)));
         }
       }
     }
@@ -580,17 +636,21 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
 
 void ProjectStructureWidget::onItemDoubleClicked(const QModelIndex& index) {
   QStandardItem* item = model_->itemFromIndex(index);
-  if (!item) return;
+  if (!item)
+    return;
   QString nodeType = item->data(NodeTypeRole).toString();
-  if (nodeType != QStringLiteral("file")) return;
+  if (nodeType != QStringLiteral("file"))
+    return;
 
   QString relPath = item->data(RelativePathRole).toString();
   emit fileOpenRequested(absolutePath(relPath));
 }
 
 void ProjectStructureWidget::onItemChanged(QStandardItem* item) {
-  if (!item || rename_old_path_.isEmpty()) return;
-  if (item->data(NodeTypeRole).toString() != QStringLiteral("file")) return;
+  if (!item || rename_old_path_.isEmpty())
+    return;
+  if (item->data(NodeTypeRole).toString() != QStringLiteral("file"))
+    return;
 
   QString newRelPath = item->data(RelativePathRole).toString();
   QDir projectDir(project_path_);
@@ -642,7 +702,8 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
   QString fullPath = QDir(fullDir).absoluteFilePath(fileName);
 
   QFile file(fullPath);
-  if (!file.open(QIODevice::WriteOnly)) return;
+  if (!file.open(QIODevice::WriteOnly))
+    return;
   file.close();
 
   emit fileCreated(fullPath);
@@ -653,11 +714,10 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
     emit fileOpenRequested(fullPath);
   } else {
     // 非领域文件进入重命名模式
-    QModelIndexList matches = model_->match(model_->index(0, 0),
-                                            RelativePathRole,
-                                            QVariant::fromValue(targetDir + fileName),
-                                            -1,
-                                            Qt::MatchExactly | Qt::MatchRecursive);
+    QModelIndexList matches =
+        model_->match(model_->index(0, 0), RelativePathRole,
+                      QVariant::fromValue(targetDir + fileName), -1,
+                      Qt::MatchExactly | Qt::MatchRecursive);
     if (!matches.isEmpty()) {
       tree_view_->edit(matches.first());
     }
@@ -665,23 +725,25 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
 }
 
 void ProjectStructureWidget::createStandaloneFile(const QString& extension,
-                                                   const QString& baseName) {
+                                                  const QString& baseName) {
   auto& cfg = etest::core::config::ConfigManager::instance();
   QString defaultDir = cfg.get<QString>(
       etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH,
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
-  QString defaultName =
-      baseName + QStringLiteral(".") + extension;
+  QString defaultName = baseName + QStringLiteral(".") + extension;
   QString filePath = QFileDialog::getSaveFileName(
       this, baseName, defaultDir,
       QStringLiteral("%1 (*.%2)").arg(baseName).arg(extension));
-  if (filePath.isEmpty()) return;
+  if (filePath.isEmpty())
+    return;
 
   QFileInfo fi(filePath);
-  cfg.set(etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH, fi.absolutePath());
+  cfg.set(etest::core::config::CONFIG_DEFAULT_FILE_SAVE_PATH,
+          fi.absolutePath());
 
   QFile file(filePath);
-  if (!file.open(QIODevice::WriteOnly)) return;
+  if (!file.open(QIODevice::WriteOnly))
+    return;
   file.close();
 
   emit fileCreated(filePath);
@@ -690,11 +752,14 @@ void ProjectStructureWidget::createStandaloneFile(const QString& extension,
 
 void ProjectStructureWidget::deleteSelectedFile() {
   QModelIndex index = tree_view_->currentIndex();
-  if (!index.isValid()) return;
+  if (!index.isValid())
+    return;
 
   QStandardItem* item = model_->itemFromIndex(index);
-  if (!item) return;
-  if (item->data(NodeTypeRole).toString() != QStringLiteral("file")) return;
+  if (!item)
+    return;
+  if (item->data(NodeTypeRole).toString() != QStringLiteral("file"))
+    return;
 
   QString relPath = item->data(RelativePathRole).toString();
   QString absPath = absolutePath(relPath);
@@ -704,7 +769,8 @@ void ProjectStructureWidget::deleteSelectedFile() {
   auto ret = QMessageBox::question(this, QStringLiteral("确认删除"), msg,
                                    QMessageBox::Yes | QMessageBox::No,
                                    QMessageBox::No);
-  if (ret != QMessageBox::Yes) return;
+  if (ret != QMessageBox::Yes)
+    return;
 
   if (QFile::remove(absPath)) {
     emit fileDeleted(absPath);
@@ -713,36 +779,45 @@ void ProjectStructureWidget::deleteSelectedFile() {
 
 void ProjectStructureWidget::copyFilePath() {
   QModelIndex index = tree_view_->currentIndex();
-  if (!index.isValid()) return;
+  if (!index.isValid())
+    return;
   QStandardItem* item = model_->itemFromIndex(index);
-  if (!item) return;
+  if (!item)
+    return;
 
   QString relPath = item->data(RelativePathRole).toString();
-  if (relPath.isEmpty()) return;
+  if (relPath.isEmpty())
+    return;
 
   QApplication::clipboard()->setText(absolutePath(relPath));
 }
 
 void ProjectStructureWidget::copyRelativePath() {
   QModelIndex index = tree_view_->currentIndex();
-  if (!index.isValid()) return;
+  if (!index.isValid())
+    return;
   QStandardItem* item = model_->itemFromIndex(index);
-  if (!item) return;
+  if (!item)
+    return;
 
   QString relPath = item->data(RelativePathRole).toString();
-  if (relPath.isEmpty()) return;
+  if (relPath.isEmpty())
+    return;
 
   QApplication::clipboard()->setText(relPath);
 }
 
 void ProjectStructureWidget::openInFileManager() {
   QModelIndex index = tree_view_->currentIndex();
-  if (!index.isValid()) return;
+  if (!index.isValid())
+    return;
   QStandardItem* item = model_->itemFromIndex(index);
-  if (!item) return;
+  if (!item)
+    return;
 
   QString relPath = item->data(RelativePathRole).toString();
-  if (relPath.isEmpty()) return;
+  if (relPath.isEmpty())
+    return;
 
   QString absPath = absolutePath(relPath);
   QFileInfo fi(absPath);
@@ -751,12 +826,15 @@ void ProjectStructureWidget::openInFileManager() {
 
 void ProjectStructureWidget::openWithTextEditor() {
   QModelIndex index = tree_view_->currentIndex();
-  if (!index.isValid()) return;
+  if (!index.isValid())
+    return;
   QStandardItem* item = model_->itemFromIndex(index);
-  if (!item) return;
+  if (!item)
+    return;
 
   QString relPath = item->data(RelativePathRole).toString();
-  if (relPath.isEmpty()) return;
+  if (relPath.isEmpty())
+    return;
 
   emit fileOpenAsTextRequested(absolutePath(relPath));
 }
@@ -764,10 +842,10 @@ void ProjectStructureWidget::openWithTextEditor() {
 // ── 工具方法 ──
 
 QStandardItem* ProjectStructureWidget::createCategoryItem(
-    const CategoryInfo& info, int fileCount) {
-  QString displayText = info.displayName +
-      QStringLiteral(" (") + QString::number(fileCount) +
-      QStringLiteral(")");
+    const CategoryInfo& info,
+    int fileCount) {
+  QString displayText = info.displayName + QStringLiteral(" (") +
+                        QString::number(fileCount) + QStringLiteral(")");
   auto* item = new QStandardItem(displayText);
   item->setData(QStringLiteral("category"), NodeTypeRole);
   item->setData(info.id, CategoryIdRole);
@@ -777,7 +855,8 @@ QStandardItem* ProjectStructureWidget::createCategoryItem(
 }
 
 QStandardItem* ProjectStructureWidget::createFileItem(
-    const QString& fileName, const QString& relativePath) {
+    const QString& fileName,
+    const QString& relativePath) {
   auto* item = new QStandardItem(fileName);
   item->setData(QStringLiteral("file"), NodeTypeRole);
   item->setData(relativePath, RelativePathRole);
@@ -819,7 +898,8 @@ QStandardItem* ProjectStructureWidget::createFileItem(
   return item;
 }
 
-QString ProjectStructureWidget::absolutePath(const QString& relativePath) const {
+QString ProjectStructureWidget::absolutePath(
+    const QString& relativePath) const {
   return QDir(project_path_).absoluteFilePath(relativePath);
 }
 
@@ -850,7 +930,8 @@ static QString newFileBaseName(const QString& base, const QString& dir) {
 // ── 占位页：刷新最近项目列表 ──
 
 void ProjectStructureWidget::refreshRecentProjects() {
-  if (!recent_container_) return;
+  if (!recent_container_)
+    return;
 
   // 清空旧条目
   QLayout* recent_layout = recent_container_->layout();
@@ -871,11 +952,12 @@ void ProjectStructureWidget::refreshRecentProjects() {
   auto& cfg = etest::core::config::ConfigManager::instance();
   QStringList recentList =
       cfg.get<QStringList>(etest::core::config::CONFIG_RECENT_PROJECT_LIST);
-  QVariantMap timestamps =
-      cfg.get<QVariantMap>(etest::core::config::CONFIG_RECENT_PROJECT_TIMESTAMPS);
+  QVariantMap timestamps = cfg.get<QVariantMap>(
+      etest::core::config::CONFIG_RECENT_PROJECT_TIMESTAMPS);
 
   if (recentList.isEmpty()) {
-    auto* empty_label = new QLabel(QStringLiteral("暂无最近项目"), recent_container_);
+    auto* empty_label =
+        new QLabel(QStringLiteral("暂无最近项目"), recent_container_);
     empty_label->setObjectName(QStringLiteral("PhRecentEmpty"));
     empty_label->setAlignment(Qt::AlignCenter);
     recent_layout->addWidget(empty_label);
@@ -885,7 +967,8 @@ void ProjectStructureWidget::refreshRecentProjects() {
   for (const QString& path : recentList) {
     QFileInfo fi(path);
     QString displayName = fi.completeBaseName();
-    if (displayName.isEmpty()) continue;
+    if (displayName.isEmpty())
+      continue;
 
     QString timeStr;
     if (timestamps.contains(path)) {
@@ -899,17 +982,115 @@ void ProjectStructureWidget::refreshRecentProjects() {
     card->setAttribute(Qt::WA_StyledBackground);
     connect(card, &RecentProjectCard::openRequested, this,
             &ProjectStructureWidget::projectOpenRequested);
-    connect(card, &RecentProjectCard::removeRequested, this, [this](const QString& p) {
-      auto& cfg = etest::core::config::ConfigManager::instance();
-      QStringList recentList =
-          cfg.get<QStringList>(etest::core::config::CONFIG_RECENT_PROJECT_LIST);
-      recentList.removeAll(p);
-      cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST, recentList);
-      refreshRecentProjects();
-    });
+    connect(card, &RecentProjectCard::removeRequested, this,
+            [this](const QString& p) {
+              auto& cfg = etest::core::config::ConfigManager::instance();
+              QStringList recentList = cfg.get<QStringList>(
+                  etest::core::config::CONFIG_RECENT_PROJECT_LIST);
+              recentList.removeAll(p);
+              cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST,
+                      recentList);
+              refreshRecentProjects();
+            });
 
     recent_layout->addWidget(card);
   }
+}
+
+// ── 已打开文件列表 ──
+
+void ProjectStructureWidget::setOpenFiles(const QStringList& paths) {
+  clearOpenFiles();
+  for (const QString& path : paths) {
+    addOpenFileItem(path);
+  }
+  updateOpenFilesCount();
+}
+
+void ProjectStructureWidget::onFileOpened(const QString& path) {
+  removeOpenFileItem(path);
+  addOpenFileItem(path);
+  updateOpenFilesCount();
+}
+
+void ProjectStructureWidget::onFileClosed(const QString& path) {
+  removeOpenFileItem(path);
+  updateOpenFilesCount();
+}
+
+void ProjectStructureWidget::toggleOpenFilesSection() {
+  open_files_collapsed_ = !open_files_collapsed_;
+  open_files_container_->setVisible(!open_files_collapsed_);
+  QString arrow = open_files_collapsed_ ? QStringLiteral("\xE2\x96\xB6")
+                                        : QStringLiteral("\xE2\x96\xBC");
+  updateOpenFilesCount();
+}
+
+void ProjectStructureWidget::addOpenFileItem(const QString& path) {
+  QFileInfo fi(path);
+  QString displayName = fi.fileName();
+  QString dirPath =
+      project_path_.isEmpty()
+          ? fi.absolutePath()
+          : QDir(project_path_).relativeFilePath(fi.absolutePath());
+
+  auto* card = new RecentProjectCard(path, displayName, dirPath, QString(),
+                                     open_files_container_);
+  card->setObjectName(QStringLiteral("PhOpenFileItem"));
+  card->setAttribute(Qt::WA_StyledBackground);
+  card->setProperty("filePath", path);
+  card->setRemoveActionText(QStringLiteral("关闭文件"));
+
+  connect(card, &RecentProjectCard::openRequested, this,
+          &ProjectStructureWidget::openFileActivateRequested);
+  connect(card, &RecentProjectCard::removeRequested, this,
+          &ProjectStructureWidget::openFileCloseRequested);
+
+  auto* layout = qobject_cast<QVBoxLayout*>(open_files_container_->layout());
+  if (layout) {
+    layout->addWidget(card);
+  }
+}
+
+void ProjectStructureWidget::removeOpenFileItem(const QString& path) {
+  auto* layout = qobject_cast<QVBoxLayout*>(open_files_container_->layout());
+  if (!layout)
+    return;
+
+  for (int i = 0; i < layout->count(); ++i) {
+    auto* item = layout->itemAt(i);
+    if (!item || !item->widget())
+      continue;
+    auto* card = qobject_cast<RecentProjectCard*>(item->widget());
+    if (card && card->property("filePath").toString() == path) {
+      layout->takeAt(i);
+      card->deleteLater();
+      return;
+    }
+  }
+}
+
+void ProjectStructureWidget::clearOpenFiles() {
+  auto* layout = qobject_cast<QVBoxLayout*>(open_files_container_->layout());
+  if (!layout)
+    return;
+
+  QLayoutItem* child;
+  while ((child = layout->takeAt(0)) != nullptr) {
+    if (child->widget()) {
+      child->widget()->deleteLater();
+    }
+    delete child;
+  }
+}
+
+void ProjectStructureWidget::updateOpenFilesCount() {
+  auto* layout = qobject_cast<QVBoxLayout*>(open_files_container_->layout());
+  int count = layout ? layout->count() : 0;
+  QString arrow = open_files_collapsed_ ? QStringLiteral("\xE2\x96\xB6")
+                                        : QStringLiteral("\xE2\x96\xBC");
+  open_files_header_btn_->setText(
+      QStringLiteral("%1 已打开 (%2)").arg(arrow).arg(count));
 }
 
 }  // namespace etest::app

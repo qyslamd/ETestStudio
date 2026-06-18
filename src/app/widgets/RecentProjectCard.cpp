@@ -28,6 +28,10 @@ void RecentProjectCard::setTimeStr(const QString& timeStr) {
   }
 }
 
+void RecentProjectCard::setRemoveActionText(const QString& text) {
+  remove_action_text_ = text;
+}
+
 void RecentProjectCard::initUi(const QString& displayName,
                                const QString& dirPath,
                                const QString& timeStr) {
@@ -69,7 +73,7 @@ void RecentProjectCard::mousePressEvent(QMouseEvent* event) {
 void RecentProjectCard::contextMenuEvent(QContextMenuEvent* event) {
   QMenu menu(this);
   menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
-  auto* removeAction = menu.addAction(QStringLiteral("从列表中移除"));
+  auto* removeAction = menu.addAction(remove_action_text_);
   if (menu.exec(event->globalPos()) == removeAction) {
     emit removeRequested(project_path_);
   }

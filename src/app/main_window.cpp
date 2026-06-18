@@ -369,6 +369,30 @@ void MainWindow::initSignalsLate() {
     connect(&projectMgr,
             &etest::core::project::ProjectManager::recentProjectsChanged,
             psWidget, &ProjectStructureWidget::refreshRecentProjects);
+
+    // 已打开文件列表：同步 EditorManager 状态
+    connect(editor_manager_, &EditorManager::fileOpened,
+            psWidget, &ProjectStructureWidget::onFileOpened);
+    connect(editor_manager_, &EditorManager::fileClosed,
+            psWidget, &ProjectStructureWidget::onFileClosed);
+    connect(&projectMgr,
+            &etest::core::project::ProjectManager::projectOpened,
+            psWidget, [this, psWidget]() {
+              psWidget->setOpenFiles(editor_manager_->openFiles());
+            });
+    connect(&projectMgr,
+            &etest::core::project::ProjectManager::projectClosed,
+            psWidget, [psWidget]() { psWidget->setOpenFiles({}); });
+    // 点击已打开文件 → 激活编辑器
+    connect(psWidget, &ProjectStructureWidget::openFileActivateRequested,
+            this, [this](const QString& path) {
+              editor_manager_->openFile(path);
+            });
+    // 右键关闭已打开文件
+    connect(psWidget, &ProjectStructureWidget::openFileCloseRequested,
+            this, [this](const QString& path) {
+              editor_manager_->closeFile(path);
+            });
   }
 
   // 搜索组件：项目打开/关闭时设置搜索根目录

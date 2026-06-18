@@ -1,5 +1,10 @@
 /* 默认主题 - 保持原生控件样式 */
 
+/* ==================== Global ==================== */
+QTreeView {
+    border: none;
+}
+
 /* ==================== TopologyEditorWidget ==================== */
 QWidget#PhLoadingOverlay {
     background-color: #FFFFFF;
@@ -522,4 +527,28 @@ QPushButton#dockFloatButton:hover, QPushButton#dockCloseButton:hover {
 }
 QPushButton#dockFloatButton:pressed, QPushButton#dockCloseButton:pressed {
     background: rgba(0, 0, 0, 0.15);
+}
+
+/* --- Open Files section (tree mode) --- */
+QToolButton#PhOpenFilesHeaderBtn {
+    background-color: transparent;
+    border: none;
+    text-align: left;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #999999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+QToolButton#PhOpenFilesHeaderBtn:hover {
+    background-color: #E8E8E8;
+}
+QWidget#PhOpenFileItem {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+}
+QWidget#PhOpenFileItem:hover {
+    background-color: #E8E8E8;
 }
