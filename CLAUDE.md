@@ -19,30 +19,45 @@ scripts/build_ninja.bat
 - 所有生成的代码需要遵循clang-format的Google C++风格规范
 
 ## 代码架构
-项目采用分层架构设计：
+项目采用分层、模块化架构设计，`src/` 下每个子目录对应一个独立的 CMake 构建目标：
 
-### Core层（核心功能层）
-位于`src/core/`目录，提供基础服务和核心功能：
-- **common/**：通用异常类定义（ByteException、FileException、StringException、TimeException）
-- **config/**：配置管理系统（ConfigManager）
-- **crashhandler/**：程序崩溃处理机制，支持Windows平台崩溃捕获
-- **logger/**：基于spdlog的日志系统
-- **plugin/**：插件框架，支持动态加载插件（IPlugin接口、PluginManager）
-- **project/**：项目管理系统（ProjectInfo、ProjectManager）
-- **utils/**：通用工具函数库（ByteUtil、FileUtil、StringUtil、TimeUtil）
+### 核心层（Core Layer）
+| 模块 | 目录 | 说明 |
+|------|------|------|
+| **etest_core** | `src/core/` | 基础服务与核心功能：配置管理（ConfigManager）、日志（spdlog）、插件框架（PluginManager）、项目管理、崩溃处理、通用工具函数 |
+| **etest_api** | `src/api/` | 纯头文件接口库（IEditor 等），无链接依赖 |
 
-### App层（应用界面层）
-位于`src/app/`目录，实现Qt UI界面：
-- **MainWindow**：主窗口，基于Qt-Advanced-Docking-System实现停靠式界面布局
-- **ActivityBarWidget**：左侧活动栏，功能模块切换
-- **SidebarWidget**：侧边栏面板容器
-- **FileExplorerWidget**：文件浏览器面板
-- **EditorManager**：编辑器管理
-- **EditorWidget**：代码编辑器（基于QScintilla）
-- **OutputPanel**：输出信息面板
-- **ProblemsPanel**：问题列表面板
-- **TerminalPanel**：终端面板
-- **dialogs/**：各类对话框（如NewProjectDialog新建项目对话框）
+### 业务模块层（Business Module Layer）
+| 模块 | 目录 | 说明 |
+|------|------|------|
+| **etest_topology** | `src/topology/` | 拓扑编辑器（ETest 核心功能），实现场景/视图/项/撤销/序列化/导出等 |
+| **etest_protocol** | `src/protocol/` |  ICD协议编辑器，实现节点树/位图视图/属性面板 |
+
+### 共享 UI 层（Shared UI Layer）
+| 模块 | 目录 | 说明 |
+|------|------|------|
+| **etest_ui** | `src/libui/` | 跨模块共享的 UI 组件库（如 DockTitleBar 自定义标题栏），被 topology、protocol 及独立 demo 共用 |
+
+### 工具库层（Utility Layer）
+| 模块 | 目录 | 说明 |
+|------|------|------|
+| **etest_tuxsaver** | `src/tuxsaver/` | 屏保动画模块，独立静态库 |
+| **icd_utility** | `src/icd_utility/` | ICD 数据格式工具库（纯 C++17，无 Qt 依赖） |
+
+### 应用层（Application Layer）
+| 模块 | 目录 | 说明 |
+|------|------|------|
+| **etest** | `src/app/` | 主程序可执行文件，集成所有模块。基于 Qt-Advanced-Docking-System 实现停靠界面布局，包含编辑器管理、欢迎页、终端、输出面板、各类对话框等 |
+
+### 模组依赖关系
+```
+etest (主程序)
+├── etest_topology ─┬── etest_ui ─── etest_core
+├── etest_protocol ─┤              └── Qt5::Widgets
+├── etest_tuxsaver  └── etest_api (header-only)
+├── icd_utility
+└── Qt5 / 第三方库 (QScintilla, SARibbon, QXlsx, libharu, QADS...)
+```
 
 ## 项目规则
 必须严格遵守以下规则：
