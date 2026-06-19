@@ -14,9 +14,8 @@ struct PoemData {
 
 /// 诗词数据库单例
 ///
-/// 负责初始化 SQLite 数据库（AppDataLocation/wisdom/poems.db），
-/// 首次运行时自动建表并插入 400 条内置古诗词金句。
-/// 若 SQLite 不可用，降级为纯内存模式。
+/// 负责从预构建的 SQLite 数据库（嵌入 Qt 资源）初始化连接，
+/// 首次运行时复制到 AppDataLocation/wisdom/poems.db。
 class WisdomDatabase {
  public:
   static WisdomDatabase& instance();
@@ -25,9 +24,6 @@ class WisdomDatabase {
   /// @param writablePath QStandardPaths::AppDataLocation 路径
   /// @return 全部诗词记录
   QVector<PoemData> initDatabase(const QString& writablePath);
-
-  /// 从 Qt 资源文件加载 400 条内置诗词数据
-  static QVector<PoemData> loadBuiltinFromJson();
 
  private:
   WisdomDatabase() = default;
