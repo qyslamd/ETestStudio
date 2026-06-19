@@ -8,19 +8,34 @@
 
 ## 软件架构
 
-分层架构设计：
+分层、模块化架构设计，`src/` 下每个子目录对应一个独立的 CMake 构建目标：
 
-- **src/core/** — 核心功能层：配置管理、日志系统、插件框架、项目管理、通用工具
-- **src/app/** — 应用界面层：基于 Qt-Advanced-Docking-System 的主窗口、编辑器、面板等
-- **src/protocal/** — 帧协议编辑器
-- **src/topology/** — 拓扑编辑器
+| 模块 | 目录 | 说明 |
+|------|------|------|
+| **etest_core** | `src/core/` | 核心功能层：配置管理、日志系统（spdlog）、插件框架、项目管理、崩溃处理、通用工具 |
+| **etest_api** | `src/api/` | 纯头文件接口库（IEditor 等），无链接依赖 |
+| **etest_topology** | `src/topology/` | 拓扑编辑器：场景/视图/项/撤销/序列化/导出 |
+| **etest_protocol** | `src/protocol/` | ICD 协议编辑器：节点树/位图视图/属性面板 |
+| **etest_ui** | `src/libui/` | 跨模块共享 UI 组件库（如 DockTitleBar），被 topology、protocol 共用 |
+| **icd_utility** | `src/icd_utility/` | ICD 数据格式工具库（纯 C++17，无 Qt 依赖） |
+| **etest** | `src/app/` | 主程序：停靠界面布局、编辑器管理、欢迎页、终端、输出面板、屏保组件等 |
+
+### 模组依赖关系
+
+```
+etest (主程序)
+├── etest_topology ─┬── etest_ui ─── etest_core
+├── etest_protocol ─┤              └── Qt5::Widgets
+├── icd_utility     └── etest_api (header-only)
+└── Qt5 / 第三方库 (QScintilla, SARibbon, QADS, QXlsx, libharu...)
+```
 
 ## 开发环境
 
 - Windows 10/11 64位
 - Visual Studio 2019 Community（需安装"使用 C++ 的桌面开发"工作负载）
-- Qt 5.14.2 (msvc2017_64)
-- CMake 3.15+
+- Qt 5.15.2 (msvc2019_64)
+- CMake 3.19+
 - Git
 
 ## 环境搭建（给新同学）
@@ -32,26 +47,24 @@
 - **使用 C++ 的桌面开发**（Desktop development with C++）
 - 右侧可选组件中确保 **MSVC v142 - VS 2019 C++ x64/x86 生成工具** 已选中
 
-安装路径保持默认，脚本会从 `D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\` 查找。如果装到了其他盘，需要修改 `scripts/build_ninja.bat` 中的路径。
+### 2. 安装 Qt 5.15.2
 
-### 2. 安装 Qt 5.14.2
-
-1. 下载 [Qt 5.14.2](https://download.qt.io/archive/qt/5.14/5.14.2/) 的 `qt-opensource-windows-x86-5.14.2.exe`
-2. 安装到默认路径 `D:\Qt\Qt5.14.2`
-3. 组件选择时展开 **Qt → Qt 5.14.2**，勾选 **msvc2017_64**
-4. 设置系统环境变量 `QT5_DEFAULT_SDK_PATH`：
+1. 下载 [Qt 5.15.2](https://download.qt.io/archive/qt/5.15/5.15.2/) 的 `qt-opensource-windows-x86-5.15.2.exe`
+2. 安装时组件选择 **msvc2019_64**
+3. 设置系统环境变量 `ETest_Qt5_Path`：
    - 此电脑 → 属性 → 高级系统设置 → 环境变量
    - 新建系统变量
-   - 变量名：`QT5_DEFAULT_SDK_PATH`
-   - 变量值：`D:\Qt\Qt5.14.2\5.14.2\msvc2017_64\`
+   - 变量名：`ETest_Qt5_Path`
+   - 变量值：`D:\Qt22\5.15.2\msvc2019_64\`
    - 注意末尾的反斜杠 `\`
-5. 重启电脑或重启资源管理器使环境变量生效
+4. 重启电脑或重启资源管理器使环境变量生效
 
 ### 3. 安装 CMake
 
 1. 下载 [CMake](https://cmake.org/download/) Windows x64 Installer
 2. 安装时勾选 **Add CMake to the system PATH for all users**
-3. 验证：打开 CMD，执行 `cmake --version` 看是否识别
+3. 设置系统环境变量 `ETest_CMake_Path` 指向 CMake bin 目录
+4. 验证：打开 CMD，执行 `cmake --version` 看是否识别
 
 ### 4. 安装 Git
 
@@ -62,17 +75,17 @@
 
 ```bash
 # 克隆仓库
-git clone https://gitee.com/你的仓库地址/ETestStudio.git
-cd ETestStudio
+git clone https://gitee.com/slamdd/etest-demo.git
+cd etest-demo
 
-# 构建项目（首次执行会自动下载第三方依赖，需要联网）
+# 构建项目（首次执行会自动解压第三方依赖）
 scripts/build_ninja.bat
 
 # 运行
 scripts/run_app.bat
 ```
 
-首次构建较慢，因为 CMake 会自动下载并编译第三方库（zlib、spdlog、QScintilla 等）。后续构建只会编译你改动的代码。
+首次构建较慢，因为 CMake 会自动解压并编译第三方库（zlib、spdlog、QScintilla、SARibbon 等）。后续构建只会编译你改动的代码。
 
 ### 确认环境变量
 
@@ -80,7 +93,9 @@ scripts/run_app.bat
 
 | 变量名 | 示例值 | 说明 |
 |---|---|---|
-| `QT5_DEFAULT_SDK_PATH` | `D:\Qt\Qt5.14.2\5.14.2\msvc2017_64\` | Qt SDK 路径，末尾带 `\` |
+| `ETest_VS2019_x64_Native_Bat` | `D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat` | VS2019 x64 环境初始化脚本 |
+| `ETest_Qt5_Path` | `D:\Qt22\5.15.2\msvc2019_64\` | Qt SDK 路径，末尾带 `\` |
+| `ETest_CMake_Path` | `C:\Program Files\CMake\bin` | CMake 可执行文件目录 |
 
 ## 使用 IDE 开发
 
@@ -104,7 +119,7 @@ scripts/run_app.bat
 ### QtCreator
 
 1. `文件 → 打开文件或项目`，选择项目根目录的 `CMakeLists.txt`
-2. 构建套件选择 **msvc2017_64**（需要 Qt 5.14.2 安装时已勾选 msvc2017_64 组件）
+2. 构建套件选择 **msvc2019_64**
 3. CMake 预设选择 **ninja-debug**
 4. 按 `Ctrl+B` 编译，按 `Ctrl+R` 运行
 
@@ -135,15 +150,78 @@ cmake -S . --preset windows-debug
 
 ## 快速开始
 
-```bash
-# 构建项目
-scripts/build_ninja.bat
+### 构建
 
-# 运行主程序
+`build_ninja.bat` 支持两种参数模式，脚本会自动识别：第一个参数以 `-` 开头走新模式，否则走旧模式。
+
+#### 旧模式（位置参数）
+
+```bash
+build_ninja.bat [<type>] [<action>]
+```
+
+| 命令 | 构建类型 | 目标 | 后续动作 |
+|------|---------|------|---------|
+| `build_ninja.bat` | debug | 全量 | — |
+| `build_ninja.bat debug` | debug | 全量 | — |
+| `build_ninja.bat relwithdebinfo` | relwithdebinfo | 全量 | — |
+| `build_ninja.bat release` | release | 全量 | — |
+| `build_ninja.bat debug deploy` | debug | 全量 | windeployqt |
+| `build_ninja.bat debug package` | debug | 全量 | windeployqt + ISCC |
+| `build_ninja.bat release package` | release | 全量 | windeployqt + ISCC |
+
+#### 新模式（显式参数）
+
+```bash
+build_ninja.bat -t <type> [-m <target>] [-d|-p]
+```
+
+| 参数 | 说明 |
+|------|------|
+| `-t, --type <type>` | 构建类型：debug / relwithdebinfo / release（默认 debug） |
+| `-m, --target <target>` | 构建目标（如 ETestStudio），省略则全量构建 |
+| `-d, --deploy` | 编译后执行 windeployqt |
+| `-p, --package` | 编译后执行 windeployqt + ISCC 打包 |
+| `-h, --help` | 显示帮助 |
+
+`--type` 和 `--target` 支持两种写法：`-t debug` 或 `--type=debug`，`-m ETestStudio` 或 `--target=ETestStudio`。
+
+常用组合示例：
+
+```bash
+# 全量构建（debug）
+scripts/build_ninja.bat -t debug
+
+# 仅构建主程序
+scripts/build_ninja.bat -t debug -m ETestStudio
+
+# 构建并部署（windeployqt）
+scripts/build_ninja.bat -t debug -m ETestStudio -d
+
+# 构建 + 部署 + 打包安装程序
+scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
+
+# 等效的长参数写法
+scripts/build_ninja.bat --type=debug --target=ETestStudio --package
+```
+
+### 运行
+
+```bash
 scripts/run_app.bat
 ```
 
 可执行文件输出到 `build/ninja-debug/bin/`。
+
+### 打包
+
+使用 `-p` 参数自动完成编译 + windeployqt 部署 + Inno Setup 打包：
+
+```bash
+scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
+```
+
+安装程序输出到 `dist/ETestStudio-setup-x64-<version>.exe`。
 
 ## 协作约定
 
@@ -153,4 +231,23 @@ scripts/run_app.bat
 
 ## 第三方依赖
 
-见 `CLAUDE.md` 中完整列表。
+项目集成了以下第三方库，均已在 CMake 中配置为静态编译：
+
+| 库 | 版本 | 说明 |
+|---|---|---|
+| Qt | 5.15.2 | Core、Gui、Widgets、PrintSupport、Test、Xml、Svg、Sql（官方共享库） |
+| Qt-Advanced-Docking-System | 3.8.3 | 高级停靠系统 |
+| SARibbon | 2.5.7 | Ribbon 风格界面 |
+| QWindowKit | 1.5.0 | 无边框窗口解决方案 |
+| QXlsx | 1.5.0 | Excel 读写 |
+| QScintilla | 2.11.3 | 高级文本编辑器组件 |
+| spdlog | 1.17.0 | 日志库 |
+| googletest | 1.17.0 | 单元测试框架 |
+| zlib | 1.3.2 | 压缩库 |
+| libpng | 1.6.43 | PNG 图像处理 |
+| libharu | 2.4.6 | PDF 生成 |
+| lua | 5.4.4 | 脚本语言支持 |
+| sol2 | 3.3.0 | Lua C++ 绑定库 |
+| Inno Setup | 6.x | 安装程序打包 |
+
+> Qt 使用官方编译的二进制发布包，默认是共享库。MSVC2019 编译环境完全兼容 msvc2019_64 编译的 Qt 库。
