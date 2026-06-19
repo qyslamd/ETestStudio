@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>poems.db</file>
+    </qresource>
+</RCC>
