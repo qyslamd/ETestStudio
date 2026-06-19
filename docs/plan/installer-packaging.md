@@ -132,14 +132,14 @@ endif()
 
 ```bash
 # 仅编译（日常开发）
-scripts\build_ninja.bat debug
+scripts\build_ninja.bat -t debug -m ETestStudio
 # 运行靠 run_app.bat，Qt DLL 由 PATH 环境变量提供
 
 # 编译 + 部署 + 打包安装包（推荐 RelWithDebInfo）
-cmake --build build\ninja-relwithdebinfo --target make_package
+scripts\build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 
 # 也可用 Release（但无 PDB，崩溃日志只有原始地址）
-cmake --build build\ninja-release --target make_package
+scripts\build_ninja.bat -t release -m ETestStudio -p
 ```
 
 ### 3.5 创建 ISS 脚本
@@ -262,25 +262,27 @@ cmake --build build\ninja-relwithdebinfo (产生 .pdb)
 发版操作流程：
 ```bash
 # 1. 构建 RelWithDebInfo
-scripts\build_ninja.bat relwithdebinfo
+scripts\build_ninja.bat -t relwithdebinfo -m ETestStudio
 
 # 2. 存档 PDB（先备份，再打包）
 copy build\ninja-relwithdebinfo\bin\*.pdb \\symbols\eteststudio\
 
 # 3. 打包安装包（ISS 已排除 *.pdb）
-cmake --build build\ninja-relwithdebinfo --target make_package
+scripts\build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 ```
 
 ### 3.7 构建脚本支持
 
-给 `scripts/build_ninja.bat` 加第二个参数：
+`scripts/build_ninja.bat` 支持新旧两种参数模式：
 
 ```bat
-:: 纯编译（默认）
+:: 旧模式（位置参数）
 scripts\build_ninja.bat debug
-
-:: 编译 + 部署 + 打包（发版推荐 RelWithDebInfo）
 scripts\build_ninja.bat relwithdebinfo package
+
+:: 新模式（显式参数，推荐）
+scripts\build_ninja.bat -t debug -m ETestStudio
+scripts\build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 ```
 
 ---
@@ -305,7 +307,7 @@ scripts\build_ninja.bat relwithdebinfo package
 | `cmake/scripts/extract_dependencies.cmake` | **已改**（添加 `.7z` 支持 + Inno Setup 条目） |
 | `src/app/make_install_package.iss` | **新建** |
 | `src/app/CMakeLists.txt` | 追加 `find_program` + `make_deploy` + `make_package` targets |
-| `scripts/build_ninja.bat` | 可选：增加 `+package` 参数 |
+| `scripts/build_ninja.bat` | 已改：支持 `-t/-m/-d/-p` 显式参数 |
 | `dist/` | 新建目录，用于存放生成的 setup.exe |
 
 ## 6. 风险

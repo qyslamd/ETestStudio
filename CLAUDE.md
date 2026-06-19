@@ -8,11 +8,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用命令
 ### 构建项目
 ```bash
+# 全量构建（默认 debug）
 scripts/build_ninja.bat
+
+# 仅构建主程序
+scripts/build_ninja.bat -t debug -m ETestStudio
+
+# 构建 + 部署 + 打包安装程序
+scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 ```
 - 自动配置VS2019 x64编译环境
-- 使用Ninja生成器进行Debug构建
-- 构建输出目录：`build/ninja-debug/`
+- 使用Ninja生成器构建
+- 构建输出目录：`build/ninja-debug/`（debug）、`build/ninja-relwithdebinfo/`（relwithdebinfo）、`build/ninja-release/`（release）
+- 支持两种参数模式：旧模式（位置参数 `build_ninja.bat debug deploy`）和新模式（显式参数 `-t <type> -m <target> -d/-p`），详见 `scripts/build_ninja.bat -h`
 - 可执行文件输出到：`build/ninja-debug/bin/`
 
 ## 代码风格

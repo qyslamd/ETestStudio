@@ -22,13 +22,15 @@ RelWithDebInfo 的核心价值：**程序以接近 Release 的性能运行，但
 scripts\build_ninja.bat relwithdebinfo
 ```
 
-脚本支持三种构建类型：
+脚本支持三种构建类型，兼容旧模式（位置参数）和新模式（显式参数）：
 
 | 命令 | 构建类型 | 输出目录 |
 |------|----------|----------|
 | `build_ninja.bat` | Debug | `build\ninja-debug\` |
 | `build_ninja.bat relwithdebinfo` | RelWithDebInfo | `build\ninja-relwithdebinfo\` |
 | `build_ninja.bat release` | Release | `build\ninja-release\` |
+| `build_ninja.bat -t relwithdebinfo` | RelWithDebInfo | `build\ninja-relwithdebinfo\` |
+| `build_ninja.bat -t relwithdebinfo -m ETestStudio` | RelWithDebInfo（仅主程序） | `build\ninja-relwithdebinfo\` |
 
 ### 2.2 手动 CMake 命令
 
