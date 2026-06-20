@@ -1,19 +1,22 @@
 #include "TuxSaverOverlay.h"
 
-#include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>
-#include <QVBoxLayout>
 
+#include "config/ConfigManager.h"
+#include "ConfigDefs.h"
 #include "SaverWidgetBase.h"
 #include "TuxSaverWidget.h"
 #include "WisdomWidget.h"
+
+using namespace etest::core::config;
 
 TuxSaverOverlay::TuxSaverOverlay(QWidget* parent)
     : QWidget(parent) {
   setVisible(false);
 
-  initModes();
+  last_mode_ = saverModeFromConfig();
+  initSaver();
 
   // ── Close button ──
   close_btn_ = new QPushButton(QStringLiteral("✕"), this);
@@ -24,69 +27,47 @@ TuxSaverOverlay::TuxSaverOverlay(QWidget* parent)
     deactivate();
     emit closed();
   });
-
-  // ── Mode switch buttons ──
-  prev_btn_ = new QPushButton(QStringLiteral("◀"), this);
-  prev_btn_->setFixedSize(28, 28);
-  prev_btn_->setObjectName(QStringLiteral("saverPrevBtn"));
-  prev_btn_->setToolTip(QStringLiteral("上一个屏保模式"));
-
-  next_btn_ = new QPushButton(QStringLiteral("▶"), this);
-  next_btn_->setFixedSize(28, 28);
-  next_btn_->setObjectName(QStringLiteral("saverNextBtn"));
-  next_btn_->setToolTip(QStringLiteral("下一个屏保模式"));
-
-  connect(prev_btn_, &QPushButton::clicked, this, [this]() { switchMode(-1); });
-  connect(next_btn_, &QPushButton::clicked, this, [this]() { switchMode(1); });
 }
 
-void TuxSaverOverlay::initModes() {
-  auto* tux = new TuxSaverWidget(this);
-  tux->setIdleThreshold(0);
-  modes_.append(tux);
+QString TuxSaverOverlay::saverModeFromConfig() const {
+  return ConfigManager::instance().get<QString>(
+      CONFIG_TUXSAVER_MODE, QString::fromLatin1(CONFIG_TUXSAVER_DEFAULT_MODE));
+}
 
-  modes_.append(new WisdomWidget(this));
+void TuxSaverOverlay::initSaver() {
+  delete saver_;
+  saver_ = nullptr;
 
-  currentMode_ = 0;
-  saver_ = modes_[0];
-
-  for (int i = 0; i < modes_.size(); ++i) {
-    if (i != currentMode_) modes_[i]->hide();
+  if (last_mode_ == QStringLiteral("wisdom")) {
+    saver_ = new WisdomWidget(this);
+  } else {
+    auto* tux = new TuxSaverWidget(this);
+    tux->setIdleThreshold(0);
+    saver_ = tux;
   }
-}
-
-void TuxSaverOverlay::switchMode(int direction) {
-  if (modes_.isEmpty()) return;
-
-  // Hide old
-  saver_->onDeactivate();
   saver_->hide();
-
-  // Switch
-  currentMode_ = (currentMode_ + direction + modes_.size()) % modes_.size();
-  saver_ = modes_[currentMode_];
-
-  // Show new
-  saver_->setGeometry(rect());
-  saver_->show();
-  saver_->raise();
-  saver_->onActivate();
 }
 
 void TuxSaverOverlay::activate() {
+  // Recreate saver only if the mode changed in settings
+  QString mode = saverModeFromConfig();
+  if (mode != last_mode_ || !saver_) {
+    last_mode_ = mode;
+    initSaver();
+  }
+
   auto* p = parentWidget();
   if (!p) return;
   background_ = p->grab();
   setGeometry(p->rect());
   saver_->setGeometry(rect());
+  saver_->show();
   saver_->onActivate();
-  repositionButtons();
+  close_btn_->move(width() - close_btn_->width() - 12, 12);
   show();
   raise();
   saver_->raise();
   close_btn_->raise();
-  prev_btn_->raise();
-  next_btn_->raise();
 }
 
 void TuxSaverOverlay::deactivate() {
@@ -97,19 +78,9 @@ void TuxSaverOverlay::deactivate() {
 
 void TuxSaverOverlay::resizeEvent(QResizeEvent* event) {
   QWidget::resizeEvent(event);
-  repositionButtons();
-  saver_->setGeometry(rect());
-}
-
-void TuxSaverOverlay::repositionButtons() {
-  const int margin = 12;
-  int right = width() - margin;
-
-  close_btn_->move(right - close_btn_->width(), margin);
-  right -= close_btn_->width() + 8;
-  next_btn_->move(right - next_btn_->width(), margin + 2);
-  right -= next_btn_->width() + 4;
-  prev_btn_->move(right - prev_btn_->width(), margin + 2);
+  if (saver_)
+    saver_->setGeometry(rect());
+  close_btn_->move(width() - close_btn_->width() - 12, 12);
 }
 
 void TuxSaverOverlay::paintEvent(QPaintEvent*) {

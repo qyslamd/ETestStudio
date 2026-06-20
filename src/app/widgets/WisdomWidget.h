@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QElapsedTimer>
-#include <QFrame>
 #include <QLabel>
 #include <QVariantAnimation>
 #include <QWidget>
@@ -41,6 +40,8 @@ class WisdomWidget : public SaverWidgetBase {
   void initUi();
   void initSignals();
   void loadPoem(int index);
+  QString formatSentence(const QString& text) const;
+  void computeOptimalFont();
   void startFadeOut();
   void startFadeIn();
   void floatUpCommentary();
@@ -68,7 +69,6 @@ class WisdomWidget : public SaverWidgetBase {
   // UI elements
   QLabel* sentenceLabel_ = nullptr;
   QLabel* commentaryLabel_ = nullptr;
-  QFrame* divider_ = nullptr;
   QLabel* sourceLabel_ = nullptr;
 
   // Animations

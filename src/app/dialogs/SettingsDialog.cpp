@@ -141,12 +141,49 @@ QWidget* SettingsDialog::createGeneralPage() {
 
   // --- 屏保 section ---
   layout->addWidget(createSectionHeader(QStringLiteral("屏保")));
-  addCheckBoxRow(page, QStringLiteral("空闲时显示 Tux 屏保"),
+  addCheckBoxRow(page, QStringLiteral("空闲时显示屏保"),
                  CONFIG_TUXSAVER_ENABLED,
                  CONFIG_TUXSAVER_DEFAULT_ENABLED);
   addSpinBoxRow(page, QStringLiteral("触发时间(秒)"),
                 CONFIG_TUXSAVER_IDLE_TIMEOUT, 1, 60, 1,
                 CONFIG_TUXSAVER_DEFAULT_TIMEOUT);
+
+  // 屏保模式（使用 userData 存储配置值）
+  {
+    auto* row = new QWidget(page);
+    auto* rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(0, 2, 0, 2);
+
+    auto* lbl = new QLabel(QStringLiteral("屏保模式"), row);
+    lbl->setFixedWidth(120);
+
+    auto* combo = new QComboBox(row);
+    combo->addItem(QStringLiteral("小企鹅"), QStringLiteral("tux"));
+    combo->addItem(QStringLiteral("哲思·片刻"), QStringLiteral("wisdom"));
+    combo->setFixedWidth(160);
+
+    QString val = ConfigManager::instance().get<QString>(
+        CONFIG_TUXSAVER_MODE,
+        QString::fromLatin1(CONFIG_TUXSAVER_DEFAULT_MODE));
+    int idx = combo->findData(val);
+    if (idx >= 0)
+      combo->setCurrentIndex(idx);
+
+    rowLayout->addWidget(lbl);
+    rowLayout->addWidget(combo);
+    rowLayout->addStretch();
+    page->layout()->addWidget(row);
+
+    combo_map_.insert(QString::fromLatin1(CONFIG_TUXSAVER_MODE), combo);
+
+    connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [combo]() {
+              ConfigManager::instance().set<QString>(
+                  CONFIG_TUXSAVER_MODE,
+                  combo->currentData().toString());
+            });
+  }
+
   layout->addStretch();
 
   return page;
@@ -554,7 +591,8 @@ void SettingsDialog::comboBoxToConfig(const QString& key, QComboBox* combo) {
 void SettingsDialog::onConfigChanged(const QString& key) {
   // 以下配置使用 userData 而非 displayText，需特殊处理
   if (key == QString::fromLatin1(CONFIG_APPEARANCE_THEME) ||
-      key == QString::fromLatin1(CONFIG_WELCOME_BG_MODE)) {
+      key == QString::fromLatin1(CONFIG_WELCOME_BG_MODE) ||
+      key == QString::fromLatin1(CONFIG_TUXSAVER_MODE)) {
     if (combo_map_.contains(key)) {
       auto* combo = combo_map_[key];
       QString val = ConfigManager::instance().get<QString>(key);

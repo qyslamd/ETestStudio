@@ -18,12 +18,12 @@ class WisdomDatabase::Impl {
 
   bool openDb(const QString& path) {
     closeDb();
-    sqliteDb_ = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
-                                          QStringLiteral("wisdom_conn"));
-    sqliteDb_.setDatabaseName(path);
-    if (!sqliteDb_.open()) {
+    QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                QStringLiteral("wisdom_conn"));
+    db.setDatabaseName(path);
+    if (!db.open()) {
       qWarning("WisdomDatabase: failed to open SQLite: %s",
-               qPrintable(sqliteDb_.lastError().text()));
+               qPrintable(db.lastError().text()));
       return false;
     }
     return true;
@@ -31,28 +31,30 @@ class WisdomDatabase::Impl {
 
   QVector<PoemData> loadAll() {
     QVector<PoemData> result;
-    QSqlQuery q(sqliteDb_);
-    q.exec(QStringLiteral(
-        "SELECT sentence, source, commentary, tag, dynasty FROM poems"));
-    while (q.next()) {
-      result.append({q.value(0).toString(), q.value(1).toString(),
-                     q.value(2).toString(), q.value(3).toString(),
-                     q.value(4).toString()});
+    QSqlDatabase db = QSqlDatabase::database(QStringLiteral("wisdom_conn"));
+    if (db.isOpen()) {
+      QSqlQuery q(db);
+      q.exec(QStringLiteral(
+          "SELECT sentence, source, commentary, tag, dynasty FROM poems"));
+      while (q.next()) {
+        result.append({q.value(0).toString(), q.value(1).toString(),
+                       q.value(2).toString(), q.value(3).toString(),
+                       q.value(4).toString()});
+      }
     }
     return result;
   }
 
  private:
   void closeDb() {
-    if (sqliteDb_.isOpen()) {
-      sqliteDb_.close();
-    }
     if (QSqlDatabase::contains(QStringLiteral("wisdom_conn"))) {
+      // Scope the db object so it's destroyed before removeDatabase
+      { QSqlDatabase db = QSqlDatabase::database(QStringLiteral("wisdom_conn"));
+        if (db.isOpen()) db.close();
+      }
       QSqlDatabase::removeDatabase(QStringLiteral("wisdom_conn"));
     }
   }
-
-  QSqlDatabase sqliteDb_;
 };
 
 WisdomDatabase::~WisdomDatabase() { delete impl_; }
@@ -63,6 +65,9 @@ WisdomDatabase& WisdomDatabase::instance() {
 }
 
 QVector<PoemData> WisdomDatabase::initDatabase(const QString& writablePath) {
+  // Already initialized — return cached data
+  if (impl_) return poems_;
+
   QString dbDir = writablePath + QStringLiteral("/wisdom");
   QDir().mkpath(dbDir);
   QString dbPath = dbDir + QStringLiteral("/poems.db");
@@ -77,9 +82,9 @@ QVector<PoemData> WisdomDatabase::initDatabase(const QString& writablePath) {
 
   impl_ = new Impl();
   if (impl_->openDb(dbPath)) {
-    QVector<PoemData> poems = impl_->loadAll();
-    if (!poems.isEmpty()) {
-      return poems;
+    poems_ = impl_->loadAll();
+    if (!poems_.isEmpty()) {
+      return poems_;
     }
   }
 

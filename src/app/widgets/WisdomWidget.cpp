@@ -1,20 +1,21 @@
 #include "WisdomWidget.h"
 
 #include <QApplication>
+#include <QDebug>
 #include <QFont>
-#include <QHBoxLayout>
-#include <QMouseEvent>
-#include <QStandardPaths>
-#include <QVariantAnimation>
+#include <QGridLayout>
 #include <QKeyEvent>
+#include <QMouseEvent>
+#include <QRegularExpression>
+#include <QStandardPaths>
+#include <QTimer>
 #include <QVBoxLayout>
+#include <QVariantAnimation>
 #include <algorithm>
 #include <random>
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  Construction
-// ═════════════════════════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════════════════════════════════════�?//  Construction
+// ════════════════════════════════════════════════════════════════════════════�?
 WisdomWidget::WisdomWidget(QWidget* parent)
     : SaverWidgetBase(parent), rng_(std::random_device{}()) {
   // Load poems from database
@@ -29,28 +30,37 @@ WisdomWidget::WisdomWidget(QWidget* parent)
 
   // Theme colors
   paperTheme_ = {
-      QColor(0xF7, 0xF4, 0xEB),  // 宣纸色背景
-      QColor(0x2C, 0x2C, 0x2C),  // 墨色文字
+      QColor(0xF7, 0xF4, 0xEB),  // 宣纸色背�?      QColor(0x2C, 0x2C, 0x2C),  // 墨色文字
       QColor(0x66, 0x66, 0x66),  // 灰色赏析
-      QColor(0xC4, 0x3D, 0x3D)   // 朱砂红 accent
+      QColor(0xC4, 0x3D, 0x3D)   // 朱砂�?accent
   };
   inkTheme_ = {
       QColor(0x1A, 0x1A, 0x1A),  // 深夜墨色背景
       QColor(0xE8, 0xE0, 0xD0),  // 暖白文字
       QColor(0x99, 0x99, 0x99),  // 灰色赏析
-      QColor(0xC4, 0x3D, 0x3D)   // 朱砂红 accent
+      QColor(0xC4, 0x3D, 0x3D)   // 朱砂�?accent
   };
   currentTheme_ = paperTheme_;
 
   setObjectName(QStringLiteral("wisdomWidget"));
-  setMinimumSize(400, 300);
+  setMinimumSize(600, 450);
   setMouseTracking(false);
 
   initUi();
   initSignals();
 
+  // Apply default theme (background fill + text color)
+  applyTheme(paperTheme_);
+  setFadeOpacity(1.0);
+
+  // Compute optimal fixed font size for all poems
+  computeOptimalFont();
+
   // Load first poem
   loadPoem(shuffledIds_[currentIndex_]);
+
+  // Show commentary immediately for first poem
+  setCommentaryOpacity(1.0);
 }
 
 WisdomWidget::~WisdomWidget() = default;
@@ -59,70 +69,59 @@ QString WisdomWidget::displayName() const {
   return QStringLiteral("哲思·片刻");
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  UI setup
-// ═════════════════════════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════════════════════════════════════�?//  UI setup
+// ════════════════════════════════════════════════════════════════════════════�?
 void WisdomWidget::initUi() {
-  auto* outerLayout = new QVBoxLayout(this);
-  outerLayout->setAlignment(Qt::AlignCenter);
-
-  // Inner container for centered text
-  auto* container = new QWidget(this);
-  container->setObjectName(QStringLiteral("wisdomContainer"));
-  auto* layout = new QVBoxLayout(container);
-  layout->setAlignment(Qt::AlignCenter);
-  layout->setSpacing(0);
-
   // ── Sentence label ──
   sentenceLabel_ = new QLabel(this);
   sentenceLabel_->setObjectName(QStringLiteral("sentenceLabel"));
   sentenceLabel_->setAlignment(Qt::AlignCenter);
-  sentenceLabel_->setWordWrap(true);
+  sentenceLabel_->setWordWrap(false);
   sentenceLabel_->setMinimumWidth(200);
-  QFont sentenceFont(QStringLiteral("KaiTi"));
-  sentenceFont.setPointSize(32);
-  sentenceFont.setStyleStrategy(QFont::PreferAntialias);
-  sentenceLabel_->setFont(sentenceFont);
-
-  // ── Divider ──
-  layout->addSpacing(24);
-  divider_ = new QFrame(this);
-  divider_->setObjectName(QStringLiteral("divider"));
-  divider_->setAutoFillBackground(true);
-  divider_->setFrameShape(QFrame::NoFrame);
-  divider_->setFixedHeight(2);
-  divider_->setMaximumWidth(120);
-
-  // ── Source label ──
-  sourceLabel_ = new QLabel(this);
-  sourceLabel_->setObjectName(QStringLiteral("sourceLabel"));
-  sourceLabel_->setAlignment(Qt::AlignCenter);
-  QFont sourceFont(QStringLiteral("KaiTi"));
-  sourceFont.setPointSize(14);
-  sourceLabel_->setFont(sourceFont);
+  // Font is set by computeOptimalFont() after loading poems
 
   // ── Commentary label ──
-  layout->addSpacing(16);
   commentaryLabel_ = new QLabel(this);
   commentaryLabel_->setObjectName(QStringLiteral("commentaryLabel"));
   commentaryLabel_->setAlignment(Qt::AlignCenter);
   commentaryLabel_->setWordWrap(true);
   commentaryLabel_->setMinimumWidth(200);
-  commentaryLabel_->setMaximumWidth(500);
-  QFont commFont(QStringLiteral("SimSun"));
+  commentaryLabel_->setMaximumWidth(520);
+  QFont commFont(QStringLiteral("Microsoft YaHei"));
   commFont.setPointSize(12);
   commentaryLabel_->setFont(commFont);
 
-  layout->addWidget(sentenceLabel_, 0, Qt::AlignCenter);
-  layout->addSpacing(24);
-  layout->addWidget(divider_, 0, Qt::AlignCenter);
-  layout->addSpacing(12);
-  layout->addWidget(sourceLabel_, 0, Qt::AlignCenter);
-  layout->addSpacing(16);
-  layout->addWidget(commentaryLabel_, 0, Qt::AlignCenter);
+  // ── Source / dynasty label ──
+  sourceLabel_ = new QLabel(this);
+  sourceLabel_->setObjectName(QStringLiteral("sourceLabel"));
+  sourceLabel_->setAlignment(Qt::AlignCenter);
+  sourceLabel_->setMinimumWidth(200);
+  sourceLabel_->setMaximumWidth(520);
+  QFont srcFont(QStringLiteral("Microsoft YaHei"));
+  srcFont.setPointSize(11);
+  srcFont.setItalic(true);
+  sourceLabel_->setFont(srcFont);
 
-  outerLayout->addWidget(container, 0, Qt::AlignCenter);
+  // ── Content container ──
+  auto* contentLayout = new QVBoxLayout;
+  contentLayout->setAlignment(Qt::AlignCenter);
+  contentLayout->setContentsMargins(0, 0, 0, 0);
+  contentLayout->setSpacing(0);
+  contentLayout->addSpacing(48);
+  contentLayout->addWidget(sentenceLabel_, 0, Qt::AlignCenter);
+  contentLayout->addSpacing(48);
+  contentLayout->addWidget(commentaryLabel_, 0, Qt::AlignCenter);
+  contentLayout->addSpacing(16);
+  contentLayout->addWidget(sourceLabel_, 0, Qt::AlignCenter);
+
+  // ── Outer grid: top spacer | content | bottom spacer ──
+  auto* outerLayout = new QGridLayout(this);
+  outerLayout->setContentsMargins(0, 0, 0, 0);
+  outerLayout->setSpacing(0);
+  outerLayout->setRowStretch(0, 25);
+  outerLayout->setRowStretch(1, 1);
+  outerLayout->setRowStretch(2, 20);
+  outerLayout->addLayout(contentLayout, 1, 0, Qt::AlignCenter);
 
   // ── Fade animations (palette alpha, no QGraphicsOpacityEffect) ──
   fadeOutAnim_ = new QVariantAnimation(this);
@@ -171,28 +170,90 @@ void WisdomWidget::initSignals() {
   });
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  Poem loading
-// ═════════════════════════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════════════════════════════════════�?//  Poem loading
+// ════════════════════════════════════════════════════════════════════════════�?
 void WisdomWidget::loadPoem(int index) {
-  if (index < 0 || index >= poems_.size()) return;
+  if (index < 0 || index >= poems_.size())
+    return;
 
   const auto& poem = poems_[index];
-  sentenceLabel_->setText(poem.sentence);
-  sourceLabel_->setText(poem.source);
+
+  // Format sentence with manual line breaks, then set text
+  sentenceLabel_->setText(formatSentence(poem.sentence));
+
   commentaryLabel_->setText(poem.commentary);
+
+  // Show dynasty · source
+  if (poem.dynasty.isEmpty() && poem.source.isEmpty()) {
+    sourceLabel_->setText(QString());
+  } else if (poem.dynasty.isEmpty()) {
+    sourceLabel_->setText(poem.source);
+  } else if (poem.source.isEmpty()) {
+    sourceLabel_->setText(poem.dynasty);
+  } else {
+    sourceLabel_->setText(poem.dynasty + QStringLiteral(" · ") + poem.source);
+  }
+
   setCommentaryOpacity(0.0);
 
   emit poemChanged(poem.sentence, poem.source);
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  Animations
-// ═════════════════════════════════════════════════════════════════════════════
+QString WisdomWidget::formatSentence(const QString& text) const {
+  // Split by Chinese punctuation for natural line breaks
+  QStringList clauses =
+      text.split(QRegularExpression(QStringLiteral("[，。；！？、]")),
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+                 Qt::SkipEmptyParts);
+#else
+                 QString::SkipEmptyParts);
+#endif
+  if (clauses.size() > 1) {
+    QStringList lines;
+    for (const auto& c : clauses) {
+      lines << c.trimmed();
+    }
+    return lines.join(QStringLiteral("\n"));
+  }
+  return text;
+}
 
+void WisdomWidget::computeOptimalFont() {
+  // Scan all poems to find the longest clause length
+  int maxClauseLen = 0;
+  for (const auto& poem : poems_) {
+    QStringList clauses =
+        poem.sentence.split(QRegularExpression(QStringLiteral("[，。；！？、]")),
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+                            Qt::SkipEmptyParts);
+#else
+                            QString::SkipEmptyParts);
+#endif
+    for (const auto& c : clauses) {
+      maxClauseLen = qMax(maxClauseLen, c.trimmed().length());
+    }
+    if (clauses.isEmpty())
+      maxClauseLen = qMax(maxClauseLen, poem.sentence.length());
+  }
+
+  // Pick a font size that fits the longest clause
+  int pt = 44;
+  if (maxClauseLen > 8)  pt = 36;
+  if (maxClauseLen > 12) pt = 30;
+  if (maxClauseLen > 16) pt = 24;
+  if (maxClauseLen > 22) pt = 20;
+  if (maxClauseLen > 30) pt = 16;
+
+  QFont f(QStringLiteral("KaiTi"), pt);
+  f.setStyleStrategy(QFont::PreferAntialias);
+  sentenceLabel_->setFont(f);
+}
+
+// ════════════════════════════════════════════════════════════════════════════�?//  Animations
+// ════════════════════════════════════════════════════════════════════════════�?
 void WisdomWidget::refresh() {
-  if (animating_) return;
+  if (animating_)
+    return;
   animating_ = true;
   startFadeOut();
 }
@@ -212,44 +273,32 @@ void WisdomWidget::floatUpCommentary() {
 }
 
 void WisdomWidget::setFadeOpacity(qreal opacity) {
-  auto alphaColor = [](const QColor& c, qreal a) {
-    QColor r = c;
-    r.setAlphaF(a);
-    return r;
-  };
-
   if (sentenceLabel_) {
-    QPalette sp = sentenceLabel_->palette();
-    sp.setColor(QPalette::WindowText, alphaColor(currentTheme_.text, opacity));
-    sentenceLabel_->setPalette(sp);
-  }
-  if (sourceLabel_) {
-    QPalette sp = sourceLabel_->palette();
-    sp.setColor(QPalette::WindowText,
-               alphaColor(currentTheme_.commentary, opacity));
-    sourceLabel_->setPalette(sp);
-  }
-  if (divider_) {
-    QPalette dp = divider_->palette();
-    dp.setColor(QPalette::Window, alphaColor(currentTheme_.accent, opacity));
-    divider_->setPalette(dp);
+    QColor c = currentTheme_.text;
+    c.setAlphaF(qBound(0.0, opacity, 1.0));
+    sentenceLabel_->setStyleSheet(
+        QStringLiteral("QLabel{color:rgba(%1,%2,%3,%4);background:transparent;padding:6px 0;}")
+            .arg(c.red()).arg(c.green()).arg(c.blue())
+            .arg(c.alphaF(), 0, 'f', 3));
   }
 }
 
 void WisdomWidget::setCommentaryOpacity(qreal opacity) {
-  if (commentaryLabel_) {
-    QPalette cp = commentaryLabel_->palette();
-    QColor c = currentTheme_.commentary;
-    c.setAlphaF(opacity);
-    cp.setColor(QPalette::WindowText, c);
-    commentaryLabel_->setPalette(cp);
-  }
+  auto setQss = [this](QLabel* label, const QColor& base, qreal a) {
+    if (!label) return;
+    QColor c = base;
+    c.setAlphaF(qBound(0.0, a, 1.0));
+    label->setStyleSheet(
+        QStringLiteral("QLabel{color:rgba(%1,%2,%3,%4);background:transparent;}")
+            .arg(c.red()).arg(c.green()).arg(c.blue())
+            .arg(c.alphaF(), 0, 'f', 3));
+  };
+  setQss(commentaryLabel_, currentTheme_.commentary, opacity);
+  setQss(sourceLabel_, currentTheme_.commentary, opacity);
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  Theme
-// ═════════════════════════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════════════════════════════════════�?//  Theme
+// ════════════════════════════════════════════════════════════════════════════�?
 void WisdomWidget::setDarkTheme(bool dark) {
   currentTheme_ = dark ? inkTheme_ : paperTheme_;
   applyTheme(currentTheme_);
@@ -257,7 +306,9 @@ void WisdomWidget::setDarkTheme(bool dark) {
 
 void WisdomWidget::applyTheme(const ThemeColors& theme) {
   QPalette pal = palette();
-  pal.setColor(QPalette::Window, theme.background);
+  QColor bg = theme.background;
+  bg.setAlpha(180);  // 半透明，让 overlay 背景透出
+  pal.setColor(QPalette::Window, bg);
   setPalette(pal);
   setAutoFillBackground(true);
 
@@ -266,16 +317,6 @@ void WisdomWidget::applyTheme(const ThemeColors& theme) {
     sp.setColor(QPalette::WindowText, theme.text);
     sentenceLabel_->setPalette(sp);
   }
-  if (sourceLabel_) {
-    QPalette sp = sourceLabel_->palette();
-    sp.setColor(QPalette::WindowText, theme.commentary);
-    sourceLabel_->setPalette(sp);
-  }
-  if (divider_) {
-    QPalette dp = divider_->palette();
-    dp.setColor(QPalette::Window, theme.accent);
-    divider_->setPalette(dp);
-  }
   if (commentaryLabel_) {
     QPalette cp = commentaryLabel_->palette();
     cp.setColor(QPalette::WindowText, theme.commentary);
@@ -283,10 +324,8 @@ void WisdomWidget::applyTheme(const ThemeColors& theme) {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  Events
-// ═════════════════════════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════════════════════════════════════�?//  Events
+// ════════════════════════════════════════════════════════════════════════════�?
 void WisdomWidget::mousePressEvent(QMouseEvent* event) {
   QWidget::mousePressEvent(event);
   refresh();
@@ -303,12 +342,4 @@ void WisdomWidget::keyPressEvent(QKeyEvent* event) {
 
 void WisdomWidget::resizeEvent(QResizeEvent* event) {
   QWidget::resizeEvent(event);
-  // Adjust font size based on widget width
-  int w = event->size().width();
-  if (sentenceLabel_) {
-    int pt = qBound(18, w / 18, 42);
-    QFont f = sentenceLabel_->font();
-    f.setPointSize(pt);
-    sentenceLabel_->setFont(f);
-  }
 }

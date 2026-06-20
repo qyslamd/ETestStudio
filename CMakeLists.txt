@@ -232,6 +232,7 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/protocol-demo)
     add_subdirectory(examples/testprogram-demo)
     add_subdirectory(examples/wisdom)
+    add_subdirectory(examples/sb_wisdom_demo)
 endif()
 
 

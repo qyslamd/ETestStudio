@@ -33,4 +33,5 @@ class WisdomDatabase {
 
   class Impl;
   Impl* impl_ = nullptr;
+  QVector<PoemData> poems_;
 };

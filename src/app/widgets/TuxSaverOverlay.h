@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QPixmap>
-#include <QVector>
 #include <QWidget>
 
 class QPushButton;
@@ -9,7 +8,8 @@ class SaverWidgetBase;
 
 /// 覆盖 MainWindow 客户区的叠加层，空闲时显示屏保内容
 ///
-/// 通过 SaverWidgetBase 策略接口支持多种屏保模式切换。
+/// 通过 SaverWidgetBase 策略接口支持多种屏保模式，
+/// 模式由配置键 tuxsaver/mode 控制（"tux" / "wisdom"）。
 class TuxSaverOverlay : public QWidget {
   Q_OBJECT
  public:
@@ -26,15 +26,11 @@ class TuxSaverOverlay : public QWidget {
   void resizeEvent(QResizeEvent* event) override;
 
  private:
-  void initModes();
-  void switchMode(int direction);
-  void repositionButtons();
+  void initSaver();
+  QString saverModeFromConfig() const;
 
-  QVector<SaverWidgetBase*> modes_;
-  int currentMode_ = 0;
   SaverWidgetBase* saver_ = nullptr;
+  QString last_mode_;
   QPushButton* close_btn_ = nullptr;
-  QPushButton* prev_btn_ = nullptr;
-  QPushButton* next_btn_ = nullptr;
   QPixmap background_;
 };

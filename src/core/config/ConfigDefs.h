@@ -95,8 +95,10 @@ constexpr const char* CONFIG_WELCOME_BG_MODE = "welcome/background_mode";
 
 // 屏保配置
 constexpr const char* CONFIG_TUXSAVER_ENABLED = "tuxsaver/enabled";
+constexpr const char* CONFIG_TUXSAVER_MODE = "tuxsaver/mode";
 constexpr const char* CONFIG_TUXSAVER_IDLE_TIMEOUT = "tuxsaver/idle_timeout";
 constexpr bool CONFIG_TUXSAVER_DEFAULT_ENABLED = true;
+constexpr const char* CONFIG_TUXSAVER_DEFAULT_MODE = "wisdom";
 constexpr int CONFIG_TUXSAVER_DEFAULT_TIMEOUT = 5;
 
 // 外观默认值
