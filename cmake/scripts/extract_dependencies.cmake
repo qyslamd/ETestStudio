@@ -19,7 +19,7 @@ set(DEPENDENCY_ARCHIVES
     "SARibbon-2.5.7.zip"
     "qwindowkit-1.5.0.tar.gz"
     "qmsetup-4a3ff82.tar.gz"
-    "Inno Setup 6.7z"
+    "Inno Setup 6.zip"
 )
 
 # 检测tar解压命令是否可用
