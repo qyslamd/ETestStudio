@@ -1,4 +1,4 @@
-set(TARGET_NAME "sb_wisdom_demo")
+set(TARGET_NAME "wisdom_demo")
 
 add_executable(${TARGET_NAME}
     main.cpp
