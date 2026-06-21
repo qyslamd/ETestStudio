@@ -22,6 +22,8 @@ TuxSaverOverlay::TuxSaverOverlay(QWidget* parent)
   close_btn_ = new QPushButton(QStringLiteral("✕"), this);
   close_btn_->setFixedSize(32, 32);
   close_btn_->setObjectName(QStringLiteral("saverCloseBtn"));
+  close_btn_->setCursor(Qt::PointingHandCursor);
+  close_btn_->setToolTip(QStringLiteral("关闭屏保"));
 
   connect(close_btn_, &QPushButton::clicked, this, [this]() {
     deactivate();

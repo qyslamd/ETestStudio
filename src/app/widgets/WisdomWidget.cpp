@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QFont>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -55,6 +56,10 @@ WisdomWidget::WisdomWidget(QWidget* parent)
 
   // Compute optimal fixed font size for all poems
   computeOptimalFont();
+
+  // Set fixed height for 4 lines (based on current font)
+  QFontMetrics fm(sentenceLabel_->font());
+  sentenceLabel_->setFixedHeight(fm.lineSpacing() * 4 + 12);
 
   // Load first poem
   loadPoem(shuffledIds_[currentIndex_]);
@@ -114,14 +119,13 @@ void WisdomWidget::initUi() {
   contentLayout->addSpacing(16);
   contentLayout->addWidget(sourceLabel_, 0, Qt::AlignCenter);
 
-  // ── Outer grid: top spacer | content | bottom spacer ──
-  auto* outerLayout = new QGridLayout(this);
+  // ── Outer vertical layout: center content vertically ──
+  auto* outerLayout = new QVBoxLayout(this);
   outerLayout->setContentsMargins(0, 0, 0, 0);
   outerLayout->setSpacing(0);
-  outerLayout->setRowStretch(0, 25);
-  outerLayout->setRowStretch(1, 1);
-  outerLayout->setRowStretch(2, 20);
-  outerLayout->addLayout(contentLayout, 1, 0, Qt::AlignCenter);
+  outerLayout->addStretch(1);
+  outerLayout->addLayout(contentLayout, 0);
+  outerLayout->addStretch(1);
 
   // ── Fade animations (palette alpha, no QGraphicsOpacityEffect) ──
   fadeOutAnim_ = new QVariantAnimation(this);
@@ -180,7 +184,6 @@ void WisdomWidget::loadPoem(int index) {
 
   // Format sentence with manual line breaks, then set text
   sentenceLabel_->setText(formatSentence(poem.sentence));
-
   commentaryLabel_->setText(poem.commentary);
 
   // Show dynasty · source

@@ -562,7 +562,13 @@ QPushButton#saverCloseBtn {
     border-radius: 16px;
 }
 QPushButton#saverCloseBtn:hover {
-    background: rgba(255,80,80,130);
+    background: rgba(255,80,80,160);
     color: white;
-    border-color: rgba(255,80,80,200);
+    border-color: rgba(255,80,80,230);
+    border-width: 1.5px;
+}
+QPushButton#saverCloseBtn:pressed {
+    background: rgba(200,50,50,180);
+    color: white;
+    border-color: rgba(200,50,50,220);
 }
