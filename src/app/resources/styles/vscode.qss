@@ -1548,12 +1548,4 @@ QToolButton#PhOpenFilesHeaderBtn {
 QToolButton#PhOpenFilesHeaderBtn:hover {
     color: #CCCCCC;
 }
-QWidget#PhOpenFileItem {
-    background-color: transparent;
-    border: none;
-    border-radius: 4px;
-    padding: 2px 4px;
-}
-QWidget#PhOpenFileItem:hover {
-    background-color: #2A2D2E;
 }

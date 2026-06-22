@@ -4,15 +4,20 @@
 #include <QMap>
 #include <QStandardItemModel>
 #include <QStackedWidget>
+
+#include "widgets/OpenFileDelegate.h"
 #include <QString>
 #include <QWidget>
 
 class QFileSystemWatcher;
 class QLabel;
+class QListView;
 class QMenu;
+class QStandardItemModel;
 class QPoint;
 class QPushButton;
 class QScrollArea;
+class QSplitter;
 class QToolButton;
 class QTreeView;
 class QTimer;
@@ -100,7 +105,6 @@ class ProjectStructureWidget : public QWidget {
   QString categoryDirPath(const QString& categoryId) const;
 
   // 已打开文件列表
-  void toggleOpenFilesSection();
   void addOpenFileItem(const QString& path);
   void removeOpenFileItem(const QString& path);
   void clearOpenFiles();
@@ -117,10 +121,12 @@ class ProjectStructureWidget : public QWidget {
   QTimer* debounce_timer_ = nullptr;
 
   QWidget* tree_page_ = nullptr;
+  QSplitter* tree_splitter_ = nullptr;
   QWidget* open_files_widget_ = nullptr;
   QToolButton* open_files_header_btn_ = nullptr;
-  QWidget* open_files_container_ = nullptr;
-  bool open_files_collapsed_ = false;
+  QListView* open_files_view_ = nullptr;
+  QStandardItemModel* open_files_model_ = nullptr;
+  OpenFileDelegate* open_file_delegate_ = nullptr;
 
   QString project_path_;
   QStandardItem* root_item_ = nullptr;

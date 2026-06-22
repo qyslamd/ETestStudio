@@ -95,6 +95,8 @@ add_executable(${TARGET_NAME}
     widgets/LoadingOverlay.cpp
     widgets/RecentProjectCard.h
     widgets/RecentProjectCard.cpp
+    widgets/OpenFileDelegate.h
+    widgets/OpenFileDelegate.cpp
     dialogs/AnimationDialog.h
     dialogs/AnimationDialog.cpp
     dialogs/NewProjectDialog.h

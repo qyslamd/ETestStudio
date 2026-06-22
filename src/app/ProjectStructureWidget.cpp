@@ -14,17 +14,20 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QListView>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSet>
+#include <QSplitter>
 #include <QStandardPaths>
 #include <QTimer>
 #include <QToolButton>
 #include <QTreeView>
 #include <QUrl>
 #include <QVBoxLayout>
+
 
 #include "AppIconProvider.h"
 #include "ConfigManager.h"
@@ -147,8 +150,8 @@ void ProjectStructureWidget::initUi() {
   auto* proj_btn_layout = new QHBoxLayout();
   proj_btn_layout->setSpacing(8);
   proj_btn_layout->addStretch();
-  proj_btn_layout->addWidget(new_proj_btn_, 1);
-  proj_btn_layout->addWidget(open_proj_btn_, 1);
+  proj_btn_layout->addWidget(new_proj_btn_);
+  proj_btn_layout->addWidget(open_proj_btn_);
   proj_btn_layout->addStretch();
   sc_layout->addLayout(proj_btn_layout);
 
@@ -177,12 +180,11 @@ void ProjectStructureWidget::initUi() {
 
   // ── 模式 1：领域分类树 + 已打开文件列表 ──
   tree_page_ = new QWidget(this);
-  auto* tree_page_layout = new QVBoxLayout(tree_page_);
-  tree_page_layout->setContentsMargins(0, 0, 0, 0);
-  tree_page_layout->setSpacing(0);
 
-  // 已打开文件区域（可折叠）
-  open_files_widget_ = new QWidget(tree_page_);
+  tree_splitter_ = new QSplitter(Qt::Vertical, tree_page_);
+
+  // 已打开文件区域
+  open_files_widget_ = new QWidget();
   auto* of_layout = new QVBoxLayout(open_files_widget_);
   of_layout->setContentsMargins(0, 0, 0, 0);
   of_layout->setSpacing(0);
@@ -191,18 +193,21 @@ void ProjectStructureWidget::initUi() {
   open_files_header_btn_->setObjectName(QStringLiteral("PhOpenFilesHeaderBtn"));
   open_files_header_btn_->setCheckable(false);
   open_files_header_btn_->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  open_files_header_btn_->setText(QStringLiteral("\xE2\x96\xBC 已打开 (0)"));
-  open_files_header_btn_->setCursor(Qt::PointingHandCursor);
+  open_files_header_btn_->setText(QStringLiteral("已打开 (0)"));
   of_layout->addWidget(open_files_header_btn_);
 
-  open_files_container_ = new QWidget(open_files_widget_);
-  open_files_container_->setObjectName(QStringLiteral("PhOpenFilesContainer"));
-  auto* of_container_layout = new QVBoxLayout(open_files_container_);
-  of_container_layout->setContentsMargins(0, 0, 0, 0);
-  of_container_layout->setSpacing(0);
-  of_layout->addWidget(open_files_container_);
+  open_files_view_ = new QListView();
+  open_files_view_->setFrameShape(QFrame::NoFrame);
+  open_files_view_->setMouseTracking(true);
+  open_files_view_->setSelectionMode(QAbstractItemView::SingleSelection);
+  open_files_view_->setContextMenuPolicy(Qt::CustomContextMenu);
+  open_files_model_ = new QStandardItemModel(this);
+  open_files_view_->setModel(open_files_model_);
+  open_file_delegate_ = new OpenFileDelegate(this);
+  open_files_view_->setItemDelegate(open_file_delegate_);
+  of_layout->addWidget(open_files_view_);
 
-  tree_view_ = new QTreeView(tree_page_);
+  tree_view_ = new QTreeView();
   tree_view_->setHeaderHidden(true);
   tree_view_->setAnimated(true);
   tree_view_->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -215,8 +220,16 @@ void ProjectStructureWidget::initUi() {
   model_ = new QStandardItemModel(this);
   tree_view_->setModel(model_);
 
-  tree_page_layout->addWidget(tree_view_, 1);
-  tree_page_layout->addWidget(open_files_widget_);
+  tree_splitter_->addWidget(tree_view_);
+  tree_splitter_->addWidget(open_files_widget_);
+  tree_splitter_->setStretchFactor(0, 1);
+  tree_splitter_->setStretchFactor(1, 0);
+  tree_splitter_->setSizes({600, 200});
+
+  auto* page_layout = new QVBoxLayout(tree_page_);
+  page_layout->setContentsMargins(0, 0, 0, 0);
+  page_layout->setSpacing(0);
+  page_layout->addWidget(tree_splitter_);
 
   stack_->addWidget(tree_page_);  // index 1
 
@@ -276,6 +289,33 @@ void ProjectStructureWidget::initSignals() {
   connect(model_, &QStandardItemModel::itemChanged, this,
           &ProjectStructureWidget::onItemChanged);
 
+  // ── 已打开文件列表 ──
+  connect(open_files_view_, &QListView::clicked, this,
+          [this](const QModelIndex& index) {
+            QString path = index.data(FilePathRole).toString();
+            if (!path.isEmpty())
+              emit openFileActivateRequested(path);
+          });
+  connect(open_files_view_, &QListView::customContextMenuRequested, this,
+          [this](const QPoint& pos) {
+            QModelIndex index = open_files_view_->indexAt(pos);
+            if (!index.isValid())
+              return;
+            QString path = index.data(FilePathRole).toString();
+            if (path.isEmpty())
+              return;
+
+            QMenu menu(open_files_view_);
+            menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+            auto* closeAction = menu.addAction(QStringLiteral("关闭文件"));
+            if (menu.exec(open_files_view_->viewport()->mapToGlobal(pos)) ==
+                closeAction) {
+              emit openFileCloseRequested(path);
+            }
+          });
+  connect(open_file_delegate_, &OpenFileDelegate::closeRequested, this,
+          &ProjectStructureWidget::openFileCloseRequested);
+
   // 最近项目变更时刷新
   connect(&etest::core::config::ConfigManager::instance(),
           &etest::core::config::ConfigManager::configChanged, this,
@@ -285,10 +325,6 @@ void ProjectStructureWidget::initSignals() {
               refreshRecentProjects();
             }
           });
-
-  // 已打开文件区域折叠/展开
-  connect(open_files_header_btn_, &QToolButton::clicked, this,
-          &ProjectStructureWidget::toggleOpenFilesSection);
 }
 
 void ProjectStructureWidget::setProjectPath(const QString& path) {
@@ -1018,14 +1054,6 @@ void ProjectStructureWidget::onFileClosed(const QString& path) {
   updateOpenFilesCount();
 }
 
-void ProjectStructureWidget::toggleOpenFilesSection() {
-  open_files_collapsed_ = !open_files_collapsed_;
-  open_files_container_->setVisible(!open_files_collapsed_);
-  QString arrow = open_files_collapsed_ ? QStringLiteral("\xE2\x96\xB6")
-                                        : QStringLiteral("\xE2\x96\xBC");
-  updateOpenFilesCount();
-}
-
 void ProjectStructureWidget::addOpenFileItem(const QString& path) {
   QFileInfo fi(path);
   QString displayName = fi.fileName();
@@ -1034,63 +1062,33 @@ void ProjectStructureWidget::addOpenFileItem(const QString& path) {
           ? fi.absolutePath()
           : QDir(project_path_).relativeFilePath(fi.absolutePath());
 
-  auto* card = new RecentProjectCard(path, displayName, dirPath, QString(),
-                                     open_files_container_);
-  card->setObjectName(QStringLiteral("PhOpenFileItem"));
-  card->setAttribute(Qt::WA_StyledBackground);
-  card->setProperty("filePath", path);
-  card->setRemoveActionText(QStringLiteral("关闭文件"));
-
-  connect(card, &RecentProjectCard::openRequested, this,
-          &ProjectStructureWidget::openFileActivateRequested);
-  connect(card, &RecentProjectCard::removeRequested, this,
-          &ProjectStructureWidget::openFileCloseRequested);
-
-  auto* layout = qobject_cast<QVBoxLayout*>(open_files_container_->layout());
-  if (layout) {
-    layout->addWidget(card);
-  }
+  auto* item = new QStandardItem(displayName);
+  item->setEditable(false);
+  item->setData(path, FilePathRole);
+  item->setData(dirPath, DirPathRole);
+  item->setToolTip(path);
+  open_files_model_->appendRow(item);
+  updateOpenFilesCount();
 }
 
 void ProjectStructureWidget::removeOpenFileItem(const QString& path) {
-  auto* layout = qobject_cast<QVBoxLayout*>(open_files_container_->layout());
-  if (!layout)
-    return;
-
-  for (int i = 0; i < layout->count(); ++i) {
-    auto* item = layout->itemAt(i);
-    if (!item || !item->widget())
-      continue;
-    auto* card = qobject_cast<RecentProjectCard*>(item->widget());
-    if (card && card->property("filePath").toString() == path) {
-      layout->takeAt(i);
-      card->deleteLater();
-      return;
+  for (int i = 0; i < open_files_model_->rowCount(); ++i) {
+    if (open_files_model_->item(i)->data(FilePathRole).toString() == path) {
+      open_files_model_->removeRow(i);
+      break;
     }
   }
+  updateOpenFilesCount();
 }
 
 void ProjectStructureWidget::clearOpenFiles() {
-  auto* layout = qobject_cast<QVBoxLayout*>(open_files_container_->layout());
-  if (!layout)
-    return;
-
-  QLayoutItem* child;
-  while ((child = layout->takeAt(0)) != nullptr) {
-    if (child->widget()) {
-      child->widget()->deleteLater();
-    }
-    delete child;
-  }
+  open_files_model_->clear();
+  updateOpenFilesCount();
 }
 
 void ProjectStructureWidget::updateOpenFilesCount() {
-  auto* layout = qobject_cast<QVBoxLayout*>(open_files_container_->layout());
-  int count = layout ? layout->count() : 0;
-  QString arrow = open_files_collapsed_ ? QStringLiteral("\xE2\x96\xB6")
-                                        : QStringLiteral("\xE2\x96\xBC");
-  open_files_header_btn_->setText(
-      QStringLiteral("%1 已打开 (%2)").arg(arrow).arg(count));
+  int count = open_files_model_->rowCount();
+  open_files_header_btn_->setText(QStringLiteral("已打开 (%1)").arg(count));
 }
 
 }  // namespace etest::app
