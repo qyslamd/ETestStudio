@@ -241,64 +241,6 @@ bool ProjectManager::hasUnsavedChanges() const {
   return false;
 }
 
-void ProjectManager::registerTopologyRef(const QString& filePath) {
-  if (!isProjectOpen())
-    return;
-  QFileInfo fi(filePath);
-  TopologyRef ref;
-  ref.id = filePath;
-  ref.name = fi.completeBaseName();
-  ref.filePath = QDir(currentProjectRoot()).relativeFilePath(filePath);
-  m_impl->current_project->addTopology(ref);
-  m_impl->current_project->saveToFile();
-}
-
-void ProjectManager::removeTopologyRef(const QString& id) {
-  if (!isProjectOpen())
-    return;
-  m_impl->current_project->removeTopology(id);
-  m_impl->current_project->saveToFile();
-}
-
-void ProjectManager::registerProtocolRef(const QString& filePath) {
-  if (!isProjectOpen())
-    return;
-  QFileInfo fi(filePath);
-  ProtocolRef ref;
-  ref.id = filePath;
-  ref.name = fi.completeBaseName();
-  ref.filePath = QDir(currentProjectRoot()).relativeFilePath(filePath);
-  m_impl->current_project->addProtocol(ref);
-  m_impl->current_project->saveToFile();
-}
-
-void ProjectManager::removeProtocolRef(const QString& id) {
-  if (!isProjectOpen())
-    return;
-  m_impl->current_project->removeProtocol(id);
-  m_impl->current_project->saveToFile();
-}
-
-void ProjectManager::registerTestProgramRef(const QString& filePath) {
-  if (!isProjectOpen())
-    return;
-  QFileInfo fi(filePath);
-  TestProgramRef ref;
-  ref.id = filePath;
-  ref.name = fi.completeBaseName();
-  ref.filePath = QDir(currentProjectRoot()).relativeFilePath(filePath);
-  ref.type = QStringLiteral("json");
-  m_impl->current_project->addTestProgram(ref);
-  m_impl->current_project->saveToFile();
-}
-
-void ProjectManager::removeTestProgramRef(const QString& id) {
-  if (!isProjectOpen())
-    return;
-  m_impl->current_project->removeTestProgram(id);
-  m_impl->current_project->saveToFile();
-}
-
 bool ProjectManager::doCloseProject() {
   if (!isProjectOpen())
     return true;

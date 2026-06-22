@@ -78,14 +78,11 @@ void TestProgramManagerWidget::refreshList() {
   auto* project = pm.currentProject();
   if (!project) return;
 
-  const auto testCases = project->testPrograms();
-  for (const auto& ref : testCases) {
-    // 将相对路径转为绝对路径
-    QString absPath = QDir(project->rootPath()).absoluteFilePath(ref.filePath);
-
+  const QStringList tcaseFiles = project->scanDirectory(
+      QStringLiteral("cases"), QStringLiteral("tcase"));
+  for (const QString& absPath : tcaseFiles) {
     auto* item = new QTreeWidgetItem(tree_);
-    item->setText(0, ref.name.isEmpty() ? QFileInfo(absPath).fileName()
-                                        : ref.name);
+    item->setText(0, QFileInfo(absPath).completeBaseName());
     item->setData(0, Qt::UserRole, absPath);
     item->setToolTip(0, absPath);
 
@@ -188,9 +185,6 @@ void TestProgramManagerWidget::onNewTestProgram() {
     return;
   }
 
-  // 注册到项目
-  pm.registerTestProgramRef(filePath);
-
   refreshList();
 
   // 打开新建的文件
@@ -200,9 +194,6 @@ void TestProgramManagerWidget::onNewTestProgram() {
 bool TestProgramManagerWidget::renameTestProgramFile(const QString& oldPath) {
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) return false;
-
-  auto* project = const_cast<ProjectInfo*>(pm.currentProject());
-  if (!project) return false;
 
   bool ok;
   QString newName = QInputDialog::getText(
@@ -232,24 +223,6 @@ bool TestProgramManagerWidget::renameTestProgramFile(const QString& oldPath) {
     return false;
   }
 
-  // 更新 ProjectInfo 中的引用
-  QString rootPath = project->rootPath();
-  QString newRelativePath = QDir(rootPath).relativeFilePath(newPath);
-  const auto testCases = project->testPrograms();
-  for (const auto& ref : testCases) {
-    QString refAbsPath = QDir(rootPath).absoluteFilePath(ref.filePath);
-    if (QDir(refAbsPath) == QDir(oldPath)) {
-      project->removeTestProgram(ref.id);
-      TestProgramRef newRef = ref;
-      newRef.id = newPath;  // 更新 id 为新的绝对路径
-      newRef.filePath = newRelativePath;
-      newRef.name = newName;
-      project->addTestProgram(newRef);
-      break;
-    }
-  }
-
-  pm.saveProject();
   refreshList();
   return true;
 }
@@ -258,26 +231,12 @@ bool TestProgramManagerWidget::removeTestProgramFile(const QString& filePath) {
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) return false;
 
-  auto* project = const_cast<ProjectInfo*>(pm.currentProject());
-  if (!project) return false;
-
   int ret = QMessageBox::question(
       this, QStringLiteral("确认删除"),
-      QStringLiteral("确定要删除测试用例文件吗？\n%1\n\n此操作将从项目中移除引用，文件将被删除。")
+      QStringLiteral("确定要删除测试用例文件吗？\n%1\n\n文件将被删除。")
           .arg(filePath),
       QMessageBox::Yes | QMessageBox::No);
   if (ret != QMessageBox::Yes) return false;
-
-  // 从 ProjectInfo 中移除引用
-  QString rootPath = project->rootPath();
-  const auto testCases = project->testPrograms();
-  for (const auto& ref : testCases) {
-    QString refAbsPath = QDir(rootPath).absoluteFilePath(ref.filePath);
-    if (QDir(refAbsPath) == QDir(filePath)) {
-      pm.removeTestProgramRef(ref.id);
-      break;
-    }
-  }
 
   // 删除文件
   QFile::remove(filePath);

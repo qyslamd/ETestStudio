@@ -2,6 +2,7 @@
 #define ETEST_APP_PROJECT_STRUCTURE_WIDGET_H_
 
 #include <QMap>
+#include <QSet>
 #include <QStandardItemModel>
 #include <QStackedWidget>
 
@@ -69,6 +70,9 @@ class ProjectStructureWidget : public QWidget {
 
   // 最近文件操作
   void recentFileOpenRequested(const QString& filePath);
+
+  // 文件系统监控 — 目录内容变化时发出，由 main_window 路由到对应管理器
+  void directoryContentChanged(const QString& dirPath);
 
  public:
   void refreshRecentProjects();
@@ -139,7 +143,7 @@ class ProjectStructureWidget : public QWidget {
 
   QString project_path_;
   QStandardItem* root_item_ = nullptr;
-  QString debounce_timer_queued_path_;
+  QSet<QString> debounce_timer_queued_paths_;
 
   // 用于重命名时跟踪旧路径
   QString rename_old_path_;

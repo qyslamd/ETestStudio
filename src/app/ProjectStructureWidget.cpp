@@ -299,9 +299,11 @@ void ProjectStructureWidget::initSignals() {
 
   // 防抖定时器
   connect(debounce_timer_, &QTimer::timeout, this, [this]() {
-    if (!debounce_timer_queued_path_.isEmpty()) {
-      refreshCategory(debounce_timer_queued_path_);
+    for (const auto& path : debounce_timer_queued_paths_) {
+      refreshCategory(path);
+      emit directoryContentChanged(path);
     }
+    debounce_timer_queued_paths_.clear();
   });
 
   // 树视图信号
@@ -608,10 +610,15 @@ void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
   }
   catItem->setText(baseName + QStringLiteral(" (") +
                    QString::number(fileCount) + QStringLiteral(")"));
+
+  // 捕获目录被删除后重建的场景：watcher 不会自动恢复，需重新注册
+  if (!file_watcher_->directories().contains(dirPath)) {
+    file_watcher_->addPath(dirPath);
+  }
 }
 
 void ProjectStructureWidget::onDirectoryChanged(const QString& path) {
-  debounce_timer_queued_path_ = path;
+  debounce_timer_queued_paths_.insert(path);
   debounce_timer_->start();
 }
 

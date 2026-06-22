@@ -104,14 +104,11 @@ void ProtocolManagerWidget::refreshList() {
   auto* project = pm.currentProject();
   if (!project) return;
 
-  const auto protocols = project->protocols();
-  for (const auto& ref : protocols) {
-    // 将相对路径转为绝对路径
-    QString absPath = QDir(project->rootPath()).absoluteFilePath(ref.filePath);
-
+  const QStringList protoFiles = project->scanDirectory(
+      QStringLiteral("protocol"), QStringLiteral("eproto"));
+  for (const QString& absPath : protoFiles) {
     auto* item = new QTreeWidgetItem(tree_);
-    item->setText(0, ref.name.isEmpty() ? QFileInfo(absPath).fileName()
-                                        : ref.name);
+    item->setText(0, QFileInfo(absPath).completeBaseName());
     item->setData(0, Qt::UserRole, absPath);
     item->setToolTip(0, absPath);
 
@@ -219,9 +216,6 @@ void ProtocolManagerWidget::onNewProtocol() {
   file.write(QJsonDocument(root).toJson());
   file.close();
 
-  // 注册到项目
-  pm.registerProtocolRef(filePath);
-
   refreshList();
 
   // 打开新建的文件
@@ -317,8 +311,7 @@ void ProtocolManagerWidget::onImportXml() {
     return;
   }
 
-  // ── 注册并刷新 ──
-  pm.registerProtocolRef(outputPath);
+  // ── 刷新列表 ──
   refreshList();
   emit openFileRequested(outputPath);
 }
@@ -327,27 +320,11 @@ bool ProtocolManagerWidget::removeProtocolFile(const QString& filePath) {
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) return false;
 
-  auto* project = const_cast<ProjectInfo*>(pm.currentProject());
-  if (!project) return false;
-
   int ret = QMessageBox::question(
       this, QStringLiteral("确认删除"),
-      QStringLiteral("确定要删除协议文件吗？\n%1\n\n此操作将从项目中移除引用，文件将被删除。")
-          .arg(filePath),
+      QStringLiteral("确定要删除协议文件吗？\n%1\n\n文件将被删除。").arg(filePath),
       QMessageBox::Yes | QMessageBox::No);
   if (ret != QMessageBox::Yes) return false;
-
-  // 从 ProjectInfo 中移除引用
-  // 使用绝对路径比较，兼容 ref.filePath 可能为绝对路径的情况
-  QString rootPath = project->rootPath();
-  const auto protocols = project->protocols();
-  for (const auto& ref : protocols) {
-    QString refAbsPath = QDir(rootPath).absoluteFilePath(ref.filePath);
-    if (QDir(refAbsPath) == QDir(filePath)) {
-      pm.removeProtocolRef(ref.id);
-      break;
-    }
-  }
 
   // 删除文件
   QFile::remove(filePath);
@@ -359,9 +336,6 @@ bool ProtocolManagerWidget::removeProtocolFile(const QString& filePath) {
 bool ProtocolManagerWidget::renameProtocolFile(const QString& oldPath) {
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) return false;
-
-  auto* project = const_cast<ProjectInfo*>(pm.currentProject());
-  if (!project) return false;
 
   bool ok;
   QString newName = QInputDialog::getText(
@@ -391,25 +365,6 @@ bool ProtocolManagerWidget::renameProtocolFile(const QString& oldPath) {
     return false;
   }
 
-  // 更新 ProjectInfo 中的引用
-  // 使用绝对路径比较，兼容 ref.filePath 可能为绝对路径的情况（如 fromJson 兼容旧数据）
-  QString newRelativePath = QDir(project->rootPath()).relativeFilePath(newPath);
-  QString rootPath = project->rootPath();
-  const auto protocols = project->protocols();
-  for (const auto& ref : protocols) {
-    QString refAbsPath = QDir(rootPath).absoluteFilePath(ref.filePath);
-    if (QDir(refAbsPath) == QDir(oldPath)) {
-      project->removeProtocol(ref.id);
-      ProtocolRef newRef = ref;
-      newRef.id = newPath;  // 同步更新 id 为新的绝对路径
-      newRef.filePath = newRelativePath;
-      newRef.name = newFileName;
-      project->addProtocol(newRef);
-      break;
-    }
-  }
-
-  pm.saveProject();
   refreshList();
   return true;
 }

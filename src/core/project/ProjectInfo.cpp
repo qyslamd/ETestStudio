@@ -1,13 +1,11 @@
 #include "ProjectInfo.h"
 
-#include <algorithm>
-
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QUuid>
 
 #include "common/FileException.h"
 #include "utils/FileUtil.h"
@@ -15,101 +13,6 @@
 namespace etest {
 namespace core {
 namespace project {
-
-// ── TopologyRef ──────────────────────────────────────────────
-
-QJsonObject TopologyRef::toJson() const {
-  QJsonObject obj;
-  obj["id"] = id;
-  obj["name"] = name;
-  obj["file"] = filePath;
-  return obj;
-}
-
-TopologyRef TopologyRef::fromJson(const QJsonObject& obj) {
-  TopologyRef ref;
-  ref.id = obj["id"].toString();
-  ref.name = obj["name"].toString();
-  ref.filePath = obj["file"].toString();
-  // 兼容旧数据：如果没有 id 则生成一个
-  if (ref.id.isEmpty()) {
-    ref.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-  }
-  return ref;
-}
-
-// ── ProtocolRef ──────────────────────────────────────────────
-
-QJsonObject ProtocolRef::toJson() const {
-  QJsonObject obj;
-  obj["id"] = id;
-  obj["name"] = name;
-  obj["file"] = filePath;
-  return obj;
-}
-
-ProtocolRef ProtocolRef::fromJson(const QJsonObject& obj) {
-  ProtocolRef ref;
-  ref.id = obj["id"].toString();
-  ref.name = obj["name"].toString();
-  ref.filePath = obj["file"].toString();
-  if (ref.filePath.isEmpty()) {
-    ref.filePath = ref.id;          // 兼容旧数据：id 字段曾用作路径
-  }
-  if (ref.id.isEmpty()) {
-    ref.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-  }
-  return ref;
-}
-
-// ── TestProgramRef ─────────────────────────────────────────────
-
-QJsonObject TestProgramRef::toJson() const {
-  QJsonObject obj;
-  obj["id"] = id;
-  obj["name"] = name;
-  obj["file"] = filePath;
-  obj["type"] = type;
-  return obj;
-}
-
-TestProgramRef TestProgramRef::fromJson(const QJsonObject& obj) {
-  TestProgramRef ref;
-  ref.id = obj["id"].toString();
-  ref.name = obj["name"].toString();
-  ref.filePath = obj["file"].toString();
-  ref.type = obj["type"].toString("json");
-  if (ref.id.isEmpty()) {
-    ref.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-  }
-  return ref;
-}
-
-// ── ReportRef ────────────────────────────────────────────────
-
-QJsonObject ReportRef::toJson() const {
-  QJsonObject obj;
-  obj["id"] = id;
-  obj["name"] = name;
-  obj["file"] = filePath;
-  obj["format"] = format;
-  obj["generate_time"] = generateTime.toString("yyyy-MM-dd HH:mm:ss");
-  return obj;
-}
-
-ReportRef ReportRef::fromJson(const QJsonObject& obj) {
-  ReportRef ref;
-  ref.id = obj["id"].toString();
-  ref.name = obj["name"].toString();
-  ref.filePath = obj["file"].toString();
-  ref.format = obj["format"].toString("html");
-  ref.generateTime = QDateTime::fromString(obj["generate_time"].toString(),
-                                           "yyyy-MM-dd HH:mm:ss");
-  if (ref.id.isEmpty()) {
-    ref.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-  }
-  return ref;
-}
 
 ProjectInfo::ProjectInfo(const QString& filePath) {
   loadFromFile(filePath);
@@ -140,31 +43,6 @@ QJsonObject ProjectInfo::toJson() const {
   obj["recent_files"] = QJsonArray::fromStringList(recent_files_);
   obj["settings"] = QJsonObject::fromVariantMap(settings_);
 
-  // 工件引用列表
-  QJsonArray topoArr;
-  for (const auto& t : topologies_) {
-    topoArr.append(t.toJson());
-  }
-  obj["topology"] = topoArr;
-
-  QJsonArray protoArr;
-  for (const auto& p : protocols_) {
-    protoArr.append(p.toJson());
-  }
-  obj["protocols"] = protoArr;
-
-  QJsonArray caseArr;
-  for (const auto& c : test_programs_) {
-    caseArr.append(c.toJson());
-  }
-  obj["test_programs"] = caseArr;
-
-  QJsonArray reportArr;
-  for (const auto& r : reports_) {
-    reportArr.append(r.toJson());
-  }
-  obj["reports"] = reportArr;
-
   return obj;
 }
 
@@ -192,34 +70,8 @@ bool ProjectInfo::fromJson(const QJsonObject& json) {
     settings_ = json["settings"].toObject().toVariantMap();
   }
 
-  // ── 工件引用列表 ──
-  topologies_.clear();
-  if (json.contains("topology")) {
-    for (const auto& item : json["topology"].toArray()) {
-      topologies_.append(TopologyRef::fromJson(item.toObject()));
-    }
-  }
-
-  protocols_.clear();
-  if (json.contains("protocols")) {
-    for (const auto& item : json["protocols"].toArray()) {
-      protocols_.append(ProtocolRef::fromJson(item.toObject()));
-    }
-  }
-
-  test_programs_.clear();
-  if (json.contains("test_programs")) {
-    for (const auto& item : json["test_programs"].toArray()) {
-      test_programs_.append(TestProgramRef::fromJson(item.toObject()));
-    }
-  }
-
-  reports_.clear();
-  if (json.contains("reports")) {
-    for (const auto& item : json["reports"].toArray()) {
-      reports_.append(ReportRef::fromJson(item.toObject()));
-    }
-  }
+  // 旧版 .etproj 文件可能包含 topology/protocols/test_programs/reports 字段，
+  // 这些已废弃，从文件系统读取。此处静默忽略以保证向后兼容。
 
   return true;
 }
@@ -295,89 +147,20 @@ QString ProjectInfo::casesPath() const {
   return QDir(root_path_).filePath("cases");
 }
 
-// ── TopologyRef 访问器 ──
+QStringList ProjectInfo::scanDirectory(const QString& subDir,
+                                       const QString& suffix) const {
+  QDir dir(QDir(root_path_).filePath(subDir));
+  if (!dir.exists()) return {};
 
-QVector<TopologyRef> ProjectInfo::topologies() const { return topologies_; }
-
-void ProjectInfo::setTopologies(const QVector<TopologyRef>& refs) {
-  topologies_ = refs;
+  QStringList result;
+  const auto entries =
+      dir.entryInfoList({QStringLiteral("*.") + suffix},
+                        QDir::Files | QDir::NoDotAndDotDot);
+  for (const auto& fi : entries) {
+    result.append(fi.absoluteFilePath());
+  }
+  return result;
 }
-
-void ProjectInfo::addTopology(const TopologyRef& ref) {
-  topologies_.append(ref);
-}
-
-void ProjectInfo::removeTopology(const QString& id) {
-  topologies_.erase(std::remove_if(topologies_.begin(), topologies_.end(),
-                                   [&](const TopologyRef& t) {
-                                     return t.id == id;
-                                   }),
-                    topologies_.end());
-}
-
-void ProjectInfo::clearTopologies() { topologies_.clear(); }
-
-// ── ProtocolRef 访问器 ──
-
-QVector<ProtocolRef> ProjectInfo::protocols() const { return protocols_; }
-
-void ProjectInfo::setProtocols(const QVector<ProtocolRef>& refs) {
-  protocols_ = refs;
-}
-
-void ProjectInfo::addProtocol(const ProtocolRef& ref) {
-  protocols_.append(ref);
-}
-
-void ProjectInfo::removeProtocol(const QString& id) {
-  protocols_.erase(std::remove_if(protocols_.begin(), protocols_.end(),
-                                  [&](const ProtocolRef& p) {
-                                    return p.id == id;
-                                  }),
-                   protocols_.end());
-}
-
-void ProjectInfo::clearProtocols() { protocols_.clear(); }
-
-// ── TestProgramRef 访问器 ──
-
-QVector<TestProgramRef> ProjectInfo::testPrograms() const { return test_programs_; }
-
-void ProjectInfo::setTestPrograms(const QVector<TestProgramRef>& refs) {
-  test_programs_ = refs;
-}
-
-void ProjectInfo::addTestProgram(const TestProgramRef& ref) {
-  test_programs_.append(ref);
-}
-
-void ProjectInfo::removeTestProgram(const QString& id) {
-  test_programs_.erase(std::remove_if(test_programs_.begin(), test_programs_.end(),
-                                      [&](const TestProgramRef& c) {
-                                        return c.id == id;
-                                      }),
-                       test_programs_.end());
-}
-
-void ProjectInfo::clearTestPrograms() { test_programs_.clear(); }
-
-// ── ReportRef 访问器 ──
-
-QVector<ReportRef> ProjectInfo::reports() const { return reports_; }
-
-void ProjectInfo::setReports(const QVector<ReportRef>& refs) {
-  reports_ = refs;
-}
-
-void ProjectInfo::addReport(const ReportRef& ref) { reports_.append(ref); }
-
-void ProjectInfo::removeReport(const QString& id) {
-  reports_.erase(std::remove_if(reports_.begin(), reports_.end(),
-                                [&](const ReportRef& r) { return r.id == id; }),
-                 reports_.end());
-}
-
-void ProjectInfo::clearReports() { reports_.clear(); }
 
 }  // namespace project
 }  // namespace core

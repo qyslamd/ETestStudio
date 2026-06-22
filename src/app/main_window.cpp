@@ -484,6 +484,18 @@ void MainWindow::initSignalsLate() {
               }
               editor_manager_->openFile(path);
             });
+
+    // 文件系统监控：目录内容变化时刷新对应管理器
+    connect(psWidget, &ProjectStructureWidget::directoryContentChanged,
+            this, [this](const QString& dirPath) {
+              if (dirPath.endsWith(QStringLiteral("/protocol")) ||
+                  dirPath.endsWith(QStringLiteral("\\protocol"))) {
+                sidebar_->protocolManager()->refreshList();
+              } else if (dirPath.endsWith(QStringLiteral("/cases")) ||
+                         dirPath.endsWith(QStringLiteral("\\cases"))) {
+                sidebar_->testProgramManager()->refreshList();
+              }
+            });
   }
 
   // 搜索组件：项目打开/关闭时设置搜索根目录
