@@ -4,6 +4,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QHeaderView>
+
+#include "AppIconProvider.h"
 #include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -121,6 +123,7 @@ void TopologyManagerWidget::refreshList() {
     item->setText(0, QFileInfo(absPath).completeBaseName());
     item->setData(0, Qt::UserRole, absPath);
     item->setToolTip(0, absPath);
+    item->setIcon(0, AppIconProvider::instance().icon(QStringLiteral("topology")));
 
     // 解析 JSON 加预览子节点
     addPreviewNodes(item, absPath);
@@ -157,6 +160,9 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
 
   QJsonObject root = doc.object();
 
+  QIcon uutIcon = AppIconProvider::instance().icon(QStringLiteral("topo_uut"));
+  QIcon deviceIcon = AppIconProvider::instance().icon(QStringLiteral("topo_device"));
+
   // ── Products (UUT) ──
   QJsonArray products = root[QStringLiteral("products")].toArray();
   for (const auto& val : products) {
@@ -164,6 +170,7 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
     QString name = pObj[QStringLiteral("name")].toString();
     auto* child = new QTreeWidgetItem(fileItem);
     child->setText(0, QStringLiteral("UUT: %1").arg(name));
+    child->setIcon(0, uutIcon);
 
     // 端口作为孙子节点，保证可搜索
     QJsonArray ports = pObj[QStringLiteral("ports")].toArray();
@@ -191,6 +198,7 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
     QString devType = dObj[QStringLiteral("deviceType")].toString();
     auto* child = new QTreeWidgetItem(fileItem);
     child->setText(0, QStringLiteral("%1 (%2)").arg(name, devType));
+    child->setIcon(0, deviceIcon);
 
     // 端口
     QJsonArray ports = dObj[QStringLiteral("ports")].toArray();
