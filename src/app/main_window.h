@@ -57,6 +57,7 @@ class MainWindow : public SARibbonMainWindow {
   bool tryCloseCurrentProject();
   void openRecentProject(const QString& path);
   void onNewProject();
+  static QString findProjectFile(const QString& dirPath);
   void onOpenProject();
   void onOpenFile();
   void onCloseProject();

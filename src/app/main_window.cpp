@@ -1,6 +1,7 @@
 ﻿#include "main_window.h"
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QCoreApplication>
@@ -376,6 +377,24 @@ void MainWindow::initSignalsLate() {
             psWidget, &ProjectStructureWidget::onFileOpened);
     connect(editor_manager_, &EditorManager::fileClosed,
             psWidget, &ProjectStructureWidget::onFileClosed);
+    // 记录最近文件
+    connect(editor_manager_, &EditorManager::fileOpened, this,
+            [](const QString& path) {
+              auto& cfg = ConfigManager::instance();
+              QStringList files = cfg.get<QStringList>(
+                  QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
+              files.removeAll(path);
+              files.prepend(path);
+              while (files.size() > CONFIG_RECENT_FILE_MAX_COUNT)
+                files.removeLast();
+              cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST), files);
+
+              QVariantMap timestamps = cfg.get<QVariantMap>(
+                  QString::fromLatin1(CONFIG_RECENT_FILE_TIMESTAMPS));
+              timestamps.insert(path, QDateTime::currentDateTime());
+              cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_TIMESTAMPS),
+                      timestamps);
+            });
     connect(&projectMgr,
             &etest::core::project::ProjectManager::projectOpened,
             psWidget, [this, psWidget]() {
@@ -393,6 +412,77 @@ void MainWindow::initSignalsLate() {
     connect(psWidget, &ProjectStructureWidget::openFileCloseRequested,
             this, [this](const QString& path) {
               editor_manager_->closeFile(path);
+            });
+    // 点击最近文件 → 项目检测 + 打开
+    connect(psWidget, &ProjectStructureWidget::recentFileOpenRequested,
+            this, [this](const QString& path) {
+              QFileInfo fi(path);
+              if (!fi.exists()) {
+                // 文件已不存在，从最近文件列表中移除
+                auto& cfg = ConfigManager::instance();
+                QStringList files = cfg.get<QStringList>(
+                    QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
+                if (files.removeAll(path) > 0) {
+                  cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST), files);
+                }
+                return;
+              }
+
+              // 向上遍历找 .etproj 项目文件
+              QString projFile = findProjectFile(fi.absolutePath());
+              if (projFile.isEmpty()) {
+                editor_manager_->openFile(path);
+                return;
+              }
+
+              QFileInfo projFi(projFile);
+              if (projFi.absolutePath() ==
+                  etest::core::project::ProjectManager::instance()
+                      .currentProjectRoot()) {
+                editor_manager_->openFile(path);
+                return;
+              }
+
+              // 检查自动打开项目的配置
+              auto& cfg = ConfigManager::instance();
+              bool autoOpenProject = cfg.get<bool>(
+                  QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
+                  CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
+              auto& projMgr = etest::core::project::ProjectManager::instance();
+
+              // 如果当前有项目打开，先关闭
+              if (projMgr.isProjectOpen()) {
+                if (!tryCloseCurrentProject()) return;
+              }
+
+              if (autoOpenProject) {
+                projMgr.openProject(projFile);
+                editor_manager_->openFile(path);
+                return;
+              }
+
+              // 不同项目 → 弹对话框询问（含复选框）
+              QMessageBox msgBox;
+              msgBox.setWindowTitle(QStringLiteral("打开文件"));
+              msgBox.setText(
+                  QStringLiteral("此文件属于项目 \"%1\"，是否打开该项目？")
+                      .arg(projFi.completeBaseName()));
+              msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+              msgBox.setDefaultButton(QMessageBox::Yes);
+
+              auto* cb = new QCheckBox(
+                  QStringLiteral("以后始终打开所属项目，不再询问"));
+              msgBox.setCheckBox(cb);
+
+              if (msgBox.exec() == QMessageBox::Yes) {
+                if (cb->isChecked()) {
+                  cfg.set(
+                      QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
+                      true);
+                }
+                projMgr.openProject(projFile);
+              }
+              editor_manager_->openFile(path);
             });
   }
 
@@ -1032,6 +1122,19 @@ void MainWindow::onOpenFile() {
 
   cfg.set(CONFIG_RECENT_LAST_OPEN_PATH, QFileInfo(filePath).absolutePath());
   editor_manager_->openFile(filePath);
+}
+
+QString MainWindow::findProjectFile(const QString& dirPath) {
+  QDir dir(dirPath);
+  for (int i = 0; i < 8 && !dir.isRoot(); ++i) {
+    QStringList entries = dir.entryList(QStringList{QStringLiteral("*.etproj")},
+                                        QDir::Files | QDir::NoDotAndDotDot);
+    if (!entries.isEmpty()) {
+      return dir.absoluteFilePath(entries.first());
+    }
+    if (!dir.cdUp()) break;
+  }
+  return {};
 }
 
 void MainWindow::openRecentProject(const QString& path) {

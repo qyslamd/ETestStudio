@@ -44,6 +44,14 @@ constexpr const char* CONFIG_RECENT_PROJECT_TIMESTAMPS = "recent/project_timesta
 constexpr const char* CONFIG_RECENT_LAST_OPEN_PATH = "recent/last_open_path";
 constexpr int CONFIG_RECENT_MAX_COUNT = 10;  // 最近项目保留10个
 
+// 最近文件配置组
+constexpr const char* CONFIG_RECENT_FILE_LIST = "recent/file_list";
+constexpr const char* CONFIG_RECENT_FILE_TIMESTAMPS = "recent/file_timestamps";
+constexpr int CONFIG_RECENT_FILE_MAX_COUNT = 15;
+constexpr const char* CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT =
+    "recent/file_auto_open_project";
+constexpr bool CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT = false;
+
 // 日志配置组
 constexpr const char* CONFIG_LOG_LEVEL = "log/level";
 constexpr const char* CONFIG_LOG_MAX_FILE_SIZE = "log/max_file_size";

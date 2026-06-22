@@ -131,6 +131,13 @@ QWidget* SettingsDialog::createGeneralPage() {
                 CONFIG_TERMINAL_DEFAULT_SCROLLBACK);
   layout->addSpacing(12);
 
+  // --- 项目 section ---
+  layout->addWidget(createSectionHeader(QStringLiteral("项目")));
+  addCheckBoxRow(page, QStringLiteral("打开文件时自动打开所属项目"),
+                 CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT,
+                 CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
+  layout->addSpacing(12);
+
   // --- 外观 section ---
   layout->addWidget(createSectionHeader(QStringLiteral("外观")));
   addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,

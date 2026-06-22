@@ -44,6 +44,7 @@ ProjectStructureWidget::ProjectStructureWidget(QWidget* parent)
   initUi();
   initSignals();
   refreshRecentProjects();
+  refreshRecentFiles();
 }
 
 void ProjectStructureWidget::initUi() {
@@ -170,6 +171,28 @@ void ProjectStructureWidget::initUi() {
   recent_container_ = new QWidget(scroll_content);
   recent_container_->setObjectName(QStringLiteral("PhRecentContainer"));
   sc_layout->addWidget(recent_container_);
+
+  // ── 最近文件 ──
+  auto* sep3 = new QFrame(scroll_content);
+  sep3->setObjectName(QStringLiteral("PhSeparator"));
+  sep3->setFrameShape(QFrame::HLine);
+  sc_layout->addWidget(sep3);
+
+  auto* recent_file_label =
+      new QLabel(QStringLiteral("最近文件"), scroll_content);
+  recent_file_label->setObjectName(QStringLiteral("PhSectionLabel"));
+  sc_layout->addWidget(recent_file_label);
+
+  recent_files_view_ = new QListView();
+  recent_files_view_->setFrameShape(QFrame::NoFrame);
+  recent_files_view_->setMouseTracking(true);
+  recent_files_model_ = new QStandardItemModel(this);
+  recent_files_view_->setModel(recent_files_model_);
+  auto* rf_delegate = new OpenFileDelegate(this);
+  rf_delegate->setCloseButtonVisible(false);
+  recent_files_view_->setItemDelegate(rf_delegate);
+  recent_files_view_->setFixedHeight(200);
+  sc_layout->addWidget(recent_files_view_);
 
   sc_layout->addStretch();
 
@@ -316,13 +339,42 @@ void ProjectStructureWidget::initSignals() {
   connect(open_file_delegate_, &OpenFileDelegate::closeRequested, this,
           &ProjectStructureWidget::openFileCloseRequested);
 
-  // 最近项目变更时刷新
+  // ── 最近文件列表 ──
+  if (recent_files_view_) {
+    connect(recent_files_view_, &QListView::clicked, this,
+            [this](const QModelIndex& index) {
+              QString path = index.data(FilePathRole).toString();
+              if (!path.isEmpty())
+                emit recentFileOpenRequested(path);
+            });
+    connect(recent_files_view_, &QListView::customContextMenuRequested, this,
+            [this](const QPoint& pos) {
+              QModelIndex index = recent_files_view_->indexAt(pos);
+              if (!index.isValid()) return;
+              QString path = index.data(FilePathRole).toString();
+              if (path.isEmpty()) return;
+
+              QMenu menu(recent_files_view_);
+              menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+              auto* removeAction = menu.addAction(QStringLiteral("从最近文件中移除"));
+              if (menu.exec(recent_files_view_->viewport()->mapToGlobal(pos)) ==
+                  removeAction) {
+                removeRecentFileFromConfig(path);
+                refreshRecentFiles();
+              }
+            });
+  }
+
+  // 最近项目/文件变更时刷新
   connect(&etest::core::config::ConfigManager::instance(),
           &etest::core::config::ConfigManager::configChanged, this,
           [this](const QString& key) {
             if (key == QLatin1String(
                            etest::core::config::CONFIG_RECENT_PROJECT_LIST)) {
               refreshRecentProjects();
+            } else if (key == QLatin1String(
+                               etest::core::config::CONFIG_RECENT_FILE_LIST)) {
+              refreshRecentFiles();
             }
           });
 }
@@ -1089,6 +1141,45 @@ void ProjectStructureWidget::clearOpenFiles() {
 void ProjectStructureWidget::updateOpenFilesCount() {
   int count = open_files_model_->rowCount();
   open_files_header_btn_->setText(QStringLiteral("已打开 (%1)").arg(count));
+}
+
+// ── 最近文件 ──
+
+void ProjectStructureWidget::refreshRecentFiles() {
+  if (!recent_files_model_) return;
+  recent_files_model_->clear();
+
+  auto& cfg = etest::core::config::ConfigManager::instance();
+  QStringList files = cfg.get<QStringList>(
+      QString::fromLatin1(etest::core::config::CONFIG_RECENT_FILE_LIST));
+
+  for (const QString& path : files) {
+    QFileInfo fi(path);
+    if (!fi.exists()) continue;
+
+    QString dirPath = fi.absolutePath();
+    auto* item = new QStandardItem(fi.fileName());
+    item->setEditable(false);
+    item->setData(path, FilePathRole);
+    item->setData(dirPath, DirPathRole);
+    item->setToolTip(path);
+    recent_files_model_->appendRow(item);
+  }
+
+  // Auto-hide the section when there are no recent files
+  if (recent_files_view_) {
+    recent_files_view_->setVisible(!files.isEmpty());
+  }
+}
+
+void ProjectStructureWidget::removeRecentFileFromConfig(const QString& path) {
+  auto& cfg = etest::core::config::ConfigManager::instance();
+  QStringList files = cfg.get<QStringList>(
+      QString::fromLatin1(etest::core::config::CONFIG_RECENT_FILE_LIST));
+  if (files.removeAll(path) > 0) {
+    cfg.set(QString::fromLatin1(etest::core::config::CONFIG_RECENT_FILE_LIST),
+            files);
+  }
 }
 
 }  // namespace etest::app

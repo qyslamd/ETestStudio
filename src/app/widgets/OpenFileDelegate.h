@@ -20,6 +20,8 @@ class OpenFileDelegate : public QStyledItemDelegate {
  public:
   explicit OpenFileDelegate(QObject* parent = nullptr);
 
+  void setCloseButtonVisible(bool visible);
+
   void paint(QPainter* painter, const QStyleOptionViewItem& option,
              const QModelIndex& index) const override;
   QSize sizeHint(const QStyleOptionViewItem& option,
@@ -33,6 +35,7 @@ class OpenFileDelegate : public QStyledItemDelegate {
   void closeRequested(const QString& filePath);
 
  private:
+  bool close_button_visible_ = true;
   static QRect closeButtonRect(const QStyleOptionViewItem& option);
 };
 

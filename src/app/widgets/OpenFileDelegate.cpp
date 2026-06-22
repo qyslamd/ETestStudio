@@ -13,6 +13,10 @@ namespace etest::app {
 OpenFileDelegate::OpenFileDelegate(QObject* parent)
     : QStyledItemDelegate(parent) {}
 
+void OpenFileDelegate::setCloseButtonVisible(bool visible) {
+  close_button_visible_ = visible;
+}
+
 void OpenFileDelegate::paint(QPainter* painter,
                              const QStyleOptionViewItem& option,
                              const QModelIndex& index) const {
@@ -41,7 +45,7 @@ void OpenFileDelegate::paint(QPainter* painter,
   int leftMargin = 8;
   int rightMargin = 4;
   int textRight = itemRect.right() - rightMargin;
-  if (itemHovered) {
+  if (itemHovered && close_button_visible_) {
     textRight -= 24;  // room for close button
   }
   int textLeft = itemRect.left() + leftMargin;
@@ -94,7 +98,7 @@ void OpenFileDelegate::paint(QPainter* painter,
   }
 
   // ── Close button ──
-  if (itemHovered) {
+  if (itemHovered && close_button_visible_) {
     QRect btnRect = closeButtonRect(option);
     bool btnHovered = index.data(CloseBtnHoverRole).toBool();
 
@@ -132,12 +136,14 @@ bool OpenFileDelegate::editorEvent(QEvent* event, QAbstractItemModel* model,
 
   switch (me->type()) {
     case QEvent::MouseMove: {
-      bool overClose = closeButtonRect(option).contains(me->pos());
-      model->setData(index, overClose, CloseBtnHoverRole);
+      if (close_button_visible_) {
+        bool overClose = closeButtonRect(option).contains(me->pos());
+        model->setData(index, overClose, CloseBtnHoverRole);
+      }
       break;
     }
     case QEvent::MouseButtonRelease: {
-      if (me->button() == Qt::LeftButton &&
+      if (close_button_visible_ && me->button() == Qt::LeftButton &&
           closeButtonRect(option).contains(me->pos())) {
         QString filePath = index.data(FilePathRole).toString();
         emit closeRequested(filePath);
@@ -146,7 +152,7 @@ bool OpenFileDelegate::editorEvent(QEvent* event, QAbstractItemModel* model,
       break;
     }
     case QEvent::ToolTip: {
-      if (closeButtonRect(option).contains(me->pos())) {
+      if (close_button_visible_ && closeButtonRect(option).contains(me->pos())) {
         QToolTip::showText(me->globalPos(), QStringLiteral("关闭文件"), nullptr);
         return true;
       }

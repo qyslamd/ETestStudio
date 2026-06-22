@@ -67,8 +67,12 @@ class ProjectStructureWidget : public QWidget {
   void openFileActivateRequested(const QString& filePath);
   void openFileCloseRequested(const QString& filePath);
 
+  // 最近文件操作
+  void recentFileOpenRequested(const QString& filePath);
+
  public:
   void refreshRecentProjects();
+  void refreshRecentFiles();
   void setOpenFiles(const QStringList& paths);
   void onFileOpened(const QString& path);
   void onFileClosed(const QString& path);
@@ -104,6 +108,9 @@ class ProjectStructureWidget : public QWidget {
   QString absolutePath(const QString& relativePath) const;
   QString categoryDirPath(const QString& categoryId) const;
 
+  // 最近文件
+  void removeRecentFileFromConfig(const QString& path);
+
   // 已打开文件列表
   void addOpenFileItem(const QString& path);
   void removeOpenFileItem(const QString& path);
@@ -115,6 +122,8 @@ class ProjectStructureWidget : public QWidget {
   QStandardItemModel* model_;
   QWidget* placeholder_widget_ = nullptr;
   QWidget* recent_container_ = nullptr;
+  QListView* recent_files_view_ = nullptr;
+  QStandardItemModel* recent_files_model_ = nullptr;
   QPushButton* new_proj_btn_ = nullptr;
   QPushButton* open_proj_btn_ = nullptr;
   QFileSystemWatcher* file_watcher_ = nullptr;
