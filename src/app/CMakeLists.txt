@@ -31,6 +31,8 @@ add_executable(${TARGET_NAME}
     HardwareTreeWidget.cpp
     ProtocolManagerWidget.h
     ProtocolManagerWidget.cpp
+    TopologyManagerWidget.h
+    TopologyManagerWidget.cpp
     TestProgramData.h
     TestProgramData.cpp
     TestProgramManagerWidget.h

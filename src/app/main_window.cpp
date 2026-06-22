@@ -47,6 +47,7 @@
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
 #include "TestProgramManagerWidget.h"
+#include "TopologyManagerWidget.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
 #include "ThemeManager.h"
@@ -485,6 +486,12 @@ void MainWindow::initSignalsLate() {
               editor_manager_->openFile(path);
             });
 
+    // 拓扑管理器：双击文件打开编辑器
+    if (auto* topoMgr = sidebar_->topologyManager()) {
+      connect(topoMgr, &TopologyManagerWidget::openFileRequested, topoMgr,
+              [this](const QString& path) { editor_manager_->openFile(path); });
+    }
+
     // 文件系统监控：目录内容变化时刷新对应管理器
     connect(psWidget, &ProjectStructureWidget::directoryContentChanged,
             this, [this](const QString& dirPath) {
@@ -494,6 +501,10 @@ void MainWindow::initSignalsLate() {
               } else if (dirPath.endsWith(QStringLiteral("/cases")) ||
                          dirPath.endsWith(QStringLiteral("\\cases"))) {
                 sidebar_->testProgramManager()->refreshList();
+              } else if (dirPath.endsWith(QStringLiteral("/topology")) ||
+                         dirPath.endsWith(QStringLiteral("\\topology"))) {
+                if (auto* tm = sidebar_->topologyManager())
+                  tm->refreshList();
               }
             });
   }
@@ -762,6 +773,14 @@ void MainWindow::initSignalsLate() {
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
           tpMgr, &TestProgramManagerWidget::refreshList);
 
+  // 拓扑管理器：项目打开/关闭时刷新
+  if (auto* topoMgr = sidebar_->topologyManager()) {
+    connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
+            topoMgr, &TopologyManagerWidget::refreshList);
+    connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+            topoMgr, &TopologyManagerWidget::refreshList);
+  }
+
   // 日志输出到界面
   auto* qtSink = etest::core::logger::Logger::qtConsoleSink();
   if (qtSink) {
@@ -845,7 +864,7 @@ void MainWindow::lazyInit() {
     sidebar_->addPage(PageId::kProjectOverview,
                       new ProjectStructureWidget(sidebar_),
                       QStringLiteral("项目概览"));
-    sidebar_->addPage(PageId::kTopology, new QWidget(sidebar_),
+    sidebar_->addPage(PageId::kTopology, new TopologyManagerWidget(sidebar_),
                       QStringLiteral("拓扑"));
     sidebar_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_),
                       QStringLiteral("硬件"));

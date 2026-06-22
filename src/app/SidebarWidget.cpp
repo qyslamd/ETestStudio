@@ -4,6 +4,7 @@
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
 #include "TestProgramManagerWidget.h"
+#include "TopologyManagerWidget.h"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -68,6 +69,8 @@ void SidebarWidget::addPage(const QString& id, QWidget* page,
     git_widget_ = gw;
   } else if (auto* tp = qobject_cast<TestProgramManagerWidget*>(page)) {
     test_program_manager_ = tp;
+  } else if (auto* tm = qobject_cast<TopologyManagerWidget*>(page)) {
+    topology_manager_ = tm;
   }
 
   // 默认显示第一个页面
@@ -134,6 +137,10 @@ GitWidget* SidebarWidget::gitWidget() const {
 
 TestProgramManagerWidget* SidebarWidget::testProgramManager() const {
   return test_program_manager_;
+}
+
+TopologyManagerWidget* SidebarWidget::topologyManager() const {
+  return topology_manager_;
 }
 
 }  // namespace etest::app

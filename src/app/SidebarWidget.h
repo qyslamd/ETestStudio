@@ -15,6 +15,7 @@ class ProtocolManagerWidget;
 class SearchWidget;
 class GitWidget;
 class TestProgramManagerWidget;
+class TopologyManagerWidget;
 
 // ── 预定义页面 ID 常量 ──
 namespace PageId {
@@ -51,6 +52,7 @@ class SidebarWidget : public QWidget {
   SearchWidget* searchWidget() const;
   GitWidget* gitWidget() const;
   TestProgramManagerWidget* testProgramManager() const;
+  TopologyManagerWidget* topologyManager() const;
 
  private:
   void setupUi();
@@ -70,6 +72,7 @@ class SidebarWidget : public QWidget {
   SearchWidget* search_widget_ = nullptr;
   GitWidget* git_widget_ = nullptr;
   TestProgramManagerWidget* test_program_manager_ = nullptr;
+  TopologyManagerWidget* topology_manager_ = nullptr;
 };
 
 }  // namespace etest::app
