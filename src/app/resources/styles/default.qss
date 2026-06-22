@@ -570,48 +570,45 @@ SettingsDialog {
     background-color: #FFFFFF;
 }
 
-/* 左侧分类树 */
-SettingsDialog QTreeWidget {
+/* 左侧分类列表 */
+SettingsDialog QListWidget {
     background-color: #F5F5F5;
     color: #333333;
     border-right: 1px solid #E0E0E0;
     font-size: 13px;
     outline: none;
 }
-SettingsDialog QTreeWidget::item {
-    padding: 6px 12px;
+SettingsDialog QListWidget::item {
+    padding: 8px 12px;
     border: none;
 }
-SettingsDialog QTreeWidget::item:hover {
+SettingsDialog QListWidget::item:hover {
     background-color: #E0E0E0;
 }
-SettingsDialog QTreeWidget::item:selected {
+SettingsDialog QListWidget::item:selected {
     background-color: #CCE4F7;
     color: #1F1F1F;
 }
 
-/* 右侧滚动区 + 页面容器 */
-SettingsDialog QScrollArea {
-    background-color: #FFFFFF;
-    border: none;
-}
+/* 右侧页面容器 */
 SettingsDialog QStackedWidget {
     background-color: #FFFFFF;
 }
 SettingsDialog QStackedWidget > QWidget {
     background-color: #FFFFFF;
 }
-SettingsDialog QStackedWidget > QWidget {
-    background-color: #FFFFFF;
-}
 
-/* 分组标题 */
-QLabel#SettingsSectionHeader {
+/* 设置卡片 */
+QWidget#SettingsCard {
+    background-color: #FAFAFA;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+}
+QLabel#SettingsCardTitle {
     color: #333333;
     font-weight: bold;
     font-size: 13px;
-    padding-top: 8px;
-    padding-bottom: 4px;
+    padding: 4px 0 8px 0;
     background-color: transparent;
 }
 
@@ -636,6 +633,12 @@ QLabel#SettingsHint {
     font-size: 11px;
     padding: 4px 0;
     background-color: transparent;
+}
+
+/* 底部按钮栏 */
+QWidget#SettingsButtonBar {
+    border-top: 1px solid #E0E0E0;
+    background-color: #FFFFFF;
 }
 
 /* 设置页通用标签 */
@@ -710,6 +713,12 @@ SettingsDialog QCheckBox {
     color: #333333;
     spacing: 8px;
     background-color: transparent;
+}
+
+/* 滚动区（外观页内嵌） */
+SettingsDialog QScrollArea {
+    background-color: #FFFFFF;
+    border: none;
 }
 
 /* 按钮 */

@@ -1009,35 +1009,27 @@ SettingsDialog {
     background-color: #252526;
 }
 
-/* 左侧分类树 */
-SettingsDialog QTreeWidget {
+/* 左侧分类列表 */
+SettingsDialog QListWidget {
     background-color: #252526;
     color: #CCCCCC;
     border-right: 1px solid #1E1E1E;
     font-size: 13px;
     outline: none;
 }
-SettingsDialog QTreeWidget::item {
-    padding: 6px 12px;
+SettingsDialog QListWidget::item {
+    padding: 8px 12px;
     border: none;
-    color: #CCCCCC;
 }
-SettingsDialog QTreeWidget::item:hover {
+SettingsDialog QListWidget::item:hover {
     background-color: #2A2D2E;
 }
-SettingsDialog QTreeWidget::item:selected {
+SettingsDialog QListWidget::item:selected {
     background-color: #094771;
     color: #FFFFFF;
 }
 
-/* 右侧滚动区 + 内部 QStackedWidget + 页面 */
-SettingsDialog QScrollArea {
-    background-color: #1E1E1E;
-    border: none;
-}
-SettingsDialog QScrollArea > QWidget {
-    background-color: #1E1E1E;
-}
+/* 右侧页面容器 */
 SettingsDialog QStackedWidget {
     background-color: #1E1E1E;
 }
@@ -1045,13 +1037,26 @@ SettingsDialog QStackedWidget > QWidget {
     background-color: #1E1E1E;
 }
 
-/* 分组标题 */
-QLabel#SettingsSectionHeader {
+/* 外观页内嵌滚动区 */
+SettingsDialog QScrollArea {
+    background-color: #1E1E1E;
+    border: none;
+}
+SettingsDialog QScrollArea > QWidget {
+    background-color: #1E1E1E;
+}
+
+/* 卡片容器 */
+QWidget#SettingsCard {
+    background-color: #2D2D2D;
+    border: 1px solid #3C3C3C;
+    border-radius: 8px;
+}
+QLabel#SettingsCardTitle {
     color: #CCCCCC;
     font-weight: bold;
     font-size: 13px;
-    padding-top: 8px;
-    padding-bottom: 4px;
+    padding: 4px 0 8px;
     background-color: transparent;
 }
 
@@ -1077,10 +1082,16 @@ QLabel#SettingsHint {
     background-color: transparent;
 }
 
-/* 设置页中的表单标签 */
+/* 设置页通用标签 */
 SettingsDialog QLabel {
     color: #CCCCCC;
     background-color: transparent;
+}
+
+/* 底部按钮栏 */
+QWidget#SettingsButtonBar {
+    border-top: 1px solid #1E1E1E;
+    background-color: #252526;
 }
 
 /* 设置页中的数值控件 */
@@ -1122,7 +1133,7 @@ SettingsDialog QComboBox::drop-down {
     border: none;
     width: 20px;
 }
-SettingsDialog QComboBox QAbstractItemView {
+QComboBox QAbstractItemView {
     background-color: #252526;
     color: #CCCCCC;
     selection-background-color: #094771;

@@ -5,12 +5,12 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QHBoxLayout>
+#include <QListWidget>
 #include <QMap>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QStackedWidget>
-#include <QTreeWidget>
 
 #include <functional>
 
@@ -35,37 +35,37 @@ class SettingsDialog : public QDialog {
 
   // VS Code style setting row — returns the right-side layout for controls
   QHBoxLayout* addSettingRow(QWidget* parent,
-                             const QString& title,
-                             const QString& description);
+                              const QString& title,
+                              const QString& description);
 
   // Form row creators — return the control widget for signal wiring
   QSpinBox* addSpinBoxRow(QWidget* parent,
-                          const QString& title,
-                          const QString& description,
-                          const QString& configKey,
-                          int min,
-                          int max,
-                          int step,
-                          int defaultVal);
+                           const QString& title,
+                           const QString& description,
+                           const QString& configKey,
+                           int min,
+                           int max,
+                           int step,
+                           int defaultVal);
   QCheckBox* addCheckBoxRow(QWidget* parent,
-                            const QString& title,
-                            const QString& description,
-                            const QString& configKey,
-                            bool defaultVal);
+                             const QString& title,
+                             const QString& description,
+                             const QString& configKey,
+                             bool defaultVal);
   QComboBox* addComboBoxRow(QWidget* parent,
-                            const QString& title,
-                            const QString& description,
-                            const QString& configKey,
-                            const QStringList& items,
-                            const QString& defaultVal);
+                             const QString& title,
+                             const QString& description,
+                             const QString& configKey,
+                             const QStringList& items,
+                             const QString& defaultVal);
   QPushButton* addButtonRow(QWidget* parent,
-                            const QString& title,
-                            const QString& description,
-                            const QString& text,
-                            std::function<void()> callback = nullptr);
+                             const QString& title,
+                             const QString& description,
+                             const QString& text,
+                             std::function<void()> callback = nullptr);
 
-  // Section header label
-  QWidget* createSectionHeader(const QString& title);
+  // Settings card container — returns the card widget for adding rows
+  QWidget* createSettingsCard(QWidget* parent, const QString& title);
 
   // Bidirectional binding helpers
   void spinBoxToConfig(const QString& key, QSpinBox* spin);
@@ -73,9 +73,11 @@ class SettingsDialog : public QDialog {
   void comboBoxToConfig(const QString& key, QComboBox* combo);
   void onConfigChanged(const QString& key);
 
-  QTreeWidget* tree_;
+  QListWidget* list_;
   QStackedWidget* pages_;
-  QScrollArea* scroll_area_;
+  QPushButton* btn_ok_;
+  QPushButton* btn_cancel_;
+  QPushButton* btn_apply_;
 
   // Maps config key -> control widget for bidirectional sync
   QMap<QString, QSpinBox*> spin_map_;
