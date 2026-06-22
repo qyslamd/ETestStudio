@@ -1,7 +1,6 @@
 #include "dialogs/SettingsDialog.h"
 
 #include <QFileDialog>
-#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -36,18 +35,16 @@ void SettingsDialog::initUi() {
   tree_->setIndentation(0);
   tree_->setRootIsDecorated(false);
 
-  // Category items (order matches pages_ index)
-  auto* itemGeneral = new QTreeWidgetItem(tree_, {QStringLiteral("常用")});
   auto* itemEditor = new QTreeWidgetItem(tree_, {QStringLiteral("编辑器")});
   auto* itemTerminal = new QTreeWidgetItem(tree_, {QStringLiteral("终端")});
   auto* itemAppearance = new QTreeWidgetItem(tree_, {QStringLiteral("外观")});
+  auto* itemProject = new QTreeWidgetItem(tree_, {QStringLiteral("项目")});
   auto* itemBackup = new QTreeWidgetItem(tree_, {QStringLiteral("备份")});
 
-  // Assign indices for selection tracking
-  itemGeneral->setData(0, Qt::UserRole, 0);
-  itemEditor->setData(0, Qt::UserRole, 1);
-  itemTerminal->setData(0, Qt::UserRole, 2);
-  itemAppearance->setData(0, Qt::UserRole, 3);
+  itemEditor->setData(0, Qt::UserRole, 0);
+  itemTerminal->setData(0, Qt::UserRole, 1);
+  itemAppearance->setData(0, Qt::UserRole, 2);
+  itemProject->setData(0, Qt::UserRole, 3);
   itemBackup->setData(0, Qt::UserRole, 4);
 
   layout->addWidget(tree_);
@@ -55,10 +52,10 @@ void SettingsDialog::initUi() {
   // === Right: scroll area with pages ===
   pages_ = new QStackedWidget(this);
 
-  pages_->addWidget(createGeneralPage());     // index 0
-  pages_->addWidget(createEditorPage());      // index 1
-  pages_->addWidget(createTerminalPage());    // index 2
-  pages_->addWidget(createAppearancePage());  // index 3
+  pages_->addWidget(createEditorPage());      // index 0
+  pages_->addWidget(createTerminalPage());    // index 1
+  pages_->addWidget(createAppearancePage());  // index 2
+  pages_->addWidget(createProjectPage());     // index 3
   pages_->addWidget(createBackupPage());      // index 4
 
   scroll_area_ = new QScrollArea(this);
@@ -66,19 +63,16 @@ void SettingsDialog::initUi() {
   scroll_area_->setWidget(pages_);
   scroll_area_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-  // Ensure dark background on scroll area viewport and page content
   scroll_area_->viewport()->setAutoFillBackground(true);
   pages_->setAutoFillBackground(true);
 
-  layout->addWidget(scroll_area_, 1);  // stretch factor 1
+  layout->addWidget(scroll_area_, 1);
 
-  // Select first item by default
-  tree_->setCurrentItem(itemGeneral);
+  tree_->setCurrentItem(itemEditor);
   pages_->setCurrentIndex(0);
 }
 
 void SettingsDialog::initSignals() {
-  // Tree item selection → switch page
   connect(tree_, &QTreeWidget::currentItemChanged, this,
           [this](QTreeWidgetItem* current, QTreeWidgetItem* /*previous*/) {
             if (!current)
@@ -87,7 +81,6 @@ void SettingsDialog::initSignals() {
             pages_->setCurrentIndex(idx);
           });
 
-  // Config changes from external sources → update controls
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
           &SettingsDialog::onConfigChanged);
 }
@@ -96,124 +89,32 @@ void SettingsDialog::initSignals() {
 // Page creation
 // =========================================================================
 
-QWidget* SettingsDialog::createGeneralPage() {
-  auto* page = new QWidget(this);
-  auto* layout = new QVBoxLayout(page);
-  layout->setContentsMargins(20, 16, 20, 16);
-  layout->setSpacing(8);
-
-  // --- 编辑器 section ---
-  layout->addWidget(createSectionHeader(QStringLiteral("编辑器")));
-  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_EDITOR_FONT_SIZE, 8,
-                72, 1, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
-  addCheckBoxRow(page, QStringLiteral("显示行号"),
-                 CONFIG_EDITOR_SHOW_LINE_NUMBER,
-                 CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
-  addCheckBoxRow(page, QStringLiteral("自动缩进"), CONFIG_EDITOR_AUTO_INDENT,
-                 CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
-  addSpinBoxRow(page, QStringLiteral("Tab 宽度"), CONFIG_EDITOR_TAB_WIDTH, 2, 8,
-                1, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
-  addCheckBoxRow(page, QStringLiteral("空格替代 Tab"),
-                 CONFIG_EDITOR_SPACES_FOR_TAB,
-                 CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
-  layout->addSpacing(12);
-
-  // --- 终端 section ---
-  layout->addWidget(createSectionHeader(QStringLiteral("终端")));
-  addComboBoxRow(page, QStringLiteral("Shell"), CONFIG_TERMINAL_SHELL,
-                 {QStringLiteral("cmd.exe"), QStringLiteral("powershell.exe"),
-                  QStringLiteral("bash.exe")},
-                 QString::fromLatin1(CONFIG_TERMINAL_DEFAULT_SHELL));
-  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_TERMINAL_FONT_SIZE, 8,
-                24, 1, CONFIG_TERMINAL_DEFAULT_FONT_SIZE);
-  addSpinBoxRow(page, QStringLiteral("滚动缓冲行数"),
-                CONFIG_TERMINAL_SCROLLBACK, 100, 100000, 1000,
-                CONFIG_TERMINAL_DEFAULT_SCROLLBACK);
-  layout->addSpacing(12);
-
-  // --- 项目 section ---
-  layout->addWidget(createSectionHeader(QStringLiteral("项目")));
-  addCheckBoxRow(page, QStringLiteral("打开文件时自动打开所属项目"),
-                 CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT,
-                 CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
-  layout->addSpacing(12);
-
-  // --- 外观 section ---
-  layout->addWidget(createSectionHeader(QStringLiteral("外观")));
-  addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,
-                 CONFIG_TOOLBAR_DEFAULT_VISIBLE);
-  addButtonRow(page, QStringLiteral("窗口布局"), QStringLiteral("恢复默认"));
-
-  layout->addSpacing(12);
-
-  // --- 屏保 section ---
-  layout->addWidget(createSectionHeader(QStringLiteral("屏保")));
-  addCheckBoxRow(page, QStringLiteral("空闲时显示屏保"),
-                 CONFIG_TUXSAVER_ENABLED,
-                 CONFIG_TUXSAVER_DEFAULT_ENABLED);
-  addSpinBoxRow(page, QStringLiteral("触发时间(秒)"),
-                CONFIG_TUXSAVER_IDLE_TIMEOUT, 1, 60, 1,
-                CONFIG_TUXSAVER_DEFAULT_TIMEOUT);
-
-  // 屏保模式（使用 userData 存储配置值）
-  {
-    auto* row = new QWidget(page);
-    auto* rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(0, 2, 0, 2);
-
-    auto* lbl = new QLabel(QStringLiteral("屏保模式"), row);
-    lbl->setFixedWidth(120);
-
-    auto* combo = new QComboBox(row);
-    combo->addItem(QStringLiteral("小企鹅"), QStringLiteral("tux"));
-    combo->addItem(QStringLiteral("哲思·片刻"), QStringLiteral("wisdom"));
-    combo->setFixedWidth(160);
-
-    QString val = ConfigManager::instance().get<QString>(
-        CONFIG_TUXSAVER_MODE,
-        QString::fromLatin1(CONFIG_TUXSAVER_DEFAULT_MODE));
-    int idx = combo->findData(val);
-    if (idx >= 0)
-      combo->setCurrentIndex(idx);
-
-    rowLayout->addWidget(lbl);
-    rowLayout->addWidget(combo);
-    rowLayout->addStretch();
-    page->layout()->addWidget(row);
-
-    combo_map_.insert(QString::fromLatin1(CONFIG_TUXSAVER_MODE), combo);
-
-    connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [combo]() {
-              ConfigManager::instance().set<QString>(
-                  CONFIG_TUXSAVER_MODE,
-                  combo->currentData().toString());
-            });
-  }
-
-  layout->addStretch();
-
-  return page;
-}
-
 QWidget* SettingsDialog::createEditorPage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
-  layout->setSpacing(8);
+  layout->setSpacing(0);
 
-  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_EDITOR_FONT_SIZE, 8,
-                72, 1, CONFIG_EDITOR_DEFAULT_FONT_SIZE);
+  layout->addWidget(createSectionHeader(QStringLiteral("编辑器")));
+  addSpinBoxRow(page, QStringLiteral("字体大小"),
+                QStringLiteral("编辑器文字大小（像素）"),
+                CONFIG_EDITOR_FONT_SIZE, 8, 72, 1,
+                CONFIG_EDITOR_DEFAULT_FONT_SIZE);
   addCheckBoxRow(page, QStringLiteral("显示行号"),
+                 QStringLiteral("在编辑器左侧显示行号"),
                  CONFIG_EDITOR_SHOW_LINE_NUMBER,
                  CONFIG_EDITOR_DEFAULT_SHOW_LINE_NUMBER);
-  addCheckBoxRow(page, QStringLiteral("自动缩进"), CONFIG_EDITOR_AUTO_INDENT,
+  addCheckBoxRow(page, QStringLiteral("自动缩进"),
+                 QStringLiteral("换行时自动对齐缩进"), CONFIG_EDITOR_AUTO_INDENT,
                  CONFIG_EDITOR_DEFAULT_AUTO_INDENT);
-  addSpinBoxRow(page, QStringLiteral("Tab 宽度"), CONFIG_EDITOR_TAB_WIDTH, 2, 8,
-                1, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
+  addSpinBoxRow(page, QStringLiteral("Tab 宽度"),
+                QStringLiteral("制表符占据的空格数"), CONFIG_EDITOR_TAB_WIDTH,
+                2, 8, 1, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
   addCheckBoxRow(page, QStringLiteral("空格替代 Tab"),
+                 QStringLiteral("按 Tab 键插入空格而非制表符"),
                  CONFIG_EDITOR_SPACES_FOR_TAB,
                  CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
+
   layout->addStretch();
   return page;
 }
@@ -222,17 +123,24 @@ QWidget* SettingsDialog::createTerminalPage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
-  layout->setSpacing(8);
+  layout->setSpacing(0);
 
-  addComboBoxRow(page, QStringLiteral("Shell"), CONFIG_TERMINAL_SHELL,
+  layout->addWidget(createSectionHeader(QStringLiteral("终端")));
+  addComboBoxRow(page, QStringLiteral("Shell"),
+                 QStringLiteral("终端使用的命令行解释器"),
+                 CONFIG_TERMINAL_SHELL,
                  {QStringLiteral("cmd.exe"), QStringLiteral("powershell.exe"),
                   QStringLiteral("bash.exe")},
                  QString::fromLatin1(CONFIG_TERMINAL_DEFAULT_SHELL));
-  addSpinBoxRow(page, QStringLiteral("字体大小"), CONFIG_TERMINAL_FONT_SIZE, 8,
-                24, 1, CONFIG_TERMINAL_DEFAULT_FONT_SIZE);
+  addSpinBoxRow(page, QStringLiteral("字体大小"),
+                QStringLiteral("终端文字大小（像素）"),
+                CONFIG_TERMINAL_FONT_SIZE, 8, 24, 1,
+                CONFIG_TERMINAL_DEFAULT_FONT_SIZE);
   addSpinBoxRow(page, QStringLiteral("滚动缓冲行数"),
+                QStringLiteral("终端可回滚查看的历史行数"),
                 CONFIG_TERMINAL_SCROLLBACK, 100, 100000, 1000,
                 CONFIG_TERMINAL_DEFAULT_SCROLLBACK);
+
   layout->addStretch();
   return page;
 }
@@ -241,18 +149,15 @@ QWidget* SettingsDialog::createAppearancePage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
-  layout->setSpacing(8);
+  layout->setSpacing(0);
 
-  // 主题选择（手动创建，使用 userData 存储配置值）
+  layout->addWidget(createSectionHeader(QStringLiteral("外观")));
+
+  // 主题选择（使用 userData 存储配置值）
   {
-    auto* row = new QWidget(page);
-    auto* rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(0, 2, 0, 2);
-
-    auto* lbl = new QLabel(QStringLiteral("主题"), row);
-    lbl->setFixedWidth(120);
-
-    auto* combo = new QComboBox(row);
+    auto* rightLayout = addSettingRow(
+        page, QStringLiteral("主题"), QStringLiteral("应用程序界面色彩主题"));
+    auto* combo = new QComboBox();
     combo->addItem(QStringLiteral("默认主题"), QStringLiteral("default"));
     combo->addItem(QStringLiteral("VS Code 暗黑"), QStringLiteral("vscode"));
     combo->setFixedWidth(160);
@@ -264,63 +169,54 @@ QWidget* SettingsDialog::createAppearancePage() {
     if (idx >= 0)
       combo->setCurrentIndex(idx);
 
-    rowLayout->addWidget(lbl);
-    rowLayout->addWidget(combo);
-    rowLayout->addStretch();
-    page->layout()->addWidget(row);
+    rightLayout->addWidget(combo);
 
-    // 注册到 combo_map_ 以支持 onConfigChanged 同步
     combo_map_.insert(QString::fromLatin1(CONFIG_APPEARANCE_THEME), combo);
 
-    // 使用 currentIndexChanged(int) 以访问 currentData()
     connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [combo]() {
               ConfigManager::instance().set<QString>(
-                  CONFIG_APPEARANCE_THEME,
-                  combo->currentData().toString());
+                  CONFIG_APPEARANCE_THEME, combo->currentData().toString());
             });
   }
 
-  addCheckBoxRow(page, QStringLiteral("工具栏可见"), CONFIG_TOOLBAR_VISIBLE,
-                 CONFIG_TOOLBAR_DEFAULT_VISIBLE);
-  addButtonRow(page, QStringLiteral("窗口布局"), QStringLiteral("恢复默认"));
+  addCheckBoxRow(page, QStringLiteral("工具栏可见"),
+                 QStringLiteral("显示或隐藏顶部工具栏"),
+                 CONFIG_TOOLBAR_VISIBLE, CONFIG_TOOLBAR_DEFAULT_VISIBLE);
+  addButtonRow(page, QStringLiteral("窗口布局"),
+               QStringLiteral("将停靠面板布局恢复到默认状态"),
+               QStringLiteral("恢复默认"),
+               []() { ConfigManager::instance().resetAllToDefault(); });
 
-  layout->addSpacing(16);
+  layout->addSpacing(12);
   layout->addWidget(createSectionHeader(QStringLiteral("欢迎页背景")));
 
-  // --- 提示：目录优先于固定图片 ---
   {
-    auto* hint = new QLabel(QStringLiteral("设置了图片目录则优先从目录中随机选图"), page);
+    auto* hint =
+        new QLabel(QStringLiteral("设置了图片目录则优先从目录中随机选图"), page);
     hint->setObjectName("SettingsHint");
-    page->layout()->addWidget(hint);
+    layout->addWidget(hint);
   }
 
   // 背景图片目录
   {
-    auto* row = new QWidget(page);
-    auto* rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(0, 2, 0, 2);
-
-    auto* lbl = new QLabel(QStringLiteral("图片目录"), row);
-    lbl->setFixedWidth(120);
-
-    auto* dirEdit = new QLineEdit(row);
+    auto* rightLayout = addSettingRow(
+        page, QStringLiteral("图片目录"),
+        QStringLiteral("从指定目录中随机选择背景图片"));
+    auto* dirEdit = new QLineEdit();
     dirEdit->setReadOnly(true);
     dirEdit->setPlaceholderText(QStringLiteral("未设置（随机选图）"));
-    QString curDir = ConfigManager::instance().get<QString>(
-        CONFIG_WELCOME_BG_DIR);
-    dirEdit->setText(curDir);
     dirEdit->setFixedWidth(260);
+    QString curDir =
+        ConfigManager::instance().get<QString>(CONFIG_WELCOME_BG_DIR);
+    dirEdit->setText(curDir);
 
-    auto* browseDirBtn = new QPushButton(QStringLiteral("选择目录..."), row);
-    auto* clearDirBtn = new QPushButton(QStringLiteral("清除"), row);
+    auto* browseDirBtn = new QPushButton(QStringLiteral("选择目录..."));
+    auto* clearDirBtn = new QPushButton(QStringLiteral("清除"));
 
-    rowLayout->addWidget(lbl);
-    rowLayout->addWidget(dirEdit);
-    rowLayout->addWidget(browseDirBtn);
-    rowLayout->addWidget(clearDirBtn);
-    rowLayout->addStretch();
-    page->layout()->addWidget(row);
+    rightLayout->addWidget(dirEdit);
+    rightLayout->addWidget(browseDirBtn);
+    rightLayout->addWidget(clearDirBtn);
 
     connect(browseDirBtn, &QPushButton::clicked, this, [dirEdit]() {
       QString dir = QFileDialog::getExistingDirectory(
@@ -336,37 +232,30 @@ QWidget* SettingsDialog::createAppearancePage() {
     });
   }
 
-  // 背景图片路径（固定图片）
+  // 固定背景图片
   {
-    auto* row = new QWidget(page);
-    auto* rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(0, 2, 0, 2);
-
-    auto* lbl = new QLabel(QStringLiteral("固定图片"), row);
-    lbl->setFixedWidth(120);
-
-    auto* pathEdit = new QLineEdit(row);
+    auto* rightLayout = addSettingRow(
+        page, QStringLiteral("固定图片"), QStringLiteral("使用单张固定图片作为背景"));
+    auto* pathEdit = new QLineEdit();
     pathEdit->setReadOnly(true);
     pathEdit->setPlaceholderText(QStringLiteral("未设置"));
-    QString curPath = ConfigManager::instance().get<QString>(
-        CONFIG_WELCOME_BG_IMAGE);
-    pathEdit->setText(curPath);
     pathEdit->setFixedWidth(260);
+    QString curPath =
+        ConfigManager::instance().get<QString>(CONFIG_WELCOME_BG_IMAGE);
+    pathEdit->setText(curPath);
 
-    auto* browseBtn = new QPushButton(QStringLiteral("浏览..."), row);
-    auto* clearBtn = new QPushButton(QStringLiteral("清除"), row);
+    auto* browseBtn = new QPushButton(QStringLiteral("浏览..."));
+    auto* clearBtn = new QPushButton(QStringLiteral("清除"));
 
-    rowLayout->addWidget(lbl);
-    rowLayout->addWidget(pathEdit);
-    rowLayout->addWidget(browseBtn);
-    rowLayout->addWidget(clearBtn);
-    rowLayout->addStretch();
-    page->layout()->addWidget(row);
+    rightLayout->addWidget(pathEdit);
+    rightLayout->addWidget(browseBtn);
+    rightLayout->addWidget(clearBtn);
 
     connect(browseBtn, &QPushButton::clicked, this, [pathEdit]() {
       QString file = QFileDialog::getOpenFileName(
           nullptr, QStringLiteral("选择背景图片"), {},
-          QStringLiteral("图片文件 (*.png *.jpg *.jpeg *.jfif *.bmp *.gif *.svg)"));
+          QStringLiteral(
+              "图片文件 (*.png *.jpg *.jpeg *.jfif *.bmp *.gif *.svg)"));
       if (!file.isEmpty()) {
         pathEdit->setText(file);
         ConfigManager::instance().set(CONFIG_WELCOME_BG_IMAGE, file);
@@ -378,37 +267,84 @@ QWidget* SettingsDialog::createAppearancePage() {
     });
   }
 
-  // 填充模式
+  // 填充方式
   {
-    auto* row = new QWidget(page);
-    auto* rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(0, 2, 0, 2);
-
-    auto* lbl = new QLabel(QStringLiteral("填充方式"), row);
-    lbl->setFixedWidth(120);
-
-    auto* combo = new QComboBox(row);
+    auto* rightLayout = addSettingRow(
+        page, QStringLiteral("填充方式"), QStringLiteral("背景图片的缩放和排列方式"));
+    auto* combo = new QComboBox();
     combo->addItem(QStringLiteral("居中"), 0);
     combo->addItem(QStringLiteral("平铺"), 1);
     combo->addItem(QStringLiteral("拉伸"), 2);
     combo->setFixedWidth(160);
 
-    int curMode = ConfigManager::instance().get<int>(CONFIG_WELCOME_BG_MODE, 0);
+    int curMode =
+        ConfigManager::instance().get<int>(CONFIG_WELCOME_BG_MODE, 0);
     combo->setCurrentIndex(combo->findData(curMode));
 
-    rowLayout->addWidget(lbl);
-    rowLayout->addWidget(combo);
-    rowLayout->addStretch();
-    page->layout()->addWidget(row);
+    rightLayout->addWidget(combo);
 
     combo_map_.insert(QString::fromLatin1(CONFIG_WELCOME_BG_MODE), combo);
 
     connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [combo]() {
-              ConfigManager::instance().set<int>(
-                  CONFIG_WELCOME_BG_MODE, combo->currentData().toInt());
+              ConfigManager::instance().set<int>(CONFIG_WELCOME_BG_MODE,
+                                                 combo->currentData().toInt());
             });
   }
+
+  // --- 屏保 section ---
+  layout->addSpacing(12);
+  layout->addWidget(createSectionHeader(QStringLiteral("屏保")));
+
+  addCheckBoxRow(page, QStringLiteral("空闲时显示屏保"),
+                 QStringLiteral("一段时间无操作后自动显示屏保动画"),
+                 CONFIG_TUXSAVER_ENABLED, CONFIG_TUXSAVER_DEFAULT_ENABLED);
+  addSpinBoxRow(page, QStringLiteral("触发时间(秒)"),
+                QStringLiteral("无操作后启动屏保的等待时间"),
+                CONFIG_TUXSAVER_IDLE_TIMEOUT, 1, 60, 1,
+                CONFIG_TUXSAVER_DEFAULT_TIMEOUT);
+
+  // 屏保模式（使用 userData 存储配置值）
+  {
+    auto* rightLayout = addSettingRow(
+        page, QStringLiteral("屏保模式"), QStringLiteral("屏保动画的风格"));
+    auto* combo = new QComboBox();
+    combo->addItem(QStringLiteral("小企鹅"), QStringLiteral("tux"));
+    combo->addItem(QStringLiteral("哲思·片刻"), QStringLiteral("wisdom"));
+    combo->setFixedWidth(160);
+
+    QString val = ConfigManager::instance().get<QString>(
+        CONFIG_TUXSAVER_MODE, QString::fromLatin1(CONFIG_TUXSAVER_DEFAULT_MODE));
+    int idx = combo->findData(val);
+    if (idx >= 0)
+      combo->setCurrentIndex(idx);
+
+    rightLayout->addWidget(combo);
+
+    combo_map_.insert(QString::fromLatin1(CONFIG_TUXSAVER_MODE), combo);
+
+    connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [combo]() {
+              ConfigManager::instance().set<QString>(
+                  CONFIG_TUXSAVER_MODE, combo->currentData().toString());
+            });
+  }
+
+  layout->addStretch();
+  return page;
+}
+
+QWidget* SettingsDialog::createProjectPage() {
+  auto* page = new QWidget(this);
+  auto* layout = new QVBoxLayout(page);
+  layout->setContentsMargins(20, 16, 20, 16);
+  layout->setSpacing(0);
+
+  layout->addWidget(createSectionHeader(QStringLiteral("项目")));
+  addCheckBoxRow(page, QStringLiteral("自动打开所属项目"),
+                 QStringLiteral("打开文件时自动打开其所属项目"),
+                 CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT,
+                 CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
 
   layout->addStretch();
   return page;
@@ -418,21 +354,26 @@ QWidget* SettingsDialog::createBackupPage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
-  layout->setSpacing(8);
+  layout->setSpacing(0);
 
   layout->addWidget(createSectionHeader(QStringLiteral("自动备份")));
-  addCheckBoxRow(page, QStringLiteral("启用自动备份"), CONFIG_BACKUP_ENABLED,
-                 CONFIG_BACKUP_DEFAULT_ENABLED);
+  addCheckBoxRow(page, QStringLiteral("启用自动备份"),
+                 QStringLiteral("按设定间隔自动备份项目文件"),
+                 CONFIG_BACKUP_ENABLED, CONFIG_BACKUP_DEFAULT_ENABLED);
   addSpinBoxRow(page, QStringLiteral("备份间隔(分钟)"),
+                QStringLiteral("两次自动备份之间的时间间隔"),
                 CONFIG_BACKUP_INTERVAL_MIN, 1, 60, 1,
                 CONFIG_BACKUP_DEFAULT_INTERVAL_MIN);
-  addSpinBoxRow(page, QStringLiteral("最大备份数"), CONFIG_BACKUP_MAX_COUNT, 1,
-                50, 1, CONFIG_BACKUP_DEFAULT_MAX_COUNT);
+  addSpinBoxRow(page, QStringLiteral("最大备份数"),
+                QStringLiteral("保留的备份份数上限，超出后自动删除最旧的"),
+                CONFIG_BACKUP_MAX_COUNT, 1, 50, 1,
+                CONFIG_BACKUP_DEFAULT_MAX_COUNT);
 
-  layout->addSpacing(16);
+  layout->addSpacing(12);
   layout->addWidget(createSectionHeader(QStringLiteral("手动操作")));
-  auto* manualBtn =
-      addButtonRow(page, QStringLiteral("立即备份"), QStringLiteral("备份"));
+  auto* manualBtn = addButtonRow(page, QStringLiteral("立即备份"),
+                                 QStringLiteral("立即创建一次项目备份"),
+                                 QStringLiteral("备份"), nullptr);
   connect(manualBtn, &QPushButton::clicked, this, []() {
     etest::core::backup::BackupManager::instance().manualBackup();
   });
@@ -452,38 +393,66 @@ QWidget* SettingsDialog::createSectionHeader(const QString& title) {
 }
 
 // =========================================================================
+// VS Code style setting row
+// =========================================================================
+
+QHBoxLayout* SettingsDialog::addSettingRow(QWidget* parent,
+                                           const QString& title,
+                                           const QString& description) {
+  auto* row = new QWidget(parent);
+  row->setObjectName("SettingsRow");
+  auto* rowLayout = new QHBoxLayout(row);
+  rowLayout->setContentsMargins(0, 8, 0, 8);
+
+  auto* leftLayout = new QVBoxLayout();
+  leftLayout->setSpacing(2);
+  leftLayout->setContentsMargins(0, 0, 0, 0);
+
+  auto* titleLabel = new QLabel(title, row);
+  titleLabel->setObjectName("SettingsRowTitle");
+  leftLayout->addWidget(titleLabel);
+
+  if (!description.isEmpty()) {
+    auto* descLabel = new QLabel(description, row);
+    descLabel->setObjectName("SettingsRowDesc");
+    descLabel->setWordWrap(true);
+    leftLayout->addWidget(descLabel);
+  }
+
+  rowLayout->addLayout(leftLayout, 1);
+
+  auto* rightLayout = new QHBoxLayout();
+  rightLayout->setContentsMargins(0, 0, 0, 0);
+  rowLayout->addLayout(rightLayout, 0);
+
+  parent->layout()->addWidget(row);
+  return rightLayout;
+}
+
+// =========================================================================
 // Form row creators — each knows its ConfigKey and default value
 // =========================================================================
 
 QSpinBox* SettingsDialog::addSpinBoxRow(QWidget* parent,
-                                        const QString& label,
+                                        const QString& title,
+                                        const QString& description,
                                         const QString& configKey,
                                         int min,
                                         int max,
                                         int step,
                                         int defaultVal) {
-  auto* row = new QWidget(parent);
-  auto* rowLayout = new QHBoxLayout(row);
-  rowLayout->setContentsMargins(0, 2, 0, 2);
+  auto* rightLayout = addSettingRow(parent, title, description);
 
-  auto* lbl = new QLabel(label, row);
-  lbl->setFixedWidth(120);
-
-  auto* spin = new QSpinBox(row);
+  auto* spin = new QSpinBox();
   spin->setRange(min, max);
   spin->setSingleStep(step);
   spin->setFixedWidth(100);
 
-  // Read current value from config (or use default)
   int val = ConfigManager::instance().get<int>(configKey, defaultVal);
   spin->setValue(val);
 
-  rowLayout->addWidget(lbl);
-  rowLayout->addWidget(spin);
-  rowLayout->addStretch();
-  parent->layout()->addWidget(row);
+  rightLayout->addWidget(spin);
 
-  // Store for bidirectional sync
   spin_map_.insert(configKey, spin);
   spinBoxToConfig(configKey, spin);
 
@@ -491,25 +460,18 @@ QSpinBox* SettingsDialog::addSpinBoxRow(QWidget* parent,
 }
 
 QCheckBox* SettingsDialog::addCheckBoxRow(QWidget* parent,
-                                          const QString& label,
+                                          const QString& title,
+                                          const QString& description,
                                           const QString& configKey,
                                           bool defaultVal) {
-  auto* row = new QWidget(parent);
-  auto* rowLayout = new QHBoxLayout(row);
-  rowLayout->setContentsMargins(0, 2, 0, 2);
+  auto* rightLayout = addSettingRow(parent, title, description);
 
-  auto* lbl = new QLabel(label, row);
-  lbl->setFixedWidth(120);
-
-  auto* cb = new QCheckBox(row);
+  auto* cb = new QCheckBox();
 
   bool val = ConfigManager::instance().get<bool>(configKey, defaultVal);
   cb->setChecked(val);
 
-  rowLayout->addWidget(lbl);
-  rowLayout->addWidget(cb);
-  rowLayout->addStretch();
-  parent->layout()->addWidget(row);
+  rightLayout->addWidget(cb);
 
   check_map_.insert(configKey, cb);
   checkBoxToConfig(configKey, cb);
@@ -518,18 +480,14 @@ QCheckBox* SettingsDialog::addCheckBoxRow(QWidget* parent,
 }
 
 QComboBox* SettingsDialog::addComboBoxRow(QWidget* parent,
-                                          const QString& label,
+                                          const QString& title,
+                                          const QString& description,
                                           const QString& configKey,
                                           const QStringList& items,
                                           const QString& defaultVal) {
-  auto* row = new QWidget(parent);
-  auto* rowLayout = new QHBoxLayout(row);
-  rowLayout->setContentsMargins(0, 2, 0, 2);
+  auto* rightLayout = addSettingRow(parent, title, description);
 
-  auto* lbl = new QLabel(label, row);
-  lbl->setFixedWidth(120);
-
-  auto* combo = new QComboBox(row);
+  auto* combo = new QComboBox();
   combo->addItems(items);
   combo->setFixedWidth(160);
 
@@ -538,10 +496,7 @@ QComboBox* SettingsDialog::addComboBoxRow(QWidget* parent,
   if (idx >= 0)
     combo->setCurrentIndex(idx);
 
-  rowLayout->addWidget(lbl);
-  rowLayout->addWidget(combo);
-  rowLayout->addStretch();
-  parent->layout()->addWidget(row);
+  rightLayout->addWidget(combo);
 
   combo_map_.insert(configKey, combo);
   comboBoxToConfig(configKey, combo);
@@ -550,25 +505,20 @@ QComboBox* SettingsDialog::addComboBoxRow(QWidget* parent,
 }
 
 QPushButton* SettingsDialog::addButtonRow(QWidget* parent,
-                                          const QString& label,
-                                          const QString& text) {
-  auto* row = new QWidget(parent);
-  auto* rowLayout = new QHBoxLayout(row);
-  rowLayout->setContentsMargins(0, 2, 0, 2);
+                                          const QString& title,
+                                          const QString& description,
+                                          const QString& text,
+                                          std::function<void()> callback) {
+  auto* rightLayout = addSettingRow(parent, title, description);
 
-  auto* lbl = new QLabel(label, row);
-  lbl->setFixedWidth(120);
-
-  auto* btn = new QPushButton(text, row);
+  auto* btn = new QPushButton(text);
   btn->setFixedWidth(100);
 
-  rowLayout->addWidget(lbl);
-  rowLayout->addWidget(btn);
-  rowLayout->addStretch();
-  parent->layout()->addWidget(row);
+  rightLayout->addWidget(btn);
 
-  connect(btn, &QPushButton::clicked, this,
-          [this]() { ConfigManager::instance().resetAllToDefault(); });
+  if (callback) {
+    connect(btn, &QPushButton::clicked, this, callback);
+  }
 
   return btn;
 }
@@ -596,7 +546,6 @@ void SettingsDialog::comboBoxToConfig(const QString& key, QComboBox* combo) {
 }
 
 void SettingsDialog::onConfigChanged(const QString& key) {
-  // 以下配置使用 userData 而非 displayText，需特殊处理
   if (key == QString::fromLatin1(CONFIG_APPEARANCE_THEME) ||
       key == QString::fromLatin1(CONFIG_WELCOME_BG_MODE) ||
       key == QString::fromLatin1(CONFIG_TUXSAVER_MODE)) {

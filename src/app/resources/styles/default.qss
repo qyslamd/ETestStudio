@@ -564,3 +564,165 @@ QPushButton#saverCloseBtn:pressed {
     color: white;
     border-color: rgba(200,50,50,220);
 }
+
+/* ==================== SettingsDialog ==================== */
+SettingsDialog {
+    background-color: #FFFFFF;
+}
+
+/* 左侧分类树 */
+SettingsDialog QTreeWidget {
+    background-color: #F5F5F5;
+    color: #333333;
+    border-right: 1px solid #E0E0E0;
+    font-size: 13px;
+    outline: none;
+}
+SettingsDialog QTreeWidget::item {
+    padding: 6px 12px;
+    border: none;
+}
+SettingsDialog QTreeWidget::item:hover {
+    background-color: #E0E0E0;
+}
+SettingsDialog QTreeWidget::item:selected {
+    background-color: #CCE4F7;
+    color: #1F1F1F;
+}
+
+/* 右侧滚动区 + 页面容器 */
+SettingsDialog QScrollArea {
+    background-color: #FFFFFF;
+    border: none;
+}
+SettingsDialog QStackedWidget {
+    background-color: #FFFFFF;
+}
+SettingsDialog QStackedWidget > QWidget {
+    background-color: #FFFFFF;
+}
+SettingsDialog QStackedWidget > QWidget {
+    background-color: #FFFFFF;
+}
+
+/* 分组标题 */
+QLabel#SettingsSectionHeader {
+    color: #333333;
+    font-weight: bold;
+    font-size: 13px;
+    padding-top: 8px;
+    padding-bottom: 4px;
+    background-color: transparent;
+}
+
+/* VS Code 风格设置行 */
+QWidget#SettingsRow {
+    background-color: transparent;
+    border-bottom: 1px solid #F0F0F0;
+}
+QLabel#SettingsRowTitle {
+    color: #1F1F1F;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: transparent;
+}
+QLabel#SettingsRowDesc {
+    color: #888888;
+    font-size: 11px;
+    background-color: transparent;
+}
+QLabel#SettingsHint {
+    color: #999999;
+    font-size: 11px;
+    padding: 4px 0;
+    background-color: transparent;
+}
+
+/* 设置页通用标签 */
+SettingsDialog QLabel {
+    color: #333333;
+    background-color: transparent;
+}
+
+/* 数值控件 */
+SettingsDialog QSpinBox {
+    background-color: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #D0D0D0;
+    border-radius: 3px;
+    padding: 4px 8px;
+}
+SettingsDialog QSpinBox:focus {
+    border-color: #007ACC;
+}
+SettingsDialog QSpinBox::up-button,
+SettingsDialog QSpinBox::down-button {
+    background-color: #F5F5F5;
+    border: none;
+    width: 16px;
+}
+SettingsDialog QSpinBox::up-button:hover,
+SettingsDialog QSpinBox::down-button:hover {
+    background-color: #E0E0E0;
+}
+
+/* 下拉框 */
+SettingsDialog QComboBox {
+    background-color: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #D0D0D0;
+    border-radius: 3px;
+    padding: 4px 8px;
+}
+SettingsDialog QComboBox:hover {
+    border-color: #007ACC;
+}
+SettingsDialog QComboBox:focus {
+    border-color: #007ACC;
+}
+SettingsDialog QComboBox::drop-down {
+    background-color: transparent;
+    border: none;
+    width: 20px;
+}
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    color: #1F1F1F;
+    selection-background-color: #CCE4F7;
+    selection-color: #1F1F1F;
+    border: 1px solid #D0D0D0;
+}
+
+/* 文本输入框 */
+SettingsDialog QLineEdit {
+    background-color: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #D0D0D0;
+    border-radius: 3px;
+    padding: 4px 8px;
+}
+SettingsDialog QLineEdit:focus {
+    border-color: #007ACC;
+}
+
+/* 复选框 */
+SettingsDialog QCheckBox {
+    color: #333333;
+    spacing: 8px;
+    background-color: transparent;
+}
+
+/* 按钮 */
+SettingsDialog QPushButton {
+    background-color: #0078D4;
+    color: #FFFFFF;
+    border: 1px solid #0078D4;
+    border-radius: 3px;
+    padding: 5px 16px;
+}
+SettingsDialog QPushButton:hover {
+    background-color: #1A86E0;
+}
+SettingsDialog QPushButton:pressed {
+    background-color: #006ABF;
+}

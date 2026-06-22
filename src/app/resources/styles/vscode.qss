@@ -1035,10 +1035,13 @@ SettingsDialog QScrollArea {
     background-color: #1E1E1E;
     border: none;
 }
-SettingsDialog QScrollArea QWidget {
+SettingsDialog QScrollArea > QWidget {
     background-color: #1E1E1E;
 }
 SettingsDialog QStackedWidget {
+    background-color: #1E1E1E;
+}
+SettingsDialog QStackedWidget > QWidget {
     background-color: #1E1E1E;
 }
 
@@ -1049,6 +1052,28 @@ QLabel#SettingsSectionHeader {
     font-size: 13px;
     padding-top: 8px;
     padding-bottom: 4px;
+    background-color: transparent;
+}
+
+/* VS Code 风格设置行 */
+QWidget#SettingsRow {
+    border-bottom: 1px solid #2D2D2D;
+    background-color: transparent;
+}
+QLabel#SettingsRowTitle {
+    color: #CCCCCC;
+    font-size: 13px;
+    background-color: transparent;
+}
+QLabel#SettingsRowDesc {
+    color: #888888;
+    font-size: 11px;
+    background-color: transparent;
+}
+QLabel#SettingsHint {
+    color: #888888;
+    font-size: 11px;
+    padding: 4px 0;
     background-color: transparent;
 }
 
@@ -1102,6 +1127,18 @@ SettingsDialog QComboBox QAbstractItemView {
     color: #CCCCCC;
     selection-background-color: #094771;
     border: 1px solid #454545;
+}
+
+/* 设置页中的文本框 */
+SettingsDialog QLineEdit {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 2px;
+    padding: 4px 8px;
+}
+SettingsDialog QLineEdit:focus {
+    border-color: #007ACC;
 }
 
 /* 设置页中的复选框 */
