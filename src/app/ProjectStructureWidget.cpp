@@ -55,9 +55,9 @@ void ProjectStructureWidget::initUi() {
   stack_ = new QStackedWidget(this);
 
   // ── 模式 0：无项目占位页（可滚动） ──
-  placeholder_widget_ = new QWidget(this);
-  placeholder_widget_->setObjectName(QStringLiteral("PhPlaceholder"));
-  auto* ph_layout = new QVBoxLayout(placeholder_widget_);
+  page_default_ = new QWidget(this);
+  page_default_->setObjectName(QStringLiteral("PhPlaceholder"));
+  auto* ph_layout = new QVBoxLayout(page_default_);
   ph_layout->setContentsMargins(0, 0, 0, 0);
   ph_layout->setSpacing(0);
 
@@ -70,29 +70,36 @@ void ProjectStructureWidget::initUi() {
   auto* scroll_content = new QWidget();
   scroll_content->setObjectName(QStringLiteral("PhScrollContent"));
   auto* sc_layout = new QVBoxLayout(scroll_content);
-  sc_layout->setContentsMargins(24, 32, 24, 32);
-  sc_layout->setSpacing(12);
+  sc_layout->setContentsMargins(12, 8, 12, 8);
+  sc_layout->setSpacing(16);
 
-  auto* ph_icon = new QLabel(scroll_content);
+  // ── 卡片 1：快速操作 ──
+  auto* card1 = new QFrame(scroll_content);
+  card1->setObjectName(QStringLiteral("PhCard"));
+  auto* c1_layout = new QVBoxLayout(card1);
+  c1_layout->setContentsMargins(20, 24, 20, 24);
+  c1_layout->setSpacing(12);
+
+  auto* ph_icon = new QLabel(card1);
   ph_icon->setPixmap(AppIconProvider::instance()
                          .icon(QStringLiteral("project"))
                          .pixmap(48, 48));
   ph_icon->setAlignment(Qt::AlignCenter);
-  sc_layout->addWidget(ph_icon);
+  c1_layout->addWidget(ph_icon);
 
-  auto* ph_title = new QLabel(QStringLiteral("没有打开的项目"), scroll_content);
+  auto* ph_title = new QLabel(QStringLiteral("没有打开的项目"), card1);
   ph_title->setObjectName(QStringLiteral("PhTitle"));
   ph_title->setAlignment(Qt::AlignCenter);
-  sc_layout->addWidget(ph_title);
+  c1_layout->addWidget(ph_title);
 
   auto* ph_desc =
       new QLabel(QStringLiteral("创建或打开一个项目来管理测试资产\n"
                                 "您也可以直接使用编辑器创建和编辑文件"),
-                 scroll_content);
+                 card1);
   ph_desc->setObjectName(QStringLiteral("PhDesc"));
   ph_desc->setAlignment(Qt::AlignCenter);
   ph_desc->setWordWrap(true);
-  sc_layout->addWidget(ph_desc);
+  c1_layout->addWidget(ph_desc);
 
   // 快捷操作 — 2×2 grid，复用 defaultCategories
   auto* btn_grid = new QGridLayout();
@@ -110,7 +117,7 @@ void ProjectStructureWidget::initUi() {
   static const int kCols[] = {0, 1, 0, 1};
   for (int i = 0; i < quickCats.size(); ++i) {
     const auto& cat = quickCats[i];
-    auto* btn = new QPushButton(cat.displayName, scroll_content);
+    auto* btn = new QPushButton(cat.displayName, card1);
     btn->setObjectName(QStringLiteral("PhQuickBtn"));
     btn->setFixedHeight(28);
     btn->setProperty("catId", cat.id);
@@ -123,27 +130,29 @@ void ProjectStructureWidget::initUi() {
   btn_row->addStretch();
   btn_row->addLayout(btn_grid);
   btn_row->addStretch();
-  sc_layout->addLayout(btn_row);
+  c1_layout->addLayout(btn_row);
 
-  // ── 分隔线 ──
-  auto* sep1 = new QFrame(scroll_content);
-  sep1->setObjectName(QStringLiteral("PhSeparator"));
-  sep1->setFrameShape(QFrame::HLine);
-  sc_layout->addWidget(sep1);
+  sc_layout->addWidget(card1);
 
-  // ── 项目管理按钮组 ──
+  // ── 卡片 2：项目管理 ──
+  auto* card2 = new QFrame(scroll_content);
+  card2->setObjectName(QStringLiteral("PhCard"));
+  auto* c2_layout = new QVBoxLayout(card2);
+  c2_layout->setContentsMargins(20, 20, 20, 20);
+  c2_layout->setSpacing(12);
+
   auto* proj_section_label =
-      new QLabel(QStringLiteral("项目管理"), scroll_content);
+      new QLabel(QStringLiteral("项目管理"), card2);
   proj_section_label->setObjectName(QStringLiteral("PhSectionLabel"));
-  sc_layout->addWidget(proj_section_label);
+  c2_layout->addWidget(proj_section_label);
 
-  new_proj_btn_ = new QPushButton(QStringLiteral("  新建项目"), scroll_content);
+  new_proj_btn_ = new QPushButton(QStringLiteral("  新建项目"), card2);
   new_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
   new_proj_btn_->setFixedHeight(32);
   new_proj_btn_->setCursor(Qt::PointingHandCursor);
 
   open_proj_btn_ =
-      new QPushButton(QStringLiteral("  打开项目"), scroll_content);
+      new QPushButton(QStringLiteral("  打开项目"), card2);
   open_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
   open_proj_btn_->setFixedHeight(32);
   open_proj_btn_->setCursor(Qt::PointingHandCursor);
@@ -154,34 +163,36 @@ void ProjectStructureWidget::initUi() {
   proj_btn_layout->addWidget(new_proj_btn_);
   proj_btn_layout->addWidget(open_proj_btn_);
   proj_btn_layout->addStretch();
-  sc_layout->addLayout(proj_btn_layout);
+  c2_layout->addLayout(proj_btn_layout);
 
-  // ── 分隔线 ──
-  auto* sep2 = new QFrame(scroll_content);
-  sep2->setObjectName(QStringLiteral("PhSeparator"));
-  sep2->setFrameShape(QFrame::HLine);
-  sc_layout->addWidget(sep2);
+  sc_layout->addWidget(card2);
 
-  // ── 最近项目 ──
+  // ── 卡片 3：最近浏览 ──
+  auto* card3 = new QFrame(scroll_content);
+  card3->setObjectName(QStringLiteral("PhCard"));
+  auto* c3_layout = new QVBoxLayout(card3);
+  c3_layout->setContentsMargins(20, 20, 20, 20);
+  c3_layout->setSpacing(12);
+
   auto* recent_section_label =
-      new QLabel(QStringLiteral("最近项目"), scroll_content);
+      new QLabel(QStringLiteral("最近项目"), card3);
   recent_section_label->setObjectName(QStringLiteral("PhSectionLabel"));
-  sc_layout->addWidget(recent_section_label);
+  c3_layout->addWidget(recent_section_label);
 
-  recent_container_ = new QWidget(scroll_content);
+  recent_container_ = new QWidget(card3);
   recent_container_->setObjectName(QStringLiteral("PhRecentContainer"));
-  sc_layout->addWidget(recent_container_);
+  c3_layout->addWidget(recent_container_);
 
-  // ── 最近文件 ──
-  auto* sep3 = new QFrame(scroll_content);
+  // ── 卡片内部隔线 ──
+  auto* sep3 = new QFrame(card3);
   sep3->setObjectName(QStringLiteral("PhSeparator"));
   sep3->setFrameShape(QFrame::HLine);
-  sc_layout->addWidget(sep3);
+  c3_layout->addWidget(sep3);
 
   auto* recent_file_label =
-      new QLabel(QStringLiteral("最近文件"), scroll_content);
+      new QLabel(QStringLiteral("最近文件"), card3);
   recent_file_label->setObjectName(QStringLiteral("PhSectionLabel"));
-  sc_layout->addWidget(recent_file_label);
+  c3_layout->addWidget(recent_file_label);
 
   recent_files_view_ = new QListView();
   recent_files_view_->setFrameShape(QFrame::NoFrame);
@@ -192,19 +203,21 @@ void ProjectStructureWidget::initUi() {
   rf_delegate->setCloseButtonVisible(false);
   recent_files_view_->setItemDelegate(rf_delegate);
   recent_files_view_->setFixedHeight(200);
-  sc_layout->addWidget(recent_files_view_);
+  c3_layout->addWidget(recent_files_view_);
+
+  sc_layout->addWidget(card3);
 
   sc_layout->addStretch();
 
   scroll_area->setWidget(scroll_content);
   ph_layout->addWidget(scroll_area);
 
-  stack_->addWidget(placeholder_widget_);  // index 0
+  stack_->addWidget(page_default_);  // index 0
 
   // ── 模式 1：领域分类树 + 已打开文件列表 ──
-  tree_page_ = new QWidget(this);
+  page_project_ = new QWidget(this);
 
-  tree_splitter_ = new QSplitter(Qt::Vertical, tree_page_);
+  tree_splitter_ = new QSplitter(Qt::Vertical, page_project_);
 
   // 已打开文件区域
   open_files_widget_ = new QWidget();
@@ -249,12 +262,12 @@ void ProjectStructureWidget::initUi() {
   tree_splitter_->setStretchFactor(1, 0);
   tree_splitter_->setSizes({600, 200});
 
-  auto* page_layout = new QVBoxLayout(tree_page_);
+  auto* page_layout = new QVBoxLayout(page_project_);
   page_layout->setContentsMargins(0, 0, 0, 0);
   page_layout->setSpacing(0);
   page_layout->addWidget(tree_splitter_);
 
-  stack_->addWidget(tree_page_);  // index 1
+  stack_->addWidget(page_project_);  // index 1
 
   layout->addWidget(stack_);
 
@@ -272,7 +285,7 @@ void ProjectStructureWidget::initUi() {
 
 void ProjectStructureWidget::initSignals() {
   // 快捷按钮
-  auto quickBtns = placeholder_widget_->findChildren<QPushButton*>(
+  auto quickBtns = page_default_->findChildren<QPushButton*>(
       QStringLiteral("PhQuickBtn"));
   for (auto* btn : quickBtns) {
     QString catId = btn->property("catId").toString();

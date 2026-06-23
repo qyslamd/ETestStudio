@@ -516,6 +516,16 @@ QFrame#PhSeparator {
     color: #3C3C3C;
     max-height: 1px;
 }
+
+/* Placeholder page round-corner cards */
+QFrame#PhCard {
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+}
+QFrame#PhCard:hover {
+    border-color: #0078D4;
+}
 QLabel#PhRecentEmpty {
     color: #666666;
     font-size: 11px;

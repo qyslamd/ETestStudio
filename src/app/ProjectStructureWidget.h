@@ -124,7 +124,7 @@ class ProjectStructureWidget : public QWidget {
   QStackedWidget* stack_;
   QTreeView* tree_view_;
   QStandardItemModel* model_;
-  QWidget* placeholder_widget_ = nullptr;
+  QWidget* page_default_ = nullptr;
   QWidget* recent_container_ = nullptr;
   QListView* recent_files_view_ = nullptr;
   QStandardItemModel* recent_files_model_ = nullptr;
@@ -133,7 +133,7 @@ class ProjectStructureWidget : public QWidget {
   QFileSystemWatcher* file_watcher_ = nullptr;
   QTimer* debounce_timer_ = nullptr;
 
-  QWidget* tree_page_ = nullptr;
+  QWidget* page_project_ = nullptr;
   QSplitter* tree_splitter_ = nullptr;
   QWidget* open_files_widget_ = nullptr;
   QToolButton* open_files_header_btn_ = nullptr;
