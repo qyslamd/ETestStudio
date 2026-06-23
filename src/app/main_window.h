@@ -38,6 +38,7 @@ class MainWindow : public SARibbonMainWindow {
  protected:
   void resizeEvent(QResizeEvent* event) override;
   void closeEvent(QCloseEvent* event) override;
+  void showEvent(QShowEvent* event) override;
   bool eventFilter(QObject* obj, QEvent* event) override;
 
  private:
@@ -179,6 +180,8 @@ class MainWindow : public SARibbonMainWindow {
   QMetaObject::Connection current_editor_modification_connection_;
   QMetaObject::Connection current_editor_selection_connection_;
   QMetaObject::Connection current_editor_state_connection_;
+
+  bool first_show_ = true;
 };
 
 }  // namespace etest::app

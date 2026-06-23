@@ -213,12 +213,6 @@ void MainWindow::initUi() {
 
   // 恢复窗口状态
   restoreWindowState();
-
-  // 初始应用 QADS 主题样式到 CDockManager
-  // 延迟到事件循环，确保窗口 show() 后再设置，触发正确的 style recalculation
-  QTimer::singleShot(0, this, [this]() {
-    onThemeChanged(ThemeManager::instance().isDarkTheme());
-  });
 }
 
 void MainWindow::initSignalsEarly() {
@@ -1044,17 +1038,18 @@ void MainWindow::onThemeChanged(bool isDark) {
     settings_dialog_->setStyleSheet(qApp->styleSheet());
   }
 
-  // QADS 暗色样式必须设置到 CDockManager 自身（widget 级优先于 app 级）
-  // QADS 构造函数内部会 setStyleSheet(default.css)，这里覆盖它
+  // 先切 Ribbon 主题（可能触发 style recalculation）
+  setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
+                        : SARibbonTheme::RibbonThemeOffice2021Blue);
+
+  // 后设 QADS 暗色样式（覆盖 QADS 内置 widget 级 default.css）
   if (dock_manager_) {
     QString adsQss;
-    // 读取 QADS 内置 default.css 作为基础
     QFile defaultCss(QStringLiteral(":ads/stylesheets/default.css"));
     if (defaultCss.open(QIODevice::ReadOnly | QIODevice::Text)) {
       adsQss = QString::fromUtf8(defaultCss.readAll());
       defaultCss.close();
     }
-    // 暗色主题追加 ads_dark.qss 覆盖
     if (isDark) {
       QFile darkCss(QStringLiteral(":/resources/styles/ads_dark.qss"));
       if (darkCss.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -1064,9 +1059,6 @@ void MainWindow::onThemeChanged(bool isDark) {
     }
     dock_manager_->setStyleSheet(adsQss);
   }
-
-  setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
-                        : SARibbonTheme::RibbonThemeOffice2021Blue);
 }
 
 void MainWindow::createStatusBar() {
@@ -1551,6 +1543,14 @@ void MainWindow::resizeEvent(QResizeEvent* event) {
     loading_overlay_->setGeometry(
         QRect(v_splitter_->mapTo(this, QPoint(0, 0)), v_splitter_->size()));
     loading_overlay_->raise();
+  }
+}
+
+void MainWindow::showEvent(QShowEvent* event) {
+  SARibbonMainWindow::showEvent(event);
+  if (first_show_) {
+    first_show_ = false;
+    onThemeChanged(ThemeManager::instance().isDarkTheme());
   }
 }
 
