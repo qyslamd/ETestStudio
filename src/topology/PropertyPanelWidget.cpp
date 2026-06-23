@@ -19,11 +19,13 @@ namespace etest::topology {
 
 PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc, QWidget* parent)
     : QWidget(parent), doc_(doc) {
+  setObjectName(QStringLiteral("topologyPropertyPanel"));
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
   stack_ = new QStackedWidget(this);
+  stack_->setObjectName(QStringLiteral("topologyPropertyStack"));
   layout->addWidget(stack_);
 
   buildEmptyPage();
@@ -298,6 +300,7 @@ void PropertyPanelWidget::clearPanel() {
 void PropertyPanelWidget::buildEmptyPage() {
   auto* w = new QWidget(this);
   w->setObjectName("emptyPage");
+  w->setAutoFillBackground(true);
   auto* lay = new QVBoxLayout(w);
   auto* lbl = new QLabel(QStringLiteral("未选中任何元素"), w);
   lbl->setAlignment(Qt::AlignCenter);
@@ -308,6 +311,7 @@ void PropertyPanelWidget::buildEmptyPage() {
 void PropertyPanelWidget::buildUutPage() {
   auto* w = new QWidget(this);
   w->setObjectName("uutPage");
+  w->setAutoFillBackground(true);
   auto* scrollLay = new QVBoxLayout(w);
   scrollLay->setContentsMargins(0, 0, 0, 0);
 
@@ -363,6 +367,7 @@ void PropertyPanelWidget::buildUutPage() {
 void PropertyPanelWidget::buildPortPage() {
   auto* w = new QWidget(this);
   w->setObjectName("portPage");
+  w->setAutoFillBackground(true);
   auto* lay = new QFormLayout(w);
 
   port_name_edit_ = new QLineEdit(w);
@@ -411,6 +416,7 @@ void PropertyPanelWidget::buildPortPage() {
 void PropertyPanelWidget::buildDevicePage() {
   auto* w = new QWidget(this);
   w->setObjectName("devicePage");
+  w->setAutoFillBackground(true);
   auto* lay = new QVBoxLayout(w);
 
   auto* form = new QFormLayout();
@@ -499,6 +505,7 @@ void PropertyPanelWidget::buildDevicePage() {
 void PropertyPanelWidget::buildConnectionPage() {
   auto* w = new QWidget(this);
   w->setObjectName("connectionPage");
+  w->setAutoFillBackground(true);
   auto* lay = new QFormLayout(w);
 
   conn_source_label_ = new QLabel(QStringLiteral("-"), w);
@@ -551,6 +558,7 @@ void PropertyPanelWidget::onDevicePortStyleChanged() {
 void PropertyPanelWidget::buildDevicePortPage() {
   auto* w = new QWidget(this);
   w->setObjectName("devicePortPage");
+  w->setAutoFillBackground(true);
   auto* lay = new QFormLayout(w);
 
   devport_name_edit_ = new QLineEdit(w);
@@ -588,6 +596,7 @@ void PropertyPanelWidget::buildDevicePortPage() {
 void PropertyPanelWidget::buildMonitorPage() {
   auto* w = new QWidget(this);
   w->setObjectName("monitorPage");
+  w->setAutoFillBackground(true);
   auto* lay = new QVBoxLayout(w);
 
   auto* form = new QFormLayout();

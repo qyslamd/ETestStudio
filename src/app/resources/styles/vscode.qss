@@ -176,15 +176,19 @@ QTextEdit {
 }
 
 /* 表格 */
-QTableWidget {
+QTableWidget, QTableView {
     background-color: #1E1E1E;
+    alternate-background-color: #252526;
     color: #CCCCCC;
     border: none;
     gridline-color: #333333;
     selection-background-color: #094771;
 }
-QTableWidget::item {
+QTableWidget::item, QTableView::item {
     padding: 4px;
+}
+QHeaderView {
+    background-color: #1E1E1E;
 }
 QHeaderView::section {
     background-color: #2D2D2D;
@@ -194,6 +198,15 @@ QHeaderView::section {
     border-right: 1px solid #333333;
     border-bottom: 1px solid #333333;
     padding: 4px 8px;
+}
+QTableCornerButton::section {
+    background-color: #2D2D2D;
+    border: none;
+    border-right: 1px solid #333333;
+    border-bottom: 1px solid #333333;
+}
+QTableCornerButton::section:hover {
+    background-color: #3C3C3C;
 }
 
 /* 树形视图 */
@@ -920,8 +933,14 @@ QLabel#PhLoadingOverlayLabel {
 }
 
 /* ==================== PropertyPanelWidget ==================== */
-#emptyPage, #uutPage, #portPage, #devicePage, #connectionPage, #devicePortPage {
-    background-color: #3C3C3C;
+QWidget#topologyPropertyPanel {
+    background-color: #252526;
+}
+QStackedWidget#topologyPropertyStack {
+    background-color: #252526;
+}
+#emptyPage, #uutPage, #portPage, #devicePage, #connectionPage, #devicePortPage, #monitorPage {
+    background-color: #252526;
 }
 #emptyPage QLabel {
     color: #888888;
@@ -1595,6 +1614,18 @@ QDockWidget {
 }
 QDockWidget > QWidget {
     background: #252526;
+}
+
+/* IcdPropertyPanel 内容区 */
+QScrollArea#icdPropertyScroll {
+    background-color: #252526;
+    border: none;
+}
+QScrollArea#icdPropertyScroll > QWidget > QWidget {
+    background-color: #252526;
+}
+QWidget#icdPropertyForm {
+    background-color: #252526;
 }
 etest--ui--DockTitleBar {
     background: #2D2D2D;

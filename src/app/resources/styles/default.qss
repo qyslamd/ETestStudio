@@ -565,6 +565,29 @@ QDockWidget {
 QDockWidget > QWidget {
     background: #FAFAFA;
 }
+
+/* ==================== PropertyPanelWidget ==================== */
+QWidget#topologyPropertyPanel {
+    background-color: #FAFAFA;
+}
+QStackedWidget#topologyPropertyStack {
+    background-color: #FAFAFA;
+}
+#emptyPage, #uutPage, #portPage, #devicePage, #connectionPage, #devicePortPage, #monitorPage {
+    background-color: #FAFAFA;
+}
+
+/* IcdPropertyPanel 内部滚动区内容 */
+QScrollArea#icdPropertyScroll {
+    background-color: transparent;
+    border: none;
+}
+QScrollArea#icdPropertyScroll > QWidget > QWidget {
+    background-color: transparent;
+}
+QWidget#icdPropertyForm {
+    background-color: transparent;
+}
 etest--ui--DockTitleBar {
     background: #F0F0F0;
     border-bottom: 1px solid #D0D0D0;
