@@ -699,6 +699,8 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
     }
   } else if (nodeType == QStringLiteral("file")) {
     // 文件节点右键
+    auto* openAction = menu.addAction(QStringLiteral("打开"));
+    menu.addSeparator();
     auto* renameAction = menu.addAction(QStringLiteral("重命名"));
     auto* deleteAction =
         menu.addAction(QIcon::fromTheme(QStringLiteral("edit-delete")),
@@ -713,7 +715,10 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
 
     QAction* chosen = menu.exec(tree_view_->viewport()->mapToGlobal(pos));
 
-    if (chosen == renameAction) {
+    if (chosen == openAction) {
+      QString relPath = item->data(RelativePathRole).toString();
+      emit fileOpenRequested(absolutePath(relPath));
+    } else if (chosen == renameAction) {
       tree_view_->edit(index);
     } else if (chosen == deleteAction) {
       deleteSelectedFile();
