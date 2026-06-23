@@ -7,6 +7,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
@@ -18,6 +19,7 @@
 #include <QShortcut>
 #include <QSplitter>
 #include <QStatusBar>
+#include <QTimer>
 #include <QToolButton>
 #include "dialogs/AboutDialog.h"
 #include "dialogs/LoginDialog.h"
@@ -211,6 +213,12 @@ void MainWindow::initUi() {
 
   // 恢复窗口状态
   restoreWindowState();
+
+  // 初始应用 QADS 主题样式到 CDockManager
+  // 延迟到事件循环，确保窗口 show() 后再设置，触发正确的 style recalculation
+  QTimer::singleShot(0, this, [this]() {
+    onThemeChanged(ThemeManager::instance().isDarkTheme());
+  });
 }
 
 void MainWindow::initSignalsEarly() {
@@ -230,7 +238,7 @@ void MainWindow::initSignalsEarly() {
   connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
     if (!settings_dialog_) {
       settings_dialog_ = new SettingsDialog(this);
-      settings_dialog_->setStyleSheet(styleSheet());
+      settings_dialog_->setStyleSheet(qApp->styleSheet());
       connect(settings_dialog_, &QDialog::finished, this,
               [this]() { activity_bar_->setSettingsActive(false); });
     }
@@ -1032,10 +1040,31 @@ void MainWindow::lazyInit() {
 
 void MainWindow::onThemeChanged(bool isDark) {
   // 同步设置对话框样式（QSS 已由 ThemeManager 全局加载到 qApp）
-  // ADS dock manager 样式跟随全局 QSS，无需单独设置
   if (settings_dialog_) {
     settings_dialog_->setStyleSheet(qApp->styleSheet());
   }
+
+  // QADS 暗色样式必须设置到 CDockManager 自身（widget 级优先于 app 级）
+  // QADS 构造函数内部会 setStyleSheet(default.css)，这里覆盖它
+  if (dock_manager_) {
+    QString adsQss;
+    // 读取 QADS 内置 default.css 作为基础
+    QFile defaultCss(QStringLiteral(":ads/stylesheets/default.css"));
+    if (defaultCss.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      adsQss = QString::fromUtf8(defaultCss.readAll());
+      defaultCss.close();
+    }
+    // 暗色主题追加 ads_dark.qss 覆盖
+    if (isDark) {
+      QFile darkCss(QStringLiteral(":/resources/styles/ads_dark.qss"));
+      if (darkCss.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        adsQss += QStringLiteral("\n") + QString::fromUtf8(darkCss.readAll());
+        darkCss.close();
+      }
+    }
+    dock_manager_->setStyleSheet(adsQss);
+  }
+
   setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
                         : SARibbonTheme::RibbonThemeOffice2021Blue);
 }
@@ -1793,7 +1822,7 @@ void MainWindow::setupRibbon() {
     connect(act_settings, &QAction::triggered, this, [this]() {
       if (!settings_dialog_) {
         settings_dialog_ = new SettingsDialog(this);
-        settings_dialog_->setStyleSheet(styleSheet());
+        settings_dialog_->setStyleSheet(qApp->styleSheet());
         connect(settings_dialog_, &QDialog::finished, this,
                 [this]() { activity_bar_->setSettingsActive(false); });
       }

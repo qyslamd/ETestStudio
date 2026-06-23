@@ -105,6 +105,9 @@ QScrollBar::handle:vertical {
 QScrollBar::handle:vertical:hover {
     background-color: #4F4F4F;
 }
+QScrollBar::handle:vertical:pressed {
+    background-color: #3F3F3F;
+}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
 }
@@ -124,6 +127,9 @@ QScrollBar::handle:horizontal {
 }
 QScrollBar::handle:horizontal:hover {
     background-color: #4F4F4F;
+}
+QScrollBar::handle:horizontal:pressed {
+    background-color: #3F3F3F;
 }
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
     width: 0px;
@@ -1595,5 +1601,4 @@ QToolButton#PhOpenFilesHeaderBtn {
 }
 QToolButton#PhOpenFilesHeaderBtn:hover {
     color: #CCCCCC;
-}
 }
