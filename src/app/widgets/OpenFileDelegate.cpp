@@ -38,7 +38,11 @@ void OpenFileDelegate::paint(QPainter* painter,
 
   // ── Item hover background ──
   if (itemHovered && !itemSelected) {
-    painter->fillRect(itemRect, option.palette.alternateBase());
+    QColor bgColor = option.palette.color(QPalette::Base);
+    bool isDark = bgColor.lightness() < 128;
+    QColor hoverColor = isDark ? QColor(255, 255, 255, 26)
+                               : QColor(0, 0, 0, 16);
+    painter->fillRect(itemRect, hoverColor);
   }
 
   // ── Text area ──

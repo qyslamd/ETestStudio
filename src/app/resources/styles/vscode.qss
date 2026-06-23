@@ -235,6 +235,26 @@ QTreeView QLineEdit {
     selection-background-color: #264F78;
 }
 
+/* 列表视图（最近文件等） */
+QListView {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: none;
+    outline: none;
+    selection-background-color: #094771;
+    selection-color: #FFFFFF;
+}
+QListView::item {
+    padding: 2px 4px;
+    border: none;
+}
+QListView::item:hover {
+    background-color: #2A2D2E;
+}
+QListView::item:selected {
+    background-color: #094771;
+}
+
 /* 硬件树 */
 QTreeWidget {
     background-color: #252526;
