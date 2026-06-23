@@ -16,6 +16,7 @@ cd /d "%PROJECT_ROOT%.."
 set "BUILD_TYPE="
 set "TARGET="
 set "ACTION="
+set "CONFIGURE_ONLY="
 
 set "FIRST_ARG=%~1"
 if not defined FIRST_ARG goto :old_mode
@@ -52,6 +53,17 @@ if /i "%~1"=="-p" (
 )
 if /i "%~1"=="--package" (
     set "ACTION=package"
+    shift
+    goto :parse_new
+)
+
+if /i "%~1"=="-c" (
+    set "CONFIGURE_ONLY=1"
+    shift
+    goto :parse_new
+)
+if /i "%~1"=="--configure" (
+    set "CONFIGURE_ONLY=1"
     shift
     goto :parse_new
 )
@@ -110,6 +122,7 @@ echo   -t, --type ^<type^>       Build type: debug / relwithdebinfo / release
 echo   -m, --target ^<target^>   Build target (e.g. ETestStudio), omit for all
 echo   -d, --deploy              Run windeployqt after build
 echo   -p, --package             Run windeployqt + ISCC after build
+echo   -c, --configure           Only run CMake configure, skip build
 echo   -h, --help                Show this help
 echo.
 echo Examples:
@@ -117,6 +130,7 @@ echo   build_ninja.bat
 echo   build_ninja.bat debug deploy
 echo   build_ninja.bat -t debug -m ETestStudio
 echo   build_ninja.bat -t relwithdebinfo -m ETestStudio -p
+echo   build_ninja.bat -t debug -c
 exit /b 1
 
 :: =======================================
@@ -155,6 +169,11 @@ if errorlevel 1 (
 )
 
 echo Configure OK
+
+if defined CONFIGURE_ONLY (
+    echo Configure only mode, skipping build.
+    exit /b 0
+)
 
 if defined TARGET (
     cmake --build %BUILD_DIR% --target %TARGET%

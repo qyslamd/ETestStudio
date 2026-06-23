@@ -3,6 +3,11 @@
 # 使用 file(GENERATE) + $<TARGET_FILE_...> 生成器表达式，
 # 自动处理 CMAKE_DEBUG_POSTFIX，确保 exe 路径始终正确
 
+# examples 构建已关闭，跳过补丁
+if(NOT SARIBBON_BUILD_EXAMPLES)
+    return()
+endif()
+
 function(_patch_example_run_script example_target)
     set(example_cmake "${CMAKE_SOURCE_DIR}/3rdparty/SARibbon-2.5.7/example/${example_target}/CMakeLists.txt")
     if(NOT EXISTS "${example_cmake}")
@@ -57,6 +62,12 @@ endfunction()
 # ========================================
 # 对所有 SARibbon example 打补丁
 # ========================================
+# examples 构建已关闭（SARIBBON_BUILD_EXAMPLES=OFF），跳过补丁
+if(NOT SARIBBON_BUILD_EXAMPLES)
+    message(STATUS "SARibbon examples disabled, skipping example patches")
+    return()
+endif()
+
 _patch_example_run_script(MainWindowExample)
 _patch_example_run_script(UseNativeFrameExample)
 _patch_example_run_script(WidgetWithRibbon)
