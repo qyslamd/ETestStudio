@@ -12,6 +12,11 @@
 #include "main_window.h"
 #include <QTranslator>
 
+// Debug 构建启用控制台，方便查看 spdlog 输出
+#ifdef _DEBUG
+#pragma comment(linker, "/SUBSYSTEM:CONSOLE")
+#endif
+
 
 using namespace etest::core::config;
 using namespace etest::core::logger;

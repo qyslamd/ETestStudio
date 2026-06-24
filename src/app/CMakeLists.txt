@@ -13,7 +13,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
 #=======================================
 # 添加可执行文件
 set(TARGET_NAME ${PROJECT_NAME})
-add_executable(${TARGET_NAME}
+add_executable(${TARGET_NAME} WIN32
     main.cpp
     main_window.h
     main_window.cpp

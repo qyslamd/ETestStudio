@@ -72,8 +72,15 @@ Source: "{#WhereAreFiles}\platforms\*.dll"; DestDir: "{app}\platforms"; Flags: i
 Source: "{#WhereAreFiles}\styles\*.dll"; DestDir: "{app}\styles"; Flags: ignoreversion
 Source: "{#WhereAreFiles}\translations\*.qm"; DestDir: "{app}\translations"; Flags: ignoreversion
 
+#ifexist "{#WhereAreFiles}\plugins"
 ; 内置模拟设备插件
 Source: "{#WhereAreFiles}\plugins\*.dll"; DestDir: "{app}\plugins"; Flags: ignoreversion
+#endif
+
+#ifexist "{#WhereAreFiles}\test_projects"
+; 测试工程（调试用）
+Source: "{#WhereAreFiles}\test_projects\*"; DestDir: "{app}\test_projects"; Flags: ignoreversion recursesubdirs createallsubdirs
+#endif
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

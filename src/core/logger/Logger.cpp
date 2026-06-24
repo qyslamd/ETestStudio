@@ -48,11 +48,13 @@ void Logger::init() {
   // 异步日志配置
   spdlog::init_thread_pool(8192, 1);
 
-  // 创建控制台彩色sink
+  // 创建控制台彩色sink（仅 Debug 构建启用）
+#ifdef _DEBUG
   auto consoleSink = std::make_shared<spdlog::sinks::wincolor_stdout_sink_mt>();
   consoleSink->set_level(spdlog::level::debug);
   consoleSink->set_pattern(
       "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%t] [%n] [%s:%#] %v");
+#endif
 
   // 从配置读取文件大小和保留数量，未配置则使用默认值
   int maxFileSize = ConfigManager::instance().get<int>(
@@ -73,7 +75,11 @@ void Logger::init() {
   s_qtSink = qtSink.get();
 
   // 注册默认logger，所有模块共用
+#ifdef _DEBUG
   std::vector<spdlog::sink_ptr> sinks = {consoleSink, fileSink, qtSink};
+#else
+  std::vector<spdlog::sink_ptr> sinks = {fileSink, qtSink};
+#endif
   auto defaultLogger = std::make_shared<spdlog::async_logger>(
       "default", sinks.begin(), sinks.end(), spdlog::thread_pool(),
       spdlog::async_overflow_policy::block);
