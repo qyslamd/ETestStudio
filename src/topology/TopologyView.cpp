@@ -65,7 +65,7 @@ void TopologyView::resizeEvent(QResizeEvent* event) {
 }
 
 void TopologyView::renderLegendCache() {
-  const int lw = 100, lh = 75;
+  const int lw = 110, lh = 148;
   const auto& tc = topologyColors();
 
   legend_cache_ = QPixmap(lw, lh);
@@ -85,25 +85,58 @@ void TopologyView::renderLegendCache() {
   f.setBold(true);
   p.setFont(f);
   p.setPen(tc.legendText);
-  p.drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft, QStringLiteral("图例"));
+  p.drawText(QRectF(8, 4, 100, 16), Qt::AlignLeft, QStringLiteral("图例"));
 
-  // Entries
   f.setBold(false);
+  f.setPointSize(7);
   p.setFont(f);
-  struct Entry { QColor color; QString label; };
-  Entry entries[] = {
+
+  // Port direction entries
+  struct PortEntry { QColor color; QString label; };
+  PortEntry ports[] = {
       {tc.directionInput, QStringLiteral("输入")},
       {tc.directionOutput, QStringLiteral("输出")},
       {tc.directionBidirectional, QStringLiteral("双向")},
   };
   for (int i = 0; i < 3; ++i) {
     qreal ey = 24 + i * 16;
-    p.setBrush(entries[i].color);
+    p.setBrush(ports[i].color);
     p.setPen(Qt::NoPen);
     p.drawEllipse(QPointF(14, ey + 4), 4, 4);
     p.setPen(tc.legendText);
-    p.drawText(QRectF(24, ey, 70, 14), Qt::AlignLeft, entries[i].label);
+    p.drawText(QRectF(24, ey, 80, 14), Qt::AlignLeft, ports[i].label);
   }
+
+  // Divider
+  qreal yDiv = 76;
+  p.setPen(QPen(tc.legendBorder, 1.0));
+  p.drawLine(QPointF(8, yDiv), QPointF(lw - 8, yDiv));
+
+  // Device type entries
+  struct DevEntry {
+    QColor fill;
+    QColor border;
+    Qt::PenStyle penStyle;
+    QString label;
+  };
+  QColor monitorFill = tc.monitorFill;
+  monitorFill.setAlpha(160);
+  DevEntry devs[] = {
+      {tc.deviceFill, tc.deviceBorder, Qt::SolidLine,
+       QStringLiteral("激励设备")},
+      {tc.uutFill, tc.uutBorder, Qt::SolidLine, QStringLiteral("UUT")},
+      {monitorFill, tc.monitorBorder, Qt::DashLine,
+       QStringLiteral("监听设备")},
+  };
+  for (int i = 0; i < 3; ++i) {
+    qreal ey = 84 + i * 18;
+    p.setBrush(devs[i].fill);
+    p.setPen(QPen(devs[i].border, 1.5, devs[i].penStyle));
+    p.drawRoundedRect(QRectF(8, ey + 1, 14, 10), 2, 2);
+    p.setPen(tc.legendText);
+    p.drawText(QRectF(28, ey, 76, 14), Qt::AlignLeft, devs[i].label);
+  }
+
   p.end();
 }
 

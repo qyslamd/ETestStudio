@@ -290,15 +290,4 @@ class MonitorPortItem : public AbstractPortItem {
   int monitor_index_;
 };
 
-// ── LegendItem ── color legend overlay ───────────────────────────
-
-class LegendItem : public QGraphicsItem {
- public:
-  LegendItem(QGraphicsItem* parent = nullptr);
-  QRectF boundingRect() const override;
-  void paint(QPainter* painter,
-             const QStyleOptionGraphicsItem* option,
-             QWidget* widget) override;
-};
-
 }  // namespace etest::topology

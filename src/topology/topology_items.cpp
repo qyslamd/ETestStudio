@@ -760,62 +760,6 @@ void ConnectionItem::setStyle(PathStyle s) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  LegendItem
-// ═══════════════════════════════════════════════════════════════
-
-LegendItem::LegendItem(QGraphicsItem* parent) : QGraphicsItem(parent) {
-  setFlag(ItemIsSelectable, false);
-  setZValue(100);
-}
-
-QRectF LegendItem::boundingRect() const {
-  return QRectF(0, 0, 100, 70);
-}
-
-void LegendItem::paint(QPainter* painter,
-                       const QStyleOptionGraphicsItem*,
-                       QWidget*) {
-  painter->setRenderHint(QPainter::Antialiasing);
-  const auto& tc = topologyColors();
-
-  // Background
-  painter->setBrush(tc.legendBackground);
-  painter->setPen(QPen(tc.legendBorder, 0.5));
-  painter->drawRoundedRect(boundingRect().adjusted(1, 1, -1, -1), 4, 4);
-
-  QFont f = painter->font();
-  f.setPointSize(8);
-  f.setBold(true);
-  painter->setFont(f);
-  painter->setPen(tc.legendText);
-  painter->drawText(QRectF(8, 4, 90, 16), Qt::AlignLeft,
-                    QStringLiteral("图例"));
-
-  f.setBold(false);
-  f.setPointSize(7);
-  painter->setFont(f);
-
-  struct Entry {
-    QColor color;
-    QString label;
-  };
-  Entry entries[] = {
-      {tc.directionInput, QStringLiteral("输入")},
-      {tc.directionOutput, QStringLiteral("输出")},
-      {tc.directionBidirectional, QStringLiteral("双向")},
-  };
-
-  for (int i = 0; i < 3; ++i) {
-    qreal y = 24 + i * 16;
-    painter->setBrush(entries[i].color);
-    painter->setPen(Qt::NoPen);
-    painter->drawEllipse(QPointF(14, y + 4), 4, 4);
-    painter->setPen(tc.legendText);
-    painter->drawText(QRectF(24, y, 70, 14), Qt::AlignLeft, entries[i].label);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
 //  MonitorItem
 // ═══════════════════════════════════════════════════════════════
 
