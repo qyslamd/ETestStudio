@@ -196,6 +196,17 @@ if(WIN32)
 endif()
 
 #=======================================
+# 拷贝测试工程到输出目录，方便调试
+if(EXISTS "${CMAKE_SOURCE_DIR}/temp/projects/Demo_Project3")
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+            "${CMAKE_SOURCE_DIR}/temp/projects/Demo_Project3"
+            "$<TARGET_FILE_DIR:${TARGET_NAME}>/test_projects"
+        COMMENT "Copying test projects to output directory..."
+    )
+endif()
+
+#=======================================
 # 安装打包工具链
 #=======================================
 

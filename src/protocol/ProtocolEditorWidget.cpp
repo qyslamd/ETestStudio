@@ -29,7 +29,6 @@
 #include "format/json_serializer.hpp"
 #include "libui/dock_title_bar/DockTitleBar.h"
 
-
 namespace etest::protocol {
 namespace {
 
@@ -85,14 +84,8 @@ void ProtocolEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded) {
     menuBar()->hide();
-    statusBar()->hide();
-    for (auto* tb : findChildren<QToolBar*>())
-      tb->hide();
   } else {
     menuBar()->show();
-    statusBar()->show();
-    for (auto* tb : findChildren<QToolBar*>())
-      tb->show();
   }
 }
 
@@ -432,10 +425,6 @@ void ProtocolEditorWidget::initUi() {
   // ── Central Widget: 位图视图 ──
   bit_view_ = new IcdBitLayoutView(this);
   setCentralWidget(bit_view_);
-
-  // ── StatusBar ──
-  statusBar()->setVisible(embedded_);
-  statusBar()->showMessage(QStringLiteral("就绪"));
 }
 
 // ── Signals ───────────────────────────────────────────────────
