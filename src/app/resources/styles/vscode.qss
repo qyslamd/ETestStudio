@@ -1659,7 +1659,26 @@ QToolButton#PhOpenFilesHeaderBtn {
     letter-spacing: 1px;
     text-align: left;
     padding: 4px 8px;
-}
-QToolButton#PhOpenFilesHeaderBtn:hover {
+}QToolButton#PhOpenFilesHeaderBtn:hover {
     color: #CCCCCC;
+}
+
+/* ==================== TuxSaverOverlay ==================== */
+QPushButton#saverCloseBtn {
+    color: rgba(255,255,255,160);
+    background: rgba(255,255,255,25);
+    border: 1px solid rgba(255,255,255,40);
+    font-size: 16px;
+    border-radius: 16px;
+}
+QPushButton#saverCloseBtn:hover {
+    background: rgba(255,80,80,160);
+    color: white;
+    border-color: rgba(255,80,80,230);
+    border-width: 1.5px;
+}
+QPushButton#saverCloseBtn:pressed {
+    background: rgba(200,50,50,180);
+    color: white;
+    border-color: rgba(200,50,50,220);
 }
