@@ -20,14 +20,15 @@
 #include <string>
 #include <vector>
 
+#include "AppIconProvider.h"
 #include "IcdBitLayoutView.h"
 #include "IcdNodeTreeWidget.h"
 #include "IcdPropertyPanel.h"
-#include "AppIconProvider.h"
 #include "ThemeManager.h"
-#include "libui/dock_title_bar/DockTitleBar.h"
 #include "format/json_parser.hpp"
 #include "format/json_serializer.hpp"
+#include "libui/dock_title_bar/DockTitleBar.h"
+
 
 namespace etest::protocol {
 namespace {
@@ -84,10 +85,12 @@ void ProtocolEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded) {
     menuBar()->hide();
+    statusBar()->hide();
     for (auto* tb : findChildren<QToolBar*>())
       tb->hide();
   } else {
     menuBar()->show();
+    statusBar()->show();
     for (auto* tb : findChildren<QToolBar*>())
       tb->show();
   }
@@ -304,16 +307,16 @@ void ProtocolEditorWidget::initUi() {
   toolbar->setFloatable(false);
 
   // 新建帧
-  new_frame_action_ = new QAction(
-      protoIcon(QStringLiteral("protocol_new_frame")),
-      QStringLiteral("+帧"), this);
+  new_frame_action_ =
+      new QAction(protoIcon(QStringLiteral("protocol_new_frame")),
+                  QStringLiteral("+帧"), this);
   new_frame_action_->setToolTip(QStringLiteral("新建帧"));
   toolbar->addAction(new_frame_action_);
 
   // 删除帧
-  delete_frame_action_ = new QAction(
-      protoIcon(QStringLiteral("protocol_delete_frame")),
-      QStringLiteral("-帧"), this);
+  delete_frame_action_ =
+      new QAction(protoIcon(QStringLiteral("protocol_delete_frame")),
+                  QStringLiteral("-帧"), this);
   delete_frame_action_->setToolTip(QStringLiteral("删除当前帧"));
   delete_frame_action_->setEnabled(false);
   toolbar->addAction(delete_frame_action_);
@@ -321,16 +324,14 @@ void ProtocolEditorWidget::initUi() {
   toolbar->addSeparator();
 
   // 撤销 / 重做
-  undo_action_ = new QAction(
-      protoIcon(QStringLiteral("undo")),
-      QStringLiteral("撤销"), this);
+  undo_action_ = new QAction(protoIcon(QStringLiteral("undo")),
+                             QStringLiteral("撤销"), this);
   undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
   undo_action_->setEnabled(false);
   toolbar->addAction(undo_action_);
 
-  redo_action_ = new QAction(
-      protoIcon(QStringLiteral("redo")),
-      QStringLiteral("重做"), this);
+  redo_action_ = new QAction(protoIcon(QStringLiteral("redo")),
+                             QStringLiteral("重做"), this);
   redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
   redo_action_->setEnabled(false);
   toolbar->addAction(redo_action_);
@@ -359,7 +360,8 @@ void ProtocolEditorWidget::initUi() {
   byte_order_btn_->setText(QStringLiteral("LE"));
   byte_order_btn_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   byte_order_btn_->setCheckable(true);
-  byte_order_btn_->setToolTip(QStringLiteral("切换字节序：小端(LE) / 大端(BE)"));
+  byte_order_btn_->setToolTip(
+      QStringLiteral("切换字节序：小端(LE) / 大端(BE)"));
   byte_order_btn_->setEnabled(false);
   toolbar->addWidget(byte_order_btn_);
 
@@ -380,17 +382,17 @@ void ProtocolEditorWidget::initUi() {
   toolbar->addSeparator();
 
   // 面板开关 toggle actions
-  node_tree_toggle_action_ = new QAction(
-      protoIcon(QStringLiteral("protocol_node_tree")),
-      QStringLiteral("节点列表"), this);
+  node_tree_toggle_action_ =
+      new QAction(protoIcon(QStringLiteral("protocol_node_tree")),
+                  QStringLiteral("节点列表"), this);
   node_tree_toggle_action_->setCheckable(true);
   node_tree_toggle_action_->setChecked(true);
   node_tree_toggle_action_->setToolTip(QStringLiteral("显示/隐藏节点列表"));
   toolbar->addAction(node_tree_toggle_action_);
 
-  property_toggle_action_ = new QAction(
-      protoIcon(QStringLiteral("protocol_property")),
-      QStringLiteral("属性面板"), this);
+  property_toggle_action_ =
+      new QAction(protoIcon(QStringLiteral("protocol_property")),
+                  QStringLiteral("属性面板"), this);
   property_toggle_action_->setCheckable(true);
   property_toggle_action_->setChecked(true);
   property_toggle_action_->setToolTip(QStringLiteral("显示/隐藏属性面板"));
@@ -417,10 +419,10 @@ void ProtocolEditorWidget::initUi() {
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
 
   // Custom title bars for full control over button size and icon
-  node_tree_dock_->setTitleBarWidget(
-      new ::etest::ui::DockTitleBar(QStringLiteral("节点列表"), node_tree_dock_));
-  property_dock_->setTitleBarWidget(
-      new ::etest::ui::DockTitleBar(QStringLiteral("属性面板"), property_dock_));
+  node_tree_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
+      QStringLiteral("节点列表"), node_tree_dock_));
+  property_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
+      QStringLiteral("属性面板"), property_dock_));
 
   // Dock features: 允许关闭/浮动/拖拽/标签页组合
   for (auto* dock : {node_tree_dock_, property_dock_}) {
@@ -432,6 +434,7 @@ void ProtocolEditorWidget::initUi() {
   setCentralWidget(bit_view_);
 
   // ── StatusBar ──
+  statusBar()->setVisible(embedded_);
   statusBar()->showMessage(QStringLiteral("就绪"));
 }
 
@@ -645,8 +648,8 @@ void ProtocolEditorWidget::initSignals() {
     if (!current_frame_)
       return;
     saveSnapshot();
-    auto order = checked ? icd::ByteOrder::big_endian
-                         : icd::ByteOrder::little_endian;
+    auto order =
+        checked ? icd::ByteOrder::big_endian : icd::ByteOrder::little_endian;
     current_frame_->setOrder(order);
     byte_order_btn_->setText(checked ? QStringLiteral("BE")
                                      : QStringLiteral("LE"));
@@ -805,12 +808,12 @@ void ProtocolEditorWidget::updateToolbar() {
     frame_type_combo_->blockSignals(false);
 
     byte_order_btn_->blockSignals(true);
-    byte_order_btn_->setChecked(
-        current_frame_->order() == icd::ByteOrder::big_endian);
-    byte_order_btn_->setText(
-        current_frame_->order() == icd::ByteOrder::little_endian
-            ? QStringLiteral("LE")
-            : QStringLiteral("BE"));
+    byte_order_btn_->setChecked(current_frame_->order() ==
+                                icd::ByteOrder::big_endian);
+    byte_order_btn_->setText(current_frame_->order() ==
+                                     icd::ByteOrder::little_endian
+                                 ? QStringLiteral("LE")
+                                 : QStringLiteral("BE"));
     byte_order_btn_->blockSignals(false);
 
     frame_length_label_->setText(

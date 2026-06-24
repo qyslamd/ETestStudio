@@ -566,15 +566,15 @@ void TopologyEditorWidget::initSignals() {
   // ── Outline navigation ──
   connect(outline_widget_, &TopologyOutlineWidget::navigateRequested, this,
           &TopologyEditorWidget::onOutlineNavigate);
-  // ── Dock 可见性同步（延迟，避免拖拽标签化时中间态干扰）──
+  // ── Dock 可见性同步 ──
   auto syncDockVisibility = [this](QAction* action, QDockWidget* dock) {
     connect(action, &QAction::toggled, dock, &QWidget::setVisible);
     connect(dock, &QDockWidget::visibilityChanged, this,
-            [this, action, dock]() {
-      QTimer::singleShot(0, this, [this, action, dock]() {
-        action->setChecked(dock->isVisible());
-      });
-    });
+            [action](bool visible) {
+              action->blockSignals(true);
+              action->setChecked(visible);
+              action->blockSignals(false);
+            });
   };
   syncDockVisibility(device_palette_toggle_action_, device_palette_dock_);
   syncDockVisibility(outline_toggle_action_, outline_dock_);

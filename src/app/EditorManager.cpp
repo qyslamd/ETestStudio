@@ -15,15 +15,16 @@
 #include <QMenu>
 #include <QMessageBox>
 
+#include "editors/EditorFactory.h"
 #include "editors/ImageViewerWidget.h"
 #include "editors/TestProgramEditorWidget.h"
 #include "editors/TextEditorWidget.h"
-#include "editors/EditorFactory.h"
 #include "logger/Logger.h"
 #include "protocol/ProtocolEditorWidget.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
 #include "topology/TopologyJsonSerializer.h"
+
 
 #include "project/ProjectManager.h"
 
@@ -138,6 +139,7 @@ void EditorManager::registerEditorTypes() {
       "protocol",
       [](const QString& id, QWidget* parent) {
         auto* editor = new etest::protocol::ProtocolEditorWidget(parent);
+        editor->setEmbeddedMode(true);
         return editor;
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
