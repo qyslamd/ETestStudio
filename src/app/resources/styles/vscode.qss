@@ -826,40 +826,71 @@ GitWidget QLabel#gitEmptyLabel {
     font-size: 13px;
 }
 
-/* ==================== BottomContainerWidget ==================== */
-BottomContainerWidget {
+/* ==================== etest--app--BottomContainerWidget ==================== */
+etest--app--BottomContainerWidget {
     background-color: #1E1E1E;
 }
-BottomContainerWidget QTabWidget {
+etest--app--BottomContainerWidget QTabWidget {
     background-color: #1E1E1E;
 }
-BottomContainerWidget QTabWidget::pane {
+etest--app--BottomContainerWidget QTabWidget::pane {
     border: none;
     background-color: #1E1E1E;
 }
-BottomContainerWidget QTabBar::tab {
+etest--app--BottomContainerWidget QTabBar {
+    background-color: #2D2D2D;
+}
+etest--app--BottomContainerWidget QTabBar::tab {
     background-color: #2D2D2D;
     color: #858585;
     border: none;
     padding: 4px 12px;
     margin-right: 1px;
 }
-BottomContainerWidget QTabBar::tab:selected {
+etest--app--BottomContainerWidget QTabBar::tab:selected {
     background-color: #1E1E1E;
     color: #FFFFFF;
     border-bottom: 1px solid #007ACC;
 }
-BottomContainerWidget QTabBar::tab:hover:!selected {
+etest--app--BottomContainerWidget QTabBar::tab:hover:!selected {
     color: #FFFFFF;
 }
-BottomContainerWidget QToolButton {
+etest--app--BottomContainerWidget QToolButton {
     background-color: transparent;
     border: none;
     color: #858585;
     padding: 2px;
 }
-BottomContainerWidget QToolButton:hover {
+etest--app--BottomContainerWidget QToolButton:hover {
     color: #FFFFFF;
+}
+
+/* Output 面板（QTextEdit） */
+etest--app--BottomContainerWidget QTextEdit {
+    background-color: #1E1E1E;
+    color: #CCCCCC;
+    border: none;
+}
+
+/* 问题面板（QTableWidget） */
+etest--app--BottomContainerWidget QTableWidget {
+    background-color: #1E1E1E;
+    color: #CCCCCC;
+    border: none;
+    gridline-color: #3C3C3C;
+}
+etest--app--BottomContainerWidget QTableWidget::item {
+    color: #CCCCCC;
+}
+etest--app--BottomContainerWidget QTableWidget::item:selected {
+    background-color: #264F78;
+    color: #FFFFFF;
+}
+etest--app--BottomContainerWidget QHeaderView::section {
+    background-color: #2D2D2D;
+    color: #858585;
+    border: none;
+    padding: 4px;
 }
 
 /* ==================== NewProjectDialog ==================== */
