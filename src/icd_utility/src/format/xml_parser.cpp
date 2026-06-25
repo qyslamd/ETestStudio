@@ -1,4 +1,7 @@
 ﻿#include "xml_parser.hpp"
+#include "xml_util.hpp"
+
+#include "type_mapping.hpp"
 
 #include <pugixml.hpp>
 
@@ -137,7 +140,7 @@ tl::expected<schema::SchemaNodeDef, Error> parse_node(const pugi::xml_node& item
     if (auto child = item.child("Tag")) {
         auto value = parse_int(item, "Tag", file);
         if (!value) return tl::make_unexpected(value.error());
-        node.tag = static_cast<Tag>(*value);
+        node.tag = tag_from_legacy_int(*value);
     }
 
     if (auto childs = item.child("Childs")) {
@@ -149,37 +152,6 @@ tl::expected<schema::SchemaNodeDef, Error> parse_node(const pugi::xml_node& item
     }
 
     return node;
-}
-
-tl::expected<pugi::xml_document, Error> load_xml_document(const std::filesystem::path& path) {
-    // pugixml's load_file uses fopen internally, which on Windows cannot handle
-    // CJK characters in paths (fopen uses ANSI encoding). Read the file ourselves
-    // using std::ifstream (which supports wide paths on MSVC), then parse via load_buffer.
-    std::ifstream stream(path, std::ios::binary | std::ios::ate);
-    if (!stream) {
-        return tl::make_unexpected(Error{ErrorCode::parse_error, "failed to open file", path, {}});
-    }
-
-    auto size = stream.tellg();
-    if (size <= 0) {
-        return tl::make_unexpected(Error{ErrorCode::parse_error, "file is empty", path, {}});
-    }
-
-    stream.seekg(0, std::ios::beg);
-    std::vector<char> buffer(static_cast<size_t>(size));
-    stream.read(buffer.data(), static_cast<std::streamsize>(size));
-
-    if (!stream) {
-        return tl::make_unexpected(Error{ErrorCode::parse_error, "failed to read file", path, {}});
-    }
-
-    pugi::xml_document doc;
-    const auto result = doc.load_buffer(buffer.data(), buffer.size(), pugi::parse_default, pugi::encoding_auto);
-    if (!result) {
-        return tl::make_unexpected(Error{ErrorCode::parse_error, result.description(), path, {}});
-    }
-
-    return doc;
 }
 
 } // namespace
@@ -225,10 +197,6 @@ tl::expected<schema::SchemaConfig, Error> parse_xml_config(const std::filesystem
         }
         entry.format = Format::xml;
         config.files.push_back(std::move(entry));
-    }
-
-    if (config.files.empty()) {
-        return tl::make_unexpected(Error{ErrorCode::schema_error, "config contains no FileInfo entries", path, "Files"});
     }
 
     return config;

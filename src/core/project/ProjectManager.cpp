@@ -1,6 +1,7 @@
 #include "ProjectManager.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 
 #include "config/ConfigDefs.h"
@@ -27,6 +28,19 @@ class ProjectManager::Impl {
     if (!utils::FileUtil::createDirectory(
             QDir(projectDir).filePath("protocol")))
       return false;
+    // Write empty ICDConfig.xml as default protocol container
+    {
+      QFile icdConfig(QDir(projectDir).filePath("protocol/ICDConfig.xml"));
+      if (icdConfig.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        icdConfig.write(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<ICDConfig>\n"
+            "  <Files>\n"
+            "  </Files>\n"
+            "</ICDConfig>\n");
+        icdConfig.close();
+      }
+    }
     if (!utils::FileUtil::createDirectory(QDir(projectDir).filePath("config")))
       return false;
     if (!utils::FileUtil::createDirectory(QDir(projectDir).filePath("backup")))

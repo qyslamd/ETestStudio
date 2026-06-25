@@ -16,17 +16,40 @@
 
 #include <tl/expected.hpp>
 
+#include <filesystem>
+#include <functional>
+
 #include <icd/error.hpp>
+#include <icd/frame.hpp>
 #include <icd/loader.hpp>
+#include <icd/node.hpp>
 #include <icd/repository.hpp>
+#include "icd_utility/src/format/json_parser.hpp"
 #include "icd_utility/src/format/json_serializer.hpp"
 #include "icd_utility/src/format/xml_parser.hpp"
+#include "icd_utility/src/format/xml_serializer.hpp"
 #include "icd_utility/src/schema/builder.hpp"
 #include "icd_utility/src/schema/schema.hpp"
 
 #include "project/ProjectManager.h"
 
 namespace etest::app {
+
+namespace {
+
+int calcFrameLength(const icd::Frame& frame) {
+  if (frame.roots().empty()) return 0;
+  int max_bits = 0;
+  std::function<void(const icd::Node&)> update_max = [&](const icd::Node& n) {
+    int end = (n.offset() * 8) + n.bit_offset() + n.bit_width();
+    if (end > max_bits) max_bits = end;
+    for (const auto& c : n.children()) update_max(*c);
+  };
+  for (const auto& root : frame.roots()) update_max(*root);
+  return (max_bits + 7) / 8;
+}
+
+}  // namespace
 
 using namespace etest::core::project;
 
@@ -104,20 +127,98 @@ void ProtocolManagerWidget::refreshList() {
   auto* project = pm.currentProject();
   if (!project) return;
 
+  // Scan multiple protocol-related extensions
   const QStringList protoFiles = project->scanDirectory(
-      QStringLiteral("protocol"), QStringLiteral("eproto"));
+      QStringLiteral("protocol"),
+      QStringList{QStringLiteral("eproto"), QStringLiteral("eprotox")});
+
+  // Also detect ICDConfig files in the protocol directory separately
+  const QStringList configFiles = project->scanDirectory(
+      QStringLiteral("protocol"),
+      QStringList{QStringLiteral("xml"), QStringLiteral("json")});
+
   for (const QString& absPath : protoFiles) {
     auto* item = new QTreeWidgetItem(tree_);
     item->setText(0, QFileInfo(absPath).completeBaseName());
     item->setData(0, Qt::UserRole, absPath);
     item->setToolTip(0, absPath);
 
-    // 加载该文件的帧列表
+    // Load frames using icd_utility (replaces old parseEprotoFrames)
     QVector<QPair<int, QString>> frames;
-    if (parseEprotoFrames(absPath, frames)) {
+    auto path = std::filesystem::path(absPath.toStdWString());
+
+    auto load_repo = [&]() -> tl::expected<icd::Repository, icd::Error> {
+      if (absPath.endsWith(QStringLiteral(".eproto")))
+        return icd::format::deserialize_repository(path);
+      if (absPath.endsWith(QStringLiteral(".eprotox")))
+        return icd::format::deserialize_xml_repository(path);
+      return tl::make_unexpected(
+          icd::Error{icd::ErrorCode::unsupported_format, "unknown format", path, {}});
+    };
+
+    auto repoResult = load_repo();
+    if (repoResult) {
+      for (const auto& frame_ptr : repoResult->frames()) {
+        auto suffix = QStringLiteral(" %1B")
+                          .arg(frame_ptr->roots().empty()
+                                   ? 0
+                                   : calcFrameLength(*frame_ptr));
+        QString typeStr;
+        switch (frame_ptr->type()) {
+          case icd::FrameType::cmd:      typeStr = QStringLiteral("CMD"); break;
+          case icd::FrameType::data_cmd: typeStr = QStringLiteral("DATACFG"); break;
+          default:                       typeStr = QStringLiteral("DATA"); break;
+        }
+        QString label = QStringLiteral("%1 %2%3 — %4")
+                            .arg(frame_ptr->id())
+                            .arg(typeStr)
+                            .arg(suffix)
+                            .arg(QString::fromStdString(
+                                std::string(frame_ptr->name())));
+        frames.append({frame_ptr->id(), label});
+      }
+    }
+
+    if (!frames.isEmpty()) {
       for (const auto& pair : frames) {
         auto* frameItem = new QTreeWidgetItem(item);
         frameItem->setText(0, pair.second);
+        frameItem->setData(0, Qt::UserRole, absPath);
+      }
+    }
+  }
+
+  // Add ICDConfig files
+  for (const QString& absPath : configFiles) {
+    // Content detection: only show files with <ICDConfig> root
+    QFile f(absPath);
+    if (!f.open(QIODevice::ReadOnly)) continue;
+    QByteArray header = f.read(4096);
+    f.close();
+    if (!header.contains("<ICDConfig>")) continue;
+
+    auto* item = new QTreeWidgetItem(tree_);
+    item->setText(0, QFileInfo(absPath).fileName());
+    item->setData(0, Qt::UserRole, absPath);
+    item->setToolTip(0, absPath);
+
+    // Expand ICDConfig to show referenced frames
+    auto path = std::filesystem::path(absPath.toStdWString());
+    auto loadResult = icd::Loader::init_with_metadata(path);
+    if (loadResult) {
+      for (const auto& entry : loadResult->file_entries) {
+        auto* frameItem = new QTreeWidgetItem(item);
+        QString typeStr;
+        switch (entry.type) {
+          case icd::FrameType::cmd:      typeStr = QStringLiteral("CMD"); break;
+          case icd::FrameType::data_cmd: typeStr = QStringLiteral("DATACFG"); break;
+          default:                       typeStr = QStringLiteral("DATA"); break;
+        }
+        QString label = QStringLiteral("%1 %2 — %3")
+                            .arg(entry.id)
+                            .arg(typeStr)
+                            .arg(QString::fromStdString(entry.name));
+        frameItem->setText(0, label);
         frameItem->setData(0, Qt::UserRole, absPath);
       }
     }

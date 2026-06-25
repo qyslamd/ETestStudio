@@ -7,6 +7,9 @@ add_library(icd_utility
     src/format/xml_parser.cpp
     src/format/json_parser.cpp
     src/format/json_serializer.cpp
+    src/format/type_mapping.cpp
+    src/format/xml_util.cpp
+    src/format/xml_serializer.cpp
     src/loader/loader.cpp
 )
 

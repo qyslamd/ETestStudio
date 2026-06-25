@@ -78,6 +78,20 @@ add_etest(
 # 批量导入测试需要处理数百个 XML 文件，超时放宽到 120 秒
 set_tests_properties(test_schema_import PROPERTIES TIMEOUT 120)
 
+add_etest(
+    NAME test_eprotox
+    SOURCES test_eprotox.cpp
+    LIBS icd_utility
+    LABELS ICD
+)
+
+add_etest(
+    NAME test_config_writeback
+    SOURCES test_config_writeback.cpp
+    LIBS icd_utility
+    LABELS ICD
+)
+
 # ====== 仅需 public API 的测试 ======
 
 add_etest(

@@ -4,6 +4,8 @@
 #include "../format/xml_parser.hpp"
 #include "../schema/builder.hpp"
 
+#include <icd/file_entry.hpp>
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -50,6 +52,14 @@ tl::expected<schema::SchemaFrameDef, Error> parse_frame(const std::filesystem::p
 } // namespace
 
 tl::expected<Repository, Error> Loader::init(const std::filesystem::path& config_path, Format format) {
+    auto result = init_with_metadata(config_path, format);
+    if (!result) {
+        return tl::make_unexpected(result.error());
+    }
+    return std::move(result->repository);
+}
+
+tl::expected<LoadResult, Error> Loader::init_with_metadata(const std::filesystem::path& config_path, Format format) {
     const auto effective_format = (format == Format::auto_detect) ? detect_format(config_path) : format;
     if (effective_format == Format::auto_detect) {
         return tl::make_unexpected(Error{ErrorCode::unsupported_format, "unsupported config format", config_path, {}});
@@ -63,10 +73,16 @@ tl::expected<Repository, Error> Loader::init(const std::filesystem::path& config
     schema::SchemaConfig merged;
     merged.files = config->files;
 
+    LoadResult result;
+    result.config_path = config_path;
+    result.format = effective_format;
+    result.file_entries.reserve(config->files.size());
+
     const auto base_dir = config_path.parent_path();
     for (const auto& file_entry : config->files) {
         const auto frame_path = base_dir / file_entry.path;
-        const auto frame_format = (effective_format == Format::auto_detect) ? detect_format(frame_path) : effective_format;
+        // Each frame file format is independently auto-detected from its extension
+        const auto frame_format = detect_format(frame_path);
         auto frame = parse_frame(frame_path, frame_format);
         if (!frame) {
             return tl::make_unexpected(frame.error());
@@ -88,10 +104,27 @@ tl::expected<Repository, Error> Loader::init(const std::filesystem::path& config
             frame->order = *file_entry.order;
         }
 
+        // Collect file entry info BEFORE moving frame
+        FrameFileInfo info;
+        info.id = frame->id;
+        info.name = frame->name;
+        info.description = frame->description;
+        info.path = file_entry.path;
+        info.type = frame->type;
+        info.order = frame->order;
+        info.format = frame_format;
+        result.file_entries.push_back(std::move(info));
+
         merged.frames.push_back(std::move(*frame));
     }
 
-    return schema::build_repository(merged);
+    auto repo = schema::build_repository(merged);
+    if (!repo) {
+        return tl::make_unexpected(repo.error());
+    }
+
+    result.repository = std::move(*repo);
+    return result;
 }
 
 } // namespace icd

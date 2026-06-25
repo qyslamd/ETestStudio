@@ -4,13 +4,15 @@
 #include <tl/expected.hpp>
 
 #include <filesystem>
+#include <vector>
 
 #include <icd/error.hpp>
+#include <icd/file_entry.hpp>
 
 namespace icd {
 
-class Repository;
 class Frame;
+class Repository;
 class Node;
 
 namespace format {
@@ -23,6 +25,14 @@ tl::expected<void, Error> serialize_repository(const std::filesystem::path& path
 
 // Serialize single frame (for internal use)
 tl::expected<void, Error> serialize_frame(const std::filesystem::path& path, const Frame& frame);
+
+// Legacy ICDConfig JSON serialization
+tl::expected<void, Error> serialize_json_config(const std::filesystem::path& path,
+                                                  const std::vector<FrameFileInfo>& file_entries);
+
+// Legacy JSON frame file serialization
+tl::expected<void, Error> serialize_json_frame_file(const std::filesystem::path& path,
+                                                      const Frame& frame);
 
 } // namespace format
 } // namespace icd

@@ -1,5 +1,7 @@
 ﻿#include "json_parser.hpp"
 
+#include "type_mapping.hpp"
+
 #include <nlohmann/json.hpp>
 
 #include <fstream>
@@ -99,7 +101,7 @@ tl::expected<schema::SchemaNodeDef, Error> parse_node(const json& item, const st
     if (auto it = item.find("scaleFormula"); it != item.end() && it->is_string()) node.attrs.scale_formula = it->get<std::string>();
     if (auto it = item.find("scaleConveror"); it != item.end() && it->is_string()) node.attrs.scale_convertor = it->get<std::string>();
     if (auto it = item.find("linkTo"); it != item.end() && it->is_string()) node.attrs.link_to = it->get<std::string>();
-    if (auto it = item.find("tag"); it != item.end() && it->is_number_integer()) node.tag = static_cast<Tag>(it->get<int>());
+    if (auto it = item.find("tag"); it != item.end() && it->is_number_integer()) node.tag = tag_from_legacy_int(it->get<int>());
 
     if (auto value = optional_float(item, "scaleA", path); value.has_value()) node.attrs.scale_a = *value;
     if (auto value = optional_float(item, "scaleB", path); value.has_value()) node.attrs.scale_b = *value;
@@ -281,10 +283,6 @@ tl::expected<schema::SchemaConfig, Error> parse_json_config(const std::filesyste
         }
         entry.format = Format::json;
         config.files.push_back(std::move(entry));
-    }
-
-    if (config.files.empty()) {
-        return tl::make_unexpected(Error{ErrorCode::schema_error, "config contains no file entries", path, "files"});
     }
 
     return config;

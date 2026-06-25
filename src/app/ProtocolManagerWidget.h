@@ -34,6 +34,7 @@ class ProtocolManagerWidget : public QWidget {
 
   bool removeProtocolFile(const QString& filePath);
   bool renameProtocolFile(const QString& oldPath);
+  [[deprecated("Use icd::format::deserialize_repository instead")]]
   bool parseEprotoFrames(const QString& filePath,
                          QVector<QPair<int, QString>>& frames);
 

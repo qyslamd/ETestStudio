@@ -159,6 +159,7 @@ target_link_libraries(${TARGET_NAME}
     etest_topology
     etest_protocol
     etest_ui
+    icd_utility
     # 已配置第三方依赖
     spdlog::spdlog
     hpdf

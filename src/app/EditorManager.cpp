@@ -79,6 +79,7 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerExtension("txt", "text");
   EditorFactoryRegistry::registerExtension("etopo", "topology");
   EditorFactoryRegistry::registerExtension("eproto", "protocol");
+  EditorFactoryRegistry::registerExtension("eprotox", "protocol");
   EditorFactoryRegistry::registerExtension("tcase", "testprogram");
 
   EditorFactoryRegistry::registerExtension("png", "image");
@@ -213,6 +214,19 @@ void EditorManager::openFile(const QString& filePath,
                            : forcedEditorType;
   if (editorType.isEmpty()) {
     editorType = QStringLiteral("text");
+  }
+
+  // ICDConfig content detection for .xml/.json files
+  if (forcedEditorType.isEmpty() &&
+      (suffix == QStringLiteral("xml") || suffix == QStringLiteral("json"))) {
+    QFile f(filePath);
+    if (f.open(QIODevice::ReadOnly)) {
+      QByteArray header = f.read(4096);
+      f.close();
+      if (header.contains("<ICDConfig>")) {
+        editorType = QStringLiteral("protocol");
+      }
+    }
   }
 
   IEditor* editor =

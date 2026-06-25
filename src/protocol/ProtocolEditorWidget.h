@@ -2,14 +2,17 @@
 
 #include <QByteArray>
 #include <QFutureWatcher>
+#include <QHash>
 #include <QTimer>
 #include <QVector>
 #include <QMainWindow>
 
+#include <filesystem>
 #include <memory>
 
 #include "api/IEditor.h"
 
+#include <icd/file_entry.hpp>
 #include <icd/frame.hpp>
 #include <icd/repository.hpp>
 
@@ -50,6 +53,20 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   void undo() override;
   void redo() override;
 
+  // Async load result carrying optional ConfigDriven metadata
+  struct AsyncLoadResult {
+    std::shared_ptr<icd::Repository> repo;
+    std::vector<icd::FrameFileInfo> file_entries;
+    std::filesystem::path config_path;
+    icd::Format config_format = icd::Format::xml;
+  };
+
+  enum class ProtocolFormat {
+    Json,           // .eproto
+    Xml,            // .eprotox
+    ConfigDriven    // ICDConfig.xml/.json
+  };
+
   void setEditorId(const QString& id);
 
   // Embedded mode (hide menuBar/toolbar when hosted in IDE)
@@ -70,11 +87,14 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   void showStatusMessage(const QString& msg);
 
   QWidget* loading_overlay_ = nullptr;
-  QFutureWatcher<std::shared_ptr<icd::Repository>>* load_watcher_ = nullptr;
+  QFutureWatcher<AsyncLoadResult>* load_watcher_ = nullptr;
   QTimer* modified_debounce_ = nullptr;
   bool embedded_ = false;
 
   bool saveEproto(const QString& path);
+  bool saveEprotox(const QString& path);
+  bool saveConfigDriven();
+  bool saveByFormat();
   void initUi();
   void initSignals();
   void updateToolbar();
@@ -85,6 +105,16 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   void refreshAndSelectFrame(icd::Frame* frame);
   void saveSnapshot();
   void restoreSnapshot(const QByteArray& data);
+
+  // ConfigDriven helpers
+  std::filesystem::path generateFrameFilePath(int frame_id, const std::string& frame_name) const;
+  bool checkFrameFileNameConflict(const std::filesystem::path& rel_path) const;
+  bool createConfigFrameFile(const icd::Frame& frame, const std::filesystem::path& rel_path);
+  bool deleteConfigFrameFile(int frame_id);
+  bool rewriteAllFrameFiles();
+  bool rewriteConfigFile();
+  void addConfigFrameEntry(int id, const std::string& name, icd::Frame& frame);
+  void removeConfigFrameEntry(int id);
 
   static constexpr int kMaxSnapshots = 32;
 
@@ -118,6 +148,14 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   int load_generation_ = 0;
 
   QString current_file_;
+
+  // Format routing
+  ProtocolFormat format_ = ProtocolFormat::Json;
+  icd::Format config_format_ = icd::Format::xml;
+  std::filesystem::path config_path_;
+  std::vector<icd::FrameFileInfo> file_entries_;
+  QHash<int, QString> frame_file_map_;  // frame_id → relative file path
+
   bool modified_ = false;
   QVector<QByteArray> snapshots_;
   QVector<int> snapshot_frame_ids_;

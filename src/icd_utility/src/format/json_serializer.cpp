@@ -1,5 +1,7 @@
 #include "json_serializer.hpp"
 
+#include "type_mapping.hpp"
+
 #include <nlohmann/json.hpp>
 
 #include <filesystem>
@@ -7,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include <icd/file_entry.hpp>
 #include <icd/node.hpp>
 #include <icd/frame.hpp>
 #include <icd/repository.hpp>
@@ -164,6 +167,117 @@ tl::expected<void, Error> serialize_frame(const std::filesystem::path& path, con
     json frames = json::array();
     frames.push_back(serialize_frame_def(frame));
     document["frames"] = std::move(frames);
+
+    return write_json(document, path);
+}
+
+// ============================================================================
+// Legacy JSON format (flat attrs, "childs" array, legacy type names)
+// ============================================================================
+
+namespace {
+
+json serialize_legacy_node(const Node& node) {
+    json obj;
+
+    obj["name"]        = std::string(node.name());
+    obj["description"] = std::string(node.description());
+    obj["offset"]      = node.offset();
+    obj["startBit"]    = node.bit_offset();
+    obj["bitWidth"]    = node.bit_width();
+    obj["type"]        = value_type_to_legacy_json_string(node.value_type());
+    obj["tag"]         = tag_to_legacy_int(node.tag());
+    obj["isScaled"]    = node.attrs().is_scaled ? 1 : 0;
+
+    // Flat attributes
+    const auto& attrs = node.attrs();
+    if (!attrs.system_name.empty())     obj["systemName"]     = attrs.system_name;
+    if (!attrs.group_name.empty())      obj["groupName"]      = attrs.group_name;
+    if (!attrs.unit.empty())            obj["unit"]            = attrs.unit;
+    if (!attrs.value_text_list.empty()) obj["valueTextList"]   = attrs.value_text_list;
+    if (!attrs.scale_formula.empty())   obj["scaleFormula"]    = attrs.scale_formula;
+    if (!attrs.scale_convertor.empty()) obj[kScaleConverorKey] = attrs.scale_convertor;
+    if (!attrs.link_to.empty())         obj["linkTo"]          = attrs.link_to;
+
+    if (attrs.scale_a.has_value()) obj["scaleA"] = *attrs.scale_a;
+    if (attrs.scale_b.has_value()) obj["scaleB"] = *attrs.scale_b;
+    if (attrs.min.has_value())     obj["min"]    = *attrs.min;
+    if (attrs.max.has_value())     obj["max"]    = *attrs.max;
+
+    // Legacy format uses "childs" (not "children")
+    if (!node.children().empty()) {
+        json childs = json::array();
+        for (const auto& child : node.children()) {
+            childs.push_back(serialize_legacy_node(*child));
+        }
+        obj["childs"] = std::move(childs);
+    }
+
+    return obj;
+}
+
+} // anonymous namespace
+
+tl::expected<void, Error> serialize_json_config(const std::filesystem::path& path,
+                                                  const std::vector<FrameFileInfo>& file_entries) {
+    json document;
+    document["version"] = "1.0";
+
+    json files = json::array();
+    for (const auto& entry : file_entries) {
+        json fi;
+        fi["name"]      = entry.name;
+        fi["path"]      = entry.path;
+        fi["id"]        = entry.id;
+        if (!entry.description.empty()) {
+            fi["description"] = entry.description;
+        }
+
+        // Legacy integer encoding for FrameType/ByteOrder
+        int type_int = 1;
+        switch (entry.type) {
+        case FrameType::cmd:      type_int = 2; break;
+        case FrameType::data_cmd: type_int = 4; break;
+        default:                  type_int = 1; break;
+        }
+        fi["type"] = type_int;
+
+        fi["byteOrder"] = (entry.order == ByteOrder::big_endian) ? 1 : 0;
+
+        files.push_back(std::move(fi));
+    }
+    document["files"] = std::move(files);
+
+    // Atomically write via temp file + rename
+    auto tmp_path = path;
+    tmp_path += ".tmp";
+    auto save_result = write_json(document, tmp_path);
+    if (!save_result) {
+        return save_result;
+    }
+
+    std::error_code ec;
+    std::filesystem::rename(tmp_path, path, ec);
+    if (ec) {
+        std::filesystem::remove(tmp_path, ec);
+        return tl::make_unexpected(
+            Error{ErrorCode::io_error, "failed to rename config file: " + ec.message(), path, {}});
+    }
+
+    return {};
+}
+
+tl::expected<void, Error> serialize_json_frame_file(const std::filesystem::path& path,
+                                                      const Frame& frame) {
+    json document;
+    document["version"] = "1.0";
+    document["name"]    = std::string(frame.name());
+
+    json data = json::array();
+    for (const auto& root_node : frame.roots()) {
+        data.push_back(serialize_legacy_node(*root_node));
+    }
+    document["data"] = std::move(data);
 
     return write_json(document, path);
 }

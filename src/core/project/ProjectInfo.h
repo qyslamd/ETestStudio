@@ -56,6 +56,8 @@ class ProjectInfo {
   // ── 目录扫描 ──
   // 在指定子目录（如 "protocol"）中扫描指定后缀（如 "eproto"）的文件，返回绝对路径列表
   QStringList scanDirectory(const QString& subDir, const QString& suffix) const;
+  // 多后缀重载
+  QStringList scanDirectory(const QString& subDir, const QStringList& suffixes) const;
 
  private:
   QString version_{"1.0"};

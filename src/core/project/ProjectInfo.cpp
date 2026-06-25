@@ -162,6 +162,25 @@ QStringList ProjectInfo::scanDirectory(const QString& subDir,
   return result;
 }
 
+QStringList ProjectInfo::scanDirectory(const QString& subDir,
+                                        const QStringList& suffixes) const {
+  QDir dir(QDir(root_path_).filePath(subDir));
+  if (!dir.exists()) return {};
+
+  QStringList filters;
+  for (const auto& suffix : suffixes) {
+    filters << (QStringLiteral("*.") + suffix);
+  }
+
+  QStringList result;
+  const auto entries =
+      dir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot);
+  for (const auto& fi : entries) {
+    result.append(fi.absoluteFilePath());
+  }
+  return result;
+}
+
 }  // namespace project
 }  // namespace core
 }  // namespace etest
