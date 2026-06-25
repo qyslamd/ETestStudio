@@ -76,6 +76,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
                     int channelCount,
                     int direction,
                     int functionType,
+                    const QString& pluginId,
                     const QPointF& scenePos);
   void onDropMonitor(const QString& deviceType,
                      int channelCount,

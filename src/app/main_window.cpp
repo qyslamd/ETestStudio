@@ -753,6 +753,31 @@ void MainWindow::initSignalsLate() {
   connect(&pluginMgr, &etest::core::plugin::PluginManager::pluginUnloaded,
           hardwareTree, &HardwareTreeWidget::refreshTree);
 
+  // 项目树硬件节点 → 导航到平台设备树
+  {
+    auto* hwPsWidget = qobject_cast<ProjectStructureWidget*>(
+        sidebar_->pageById(PageId::kProjectOverview));
+    if (hwPsWidget) {
+      connect(hwPsWidget,
+          &ProjectStructureWidget::hardwareDeviceNavigateRequested,
+          this, [this](const QString& deviceType, const QString& pluginId) {
+            // 侧边栏切换到平台设备树页面
+            sidebar_->switchPage(PageId::kHardware);
+            if (!sidebar_->isContentVisible()) {
+              sidebar_->showContent();
+              auto sizes = h_splitter_->sizes();
+              if (!sizes.isEmpty()) {
+                sizes[0] = sidebar_expanded_width_;
+                h_splitter_->setSizes(sizes);
+              }
+            }
+            activity_bar_->setActivePageId(PageId::kHardware);
+            // 高亮对应的设备类型
+            sidebar_->hardwareTree()->highlightDeviceType(deviceType, pluginId);
+          });
+    }
+  }
+
   // 协议管理器：双击文件打开编辑器
   auto* protocolMgr = sidebar_->protocolManager();
   connect(protocolMgr, &ProtocolManagerWidget::openFileRequested, protocolMgr,

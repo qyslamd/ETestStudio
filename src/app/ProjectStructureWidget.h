@@ -6,6 +6,8 @@
 #include <QStandardItemModel>
 #include <QStackedWidget>
 
+#include "plugin/IDevicePlugin.h"
+#include "plugin/PluginManager.h"
 #include "widgets/OpenFileDelegate.h"
 #include <QString>
 #include <QWidget>
@@ -74,6 +76,10 @@ class ProjectStructureWidget : public QWidget {
   // 文件系统监控 — 目录内容变化时发出，由 main_window 路由到对应管理器
   void directoryContentChanged(const QString& dirPath);
 
+  // 硬件节点导航请求 — 右键/双击硬件设备跳转到平台设备树
+  void hardwareDeviceNavigateRequested(const QString& deviceType,
+                                       const QString& pluginId);
+
  public:
   void refreshRecentProjects();
   void refreshRecentFiles();
@@ -111,6 +117,10 @@ class ProjectStructureWidget : public QWidget {
                                 const QString& relativePath);
   QString absolutePath(const QString& relativePath) const;
   QString categoryDirPath(const QString& categoryId) const;
+
+  // 硬件节点管理
+  void refreshHardwareDevices();
+  void connectHardwareRefresh();
 
   // 最近文件
   void removeRecentFileFromConfig(const QString& path);

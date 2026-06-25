@@ -65,6 +65,7 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
     QJsonObject dObj;
     dObj["name"] = d->name;
     dObj["deviceType"] = d->deviceType;
+    dObj["pluginId"] = d->pluginId;
     dObj["positionX"] = d->position.x();
     dObj["positionY"] = d->position.y();
     if (d->size.isValid() && d->size.width() > 0)
@@ -218,6 +219,7 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     TopologyDevice device;
     device.name = dObj["name"].toString();
     device.deviceType = dObj["deviceType"].toString();
+    device.pluginId = dObj["pluginId"].toString();
     device.position =
         QPointF(dObj["positionX"].toDouble(), dObj["positionY"].toDouble());
     {

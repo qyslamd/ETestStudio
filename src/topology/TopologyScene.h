@@ -66,6 +66,7 @@ class TopologyScene : public QGraphicsScene {
                      int channelCount,
                      int direction,
                      int functionType,
+                     const QString& pluginId,
                      const QPointF& scenePos);
   void monitorDropped(const QString& deviceType,
                       int channelCount,

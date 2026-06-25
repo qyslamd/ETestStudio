@@ -233,6 +233,9 @@ PluginMetaData PluginManager::parseMetaDataFromLib(
   meta.category = metaDataObj.value("category").toString();
   meta.device_type = metaDataObj.value("device_type").toString();
   meta.device_channels = metaDataObj.value("device_channels").toInt(0);
+  meta.device_function = metaDataObj.value("device_function").toString();
+  meta.device_direction = metaDataObj.value("device_direction").toString(
+      QStringLiteral("Bidirectional"));
 
   QJsonArray deps = metaDataObj.value("dependencies").toArray();
   for (const QJsonValue& v : deps) {

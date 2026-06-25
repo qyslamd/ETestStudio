@@ -51,6 +51,7 @@
 #include "UndoCommands.h"
 #include "core/config/ConfigDefs.h"
 #include "core/config/ConfigManager.h"
+#include "plugin/PluginManager.h"
 #include "topology_items.h"
 
 
@@ -823,10 +824,23 @@ void TopologyEditorWidget::onAddUutPort(int productIndex) {
 }
 
 void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
+  // Query PluginManager for the first available device plugin
+  auto& pm = etest::core::plugin::PluginManager::instance();
+  etest::core::plugin::PluginMetaData firstDevice;
+  for (const auto& meta : pm.loadedPlugins()) {
+    if (meta.category == "device" && !meta.device_type.isEmpty()) {
+      firstDevice = meta;
+      break;
+    }
+  }
+  if (firstDevice.id.isEmpty())
+    return;  // No device plugins available — do nothing
+
   int n = doc_->deviceCount() + 1;
   TopologyDevice dev;
   dev.name = QStringLiteral("Device-%1").arg(n, 2, 10, QChar('0'));
-  dev.deviceType = QStringLiteral("EPH6272T");
+  dev.deviceType = firstDevice.device_type;
+  dev.pluginId = firstDevice.id;
   dev.position = scenePos;
   if (dev.position.isNull()) {
     auto center = view_->mapToScene(view_->viewport()->rect().center());
@@ -848,10 +862,12 @@ void TopologyEditorWidget::onDropDevice(const QString& deviceType,
                                         int channelCount,
                                         int direction,
                                         int functionType,
+                                        const QString& pluginId,
                                         const QPointF& scenePos) {
   int n = doc_->deviceCount() + 1;
   TopologyDevice dev;
   dev.deviceType = deviceType;
+  dev.pluginId = pluginId;
   dev.name = QStringLiteral("%1_%2").arg(deviceType).arg(n, 2, 10, QChar('0'));
   dev.position = scenePos;
 
@@ -1141,6 +1157,7 @@ void TopologyEditorWidget::onCopy() {
       QJsonObject obj;
       obj["name"] = d->name;
       obj["deviceType"] = d->deviceType;
+      obj["pluginId"] = d->pluginId;
       obj["positionX"] = d->position.x();
       obj["positionY"] = d->position.y();
       QJsonArray propsArr;
@@ -1264,6 +1281,7 @@ void TopologyEditorWidget::onPaste() {
     TopologyDevice dev;
     dev.name = obj["name"].toString();
     dev.deviceType = obj["deviceType"].toString();
+    dev.pluginId = obj["pluginId"].toString();
     dev.position = QPointF(obj["positionX"].toDouble() + 30,
                            obj["positionY"].toDouble() + 30);
 
@@ -1476,6 +1494,17 @@ void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
   dev.name =
       QStringLiteral("%1_%2").arg(dev.deviceType).arg(n, 2, 10, QChar('0'));
   dev.position = scenePos;
+
+  // Look up pluginId by matching device_type
+  auto& pm = etest::core::plugin::PluginManager::instance();
+  auto matched = pm.devicesByType(dev.deviceType);
+  if (matched.isEmpty()) {
+    QMessageBox::warning(this, QStringLiteral("错误"),
+        QStringLiteral("找不到匹配的设备插件 \"%1\"，请先加载对应插件")
+            .arg(dev.deviceType));
+    return;
+  }
+  dev.pluginId = matched.first().id;
 
   // Load properties
   for (const auto& propVal : properties) {

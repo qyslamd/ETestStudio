@@ -17,6 +17,8 @@ class HardwareTreeWidget : public QWidget {
   ~HardwareTreeWidget() override;
 
   void refreshTree();
+  void highlightDeviceType(const QString& deviceType,
+                           const QString& pluginId);
 
  private:
   void setupUi();

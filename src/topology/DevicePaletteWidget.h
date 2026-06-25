@@ -10,13 +10,11 @@ class QMimeData;
 
 namespace etest::topology {
 
-// Device type information used to populate the palette and create devices.
-struct DeviceEntry {
+// Monitored device entry (kept hard-coded — monitors aren't plugin-loaded)
+struct MonitorEntry {
   QString deviceType;
   QString displayName;
   int channelCount;
-  TopologyPort::Direction direction;
-  FunctionType functionType;
 };
 
 // Subclassed to provide custom MIME data for drag operations.
@@ -37,6 +35,7 @@ class DevicePaletteWidget : public QWidget {
 
  private:
   void populateDeviceTypes();
+  void addMonitorEntry();
   void onFilterChanged(const QString& text);
 
   DeviceListWidget* list_widget_ = nullptr;

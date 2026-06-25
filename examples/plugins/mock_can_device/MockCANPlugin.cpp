@@ -17,6 +17,7 @@ MockCANPlugin::MockCANPlugin() {
   meta_.category = "device";
   meta_.device_type = "can";
   meta_.device_channels = 2;
+  meta_.device_function = "CAN";
 }
 
 MockCANPlugin::~MockCANPlugin() = default;

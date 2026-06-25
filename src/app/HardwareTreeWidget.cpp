@@ -2,6 +2,7 @@
 
 #include <QHeaderView>
 #include <QMenu>
+#include <QTreeWidgetItemIterator>
 #include <QVBoxLayout>
 #include "IDevicePlugin.h"
 #include "PluginManager.h"
@@ -110,6 +111,35 @@ void HardwareTreeWidget::refreshTree() {
 
   tree_->expandAll();
   status_timer_->start();
+}
+
+void HardwareTreeWidget::highlightDeviceType(const QString& deviceType,
+                                              const QString& pluginId) {
+  // Iterate all leaf (device-level) items to find a match
+  QTreeWidgetItemIterator it(tree_);
+  while (*it) {
+    if ((*it)->data(0, Qt::UserRole).toString() == QLatin1String("device")) {
+      QString itemPluginId = (*it)->data(0, Qt::UserRole + 1).toString();
+      if (itemPluginId == pluginId) {
+        tree_->setCurrentItem(*it);
+        tree_->scrollToItem(*it);
+        return;
+      }
+    }
+    ++it;
+  }
+  // Fallback: try matching by device type display name
+  QTreeWidgetItemIterator it2(tree_);
+  while (*it2) {
+    if ((*it2)->data(0, Qt::UserRole).toString() == QLatin1String("device_type")) {
+      if ((*it2)->text(0).contains(deviceType, Qt::CaseInsensitive)) {
+        tree_->setCurrentItem(*it2);
+        tree_->scrollToItem(*it2);
+        return;
+      }
+    }
+    ++it2;
+  }
 }
 
 void HardwareTreeWidget::onItemDoubleClicked(QTreeWidgetItem* item,

@@ -13,6 +13,10 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
 #include <QLabel>
 #include <QListView>
 #include <QMenu>
@@ -391,6 +395,9 @@ void ProjectStructureWidget::initSignals() {
           refreshRecentFiles();
         }
       });
+
+  // 硬件节点自动刷新
+  connectHardwareRefresh();
 }
 
 void ProjectStructureWidget::setProjectPath(const QString& path) {
@@ -438,9 +445,6 @@ QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
       {QStringLiteral("topology"), QStringLiteral("拓扑"),
        QStringLiteral("topology/"), QStringLiteral("topo_tap"),
        QStringLiteral("etopo"), QStringLiteral("新建拓扑文件")},
-      {QStringLiteral("hardware"), QStringLiteral("硬件"),
-       QStringLiteral("hardware/"), QStringLiteral("hardware"), QString(),
-       QString()},
       {QStringLiteral("testprog"), QStringLiteral("用例"),
        QStringLiteral("cases/"), QStringLiteral("testprogram"),
        QStringLiteral("tcase"), QStringLiteral("新建测试用例")},
@@ -531,6 +535,10 @@ void ProjectStructureWidget::buildTree() {
     QString absDir = QDir(project_path_).absoluteFilePath(cat.dirPath);
     skipPrefixes.append(absDir.toLower() + QStringLiteral("/"));
   }
+  // Also skip hardware/ directory (reserved, but no longer a standard category)
+  skipPrefixes.append(
+      QDir(project_path_).absoluteFilePath(QStringLiteral("hardware/"))
+          .toLower() + QStringLiteral("/"));
 
   QDirIterator it(project_path_, QDir::Files | QDir::NoDotAndDotDot,
                   QDirIterator::Subdirectories);
@@ -562,6 +570,18 @@ void ProjectStructureWidget::buildTree() {
   otherItem->setText(otherText);
   root_item_->appendRow(otherItem);
 
+  // ── 硬件节点（从拓扑文件解析，非文件系统）──
+  auto* hwItem = createCategoryItem(
+      {QStringLiteral("hardware"), QStringLiteral("硬件"),
+       QString(), QStringLiteral("hardware"), QString(), QString()}, 0);
+  QFont hwFont = hwItem->font();
+  hwFont.setItalic(true);
+  hwItem->setFont(hwFont);
+  hwItem->setToolTip(QStringLiteral(
+      "项目拓扑文件中引用的硬件设备列表\n"
+      "平台插件加载后自动匹配设备状态"));
+  root_item_->appendRow(hwItem);
+
   // 展开根节点
   tree_view_->expand(root_item_->index());
 
@@ -569,6 +589,9 @@ void ProjectStructureWidget::buildTree() {
   if (!watchedDirs.isEmpty()) {
     file_watcher_->addPaths(watchedDirs);
   }
+
+  // 首次刷新硬件节点
+  refreshHardwareDevices();
 }
 
 void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
@@ -670,6 +693,18 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
   QStandardItem* item = model_->itemFromIndex(index);
   QString nodeType = item->data(NodeTypeRole).toString();
 
+  if (nodeType == QStringLiteral("hardware_device")) {
+    // 硬件设备节点右键 — 导航到平台设备树
+    auto* navigateAction = menu.addAction(QStringLiteral("跳转到设备树"));
+
+    if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) == navigateAction) {
+      QString deviceType = item->data(Qt::UserRole + 1).toString();
+      QString pluginId = item->data(Qt::UserRole + 2).toString();
+      emit hardwareDeviceNavigateRequested(deviceType, pluginId);
+    }
+    return;
+  }
+
   if (nodeType == QStringLiteral("category")) {
     // 分类节点右键
     QString catId = item->data(CategoryIdRole).toString();
@@ -696,16 +731,24 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
     }
 
     if (!hasNewAction) {
-      // 不支持新建的分类（硬件、报告、备份、"其他文件"）
-      auto* openInFmAction = menu.addAction(QStringLiteral("在文件系统中打开"));
-      if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) ==
-          openInFmAction) {
-        QString dirPath = categoryDirPath(catId);
-        if (dirPath.isEmpty()) {
-          QDesktopServices::openUrl(QUrl::fromLocalFile(project_path_));
-        } else {
-          QDesktopServices::openUrl(QUrl::fromLocalFile(
-              QDir(project_path_).absoluteFilePath(dirPath)));
+      // 不支持新建的分类（硬件节点为计算节点，无文件系统对应目录）
+      // 硬件节点不显示"在文件系统中打开"
+      if (catId == QLatin1String("hardware")) {
+        auto* refreshAction = menu.addAction(QStringLiteral("刷新硬件设备"));
+        if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) == refreshAction) {
+          refreshHardwareDevices();
+        }
+      } else {
+        auto* openInFmAction = menu.addAction(QStringLiteral("在文件系统中打开"));
+        if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) ==
+            openInFmAction) {
+          QString dirPath = categoryDirPath(catId);
+          if (dirPath.isEmpty()) {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(project_path_));
+          } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(
+                QDir(project_path_).absoluteFilePath(dirPath)));
+          }
         }
       }
     }
@@ -751,6 +794,12 @@ void ProjectStructureWidget::onItemDoubleClicked(const QModelIndex& index) {
   if (!item)
     return;
   QString nodeType = item->data(NodeTypeRole).toString();
+  if (nodeType == QStringLiteral("hardware_device")) {
+    QString deviceType = item->data(Qt::UserRole + 1).toString();
+    QString pluginId = item->data(Qt::UserRole + 2).toString();
+    emit hardwareDeviceNavigateRequested(deviceType, pluginId);
+    return;
+  }
   if (nodeType != QStringLiteral("file"))
     return;
 
@@ -1023,6 +1072,116 @@ QString ProjectStructureWidget::categoryDirPath(
     }
   }
   return QString();
+}
+
+// ── 硬件节点 ──
+
+void ProjectStructureWidget::refreshHardwareDevices() {
+  if (!root_item_ || project_path_.isEmpty())
+    return;
+
+  // Find the hardware node (last child — the computed node)
+  QStandardItem* hwItem = nullptr;
+  for (int i = 0; i < root_item_->rowCount(); ++i) {
+    auto* child = root_item_->child(i);
+    if (child->data(CategoryIdRole).toString() == QLatin1String("hardware")) {
+      hwItem = child;
+      break;
+    }
+  }
+  if (!hwItem)
+    return;
+
+  hwItem->removeRows(0, hwItem->rowCount());
+
+  // Parse all .etopo files in the topology/ directory
+  QDir topoDir(QDir(project_path_).absoluteFilePath(QStringLiteral("topology")));
+  QSet<QString> seenNames;  // Dedup by device name
+
+  if (topoDir.exists()) {
+    for (const QFileInfo& fi : topoDir.entryInfoList(
+             {QStringLiteral("*.etopo")}, QDir::Files)) {
+      QFile file(fi.absoluteFilePath());
+      if (!file.open(QIODevice::ReadOnly))
+        continue;
+      QJsonParseError err;
+      QJsonDocument jdoc = QJsonDocument::fromJson(file.readAll(), &err);
+      file.close();
+      if (err.error != QJsonParseError::NoError)
+        continue;
+
+      QJsonArray devices = jdoc.object()[QStringLiteral("devices")].toArray();
+      for (const auto& dval : devices) {
+        QJsonObject dobj = dval.toObject();
+        QString name = dobj[QStringLiteral("name")].toString();
+        if (name.isEmpty() || seenNames.contains(name))
+          continue;
+        seenNames.insert(name);
+
+        QString deviceType = dobj[QStringLiteral("deviceType")].toString();
+        QString pluginId = dobj[QStringLiteral("pluginId")].toString();
+
+        auto* deviceItem = new QStandardItem(deviceType);
+        deviceItem->setData(QStringLiteral("hardware_device"), NodeTypeRole);
+        deviceItem->setData(deviceType, Qt::UserRole + 1);  // deviceType
+        deviceItem->setData(pluginId, Qt::UserRole + 2);    // pluginId
+        deviceItem->setEditable(false);
+
+        // Match via PluginManager
+        auto& pm = etest::core::plugin::PluginManager::instance();
+        etest::core::plugin::IPlugin* plugin = pm.plugin(pluginId);
+        QString suffix;
+        QColor color;
+        if (plugin) {
+          auto* device = pm.pluginAs<etest::core::plugin::IDevicePlugin>(pluginId);
+          if (device && device->deviceStatus() == etest::core::plugin::DeviceStatus::Online) {
+            suffix = QStringLiteral("  [在线]");
+            color = QColor(0x4C, 0xAF, 0x50);  // 绿色
+          } else {
+            suffix = QStringLiteral("  [在线]");
+            color = QColor(0xFF, 0x98, 0x00);  // 橙色—已匹配但状态异常
+          }
+        } else if (!pluginId.isEmpty()) {
+          suffix = QStringLiteral("  [未加载]");
+          color = QColor(0x99, 0x99, 0x99);    // 灰色
+        } else {
+          suffix = QStringLiteral("  [未加载]");
+          color = QColor(0x99, 0x99, 0x99);    // 灰色—旧文件无pluginId
+        }
+
+        deviceItem->setText(name + suffix);
+        deviceItem->setForeground(color);
+
+        QString tip = QStringLiteral("设备: %1\n类型: %2").arg(name, deviceType);
+        if (!pluginId.isEmpty())
+          tip += QStringLiteral("\n插件: %1").arg(pluginId);
+        deviceItem->setToolTip(tip);
+
+        hwItem->appendRow(deviceItem);
+      }
+    }
+  }
+
+  // Update hardware count
+  int count = hwItem->rowCount();
+  hwItem->setText(QStringLiteral("硬件 (%1)").arg(count));
+}
+
+void ProjectStructureWidget::connectHardwareRefresh() {
+  // Topology directory changes → refresh hardware
+  connect(this, &ProjectStructureWidget::directoryContentChanged,
+          this, [this](const QString& dirPath) {
+            if (dirPath.endsWith(QStringLiteral("/topology")) ||
+                dirPath.endsWith(QStringLiteral("\\topology"))) {
+              refreshHardwareDevices();
+            }
+          });
+  // Plugin load/unload → refresh hardware
+  auto& pm = etest::core::plugin::PluginManager::instance();
+  connect(&pm, &etest::core::plugin::PluginManager::pluginLoaded,
+          this, &ProjectStructureWidget::refreshHardwareDevices);
+  connect(&pm, &etest::core::plugin::PluginManager::pluginUnloaded,
+          this, &ProjectStructureWidget::refreshHardwareDevices);
 }
 
 // ── 静态辅助函数 ──

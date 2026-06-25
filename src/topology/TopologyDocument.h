@@ -59,6 +59,7 @@ struct TopologyProduct {
 struct TopologyDevice {
   QString name;
   QString deviceType;
+  QString pluginId;       // 设备插件唯一标识，必填
   QPointF position{0, 0};
   QVector<QPair<QString, QString>> properties;
   QVector<TopologyDevicePort> ports;

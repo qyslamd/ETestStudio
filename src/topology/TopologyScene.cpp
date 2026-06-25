@@ -476,6 +476,7 @@ void TopologyScene::dropEvent(QGraphicsSceneDragDropEvent* event) {
                            obj["channelCount"].toInt(),
                            obj["direction"].toInt(),
                            obj["functionType"].toInt(),
+                           obj["pluginId"].toString(),
                            event->scenePos());
       }
     }

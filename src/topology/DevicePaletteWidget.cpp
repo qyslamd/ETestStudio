@@ -8,39 +8,12 @@
 #include <QMimeData>
 #include <QVBoxLayout>
 
+#include "plugin/PluginManager.h"
+
 namespace etest::topology {
 
 // MIME type used when dragging devices from the palette.
 static const char kTopologyDeviceMime[] = "application/x-topology-device";
-
-// ── Device palette entries ───────────────────────────────────
-
-static const DeviceEntry kDeviceTypes[] = {
-    {"EPH6272T", "EPH6272T ARINC429 4CH", 4, TopologyPort::Direction::Bidirectional,
-     FunctionType::A429},
-    {"EPH6633A", "EPH6633A Analog 8CH", 8, TopologyPort::Direction::Bidirectional,
-     FunctionType::AD},
-    {"EPH5121A", "EPH5121A Discrete 32CH", 32, TopologyPort::Direction::Bidirectional,
-     FunctionType::DISCRETE},
-};
-
-static const int kDeviceTypeCount =
-    sizeof(kDeviceTypes) / sizeof(kDeviceTypes[0]);
-
-// ── Monitor palette entries ──────────────────────────────────
-
-struct MonitorEntry {
-  QString deviceType;
-  QString displayName;
-  int channelCount;
-};
-
-static const MonitorEntry kMonitorTypes[] = {
-    {"Monitor-4CH", "Monitor-4CH (4通道监听器)", 4},
-};
-
-static const int kMonitorTypeCount =
-    sizeof(kMonitorTypes) / sizeof(kMonitorTypes[0]);
 
 // ── DeviceListWidget ─────────────────────────────────────────
 
@@ -55,32 +28,15 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
   if (items.isEmpty())
     return;
 
-  // Build JSON with full device entry for the selected item
-  QString dt = items.first()->data(Qt::UserRole).toString();
+  auto* item = items.first();
 
   QJsonObject obj;
-  obj["deviceType"] = dt;
-
-  // Check if this is a monitor item
-  bool isMonitor = items.first()->data(Qt::UserRole + 1).toBool();
-  if (isMonitor) {
-    obj["isMonitor"] = true;
-    for (int i = 0; i < kMonitorTypeCount; ++i) {
-      if (dt == kMonitorTypes[i].deviceType) {
-        obj["channelCount"] = kMonitorTypes[i].channelCount;
-        break;
-      }
-    }
-  } else {
-    for (int i = 0; i < kDeviceTypeCount; ++i) {
-      if (dt == kDeviceTypes[i].deviceType) {
-        obj["channelCount"] = kDeviceTypes[i].channelCount;
-        obj["direction"] = static_cast<int>(kDeviceTypes[i].direction);
-        obj["functionType"] = static_cast<int>(kDeviceTypes[i].functionType);
-        break;
-      }
-    }
-  }
+  obj["deviceType"]    = item->data(Qt::UserRole).toString();
+  obj["isMonitor"]     = item->data(Qt::UserRole + 1).toBool();
+  obj["channelCount"]  = item->data(Qt::UserRole + 2).toInt();
+  obj["pluginId"]      = item->data(Qt::UserRole + 3).toString();
+  obj["direction"]     = item->data(Qt::UserRole + 4).toInt();
+  obj["functionType"]  = item->data(Qt::UserRole + 5).toInt();
 
   auto* mime = new QMimeData();
   mime->setData(QLatin1String(kTopologyDeviceMime),
@@ -106,6 +62,14 @@ DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QWidget(parent) {
   list_widget_ = new DeviceListWidget(this);
   layout->addWidget(list_widget_);
 
+  // Connect plugin load/unload to refresh the device list
+  auto& pm = etest::core::plugin::PluginManager::instance();
+  connect(&pm, &etest::core::plugin::PluginManager::pluginLoaded,
+          this, &DevicePaletteWidget::populateDeviceTypes);
+  connect(&pm, &etest::core::plugin::PluginManager::pluginUnloaded,
+          this, &DevicePaletteWidget::populateDeviceTypes);
+
+  // Initial population (also used as refresh target)
   populateDeviceTypes();
 
   connect(filter_input_, &QLineEdit::textChanged, this,
@@ -113,25 +77,55 @@ DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QWidget(parent) {
 }
 
 void DevicePaletteWidget::populateDeviceTypes() {
-  for (int i = 0; i < kDeviceTypeCount; ++i) {
-    const auto& entry = kDeviceTypes[i];
+  list_widget_->clear();
 
-    auto* item = new QListWidgetItem(entry.displayName);
-    item->setData(Qt::UserRole, entry.deviceType);
+  // Load device types from PluginManager
+  auto& pm = etest::core::plugin::PluginManager::instance();
+  for (const auto& meta : pm.loadedPlugins()) {
+    if (meta.category != "device") continue;
+    if (meta.device_type.isEmpty()) continue;
 
-    QString tip =
-        QStringLiteral("%1\n%2ch %3 %4\n拖放至画布创建设备")
-            .arg(entry.displayName)
-            .arg(entry.channelCount)
-            .arg(directionToString(entry.direction))
-            .arg(functionTypeToString(entry.functionType));
+    auto* item = new QListWidgetItem(list_widget_);
+    QString display = meta.name.isEmpty()
+        ? meta.device_type
+        : QStringLiteral("%1 (%2ch)").arg(meta.name).arg(meta.device_channels);
+    item->setText(display);
+    item->setData(Qt::UserRole,     meta.device_type);          // deviceType
+    item->setData(Qt::UserRole + 1, QVariant(false));            // isMonitor
+    item->setData(Qt::UserRole + 2, meta.device_channels);       // channelCount
+    item->setData(Qt::UserRole + 3, meta.id);                    // pluginId
+
+    int direction = static_cast<int>(TopologyPort::Direction::Bidirectional);
+    if (meta.device_direction == "Input")
+      direction = static_cast<int>(TopologyPort::Direction::Input);
+    else if (meta.device_direction == "Output")
+      direction = static_cast<int>(TopologyPort::Direction::Output);
+    item->setData(Qt::UserRole + 4, direction);                  // direction
+
+    FunctionType ft = stringToFunctionType(meta.device_function.isEmpty()
+        ? QStringLiteral("CUSTOM") : meta.device_function);
+    item->setData(Qt::UserRole + 5, static_cast<int>(ft));       // functionType
+
+    QString tip = QStringLiteral("%1\n%2ch %3 %4\n拖放至画布创建设备")
+                      .arg(display)
+                      .arg(meta.device_channels)
+                      .arg(directionToString(static_cast<TopologyPort::Direction>(direction)))
+                      .arg(functionTypeToString(ft));
     item->setToolTip(tip);
-
     item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
-    list_widget_->addItem(item);
   }
 
-  // ── Monitor section ──
+  // Add the hard-coded monitor entry
+  addMonitorEntry();
+}
+
+void DevicePaletteWidget::addMonitorEntry() {
+  static const MonitorEntry kMonitorTypes[] = {
+      {"Monitor-4CH", "Monitor-4CH (4通道监听器)", 4},
+  };
+  static const int kMonitorTypeCount =
+      sizeof(kMonitorTypes) / sizeof(kMonitorTypes[0]);
+
   if (kMonitorTypeCount > 0) {
     auto* sep = new QListWidgetItem(QStringLiteral("─── 监听器 ───"));
     sep->setFlags(sep->flags() & ~Qt::ItemIsSelectable);
@@ -142,7 +136,13 @@ void DevicePaletteWidget::populateDeviceTypes() {
       const auto& entry = kMonitorTypes[i];
       auto* item = new QListWidgetItem(entry.displayName);
       item->setData(Qt::UserRole, entry.deviceType);
-      item->setData(Qt::UserRole + 1, true);  // isMonitor flag
+      item->setData(Qt::UserRole + 1, true);                    // isMonitor
+      item->setData(Qt::UserRole + 2, entry.channelCount);      // channelCount
+      item->setData(Qt::UserRole + 3, QString());                // pluginId（空）
+      item->setData(Qt::UserRole + 4,
+          static_cast<int>(TopologyPort::Direction::Bidirectional)); // direction
+      item->setData(Qt::UserRole + 5,
+          static_cast<int>(FunctionType::CUSTOM));               // functionType
       item->setToolTip(QStringLiteral("%1\n拖放至画布添加监听器").arg(
           entry.displayName));
       item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
