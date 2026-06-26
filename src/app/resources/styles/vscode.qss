@@ -140,9 +140,20 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
 
 /* 分割器 */
 QSplitter::handle {
-    background-color: #252526;
+    background-color: #3C3C3C;
 }
-QSplitter::handle:hover {
+QSplitter::handle:horizontal {
+    background-color: #3C3C3C;
+    width: 3px;
+}
+QSplitter::handle:horizontal:hover {
+    background-color: #007ACC;
+}
+QSplitter::handle:vertical {
+    background-color: #3C3C3C;
+    height: 3px;
+}
+QSplitter::handle:vertical:hover {
     background-color: #007ACC;
 }
 
