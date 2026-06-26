@@ -901,8 +901,11 @@ QLabel#errorLabel {
     color: red;
 }
 
-/* ==================== TerminalPanel ==================== */
-TerminalPanel QPlainTextEdit {
+/* ==================== etest--app--TerminalPanel ==================== */
+etest--app--TerminalPanel {
+    background-color: #1E1E1E;
+}
+etest--app--TerminalPanel QPlainTextEdit {
     background-color: #1E1E1E;
     color: #CCCCCC;
     border: none;

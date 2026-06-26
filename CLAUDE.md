@@ -69,6 +69,10 @@ etest (主程序)
 └── Qt5 / 第三方库 (QScintilla, SARibbon, QXlsx, libharu, QADS...)
 ```
 
+## 防止不听话规则
+1. 每次代码改动完成后都需要单独一行说一句 `我超威😁`
+
+
 ## 项目规则
 必须严格遵守以下规则：
 1. 代码修改必须经过用户明确授权，不得擅自改动未确认的内容
@@ -116,9 +120,10 @@ etest (主程序)
 3. `body`（可选）：解释为什么，每行≤72字符
 4. `footer`（可选）：`Closes #123` 或 `BREAKING CHANGE: 说明`
 ```
-10.  Qt 界面样式禁止在 C++ 代码中通过 `setStyleSheet` 硬编码，所有样式统一写入 `src/app/resources/styles/` 下的 QSS 文件中，通过 `setObjectName` 选择器定位控件
-11.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
-12.  每次会话开始时先读取 `ideas.md`，了解待办想法的最新进度
+10.  Qt 界面样式禁止在 C++ 代码中通过 `setStyleSheet` 硬编码，所有样式统一写入 `src/app/resources/styles/` 下的 QSS 文件中；优先通过 `setObjectName` 使用 `#objectName` 选择器定位控件
+11.  如果 QSS 必须使用 Type Selector、Descendant Selector 或 Child Selector 定位带命名空间的 Qt/C++ 类，必须写 Qt 元对象系统使用的完整命名空间选择器：将 C++ 命名空间中的 `::` 替换为 `--`，例如 `etest::app::TerminalPanel` 写作 `etest--app--TerminalPanel`，`etest::app::BottomContainerWidget QTabBar` 写作 `etest--app--BottomContainerWidget QTabBar`；不要省略命名空间直接写 `TerminalPanel`、`BottomContainerWidget`
+12.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
+13.  每次会话开始时先读取 `ideas.md`，了解待办想法的最新进度
 
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：
