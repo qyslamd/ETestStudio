@@ -1,22 +1,21 @@
 #include <QApplication>
 #include <QFont>
 
+#include <QTranslator>
 #include "EditorManager.h"
-#include "editors/TextEditorWidget.h"
 #include "common/GlobalExceptionHandler.h"
 #include "common/SingleInstance.h"
 #include "config/ConfigManager.h"
 #include "crashhandler/CrashHandler.h"
 #include "editors/EditorFactory.h"
+#include "editors/TextEditorWidget.h"
 #include "logger/Logger.h"
 #include "main_window.h"
-#include <QTranslator>
 
 // Debug 构建启用控制台，方便查看 spdlog 输出
 #ifdef _DEBUG
 #pragma comment(linker, "/SUBSYSTEM:CONSOLE")
 #endif
-
 
 using namespace etest::core::config;
 using namespace etest::core::logger;
@@ -27,6 +26,9 @@ using namespace etest::app;
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   app.setFont(QFont("Microsoft YaHei", 10));
+
+  LOG_INFO("MAIN",
+           app.applicationDirPath().toStdString() + " 目录下启动应用程序");
 
   // 注册编辑器类型
   EditorManager::registerEditorTypes();
