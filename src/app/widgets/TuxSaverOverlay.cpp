@@ -3,23 +3,27 @@
 #include <QPainter>
 #include <QPushButton>
 
-#include "config/ConfigManager.h"
+#include "AppIconProvider.h"
 #include "ConfigDefs.h"
 #include "SaverWidgetBase.h"
 #include "TuxSaverWidget.h"
 #include "WisdomWidget.h"
+#include "config/ConfigManager.h"
 
 using namespace etest::core::config;
+using namespace etest::app;
 
-TuxSaverOverlay::TuxSaverOverlay(QWidget* parent)
-    : QWidget(parent) {
+TuxSaverOverlay::TuxSaverOverlay(QWidget* parent) : QWidget(parent) {
   setVisible(false);
 
   last_mode_ = saverModeFromConfig();
   initSaver();
 
   // ── Close button ──
-  close_btn_ = new QPushButton(QStringLiteral("✕"), this);
+  close_btn_ = new QPushButton(this);
+  close_btn_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("close")));
+  close_btn_->setIconSize(QSize(16, 16));
   close_btn_->setFixedSize(32, 32);
   close_btn_->setObjectName(QStringLiteral("saverCloseBtn"));
   close_btn_->setCursor(Qt::PointingHandCursor);
@@ -59,7 +63,8 @@ void TuxSaverOverlay::activate() {
   }
 
   auto* p = parentWidget();
-  if (!p) return;
+  if (!p)
+    return;
   background_ = p->grab();
   setGeometry(p->rect());
   saver_->setGeometry(rect());

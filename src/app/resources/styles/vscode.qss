@@ -990,8 +990,8 @@ GitWidget QLabel#gitTitleLabel {
 
 /* ==================== NewProjectDialog ==================== */
 #dlg_contentWidget {
-    background-color: white;
-    border: 1px solid #ccc;
+    background-color: #252526;
+    border: 1px solid #3C3C3C;
     border-radius: 8px;
 }
 

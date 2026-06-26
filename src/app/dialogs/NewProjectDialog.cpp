@@ -92,6 +92,10 @@ void NewProjectDialog::initUi() {
   QString lastPath = cfg.get<QString>(CONFIG_RECENT_LAST_OPEN_PATH);
   if (lastPath.isEmpty()) {
     lastPath = QDir::homePath();
+  } else {
+    // CONFIG_RECENT_LAST_OPEN_PATH 存储的是上次打开项目的目录（项目文件夹本身），
+    // 新建项目的 location 应为其上一级目录
+    lastPath = QFileInfo(lastPath).dir().absolutePath();
   }
   location_edit_->setText(lastPath);
 
