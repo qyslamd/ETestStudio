@@ -692,36 +692,36 @@ etest--app--SearchWidget QLabel#contentSectionLabel {
     padding: 2px 4px;
 }
 
-/* ==================== SettingsDialog ==================== */
-SettingsDialog {
+/* ==================== etest--app--SettingsDialog ==================== */
+etest--app--SettingsDialog {
     background-color: #FFFFFF;
 }
 
 /* 左侧分类列表 */
-SettingsDialog QListWidget {
+etest--app--SettingsDialog QListWidget {
     background-color: #F5F5F5;
     color: #333333;
     border-right: 1px solid #E0E0E0;
     font-size: 13px;
     outline: none;
 }
-SettingsDialog QListWidget::item {
+etest--app--SettingsDialog QListWidget::item {
     padding: 8px 12px;
     border: none;
 }
-SettingsDialog QListWidget::item:hover {
+etest--app--SettingsDialog QListWidget::item:hover {
     background-color: #E0E0E0;
 }
-SettingsDialog QListWidget::item:selected {
+etest--app--SettingsDialog QListWidget::item:selected {
     background-color: #CCE4F7;
     color: #1F1F1F;
 }
 
 /* 右侧页面容器 */
-SettingsDialog QStackedWidget {
+etest--app--SettingsDialog QStackedWidget {
     background-color: #FFFFFF;
 }
-SettingsDialog QStackedWidget > QWidget {
+etest--app--SettingsDialog QStackedWidget > QWidget {
     background-color: #FFFFFF;
 }
 
@@ -769,48 +769,48 @@ QWidget#SettingsButtonBar {
 }
 
 /* 设置页通用标签 */
-SettingsDialog QLabel {
+etest--app--SettingsDialog QLabel {
     color: #333333;
     background-color: transparent;
 }
 
 /* 数值控件 */
-SettingsDialog QSpinBox {
+etest--app--SettingsDialog QSpinBox {
     background-color: #FFFFFF;
     color: #1F1F1F;
     border: 1px solid #D0D0D0;
     border-radius: 3px;
     padding: 4px 8px;
 }
-SettingsDialog QSpinBox:focus {
+etest--app--SettingsDialog QSpinBox:focus {
     border-color: #007ACC;
 }
-SettingsDialog QSpinBox::up-button,
-SettingsDialog QSpinBox::down-button {
+etest--app--SettingsDialog QSpinBox::up-button,
+etest--app--SettingsDialog QSpinBox::down-button {
     background-color: #F5F5F5;
     border: none;
     width: 16px;
 }
-SettingsDialog QSpinBox::up-button:hover,
-SettingsDialog QSpinBox::down-button:hover {
+etest--app--SettingsDialog QSpinBox::up-button:hover,
+etest--app--SettingsDialog QSpinBox::down-button:hover {
     background-color: #E0E0E0;
 }
 
 /* 下拉框 */
-SettingsDialog QComboBox {
+etest--app--SettingsDialog QComboBox {
     background-color: #FFFFFF;
     color: #1F1F1F;
     border: 1px solid #D0D0D0;
     border-radius: 3px;
     padding: 4px 8px;
 }
-SettingsDialog QComboBox:hover {
+etest--app--SettingsDialog QComboBox:hover {
     border-color: #007ACC;
 }
-SettingsDialog QComboBox:focus {
+etest--app--SettingsDialog QComboBox:focus {
     border-color: #007ACC;
 }
-SettingsDialog QComboBox::drop-down {
+etest--app--SettingsDialog QComboBox::drop-down {
     background-color: transparent;
     border: none;
     width: 20px;
@@ -824,41 +824,47 @@ QComboBox QAbstractItemView {
 }
 
 /* 文本输入框 */
-SettingsDialog QLineEdit {
+etest--app--SettingsDialog QLineEdit {
     background-color: #FFFFFF;
     color: #1F1F1F;
     border: 1px solid #D0D0D0;
     border-radius: 3px;
     padding: 4px 8px;
 }
-SettingsDialog QLineEdit:focus {
+etest--app--SettingsDialog QLineEdit:focus {
     border-color: #007ACC;
 }
 
 /* 复选框 */
-SettingsDialog QCheckBox {
+etest--app--SettingsDialog QCheckBox {
     color: #333333;
     spacing: 8px;
     background-color: transparent;
 }
 
 /* 滚动区（外观页内嵌） */
-SettingsDialog QScrollArea {
+etest--app--SettingsDialog QScrollArea {
     background-color: #FFFFFF;
     border: none;
 }
+etest--app--SettingsDialog QScrollArea > QWidget {
+    background-color: #FFFFFF;
+}
+etest--app--SettingsDialog QScrollArea > QWidget > QWidget {
+    background-color: #FFFFFF;
+}
 
 /* 按钮 */
-SettingsDialog QPushButton {
+etest--app--SettingsDialog QPushButton {
     background-color: #0078D4;
     color: #FFFFFF;
     border: 1px solid #0078D4;
     border-radius: 3px;
     padding: 5px 16px;
 }
-SettingsDialog QPushButton:hover {
+etest--app--SettingsDialog QPushButton:hover {
     background-color: #1A86E0;
 }
-SettingsDialog QPushButton:pressed {
+etest--app--SettingsDialog QPushButton:pressed {
     background-color: #006ABF;
 }

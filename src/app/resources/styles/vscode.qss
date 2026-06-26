@@ -1121,45 +1121,48 @@ QLabel#WelcomeTipContent {
     font-size: 12px;
 }
 
-/* ==================== SettingsDialog ==================== */
-SettingsDialog {
+/* ==================== etest--app--SettingsDialog ==================== */
+etest--app--SettingsDialog {
     background-color: #252526;
 }
 
 /* 左侧分类列表 */
-SettingsDialog QListWidget {
+etest--app--SettingsDialog QListWidget {
     background-color: #252526;
     color: #CCCCCC;
     border-right: 1px solid #1E1E1E;
     font-size: 13px;
     outline: none;
 }
-SettingsDialog QListWidget::item {
+etest--app--SettingsDialog QListWidget::item {
     padding: 8px 12px;
     border: none;
 }
-SettingsDialog QListWidget::item:hover {
+etest--app--SettingsDialog QListWidget::item:hover {
     background-color: #2A2D2E;
 }
-SettingsDialog QListWidget::item:selected {
+etest--app--SettingsDialog QListWidget::item:selected {
     background-color: #094771;
     color: #FFFFFF;
 }
 
 /* 右侧页面容器 */
-SettingsDialog QStackedWidget {
+etest--app--SettingsDialog QStackedWidget {
     background-color: #1E1E1E;
 }
-SettingsDialog QStackedWidget > QWidget {
+etest--app--SettingsDialog QStackedWidget > QWidget {
     background-color: #1E1E1E;
 }
 
 /* 外观页内嵌滚动区 */
-SettingsDialog QScrollArea {
+etest--app--SettingsDialog QScrollArea {
     background-color: #1E1E1E;
     border: none;
 }
-SettingsDialog QScrollArea > QWidget {
+etest--app--SettingsDialog QScrollArea > QWidget {
+    background-color: #1E1E1E;
+}
+etest--app--SettingsDialog QScrollArea > QWidget > QWidget {
     background-color: #1E1E1E;
 }
 
@@ -1200,7 +1203,7 @@ QLabel#SettingsHint {
 }
 
 /* 设置页通用标签 */
-SettingsDialog QLabel {
+etest--app--SettingsDialog QLabel {
     color: #CCCCCC;
     background-color: transparent;
 }
@@ -1212,40 +1215,40 @@ QWidget#SettingsButtonBar {
 }
 
 /* 设置页中的数值控件 */
-SettingsDialog QSpinBox {
+etest--app--SettingsDialog QSpinBox {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
     border-radius: 2px;
     padding: 4px 8px;
 }
-SettingsDialog QSpinBox:focus {
+etest--app--SettingsDialog QSpinBox:focus {
     border-color: #007ACC;
 }
-SettingsDialog QSpinBox::up-button,
-SettingsDialog QSpinBox::down-button {
+etest--app--SettingsDialog QSpinBox::up-button,
+etest--app--SettingsDialog QSpinBox::down-button {
     background-color: #3C3C3C;
     border: none;
     width: 16px;
 }
-SettingsDialog QSpinBox::up-arrow,
-SettingsDialog QSpinBox::down-arrow {
+etest--app--SettingsDialog QSpinBox::up-arrow,
+etest--app--SettingsDialog QSpinBox::down-arrow {
     width: 8px;
     height: 8px;
 }
 
 /* 设置页中的下拉框 */
-SettingsDialog QComboBox {
+etest--app--SettingsDialog QComboBox {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
     border-radius: 2px;
     padding: 4px 8px;
 }
-SettingsDialog QComboBox:hover {
+etest--app--SettingsDialog QComboBox:hover {
     border-color: #007ACC;
 }
-SettingsDialog QComboBox::drop-down {
+etest--app--SettingsDialog QComboBox::drop-down {
     background-color: #3C3C3C;
     border: none;
     width: 20px;
@@ -1258,59 +1261,59 @@ QComboBox QAbstractItemView {
 }
 
 /* 设置页中的文本框 */
-SettingsDialog QLineEdit {
+etest--app--SettingsDialog QLineEdit {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
     border-radius: 2px;
     padding: 4px 8px;
 }
-SettingsDialog QLineEdit:focus {
+etest--app--SettingsDialog QLineEdit:focus {
     border-color: #007ACC;
 }
 
 /* 设置页中的复选框 */
-SettingsDialog QCheckBox {
+etest--app--SettingsDialog QCheckBox {
     color: #CCCCCC;
     spacing: 8px;
     background-color: transparent;
 }
-SettingsDialog QCheckBox::indicator {
+etest--app--SettingsDialog QCheckBox::indicator {
     width: 16px;
     height: 16px;
     image: url(:/resources/icons/svg/checkbox_unchecked.svg);
 }
-SettingsDialog QCheckBox::indicator:hover {
+etest--app--SettingsDialog QCheckBox::indicator:hover {
     image: url(:/resources/icons/svg/checkbox_unchecked_hover.svg);
 }
-SettingsDialog QCheckBox::indicator:checked {
+etest--app--SettingsDialog QCheckBox::indicator:checked {
     image: url(:/resources/icons/svg/checkbox_checked.svg);
 }
-SettingsDialog QCheckBox::indicator:checked:hover {
+etest--app--SettingsDialog QCheckBox::indicator:checked:hover {
     image: url(:/resources/icons/svg/checkbox_checked_hover.svg);
 }
-SettingsDialog QCheckBox::indicator:disabled {
+etest--app--SettingsDialog QCheckBox::indicator:disabled {
     image: url(:/resources/icons/svg/checkbox_unchecked_disabled.svg);
 }
-SettingsDialog QCheckBox::indicator:checked:disabled {
+etest--app--SettingsDialog QCheckBox::indicator:checked:disabled {
     image: url(:/resources/icons/svg/checkbox_checked_disabled.svg);
 }
-SettingsDialog QCheckBox::indicator:indeterminate {
+etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
     image: url(:/resources/icons/svg/checkbox_indeterminate.svg);
 }
 
 /* 设置页中的按钮 */
-SettingsDialog QPushButton {
+etest--app--SettingsDialog QPushButton {
     background-color: #0E639C;
     color: #FFFFFF;
     border: 1px solid #0E639C;
     border-radius: 2px;
     padding: 5px 16px;
 }
-SettingsDialog QPushButton:hover {
+etest--app--SettingsDialog QPushButton:hover {
     background-color: #1177BB;
 }
-SettingsDialog QPushButton:pressed {
+etest--app--SettingsDialog QPushButton:pressed {
     background-color: #0D5A8F;
 }
 
