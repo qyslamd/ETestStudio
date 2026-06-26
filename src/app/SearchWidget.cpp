@@ -86,6 +86,7 @@ void SearchWidget::initUi() {
   mainLayout->addLayout(inputRow);
 
   auto* separator = new QFrame(this);
+  separator->setObjectName(QStringLiteral("searchSeparator"));
   separator->setFrameShape(QFrame::HLine);
   separator->setFixedHeight(1);
   mainLayout->addWidget(separator);
@@ -267,7 +268,7 @@ void SearchWidget::performSearch() {
 
     QTreeWidgetItem* fileItem = nullptr;
     int lineNumber = 0;
-    int fileMatches = 0;
+    int contentMatches = 0;
 
     while (!stream.atEnd()) {
       QString line = stream.readLine();
@@ -294,7 +295,7 @@ void SearchWidget::performSearch() {
         matchItem->setData(0, Qt::UserRole, filePath);
         matchItem->setData(0, Qt::UserRole + 1, lineNumber);
 
-        ++fileMatches;
+        ++contentMatches;
         ++totalMatches;
 
         if (totalMatches >= kMaxResults) {
@@ -306,7 +307,7 @@ void SearchWidget::performSearch() {
 
     if (fileItem) {
       fileItem->setText(
-          0, QStringLiteral("%1 (%2)").arg(fi.fileName()).arg(fileMatches));
+          0, QStringLiteral("%1 (%2)").arg(fi.fileName()).arg(contentMatches));
       fileItem->setExpanded(true);
     }
 

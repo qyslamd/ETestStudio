@@ -755,7 +755,7 @@ etest--app--SearchWidget QTreeWidget::item:hover {
 etest--app--SearchWidget QTreeWidget::item:selected {
     background-color: #094771;
 }
-etest--app--SearchWidget QFrame {
+etest--app--SearchWidget QFrame#searchSeparator {
     background-color: #3C3C3C;
     max-height: 1px;
 }
