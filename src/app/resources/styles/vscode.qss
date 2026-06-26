@@ -692,10 +692,10 @@ TestProgramEditorWidget QTabBar::tab:hover {
 }
 
 /* ==================== SearchWidget ==================== */
-SearchWidget {
+etest--app--SearchWidget {
     background-color: #252526;
 }
-SearchWidget QLineEdit {
+etest--app--SearchWidget QLineEdit {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
@@ -703,64 +703,88 @@ SearchWidget QLineEdit {
     padding: 4px 8px;
     selection-background-color: #264F78;
 }
-SearchWidget QLineEdit:focus {
+etest--app--SearchWidget QLineEdit:focus {
     border-color: #007ACC;
 }
-SearchWidget QPushButton {
+etest--app--SearchWidget QPushButton {
     background-color: transparent;
     border: 1px solid #3C3C3C;
     border-radius: 2px;
     color: #CCCCCC;
     padding: 2px;
 }
-SearchWidget QPushButton:hover {
+etest--app--SearchWidget QPushButton:hover {
     background-color: #505050;
     border-color: #007ACC;
 }
-SearchWidget QCheckBox {
-    color: #858585;
-    spacing: 2px;
+etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn,
+etest--app--SearchWidget QToolButton#searchWholeWordBtn {
     background-color: transparent;
+    border: 1px solid #3C3C3C;
+    border-radius: 3px;
+    color: #858585;
+    font-size: 12px;
+    padding: 0px;
+    margin: 0px;
 }
-SearchWidget QCheckBox::indicator {
-    width: 14px;
-    height: 14px;
-    image: url(:/resources/icons/svg/checkbox_unchecked.svg);
+etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:hover,
+etest--app--SearchWidget QToolButton#searchWholeWordBtn:hover {
+    background-color: #505050;
+    color: #CCCCCC;
 }
-SearchWidget QCheckBox::indicator:hover {
-    image: url(:/resources/icons/svg/checkbox_unchecked_hover.svg);
+etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:checked,
+etest--app--SearchWidget QToolButton#searchWholeWordBtn:checked {
+    background-color: #094771;
+    border-color: #007ACC;
+    color: #FFFFFF;
 }
-SearchWidget QCheckBox::indicator:checked {
-    image: url(:/resources/icons/svg/checkbox_checked.svg);
-}
-SearchWidget QCheckBox::indicator:checked:hover {
-    image: url(:/resources/icons/svg/checkbox_checked_hover.svg);
-}
-SearchWidget QTreeWidget {
+etest--app--SearchWidget QTreeWidget {
     background-color: #252526;
     color: #CCCCCC;
     border: none;
     outline: none;
     font-size: 13px;
 }
-SearchWidget QTreeWidget::item {
+etest--app--SearchWidget QTreeWidget::item {
     padding: 2px 0px;
     border: none;
 }
-SearchWidget QTreeWidget::item:hover {
+etest--app--SearchWidget QTreeWidget::item:hover {
     background-color: #2A2D2E;
 }
-SearchWidget QTreeWidget::item:selected {
+etest--app--SearchWidget QTreeWidget::item:selected {
     background-color: #094771;
 }
-SearchWidget QFrame {
+etest--app--SearchWidget QFrame {
     background-color: #3C3C3C;
     max-height: 1px;
 }
-SearchWidget QLabel {
+etest--app--SearchWidget QLabel {
     color: #858585;
     font-size: 12px;
     background-color: transparent;
+}
+etest--app--SearchWidget QLabel#fileSectionLabel,
+etest--app--SearchWidget QLabel#contentSectionLabel {
+    color: #888888;
+    font-size: 11px;
+    background-color: transparent;
+    padding: 2px 4px;
+}
+etest--app--SearchWidget QListWidget {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: none;
+    outline: none;
+}
+etest--app--SearchWidget QListWidget::item {
+    padding: 2px 4px;
+}
+etest--app--SearchWidget QListWidget::item:hover {
+    background-color: #2A2D2E;
+}
+etest--app--SearchWidget QListWidget::item:selected {
+    background-color: #094771;
 }
 
 /* ==================== GitWidget ==================== */

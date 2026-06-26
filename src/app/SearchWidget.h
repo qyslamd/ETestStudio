@@ -1,10 +1,12 @@
 #ifndef ETEST_APP_SEARCH_WIDGET_H_
 #define ETEST_APP_SEARCH_WIDGET_H_
 
-#include <QCheckBox>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QPushButton>
+#include <QSplitter>
+#include <QToolButton>
 #include <QTreeWidget>
 #include <QWidget>
 
@@ -29,16 +31,21 @@ class SearchWidget : public QWidget {
 
   void performSearch();
   void clearResults();
+  QString fileIconName(const QString& suffix) const;
 
   QLineEdit* search_input_ = nullptr;
   QPushButton* search_button_ = nullptr;
-  QCheckBox* case_sensitive_check_ = nullptr;
+  QToolButton* case_sensitive_btn_ = nullptr;
+  QToolButton* whole_word_btn_ = nullptr;
+  QSplitter* splitter_ = nullptr;
+  QListWidget* file_list_ = nullptr;
   QTreeWidget* result_tree_ = nullptr;
   QLabel* status_label_ = nullptr;
 
   QString search_root_;
 
   static const int kMaxResults = 1000;
+  static const int kMaxFileResults = 200;
 };
 
 }  // namespace etest::app

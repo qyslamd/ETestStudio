@@ -645,6 +645,36 @@ QPushButton#saverCloseBtn:pressed {
     border-color: rgba(200,50,50,220);
 }
 
+/* ==================== SearchWidget ==================== */
+etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn,
+etest--app--SearchWidget QToolButton#searchWholeWordBtn {
+    background-color: transparent;
+    border: 1px solid #D0D0D0;
+    border-radius: 3px;
+    color: #666666;
+    font-size: 12px;
+    padding: 0px;
+    margin: 0px;
+}
+etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:hover,
+etest--app--SearchWidget QToolButton#searchWholeWordBtn:hover {
+    background-color: #E0E0E0;
+    color: #333333;
+}
+etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:checked,
+etest--app--SearchWidget QToolButton#searchWholeWordBtn:checked {
+    background-color: #CCE4F7;
+    border-color: #0078D4;
+    color: #1F1F1F;
+}
+etest--app--SearchWidget QLabel#fileSectionLabel,
+etest--app--SearchWidget QLabel#contentSectionLabel {
+    color: #999999;
+    font-size: 11px;
+    background-color: transparent;
+    padding: 2px 4px;
+}
+
 /* ==================== SettingsDialog ==================== */
 SettingsDialog {
     background-color: #FFFFFF;
