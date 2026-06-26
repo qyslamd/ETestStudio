@@ -153,6 +153,8 @@
         <file>resources/icons/svg/welcome_dark.svg</file>
         <file>resources/icons/svg/output_panel_light.svg</file>
         <file>resources/icons/svg/output_panel_dark.svg</file>
+        <file>resources/icons/svg/report_light.svg</file>
+        <file>resources/icons/svg/report_dark.svg</file>
         <file>resources/icons/svg/sidebar_light.svg</file>
         <file>resources/icons/svg/sidebar_dark.svg</file>
         <file>resources/icons/svg/ribbon_settings_light.svg</file>

@@ -871,6 +871,8 @@ void MainWindow::lazyInit() {
   {
     activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
                            QStringLiteral("project"));
+    activity_bar_->addPage(PageId::kSearch, QStringLiteral("搜索"),
+                           QStringLiteral("search"));
     activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
                            QStringLiteral("topo_tap"));
     activity_bar_->addPage(PageId::kHardware, QStringLiteral("硬件"),
@@ -882,15 +884,15 @@ void MainWindow::lazyInit() {
     activity_bar_->addPage(PageId::kRun, QStringLiteral("运行"),
                            QStringLiteral("debug"));
     activity_bar_->addPage(PageId::kReport, QStringLiteral("报告"),
-                           QStringLiteral("project"));
-    activity_bar_->addPage(PageId::kSearch, QStringLiteral("搜索"),
-                           QStringLiteral("search"));
+                           QStringLiteral("report"));
     activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
                            QStringLiteral("git"));
 
     sidebar_->addPage(PageId::kProjectOverview,
                       new ProjectStructureWidget(sidebar_),
                       QStringLiteral("项目概览"));
+    sidebar_->addPage(PageId::kSearch, new SearchWidget(sidebar_),
+                      QStringLiteral("搜索"));
     sidebar_->addPage(PageId::kTopology, new TopologyManagerWidget(sidebar_),
                       QStringLiteral("拓扑"));
     sidebar_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_),
@@ -904,8 +906,6 @@ void MainWindow::lazyInit() {
                       QStringLiteral("运行"));
     sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
                       QStringLiteral("报告"));
-    sidebar_->addPage(PageId::kSearch, new SearchWidget(sidebar_),
-                      QStringLiteral("搜索"));
     sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
                       QStringLiteral("Git"));
 
