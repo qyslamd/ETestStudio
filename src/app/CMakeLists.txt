@@ -198,11 +198,18 @@ endif()
 
 #=======================================
 # 拷贝测试工程到输出目录，方便调试
-if(EXISTS "${CMAKE_SOURCE_DIR}/temp/projects/Demo_Project3")
+# temp/projects 下可能包含多个项目目录，复制后保持为 test_projects/<project_name>/...
+set(TEST_PROJECTS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/temp/projects")
+set(TEST_PROJECTS_OUTPUT_DIR "$<TARGET_FILE_DIR:${TARGET_NAME}>/test_projects")
+if(EXISTS "${TEST_PROJECTS_SOURCE_DIR}")
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory
+            "${TEST_PROJECTS_OUTPUT_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${TEST_PROJECTS_OUTPUT_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-            "${CMAKE_SOURCE_DIR}/temp/projects/Demo_Project3"
-            "$<TARGET_FILE_DIR:${TARGET_NAME}>/test_projects"
+            "${TEST_PROJECTS_SOURCE_DIR}"
+            "${TEST_PROJECTS_OUTPUT_DIR}"
         COMMENT "Copying test projects to output directory..."
     )
 endif()

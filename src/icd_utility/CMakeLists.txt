@@ -24,4 +24,5 @@ target_link_libraries(icd_utility PUBLIC
     pugixml_local
     nlohmann
     tl
+    ValiJSON::valijson
 )

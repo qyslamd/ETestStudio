@@ -190,6 +190,11 @@ target_include_directories(nlohmann INTERFACE ${CMAKE_SOURCE_DIR}/3rdparty)
 add_library(tl INTERFACE)
 target_include_directories(tl INTERFACE ${CMAKE_SOURCE_DIR}/3rdparty)
 
+# valijson JSON Schema validator (header-only)
+set(valijson_BUILD_EXAMPLES OFF CACHE BOOL "Do not build valijson examples" FORCE)
+set(valijson_BUILD_TESTS OFF CACHE BOOL "Do not build valijson tests" FORCE)
+add_subdirectory(3rdparty/valijson)
+
 #=======================================
 # 设置编译选项，特别是Windows平台下的Unicode支持
 # 对于MSVC编译器，启用UTF-8编码支持，并定义Unicode相关的宏，以确保应用程序能够正确处理Unicode字符。
