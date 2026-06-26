@@ -183,12 +183,6 @@ void ProjectStructureWidget::initUi() {
   recent_container_->setObjectName(QStringLiteral("PhRecentContainer"));
   c3_layout->addWidget(recent_container_);
 
-  // ── 卡片内部隔线 ──
-  auto* sep3 = new QFrame(card3);
-  sep3->setObjectName(QStringLiteral("PhSeparator"));
-  sep3->setFrameShape(QFrame::HLine);
-  c3_layout->addWidget(sep3);
-
   auto* recent_file_label = new QLabel(QStringLiteral("最近文件"), card3);
   recent_file_label->setObjectName(QStringLiteral("PhSectionLabel"));
   c3_layout->addWidget(recent_file_label);
@@ -536,9 +530,10 @@ void ProjectStructureWidget::buildTree() {
     skipPrefixes.append(absDir.toLower() + QStringLiteral("/"));
   }
   // Also skip hardware/ directory (reserved, but no longer a standard category)
-  skipPrefixes.append(
-      QDir(project_path_).absoluteFilePath(QStringLiteral("hardware/"))
-          .toLower() + QStringLiteral("/"));
+  skipPrefixes.append(QDir(project_path_)
+                          .absoluteFilePath(QStringLiteral("hardware/"))
+                          .toLower() +
+                      QStringLiteral("/"));
 
   QDirIterator it(project_path_, QDir::Files | QDir::NoDotAndDotDot,
                   QDirIterator::Subdirectories);
@@ -572,14 +567,15 @@ void ProjectStructureWidget::buildTree() {
 
   // ── 硬件节点（从拓扑文件解析，非文件系统）──
   auto* hwItem = createCategoryItem(
-      {QStringLiteral("hardware"), QStringLiteral("硬件"),
-       QString(), QStringLiteral("hardware"), QString(), QString()}, 0);
+      {QStringLiteral("hardware"), QStringLiteral("硬件"), QString(),
+       QStringLiteral("hardware"), QString(), QString()},
+      0);
   QFont hwFont = hwItem->font();
   hwFont.setItalic(true);
   hwItem->setFont(hwFont);
-  hwItem->setToolTip(QStringLiteral(
-      "项目拓扑文件中引用的硬件设备列表\n"
-      "平台插件加载后自动匹配设备状态"));
+  hwItem->setToolTip(
+      QStringLiteral("项目拓扑文件中引用的硬件设备列表\n"
+                     "平台插件加载后自动匹配设备状态"));
   root_item_->appendRow(hwItem);
 
   // 展开根节点
@@ -735,11 +731,13 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
       // 硬件节点不显示"在文件系统中打开"
       if (catId == QLatin1String("hardware")) {
         auto* refreshAction = menu.addAction(QStringLiteral("刷新硬件设备"));
-        if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) == refreshAction) {
+        if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) ==
+            refreshAction) {
           refreshHardwareDevices();
         }
       } else {
-        auto* openInFmAction = menu.addAction(QStringLiteral("在文件系统中打开"));
+        auto* openInFmAction =
+            menu.addAction(QStringLiteral("在文件系统中打开"));
         if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) ==
             openInFmAction) {
           QString dirPath = categoryDirPath(catId);
@@ -1095,12 +1093,13 @@ void ProjectStructureWidget::refreshHardwareDevices() {
   hwItem->removeRows(0, hwItem->rowCount());
 
   // Parse all .etopo files in the topology/ directory
-  QDir topoDir(QDir(project_path_).absoluteFilePath(QStringLiteral("topology")));
+  QDir topoDir(
+      QDir(project_path_).absoluteFilePath(QStringLiteral("topology")));
   QSet<QString> seenNames;  // Dedup by device name
 
   if (topoDir.exists()) {
-    for (const QFileInfo& fi : topoDir.entryInfoList(
-             {QStringLiteral("*.etopo")}, QDir::Files)) {
+    for (const QFileInfo& fi :
+         topoDir.entryInfoList({QStringLiteral("*.etopo")}, QDir::Files)) {
       QFile file(fi.absoluteFilePath());
       if (!file.open(QIODevice::ReadOnly))
         continue;
@@ -1133,8 +1132,10 @@ void ProjectStructureWidget::refreshHardwareDevices() {
         QString suffix;
         QColor color;
         if (plugin) {
-          auto* device = pm.pluginAs<etest::core::plugin::IDevicePlugin>(pluginId);
-          if (device && device->deviceStatus() == etest::core::plugin::DeviceStatus::Online) {
+          auto* device =
+              pm.pluginAs<etest::core::plugin::IDevicePlugin>(pluginId);
+          if (device && device->deviceStatus() ==
+                            etest::core::plugin::DeviceStatus::Online) {
             suffix = QStringLiteral("  [在线]");
             color = QColor(0x4C, 0xAF, 0x50);  // 绿色
           } else {
@@ -1143,16 +1144,17 @@ void ProjectStructureWidget::refreshHardwareDevices() {
           }
         } else if (!pluginId.isEmpty()) {
           suffix = QStringLiteral("  [未加载]");
-          color = QColor(0x99, 0x99, 0x99);    // 灰色
+          color = QColor(0x99, 0x99, 0x99);  // 灰色
         } else {
           suffix = QStringLiteral("  [未加载]");
-          color = QColor(0x99, 0x99, 0x99);    // 灰色—旧文件无pluginId
+          color = QColor(0x99, 0x99, 0x99);  // 灰色—旧文件无pluginId
         }
 
         deviceItem->setText(name + suffix);
         deviceItem->setForeground(color);
 
-        QString tip = QStringLiteral("设备: %1\n类型: %2").arg(name, deviceType);
+        QString tip =
+            QStringLiteral("设备: %1\n类型: %2").arg(name, deviceType);
         if (!pluginId.isEmpty())
           tip += QStringLiteral("\n插件: %1").arg(pluginId);
         deviceItem->setToolTip(tip);
@@ -1169,8 +1171,8 @@ void ProjectStructureWidget::refreshHardwareDevices() {
 
 void ProjectStructureWidget::connectHardwareRefresh() {
   // Topology directory changes → refresh hardware
-  connect(this, &ProjectStructureWidget::directoryContentChanged,
-          this, [this](const QString& dirPath) {
+  connect(this, &ProjectStructureWidget::directoryContentChanged, this,
+          [this](const QString& dirPath) {
             if (dirPath.endsWith(QStringLiteral("/topology")) ||
                 dirPath.endsWith(QStringLiteral("\\topology"))) {
               refreshHardwareDevices();
@@ -1178,10 +1180,10 @@ void ProjectStructureWidget::connectHardwareRefresh() {
           });
   // Plugin load/unload → refresh hardware
   auto& pm = etest::core::plugin::PluginManager::instance();
-  connect(&pm, &etest::core::plugin::PluginManager::pluginLoaded,
-          this, &ProjectStructureWidget::refreshHardwareDevices);
-  connect(&pm, &etest::core::plugin::PluginManager::pluginUnloaded,
-          this, &ProjectStructureWidget::refreshHardwareDevices);
+  connect(&pm, &etest::core::plugin::PluginManager::pluginLoaded, this,
+          &ProjectStructureWidget::refreshHardwareDevices);
+  connect(&pm, &etest::core::plugin::PluginManager::pluginUnloaded, this,
+          &ProjectStructureWidget::refreshHardwareDevices);
 }
 
 // ── 静态辅助函数 ──

@@ -80,7 +80,8 @@ void SearchWidget::initUi() {
 
   regex_mode_btn_ = new QToolButton(this);
   regex_mode_btn_->setText(QStringLiteral(".*"));
-  regex_mode_btn_->setToolTip(QStringLiteral("匹配模式: 普通（支持 * ? 通配符），点击切换为正则表达式"));
+  regex_mode_btn_->setToolTip(QStringLiteral(
+      "匹配模式: 普通（支持 * ? 通配符），点击切换为正则表达式"));
   regex_mode_btn_->setCheckable(true);
   regex_mode_btn_->setFixedSize(28, 26);
   regex_mode_btn_->setObjectName("searchRegexModeBtn");
@@ -92,12 +93,6 @@ void SearchWidget::initUi() {
   inputRow->addWidget(regex_mode_btn_);
 
   mainLayout->addLayout(inputRow);
-
-  auto* separator = new QFrame(this);
-  separator->setObjectName(QStringLiteral("searchSeparator"));
-  separator->setFrameShape(QFrame::HLine);
-  separator->setFixedHeight(1);
-  mainLayout->addWidget(separator);
 
   status_label_ = new QLabel(this);
   status_label_->setContentsMargins(8, 2, 8, 4);
@@ -119,6 +114,7 @@ void SearchWidget::initUi() {
   fileLayout->addWidget(fileSectionLabel);
 
   file_list_ = new QListWidget(fileSection);
+  file_list_->setFrameShape(QFrame::NoFrame);
   file_list_->setUniformItemSizes(true);
   file_list_->setSelectionMode(QAbstractItemView::SingleSelection);
   fileLayout->addWidget(file_list_);
@@ -375,8 +371,8 @@ void SearchWidget::onMatchModeToggled() {
   } else {
     match_mode_ = MatchMode::Normal;
     regex_mode_btn_->setText(QStringLiteral("Ab"));
-    regex_mode_btn_->setToolTip(
-        QStringLiteral("匹配模式: 普通（支持 * ? 通配符），点击切换为正则表达式"));
+    regex_mode_btn_->setToolTip(QStringLiteral(
+        "匹配模式: 普通（支持 * ? 通配符），点击切换为正则表达式"));
     whole_word_btn_->setEnabled(true);
   }
 }

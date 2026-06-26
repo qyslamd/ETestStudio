@@ -37,7 +37,8 @@ void AboutDialog::initUi() {
   logo_label_ = new QLabel(header);
   logo_label_->setObjectName(QStringLiteral("aboutLogo"));
   QPixmap logo_pix(QStringLiteral(":/resources/icons/app_icon.svg"));
-  logo_label_->setPixmap(logo_pix.scaled(72, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  logo_label_->setPixmap(
+      logo_pix.scaled(72, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
   logo_label_->setAlignment(Qt::AlignCenter);
   logo_label_->setFixedSize(64, 64);
 
@@ -67,10 +68,10 @@ void AboutDialog::initUi() {
   body_layout->setSpacing(12);
 
   // Description
-  desc_label_ = new QLabel(QStringLiteral(
-      "通过硬件抽象层、接口控制文档及脚本执行引擎，\n"
-      "实现测试逻辑与物理硬件的高度解耦。"),
-      body);
+  desc_label_ =
+      new QLabel(QStringLiteral("通过硬件抽象层、接口控制文档及脚本执行引擎，\n"
+                                "实现测试逻辑与物理硬件的高度解耦。"),
+                 body);
   desc_label_->setObjectName(QStringLiteral("aboutDesc"));
   desc_label_->setWordWrap(true);
   desc_label_->setAlignment(Qt::AlignCenter);
@@ -89,10 +90,8 @@ void AboutDialog::initUi() {
   chips_grid->setSpacing(8);
 
   const char* tech_list[] = {
-      "C++17",        "Lua 5.4.4",   "spdlog",
-      "QScintilla",   "QXlsx",       "libharu",
-      "Googletest",   "SARibbon",    "QWindowKit",
-      "libpng",       "zlib",
+      "C++17",      "Lua 5.4.4", "spdlog",     "QScintilla", "QXlsx", "libharu",
+      "Googletest", "SARibbon",  "QWindowKit", "libpng",     "zlib",
   };
   constexpr int kChipsPerRow = 3;
 
@@ -153,9 +152,8 @@ void AboutDialog::initUi() {
   ok_button_->setCursor(Qt::PointingHandCursor);
   ok_button_->setFixedWidth(160);
   ok_button_->setFixedHeight(36);
-  connect(ok_button_, &QPushButton::clicked, this, [this] {
-    actHideAnimation();
-  });
+  connect(ok_button_, &QPushButton::clicked, this,
+          [this] { actHideAnimation(); });
   auto* btn_row = new QHBoxLayout;
   btn_row->setAlignment(Qt::AlignCenter);
   btn_row->addWidget(ok_button_);
