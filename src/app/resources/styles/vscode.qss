@@ -729,7 +729,8 @@ etest--app--SearchWidget QPushButton:hover {
     border-color: #007ACC;
 }
 etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn,
-etest--app--SearchWidget QToolButton#searchWholeWordBtn {
+etest--app--SearchWidget QToolButton#searchWholeWordBtn,
+etest--app--SearchWidget QToolButton#searchRegexModeBtn {
     background-color: transparent;
     border: 1px solid #3C3C3C;
     border-radius: 3px;
@@ -739,12 +740,14 @@ etest--app--SearchWidget QToolButton#searchWholeWordBtn {
     margin: 0px;
 }
 etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:hover,
-etest--app--SearchWidget QToolButton#searchWholeWordBtn:hover {
+etest--app--SearchWidget QToolButton#searchWholeWordBtn:hover,
+etest--app--SearchWidget QToolButton#searchRegexModeBtn:hover {
     background-color: #505050;
     color: #CCCCCC;
 }
 etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:checked,
-etest--app--SearchWidget QToolButton#searchWholeWordBtn:checked {
+etest--app--SearchWidget QToolButton#searchWholeWordBtn:checked,
+etest--app--SearchWidget QToolButton#searchRegexModeBtn:checked {
     background-color: #094771;
     border-color: #007ACC;
     color: #FFFFFF;

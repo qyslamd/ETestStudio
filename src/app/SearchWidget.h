@@ -26,23 +26,29 @@ class SearchWidget : public QWidget {
   void fileOpenRequested(const QString& filePath, int line);
 
  private:
+  enum class MatchMode { Normal, Regex };
+
   void initUi();
   void initSignals();
 
   void performSearch();
   void clearResults();
   QString fileIconName(const QString& suffix) const;
+  QString buildRegexPattern(const QString& query) const;
+  void onMatchModeToggled();
 
   QLineEdit* search_input_ = nullptr;
   QPushButton* search_button_ = nullptr;
   QToolButton* case_sensitive_btn_ = nullptr;
   QToolButton* whole_word_btn_ = nullptr;
+  QToolButton* regex_mode_btn_ = nullptr;
   QSplitter* splitter_ = nullptr;
   QListWidget* file_list_ = nullptr;
   QTreeWidget* result_tree_ = nullptr;
   QLabel* status_label_ = nullptr;
 
   QString search_root_;
+  MatchMode match_mode_ = MatchMode::Normal;
 
   static const int kMaxResults = 1000;
   static const int kMaxFileResults = 200;

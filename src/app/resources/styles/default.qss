@@ -661,7 +661,8 @@ QPushButton#saverCloseBtn:pressed {
 
 /* ==================== SearchWidget ==================== */
 etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn,
-etest--app--SearchWidget QToolButton#searchWholeWordBtn {
+etest--app--SearchWidget QToolButton#searchWholeWordBtn,
+etest--app--SearchWidget QToolButton#searchRegexModeBtn {
     background-color: transparent;
     border: 1px solid #D0D0D0;
     border-radius: 3px;
@@ -671,12 +672,14 @@ etest--app--SearchWidget QToolButton#searchWholeWordBtn {
     margin: 0px;
 }
 etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:hover,
-etest--app--SearchWidget QToolButton#searchWholeWordBtn:hover {
+etest--app--SearchWidget QToolButton#searchWholeWordBtn:hover,
+etest--app--SearchWidget QToolButton#searchRegexModeBtn:hover {
     background-color: #E0E0E0;
     color: #333333;
 }
 etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:checked,
-etest--app--SearchWidget QToolButton#searchWholeWordBtn:checked {
+etest--app--SearchWidget QToolButton#searchWholeWordBtn:checked,
+etest--app--SearchWidget QToolButton#searchRegexModeBtn:checked {
     background-color: #CCE4F7;
     border-color: #0078D4;
     color: #1F1F1F;

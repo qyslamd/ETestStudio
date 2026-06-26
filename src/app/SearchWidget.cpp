@@ -78,10 +78,18 @@ void SearchWidget::initUi() {
   wwFont.setUnderline(true);
   whole_word_btn_->setFont(wwFont);
 
+  regex_mode_btn_ = new QToolButton(this);
+  regex_mode_btn_->setText(QStringLiteral(".*"));
+  regex_mode_btn_->setToolTip(QStringLiteral("匹配模式: 普通（支持 * ? 通配符），点击切换为正则表达式"));
+  regex_mode_btn_->setCheckable(true);
+  regex_mode_btn_->setFixedSize(28, 26);
+  regex_mode_btn_->setObjectName("searchRegexModeBtn");
+
   inputRow->addWidget(search_input_);
   inputRow->addWidget(search_button_);
   inputRow->addWidget(case_sensitive_btn_);
   inputRow->addWidget(whole_word_btn_);
+  inputRow->addWidget(regex_mode_btn_);
 
   mainLayout->addLayout(inputRow);
 
@@ -158,7 +166,8 @@ void SearchWidget::initSignals() {
 
   connect(result_tree_, &QTreeWidget::itemClicked, this,
           [this](QTreeWidgetItem* item) {
-            if (item->parent() == nullptr) return;
+            if (item->parent() == nullptr)
+              return;
 
             QString filePath = item->data(0, Qt::UserRole).toString();
             int line = item->data(0, Qt::UserRole + 1).toInt();
@@ -174,6 +183,9 @@ void SearchWidget::initSignals() {
               emit fileOpenRequested(filePath, 0);
             }
           });
+
+  connect(regex_mode_btn_, &QToolButton::toggled, this,
+          &SearchWidget::onMatchModeToggled);
 }
 
 void SearchWidget::performSearch() {
@@ -193,28 +205,35 @@ void SearchWidget::performSearch() {
   clearResults();
 
   bool caseSensitive = case_sensitive_btn_->isChecked();
-  Qt::CaseSensitivity cs =
-      caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive;
+  bool wholeWord =
+      whole_word_btn_->isChecked() && match_mode_ != MatchMode::Regex;
 
-  bool wholeWord = whole_word_btn_->isChecked();
-  QRegularExpression regex;
+  // 构建正则表达式
+  QString pattern = buildRegexPattern(query);
   if (wholeWord) {
-    QString pattern =
-        QStringLiteral("\\b%1\\b").arg(QRegularExpression::escape(query));
-    regex.setPattern(pattern);
-    regex.setPatternOptions(caseSensitive
-                                ? QRegularExpression::NoPatternOption
-                                : QRegularExpression::CaseInsensitiveOption);
+    pattern = QStringLiteral("\\b%1\\b").arg(pattern);
   }
 
-  QStringList skipDirs = {".git",    ".svn",          "build",
-                          "cmake-build-", "node_modules",  "__pycache__",
+  QRegularExpression regex(pattern);
+  regex.setPatternOptions(caseSensitive
+                              ? QRegularExpression::NoPatternOption
+                              : QRegularExpression::CaseInsensitiveOption);
+
+  if (!regex.isValid()) {
+    status_label_->setText(
+        QStringLiteral("正则表达式无效: %1").arg(regex.errorString()));
+    status_label_->show();
+    return;
+  }
+
+  QStringList skipDirs = {".git",         ".svn",         "build",
+                          "cmake-build-", "node_modules", "__pycache__",
                           ".vs"};
 
-  QStringList binarySuffixes = {
-      "o",   "obj", "exe", "dll", "so",  "a",    "lib",  "png",
-      "jpg", "jpeg", "gif", "bmp", "ico", "pdf",  "zip",  "tar",
-      "gz",  "7z",  "ttf", "woff", "woff2", "db", "sqlite"};
+  QStringList binarySuffixes = {"o",   "obj",  "exe",   "dll",  "so",    "a",
+                                "lib", "png",  "jpg",   "jpeg", "gif",   "bmp",
+                                "ico", "pdf",  "zip",   "tar",  "gz",    "7z",
+                                "ttf", "woff", "woff2", "db",   "sqlite"};
 
   int totalMatches = 0;
   int filesWithMatches = 0;
@@ -237,31 +256,31 @@ void SearchWidget::performSearch() {
         break;
       }
     }
-    if (skip) continue;
+    if (skip)
+      continue;
 
     QString suffix = fi.suffix().toLower();
 
     // 文件名匹配（不跳过二进制文件，仅匹配名字）
-    bool nameMatched = wholeWord ? regex.match(fi.fileName()).hasMatch()
-                                 : fi.fileName().contains(query, cs);
-    if (!fileTruncated && nameMatched) {
+    if (!fileTruncated && regex.match(fi.fileName()).hasMatch()) {
       QString relPath = QDir(search_root_).relativeFilePath(filePath);
       auto* item = new QListWidgetItem(file_list_);
       item->setText(relPath);
       item->setToolTip(filePath);
       item->setData(Qt::UserRole, filePath);
-      item->setIcon(
-          AppIconProvider::instance().icon(fileIconName(suffix)));
+      item->setIcon(AppIconProvider::instance().icon(fileIconName(suffix)));
       ++fileMatches;
       if (fileMatches >= kMaxFileResults) {
         fileTruncated = true;
       }
     }
 
-    if (binarySuffixes.contains(suffix)) continue;
+    if (binarySuffixes.contains(suffix))
+      continue;
 
     QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) continue;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+      continue;
 
     QTextStream stream(&file);
     stream.setCodec("UTF-8");
@@ -274,9 +293,7 @@ void SearchWidget::performSearch() {
       QString line = stream.readLine();
       ++lineNumber;
 
-      bool lineMatched = wholeWord ? regex.match(line).hasMatch()
-                                   : line.contains(query, cs);
-      if (lineMatched) {
+      if (regex.match(line).hasMatch()) {
         if (!fileItem) {
           fileItem = new QTreeWidgetItem(result_tree_);
           fileItem->setText(0, fi.fileName());
@@ -311,19 +328,22 @@ void SearchWidget::performSearch() {
       fileItem->setExpanded(true);
     }
 
-    if (truncated) break;
+    if (truncated)
+      break;
   }
 
   QStringList statusParts;
 
   if (fileTruncated) {
-    statusParts << QStringLiteral("文件名匹配超过 %1 个，已截断").arg(kMaxFileResults);
+    statusParts
+        << QStringLiteral("文件名匹配超过 %1 个，已截断").arg(kMaxFileResults);
   } else if (fileMatches > 0) {
     statusParts << QStringLiteral("文件名匹配 %1 个").arg(fileMatches);
   }
 
   if (truncated) {
-    statusParts << QStringLiteral("内容匹配超过 %1 个结果（%2 个文件中），已截断")
+    statusParts << QStringLiteral(
+                       "内容匹配超过 %1 个结果（%2 个文件中），已截断")
                        .arg(kMaxResults)
                        .arg(filesWithMatches);
   } else if (totalMatches > 0) {
@@ -339,8 +359,44 @@ void SearchWidget::performSearch() {
   }
   status_label_->show();
 
-  LOG_INFO("SEARCH", "搜索 '{}' 找到 {} 个文件名匹配, {} 个内容结果（{} 个文件中）",
+  LOG_INFO("SEARCH",
+           "搜索 '{}' 找到 {} 个文件名匹配, {} 个内容结果（{} 个文件中）",
            query.toStdString(), fileMatches, totalMatches, filesWithMatches);
+}
+
+void SearchWidget::onMatchModeToggled() {
+  if (regex_mode_btn_->isChecked()) {
+    match_mode_ = MatchMode::Regex;
+    regex_mode_btn_->setText(QStringLiteral("(.*)"));
+    regex_mode_btn_->setToolTip(
+        QStringLiteral("匹配模式: 正则表达式，点击切换为普通"));
+    whole_word_btn_->setEnabled(false);
+    whole_word_btn_->setChecked(false);
+  } else {
+    match_mode_ = MatchMode::Normal;
+    regex_mode_btn_->setText(QStringLiteral("Ab"));
+    regex_mode_btn_->setToolTip(
+        QStringLiteral("匹配模式: 普通（支持 * ? 通配符），点击切换为正则表达式"));
+    whole_word_btn_->setEnabled(true);
+  }
+}
+
+QString SearchWidget::buildRegexPattern(const QString& query) const {
+  if (match_mode_ == MatchMode::Regex) {
+    return query;
+  }
+  // 普通模式: * -> .*, ? -> ., 其余转义
+  QString escaped;
+  for (const QChar& c : query) {
+    if (c == QLatin1Char('*')) {
+      escaped += QStringLiteral(".*");
+    } else if (c == QLatin1Char('?')) {
+      escaped += QStringLiteral(".");
+    } else {
+      escaped += QRegularExpression::escape(c);
+    }
+  }
+  return escaped;
 }
 
 void SearchWidget::clearResults() {
