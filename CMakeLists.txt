@@ -16,8 +16,25 @@ project(ETestStudio
 
 #=======================================
 # 自动解压第三方依赖库
-if (EXISTS "cmake/scripts/extract_dependencies.cmake")
-    include(cmake/scripts/extract_dependencies.cmake)
+if (EXISTS "${CMAKE_SOURCE_DIR}/cmake/extract_dependencies.cmake")
+    include(${CMAKE_SOURCE_DIR}/cmake/extract_dependencies.cmake)
+else()
+    message(SEND_ERROR "Missing cmake/extract_dependencies.cmake. Please ensure that the file exists and is accessible.")
+endif()
+
+#=======================================
+# 配置你自己的一些变量
+if (EXISTS "${CMAKE_SOURCE_DIR}/local.cmake")
+    include("${CMAKE_SOURCE_DIR}/local.cmake")
+    message(STATUS "Loaded variables from local.cmake")
+else()
+    if(WIN32)
+        set(PATH_FOR_QT_INSTALLATION "X:/Qt/Qt5.12.12/5.12.12/msvc2017_64")
+        configure_file("${CMAKE_SOURCE_DIR}/cmake/local.cmake.in"
+            "${CMAKE_SOURCE_DIR}/local.cmake" 
+            @ONLY)
+    endif()
+    message(FATAL_ERROR "Please change local.cmake  to set your own variables, then rerun CMake.")
 endif()
 
 

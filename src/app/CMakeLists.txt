@@ -135,6 +135,7 @@ target_include_directories(${TARGET_NAME}
 #=======================================
 # 生成 Windows .rc 文件（版本信息嵌入 exe）
 if(WIN32 AND MSVC)
+    set(APP_ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/app_icon.ico")
     set(OUT_RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/app.rc.in
         ${OUT_RC_FILE}

@@ -13,9 +13,7 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_C_STANDARD": "11",
-                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
-                "Qt5_DIR": "$env{ETest_Qt5_Path}lib/cmake/Qt5",
-                "QT_DIR": "$env{ETest_Qt5_Path}lib/cmake/Qt5"
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL"
             },
             "environment": {}
         },
@@ -52,8 +50,6 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_C_STANDARD": "11",
-                "Qt5_DIR": "$env{ETest_Qt5_Path}lib/cmake/Qt5",
-                "QT_DIR": "$env{ETest_Qt5_Path}lib/cmake/Qt5",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": true
             }
         },
@@ -66,9 +62,7 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_C_STANDARD": "11",
-                "Qt5_DIR": "$env{ETest_Qt5_Path}lib/cmake/Qt5",
-                "QT_DIR": "$env{ETest_Qt5_Path}lib/cmake/Qt5"
+                "CMAKE_C_STANDARD": "11"
             }
         },
         {

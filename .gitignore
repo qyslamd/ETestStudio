@@ -26,6 +26,7 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 *.ninja
+local.cmake
 
 # ========== 编译输出文件 ==========
 *.o

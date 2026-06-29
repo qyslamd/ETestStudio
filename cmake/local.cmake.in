@@ -1,0 +1,9 @@
+# Qt comfiguration
+if(MSVC)
+    set(Qt5_12_x_Path "@PATH_FOR_QT_INSTALLATION@")
+else()
+    set(Qt5_12_x_Path "/opt/qt5.12.12/5.12.12/gcc_64")
+endif()
+
+set(Qt5_DIR "${Qt5_12_x_Path}/lib/cmake/Qt5")
+set(QT_DIR "${Qt5_12_x_Path}/lib/cmake/Qt5")
