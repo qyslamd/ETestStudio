@@ -1,0 +1,6 @@
+CompileFlags:
+  CompilationDatabase: "@CLANGD_COMPILE_COMMANDS_DIR@"
+  Add: 
+    - "-Dsignals=protected"
+    - "-Dslots="
+    - "-Demit="

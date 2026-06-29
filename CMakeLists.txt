@@ -26,6 +26,17 @@ endif()
 set(CMAKE_CXX_STANDARD 17)  # C++ 标准，影响全局
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
+
+# 生成 clangd 配置，让 LSP 使用当前构建目录下的 compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CLANGD_COMPILE_COMMANDS_DIR "${CMAKE_BINARY_DIR}")
+file(TO_CMAKE_PATH "${CLANGD_COMPILE_COMMANDS_DIR}" CLANGD_COMPILE_COMMANDS_DIR)
+configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/.clangd.in"
+    "${CMAKE_SOURCE_DIR}/.clangd"
+    @ONLY
+)
+
 # 设置输出目录,所有target的输出目录都统一到bin和lib下
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
