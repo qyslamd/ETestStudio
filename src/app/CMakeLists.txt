@@ -33,12 +33,8 @@ add_executable(${TARGET_NAME} WIN32
     ProtocolManagerWidget.cpp
     TopologyManagerWidget.h
     TopologyManagerWidget.cpp
-    TestProgramData.h
-    TestProgramData.cpp
     TestProgramManagerWidget.h
     TestProgramManagerWidget.cpp
-    editors/TestProgramEditorWidget.h
-    editors/TestProgramEditorWidget.cpp
     editors/TextEditorWidget.h
     editors/TextEditorWidget.cpp
     editors/ImageViewerWidget.h
@@ -158,6 +154,7 @@ target_link_libraries(${TARGET_NAME}
     etest_api
     etest_topology
     etest_protocol
+    etest_program
     etest_ui
     icd_utility
     # 已配置第三方依赖

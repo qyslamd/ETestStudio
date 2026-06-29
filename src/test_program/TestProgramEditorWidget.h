@@ -1,5 +1,5 @@
-#ifndef ETEST_APP_TESTPROGRAM_EDITOR_WIDGET_H_
-#define ETEST_APP_TESTPROGRAM_EDITOR_WIDGET_H_
+#ifndef ETEST_PROGRAM_TESTPROGRAM_EDITOR_WIDGET_H_
+#define ETEST_PROGRAM_TESTPROGRAM_EDITOR_WIDGET_H_
 
 #include <QVector>
 #include <QWidget>
@@ -90,4 +90,4 @@ class TestProgramEditorWidget : public QWidget, public IEditor {
 
 }  // namespace etest::app
 
-#endif  // ETEST_APP_TESTPROGRAM_EDITOR_WIDGET_H_
+#endif  // ETEST_PROGRAM_TESTPROGRAM_EDITOR_WIDGET_H_

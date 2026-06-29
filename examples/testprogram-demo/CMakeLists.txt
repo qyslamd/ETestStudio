@@ -4,10 +4,6 @@ add_executable(${TARGET_NAME}
     main.cpp
     MainWindow.h
     MainWindow.cpp
-    ${CMAKE_SOURCE_DIR}/src/app/TestProgramData.h
-    ${CMAKE_SOURCE_DIR}/src/app/TestProgramData.cpp
-    ${CMAKE_SOURCE_DIR}/src/app/editors/TestProgramEditorWidget.h
-    ${CMAKE_SOURCE_DIR}/src/app/editors/TestProgramEditorWidget.cpp
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
@@ -15,12 +11,12 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     Qt5::Core
     Qt5::Gui
     etest_core
+    etest_program
     spdlog::spdlog
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/app
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/3rdparty/spdlog-1.17.0/include
 )

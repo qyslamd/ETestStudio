@@ -1,5 +1,5 @@
-#ifndef ETEST_APP_TESTPROGRAM_DATA_H_
-#define ETEST_APP_TESTPROGRAM_DATA_H_
+#ifndef ETEST_PROGRAM_TESTPROGRAM_DATA_H_
+#define ETEST_PROGRAM_TESTPROGRAM_DATA_H_
 
 #include <QJsonObject>
 #include <QString>
@@ -50,4 +50,4 @@ TestProgramData loadTestProgram(const QString& filePath);
 
 }  // namespace etest::app
 
-#endif  // ETEST_APP_TESTPROGRAM_DATA_H_
+#endif  // ETEST_PROGRAM_TESTPROGRAM_DATA_H_
