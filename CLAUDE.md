@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 项目概述
-这是一个基于Qt/C++的学习研究项目，目标是仿照凯云ETest测试系统实现其核心功能。项目采用CMake构建系统，支持Windows平台。
+这是一个基于Qt/C++的学习研究项目，目标是实现自动化测试系统实现其核心功能。项目采用CMake构建系统，支持Windows平台。后续考虑迁移并支持常见的Linux发行版。
 
 ## 常用命令
 ### 构建项目
