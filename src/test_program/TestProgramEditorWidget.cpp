@@ -1,32 +1,107 @@
 #include "TestProgramEditorWidget.h"
 
+#include <QAction>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenuBar>
 #include <QMessageBox>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTextEdit>
-#include <QToolButton>
+#include <QToolBar>
 #include <QVBoxLayout>
+#include <QWidget>
 
 namespace etest::app {
 
-TestProgramEditorWidget::TestProgramEditorWidget(const QString& id, QWidget* parent)
-    : QWidget(parent) {
-  current_file_ = id;
+TestProgramEditorWidget::TestProgramEditorWidget(const QString& id,
+                                                 QWidget* parent)
+    : QMainWindow(parent) {
   initUi();
   initSignals();
 
   if (!id.isEmpty() && !id.startsWith("editor://") && QFileInfo::exists(id)) {
+    current_file_ = id;
     loadFile(id);
+  } else {
+    current_file_ = id.startsWith("editor://") ? QString() : id;
+    newProgram();
+  }
+}
+
+void TestProgramEditorWidget::setEmbeddedMode(bool embedded) {
+  embedded_ = embedded;
+  if (embedded_) {
+    menuBar()->hide();
+  } else {
+    menuBar()->show();
+  }
+}
+
+void TestProgramEditorWidget::newProgram() {
+  QString oldId = editorId();
+  current_file_.clear();
+
+  TestProgramData suite;
+  suite.name = QStringLiteral("未命名测试程序");
+
+  loading_ = true;
+  loadProgramToUi(suite);
+  loading_ = false;
+
+  resetSnapshots(true);
+  setModified(false);
+  updateActions();
+
+  if (oldId != editorId()) {
+    emit editorIdChanged(oldId, editorId());
   }
 }
 
 void TestProgramEditorWidget::initUi() {
-  auto* main_layout = new QVBoxLayout(this);
+  setAutoFillBackground(true);
+
+  // ── QToolBar ──
+  auto* toolbar = addToolBar(QStringLiteral("测试程序工具栏"));
+  toolbar->setObjectName(QStringLiteral("testProgramToolbar"));
+  toolbar->setMovable(false);
+  toolbar->setFloatable(false);
+
+  add_case_action_ = new QAction(QStringLiteral("添加用例"), this);
+  add_case_action_->setToolTip(QStringLiteral("添加测试用例"));
+  toolbar->addAction(add_case_action_);
+
+  remove_case_action_ = new QAction(QStringLiteral("删除用例"), this);
+  remove_case_action_->setToolTip(QStringLiteral("删除当前测试用例"));
+  toolbar->addAction(remove_case_action_);
+
+  toolbar->addSeparator();
+
+  add_step_action_ = new QAction(QStringLiteral("添加步骤"), this);
+  add_step_action_->setToolTip(QStringLiteral("添加测试步骤"));
+  toolbar->addAction(add_step_action_);
+
+  remove_step_action_ = new QAction(QStringLiteral("删除步骤"), this);
+  remove_step_action_->setToolTip(QStringLiteral("删除当前测试步骤"));
+  toolbar->addAction(remove_step_action_);
+
+  toolbar->addSeparator();
+
+  undo_action_ = new QAction(QStringLiteral("撤销"), this);
+  undo_action_->setShortcut(QKeySequence::Undo);
+  undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
+  toolbar->addAction(undo_action_);
+
+  redo_action_ = new QAction(QStringLiteral("重做"), this);
+  redo_action_->setShortcut(QKeySequence::Redo);
+  redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
+  toolbar->addAction(redo_action_);
+
+  auto* content = new QWidget(this);
+  auto* main_layout = new QVBoxLayout(content);
   main_layout->setContentsMargins(8, 8, 8, 8);
   main_layout->setSpacing(8);
 
@@ -34,52 +109,20 @@ void TestProgramEditorWidget::initUi() {
   auto* info_layout = new QHBoxLayout();
   info_layout->setSpacing(8);
 
-  auto* name_label = new QLabel(QStringLiteral("套件名称:"), this);
-  suite_name_edit_ = new QLineEdit(this);
+  auto* name_label = new QLabel(QStringLiteral("套件名称:"), content);
+  suite_name_edit_ = new QLineEdit(content);
   info_layout->addWidget(name_label);
   info_layout->addWidget(suite_name_edit_, 1);
 
   main_layout->addLayout(info_layout);
 
-  suite_desc_edit_ = new QTextEdit(this);
+  suite_desc_edit_ = new QTextEdit(content);
   suite_desc_edit_->setPlaceholderText(QStringLiteral("套件描述..."));
   suite_desc_edit_->setMaximumHeight(60);
   main_layout->addWidget(suite_desc_edit_);
 
-  // ── 工具栏 ──
-  auto* toolbar = new QWidget(this);
-  toolbar->setObjectName(QStringLiteral("testProgramEditorToolbar"));
-  auto* toolbar_layout = new QHBoxLayout(toolbar);
-  toolbar_layout->setContentsMargins(0, 0, 0, 0);
-  toolbar_layout->setSpacing(4);
-
-  add_case_btn_ = new QToolButton(this);
-  add_case_btn_->setText(QStringLiteral("+ 添加用例"));
-  add_case_btn_->setObjectName(QStringLiteral("testProgramEditorAddCaseBtn"));
-
-  remove_case_btn_ = new QToolButton(this);
-  remove_case_btn_->setText(QStringLiteral("- 删除用例"));
-  remove_case_btn_->setObjectName(QStringLiteral("testProgramEditorRemoveCaseBtn"));
-
-  toolbar_layout->addWidget(add_case_btn_);
-  toolbar_layout->addWidget(remove_case_btn_);
-  toolbar_layout->addStretch();
-
-  add_step_btn_ = new QToolButton(this);
-  add_step_btn_->setText(QStringLiteral("+ 添加步骤"));
-  add_step_btn_->setObjectName(QStringLiteral("testProgramEditorAddStepBtn"));
-
-  remove_step_btn_ = new QToolButton(this);
-  remove_step_btn_->setText(QStringLiteral("- 删除步骤"));
-  remove_step_btn_->setObjectName(QStringLiteral("testProgramEditorRemoveStepBtn"));
-
-  toolbar_layout->addWidget(add_step_btn_);
-  toolbar_layout->addWidget(remove_step_btn_);
-
-  main_layout->addWidget(toolbar);
-
   // ── Tab 页：Setup / Teardown / Cases ──
-  tab_widget_ = new QTabWidget(this);
+  tab_widget_ = new QTabWidget(content);
 
   setup_table_ = createStepTable();
   tab_widget_->addTab(setup_table_, QStringLiteral("Setup"));
@@ -88,6 +131,9 @@ void TestProgramEditorWidget::initUi() {
   tab_widget_->addTab(teardown_table_, QStringLiteral("Teardown"));
 
   main_layout->addWidget(tab_widget_, 1);
+  setCentralWidget(content);
+
+  updateActions();
 }
 
 QTableWidget* TestProgramEditorWidget::createStepTable() {
@@ -110,6 +156,8 @@ QTableWidget* TestProgramEditorWidget::createStepTable() {
 void TestProgramEditorWidget::connectTableSignals(QTableWidget* table) {
   connect(table, &QTableWidget::cellChanged, this,
           &TestProgramEditorWidget::onDataChanged);
+  connect(table, &QTableWidget::itemSelectionChanged, this,
+          &TestProgramEditorWidget::updateActions);
 }
 
 void TestProgramEditorWidget::initSignals() {
@@ -121,26 +169,37 @@ void TestProgramEditorWidget::initSignals() {
   connectTableSignals(setup_table_);
   connectTableSignals(teardown_table_);
 
-  connect(add_case_btn_, &QToolButton::clicked, this,
+  connect(tab_widget_, &QTabWidget::currentChanged, this,
+          &TestProgramEditorWidget::updateActions);
+  connect(add_case_action_, &QAction::triggered, this,
           &TestProgramEditorWidget::onAddCase);
-  connect(remove_case_btn_, &QToolButton::clicked, this,
+  connect(remove_case_action_, &QAction::triggered, this,
           &TestProgramEditorWidget::onRemoveCase);
-  connect(add_step_btn_, &QToolButton::clicked, this,
+  connect(add_step_action_, &QAction::triggered, this,
           &TestProgramEditorWidget::onAddStep);
-  connect(remove_step_btn_, &QToolButton::clicked, this,
+  connect(remove_step_action_, &QAction::triggered, this,
           &TestProgramEditorWidget::onRemoveStep);
+  connect(undo_action_, &QAction::triggered, this,
+          &TestProgramEditorWidget::undo);
+  connect(redo_action_, &QAction::triggered, this,
+          &TestProgramEditorWidget::redo);
 }
 
 // ── 数据变更 ──
 
 void TestProgramEditorWidget::onDataChanged() {
-  if (loading_ || undo_redo_in_progress_) return;
+  if (loading_ || undo_redo_in_progress_) {
+    return;
+  }
   saveSnapshot();
   setModified(true);
+  updateActions();
 }
 
 void TestProgramEditorWidget::onAddCase() {
-  if (loading_) return;
+  if (loading_) {
+    return;
+  }
 
   int index = tab_widget_->count();
   auto* table = createStepTable();
@@ -154,16 +213,21 @@ void TestProgramEditorWidget::onAddCase() {
 
   saveSnapshot();
   setModified(true);
+  updateActions();
 }
 
 void TestProgramEditorWidget::onRemoveCase() {
   int index = tab_widget_->currentIndex();
-  if (index < 2) return;  // 不能删除 Setup 和 Teardown
+  if (index < 2) {
+    return;  // 不能删除 Setup 和 Teardown
+  }
 
   int ret = QMessageBox::question(this, QStringLiteral("删除用例"),
-                                   QStringLiteral("确定删除当前测试用例？"),
-                                   QMessageBox::Yes | QMessageBox::No);
-  if (ret != QMessageBox::Yes) return;
+                                  QStringLiteral("确定删除当前测试用例？"),
+                                  QMessageBox::Yes | QMessageBox::No);
+  if (ret != QMessageBox::Yes) {
+    return;
+  }
 
   QWidget* w = tab_widget_->widget(index);
   tab_widget_->removeTab(index);
@@ -171,13 +235,18 @@ void TestProgramEditorWidget::onRemoveCase() {
 
   saveSnapshot();
   setModified(true);
+  updateActions();
 }
 
 void TestProgramEditorWidget::onAddStep() {
-  if (loading_) return;
+  if (loading_) {
+    return;
+  }
 
   auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
-  if (!table) return;
+  if (!table) {
+    return;
+  }
 
   int row = table->rowCount();
   table->setRowCount(row + 1);
@@ -192,21 +261,28 @@ void TestProgramEditorWidget::onAddStep() {
   table->setItem(row, 4, new QTableWidgetItem(QStringLiteral("0")));
   table->setItem(row, 5, new QTableWidgetItem(QStringLiteral("5000")));
   table->blockSignals(wasBlocked);
+  table->selectRow(row);
 
   saveSnapshot();
   setModified(true);
+  updateActions();
 }
 
 void TestProgramEditorWidget::onRemoveStep() {
   auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
-  if (!table) return;
+  if (!table) {
+    return;
+  }
 
   int row = table->currentRow();
-  if (row < 0) return;
+  if (row < 0) {
+    return;
+  }
 
   table->removeRow(row);
   saveSnapshot();
   setModified(true);
+  updateActions();
 }
 
 // ── 快照式撤销/重做 ──
@@ -229,6 +305,7 @@ void TestProgramEditorWidget::saveSnapshot() {
       clean_snapshot_index_ = -1;
     }
   }
+  updateActions();
 }
 
 void TestProgramEditorWidget::restoreState(const TestProgramData& state) {
@@ -243,6 +320,7 @@ void TestProgramEditorWidget::restoreState(const TestProgramData& state) {
     modified_ = true;
     emit modificationChanged(true);
   }
+  updateActions();
 }
 
 bool TestProgramEditorWidget::canUndo() const {
@@ -254,26 +332,36 @@ bool TestProgramEditorWidget::canRedo() const {
 }
 
 void TestProgramEditorWidget::undo() {
-  if (!canUndo()) return;
+  if (!canUndo()) {
+    return;
+  }
 
   undo_redo_in_progress_ = true;
   snapshot_index_--;
   restoreState(snapshots_[snapshot_index_]);
   undo_redo_in_progress_ = false;
+  updateActions();
 }
 
 void TestProgramEditorWidget::redo() {
-  if (!canRedo()) return;
+  if (!canRedo()) {
+    return;
+  }
 
   undo_redo_in_progress_ = true;
   snapshot_index_++;
   restoreState(snapshots_[snapshot_index_]);
   undo_redo_in_progress_ = false;
+  updateActions();
 }
 
 // ── IEditor 接口 ──
 
 QString TestProgramEditorWidget::displayName() const {
+  if (current_file_.isEmpty()) {
+    QString name = suite_name_edit_ ? suite_name_edit_->text() : QString();
+    return name.isEmpty() ? QStringLiteral("未命名测试程序") : name;
+  }
   return QFileInfo(current_file_).fileName();
 }
 
@@ -282,19 +370,23 @@ bool TestProgramEditorWidget::isModified() const {
 }
 
 bool TestProgramEditorWidget::save() {
-  if (current_file_.isEmpty()) return false;
+  if (current_file_.isEmpty()) {
+    return false;
+  }
   return saveFile(current_file_);
 }
 
 bool TestProgramEditorWidget::saveAs(const QString& path) {
-  if (path.isEmpty()) return false;
-  QString oldId = current_file_;
+  if (path.isEmpty()) {
+    return false;
+  }
+  QString oldId = editorId();
   current_file_ = path;
   if (saveFile(path)) {
-    emit editorIdChanged(oldId, current_file_);
+    emit editorIdChanged(oldId, editorId());
     return true;
   }
-  current_file_ = oldId;
+  current_file_ = oldId.startsWith("editor://") ? QString() : oldId;
   return false;
 }
 
@@ -303,6 +395,9 @@ QString TestProgramEditorWidget::filePath() const {
 }
 
 QString TestProgramEditorWidget::editorId() const {
+  if (current_file_.isEmpty()) {
+    return QStringLiteral("editor://testprogram/new");
+  }
   return current_file_;
 }
 
@@ -319,7 +414,15 @@ QObject* TestProgramEditorWidget::signalObject() {
 }
 
 void TestProgramEditorWidget::setEditorId(const QString& id) {
-  current_file_ = id;
+  QString oldId = editorId();
+  current_file_ = id.startsWith("editor://") ? QString() : id;
+  if (oldId != editorId()) {
+    emit editorIdChanged(oldId, editorId());
+  }
+
+  if (!id.isEmpty() && !id.startsWith("editor://") && QFileInfo::exists(id)) {
+    loadFile(id);
+  }
 }
 
 // ── 文件 I/O ──
@@ -334,14 +437,9 @@ bool TestProgramEditorWidget::loadFile(const QString& path) {
   loadProgramToUi(suite);
   loading_ = false;
 
-  // 重置快照栈
-  snapshots_.clear();
-  snapshot_index_ = -1;
-  // 保存初始状态作为撤销基底
-  saveSnapshot();
-  clean_snapshot_index_ = snapshot_index_;
-
-  modified_ = false;
+  resetSnapshots(true);
+  setModified(false);
+  updateActions();
   return true;
 }
 
@@ -356,6 +454,7 @@ bool TestProgramEditorWidget::saveFile(const QString& path) {
 
   modified_ = false;
   emit modificationChanged(false);
+  updateActions();
   return true;
 }
 
@@ -370,13 +469,11 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
     setup_table_->setItem(i, 0, new QTableWidgetItem(step.description));
     setup_table_->setItem(i, 1, new QTableWidgetItem(step.cmd));
     setup_table_->setItem(i, 2, new QTableWidgetItem(step.target));
-    setup_table_->setItem(i, 3,
-                           new QTableWidgetItem(step.value.toString()));
+    setup_table_->setItem(i, 3, new QTableWidgetItem(step.value.toString()));
     setup_table_->setItem(i, 4,
-                           new QTableWidgetItem(QString::number(step.delayMs)));
+                          new QTableWidgetItem(QString::number(step.delayMs)));
     setup_table_->setItem(i, 5,
-                           new QTableWidgetItem(
-                               QString::number(step.timeoutMs)));
+                          new QTableWidgetItem(QString::number(step.timeoutMs)));
   }
 
   // Teardown 步骤
@@ -386,14 +483,11 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
     teardown_table_->setItem(i, 0, new QTableWidgetItem(step.description));
     teardown_table_->setItem(i, 1, new QTableWidgetItem(step.cmd));
     teardown_table_->setItem(i, 2, new QTableWidgetItem(step.target));
-    teardown_table_->setItem(i, 3,
-                              new QTableWidgetItem(step.value.toString()));
+    teardown_table_->setItem(i, 3, new QTableWidgetItem(step.value.toString()));
     teardown_table_->setItem(i, 4,
-                              new QTableWidgetItem(
-                                  QString::number(step.delayMs)));
-    teardown_table_->setItem(i, 5,
-                              new QTableWidgetItem(
-                                  QString::number(step.timeoutMs)));
+                             new QTableWidgetItem(QString::number(step.delayMs)));
+    teardown_table_->setItem(
+        i, 5, new QTableWidgetItem(QString::number(step.timeoutMs)));
   }
 
   // 删除旧的用例 tab（索引 2 及之后），需手动删除 widget
@@ -421,6 +515,8 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
     }
     tab_widget_->addTab(table, tc.name);
   }
+
+  updateActions();
 }
 
 TestProgramData TestProgramEditorWidget::uiToProgram() const {
@@ -436,21 +532,17 @@ TestProgramData TestProgramEditorWidget::uiToProgram() const {
                            ? setup_table_->item(i, 0)->text()
                            : QString();
     step.cmd = setup_table_->item(i, 1) ? setup_table_->item(i, 1)->text()
-                                         : QString();
-    step.target = setup_table_->item(i, 2)
-                      ? setup_table_->item(i, 2)->text()
-                      : QString();
+                                        : QString();
+    step.target = setup_table_->item(i, 2) ? setup_table_->item(i, 2)->text()
+                                           : QString();
     step.value = setup_table_->item(i, 3)
                      ? QVariant(setup_table_->item(i, 3)->text())
                      : QVariant();
     step.delayMs =
-        setup_table_->item(i, 4)
-            ? setup_table_->item(i, 4)->text().toInt()
-            : 0;
-    step.timeoutMs =
-        setup_table_->item(i, 5)
-            ? setup_table_->item(i, 5)->text().toInt()
-            : 5000;
+        setup_table_->item(i, 4) ? setup_table_->item(i, 4)->text().toInt() : 0;
+    step.timeoutMs = setup_table_->item(i, 5)
+                         ? setup_table_->item(i, 5)->text().toInt()
+                         : 5000;
     suite.setup.append(step);
   }
 
@@ -469,21 +561,21 @@ TestProgramData TestProgramEditorWidget::uiToProgram() const {
     step.value = teardown_table_->item(i, 3)
                      ? QVariant(teardown_table_->item(i, 3)->text())
                      : QVariant();
-    step.delayMs =
-        teardown_table_->item(i, 4)
-            ? teardown_table_->item(i, 4)->text().toInt()
-            : 0;
-    step.timeoutMs =
-        teardown_table_->item(i, 5)
-            ? teardown_table_->item(i, 5)->text().toInt()
-            : 5000;
+    step.delayMs = teardown_table_->item(i, 4)
+                       ? teardown_table_->item(i, 4)->text().toInt()
+                       : 0;
+    step.timeoutMs = teardown_table_->item(i, 5)
+                         ? teardown_table_->item(i, 5)->text().toInt()
+                         : 5000;
     suite.teardown.append(step);
   }
 
   // 用例 tab（索引 2 开始）
   for (int t = 2; t < tab_widget_->count(); ++t) {
     auto* table = qobject_cast<QTableWidget*>(tab_widget_->widget(t));
-    if (!table) continue;
+    if (!table) {
+      continue;
+    }
 
     TestCaseData tc;
     tc.name = tab_widget_->tabText(t);
@@ -492,14 +584,11 @@ TestProgramData TestProgramEditorWidget::uiToProgram() const {
     for (int i = 0; i < table->rowCount(); ++i) {
       TestStepData step;
       step.description = table->item(i, 0) ? table->item(i, 0)->text()
-                                            : QString();
-      step.cmd =
-          table->item(i, 1) ? table->item(i, 1)->text() : QString();
-      step.target = table->item(i, 2) ? table->item(i, 2)->text()
-                                       : QString();
-      step.value = table->item(i, 3)
-                       ? QVariant(table->item(i, 3)->text())
-                       : QVariant();
+                                           : QString();
+      step.cmd = table->item(i, 1) ? table->item(i, 1)->text() : QString();
+      step.target = table->item(i, 2) ? table->item(i, 2)->text() : QString();
+      step.value = table->item(i, 3) ? QVariant(table->item(i, 3)->text())
+                                     : QVariant();
       step.delayMs =
           table->item(i, 4) ? table->item(i, 4)->text().toInt() : 0;
       step.timeoutMs =
@@ -517,6 +606,31 @@ void TestProgramEditorWidget::setModified(bool modified) {
   if (modified_ != modified) {
     modified_ = modified;
     emit modificationChanged(modified);
+  }
+  updateActions();
+}
+
+void TestProgramEditorWidget::resetSnapshots(bool clean) {
+  snapshots_.clear();
+  snapshot_index_ = -1;
+  saveSnapshot();
+  clean_snapshot_index_ = clean ? snapshot_index_ : -1;
+}
+
+void TestProgramEditorWidget::updateActions() {
+  if (undo_action_) {
+    undo_action_->setEnabled(canUndo());
+  }
+  if (redo_action_) {
+    redo_action_->setEnabled(canRedo());
+  }
+  if (remove_case_action_) {
+    remove_case_action_->setEnabled(tab_widget_ && tab_widget_->currentIndex() >= 2);
+  }
+  if (remove_step_action_) {
+    auto* table = tab_widget_ ? qobject_cast<QTableWidget*>(tab_widget_->currentWidget())
+                              : nullptr;
+    remove_step_action_->setEnabled(table && table->currentRow() >= 0);
   }
 }
 

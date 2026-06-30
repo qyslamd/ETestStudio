@@ -2,8 +2,6 @@ set(TARGET_NAME "testprogram-demo")
 
 add_executable(${TARGET_NAME}
     main.cpp
-    MainWindow.h
-    MainWindow.cpp
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE

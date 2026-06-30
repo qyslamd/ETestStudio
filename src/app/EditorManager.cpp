@@ -172,6 +172,7 @@ void EditorManager::registerEditorTypes() {
       "testprogram",
       [](const QString& id, QWidget* parent) {
         auto* editor = new TestProgramEditorWidget(id, parent);
+        editor->setEmbeddedMode(true);
         return editor;
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {

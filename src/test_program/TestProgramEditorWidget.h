@@ -1,21 +1,21 @@
 #ifndef ETEST_PROGRAM_TESTPROGRAM_EDITOR_WIDGET_H_
 #define ETEST_PROGRAM_TESTPROGRAM_EDITOR_WIDGET_H_
 
+#include <QMainWindow>
 #include <QVector>
-#include <QWidget>
 
 #include "api/IEditor.h"
 #include "TestProgramData.h"
 
+class QAction;
 class QLineEdit;
 class QTableWidget;
 class QTabWidget;
 class QTextEdit;
-class QToolButton;
 
 namespace etest::app {
 
-class TestProgramEditorWidget : public QWidget, public IEditor {
+class TestProgramEditorWidget : public QMainWindow, public IEditor {
   Q_OBJECT
 
  public:
@@ -39,6 +39,8 @@ class TestProgramEditorWidget : public QWidget, public IEditor {
   void redo() override;
 
   void setEditorId(const QString& id);
+  void setEmbeddedMode(bool embedded);
+  void newProgram();
 
  signals:
   void modificationChanged(bool modified);
@@ -63,14 +65,18 @@ class TestProgramEditorWidget : public QWidget, public IEditor {
   void setModified(bool modified);
   void saveSnapshot();
   void restoreState(const TestProgramData& state);
+  void resetSnapshots(bool clean);
+  void updateActions();
 
   QLineEdit* suite_name_edit_ = nullptr;
   QTextEdit* suite_desc_edit_ = nullptr;
   QTabWidget* tab_widget_ = nullptr;
-  QToolButton* add_case_btn_ = nullptr;
-  QToolButton* remove_case_btn_ = nullptr;
-  QToolButton* add_step_btn_ = nullptr;
-  QToolButton* remove_step_btn_ = nullptr;
+  QAction* add_case_action_ = nullptr;
+  QAction* remove_case_action_ = nullptr;
+  QAction* add_step_action_ = nullptr;
+  QAction* remove_step_action_ = nullptr;
+  QAction* undo_action_ = nullptr;
+  QAction* redo_action_ = nullptr;
 
   // 固定索引: 0=setup, 1=teardown, 2+=cases
   QTableWidget* setup_table_ = nullptr;
@@ -79,6 +85,7 @@ class TestProgramEditorWidget : public QWidget, public IEditor {
   QString current_file_;
   bool modified_ = false;
   bool loading_ = false;
+  bool embedded_ = false;
   bool undo_redo_in_progress_ = false;
 
   // 快照式撤销/重做
