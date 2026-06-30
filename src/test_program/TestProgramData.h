@@ -46,6 +46,7 @@ QJsonObject testProgramToJson(const TestProgramData& suite);
 TestProgramData testProgramFromJson(const QJsonObject& obj);
 
 bool saveTestProgram(const QString& filePath, const TestProgramData& suite);
+bool saveDefaultTestProgram(const QString& filePath);
 TestProgramData loadTestProgram(const QString& filePath);
 
 }  // namespace etest::app

@@ -133,6 +133,12 @@ bool saveTestProgram(const QString& filePath, const TestProgramData& suite) {
   return true;
 }
 
+bool saveDefaultTestProgram(const QString& filePath) {
+  TestProgramData suite;
+  suite.name = QFileInfo(filePath).completeBaseName();
+  return saveTestProgram(filePath, suite);
+}
+
 TestProgramData loadTestProgram(const QString& filePath) {
   QFile file(filePath);
   if (!file.open(QIODevice::ReadOnly)) {

@@ -34,6 +34,7 @@
 
 #include "AppIconProvider.h"
 #include "ConfigManager.h"
+#include "TestProgramData.h"
 #include "config/ConfigDefs.h"
 #include "widgets/RecentProjectCard.h"
 
@@ -860,10 +861,19 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
       (extension.isEmpty() ? QString() : QStringLiteral(".") + extension);
   QString fullPath = QDir(fullDir).absoluteFilePath(fileName);
 
-  QFile file(fullPath);
-  if (!file.open(QIODevice::WriteOnly))
+  bool created = false;
+  if (extension == QStringLiteral("tcase")) {
+    created = saveDefaultTestProgram(fullPath);
+  } else {
+    QFile file(fullPath);
+    created = file.open(QIODevice::WriteOnly);
+    if (created) {
+      file.close();
+    }
+  }
+  if (!created) {
     return;
-  file.close();
+  }
 
   emit fileCreated(fullPath);
 
