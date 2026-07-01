@@ -27,8 +27,7 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   app.setFont(QFont("Microsoft YaHei", 10));
 
-  LOG_INFO("MAIN",
-           app.applicationDirPath().toStdString() + " 目录下启动应用程序");
+  qInfo() << app.applicationDirPath() << " 目录下启动应用程序";
 
   // 注册编辑器类型
   EditorManager::registerEditorTypes();
