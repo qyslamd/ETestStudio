@@ -400,7 +400,55 @@ TEST_F(EprotoxTest, CrossFormatRoundTrip) {
     EXPECT_EQ(json_frame.roots()[0]->value_type(), ValueType::word);
 }
 
-// ── Test 9: Malformed XML ──────────────────────────────────────
+// ── Test 9: Legacy ICDData .eprotox Compatibility ───────────────
+TEST_F(EprotoxTest, LegacyIcdDataFileCanBuildRepository) {
+    auto path = tempDir / "legacy_icddata.eprotox";
+
+    {
+        std::ofstream stream(path);
+        ASSERT_TRUE(stream.is_open());
+        stream << R"(<?xml version="1.0" encoding="UTF-8"?>
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+  <Name>LegacyFrame</Name>
+  <Data>
+    <Item>
+      <Offset>4</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>16</BitWidth>
+      <Type>word</Type>
+      <Name>5V导光板电源 设定电流值</Name>
+      <Description>仅此项是大端，单位为A，分辨率为0.01</Description>
+      <GroupName>5V导光板电源</GroupName>
+      <IsScaled>1</IsScaled>
+      <ScaleA>0.01</ScaleA>
+      <SystemName>5V导光板电源</SystemName>
+      <Tag>41</Tag>
+      <ValueTextList>0</ValueTextList>
+      <LinkTo>\ComCHH50W_COM1\ch1</LinkTo>
+    </Item>
+  </Data>
+</ICDData>
+)";
+    }
+
+    auto read_result = deserialize_xml_repository(path);
+    ASSERT_TRUE(read_result.has_value()) << read_result.error().message;
+
+    ASSERT_EQ(read_result->frames().size(), 1u);
+    const auto& frame = *read_result->frames()[0];
+    EXPECT_EQ(frame.name(), "LegacyFrame");
+    ASSERT_EQ(frame.roots().size(), 1u);
+
+    const auto& node = *frame.roots()[0];
+    EXPECT_EQ(node.name(), "5V导光板电源 设定电流值");
+    EXPECT_EQ(node.value_type(), ValueType::word);
+    EXPECT_TRUE(node.attrs().is_scaled);
+    ASSERT_TRUE(node.attrs().scale_a.has_value());
+    EXPECT_FLOAT_EQ(*node.attrs().scale_a, 0.01f);
+    EXPECT_EQ(node.attrs().link_to, "\\ComCHH50W_COM1\\ch1");
+}
+
+// ── Test 10: Malformed XML ──────────────────────────────────────
 TEST_F(EprotoxTest, MalformedXml) {
     auto path = tempDir / "malformed.eprotox";
     {

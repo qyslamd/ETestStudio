@@ -158,6 +158,64 @@ tl::expected<std::unique_ptr<Node>, Error> deserialize_node(const pugi::xml_node
     return node;
 }
 
+tl::expected<std::unique_ptr<Node>, Error> deserialize_legacy_node(const pugi::xml_node& item,
+                                                                   const std::filesystem::path& file) {
+    auto name = parse_required_string(item, "Name", file);
+    if (!name) return tl::make_unexpected(name.error());
+
+    auto description = parse_required_string(item, "Description", file);
+    if (!description) return tl::make_unexpected(description.error());
+
+    auto offset = parse_required_int(item, "Offset", file);
+    if (!offset) return tl::make_unexpected(offset.error());
+
+    auto start_bit = parse_required_int(item, "StartBit", file);
+    if (!start_bit) return tl::make_unexpected(start_bit.error());
+
+    auto bit_width = parse_required_int(item, "BitWidth", file);
+    if (!bit_width) return tl::make_unexpected(bit_width.error());
+
+    auto type_str = parse_required_string(item, "Type", file);
+    if (!type_str) return tl::make_unexpected(type_str.error());
+
+    NodeAttrs attrs;
+    attrs.system_name     = parse_optional_string(item, "SystemName");
+    attrs.group_name      = parse_optional_string(item, "GroupName");
+    attrs.unit            = parse_optional_string(item, "Unit");
+    attrs.value_text_list = parse_optional_string(item, "ValueTextList");
+    attrs.scale_formula   = parse_optional_string(item, "ScaleFormula");
+    attrs.scale_convertor = parse_optional_string(item, kScaleConverorKey);
+    attrs.link_to         = parse_optional_string(item, "LinkTo");
+    attrs.is_scaled       = parse_is_scaled(item, file);
+
+    if (auto v = parse_optional_float(item, "ScaleA")) attrs.scale_a = v;
+    if (auto v = parse_optional_float(item, "ScaleB")) attrs.scale_b = v;
+    if (auto v = parse_optional_float(item, "Min"))    attrs.min = v;
+    if (auto v = parse_optional_float(item, "Max"))    attrs.max = v;
+
+    Tag tag = Tag::none;
+    if (auto tag_child = item.child("Tag")) {
+        try {
+            tag = tag_from_legacy_int(std::stoi(tag_child.child_value()));
+        } catch (...) {
+            tag = Tag::none;
+        }
+    }
+
+    auto node = std::make_unique<Node>(
+        *name, *description, *offset, *start_bit, *bit_width,
+        value_type_from_legacy_xml_string(*type_str), tag, std::move(attrs));
+
+    if (auto childs_node = item.child("Childs")) {
+        for (auto child_item : childs_node.children("Item")) {
+            auto child = deserialize_legacy_node(child_item, file);
+            if (!child) return tl::make_unexpected(child.error());
+            node->add_child(std::move(*child));
+        }
+    }
+
+    return node;
+}
 // ── Calculate frame length from max node bit extent ────────────
 void update_max_bits(const Node& node, int& max_bits) {
     int node_end = (node.offset() * 8) + node.bit_offset() + node.bit_width();
@@ -243,14 +301,37 @@ tl::expected<Repository, Error> deserialize_xml_repository(const std::filesystem
 
     const auto& doc = *doc_result;
 
+    Repository repo;
+
+    if (auto legacy_root = doc.child("ICDData")) {
+        auto name = legacy_root.child("Name");
+        auto data = legacy_root.child("Data");
+        if (!name || !data) {
+            return tl::make_unexpected(
+                Error{ErrorCode::schema_error, "missing frame content", path, "ICDData"});
+        }
+
+        auto frame = std::make_unique<Frame>(
+            0, name.child_value(), std::string{}, FrameType::data, ByteOrder::little_endian);
+        for (auto item : data.children("Item")) {
+            auto node_result = deserialize_legacy_node(item, path);
+            if (!node_result) return tl::make_unexpected(node_result.error());
+            frame->add_root(std::move(*node_result));
+        }
+        if (frame->roots().empty()) {
+            return tl::make_unexpected(
+                Error{ErrorCode::schema_error, "frame has no root items", path, std::string(frame->name())});
+        }
+        repo.add_frame(std::move(frame));
+        return repo;
+    }
+
     // Check root element
     auto root = doc.child("ICDProtocol");
     if (!root) {
         return tl::make_unexpected(
             Error{ErrorCode::schema_error, "missing ICDProtocol root element", path, "ICDProtocol"});
     }
-
-    Repository repo;
 
     for (auto frame_elem : root.children("Frame")) {
         // Parse required fields
