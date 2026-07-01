@@ -3,11 +3,9 @@ setlocal enabledelayedexpansion
 
 chcp 65001 >nul
 
-call "%ETest_VS2019_x64_Native_Bat%"
-
-set PATH=%PATH%;"%ETest_CMake_Path%"
-
-set PROJECT_ROOT=%~dp0
+:: Change to source root before any argument parsing,
+:: so later %~dp0 references remain stable.
+set "PROJECT_ROOT=%~dp0"
 cd /d "%PROJECT_ROOT%.."
 
 :: =======================================
@@ -17,6 +15,7 @@ set "BUILD_TYPE="
 set "TARGET="
 set "ACTION="
 set "CONFIGURE_ONLY="
+set "ARCH=x64"
 
 set "FIRST_ARG=%~1"
 if not defined FIRST_ARG goto :old_mode
@@ -68,6 +67,19 @@ if /i "%~1"=="--configure" (
     goto :parse_new
 )
 
+if /i "%~1"=="-a" (
+    set "ARCH=%~2"
+    shift
+    shift
+    goto :parse_new
+)
+if /i "%~1"=="--arch" (
+    set "ARCH=%~2"
+    shift
+    shift
+    goto :parse_new
+)
+
 set "ARG=%~1"
 set "PREFIX=!ARG:~0,7!"
 if /i "!PREFIX!"=="--type=" (
@@ -115,22 +127,26 @@ goto :show_help
 :show_help
 echo Usage:
 echo   Legacy:  build_ninja.bat [debug^|relwithdebinfo^|release] [deploy^|package]
-echo   Modern:  build_ninja.bat -t ^<type^> [-m ^<target^>] [-d^|-p]
+echo   Modern:  build_ninja.bat -t ^<type^> [-a ^<arch^>] [-m ^<target^>] [-d^|-p]
 echo.
 echo Options:
 echo   -t, --type ^<type^>       Build type: debug / relwithdebinfo / release
+echo   -a, --arch ^<arch^>       Target architecture: x64 (default) / x86
 echo   -m, --target ^<target^>   Build target (e.g. ETestStudio), omit for all
 echo   -d, --deploy              Run windeployqt after build
 echo   -p, --package             Run windeployqt + ISCC after build
 echo   -c, --configure           Only run CMake configure, skip build
 echo   -h, --help                Show this help
 echo.
+echo Architecture notes:
+echo   VS2019_CMD_DIR should point to the directory containing vcvars64.bat and vcvars32.bat
+echo.
 echo Examples:
 echo   build_ninja.bat
 echo   build_ninja.bat debug deploy
 echo   build_ninja.bat -t debug -m ETestStudio
 echo   build_ninja.bat -t relwithdebinfo -m ETestStudio -p
-echo   build_ninja.bat -t debug -c
+echo   build_ninja.bat -t debug -a x86 -c
 exit /b 1
 
 :: =======================================
@@ -138,27 +154,51 @@ exit /b 1
 :: =======================================
 :setup_new
 :setup_build
+
+:: Validate arch
+if /i not "%ARCH%"=="x64" if /i not "%ARCH%"=="x86" (
+    echo Unknown arch: %ARCH% ^(expected x64 or x86^)
+    exit /b 1
+)
+
+:: Init vcvars env for the chosen arch
+if not defined VS2019_CMD_DIR (
+    echo VS2019_CMD_DIR env var not set.
+    echo Set it to the directory containing vcvars64.bat and vcvars32.bat.
+    exit /b 1
+)
+
+if /i "%ARCH%"=="x86" (
+    call "%VS2019_CMD_DIR%\vcvars32.bat"
+) else (
+    call "%VS2019_CMD_DIR%\vcvars64.bat"
+)
+
+set PATH=%PATH%;"%ETest_CMake_Path%"
+
 if "%BUILD_TYPE%"=="" set "BUILD_TYPE=debug"
+
 if /i "%BUILD_TYPE%"=="debug" (
-    set "PRESET=ninja-debug"
-    set "BUILD_DIR=build\ninja-debug"
+    set "PRESET=ninja-debug-%ARCH%"
+    set "BUILD_DIR=build\ninja-debug-%ARCH%"
 )
 if /i "%BUILD_TYPE%"=="relwithdebinfo" (
-    set "PRESET=ninja-relwithdebinfo"
-    set "BUILD_DIR=build\ninja-relwithdebinfo"
+    set "PRESET=ninja-relwithdebinfo-%ARCH%"
+    set "BUILD_DIR=build\ninja-relwithdebinfo-%ARCH%"
 )
 if /i "%BUILD_TYPE%"=="release" (
-    set "PRESET=ninja-release"
-    set "BUILD_DIR=build\ninja-release"
+    set "PRESET=ninja-release-%ARCH%"
+    set "BUILD_DIR=build\ninja-release-%ARCH%"
 )
 
 if not defined PRESET (
     echo Unknown build type: %BUILD_TYPE%
-    echo Usage: build_ninja.bat -t ^<debug^|relwithdebinfo^|release^> [-m ^<target^>] [-d^|-p]
+    echo Usage: build_ninja.bat -t ^<debug^|relwithdebinfo^|release^> [-a ^<x64^|x86^>] [-m ^<target^>] [-d^|-p]
     exit /b 1
 )
 
 echo Build type: %BUILD_TYPE% (%PRESET%)
+echo Target arch: %ARCH%
 if defined TARGET echo Build target: %TARGET%
 
 cmake -S . --preset %PRESET%

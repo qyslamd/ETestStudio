@@ -73,6 +73,66 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
+        },
+        {
+            "name": "ninja-debug-x64",
+            "displayName": "Ninja Debug (x64)",
+            "description": "使用Ninja构建的Debug版本（x64，需在x64 Native Tools Command Prompt for VS2019中执行）",
+            "inherits": "ninja-debug",
+            "binaryDir": "${sourceDir}/build/ninja-debug-x64",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-debug-x64"
+            }
+        },
+        {
+            "name": "ninja-debug-x86",
+            "displayName": "Ninja Debug (x86)",
+            "description": "使用Ninja构建的Debug版本（x86，需在x86 Native Tools Command Prompt for VS2019中执行）",
+            "inherits": "ninja-debug",
+            "binaryDir": "${sourceDir}/build/ninja-debug-x86",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-debug-x86"
+            }
+        },
+        {
+            "name": "ninja-release-x64",
+            "displayName": "Ninja Release (x64)",
+            "description": "使用Ninja构建的Release版本（x64）",
+            "inherits": "ninja-release",
+            "binaryDir": "${sourceDir}/build/ninja-release-x64",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-release-x64"
+            }
+        },
+        {
+            "name": "ninja-release-x86",
+            "displayName": "Ninja Release (x86)",
+            "description": "使用Ninja构建的Release版本（x86）",
+            "inherits": "ninja-release",
+            "binaryDir": "${sourceDir}/build/ninja-release-x86",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-release-x86"
+            }
+        },
+        {
+            "name": "ninja-relwithdebinfo-x64",
+            "displayName": "Ninja RelWithDebInfo (x64)",
+            "description": "使用Ninja构建的RelWithDebInfo版本（x64）",
+            "inherits": "ninja-relwithdebinfo",
+            "binaryDir": "${sourceDir}/build/ninja-relwithdebinfo-x64",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-relwithdebinfo-x64"
+            }
+        },
+        {
+            "name": "ninja-relwithdebinfo-x86",
+            "displayName": "Ninja RelWithDebInfo (x86)",
+            "description": "使用Ninja构建的RelWithDebInfo版本（x86）",
+            "inherits": "ninja-relwithdebinfo",
+            "binaryDir": "${sourceDir}/build/ninja-relwithdebinfo-x86",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-relwithdebinfo-x86"
+            }
         }
     ],
     "buildPresets": [
@@ -109,6 +169,48 @@
             "description": "使用Ninja构建RelWithDebInfo版本",
             "configurePreset": "ninja-relwithdebinfo",
             "targets": "all"
+        },
+        {
+            "name": "ninja-debug-x64-build",
+            "displayName": "Ninja Build Debug (x64)",
+            "description": "使用Ninja构建x64 Debug版本",
+            "configurePreset": "ninja-debug-x64",
+            "targets": "all"
+        },
+        {
+            "name": "ninja-debug-x86-build",
+            "displayName": "Ninja Build Debug (x86)",
+            "description": "使用Ninja构建x86 Debug版本",
+            "configurePreset": "ninja-debug-x86",
+            "targets": "all"
+        },
+        {
+            "name": "ninja-release-x64-build",
+            "displayName": "Ninja Build Release (x64)",
+            "description": "使用Ninja构建x64 Release版本",
+            "configurePreset": "ninja-release-x64",
+            "targets": "ALL_BUILD"
+        },
+        {
+            "name": "ninja-release-x86-build",
+            "displayName": "Ninja Build Release (x86)",
+            "description": "使用Ninja构建x86 Release版本",
+            "configurePreset": "ninja-release-x86",
+            "targets": "ALL_BUILD"
+        },
+        {
+            "name": "ninja-relwithdebinfo-x64-build",
+            "displayName": "Ninja Build RelWithDebInfo (x64)",
+            "description": "使用Ninja构建x64 RelWithDebInfo版本",
+            "configurePreset": "ninja-relwithdebinfo-x64",
+            "targets": "all"
+        },
+        {
+            "name": "ninja-relwithdebinfo-x86-build",
+            "displayName": "Ninja Build RelWithDebInfo (x86)",
+            "description": "使用Ninja构建x86 RelWithDebInfo版本",
+            "configurePreset": "ninja-relwithdebinfo-x86",
+            "targets": "all"
         }
     ],
     "testPresets": [
@@ -129,6 +231,42 @@
             "displayName": "Ninja Test RelWithDebInfo",
             "description": "使用Ninja测试RelWithDebInfo版本",
             "configurePreset": "ninja-relwithdebinfo"
+        },
+        {
+            "name": "ninja-debug-x64-test",
+            "displayName": "Ninja Test Debug (x64)",
+            "description": "使用Ninja测试x64 Debug版本",
+            "configurePreset": "ninja-debug-x64"
+        },
+        {
+            "name": "ninja-debug-x86-test",
+            "displayName": "Ninja Test Debug (x86)",
+            "description": "使用Ninja测试x86 Debug版本",
+            "configurePreset": "ninja-debug-x86"
+        },
+        {
+            "name": "ninja-release-x64-test",
+            "displayName": "Ninja Test Release (x64)",
+            "description": "使用Ninja测试x64 Release版本",
+            "configurePreset": "ninja-release-x64"
+        },
+        {
+            "name": "ninja-release-x86-test",
+            "displayName": "Ninja Test Release (x86)",
+            "description": "使用Ninja测试x86 Release版本",
+            "configurePreset": "ninja-release-x86"
+        },
+        {
+            "name": "ninja-relwithdebinfo-x64-test",
+            "displayName": "Ninja Test RelWithDebInfo (x64)",
+            "description": "使用Ninja测试x64 RelWithDebInfo版本",
+            "configurePreset": "ninja-relwithdebinfo-x64"
+        },
+        {
+            "name": "ninja-relwithdebinfo-x86-test",
+            "displayName": "Ninja Test RelWithDebInfo (x86)",
+            "description": "使用Ninja测试x86 RelWithDebInfo版本",
+            "configurePreset": "ninja-relwithdebinfo-x86"
         }
     ]
 }

@@ -29,12 +29,13 @@ if (EXISTS "${CMAKE_SOURCE_DIR}/local.cmake")
     message(STATUS "Loaded variables from local.cmake")
 else()
     if(WIN32)
-        set(PATH_FOR_QT_INSTALLATION "X:/Qt/Qt5.12.12/5.12.12/msvc2017_64")
+        set(PATH_FOR_QT_INSTALLATION_X64 "X:/Qt/Qt5.12.12/5.12.12/msvc2019_64")
+        set(PATH_FOR_QT_INSTALLATION_X86 "X:/Qt/Qt5.12.12/5.12.12/msvc2019")
         configure_file("${CMAKE_SOURCE_DIR}/cmake/local.cmake.in"
-            "${CMAKE_SOURCE_DIR}/local.cmake" 
+            "${CMAKE_SOURCE_DIR}/local.cmake"
             @ONLY)
     endif()
-    message(FATAL_ERROR "Please change local.cmake  to set your own variables, then rerun CMake.")
+    message(FATAL_ERROR "Please change local.cmake to set your own Qt paths for both x64 and x86, then rerun CMake.")
 endif()
 
 

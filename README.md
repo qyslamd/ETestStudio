@@ -55,8 +55,8 @@ etest (主程序)
    - 此电脑 → 属性 → 高级系统设置 → 环境变量
    - 新建系统变量
    - 变量名：`ETest_Qt5_Path`
-   - 变量值：`D:\Qt22\5.15.2\msvc2019_64\`
-   - 注意末尾的反斜杠 `\`
+   - 变量值：`D:\Qt22\5.15.2`
+   - 不需要在末尾添加 kit 目录，调试配置会自行拼接 `msvc2019_64`
 4. 重启电脑或重启资源管理器使环境变量生效
 
 ### 3. 安装 CMake
@@ -93,8 +93,8 @@ scripts/run_app.bat
 
 | 变量名 | 示例值 | 说明 |
 |---|---|---|
-| `ETest_VS2019_x64_Native_Bat` | `D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat` | VS2019 x64 环境初始化脚本 |
-| `ETest_Qt5_Path` | `D:\Qt22\5.15.2\msvc2019_64\` | Qt SDK 路径，末尾带 `\` |
+| `VS2019_CMD_DIR` | `D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build` | VS2019 环境初始化脚本目录，需包含 `vcvars64.bat` 和 `vcvars32.bat` |
+| `ETest_Qt5_Path` | `D:\Qt22\5.15.2` | Qt 5.15.2 安装路径 |
 | `ETest_CMake_Path` | `C:\Program Files\CMake\bin` | CMake 可执行文件目录 |
 
 ## 使用 IDE 开发
