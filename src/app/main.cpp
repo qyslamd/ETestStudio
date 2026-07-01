@@ -27,8 +27,6 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   app.setFont(QFont("Microsoft YaHei", 10));
 
-  qInfo() << app.applicationDirPath() << " 目录下启动应用程序";
-
   // 注册编辑器类型
   EditorManager::registerEditorTypes();
 
@@ -45,6 +43,8 @@ int main(int argc, char* argv[]) {
 
   // 初始化日志系统
   Logger::init();
+  LOG_INFO("MAIN",
+           app.applicationDirPath().toStdString() + " 目录下启动应用程序");
 
   // 初始化全局异常处理器（信号捕获 + Qt消息重定向）
   GlobalExceptionHandler::instance().init();
