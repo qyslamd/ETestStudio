@@ -202,15 +202,15 @@ void TopologyEditorWidget::reloadScene() {
     view_->viewport()->update();
 }
 
-void TopologyEditorWidget::setEditorId(const QString& newId) {
+void TopologyEditorWidget::openFile(const QString& filePath) {
   QString oldId = editorId();
-  current_file_ = newId;
+  current_file_ = filePath;
   if (oldId != editorId()) {
     emit editorIdChanged(oldId, editorId());
   }
 
   // 文件不存在或为临时 ID 时不加载
-  if (newId.startsWith("editor://") || !QFileInfo::exists(newId))
+  if (filePath.startsWith("editor://") || !QFileInfo::exists(filePath))
     return;
 
   // 取消之前的异步加载
@@ -243,8 +243,8 @@ void TopologyEditorWidget::setEditorId(const QString& newId) {
             }
             hideLoadingOverlay();
           });
-  load_watcher_->setFuture(QtConcurrent::run([newId]() -> QJsonDocument {
-    QFile file(newId);
+  load_watcher_->setFuture(QtConcurrent::run([filePath]() -> QJsonDocument {
+    QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly))
       return {};
     QJsonParseError err;

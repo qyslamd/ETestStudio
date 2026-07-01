@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
     if (path.isEmpty()) {
       return;
     }
-    editor.setEditorId(path);
+    editor.openFile(path);
     editor.statusBar()->showMessage(QStringLiteral("已打开: %1").arg(path),
                                     3000);
     updateTitle(&editor);

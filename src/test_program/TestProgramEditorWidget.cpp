@@ -17,17 +17,18 @@
 
 namespace etest::app {
 
-TestProgramEditorWidget::TestProgramEditorWidget(const QString& id,
+TestProgramEditorWidget::TestProgramEditorWidget(const QString& filePath,
                                                  QWidget* parent)
     : QMainWindow(parent) {
   initUi();
   initSignals();
 
-  if (!id.isEmpty() && !id.startsWith("editor://") && QFileInfo::exists(id)) {
-    current_file_ = id;
-    loadFile(id);
+  if (!filePath.isEmpty() && !filePath.startsWith("editor://") &&
+      QFileInfo::exists(filePath)) {
+    current_file_ = filePath;
+    loadFile(filePath);
   } else {
-    current_file_ = id.startsWith("editor://") ? QString() : id;
+    current_file_ = filePath.startsWith("editor://") ? QString() : filePath;
     newProgram();
   }
 }
@@ -413,15 +414,16 @@ QObject* TestProgramEditorWidget::signalObject() {
   return this;
 }
 
-void TestProgramEditorWidget::setEditorId(const QString& id) {
+void TestProgramEditorWidget::openFile(const QString& filePath) {
   QString oldId = editorId();
-  current_file_ = id.startsWith("editor://") ? QString() : id;
+  current_file_ = filePath.startsWith("editor://") ? QString() : filePath;
   if (oldId != editorId()) {
     emit editorIdChanged(oldId, editorId());
   }
 
-  if (!id.isEmpty() && !id.startsWith("editor://") && QFileInfo::exists(id)) {
-    loadFile(id);
+  if (!filePath.isEmpty() && !filePath.startsWith("editor://") &&
+      QFileInfo::exists(filePath)) {
+    loadFile(filePath);
   }
 }
 

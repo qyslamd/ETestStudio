@@ -67,7 +67,7 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
     ConfigDriven    // ICDConfig.xml/.json
   };
 
-  void setEditorId(const QString& id);
+  void openFile(const QString& filePath) override;
 
   // Embedded mode (hide menuBar/toolbar when hosted in IDE)
   void setEmbeddedMode(bool embedded);

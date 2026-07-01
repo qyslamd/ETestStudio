@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
                            QStringLiteral("文件不存在: %1").arg(loadFile));
       return 1;
     }
-    editor.setEditorId(loadFile);
+    editor.openFile(loadFile);
   }
 
   // standalone 模式：添加文件/编辑菜单
@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
         QStringLiteral("协议文件 (*.eproto *.epro);;所有文件 (*)"));
     if (path.isEmpty())
       return;
-    editor.setEditorId(path);
+    editor.openFile(path);
   });
 
   fileMenu->addSeparator();

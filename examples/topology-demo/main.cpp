@@ -41,9 +41,9 @@ int main(int argc, char* argv[]) {
           QStringLiteral("文件不存在: %1").arg(loadFile));
       return 1;
     }
-    editor.setEditorId(loadFile);
+    editor.openFile(loadFile);
   } else {
-    editor.setEditorId(QString());
+    editor.openFile(QString());
   }
 
   // standalone 模式：添加文件/编辑菜单
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
     }
     editor.document()->clear();
     editor.reloadScene();
-    editor.setEditorId(QString());
+    editor.openFile(QString());
   });
 
   auto* openAction = fileMenu->addAction(QStringLiteral("打开"));
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
     doc->clear();
     etest::topology::TopologyJsonSerializer::deserialize(jdoc.object(), doc);
     editor.reloadScene();
-    editor.setEditorId(path);
+    editor.openFile(path);
     if (doc->undoStack()) doc->undoStack()->clear();
   });
 

@@ -25,8 +25,8 @@ class IEditor {
   virtual void undo() = 0;
   virtual void redo() = 0;
 
-  // 编辑器初始化（文件路径），默认空实现
-  virtual void setEditorId(const QString& id) { Q_UNUSED(id); }
+  // 打开编辑器文件，默认空实现
+  virtual void openFile(const QString& filePath) { Q_UNUSED(filePath); }
 };
 
 }  // namespace etest::app

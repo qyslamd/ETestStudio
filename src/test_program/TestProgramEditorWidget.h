@@ -19,7 +19,8 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   Q_OBJECT
 
  public:
-  explicit TestProgramEditorWidget(const QString& id, QWidget* parent = nullptr);
+  explicit TestProgramEditorWidget(const QString& filePath,
+                                   QWidget* parent = nullptr);
 
   // IEditor interface
   QString displayName() const override;
@@ -38,7 +39,7 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void undo() override;
   void redo() override;
 
-  void setEditorId(const QString& id);
+  void openFile(const QString& filePath) override;
   void setEmbeddedMode(bool embedded);
   void newProgram();
 

@@ -251,7 +251,7 @@ void EditorManager::openFile(const QString& filePath,
   if (binder) {
     binder(editor, dock, this);
   }
-  editor->setEditorId(filePath);
+  editor->openFile(filePath);
 
   connect(dock, &ads::CDockWidget::closeRequested, this,
           [this, editorKey]() { closeFile(editorKey); });
@@ -537,7 +537,7 @@ void EditorManager::createEditor(const QString& editorType,
   if (binder) {
     binder(editor, dock, this);
   }
-  editor->setEditorId(id);
+  editor->openFile(id);
 
   connect(dock, &ads::CDockWidget::closeRequested, this,
           [this, id]() { closeFile(id); });
@@ -673,12 +673,12 @@ void EditorManager::onFileRenamed(const QString& oldPath,
     textEditor->setFilePath(newPath);
   } else if (auto* protocolEditor =
                  dynamic_cast<etest::protocol::ProtocolEditorWidget*>(editor)) {
-    protocolEditor->setEditorId(newPath);
+    protocolEditor->openFile(newPath);
   } else if (auto* topoEditor =
                  dynamic_cast<etest::topology::TopologyEditorWidget*>(editor)) {
-    topoEditor->setEditorId(newPath);
+    topoEditor->openFile(newPath);
   } else if (auto* tpEditor = dynamic_cast<TestProgramEditorWidget*>(editor)) {
-    tpEditor->setEditorId(newPath);
+    tpEditor->openFile(newPath);
   }
 
   editors_.remove(oldPath);

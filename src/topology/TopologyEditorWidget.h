@@ -49,7 +49,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   // Topology specific
   TopologyDocument* document() const;
   void reloadScene();
-  void setEditorId(const QString& newId);
+  void openFile(const QString& filePath) override;
 
   // 嵌入模式（IDE 中隐藏 menuBar）
   void setEmbeddedMode(bool embedded);

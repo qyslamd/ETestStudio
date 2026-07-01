@@ -233,12 +233,12 @@ void ProtocolEditorWidget::redo() {
   setModified(snapshot_index_ != 0);
 }
 
-void ProtocolEditorWidget::setEditorId(const QString& id) {
-  if (id == current_file_)
+void ProtocolEditorWidget::openFile(const QString& filePath) {
+  if (filePath == current_file_)
     return;
-  current_file_ = id;
+  current_file_ = filePath;
 
-  if (!QFileInfo::exists(id))
+  if (!QFileInfo::exists(filePath))
     return;
 
   // Bump generation; any stale lambda with an older generation discards its
@@ -257,7 +257,7 @@ void ProtocolEditorWidget::setEditorId(const QString& id) {
   showLoadingOverlay();
 
   // ── Determine format from file extension ──
-  auto path = std::filesystem::path(id.toStdWString());
+  auto path = std::filesystem::path(filePath.toStdWString());
   auto ext = path.extension().string();
 
   // Detect format
@@ -316,9 +316,9 @@ void ProtocolEditorWidget::setEditorId(const QString& id) {
   switch (format_) {
   case ProtocolFormat::Json:
     load_watcher_->setFuture(
-        QtConcurrent::run([id]() -> AsyncLoadResult {
+        QtConcurrent::run([filePath]() -> AsyncLoadResult {
           auto result = icd::format::deserialize_repository(
-              std::filesystem::path(id.toStdWString()));
+              std::filesystem::path(filePath.toStdWString()));
           if (!result) return {};
           return {std::make_shared<icd::Repository>(std::move(*result))};
         }));
@@ -326,9 +326,9 @@ void ProtocolEditorWidget::setEditorId(const QString& id) {
 
   case ProtocolFormat::Xml:
     load_watcher_->setFuture(
-        QtConcurrent::run([id]() -> AsyncLoadResult {
+        QtConcurrent::run([filePath]() -> AsyncLoadResult {
           auto result = icd::format::deserialize_xml_repository(
-              std::filesystem::path(id.toStdWString()));
+              std::filesystem::path(filePath.toStdWString()));
           if (!result) return {};
           return {std::make_shared<icd::Repository>(std::move(*result))};
         }));
