@@ -5,6 +5,42 @@ QTreeView {
     border: none;
 }
 
+/* ==================== QDoubleSpinBox ==================== */
+QDoubleSpinBox {
+    background-color: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #D0D0D0;
+    border-radius: 3px;
+    padding: 4px 8px;
+    selection-background-color: #CCE4F7;
+    selection-color: #1F1F1F;
+}
+QDoubleSpinBox:hover {
+    border-color: #007ACC;
+}
+QDoubleSpinBox:focus {
+    border-color: #007ACC;
+}
+QDoubleSpinBox:disabled {
+    background-color: #F5F5F5;
+    color: #AAAAAA;
+    border-color: #E0E0E0;
+}
+QDoubleSpinBox::up-button,
+QDoubleSpinBox::down-button {
+    background-color: #F5F5F5;
+    border: none;
+    width: 16px;
+}
+QDoubleSpinBox::up-button:hover,
+QDoubleSpinBox::down-button:hover {
+    background-color: #E0E0E0;
+}
+QDoubleSpinBox::up-button:pressed,
+QDoubleSpinBox::down-button:pressed {
+    background-color: #D0D0D0;
+}
+
 /* ==================== QScrollBar ==================== */
 QScrollBar:vertical {
     background-color: #F0F0F0;

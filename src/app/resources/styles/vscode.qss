@@ -386,6 +386,47 @@ QSpinBox:focus {
     border-color: #007ACC;
 }
 
+/* DoubleSpinBox */
+QDoubleSpinBox {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 2px;
+    padding: 4px 8px;
+    selection-background-color: #264F78;
+    selection-color: #FFFFFF;
+}
+QDoubleSpinBox:hover {
+    border-color: #007ACC;
+}
+QDoubleSpinBox:focus {
+    border-color: #007ACC;
+}
+QDoubleSpinBox:disabled {
+    background-color: #2D2D2D;
+    color: #5A5A5A;
+    border-color: #2D2D2D;
+}
+QDoubleSpinBox::up-button,
+QDoubleSpinBox::down-button {
+    background-color: #3C3C3C;
+    border: none;
+    width: 16px;
+}
+QDoubleSpinBox::up-button:hover,
+QDoubleSpinBox::down-button:hover {
+    background-color: #505050;
+}
+QDoubleSpinBox::up-button:pressed,
+QDoubleSpinBox::down-button:pressed {
+    background-color: #2D2D2D;
+}
+QDoubleSpinBox::up-arrow,
+QDoubleSpinBox::down-arrow {
+    width: 8px;
+    height: 8px;
+}
+
 /* CheckBox */
 QCheckBox {
     color: #CCCCCC;
