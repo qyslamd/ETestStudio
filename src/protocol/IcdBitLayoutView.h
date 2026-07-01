@@ -62,6 +62,7 @@ class FieldSectionItem : public QGraphicsObject {
   bool hovered_ = false;
   bool highlighted_ = false;
   static constexpr int kHeaderHeight = 28;
+  static constexpr int kMinSectionWidth = 420;
   QFont header_font_;
   QFont cell_font_;
 };
@@ -118,9 +119,6 @@ class IcdBitLayoutView : public QWidget {
   void blockClicked(const QString& name);
   void contextMenuAction(const QString& name, const QString& action);
   void blockHovered(const QString& name, bool on);
-
- protected:
-  bool eventFilter(QObject* obj, QEvent* event) override;
 
  private:
   void initUi();

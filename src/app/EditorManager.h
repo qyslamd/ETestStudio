@@ -47,6 +47,9 @@ class EditorManager : public QObject {
                     const QString& title);
   void updateEditorId(IEditor* editor, const QString& newId);
 
+  void bindDockTabContextMenu(ads::CDockWidget* dock);
+  void showDockContextMenu(ads::CDockWidget* dock, const QPoint& globalPos);
+
  signals:
   void fileOpened(const QString& filePath);
   void fileClosed(const QString& filePath);
@@ -57,7 +60,6 @@ class EditorManager : public QObject {
  private slots:
   void onDockWidgetActivated(ads::CDockWidget* dock);
   void updateDockTitle(IEditor* editor, ads::CDockWidget* dock);
-  void onDockCustomContextMenuRequested(const QPoint& pos);
 
  private:
   ads::CDockManager* dock_manager_;

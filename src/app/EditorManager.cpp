@@ -243,9 +243,7 @@ void EditorManager::openFile(const QString& filePath,
   dock->setFeature(ads::CDockWidget::CustomCloseHandling, true);
   dock->tabWidget()->setElideMode(Qt::ElideNone);
 
-  dock->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(dock, &ads::CDockWidget::customContextMenuRequested, this,
-          &EditorManager::onDockCustomContextMenuRequested);
+  bindDockTabContextMenu(dock);
 
   auto binder = EditorFactoryRegistry::binderForType(editorType);
   if (binder) {
@@ -529,9 +527,7 @@ void EditorManager::createEditor(const QString& editorType,
   dock->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
   dock->setFeature(ads::CDockWidget::CustomCloseHandling, true);
 
-  dock->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(dock, &ads::CDockWidget::customContextMenuRequested, this,
-          &EditorManager::onDockCustomContextMenuRequested);
+  bindDockTabContextMenu(dock);
 
   auto binder = EditorFactoryRegistry::binderForType(editorType);
   if (binder) {
@@ -723,10 +719,24 @@ bool EditorManager::closeFilesInDirectory(const QString& dirPath) {
   return true;
 }
 
-void EditorManager::onDockCustomContextMenuRequested(const QPoint& pos) {
-  auto* dock = qobject_cast<ads::CDockWidget*>(sender());
-  if (!dock)
+void EditorManager::bindDockTabContextMenu(ads::CDockWidget* dock) {
+  if (!dock || !dock->tabWidget()) {
     return;
+  }
+
+  auto* tab = dock->tabWidget();
+  tab->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(tab, &QWidget::customContextMenuRequested, this,
+          [this, dock, tab](const QPoint& pos) {
+            showDockContextMenu(dock, tab->mapToGlobal(pos));
+          });
+}
+
+void EditorManager::showDockContextMenu(ads::CDockWidget* dock,
+                                        const QPoint& globalPos) {
+  if (!dock) {
+    return;
+  }
 
   QString editorId;
   for (auto it = dock_widgets_.constBegin(); it != dock_widgets_.constEnd();
@@ -794,7 +804,7 @@ void EditorManager::onDockCustomContextMenuRequested(const QPoint& pos) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absolutePath()));
   });
 
-  menu.exec(dock->mapToGlobal(pos));
+  menu.exec(globalPos);
 }
 
 }  // namespace etest::app
