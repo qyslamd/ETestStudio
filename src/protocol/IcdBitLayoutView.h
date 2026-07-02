@@ -107,7 +107,7 @@ class FieldSectionItem : public LayoutNodeItem {
 };
 
 // ============================================================
-// ChildFieldItem — 容器字段内部的子字段位段
+// ChildFieldItem — 容器字段内部的子字段行（树形缩进）
 // ============================================================
 class ChildFieldItem : public QGraphicsObject {
   Q_OBJECT
@@ -125,6 +125,9 @@ class ChildFieldItem : public QGraphicsObject {
   int relativeEnd() const { return relative_end_; }
   void setHighlighted(bool on);
   void setHovered(bool on);
+  void setRowWidth(int w) { row_width_ = w; }
+
+  static constexpr int kRowHeight = 26;
 
  signals:
   void clicked(const icd::Node* node);
@@ -144,9 +147,13 @@ class ChildFieldItem : public QGraphicsObject {
   QString value_type_;
   QColor color_;
   int cell_size_ = 38;
+  int row_width_ = 200;
   bool hovered_ = false;
   bool highlighted_ = false;
-  QFont label_font_;
+  bool is_last_ = false;
+  QFont row_font_;
+
+  friend class ContainerFieldItem;  // allow container to set is_last_
 };
 
 // ============================================================
@@ -192,11 +199,12 @@ class ContainerFieldItem : public LayoutNodeItem {
   bool hovered_ = false;
   bool highlighted_ = false;
   static constexpr int kHeaderHeight = 30;
-  static constexpr int kBodyTop = 40;
-  static constexpr int kBodyHeight = 52;
+  static constexpr int kRowHeight = 26;
+  static constexpr int kChildIndent = 24;
   static constexpr int kMinSectionWidth = 520;
+  static constexpr int kContainerPadding = 12;
   QFont header_font_;
-  QFont cell_font_;
+  QFont row_font_;
   QVector<ChildFieldItem*> child_items_;
 };
 

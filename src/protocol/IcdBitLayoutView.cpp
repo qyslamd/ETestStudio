@@ -571,16 +571,14 @@ ChildFieldItem::ChildFieldItem(const icd::Node* node, int relative_start,
       cell_size_(cell_size) {
   setAcceptHoverEvents(true);
   setCursor(Qt::PointingHandCursor);
-  label_font_.setPointSize(8);
-  label_font_.setBold(true);
+  row_font_.setPointSize(9);
   if (node_) {
     setToolTip(buildNodeTooltip(*node_));
   }
 }
 
 QRectF ChildFieldItem::boundingRect() const {
-  int bit_count = qMax(1, relative_end_ - relative_start_ + 1);
-  return QRectF(0, 0, qMax(bit_count * cell_size_, 24), 36);
+  return QRectF(0, 0, row_width_, kRowHeight);
 }
 
 void ChildFieldItem::setHighlighted(bool on) {
@@ -596,30 +594,62 @@ void ChildFieldItem::setHovered(bool on) {
 void ChildFieldItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
                            QWidget*) {
   bool dark = etest::app::ThemeManager::instance().isDarkTheme();
-  QRectF rect = boundingRect().adjusted(1, 1, -1, -1);
-  QColor fill = highlighted_ ? color_.lighter(150) : color_.lighter(115);
-  if (hovered_ && !highlighted_) {
-    fill = fill.lighter(115);
+  int rh = kRowHeight;
+
+  // Selection/hover background
+  if (highlighted_) {
+    QColor sel = color_;
+    sel.setAlpha(dark ? 50 : 30);
+    painter->fillRect(0, 0, row_width_, rh, sel);
+  } else if (hovered_) {
+    QColor ho = Qt::white;
+    ho.setAlpha(dark ? 15 : 25);
+    painter->fillRect(0, 0, row_width_, rh, ho);
   }
 
-  painter->setPen(QPen(highlighted_ ? QColor(255, 255, 255)
-                                    : color_.darker(dark ? 120 : 105),
-                       highlighted_ ? 2 : 1));
-  painter->setBrush(fill);
-  painter->drawRoundedRect(rect, 5, 5);
+  // Tree connector: ├─ or └─
+  QString connector = is_last_ ? QStringLiteral("  └─ ") : QStringLiteral("  ├─ ");
+  painter->setPen(dark ? QColor(160, 160, 165) : QColor(130, 130, 135));
+  painter->setFont(row_font_);
+  QFontMetrics fm(row_font_);
+  int conn_w = fm.horizontalAdvance(connector);
+  painter->drawText(4, 0, conn_w, rh, Qt::AlignVCenter | Qt::AlignLeft,
+                    connector);
 
-  QString text = node_ ? nodeNameText(*node_) : QString();
-  QString range = QStringLiteral("%1~%2").arg(relative_start_).arg(relative_end_);
-  if (relative_start_ == relative_end_) {
-    range = QString::number(relative_start_);
+  // Name
+  const int range_w = fm.horizontalAdvance(QStringLiteral("000~000"));
+  const int pill_space = 100;  // reserved for type badge
+  int name_max_w = row_width_ - conn_w - 12 - range_w - pill_space;
+  QString name_text = node_ ? nodeNameText(*node_) : QString();
+  QString elided = fm.elidedText(name_text, Qt::ElideRight, qMax(0, name_max_w));
+  painter->setPen(dark ? QColor(220, 220, 225) : QColor(45, 45, 50));
+  painter->drawText(4 + conn_w, 0, name_max_w, rh,
+                    Qt::AlignVCenter | Qt::AlignLeft, elided);
+
+  // Type pill
+  if (!value_type_.isEmpty()) {
+    int pill_w = fm.horizontalAdvance(value_type_) + 10;
+    int pill_h = fm.height() + 2;
+    int pill_x = row_width_ - range_w - pill_w - 8;
+    int pill_y = (rh - pill_h) / 2;
+    QColor pill_bg = color_;
+    pill_bg.setAlpha(highlighted_ ? 80 : 30);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(pill_bg);
+    painter->drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4);
+    painter->setPen(color_.lighter(180));
+    painter->drawText(QRectF(pill_x, pill_y, pill_w, pill_h),
+                      Qt::AlignCenter, value_type_);
   }
-  QString label = QStringLiteral("%1\n%2 %3").arg(text, range, value_type_);
 
-  painter->setPen(dark ? QColor(245, 245, 245) : QColor(35, 35, 35));
-  painter->setFont(label_font_);
-  QString elided = painter->fontMetrics().elidedText(
-      label, Qt::ElideRight, qMax(0, static_cast<int>(rect.width()) - 8));
-  painter->drawText(rect.adjusted(4, 2, -4, -2), Qt::AlignCenter, elided);
+  // Bit range
+  QString range_str =
+      (relative_start_ == relative_end_)
+          ? QString::number(relative_start_)
+          : QStringLiteral("%1~%2").arg(relative_start_).arg(relative_end_);
+  painter->setPen(dark ? QColor(150, 150, 155) : QColor(110, 110, 115));
+  painter->drawText(row_width_ - range_w - 4, 0, range_w, rh,
+                    Qt::AlignVCenter | Qt::AlignRight, range_str);
 }
 
 void ChildFieldItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
@@ -677,7 +707,7 @@ ContainerFieldItem::ContainerFieldItem(const icd::Node* node,
   setCursor(Qt::PointingHandCursor);
   header_font_.setPointSize(10);
   header_font_.setBold(true);
-  cell_font_.setPointSize(7);
+  row_font_.setPointSize(9);
   if (node_) {
     setToolTip(buildNodeTooltip(*node_));
   }
@@ -689,19 +719,24 @@ int ContainerFieldItem::parentStartBit() const {
 }
 
 void ContainerFieldItem::initChildren() {
-  if (!node_) {
+  if (!node_){
     return;
   }
 
+  const int row_w = sectionWidth() - kChildIndent - 8;
   int parent_start = parentStartBit();
-  for (const auto& child : node_->children()) {
+  int child_count = static_cast<int>(node_->children().size());
+  for (int i = 0; i < child_count; ++i) {
+    const auto& child = node_->children()[i];
     int child_start = absoluteStartBit(*child);
     int relative_start = child_start - parent_start;
     int relative_end = relative_start + child->bit_width() - 1;
     auto* item = new ChildFieldItem(child.get(), relative_start, relative_end,
                                     valueTypeText(*child), color_, cell_size_,
                                     this);
-    item->setPos(relative_start * cell_size_, kBodyTop);
+    item->setRowWidth(row_w);
+    item->is_last_ = (i == child_count - 1);
+    item->setPos(kChildIndent, kHeaderHeight + 8 + i * kRowHeight);
     child_items_.append(item);
 
     connect(item, &ChildFieldItem::clicked, this, &ContainerFieldItem::clicked);
@@ -712,14 +747,12 @@ void ContainerFieldItem::initChildren() {
 }
 
 int ContainerFieldItem::sectionWidth() const {
-  if (!node_) {
-    return kMinSectionWidth;
-  }
-  return std::max(node_->bit_width() * cell_size_, kMinSectionWidth);
+  return std::max(static_cast<int>(name_.size()) * 9 + 200, kMinSectionWidth);
 }
 
 int ContainerFieldItem::totalHeight() const {
-  return kBodyTop + kBodyHeight + 10;
+  int row_count = static_cast<int>(child_items_.size());
+  return kHeaderHeight + 8 + row_count * kRowHeight + kContainerPadding;
 }
 
 QRectF ContainerFieldItem::boundingRect() const {
@@ -773,27 +806,37 @@ void ContainerFieldItem::paint(QPainter* painter,
   int sec_w = sectionWidth();
   int sec_h = totalHeight();
 
-  QColor bg = dark ? QColor(30, 30, 33) : QColor(245, 245, 248);
+  // Container background
+  QColor bg = dark ? QColor(28, 28, 32) : QColor(248, 248, 250);
   painter->fillRect(0, 0, sec_w, sec_h, bg);
 
+  // Header bar
   QColor c1 = color_;
   QColor c2 = gradientPartner(color_);
-  QLinearGradient header_gradient(0, 0, sec_w, 0);
-  header_gradient.setColorAt(0.0, c1);
-  header_gradient.setColorAt(0.55, c2);
-  header_gradient.setColorAt(1.0, c2.darker(125));
-  painter->fillRect(0, 0, sec_w, kHeaderHeight, header_gradient);
+  {
+    QLinearGradient g(0, 0, sec_w, 0);
+    g.setColorAt(0.0, c1);
+    g.setColorAt(0.55, c2);
+    g.setColorAt(1.0, c2.darker(125));
+    painter->fillRect(0, 0, sec_w, kHeaderHeight, g);
+  }
 
+  // Header title (without value_type — it's drawn as a badge on the right)
   QString range;
   if (node_) {
     int start = absoluteStartBit(*node_);
     int end = start + node_->bit_width() - 1;
     range = QStringLiteral("%1~%2").arg(start).arg(end);
   }
-  QString title = QStringLiteral("%1  [%2 bits]  %3")
-                      .arg(name_, range, value_type_);
+  QString title = QStringLiteral("%1  [%2 bits]").arg(name_, range);
 
-  QStringList sem_badges = node_ ? buildNodeBadges(*node_) : QStringList{};
+  // Build badge list: type badge first, then semantic badges
+  QStringList all_badges;
+  if (!value_type_.isEmpty()) {
+    all_badges << value_type_;
+  }
+  all_badges << (node_ ? buildNodeBadges(*node_) : QStringList{});
+
   QFont badge_font;
   badge_font.setPointSize(8);
   badge_font.setBold(true);
@@ -802,61 +845,48 @@ void ContainerFieldItem::paint(QPainter* painter,
   int badge_gap = 4;
   int badge_h = badge_fm.height() + 4;
   int badges_total_w = 0;
-  for (const auto& b : sem_badges) {
+  for (const auto& b : all_badges) {
     badges_total_w += badge_fm.horizontalAdvance(b) + badge_pad * 2 + badge_gap;
   }
 
   painter->setPen(Qt::white);
   painter->setFont(header_font_);
-  painter->drawText(QRectF(14, 0, sec_w - 28 - badges_total_w, kHeaderHeight),
+  painter->drawText(QRectF(12, 0, sec_w - 24 - badges_total_w, kHeaderHeight),
                     Qt::AlignVCenter | Qt::AlignLeft,
                     painter->fontMetrics().elidedText(
-                        title, Qt::ElideRight, sec_w - 28 - badges_total_w));
+                        title, Qt::ElideRight, sec_w - 24 - badges_total_w));
 
   painter->setFont(badge_font);
   int cur_x = sec_w - 8;
-  for (const auto& b : sem_badges) {
+  for (const auto& b : all_badges) {
     int badge_w = badge_fm.horizontalAdvance(b) + badge_pad * 2;
     cur_x -= badge_w;
     int badge_y = (kHeaderHeight - badge_h) / 2;
-
-    QColor badge_bg = highlighted_ ? QColor(255, 255, 255, 90)
-                                    : QColor(255, 255, 255, 45);
+    QColor badge_bg = QColor(255, 255, 255, 45);
     painter->setPen(Qt::NoPen);
     painter->setBrush(badge_bg);
     painter->drawRoundedRect(cur_x, badge_y, badge_w, badge_h, 4, 4);
-
-    painter->setPen(highlighted_ ? Qt::white : QColor(255, 255, 255, 230));
+    painter->setPen(QColor(255, 255, 255, 230));
     painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h),
                       Qt::AlignCenter, b);
     cur_x -= badge_gap;
   }
 
-  QRectF body(0, kBodyTop, node_ ? node_->bit_width() * cell_size_ : sec_w,
-              kBodyHeight - 16);
-  painter->setPen(QPen(dark ? QColor(70, 70, 75) : QColor(210, 210, 215), 1));
-  painter->setBrush(dark ? QColor(38, 38, 42) : QColor(252, 252, 253));
-  painter->drawRoundedRect(body, 6, 6);
+  // Outer frame border
+  QColor border_col = dark ? QColor(80, 80, 85) : QColor(200, 200, 205);
+  painter->setPen(QPen(border_col, 1));
+  painter->setBrush(Qt::NoBrush);
+  painter->drawRect(0, 0, sec_w - 1, sec_h - 1);
 
-  if (node_) {
-    painter->setFont(cell_font_);
-    painter->setPen(dark ? QColor(150, 150, 155) : QColor(110, 110, 115));
-    for (int bit = 0; bit < node_->bit_width(); ++bit) {
-      int x = bit * cell_size_;
-      painter->drawLine(x, kBodyTop, x, kBodyTop + kBodyHeight - 16);
-      painter->drawText(QRectF(x, kBodyTop + kBodyHeight - 16, cell_size_, 14),
-                        Qt::AlignCenter, QString::number(bit));
-    }
-  }
+  // Thin separator below header
+  painter->setPen(QPen(c2.lighter(150), 1));
+  painter->drawLine(1, kHeaderHeight, sec_w - 2, kHeaderHeight);
 
+  // Selection indicator on outer frame
   if (highlighted_) {
     painter->setPen(QPen(Qt::white, 2));
     painter->setBrush(Qt::NoBrush);
-    painter->drawRect(1, 1, sec_w - 2, sec_h - 2);
-  } else if (hovered_) {
-    painter->setPen(QPen(QColor(255, 255, 255, dark ? 55 : 110), 1));
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRect(1, 1, sec_w - 2, sec_h - 2);
+    painter->drawRect(1, 1, sec_w - 3, sec_h - 3);
   }
 }
 
