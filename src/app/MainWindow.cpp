@@ -1,4 +1,4 @@
-﻿#include "main_window.h"
+﻿#include "MainWindow.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -36,23 +36,17 @@
 #include <DockWidgetTab.h>
 #include "ActivityBarWidget.h"
 #include "AppIconProvider.h"
-#include "widgets/BottomContainerWidget.h"
 #include "EditorManager.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
-#include "widgets/HintBarWidget.h"
-#include "widgets/OutputPanel.h"
-#include "widgets/ProblemsPanel.h"
 #include "ProjectStructureWidget.h"
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
 #include "TestProgramManagerWidget.h"
-#include "TopologyManagerWidget.h"
-#include "editors/EditorFactory.h"
-#include "editors/TextEditorWidget.h"
 #include "ThemeManager.h"
+#include "TopologyManagerWidget.h"
 #include "WelcomeWidget.h"
 #include "api/IEditor.h"
 #include "auth/AuthService.h"
@@ -61,14 +55,21 @@
 #include "config/ConfigManager.h"
 #include "dialogs/NewProjectDialog.h"
 #include "dialogs/SettingsDialog.h"
+#include "editors/EditorFactory.h"
+#include "editors/TextEditorWidget.h"
 #include "logger/Logger.h"
 #include "logger/QtConsoleSink.h"
 #include "plugin/PluginManager.h"
 #include "project/ProjectManager.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
+#include "widgets/BottomContainerWidget.h"
+#include "widgets/HintBarWidget.h"
 #include "widgets/LoadingOverlay.h"
+#include "widgets/OutputPanel.h"
+#include "widgets/ProblemsPanel.h"
 #include "widgets/TuxSaverOverlay.h"
+
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -376,10 +377,10 @@ void MainWindow::initSignalsLate() {
             psWidget, &ProjectStructureWidget::refreshRecentProjects);
 
     // 已打开文件列表：同步 EditorManager 状态
-    connect(editor_manager_, &EditorManager::fileOpened,
-            psWidget, &ProjectStructureWidget::onFileOpened);
-    connect(editor_manager_, &EditorManager::fileClosed,
-            psWidget, &ProjectStructureWidget::onFileClosed);
+    connect(editor_manager_, &EditorManager::fileOpened, psWidget,
+            &ProjectStructureWidget::onFileOpened);
+    connect(editor_manager_, &EditorManager::fileClosed, psWidget,
+            &ProjectStructureWidget::onFileClosed);
     // 记录最近文件
     connect(editor_manager_, &EditorManager::fileOpened, this,
             [](const QString& path) {
@@ -398,95 +399,90 @@ void MainWindow::initSignalsLate() {
               cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_TIMESTAMPS),
                       timestamps);
             });
-    connect(&projectMgr,
-            &etest::core::project::ProjectManager::projectOpened,
+    connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
             psWidget, [this, psWidget]() {
               psWidget->setOpenFiles(editor_manager_->openFiles());
             });
-    connect(&projectMgr,
-            &etest::core::project::ProjectManager::projectClosed,
+    connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
             psWidget, [psWidget]() { psWidget->setOpenFiles({}); });
     // 点击已打开文件 → 激活编辑器
-    connect(psWidget, &ProjectStructureWidget::openFileActivateRequested,
-            this, [this](const QString& path) {
-              editor_manager_->openFile(path);
-            });
+    connect(psWidget, &ProjectStructureWidget::openFileActivateRequested, this,
+            [this](const QString& path) { editor_manager_->openFile(path); });
     // 右键关闭已打开文件
-    connect(psWidget, &ProjectStructureWidget::openFileCloseRequested,
-            this, [this](const QString& path) {
-              editor_manager_->closeFile(path);
-            });
+    connect(psWidget, &ProjectStructureWidget::openFileCloseRequested, this,
+            [this](const QString& path) { editor_manager_->closeFile(path); });
     // 点击最近文件 → 项目检测 + 打开
-    connect(psWidget, &ProjectStructureWidget::recentFileOpenRequested,
-            this, [this](const QString& path) {
-              QFileInfo fi(path);
-              if (!fi.exists()) {
-                // 文件已不存在，从最近文件列表中移除
-                auto& cfg = ConfigManager::instance();
-                QStringList files = cfg.get<QStringList>(
-                    QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
-                if (files.removeAll(path) > 0) {
-                  cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST), files);
-                }
-                return;
-              }
+    connect(
+        psWidget, &ProjectStructureWidget::recentFileOpenRequested, this,
+        [this](const QString& path) {
+          QFileInfo fi(path);
+          if (!fi.exists()) {
+            // 文件已不存在，从最近文件列表中移除
+            auto& cfg = ConfigManager::instance();
+            QStringList files = cfg.get<QStringList>(
+                QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
+            if (files.removeAll(path) > 0) {
+              cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST), files);
+            }
+            return;
+          }
 
-              // 向上遍历找 .etproj 项目文件
-              QString projFile = findProjectFile(fi.absolutePath());
-              if (projFile.isEmpty()) {
-                editor_manager_->openFile(path);
-                return;
-              }
+          // 向上遍历找 .etproj 项目文件
+          QString projFile = findProjectFile(fi.absolutePath());
+          if (projFile.isEmpty()) {
+            editor_manager_->openFile(path);
+            return;
+          }
 
-              QFileInfo projFi(projFile);
-              if (projFi.absolutePath() ==
-                  etest::core::project::ProjectManager::instance()
-                      .currentProjectRoot()) {
-                editor_manager_->openFile(path);
-                return;
-              }
+          QFileInfo projFi(projFile);
+          if (projFi.absolutePath() ==
+              etest::core::project::ProjectManager::instance()
+                  .currentProjectRoot()) {
+            editor_manager_->openFile(path);
+            return;
+          }
 
-              // 检查自动打开项目的配置
-              auto& cfg = ConfigManager::instance();
-              bool autoOpenProject = cfg.get<bool>(
-                  QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
-                  CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
-              auto& projMgr = etest::core::project::ProjectManager::instance();
+          // 检查自动打开项目的配置
+          auto& cfg = ConfigManager::instance();
+          bool autoOpenProject = cfg.get<bool>(
+              QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
+              CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
+          auto& projMgr = etest::core::project::ProjectManager::instance();
 
-              // 如果当前有项目打开，先关闭
-              if (projMgr.isProjectOpen()) {
-                if (!tryCloseCurrentProject()) return;
-              }
+          // 如果当前有项目打开，先关闭
+          if (projMgr.isProjectOpen()) {
+            if (!tryCloseCurrentProject())
+              return;
+          }
 
-              if (autoOpenProject) {
-                projMgr.openProject(projFile);
-                editor_manager_->openFile(path);
-                return;
-              }
+          if (autoOpenProject) {
+            projMgr.openProject(projFile);
+            editor_manager_->openFile(path);
+            return;
+          }
 
-              // 不同项目 → 弹对话框询问（含复选框）
-              QMessageBox msgBox;
-              msgBox.setWindowTitle(QStringLiteral("打开文件"));
-              msgBox.setText(
-                  QStringLiteral("此文件属于项目 \"%1\"，是否打开该项目？")
-                      .arg(projFi.completeBaseName()));
-              msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-              msgBox.setDefaultButton(QMessageBox::Yes);
+          // 不同项目 → 弹对话框询问（含复选框）
+          QMessageBox msgBox;
+          msgBox.setWindowTitle(QStringLiteral("打开文件"));
+          msgBox.setText(
+              QStringLiteral("此文件属于项目 \"%1\"，是否打开该项目？")
+                  .arg(projFi.completeBaseName()));
+          msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+          msgBox.setDefaultButton(QMessageBox::Yes);
 
-              auto* cb = new QCheckBox(
-                  QStringLiteral("以后始终打开所属项目，不再询问"));
-              msgBox.setCheckBox(cb);
+          auto* cb =
+              new QCheckBox(QStringLiteral("以后始终打开所属项目，不再询问"));
+          msgBox.setCheckBox(cb);
 
-              if (msgBox.exec() == QMessageBox::Yes) {
-                if (cb->isChecked()) {
-                  cfg.set(
-                      QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
+          if (msgBox.exec() == QMessageBox::Yes) {
+            if (cb->isChecked()) {
+              cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
                       true);
-                }
-                projMgr.openProject(projFile);
-              }
-              editor_manager_->openFile(path);
-            });
+            }
+            projMgr.openProject(projFile);
+          }
+          editor_manager_->openFile(path);
+        });
 
     // 拓扑管理器：双击文件打开编辑器
     if (auto* topoMgr = sidebar_->topologyManager()) {
@@ -495,8 +491,8 @@ void MainWindow::initSignalsLate() {
     }
 
     // 文件系统监控：目录内容变化时刷新对应管理器
-    connect(psWidget, &ProjectStructureWidget::directoryContentChanged,
-            this, [this](const QString& dirPath) {
+    connect(psWidget, &ProjectStructureWidget::directoryContentChanged, this,
+            [this](const QString& dirPath) {
               if (dirPath.endsWith(QStringLiteral("/protocol")) ||
                   dirPath.endsWith(QStringLiteral("\\protocol"))) {
                 sidebar_->protocolManager()->refreshList();
@@ -758,8 +754,8 @@ void MainWindow::initSignalsLate() {
     auto* hwPsWidget = qobject_cast<ProjectStructureWidget*>(
         sidebar_->pageById(PageId::kProjectOverview));
     if (hwPsWidget) {
-      connect(hwPsWidget,
-          &ProjectStructureWidget::hardwareDeviceNavigateRequested,
+      connect(
+          hwPsWidget, &ProjectStructureWidget::hardwareDeviceNavigateRequested,
           this, [this](const QString& deviceType, const QString& pluginId) {
             // 侧边栏切换到平台设备树页面
             sidebar_->switchPage(PageId::kHardware);
@@ -1191,9 +1187,8 @@ void MainWindow::onOpenFile() {
     lastPath = QDir::homePath();
   }
 
-  QString filePath =
-      QFileDialog::getOpenFileName(this, QStringLiteral("打开文件"), lastPath,
-                                   filter);
+  QString filePath = QFileDialog::getOpenFileName(
+      this, QStringLiteral("打开文件"), lastPath, filter);
   if (filePath.isEmpty())
     return;
 
@@ -1209,7 +1204,8 @@ QString MainWindow::findProjectFile(const QString& dirPath) {
     if (!entries.isEmpty()) {
       return dir.absoluteFilePath(entries.first());
     }
-    if (!dir.cdUp()) break;
+    if (!dir.cdUp())
+      break;
   }
   return {};
 }

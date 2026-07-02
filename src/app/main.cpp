@@ -3,6 +3,7 @@
 
 #include <QTranslator>
 #include "EditorManager.h"
+#include "MainWindow.h"
 #include "common/GlobalExceptionHandler.h"
 #include "common/SingleInstance.h"
 #include "config/ConfigManager.h"
@@ -10,7 +11,7 @@
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
 #include "logger/Logger.h"
-#include "main_window.h"
+
 
 // Debug 构建启用控制台，方便查看 spdlog 输出
 #ifdef _DEBUG
