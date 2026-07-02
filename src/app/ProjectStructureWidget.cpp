@@ -240,7 +240,8 @@ void ProjectStructureWidget::initUi() {
   tree_view_ = new QTreeView();
   tree_view_->setHeaderHidden(true);
   tree_view_->setAnimated(true);
-  tree_view_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  tree_view_->setEditTriggers(QAbstractItemView::SelectedClicked |
+                              QAbstractItemView::EditKeyPressed);
   tree_view_->setContextMenuPolicy(Qt::CustomContextMenu);
   tree_view_->setDragDropMode(QAbstractItemView::NoDragDrop);
   tree_view_->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -307,6 +308,11 @@ void ProjectStructureWidget::initSignals() {
   // 防抖定时器
   connect(debounce_timer_, &QTimer::timeout, this, [this]() {
     for (const auto& path : debounce_timer_queued_paths_) {
+      if (suppressed_watch_paths_.contains(path)) {
+        // 刚新建文件的目录,跳过 watcher 刷新以保护 inline editor
+        suppressed_watch_paths_.remove(path);
+        continue;
+      }
       refreshCategory(path);
       emit directoryContentChanged(path);
     }
@@ -773,6 +779,11 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
       QString relPath = item->data(RelativePathRole).toString();
       emit fileOpenRequested(absolutePath(relPath));
     } else if (chosen == renameAction) {
+      QString relPath = item->data(RelativePathRole).toString();
+      if (relPath.isEmpty()) {
+        return;
+      }
+      rename_old_path_ = absolutePath(relPath);
       tree_view_->edit(index);
     } else if (chosen == deleteAction) {
       deleteSelectedFile();
@@ -812,28 +823,58 @@ void ProjectStructureWidget::onItemChanged(QStandardItem* item) {
   if (item->data(NodeTypeRole).toString() != QStringLiteral("file"))
     return;
 
-  QString newRelPath = item->data(RelativePathRole).toString();
-  QDir projectDir(project_path_);
-  QString newPath = projectDir.absoluteFilePath(newRelPath);
-
-  // 检查是否真的发生了重命名（不是编辑器失焦等误触）
-  QFileInfo fi(newPath);
-  QString newFileName = fi.fileName();
-
-  // 更新相对路径
-  QString parentRelPath;
-  QStandardItem* parent = item->parent();
-  if (parent && parent != model_->invisibleRootItem()) {
-    QString catId = parent->data(CategoryIdRole).toString();
-    for (const auto& cat : defaultCategories()) {
-      if (cat.id == catId) {
-        parentRelPath = cat.dirPath;
-        break;
-      }
-    }
+  // 取出用户编辑后的文件名
+  QString newFileName = item->text().trimmed();
+  if (newFileName.isEmpty()) {
+    // 用户清空了文件名,取消编辑
+    QSignalBlocker blocker(model_);
+    item->setText(QFileInfo(rename_old_path_).fileName());
+    rename_old_path_.clear();
+    return;
   }
-  if (!parentRelPath.isEmpty()) {
-    item->setData(parentRelPath + newFileName, RelativePathRole);
+
+  QFileInfo oldFi(rename_old_path_);
+  QString oldFileName = oldFi.fileName();
+  if (newFileName == oldFileName) {
+    // 没有变化,直接重置
+    rename_old_path_.clear();
+    return;
+  }
+
+  // 构造新路径:目录不变,文件名更新
+  QString newPath = oldFi.absolutePath() + QStringLiteral("/") + newFileName;
+
+  // 检查源文件存在且目标不存在
+  QFile src(rename_old_path_);
+  if (!src.exists()) {
+    rename_old_path_.clear();
+    return;
+  }
+  if (QFile::exists(newPath)) {
+    // 目标已存在,还原
+    QSignalBlocker blocker(model_);
+    item->setText(oldFileName);
+    QMessageBox::warning(this, QStringLiteral("重命名失败"),
+                         QStringLiteral("目标文件已存在: %1").arg(newFileName));
+    rename_old_path_.clear();
+    return;
+  }
+
+  if (!src.rename(newPath)) {
+    QSignalBlocker blocker(model_);
+    item->setText(oldFileName);
+    QMessageBox::warning(this, QStringLiteral("重命名失败"),
+                         QStringLiteral("无法重命名文件: %1").arg(newFileName));
+    rename_old_path_.clear();
+    return;
+  }
+
+  // 更新 item 的 RelativePathRole
+  QDir projectDir(project_path_);
+  QString newRelPath = projectDir.relativeFilePath(newPath);
+  {
+    QSignalBlocker blocker(model_);
+    item->setData(newRelPath, RelativePathRole);
   }
 
   emit fileRenamed(rename_old_path_, newPath);
@@ -877,19 +918,53 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
 
   emit fileCreated(fullPath);
 
-  // 领域文件自动打开
-  if (!extension.isEmpty() && extension != QStringLiteral("json") &&
-      extension != QStringLiteral("lua")) {
-    emit fileOpenRequested(fullPath);
-  } else {
-    // 非领域文件进入重命名模式
-    QModelIndexList matches =
-        model_->match(model_->index(0, 0), RelativePathRole,
-                      QVariant::fromValue(targetDir + fileName), -1,
-                      Qt::MatchExactly | Qt::MatchRecursive);
-    if (!matches.isEmpty()) {
-      tree_view_->edit(matches.first());
+  // 短暂抑制该目录的 watcher 刷新,避免 200ms 后的 refreshCategory 重建 model
+  // 破坏刚打开的 inline editor(导致焦点丢失、editor 关闭)
+  suppressed_watch_paths_.insert(fullDir);
+  QTimer::singleShot(500, this, [this, fullDir]() {
+    suppressed_watch_paths_.remove(fullDir);
+  });
+
+  // 同步把新文件 item 添加到 model 对应分类下(避免依赖 QFileSystemWatcher 防抖刷新)
+  QString effectiveCatId = categoryId;
+  if (effectiveCatId.isEmpty()) {
+    effectiveCatId = QStringLiteral("other");
+  }
+  QString relPath = targetDir + fileName;
+
+  QStandardItem* catItem = nullptr;
+  if (root_item_) {
+    for (int i = 0; i < root_item_->rowCount(); ++i) {
+      auto* child = root_item_->child(i);
+      if (child->data(CategoryIdRole).toString() == effectiveCatId) {
+        catItem = child;
+        break;
+      }
     }
+  }
+
+  QStandardItem* newItem = nullptr;
+  if (catItem) {
+    newItem = createFileItem(fileName, relPath);
+    catItem->appendRow(newItem);
+    // 刷新分类标题中的文件计数
+    int fileCount = catItem->rowCount();
+    QString baseName = catItem->data(Qt::DisplayRole).toString();
+    int parenIdx = baseName.indexOf(QStringLiteral(" ("));
+    if (parenIdx > 0) {
+      baseName = baseName.left(parenIdx);
+    }
+    catItem->setText(baseName + QStringLiteral(" (") +
+                     QString::number(fileCount) + QStringLiteral(")"));
+  }
+
+  // 选中并进入重命名模式
+  if (newItem) {
+    QModelIndex newIndex = newItem->index();
+    tree_view_->setCurrentIndex(newIndex);
+    tree_view_->scrollTo(newIndex);
+    rename_old_path_ = fullPath;
+    tree_view_->edit(newIndex);
   }
 }
 
@@ -1029,7 +1104,7 @@ QStandardItem* ProjectStructureWidget::createFileItem(
   auto* item = new QStandardItem(fileName);
   item->setData(QStringLiteral("file"), NodeTypeRole);
   item->setData(relativePath, RelativePathRole);
-  item->setEditable(false);
+  item->setEditable(true);
 
   QFileInfo fi(fileName);
   QString suffix = fi.suffix().toLower();

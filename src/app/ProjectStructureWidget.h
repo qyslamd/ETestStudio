@@ -87,7 +87,7 @@ class ProjectStructureWidget : public QWidget {
   void onFileOpened(const QString& path);
   void onFileClosed(const QString& path);
 
- private slots:
+  private slots:
   void onCustomContextMenu(const QPoint& pos);
   void onItemDoubleClicked(const QModelIndex& index);
   void onItemChanged(QStandardItem* item);
@@ -154,6 +154,8 @@ class ProjectStructureWidget : public QWidget {
   QString project_path_;
   QStandardItem* root_item_ = nullptr;
   QSet<QString> debounce_timer_queued_paths_;
+  // 新建文件后,短时间内忽略该目录的 watcher 刷新(避免破坏刚打开的 inline editor)
+  QSet<QString> suppressed_watch_paths_;
 
   // 用于重命名时跟踪旧路径
   QString rename_old_path_;
