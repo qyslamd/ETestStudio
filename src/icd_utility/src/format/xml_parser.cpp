@@ -210,6 +210,12 @@ tl::expected<schema::SchemaConfig, Error> parse_xml_config(const std::filesystem
         if (auto order = parse_optional_int(file_info, "ByteOrder")) {
             entry.order = parse_byte_order(*order);
         }
+        if (auto enable = parse_optional_int(file_info, "Enable")) {
+            entry.enable = (*enable != 0);
+        }
+        if (auto word_type = parse_optional_int(file_info, "WordType")) {
+            entry.word_type = static_cast<unsigned int>(*word_type);
+        }
         entry.format = Format::xml;
         config.files.push_back(std::move(entry));
     }

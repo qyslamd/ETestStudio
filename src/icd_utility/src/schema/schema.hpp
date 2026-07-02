@@ -37,6 +37,9 @@ struct SchemaFileEntry {
     std::optional<FrameType> type;
     std::optional<ByteOrder> order;
     Format format {Format::auto_detect};
+    // 扩展元数据，用于 ICDConfig 写回保真
+    std::optional<bool> enable;
+    std::optional<unsigned int> word_type;
 };
 
 struct SchemaConfig {

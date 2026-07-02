@@ -281,6 +281,12 @@ tl::expected<schema::SchemaConfig, Error> parse_json_config(const std::filesyste
         if (auto it = file_info.find("byteOrder"); it != file_info.end() && it->is_number_integer()) {
             entry.order = (it->get<int>() == 1) ? ByteOrder::big_endian : ByteOrder::little_endian;
         }
+        if (auto it = file_info.find("enable"); it != file_info.end() && it->is_boolean()) {
+            entry.enable = it->get<bool>();
+        }
+        if (auto it = file_info.find("wordType"); it != file_info.end() && it->is_number_integer()) {
+            entry.word_type = static_cast<unsigned int>(it->get<int>());
+        }
         entry.format = Format::json;
         config.files.push_back(std::move(entry));
     }

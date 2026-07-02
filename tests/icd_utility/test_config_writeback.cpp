@@ -277,4 +277,108 @@ TEST_F(ConfigWritebackTest, FrameFileInfoDefaults) {
     EXPECT_EQ(info.type, FrameType::data);
     EXPECT_EQ(info.order, ByteOrder::little_endian);
     EXPECT_EQ(info.format, Format::xml);
+    EXPECT_TRUE(info.enable);
+    EXPECT_EQ(info.word_type, 0u);
+}
+
+// ── Test 8: Enable/WordType round-trip (XML) ───────────────────
+TEST_F(ConfigWritebackTest, XmlConfigPreservesEnableAndWordType) {
+    auto config_path = tempDir / "ICDConfig_enable.xml";
+    auto frame_path = tempDir / "frame_enable.xml";
+    writeXmlFrame(frame_path);
+
+    {
+        std::ofstream stream(config_path);
+        ASSERT_TRUE(stream.is_open());
+        stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+               << "<ICDConfig>\n"
+               << "  <Files>\n"
+               << "    <FileInfo>\n"
+               << "      <Name>TestFrame</Name>\n"
+               << "      <Path>frame_enable.xml</Path>\n"
+               << "      <ID>1</ID>\n"
+               << "      <Type>2</Type>\n"
+               << "      <Description>desc</Description>\n"
+               << "      <Enable>1</Enable>\n"
+               << "      <WordType>3</WordType>\n"
+               << "      <ByteOrder>1</ByteOrder>\n"
+               << "    </FileInfo>\n"
+               << "  </Files>\n"
+               << "</ICDConfig>\n";
+    }
+
+    auto result = Loader::init_with_metadata(config_path);
+    ASSERT_TRUE(result.has_value()) << result.error().message;
+    ASSERT_EQ(result->file_entries.size(), 1u);
+    EXPECT_TRUE(result->file_entries[0].enable);
+    EXPECT_EQ(result->file_entries[0].word_type, 3u);
+
+    // Write back and reload
+    auto write_result = serialize_xml_config(config_path, result->file_entries);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().message;
+
+    auto result2 = Loader::init_with_metadata(config_path);
+    ASSERT_TRUE(result2.has_value()) << result2.error().message;
+    ASSERT_EQ(result2->file_entries.size(), 1u);
+    EXPECT_TRUE(result2->file_entries[0].enable);
+    EXPECT_EQ(result2->file_entries[0].word_type, 3u);
+
+    // Verify raw XML contains the fields
+    std::ifstream in(config_path);
+    std::string content((std::istreambuf_iterator<char>(in)),
+                        std::istreambuf_iterator<char>());
+    EXPECT_NE(content.find("<Enable>1</Enable>"), std::string::npos);
+    EXPECT_NE(content.find("<WordType>3</WordType>"), std::string::npos);
+}
+
+// ── Test 9: Enable=false preserved ─────────────────────────────
+TEST_F(ConfigWritebackTest, XmlConfigPreservesDisabledFrame) {
+    auto config_path = tempDir / "ICDConfig_disabled.xml";
+    auto frame_path = tempDir / "frame_disabled.xml";
+    writeXmlFrame(frame_path);
+
+    {
+        std::ofstream stream(config_path);
+        ASSERT_TRUE(stream.is_open());
+        stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+               << "<ICDConfig>\n"
+               << "  <Files>\n"
+               << "    <FileInfo>\n"
+               << "      <Name>TestFrame</Name>\n"
+               << "      <Path>frame_disabled.xml</Path>\n"
+               << "      <ID>1</ID>\n"
+               << "      <Type>1</Type>\n"
+               << "      <Enable>0</Enable>\n"
+               << "      <ByteOrder>0</ByteOrder>\n"
+               << "    </FileInfo>\n"
+               << "  </Files>\n"
+               << "</ICDConfig>\n";
+    }
+
+    auto result = Loader::init_with_metadata(config_path);
+    ASSERT_TRUE(result.has_value()) << result.error().message;
+    ASSERT_EQ(result->file_entries.size(), 1u);
+    EXPECT_FALSE(result->file_entries[0].enable);
+
+    auto write_result = serialize_xml_config(config_path, result->file_entries);
+    ASSERT_TRUE(write_result.has_value());
+
+    std::ifstream in(config_path);
+    std::string content((std::istreambuf_iterator<char>(in)),
+                        std::istreambuf_iterator<char>());
+    EXPECT_NE(content.find("<Enable>0</Enable>"), std::string::npos);
+}
+
+// ── Test 10: Missing Enable defaults to true ───────────────────
+TEST_F(ConfigWritebackTest, XmlConfigMissingEnableDefaultsTrue) {
+    auto config_path = tempDir / "ICDConfig_noenable.xml";
+    auto frame_path = tempDir / "frame_noenable.xml";
+    writeXmlFrame(frame_path);
+    writeXmlConfig(config_path, "frame_noenable.xml");  // no Enable field
+
+    auto result = Loader::init_with_metadata(config_path);
+    ASSERT_TRUE(result.has_value()) << result.error().message;
+    ASSERT_EQ(result->file_entries.size(), 1u);
+    EXPECT_TRUE(result->file_entries[0].enable);
+    EXPECT_EQ(result->file_entries[0].word_type, 0u);
 }

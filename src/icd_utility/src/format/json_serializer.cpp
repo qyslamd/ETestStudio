@@ -243,6 +243,8 @@ tl::expected<void, Error> serialize_json_config(const std::filesystem::path& pat
         fi["type"] = type_int;
 
         fi["byteOrder"] = (entry.order == ByteOrder::big_endian) ? 1 : 0;
+        fi["enable"] = entry.enable;
+        fi["wordType"] = entry.word_type;
 
         files.push_back(std::move(fi));
     }

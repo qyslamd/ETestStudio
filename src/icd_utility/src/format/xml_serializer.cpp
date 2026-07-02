@@ -472,6 +472,10 @@ tl::expected<void, Error> serialize_xml_config(const std::filesystem::path& path
 
         int order_int = (entry.order == ByteOrder::big_endian) ? 1 : 0;
         fi.append_child("ByteOrder").text() = order_int;
+
+        // Preserve extended metadata for round-trip fidelity
+        fi.append_child("Enable").text() = entry.enable ? 1 : 0;
+        fi.append_child("WordType").text() = entry.word_type;
     }
 
     // Atomically write via temp file + rename

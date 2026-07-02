@@ -113,6 +113,8 @@ tl::expected<LoadResult, Error> Loader::init_with_metadata(const std::filesystem
         info.type = frame->type;
         info.order = frame->order;
         info.format = frame_format;
+        info.enable = file_entry.enable.value_or(true);
+        info.word_type = file_entry.word_type.value_or(0u);
         result.file_entries.push_back(std::move(info));
 
         merged.frames.push_back(std::move(*frame));
