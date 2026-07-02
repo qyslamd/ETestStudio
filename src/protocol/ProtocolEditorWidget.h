@@ -139,14 +139,18 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
 
   // Toolbar actions
   QAction* new_frame_action_ = nullptr;
+  QAction* add_node_action_ = nullptr;
+  QAction* delete_selected_action_ = nullptr;
   QAction* delete_frame_action_ = nullptr;
   QAction* undo_action_ = nullptr;
   QAction* redo_action_ = nullptr;
   QAction* node_tree_toggle_action_ = nullptr;
   QAction* property_toggle_action_ = nullptr;
+  QAction* preview_toggle_action_ = nullptr;
 
   icd::Repository repo_;
   icd::Frame* current_frame_ = nullptr;
+  const icd::Node* current_selected_node_ = nullptr;
 
   int load_generation_ = 0;
 

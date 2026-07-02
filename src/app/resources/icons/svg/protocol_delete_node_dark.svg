@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#ef5350" flood-opacity="0.3"/>
+    </filter>
+    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d2d2d" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#1e1e1e" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ef9a9a"/>
+      <stop offset="50%" stop-color="#ef5350"/>
+      <stop offset="100%" stop-color="#e53935"/>
+    </linearGradient>
+  </defs>
+  <!-- Card -->
+  <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#cardBg)" filter="url(#shadow)" stroke="#3c3c3c" stroke-width="0.5"/>
+  <!-- Node with X overlay (isometric) -->
+  <g transform="translate(5, 4) skewY(-6) skewX(3)">
+    <!-- Node field rectangle -->
+    <rect x="0" y="0" width="14" height="14" rx="2" fill="url(#nodeGrad)" opacity="0.9"/>
+    <rect x="2.5" y="2.5" width="9" height="1.2" rx="0.5" fill="#ffffff" opacity="0.5"/>
+    <rect x="2.5" y="5.5" width="7" height="1.2" rx="0.5" fill="#ffffff" opacity="0.5"/>
+    <rect x="2.5" y="8.5" width="8" height="1.2" rx="0.5" fill="#ffffff" opacity="0.5"/>
+    <!-- X mark overlay -->
+    <g opacity="0.6">
+      <rect x="10" y="0" width="2" height="14" rx="0.5" fill="#ffffff" transform="rotate(45 11 7)"/>
+      <rect x="10" y="0" width="2" height="14" rx="0.5" fill="#ffffff" transform="rotate(-45 11 7)"/>
+    </g>
+  </g>
+  <!-- × badge -->
+  <circle cx="17" cy="6" r="4.5" fill="#1e1e1e" stroke="#ef5350" stroke-width="1.2"/>
+  <path d="M15 4l4 4M19 4l-4 4" stroke="#ef5350" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

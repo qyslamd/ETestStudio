@@ -317,7 +317,8 @@ void IcdNodeTreeWidget::onContextMenu(const QPoint& pos) {
     connect(action, &QAction::triggered, this,
             &IcdNodeTreeWidget::addFrameRequested);
   } else {
-    auto* item = model_->itemFromIndex(index);
+    // 必须把 proxy index 映射到 source model，否则 itemFromIndex 返回 nullptr
+    auto* item = model_->itemFromIndex(proxy_->mapToSource(index));
     if (!item)
       return;
 

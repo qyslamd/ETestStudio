@@ -107,6 +107,12 @@
         <file>resources/icons/svg/protocol_node_tree_light.svg</file>
         <file>resources/icons/svg/protocol_property_dark.svg</file>
         <file>resources/icons/svg/protocol_property_light.svg</file>
+        <file>resources/icons/svg/protocol_add_node_dark.svg</file>
+        <file>resources/icons/svg/protocol_add_node_light.svg</file>
+        <file>resources/icons/svg/protocol_preview_dark.svg</file>
+        <file>resources/icons/svg/protocol_preview_light.svg</file>
+        <file>resources/icons/svg/protocol_delete_node_dark.svg</file>
+        <file>resources/icons/svg/protocol_delete_node_light.svg</file>
         <file>resources/icons/svg/testprogram_dark.svg</file>
         <file>resources/icons/svg/testprogram_light.svg</file>
         <file>resources/icons/svg/topo_align_left_dark.svg</file>

@@ -638,6 +638,24 @@ void ProtocolEditorWidget::initUi() {
 
   toolbar->addSeparator();
 
+  // 添加节点（当前选中字段下加子字段，无选中则在当前帧加根字段）
+  add_node_action_ =
+      new QAction(protoIcon(QStringLiteral("protocol_add_node")),
+                  QStringLiteral("+节点"), this);
+  add_node_action_->setToolTip(QStringLiteral("添加信号（选中帧→根字段，选中字段→子字段）"));
+  add_node_action_->setEnabled(false);
+  toolbar->addAction(add_node_action_);
+
+  // 删除选中节点
+  delete_selected_action_ =
+      new QAction(protoIcon(QStringLiteral("protocol_delete_node")),
+                  QStringLiteral("-选中"), this);
+  delete_selected_action_->setToolTip(QStringLiteral("删除选中的字段"));
+  delete_selected_action_->setEnabled(false);
+  toolbar->addAction(delete_selected_action_);
+
+  toolbar->addSeparator();
+
   // 撤销 / 重做
   undo_action_ = new QAction(protoIcon(QStringLiteral("undo")),
                              QStringLiteral("撤销"), this);
@@ -713,6 +731,14 @@ void ProtocolEditorWidget::initUi() {
   property_toggle_action_->setToolTip(QStringLiteral("显示/隐藏属性面板"));
   toolbar->addAction(property_toggle_action_);
 
+  preview_toggle_action_ =
+      new QAction(protoIcon(QStringLiteral("protocol_preview")),
+                  QStringLiteral("报文预览"), this);
+  preview_toggle_action_->setCheckable(true);
+  preview_toggle_action_->setChecked(true);
+  preview_toggle_action_->setToolTip(QStringLiteral("显示/隐藏报文预览"));
+  toolbar->addAction(preview_toggle_action_);
+
   // ── Dock: 节点列表 (左侧) ──
   node_tree_ = new IcdNodeTreeWidget(this);
   node_tree_->setMinimumWidth(200);
@@ -765,11 +791,17 @@ void ProtocolEditorWidget::initUi() {
 void ProtocolEditorWidget::initSignals() {
   // Frame selection from tree
   connect(node_tree_, &IcdNodeTreeWidget::frameSelected, this,
-          [this](icd::Frame* frame) { setCurrentFrame(frame); });
+          [this](icd::Frame* frame) {
+            current_selected_node_ = nullptr;
+            updateToolbar();
+            setCurrentFrame(frame);
+          });
 
   // Node selection from tree → property panel + bit view highlight
   connect(node_tree_, &IcdNodeTreeWidget::nodeSelected, this,
           [this](icd::Node* node) {
+            current_selected_node_ = node;
+            updateToolbar();
             if (node) {
               property_panel_->showNode(*node);
               bit_view_->highlightNode(node);
@@ -1006,6 +1038,48 @@ void ProtocolEditorWidget::initSignals() {
     redo_action_->setEnabled(canRedo());
   });
 
+  // ── Toolbar: 添加 / 删除 节点 ──
+  connect(add_node_action_, &QAction::triggered, this, [this]() {
+    if (!current_frame_) return;
+    saveSnapshot();
+    auto node = std::make_unique<icd::Node>(
+        "NewNode", "", 0, 0, 8, icd::ValueType::byte_, icd::Tag::none,
+        icd::NodeAttrs{});
+    if (current_selected_node_) {
+      const_cast<icd::Node*>(current_selected_node_)->add_child(std::move(node));
+    } else {
+      current_frame_->add_root(std::move(node));
+    }
+    refreshAndSelectFrame(current_frame_);
+    setModified(true);
+  });
+
+  connect(delete_selected_action_, &QAction::triggered, this, [this]() {
+    if (!current_frame_ || !current_selected_node_) return;
+    saveSnapshot();
+    auto* parent = const_cast<icd::Node*>(current_selected_node_->parent());
+    if (!parent) {
+      const auto& roots = current_frame_->roots();
+      for (std::size_t i = 0; i < roots.size(); ++i) {
+        if (roots[i].get() == current_selected_node_) {
+          current_frame_->remove_root(i);
+          break;
+        }
+      }
+    } else {
+      const auto& children = parent->children();
+      for (std::size_t i = 0; i < children.size(); ++i) {
+        if (children[i].get() == current_selected_node_) {
+          parent->remove_child(i);
+          break;
+        }
+      }
+    }
+    current_selected_node_ = nullptr;
+    refreshAndSelectFrame(current_frame_);
+    setModified(true);
+  });
+
   // ── Dock toggle actions ──
   connect(node_tree_toggle_action_, &QAction::toggled, this,
           [this](bool checked) { node_tree_dock_->setVisible(checked); });
@@ -1023,6 +1097,15 @@ void ProtocolEditorWidget::initSignals() {
             property_toggle_action_->blockSignals(true);
             property_toggle_action_->setChecked(visible);
             property_toggle_action_->blockSignals(false);
+          });
+
+  connect(preview_toggle_action_, &QAction::toggled, this,
+          [this](bool checked) { preview_dock_->setVisible(checked); });
+  connect(preview_dock_, &QDockWidget::visibilityChanged, this,
+          [this](bool visible) {
+            preview_toggle_action_->blockSignals(true);
+            preview_toggle_action_->setChecked(visible);
+            preview_toggle_action_->blockSignals(false);
           });
 
   // ── Context-menu from tree widget ──────────────────────────
@@ -1169,6 +1252,8 @@ void ProtocolEditorWidget::updateToolbar() {
     frame_type_combo_->setEnabled(true);
     byte_order_btn_->setEnabled(true);
     delete_frame_action_->setEnabled(true);
+    add_node_action_->setEnabled(true);
+    delete_selected_action_->setEnabled(current_selected_node_ != nullptr);
   } else {
     frame_name_label_->setText(QStringLiteral("(无帧)"));
     frame_id_label_->setText(QStringLiteral("ID: -"));
@@ -1176,6 +1261,8 @@ void ProtocolEditorWidget::updateToolbar() {
     frame_type_combo_->setEnabled(false);
     byte_order_btn_->setEnabled(false);
     delete_frame_action_->setEnabled(false);
+    add_node_action_->setEnabled(false);
+    delete_selected_action_->setEnabled(false);
   }
 }
 
@@ -1375,6 +1462,9 @@ void ProtocolEditorWidget::reloadToolbarIcons() {
   byte_order_btn_->setIcon(icon(QStringLiteral("protocol_byte_order")));
   node_tree_toggle_action_->setIcon(icon(QStringLiteral("protocol_node_tree")));
   property_toggle_action_->setIcon(icon(QStringLiteral("protocol_property")));
+  preview_toggle_action_->setIcon(icon(QStringLiteral("protocol_preview")));
+  add_node_action_->setIcon(icon(QStringLiteral("protocol_add_node")));
+  delete_selected_action_->setIcon(icon(QStringLiteral("protocol_delete_node")));
 }
 
 }  // namespace etest::protocol
