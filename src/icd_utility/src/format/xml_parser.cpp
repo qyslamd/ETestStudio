@@ -105,9 +105,24 @@ tl::expected<schema::SchemaNodeDef, Error> parse_node(const pugi::xml_node& item
     node.name = name.child_value();
     node.description = description.child_value();
 
-    auto is_scaled_value = parse_int(item, "IsScaled", file);
-    if (!is_scaled_value) return tl::make_unexpected(is_scaled_value.error());
-    node.attrs.is_scaled = (*is_scaled_value != 0);
+    // IsScaled 宽容解析：兼容 "0"/"1" 数字写法和 "true"/"false" 字符串写法
+    {
+        std::string raw = is_scaled.child_value();
+        // 去掉首尾空白
+        auto first = raw.find_first_not_of(" \t\r\n");
+        auto last = raw.find_last_not_of(" \t\r\n");
+        std::string trimmed = (first == std::string::npos)
+                                  ? std::string{}
+                                  : raw.substr(first, last - first + 1);
+        if (trimmed == "true" || trimmed == "1") {
+            node.attrs.is_scaled = true;
+        } else if (trimmed == "false" || trimmed == "0" || trimmed.empty()) {
+            node.attrs.is_scaled = false;
+        } else {
+            return tl::make_unexpected(
+                Error{ErrorCode::schema_error, "invalid IsScaled value", file, "IsScaled"});
+        }
+    }
 
     if (auto child = item.child("GroupName")) node.attrs.group_name = child.child_value();
     if (auto child = item.child("SystemName")) node.attrs.system_name = child.child_value();

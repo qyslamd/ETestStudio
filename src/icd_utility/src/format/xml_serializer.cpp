@@ -413,7 +413,7 @@ void serialize_legacy_node(const Node& node, pugi::xml_node& parent) {
     item.append_child("BitWidth").text()    = node.bit_width();
     item.append_child("Type").text()        = value_type_to_legacy_xml_string(node.value_type()).c_str();
     item.append_child("Tag").text()         = tag_to_legacy_int(node.tag());
-    item.append_child("IsScaled").text()    = node.attrs().is_scaled ? "true" : "false";
+    item.append_child("IsScaled").text()    = node.attrs().is_scaled ? 1 : 0;
 
     // Flat attributes (no Attrs wrapper in legacy format)
     const auto& attrs = node.attrs();

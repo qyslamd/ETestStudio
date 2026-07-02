@@ -311,81 +311,83 @@ tl::expected<void, Error> Node::set_value(NodeValue value) {
     }
 
     auto buffer = icd::span<std::byte>(frame_->decode_buffer_);
+    const ByteOrder effective_order =
+        (tag_ == Tag::big_endian_value) ? ByteOrder::big_endian : frame_->order();
 
     switch (value_type_) {
     case ValueType::boolean: {
         if (!std::holds_alternative<bool>(value) || bit_width_ != 1) {
             return make_decode_error("boolean node requires bool with width 1", "Node::set_value.boolean");
         }
-        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, frame_->order(), std::get<bool>(value) ? 1u : 0u);
+        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, effective_order, std::get<bool>(value) ? 1u : 0u);
         if (!result) return result;
         break;
     }
     case ValueType::word: {
-        if (!std::holds_alternative<std::uint16_t>(value) || bit_width_ != 16) {
-            return make_decode_error("word node requires uint16_t with width 16", "Node::set_value.word");
+        if (!std::holds_alternative<std::uint16_t>(value) || bit_width_ < 1 || bit_width_ > 16) {
+            return make_decode_error("word node requires uint16_t with width 1..16", "Node::set_value.word");
         }
-        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, frame_->order(), std::get<std::uint16_t>(value));
+        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, effective_order, std::get<std::uint16_t>(value));
         if (!result) return result;
         break;
     }
     case ValueType::smallint: {
-        if (!std::holds_alternative<std::int16_t>(value) || bit_width_ != 16) {
-            return make_decode_error("smallint node requires int16_t with width 16", "Node::set_value.smallint");
+        if (!std::holds_alternative<std::int16_t>(value) || bit_width_ < 1 || bit_width_ > 16) {
+            return make_decode_error("smallint node requires int16_t with width 1..16", "Node::set_value.smallint");
         }
         auto signed_value = static_cast<std::int64_t>(std::get<std::int16_t>(value));
         auto fits = ensure_signed_fits(signed_value, bit_width_, "Node::set_value.smallint");
         if (!fits) return fits;
-        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, frame_->order(), static_cast<std::uint64_t>(signed_value));
+        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, effective_order, static_cast<std::uint64_t>(signed_value));
         if (!result) return result;
         break;
     }
     case ValueType::longword: {
-        if (!std::holds_alternative<std::uint32_t>(value) || bit_width_ != 32) {
-            return make_decode_error("longword node requires uint32_t with width 32", "Node::set_value.longword");
+        if (!std::holds_alternative<std::uint32_t>(value) || bit_width_ < 1 || bit_width_ > 32) {
+            return make_decode_error("longword node requires uint32_t with width 1..32", "Node::set_value.longword");
         }
-        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, frame_->order(), std::get<std::uint32_t>(value));
+        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, effective_order, std::get<std::uint32_t>(value));
         if (!result) return result;
         break;
     }
     case ValueType::integer: {
-        if (!std::holds_alternative<std::int32_t>(value) || bit_width_ != 32) {
-            return make_decode_error("integer node requires int32_t with width 32", "Node::set_value.integer");
+        if (!std::holds_alternative<std::int32_t>(value) || bit_width_ < 1 || bit_width_ > 32) {
+            return make_decode_error("integer node requires int32_t with width 1..32", "Node::set_value.integer");
         }
         auto signed_value = static_cast<std::int64_t>(std::get<std::int32_t>(value));
         auto fits = ensure_signed_fits(signed_value, bit_width_, "Node::set_value.integer");
         if (!fits) return fits;
-        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, frame_->order(), static_cast<std::uint64_t>(signed_value));
+        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, effective_order, static_cast<std::uint64_t>(signed_value));
         if (!result) return result;
         break;
     }
     case ValueType::byte_: {
-        if (!std::holds_alternative<std::uint64_t>(value) || bit_width_ != 8) {
-            return make_decode_error("byte_ node requires uint64_t with width 8", "Node::set_value.byte");
+        if (!std::holds_alternative<std::uint64_t>(value) || bit_width_ < 1 || bit_width_ > 8) {
+            return make_decode_error("byte_ node requires uint64_t with width 1..8", "Node::set_value.byte");
         }
         auto raw = std::get<std::uint64_t>(value);
         auto fits = ensure_unsigned_fits(raw, bit_width_, "Node::set_value.byte");
         if (!fits) return fits;
-        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, frame_->order(), raw);
+        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, effective_order, raw);
         if (!result) return result;
         break;
     }
     case ValueType::shortint: {
-        if (!std::holds_alternative<std::int64_t>(value) || bit_width_ != 8) {
-            return make_decode_error("shortint node requires int64_t with width 8", "Node::set_value.shortint");
+        if (!std::holds_alternative<std::int64_t>(value) || bit_width_ < 1 || bit_width_ > 8) {
+            return make_decode_error("shortint node requires int64_t with width 1..8", "Node::set_value.shortint");
         }
         auto signed_value = std::get<std::int64_t>(value);
         auto fits = ensure_signed_fits(signed_value, bit_width_, "Node::set_value.shortint");
         if (!fits) return fits;
-        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, frame_->order(), static_cast<std::uint64_t>(signed_value));
+        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, effective_order, static_cast<std::uint64_t>(signed_value));
         if (!result) return result;
         break;
     }
     case ValueType::ulong_: {
-        if (!std::holds_alternative<std::uint64_t>(value) || bit_width_ != 64) {
-            return make_decode_error("ulong_ node requires uint64_t with width 64", "Node::set_value.ulong");
+        if (!std::holds_alternative<std::uint64_t>(value) || bit_width_ < 1 || bit_width_ > 64) {
+            return make_decode_error("ulong_ node requires uint64_t with width 1..64", "Node::set_value.ulong");
         }
-        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, frame_->order(), std::get<std::uint64_t>(value));
+        auto result = write_integer_bits(buffer, offset_, bit_offset_, bit_width_, effective_order, std::get<std::uint64_t>(value));
         if (!result) return result;
         break;
     }
@@ -509,6 +511,8 @@ void Node::mark_children_modified() noexcept {
 
 tl::expected<NodeValue, Error>
 Node::decode(icd::span<const std::byte> frame_bytes, ByteOrder frame_order) const {
+    const ByteOrder effective_order =
+        (tag_ == Tag::big_endian_value) ? ByteOrder::big_endian : frame_order;
     switch (value_type_) {
     case ValueType::boolean: {
         if (bit_width_ != 1) {
@@ -521,84 +525,84 @@ Node::decode(icd::span<const std::byte> frame_bytes, ByteOrder frame_order) cons
         return NodeValue{static_cast<bool>(*raw != 0)};
     }
     case ValueType::byte_: {
-        if (bit_width_ != 8) {
-            return make_decode_error("byte_ nodes must have width 8", "Node::decode.byte");
+        if (bit_width_ < 1 || bit_width_ > 8) {
+            return make_decode_error("byte_ nodes must have width 1..8", "Node::decode.byte");
         }
-        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!raw) {
             return tl::make_unexpected(raw.error());
         }
         return NodeValue{static_cast<std::uint64_t>(*raw)};
     }
     case ValueType::word: {
-        if (bit_width_ != 16) {
-            return make_decode_error("word nodes must have width 16", "Node::decode.word");
+        if (bit_width_ < 1 || bit_width_ > 16) {
+            return make_decode_error("word nodes must have width 1..16", "Node::decode.word");
         }
-        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!raw) {
             return tl::make_unexpected(raw.error());
         }
         return NodeValue{static_cast<std::uint16_t>(*raw)};
     }
     case ValueType::smallint: {
-        if (bit_width_ != 16) {
-            return make_decode_error("smallint nodes must have width 16", "Node::decode.smallint");
+        if (bit_width_ < 1 || bit_width_ > 16) {
+            return make_decode_error("smallint nodes must have width 1..16", "Node::decode.smallint");
         }
-        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!raw) {
             return tl::make_unexpected(raw.error());
         }
         return NodeValue{static_cast<std::int16_t>(sign_extend(*raw, bit_width_))};
     }
     case ValueType::longword: {
-        if (bit_width_ != 32) {
-            return make_decode_error("longword nodes must have width 32", "Node::decode.longword");
+        if (bit_width_ < 1 || bit_width_ > 32) {
+            return make_decode_error("longword nodes must have width 1..32", "Node::decode.longword");
         }
-        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!raw) {
             return tl::make_unexpected(raw.error());
         }
         return NodeValue{static_cast<std::uint32_t>(*raw)};
     }
     case ValueType::integer: {
-        if (bit_width_ != 32) {
-            return make_decode_error("integer nodes must have width 32", "Node::decode.integer");
+        if (bit_width_ < 1 || bit_width_ > 32) {
+            return make_decode_error("integer nodes must have width 1..32", "Node::decode.integer");
         }
-        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!raw) {
             return tl::make_unexpected(raw.error());
         }
         return NodeValue{static_cast<std::int32_t>(sign_extend(*raw, bit_width_))};
     }
     case ValueType::ulong_: {
-        if (bit_width_ != 64) {
-            return make_decode_error("ulong_ nodes must have width 64", "Node::decode.ulong");
+        if (bit_width_ < 1 || bit_width_ > 64) {
+            return make_decode_error("ulong_ nodes must have width 1..64", "Node::decode.ulong");
         }
-        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!raw) {
             return tl::make_unexpected(raw.error());
         }
         return NodeValue{static_cast<std::uint64_t>(*raw)};
     }
     case ValueType::shortint: {
-        if (bit_width_ != 8) {
-            return make_decode_error("shortint nodes must have width 8", "Node::decode.shortint");
+        if (bit_width_ < 1 || bit_width_ > 8) {
+            return make_decode_error("shortint nodes must have width 1..8", "Node::decode.shortint");
         }
-        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto raw = read_integer_bits(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!raw) {
             return tl::make_unexpected(raw.error());
         }
         return NodeValue{sign_extend(*raw, bit_width_)};
     }
     case ValueType::single: {
-        auto value = read_floating<float>(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto value = read_floating<float>(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!value) {
             return tl::make_unexpected(value.error());
         }
         return NodeValue{*value};
     }
     case ValueType::double_: {
-        auto value = read_floating<double>(frame_bytes, offset_, bit_offset_, bit_width_, frame_order);
+        auto value = read_floating<double>(frame_bytes, offset_, bit_offset_, bit_width_, effective_order);
         if (!value) {
             return tl::make_unexpected(value.error());
         }

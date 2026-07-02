@@ -252,11 +252,70 @@ TEST(NodeValueTest, DecodeUnknownType) {
 }
 
 TEST(NodeValueTest, DecodeWordWrongWidth) {
-    icd::Node node("bad-word", "", 0, 0, 8, icd::ValueType::word, icd::Tag::none, {});
-    const std::array<std::byte, 1> frame{std::byte{0x01}};
+    icd::Node node("bad-word", "", 0, 0, 17, icd::ValueType::word, icd::Tag::none, {});
+    const std::array<std::byte, 4> frame{std::byte{0x01}, std::byte{0x00}, std::byte{0x00}, std::byte{0x00}};
     auto value = node.decode(frame, icd::ByteOrder::little_endian);
     ASSERT_FALSE(value.has_value());
     EXPECT_EQ(value.error().code, icd::ErrorCode::invalid_argument);
+}
+
+// ── 第三阶段：可变 bit width decode ──
+
+TEST(NodeValueTest, DecodeByteWithTwoBits) {
+    icd::Node node("sdi", "", 1, 0, 2, icd::ValueType::byte_, icd::Tag::none, {});
+    const std::array<std::byte, 2> frame{std::byte{0x00}, std::byte{0b00000011}};
+    auto value = node.decode(frame, icd::ByteOrder::little_endian);
+    ASSERT_TRUE(value.has_value());
+    ASSERT_TRUE(std::holds_alternative<std::uint64_t>(*value));
+    EXPECT_EQ(std::get<std::uint64_t>(*value), static_cast<std::uint64_t>(3));
+}
+
+TEST(NodeValueTest, DecodeIntegerWithNineteenBitsSigned) {
+    // 19-bit field at offset 1, start_bit 2 → absolute bits 10..28
+    icd::Node node("data", "", 1, 2, 19, icd::ValueType::integer, icd::Tag::none, {});
+    // byte1 bits 2..7 = 0xFC, byte2 = 0xFF, byte3 bits 0..4 = 0x1F → all 19 bits set → -1
+    const std::array<std::byte, 4> frame{std::byte{0x00}, std::byte{0xFC}, std::byte{0xFF}, std::byte{0x1F}};
+    auto value = node.decode(frame, icd::ByteOrder::little_endian);
+    ASSERT_TRUE(value.has_value());
+    ASSERT_TRUE(std::holds_alternative<std::int32_t>(*value));
+    EXPECT_EQ(std::get<std::int32_t>(*value), static_cast<std::int32_t>(-1));
+}
+
+TEST(NodeValueTest, DecodeWordWithSixBits) {
+    // 6-bit field at offset 1, start_bit 3 → absolute bits 11..16 (spans byte 1 and byte 2)
+    icd::Node node("c_n0", "", 1, 3, 6, icd::ValueType::word, icd::Tag::none, {});
+    const std::array<std::byte, 3> frame{std::byte{0x00}, std::byte{0b11111000}, std::byte{0b00000001}};
+    auto value = node.decode(frame, icd::ByteOrder::little_endian);
+    ASSERT_TRUE(value.has_value());
+    ASSERT_TRUE(std::holds_alternative<std::uint16_t>(*value));
+    EXPECT_EQ(std::get<std::uint16_t>(*value), static_cast<std::uint16_t>(0x3F));
+}
+
+// ── node-level big endian override ──
+
+TEST(NodeValueTest, NodeLevelBigEndianOverridesLittleEndianFrame) {
+    icd::Node node("be-word", "", 0, 0, 16, icd::ValueType::word, icd::Tag::big_endian_value, {});
+    const std::array<std::byte, 2> frame{std::byte{0x12}, std::byte{0x34}};
+    auto value = node.decode(frame, icd::ByteOrder::little_endian);
+    ASSERT_TRUE(value.has_value());
+    ASSERT_TRUE(std::holds_alternative<std::uint16_t>(*value));
+    EXPECT_EQ(std::get<std::uint16_t>(*value), static_cast<std::uint16_t>(0x1234));
+}
+
+// ── bit field set_value ──
+
+TEST(NodeValueTest, SetValueOnTwoBitByteField) {
+    icd::Frame frame(1, "f", "", icd::FrameType::data, icd::ByteOrder::little_endian);
+    auto node = make_node("sdi", 0, 0, 2, icd::ValueType::byte_);
+    auto* node_ptr = node.get();
+    frame.add_root(std::move(node));
+    const std::array<std::byte, 1> payload{std::byte{0x00}};
+    ASSERT_TRUE(frame.decode(payload, icd::DecodeMode::eager).has_value());
+    ASSERT_TRUE(node_ptr->set_value(icd::NodeValue{static_cast<std::uint64_t>(3)}).has_value());
+    auto value = node_ptr->get_value();
+    ASSERT_TRUE(value.has_value());
+    ASSERT_TRUE(std::holds_alternative<std::uint64_t>(**value));
+    EXPECT_EQ(std::get<std::uint64_t>(**value), static_cast<std::uint64_t>(3));
 }
 
 int main(int argc, char** argv) {
