@@ -26,21 +26,6 @@ QDoubleSpinBox:disabled {
     color: #AAAAAA;
     border-color: #E0E0E0;
 }
-QDoubleSpinBox::up-button,
-QDoubleSpinBox::down-button {
-    background-color: #F5F5F5;
-    border: none;
-    width: 16px;
-}
-QDoubleSpinBox::up-button:hover,
-QDoubleSpinBox::down-button:hover {
-    background-color: #E0E0E0;
-}
-QDoubleSpinBox::up-button:pressed,
-QDoubleSpinBox::down-button:pressed {
-    background-color: #D0D0D0;
-}
-
 /* ==================== QScrollBar ==================== */
 QScrollBar:vertical {
     background-color: #F0F0F0;
@@ -831,7 +816,6 @@ etest--app--SettingsDialog QSpinBox::up-button:hover,
 etest--app--SettingsDialog QSpinBox::down-button:hover {
     background-color: #E0E0E0;
 }
-
 /* 下拉框 */
 etest--app--SettingsDialog QComboBox {
     background-color: #FFFFFF;
@@ -850,6 +834,11 @@ etest--app--SettingsDialog QComboBox::drop-down {
     background-color: transparent;
     border: none;
     width: 20px;
+}
+etest--app--SettingsDialog QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+    image: url(:/resources/icons/svg/drop_down_arrow_light.svg);
 }
 QComboBox QAbstractItemView {
     background-color: #FFFFFF;

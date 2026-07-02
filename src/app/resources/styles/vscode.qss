@@ -368,6 +368,11 @@ QComboBox:hover {
 QComboBox::drop-down {
     border: none;
 }
+QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+    image: url(:/resources/icons/svg/drop_down_arrow_dark.svg);
+}
 QComboBox QAbstractItemView {
     background-color: #252526;
     color: #CCCCCC;
@@ -407,26 +412,6 @@ QDoubleSpinBox:disabled {
     color: #5A5A5A;
     border-color: #2D2D2D;
 }
-QDoubleSpinBox::up-button,
-QDoubleSpinBox::down-button {
-    background-color: #3C3C3C;
-    border: none;
-    width: 16px;
-}
-QDoubleSpinBox::up-button:hover,
-QDoubleSpinBox::down-button:hover {
-    background-color: #505050;
-}
-QDoubleSpinBox::up-button:pressed,
-QDoubleSpinBox::down-button:pressed {
-    background-color: #2D2D2D;
-}
-QDoubleSpinBox::up-arrow,
-QDoubleSpinBox::down-arrow {
-    width: 8px;
-    height: 8px;
-}
-
 /* CheckBox */
 QCheckBox {
     color: #CCCCCC;
@@ -1293,6 +1278,11 @@ etest--app--SettingsDialog QComboBox::drop-down {
     background-color: #3C3C3C;
     border: none;
     width: 20px;
+}
+etest--app--SettingsDialog QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+    image: url(:/resources/icons/svg/drop_down_arrow_dark.svg);
 }
 QComboBox QAbstractItemView {
     background-color: #252526;
