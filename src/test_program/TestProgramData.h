@@ -74,7 +74,7 @@ struct TestCaseData {
   QVector<TestStepData> steps;
 };
 
-// ── 测试程序（对应一个 .tcase 文件） ──
+// ── 测试程序（对应一个 .etprog 文件） ──
 struct TestProgramData {
   QString name;
   QString description;

@@ -79,7 +79,7 @@ void TestProgramManagerWidget::refreshList() {
   if (!project) return;
 
   const QStringList tcaseFiles = project->scanDirectory(
-      QStringLiteral("cases"), QStringLiteral("tcase"));
+      QStringLiteral("cases"), QStringLiteral("etprog"));
   for (const QString& absPath : tcaseFiles) {
     auto* item = new QTreeWidgetItem(tree_);
     item->setText(0, QFileInfo(absPath).completeBaseName());
@@ -162,7 +162,7 @@ void TestProgramManagerWidget::onNewTestProgram() {
   if (!ok || name.trimmed().isEmpty()) return;
 
   name = name.trimmed();
-  QString fileName = name + QStringLiteral(".tcase");
+  QString fileName = name + QStringLiteral(".etprog");
   QString dirPath = QDir(rootPath).absoluteFilePath(QStringLiteral("cases"));
   QDir casesDir(dirPath);
   if (!casesDir.exists()) {
@@ -204,7 +204,7 @@ bool TestProgramManagerWidget::renameTestProgramFile(const QString& oldPath) {
   if (!ok || newName.trimmed().isEmpty()) return false;
 
   newName = newName.trimmed();
-  QString newFileName = newName + QStringLiteral(".tcase");
+  QString newFileName = newName + QStringLiteral(".etprog");
   QFileInfo fi(oldPath);
   QString newPath = fi.absolutePath() + QStringLiteral("/") + newFileName;
 

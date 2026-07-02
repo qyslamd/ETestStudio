@@ -80,7 +80,7 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerExtension("etopo", "topology");
   EditorFactoryRegistry::registerExtension("eproto", "protocol");
   EditorFactoryRegistry::registerExtension("eprotox", "protocol");
-  EditorFactoryRegistry::registerExtension("tcase", "testprogram");
+  EditorFactoryRegistry::registerExtension("etprog", "testprogram");
 
   EditorFactoryRegistry::registerExtension("png", "image");
   EditorFactoryRegistry::registerExtension("jpg", "image");

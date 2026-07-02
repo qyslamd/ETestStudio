@@ -875,7 +875,7 @@ void MainWindow::lazyInit() {
                            QStringLiteral("hardware"));
     activity_bar_->addPage(PageId::kProtocol, QStringLiteral("协议"),
                            QStringLiteral("protocol"));
-    activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("用例"),
+    activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("测试程序"),
                            QStringLiteral("testprogram"));
     activity_bar_->addPage(PageId::kRun, QStringLiteral("运行"),
                            QStringLiteral("debug"));
@@ -897,7 +897,7 @@ void MainWindow::lazyInit() {
                       QStringLiteral("协议"));
     sidebar_->addPage(PageId::kTestProgram,
                       new TestProgramManagerWidget(sidebar_),
-                      QStringLiteral("用例"));
+                      QStringLiteral("测试程序"));
     sidebar_->addPage(PageId::kRun, new QWidget(sidebar_),
                       QStringLiteral("运行"));
     sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),

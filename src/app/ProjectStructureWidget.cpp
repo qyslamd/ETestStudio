@@ -446,9 +446,9 @@ QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
       {QStringLiteral("topology"), QStringLiteral("拓扑"),
        QStringLiteral("topology/"), QStringLiteral("topo_tap"),
        QStringLiteral("etopo"), QStringLiteral("新建拓扑文件")},
-      {QStringLiteral("testprog"), QStringLiteral("用例"),
+      {QStringLiteral("testprog"), QStringLiteral("测试程序"),
        QStringLiteral("cases/"), QStringLiteral("testprogram"),
-       QStringLiteral("tcase"), QStringLiteral("新建测试用例")},
+       QStringLiteral("etprog"), QStringLiteral("新建测试程序")},
       {QStringLiteral("script"), QStringLiteral("脚本"),
        QStringLiteral("scripts/"), QStringLiteral("file_lua"),
        QStringLiteral("lua"), QStringLiteral("新建脚本")},
@@ -903,7 +903,7 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
   QString fullPath = QDir(fullDir).absoluteFilePath(fileName);
 
   bool created = false;
-  if (extension == QStringLiteral("tcase")) {
+  if (extension == QStringLiteral("etprog")) {
     created = saveDefaultTestProgram(fullPath);
   } else {
     QFile file(fullPath);
