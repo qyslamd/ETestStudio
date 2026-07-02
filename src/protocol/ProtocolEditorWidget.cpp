@@ -26,6 +26,7 @@
 
 #include "AppIconProvider.h"
 #include "IcdBitLayoutView.h"
+#include "IcdFramePreviewPanel.h"
 #include "IcdNodeTreeWidget.h"
 #include "IcdPropertyPanel.h"
 #include "ThemeManager.h"
@@ -732,14 +733,26 @@ void ProtocolEditorWidget::initUi() {
   property_dock_->setWidget(property_panel_);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
 
+  // ── Dock: 报文预览 (底部) ──
+  preview_panel_ = new IcdFramePreviewPanel(this);
+  preview_panel_->setMinimumHeight(120);
+  preview_panel_->setObjectName(QStringLiteral("protocolPreviewPanel"));
+
+  preview_dock_ = new QDockWidget(QStringLiteral("报文预览"), this);
+  preview_dock_->setObjectName(QStringLiteral("protocolPreviewDock"));
+  preview_dock_->setWidget(preview_panel_);
+  addDockWidget(Qt::BottomDockWidgetArea, preview_dock_);
+
   // Custom title bars for full control over button size and icon
   node_tree_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
       QStringLiteral("节点列表"), node_tree_dock_));
   property_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
       QStringLiteral("属性面板"), property_dock_));
+  preview_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
+      QStringLiteral("报文预览"), preview_dock_));
 
   // Dock features: 允许关闭/浮动/拖拽/标签页组合
-  for (auto* dock : {node_tree_dock_, property_dock_}) {
+  for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
     dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
   }
 
@@ -794,6 +807,18 @@ void ProtocolEditorWidget::initSignals() {
               return;
             }
             node_tree_->revealNode(node);
+          });
+
+  // 报文预览选中行 → 联动位布局高亮 + 节点树选中 + 属性面板
+  connect(preview_panel_, &IcdFramePreviewPanel::nodeActivated, this,
+          [this](const icd::Node* node) {
+            if (!current_frame_ || !node) {
+              return;
+            }
+            bit_view_->highlightNode(node);
+            node_tree_->selectNode(node);
+            auto* editable_node = const_cast<icd::Node*>(node);
+            property_panel_->showNode(*editable_node);
           });
 
   // Bit node context menu actions
@@ -1165,6 +1190,7 @@ void ProtocolEditorWidget::setCurrentFrame(icd::Frame* frame) {
   if (frame) {
     bit_view_->loadFromFrame(*frame);
     property_panel_->showFrame(*frame);
+    preview_panel_->setFrame(frame);
     showStatusMessage(
         QStringLiteral("Frame: %1  |  ID: %2")
             .arg(QString::fromStdString(std::string(frame->name())))
@@ -1172,6 +1198,7 @@ void ProtocolEditorWidget::setCurrentFrame(icd::Frame* frame) {
   } else {
     bit_view_->clearBlocks();
     property_panel_->clear();
+    preview_panel_->setFrame(nullptr);
     showStatusMessage(QStringLiteral("就绪"));
   }
   updateToolbar();

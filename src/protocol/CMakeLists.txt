@@ -11,6 +11,10 @@ add_library(${TARGET_NAME} STATIC
     IcdPropertyPanel.cpp
     IcdProtocolUtils.h
     IcdProtocolUtils.cpp
+    IcdFramePreview.h
+    IcdFramePreview.cpp
+    IcdFramePreviewPanel.h
+    IcdFramePreviewPanel.cpp
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC

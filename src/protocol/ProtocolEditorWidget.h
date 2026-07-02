@@ -29,6 +29,7 @@ namespace etest::protocol {
 class IcdNodeTreeWidget;
 class IcdBitLayoutView;
 class IcdPropertyPanel;
+class IcdFramePreviewPanel;
 
 class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   Q_OBJECT
@@ -121,11 +122,13 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   // Dock widgets
   QDockWidget* node_tree_dock_ = nullptr;
   QDockWidget* property_dock_ = nullptr;
+  QDockWidget* preview_dock_ = nullptr;
 
   // Panels (owned by docks)
   IcdNodeTreeWidget* node_tree_ = nullptr;
   IcdBitLayoutView* bit_view_ = nullptr;
   IcdPropertyPanel* property_panel_ = nullptr;
+  IcdFramePreviewPanel* preview_panel_ = nullptr;
 
   // Toolbar widgets
   QLabel* frame_name_label_ = nullptr;
