@@ -29,7 +29,7 @@ void StepDetailPanel::setupUi() {
   layout->setSpacing(4);
 
   auto* title = new QLabel(QStringLiteral("步骤详情"), this);
-  title->setStyleSheet(QStringLiteral("font-weight: bold;"));
+  title->setObjectName(QStringLiteral("stepDetailTitle"));
   layout->addWidget(title);
 
   stack_ = new QStackedWidget(this);
@@ -52,8 +52,8 @@ QWidget* StepDetailPanel::createEmptyPage() {
   auto* page = new QWidget(this);
   auto* layout = new QVBoxLayout(page);
   empty_label_ = new QLabel(QStringLiteral("选择一个步骤以查看详情"), page);
+  empty_label_->setObjectName(QStringLiteral("stepDetailEmptyLabel"));
   empty_label_->setAlignment(Qt::AlignCenter);
-  empty_label_->setStyleSheet(QStringLiteral("color: #888;"));
   layout->addWidget(empty_label_);
   return page;
 }

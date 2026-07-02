@@ -822,6 +822,12 @@ StepDetailPanel QLabel {
     color: #CCCCCC;
     font-size: 12px;
 }
+#stepDetailTitle {
+    font-weight: bold;
+}
+#stepDetailEmptyLabel {
+    color: #888;
+}
 
 StepDetailPanel QDoubleSpinBox,
 StepDetailPanel QLineEdit,

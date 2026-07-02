@@ -5,6 +5,9 @@
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
@@ -18,12 +21,13 @@
 #include <QTextEdit>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <QDockWidget>
 #include <QWidget>
-#include <QSplitter>
 
 #include "CommandTypeDelegate.h"
 #include "StepDetailPanel.h"
 #include "StepValidation.h"
+#include "libui/dock_title_bar/DockTitleBar.h"
 
 namespace etest::app {
 
@@ -38,6 +42,36 @@ enum StepCol {
   kColTimeout = 6,    // 超时ms
   kStepColumnCount = 7
 };
+
+// ── subSteps 序列化辅助（QVector<TestStepData> → JSON → QByteArray） ──
+// QVector<TestStepData> 无法直接存入 QVariant，序列化为 JSON 字符串绕开此限制
+static QJsonArray subStepsToJsonArray(const QVector<TestStepData>& steps) {
+  QJsonArray arr;
+  for (const auto& s : steps) {
+    arr.append(testStepToJson(s));
+  }
+  return arr;
+}
+
+static QVector<TestStepData> subStepsFromJsonArray(const QJsonArray& arr) {
+  QVector<TestStepData> steps;
+  for (const auto& v : arr) {
+    steps.append(testStepFromJson(v.toObject()));
+  }
+  return steps;
+}
+
+static QByteArray serializeSubSteps(const QVector<TestStepData>& steps) {
+  return QJsonDocument(subStepsToJsonArray(steps)).toJson(QJsonDocument::Compact);
+}
+
+static QVector<TestStepData> deserializeSubSteps(const QByteArray& data) {
+  QJsonDocument doc = QJsonDocument::fromJson(data);
+  if (doc.isArray()) {
+    return subStepsFromJsonArray(doc.array());
+  }
+  return {};
+}
 
 TestProgramEditorWidget::TestProgramEditorWidget(const QString& filePath,
                                                  QWidget* parent)
@@ -133,29 +167,11 @@ void TestProgramEditorWidget::initUi() {
 
   auto* content = new QWidget(this);
   auto* main_layout = new QVBoxLayout(content);
-  main_layout->setContentsMargins(8, 8, 8, 8);
-  main_layout->setSpacing(8);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setSpacing(0);
 
-  // ── 套件信息 ──
-  auto* info_layout = new QHBoxLayout();
-  info_layout->setSpacing(8);
-
-  auto* name_label = new QLabel(QStringLiteral("套件名称:"), content);
-  suite_name_edit_ = new QLineEdit(content);
-  info_layout->addWidget(name_label);
-  info_layout->addWidget(suite_name_edit_, 1);
-
-  main_layout->addLayout(info_layout);
-
-  suite_desc_edit_ = new QTextEdit(content);
-  suite_desc_edit_->setPlaceholderText(QStringLiteral("套件描述..."));
-  suite_desc_edit_->setMaximumHeight(60);
-  main_layout->addWidget(suite_desc_edit_);
-
-  // ── 垂直分割：步骤表格 + 详情面板 ──
-  splitter_ = new QSplitter(Qt::Vertical, content);
-
-  tab_widget_ = new QTabWidget(splitter_);
+  // ── Central：步骤表格 + 校验状态 ──
+  tab_widget_ = new QTabWidget(content);
   tab_widget_->tabBar()->installEventFilter(this);
 
   setup_table_ = createStepTable(CommandTypeDelegate::Full);
@@ -164,15 +180,7 @@ void TestProgramEditorWidget::initUi() {
   teardown_table_ = createStepTable(CommandTypeDelegate::Full);
   tab_widget_->addTab(teardown_table_, QStringLiteral("Teardown"));
 
-  step_detail_panel_ = new StepDetailPanel(splitter_);
-  step_detail_panel_->setVisible(false);
-
-  splitter_->addWidget(tab_widget_);
-  splitter_->addWidget(step_detail_panel_);
-  splitter_->setStretchFactor(0, 3);
-  splitter_->setStretchFactor(1, 2);
-
-  main_layout->addWidget(splitter_, 1);
+  main_layout->addWidget(tab_widget_, 1);
 
   // ── 校验状态栏 ──
   validation_label_ = new QLabel(content);
@@ -181,6 +189,43 @@ void TestProgramEditorWidget::initUi() {
   main_layout->addWidget(validation_label_);
 
   setCentralWidget(content);
+
+  // ── Info Dock：套件名称 + 描述 ──
+  auto* info_widget = new QWidget(this);
+  auto* info_layout = new QVBoxLayout(info_widget);
+  info_layout->setContentsMargins(8, 8, 8, 8);
+  info_layout->setSpacing(6);
+
+  auto* name_label = new QLabel(QStringLiteral("套件名称:"), info_widget);
+  suite_name_edit_ = new QLineEdit(info_widget);
+  info_layout->addWidget(name_label);
+  info_layout->addWidget(suite_name_edit_);
+
+  auto* desc_label = new QLabel(QStringLiteral("描述:"), info_widget);
+  suite_desc_edit_ = new QTextEdit(info_widget);
+  suite_desc_edit_->setPlaceholderText(QStringLiteral("套件描述..."));
+  suite_desc_edit_->setMaximumHeight(80);
+  info_layout->addWidget(desc_label);
+  info_layout->addWidget(suite_desc_edit_);
+  info_layout->addStretch();
+
+  info_dock_ = new QDockWidget(QStringLiteral("套件信息"), this);
+  info_dock_->setObjectName(QStringLiteral("testProgramInfoDock"));
+  info_dock_->setWidget(info_widget);
+  info_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
+  info_dock_->setTitleBarWidget(
+      new ::etest::ui::DockTitleBar(QStringLiteral("套件信息"), info_dock_));
+  addDockWidget(Qt::RightDockWidgetArea, info_dock_);
+
+  // ── Detail Dock：步骤详情（常驻显示） ──
+  step_detail_panel_ = new StepDetailPanel(this);
+  detail_dock_ = new QDockWidget(QStringLiteral("步骤详情"), this);
+  detail_dock_->setObjectName(QStringLiteral("testProgramDetailDock"));
+  detail_dock_->setWidget(step_detail_panel_);
+  detail_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
+  detail_dock_->setTitleBarWidget(
+      new ::etest::ui::DockTitleBar(QStringLiteral("步骤详情"), detail_dock_));
+  addDockWidget(Qt::RightDockWidgetArea, detail_dock_);
   updateActions();
 }
 
@@ -266,8 +311,11 @@ void TestProgramEditorWidget::initSignals() {
   connectTableSignals(setup_table_);
   connectTableSignals(teardown_table_);
 
-  connect(tab_widget_, &QTabWidget::currentChanged, this,
-          &TestProgramEditorWidget::updateActions);
+  connect(tab_widget_, &QTabWidget::currentChanged, this, [this](int) {
+    // 切换 tab 时刷新校验状态
+    updateActions();
+    validateCurrentTable();
+  });
   connect(add_case_action_, &QAction::triggered, this,
           &TestProgramEditorWidget::onAddCase);
   connect(remove_case_action_, &QAction::triggered, this,
@@ -285,10 +333,25 @@ void TestProgramEditorWidget::initSignals() {
   connect(redo_action_, &QAction::triggered, this,
           &TestProgramEditorWidget::redo);
 
-  // 详情面板数据变更 → 同步到表格
+  // 详情面板数据变更 → 同步子步骤到当前行的 UserRole
   connect(step_detail_panel_, &StepDetailPanel::dataChanged, this, [this]() {
     if (loading_ || undo_redo_in_progress_) {
       return;
+    }
+    // 将 detail panel 中的 subSteps 写回当前行的 UserRole
+    auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
+    int row = table ? table->currentRow() : -1;
+    if (table && row >= 0) {
+      QTableWidgetItem* cmdItem = table->item(row, kColCmd);
+      if (cmdItem) {
+        TestStepData panelStep = step_detail_panel_->stepData();
+        if (panelStep.isControlFlow()) {
+          TestStepData existing = loadStepExtData(cmdItem);
+          existing.subSteps = panelStep.subSteps;
+          existing.elseSubSteps = panelStep.elseSubSteps;
+          storeStepExtData(cmdItem, existing);
+        }
+      }
     }
     saveSnapshot();
     setModified(true);
@@ -298,15 +361,7 @@ void TestProgramEditorWidget::initSignals() {
 
 // ── 动态列头 ──
 
-static constexpr int kHidden = -1;
-
-struct ColMapping {
-  int col;          // 列索引
-  const char* label; // 表头文本
-};
-
-// 返回每个命令类型的列映射：{col, label} 按顺序排列，kHidden 表示该列隐藏
-// 返回数组长度 = kStepColumnCount
+// 返回每个命令类型的列映射
 static void getColumnMapping(const QString& cmd, const char** labels) {
   // 初始化为隐藏
   for (int i = 0; i < kStepColumnCount; ++i) {
@@ -399,7 +454,7 @@ void TestProgramEditorWidget::onDataChanged() {
   }
   saveSnapshot();
   setModified(true);
-  validateCurrentStep();
+  validateCurrentTable();
   updateActions();
 }
 
@@ -568,13 +623,13 @@ void TestProgramEditorWidget::renumberSteps(QTableWidget* table) {
 void TestProgramEditorWidget::onStepSelectionChanged() {
   auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
-    step_detail_panel_->setVisible(false);
+    step_detail_panel_->clear();
     return;
   }
 
   int row = table->currentRow();
   if (row < 0) {
-    step_detail_panel_->setVisible(false);
+    step_detail_panel_->clear();
     return;
   }
 
@@ -630,22 +685,21 @@ void TestProgramEditorWidget::onStepSelectionChanged() {
     if (ext.contains("loopIntervalMs")) {
       step.loopIntervalMs = ext["loopIntervalMs"].toInt();
     }
-    // subSteps/elseSubSteps 从 detail panel 读取，不在 UserRole 中存储
+    if (ext.contains("subStepsJson")) {
+      step.subSteps = deserializeSubSteps(ext["subStepsJson"].toString().toUtf8());
+    }
+    if (ext.contains("elseSubStepsJson")) {
+      step.elseSubSteps = deserializeSubSteps(ext["elseSubStepsJson"].toString().toUtf8());
+    }
   }
 
-  if (step.isControlFlow() || step.cmd == QStringLiteral("VERIFY") ||
-      step.cmd == QStringLiteral("INJECT_FAULT") ||
-      step.cmd == QStringLiteral("WAIT")) {
-    step_detail_panel_->setStepData(step, false);
-    step_detail_panel_->setVisible(true);
-  } else {
-    step_detail_panel_->setVisible(false);
-  }
+  // 始终填充面板，由面板内部根据命令类型切换页面
+  step_detail_panel_->setStepData(step, false);
 }
 
 // ── 校验 ──
 
-void TestProgramEditorWidget::validateCurrentStep() {
+void TestProgramEditorWidget::validateCurrentTable() {
   auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     updateValidationLabel();
@@ -664,6 +718,9 @@ void TestProgramEditorWidget::validateCurrentStep() {
     }
 
     TestStepData step = loadStepExtData(cmdItem);
+    step.cmd = table->item(i, kColCmd)
+                   ? table->item(i, kColCmd)->text()
+                   : QString();
     step.description = table->item(i, kColDesc)
                            ? table->item(i, kColDesc)->text()
                            : QString();
@@ -711,14 +768,24 @@ void TestProgramEditorWidget::validateCurrentStep() {
   }
 
   if (errors > 0 || warnings > 0) {
-    QStringList parts;
+    // 显示摘要 + 首条错误详情
+    QString labelText;
     if (errors > 0) {
-      parts << QStringLiteral("%1 个错误").arg(errors);
+      labelText = QStringLiteral("⚠ %1 个错误").arg(errors);
     }
     if (warnings > 0) {
-      parts << QStringLiteral("%1 个警告").arg(warnings);
+      if (!labelText.isEmpty()) {
+        labelText += QStringLiteral(", ");
+      }
+      labelText += QStringLiteral("%1 个警告").arg(warnings);
     }
-    validation_label_->setText(parts.join(QStringLiteral(", ")));
+    // 附加第一条具体错误便于快速定位
+    if (!details.isEmpty()) {
+      labelText += QStringLiteral(" · %1").arg(details.first());
+    }
+    // 全部错误存入 tooltip
+    validation_label_->setText(labelText);
+    validation_label_->setToolTip(details.join(QStringLiteral("\n")));
     validation_label_->setVisible(true);
   } else {
     validation_label_->setVisible(false);
@@ -753,7 +820,13 @@ void TestProgramEditorWidget::storeStepExtData(QTableWidgetItem* item,
     ext["loopCount"] = step.loopCount;
     ext["loopIntervalMs"] = step.loopIntervalMs;
   }
-  // subSteps/elseSubSteps 由 detail panel 管理，不存入 UserRole
+  // subSteps/elseSubSteps 序列化存入 UserRole（避免多控制流步骤时数据丢失）
+  if (!step.subSteps.isEmpty()) {
+    ext["subStepsJson"] = QString::fromUtf8(serializeSubSteps(step.subSteps));
+  }
+  if (!step.elseSubSteps.isEmpty()) {
+    ext["elseSubStepsJson"] = QString::fromUtf8(serializeSubSteps(step.elseSubSteps));
+  }
   item->setData(kStepDataRole, ext);
 }
 
@@ -793,6 +866,12 @@ TestStepData TestProgramEditorWidget::loadStepExtData(
   }
   if (ext.contains("loopIntervalMs")) {
     step.loopIntervalMs = ext["loopIntervalMs"].toInt();
+  }
+  if (ext.contains("subStepsJson")) {
+    step.subSteps = deserializeSubSteps(ext["subStepsJson"].toString().toUtf8());
+  }
+  if (ext.contains("elseSubStepsJson")) {
+    step.elseSubSteps = deserializeSubSteps(ext["elseSubStepsJson"].toString().toUtf8());
   }
   return step;
 }
@@ -1123,10 +1202,11 @@ TestProgramData TestProgramEditorWidget::uiToProgram() {
           step.loopCount = m["loopCount"].toInt();
           step.loopIntervalMs = m["loopIntervalMs"].toInt();
         }
-        // subSteps/elseSubSteps 从 detail panel 读取
-        if (step.isControlFlow()) {
-          step.subSteps = step_detail_panel_->stepData().subSteps;
-          step.elseSubSteps = step_detail_panel_->stepData().elseSubSteps;
+        if (m.contains("subStepsJson")) {
+          step.subSteps = deserializeSubSteps(m["subStepsJson"].toString().toUtf8());
+        }
+        if (m.contains("elseSubStepsJson")) {
+          step.elseSubSteps = deserializeSubSteps(m["elseSubStepsJson"].toString().toUtf8());
         }
       }
     }

@@ -10,14 +10,16 @@
 #include "CommandTypeDelegate.h"
 #include "StepDetailPanel.h"
 
+#include <QDockWidget>
+
 class QAction;
+class QDockWidget;
 class QLabel;
 class QLineEdit;
 class QTableWidget;
 class QTableWidgetItem;
 class QTabWidget;
 class QTextEdit;
-class QSplitter;
 
 namespace etest::app {
 
@@ -86,7 +88,7 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void updateColumnHeadersForCommand(QTableWidget* table, int row);
 
   // 校验
-  void validateCurrentStep();
+  void validateCurrentTable();
   void updateValidationLabel();
 
   // 扩展数据存取
@@ -97,7 +99,8 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   QLineEdit* suite_name_edit_ = nullptr;
   QTextEdit* suite_desc_edit_ = nullptr;
   QTabWidget* tab_widget_ = nullptr;
-  QSplitter* splitter_ = nullptr;
+  QDockWidget* info_dock_ = nullptr;
+  QDockWidget* detail_dock_ = nullptr;
   StepDetailPanel* step_detail_panel_ = nullptr;
   QLabel* validation_label_ = nullptr;
 
