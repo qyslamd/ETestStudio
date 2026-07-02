@@ -808,6 +808,84 @@ TestProgramEditorWidget QTabBar::tab:hover {
     background-color: #2D2D2D;
 }
 
+/* ── Validation label ── */
+#testProgramValidationLabel {
+    color: #F48771;
+    font-size: 11px;
+    padding: 2px 8px;
+    background-color: #3C2020;
+    border-radius: 2px;
+}
+
+/* ── Step detail panel ── */
+StepDetailPanel QLabel {
+    color: #CCCCCC;
+    font-size: 12px;
+}
+
+StepDetailPanel QDoubleSpinBox,
+StepDetailPanel QLineEdit,
+StepDetailPanel QComboBox {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 2px;
+    padding: 2px 4px;
+    min-height: 20px;
+}
+
+StepDetailPanel QDoubleSpinBox:focus,
+StepDetailPanel QLineEdit:focus,
+StepDetailPanel QComboBox:focus {
+    border-color: #007ACC;
+}
+
+StepDetailPanel QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+
+StepDetailPanel QComboBox::down-arrow {
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #CCCCCC;
+    margin-right: 4px;
+}
+
+StepDetailPanel QComboBox QAbstractItemView {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: 1px solid #454545;
+    selection-background-color: #094771;
+}
+
+StepDetailPanel QCheckBox {
+    color: #CCCCCC;
+    spacing: 6px;
+}
+
+StepDetailPanel QCheckBox::indicator {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #454545;
+    border-radius: 2px;
+    background-color: #3C3C3C;
+}
+
+StepDetailPanel QCheckBox::indicator:checked {
+    background-color: #007ACC;
+    border-color: #007ACC;
+}
+
+StepDetailPanel QTableWidget {
+    background-color: #2D2D2D;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    gridline-color: #3C3C3C;
+    selection-background-color: #094771;
+}
+
 /* ==================== SearchWidget ==================== */
 etest--app--SearchWidget {
     background-color: #252526;

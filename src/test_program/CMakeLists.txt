@@ -5,6 +5,13 @@ add_library(${TARGET_NAME} STATIC
     TestProgramData.h
     TestProgramEditorWidget.cpp
     TestProgramEditorWidget.h
+    CommandTypeDelegate.cpp
+    CommandTypeDelegate.h
+    StepDetailPanel.cpp
+    StepDetailPanel.h
+    StepValidation.cpp
+    StepValidation.h
+    SignalSelectionInterface.h
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC

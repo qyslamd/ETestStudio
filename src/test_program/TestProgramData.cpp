@@ -9,6 +9,89 @@
 
 namespace etest::app {
 
+// ── ConditionExpr ──
+
+static QJsonObject conditionExprToJson(const ConditionExpr& expr) {
+  if (expr.target.isEmpty()) {
+    return {};
+  }
+  QJsonObject obj;
+  obj["target"] = expr.target;
+  obj["op"] = expr.op;
+  if (expr.value.isValid()) {
+    obj["value"] = QJsonValue::fromVariant(expr.value);
+  }
+  return obj;
+}
+
+static ConditionExpr conditionExprFromJson(const QJsonObject& obj) {
+  ConditionExpr expr;
+  expr.target = obj["target"].toString();
+  expr.op = obj["op"].toString();
+  expr.value = obj["value"].toVariant();
+  return expr;
+}
+
+// ── ToleranceSpec ──
+
+static QJsonObject toleranceToJson(const ToleranceSpec& tol) {
+  if (!tol.enabled) {
+    return {};
+  }
+  QJsonObject obj;
+  obj["min"] = tol.min;
+  obj["max"] = tol.max;
+  obj["enabled"] = tol.enabled;
+  return obj;
+}
+
+static ToleranceSpec toleranceFromJson(const QJsonObject& obj) {
+  ToleranceSpec tol;
+  tol.min = obj["min"].toDouble(0.0);
+  tol.max = obj["max"].toDouble(0.0);
+  tol.enabled = obj["enabled"].toBool(false);
+  return tol;
+}
+
+// ── FaultConfig ──
+
+static QJsonObject faultConfigToJson(const FaultConfig& fault) {
+  if (fault.type.isEmpty()) {
+    return {};
+  }
+  QJsonObject obj;
+  obj["type"] = fault.type;
+  if (fault.value.isValid()) {
+    obj["value"] = QJsonValue::fromVariant(fault.value);
+  }
+  return obj;
+}
+
+static FaultConfig faultConfigFromJson(const QJsonObject& obj) {
+  FaultConfig fault;
+  fault.type = obj["type"].toString();
+  fault.value = obj["value"].toVariant();
+  return fault;
+}
+
+// ── 子步骤序列化辅助 ──
+
+static QJsonArray stepsToJsonArray(const QVector<TestStepData>& steps) {
+  QJsonArray arr;
+  for (const auto& s : steps) {
+    arr.append(testStepToJson(s));
+  }
+  return arr;
+}
+
+static QVector<TestStepData> stepsFromJsonArray(const QJsonArray& arr) {
+  QVector<TestStepData> steps;
+  for (const auto& v : arr) {
+    steps.append(testStepFromJson(v.toObject()));
+  }
+  return steps;
+}
+
 // ── TestStepData ──
 
 QJsonObject testStepToJson(const TestStepData& step) {
@@ -21,6 +104,28 @@ QJsonObject testStepToJson(const TestStepData& step) {
   obj["delayMs"] = step.delayMs;
   obj["timeoutMs"] = step.timeoutMs;
   obj["description"] = step.description;
+
+  // 新字段（仅序列化非默认值）
+  if (!step.condition.target.isEmpty()) {
+    obj["condition"] = conditionExprToJson(step.condition);
+  }
+  if (step.tolerance.enabled) {
+    obj["tolerance"] = toleranceToJson(step.tolerance);
+  }
+  if (!step.fault.type.isEmpty()) {
+    obj["fault"] = faultConfigToJson(step.fault);
+  }
+  if (step.loopCount > 1 || step.loopIntervalMs > 0) {
+    obj["loopCount"] = step.loopCount;
+    obj["loopIntervalMs"] = step.loopIntervalMs;
+  }
+  if (!step.subSteps.isEmpty()) {
+    obj["subSteps"] = stepsToJsonArray(step.subSteps);
+  }
+  if (!step.elseSubSteps.isEmpty()) {
+    obj["elseSubSteps"] = stepsToJsonArray(step.elseSubSteps);
+  }
+
   return obj;
 }
 
@@ -32,6 +137,30 @@ TestStepData testStepFromJson(const QJsonObject& obj) {
   step.delayMs = obj["delayMs"].toInt();
   step.timeoutMs = obj["timeoutMs"].toInt(5000);
   step.description = obj["description"].toString();
+
+  // 新字段（缺省时为默认值，后向兼容）
+  if (obj.contains("condition")) {
+    step.condition = conditionExprFromJson(obj["condition"].toObject());
+  }
+  if (obj.contains("tolerance")) {
+    step.tolerance = toleranceFromJson(obj["tolerance"].toObject());
+  }
+  if (obj.contains("fault")) {
+    step.fault = faultConfigFromJson(obj["fault"].toObject());
+  }
+  if (obj.contains("loopCount")) {
+    step.loopCount = obj["loopCount"].toInt(1);
+  }
+  if (obj.contains("loopIntervalMs")) {
+    step.loopIntervalMs = obj["loopIntervalMs"].toInt();
+  }
+  if (obj.contains("subSteps")) {
+    step.subSteps = stepsFromJsonArray(obj["subSteps"].toArray());
+  }
+  if (obj.contains("elseSubSteps")) {
+    step.elseSubSteps = stepsFromJsonArray(obj["elseSubSteps"].toArray());
+  }
+
   return step;
 }
 
