@@ -282,7 +282,7 @@ if(EXISTS ${ISCC_EXECUTABLE})
             "/DMySetupIcon=${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/app_icon.ico"
             "/DMyProductName=${PROJECT_NAME}"
             "/DMyAppArch=${APP_ARCH}"
-            "${CMAKE_CURRENT_SOURCE_DIR}/make_install_package.iss"
+            "${CMAKE_SOURCE_DIR}/scripts/make_install_package.iss"
         WORKING_DIRECTORY "$<TARGET_FILE_DIR:${TARGET_NAME}>"
         COMMENT "Building installer package with Inno Setup (${APP_ARCH})..."
     )
