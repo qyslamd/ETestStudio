@@ -3,6 +3,7 @@ set(TARGET_NAME etest_core)
 set(SOURCES
     logger/Logger.cpp
     logger/QtConsoleSink.cpp
+    logger/LogHistoryBuffer.cpp
     config/ConfigManager.cpp
     crashhandler/CrashHandler.cpp
     common/FileException.cpp
@@ -32,6 +33,7 @@ set(SOURCES
 set(HEADERS
     logger/Logger.h
     logger/QtConsoleSink.h
+    logger/LogHistoryBuffer.h
     config/ConfigManager.h
     config/ConfigDefs.h
     crashhandler/CrashHandler.h

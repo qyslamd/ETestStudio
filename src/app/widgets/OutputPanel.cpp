@@ -3,10 +3,29 @@
 #include <spdlog/spdlog.h>
 #include <QScrollBar>
 
+#include "logger/Logger.h"
+
 namespace etest::app {
 
 OutputPanel::OutputPanel(QWidget* parent) : QWidget(parent) {
   setupUi();
+
+  // 拉取 Logger::init() 之后到本构造之间的历史日志。
+  // drain() 在 connect 之后同步触发 onHistoricalLogs 槽，槽内循环 appendLog
+  // 把历史追加到 QTextEdit。main_window.cpp 中 connect 实时 logMessage
+  // 在本构造之后进行，所以历史天然先于实时。
+  if (auto* hist = etest::core::logger::Logger::qtHistoryBuffer()) {
+    connect(hist, &etest::core::logger::LogHistoryBuffer::drained, this,
+            &OutputPanel::onHistoricalLogs);
+    hist->drain(this);
+  }
+}
+
+void OutputPanel::onHistoricalLogs(
+    const QList<etest::core::logger::LogEntry>& entries) {
+  for (const auto& entry : entries) {
+    appendLog(entry.level, entry.text);
+  }
 }
 
 void OutputPanel::setupUi() {

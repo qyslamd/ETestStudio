@@ -5,6 +5,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "logger/LogHistoryBuffer.h"
+
 namespace etest::app {
 
 class OutputPanel : public QWidget {
@@ -23,6 +25,9 @@ class OutputPanel : public QWidget {
 
   QTextEdit* text_edit_;
   static constexpr int kMaxLines = 5000;
+
+ private slots:
+  void onHistoricalLogs(const QList<etest::core::logger::LogEntry>& entries);
 };
 
 }  // namespace etest::app

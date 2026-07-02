@@ -1,4 +1,5 @@
 #include "Logger.h"
+#include "LogHistoryBuffer.h"
 #include "QtConsoleSink.h"
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -16,6 +17,7 @@ namespace etest::core::logger {
 bool Logger::s_initialized = false;
 QMutex Logger::s_mutex;
 QtConsoleSink* Logger::s_qtSink = nullptr;
+LogHistoryBuffer* Logger::s_historyBuffer = nullptr;
 std::unordered_map<std::string, spdlog::logger*> Logger::s_moduleLoggers;
 
 void Logger::init() {
@@ -69,8 +71,12 @@ void Logger::init() {
   fileSink->set_level(spdlog::level::debug);
   fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [%t] [%n] [%s:%#] %v");
 
+  // 创建启动期历史日志缓冲（环形 5000 条）。OutputPanel 出现后回放。
+  // 必须先于 QtConsoleSink 创建，让 sink 在首条日志时就能 push 到 history。
+  s_historyBuffer = new LogHistoryBuffer(5000);
+
   // 创建Qt控制台sink，输出到界面
-  auto qtSink = std::make_shared<QtConsoleSink>();
+  auto qtSink = std::make_shared<QtConsoleSink>(s_historyBuffer);
   qtSink->set_level(spdlog::level::debug);
   s_qtSink = qtSink.get();
 
@@ -143,6 +149,10 @@ void Logger::shutdown() {
   s_moduleLoggers.clear();
   s_qtSink = nullptr;
   spdlog::shutdown();
+  // spdlog::shutdown() 析构所有 sink（QtConsoleSink 在其中），
+  // 之后 history_ 已无引用者，可以安全 delete。
+  delete s_historyBuffer;
+  s_historyBuffer = nullptr;
   s_initialized = false;
 }
 
@@ -205,6 +215,10 @@ spdlog::logger* Logger::getLogger(const QString& module) {
 
 QtConsoleSink* Logger::qtConsoleSink() {
   return s_qtSink;
+}
+
+LogHistoryBuffer* Logger::qtHistoryBuffer() {
+  return s_historyBuffer;
 }
 
 }  // namespace etest::core::logger

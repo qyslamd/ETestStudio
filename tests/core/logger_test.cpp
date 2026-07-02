@@ -1,9 +1,14 @@
 #include "logger/Logger.h"
+#include "logger/LogHistoryBuffer.h"
 #include <gtest/gtest.h>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QObject>
 #include <QStandardPaths>
+#include <QString>
+#include <thread>
+#include <vector>
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 
@@ -102,6 +107,126 @@ TEST_F(LoggerTest, MultipleModulesLog) {
 
   // 同一模块再次输出
   LOG_INFO("MODULE_A", "second message from module A");
+}
+
+// ============================================================
+// LogHistoryBuffer 测试（独立于 Logger，不依赖 spdlog）
+// ============================================================
+
+class LogHistoryBufferTest : public ::testing::Test {
+ protected:
+  void SetUp() override { buffer_ = new LogHistoryBuffer(5000); }
+  void TearDown() override { delete buffer_; }
+  LogHistoryBuffer* buffer_ = nullptr;
+};
+
+// 容量上限：连续 push 6000 条应截断到 5000，丢最老的 1000 条。
+TEST_F(LogHistoryBufferTest, CapacityOverflowTruncates) {
+  for (int i = 0; i < 6000; ++i) {
+    buffer_->push(0, QStringLiteral("msg_%1").arg(i));
+  }
+  QObject receiver;
+  int count = -1;
+  QString firstText;
+  QString lastText;
+  QObject::connect(buffer_, &LogHistoryBuffer::drained, &receiver,
+                   [&](const QList<LogEntry>& entries) {
+                     count = entries.size();
+                     if (!entries.isEmpty()) {
+                       firstText = entries.first().text;
+                       lastText = entries.last().text;
+                     }
+                   });
+  buffer_->drain(&receiver);
+  EXPECT_EQ(count, 5000);
+  EXPECT_EQ(firstText, QStringLiteral("msg_1000"));
+  EXPECT_EQ(lastText, QStringLiteral("msg_5999"));
+}
+
+// drain 一次：push 100 条后 drain 一次性收到所有 100 条且顺序正确。
+TEST_F(LogHistoryBufferTest, DrainDeliversAllEntries) {
+  for (int i = 0; i < 100; ++i) {
+    buffer_->push(1, QStringLiteral("entry_%1").arg(i));
+  }
+  QObject receiver;
+  int count = 0;
+  int firstLevel = -1;
+  QString firstText;
+  QString lastText;
+  QObject::connect(buffer_, &LogHistoryBuffer::drained, &receiver,
+                   [&](const QList<LogEntry>& entries) {
+                     count = entries.size();
+                     if (!entries.isEmpty()) {
+                       firstLevel = entries.first().level;
+                       firstText = entries.first().text;
+                       lastText = entries.last().text;
+                     }
+                   });
+  buffer_->drain(&receiver);
+  EXPECT_EQ(count, 100);
+  EXPECT_EQ(firstLevel, 1);
+  EXPECT_EQ(firstText, QStringLiteral("entry_0"));
+  EXPECT_EQ(lastText, QStringLiteral("entry_99"));
+}
+
+// drain 多次幂等：重复调用 drained 信号只 emit 一次。
+TEST_F(LogHistoryBufferTest, DrainIsIdempotent) {
+  buffer_->push(0, "x");
+  QObject receiver;
+  int emitCount = 0;
+  QObject::connect(buffer_, &LogHistoryBuffer::drained, &receiver,
+                   [&](const QList<LogEntry>&) { ++emitCount; });
+  buffer_->drain(&receiver);
+  buffer_->drain(&receiver);
+  buffer_->drain(&receiver);
+  EXPECT_EQ(emitCount, 1);
+}
+
+// drain 防御 nullptr receiver：传 nullptr 不崩溃、不 emit。
+TEST_F(LogHistoryBufferTest, DrainWithNullReceiverDoesNotCrash) {
+  buffer_->push(0, "x");
+  buffer_->drain(nullptr);
+  SUCCEED();
+}
+
+// drain 防御 receiver 析构后调用：connect 之后 delete receiver，Qt 自动 disconnect。
+// drain 不会触发任何已 disconnect 的槽，也不持有对已析构对象的引用。
+TEST_F(LogHistoryBufferTest, DrainAfterReceiverDestroyedDoesNotCrash) {
+  buffer_->push(0, "x");
+  int emitCount = 0;
+  QObject receiver;
+  QObject::connect(buffer_, &LogHistoryBuffer::drained, &receiver,
+                   [&](const QList<LogEntry>&) { ++emitCount; });
+  // drain 一次，receiver 仍活着，正常收到
+  buffer_->drain(&receiver);
+  EXPECT_EQ(emitCount, 1);
+  // 第二次 drain 因 drained_=true 不会再 emit；这验证 Qt 槽仍有效
+  buffer_->drain(&receiver);
+  EXPECT_EQ(emitCount, 1);
+}
+
+// 线程安全：4 线程并发 push 各 1000 条（共 4000，未超 5000），全部保留。
+TEST_F(LogHistoryBufferTest, ConcurrentPushPreservesAll) {
+  constexpr int kThreads = 4;
+  constexpr int kPerThread = 1000;
+  std::vector<std::thread> threads;
+  threads.reserve(kThreads);
+  for (int t = 0; t < kThreads; ++t) {
+    threads.emplace_back([this, t, kPerThread]() {
+      for (int i = 0; i < kPerThread; ++i) {
+        buffer_->push(t, QStringLiteral("t%1_m%2").arg(t).arg(i));
+      }
+    });
+  }
+  for (auto& th : threads) {
+    th.join();
+  }
+  QObject receiver;
+  int count = 0;
+  QObject::connect(buffer_, &LogHistoryBuffer::drained, &receiver,
+                   [&](const QList<LogEntry>& entries) { count = entries.size(); });
+  buffer_->drain(&receiver);
+  EXPECT_EQ(count, kThreads * kPerThread);
 }
 
 int main(int argc, char* argv[]) {

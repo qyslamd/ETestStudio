@@ -9,6 +9,8 @@
 class QtConsoleSink;
 
 namespace etest::core::logger {
+class LogHistoryBuffer;
+
 // 日志级别枚举
 enum LogLevel {
   LOG_LEVEL_DEBUG = spdlog::level::debug,
@@ -36,6 +38,9 @@ class Logger {
   // 获取Qt控制台sink，用于连接UI信号
   static QtConsoleSink* qtConsoleSink();
 
+  // 获取启动期历史日志缓冲。Logger 未 init 时返回 nullptr。
+  static LogHistoryBuffer* qtHistoryBuffer();
+
   // 获取模块logger指针，供LOG宏使用
   static spdlog::logger* getLogger(const QString& module);
 
@@ -45,6 +50,7 @@ class Logger {
   static bool s_initialized;
   static QMutex s_mutex;
   static QtConsoleSink* s_qtSink;
+  static LogHistoryBuffer* s_historyBuffer;
   static std::unordered_map<std::string, spdlog::logger*> s_moduleLoggers;
 };
 }  // namespace etest::core::logger
