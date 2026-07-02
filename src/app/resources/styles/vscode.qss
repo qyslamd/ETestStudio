@@ -562,7 +562,7 @@ SidebarWidget QToolButton:hover {
     background-color: #252526;
 }
 
-/* ==================== ProtocolManagerWidget ==================== */
+/* ==================== ProtocolManagerWidget (ICDConfig 视图) ==================== */
 ProtocolManagerWidget {
     background-color: #252526;
 }
@@ -571,10 +571,12 @@ ProtocolManagerWidget QTreeWidget {
     color: #CCCCCC;
     border: none;
     outline: none;
+    alternate-background-color: #252526;
 }
 ProtocolManagerWidget QTreeWidget::item {
-    padding: 4px 8px;
-    min-height: 22px;
+    padding: 3px 6px;
+    min-height: 20px;
+    border: 0;
 }
 ProtocolManagerWidget QTreeWidget::item:selected {
     background-color: #094771;
@@ -583,23 +585,101 @@ ProtocolManagerWidget QTreeWidget::item:selected {
 ProtocolManagerWidget QTreeWidget::item:hover {
     background-color: #2A2D2E;
 }
+/* 帧条目禁用态：灰色 + 删除线（在代码中通过 font strikeOut + foreground 实现） */
+ProtocolManagerWidget QTreeWidget::indicator {
+    width: 13px;
+    height: 13px;
+}
+ProtocolManagerWidget QHeaderView {
+    background-color: #1E1E1E;
+    border: none;
+    border-bottom: 1px solid #1E1E1E;
+}
+ProtocolManagerWidget QHeaderView::section {
+    background-color: #252526;
+    color: #969696;
+    padding: 4px 8px;
+    border: 0;
+    border-right: 1px solid #1E1E1E;
+    font-weight: 600;
+    font-size: 11px;
+}
+ProtocolManagerWidget QHeaderView::section:last {
+    border-right: 0;
+}
+
+#protocolManagerTitle {
+    background-color: #252526;
+    border-bottom: 1px solid #1E1E1E;
+}
+#protocolManagerConfigLabel {
+    color: #CCCCCC;
+    font-size: 12px;
+    font-weight: 600;
+}
+ProtocolManagerWidget QPushButton#protocolManagerRefreshBtn {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+}
+ProtocolManagerWidget QPushButton#protocolManagerRefreshBtn:hover {
+    background-color: #505050;
+    border-radius: 3px;
+}
+ProtocolManagerWidget QPushButton#protocolManagerRefreshBtn:pressed {
+    background-color: #094771;
+    border-radius: 3px;
+}
+
 #protocolManagerToolbar {
     background-color: #252526;
     border-bottom: 1px solid #1E1E1E;
 }
-#protocolNewBtn, #protocolImportBtn {
+#protocolManagerNewFrameBtn, #protocolManagerImportBtn {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #454545;
     border-radius: 3px;
-    padding: 2px 12px;
+    padding: 2px 10px;
     font-size: 12px;
 }
-#protocolNewBtn:hover, #protocolImportBtn:hover {
+#protocolManagerNewFrameBtn:hover, #protocolManagerImportBtn:hover {
     background-color: #505050;
 }
-#protocolNewBtn:pressed, #protocolImportBtn:pressed {
+#protocolManagerNewFrameBtn:pressed, #protocolManagerImportBtn:pressed {
     background-color: #2D2D2D;
+}
+
+#protocolManagerEmpty {
+    background-color: #252526;
+}
+#protocolManagerEmptyText {
+    color: #969696;
+    font-size: 12px;
+    line-height: 1.5;
+}
+#protocolManagerCreateBtn {
+    background-color: #0E639C;
+    color: #FFFFFF;
+    border: 1px solid #1177BB;
+    border-radius: 3px;
+    padding: 2px 16px;
+    font-size: 12px;
+}
+#protocolManagerCreateBtn:hover {
+    background-color: #1177BB;
+}
+#protocolManagerCreateBtn:pressed {
+    background-color: #0A4A75;
+}
+
+#protocolManagerStatus {
+    background-color: #1E1E1E;
+    border-top: 1px solid #1E1E1E;
+}
+#protocolManagerStatusLabel {
+    color: #969696;
+    font-size: 11px;
 }
 
 /* ==================== TestProgramManagerWidget ==================== */
