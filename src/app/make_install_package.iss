@@ -26,6 +26,28 @@
 #define MyProductName "ETestStudio"
 #endif
 
+; 目标架构：x64（默认）或 x86。由 CMake 通过 /DMyAppArch 传入。
+; x64 与 x86 使用不同 AppId，两者可在同一台机器共存，互不干扰。
+#ifndef MyAppArch
+  #define MyAppArch "x64"
+#endif
+
+#if MyAppArch == "x64"
+  ; x64：64 位安装，进 64 位 Program Files，使用 x64 vc_redist
+  #define MyAppId "{{6811a736-4ffd-4dae-a7a7-459a6e3d572f}"
+  #define MyAppPf "{autopf64}"
+  #define MyVcRedist "vc_redist.x64.exe"
+  #define MyAppArchSuffix "x64"
+#elif MyAppArch == "x86"
+  ; x86：32 位安装，进 32 位 Program Files，使用 x86 vc_redist
+  #define MyAppId "{{46AB6095-36F9-49F4-ABB1-6A36D8BB7E39}"
+  #define MyAppPf "{autopf}"
+  #define MyVcRedist "vc_redist.x86.exe"
+  #define MyAppArchSuffix "x86"
+#else
+  #error MyAppArch 必须是 x64 或 x86
+#endif
+
 #define MyAppName "ETestStudio 自动化测试系统"
 #define MyCompanyName ""
 #define MyAppPublisher ""
@@ -33,17 +55,19 @@
 #define MyAppMutex "ETestStudioAppMutex"
 
 [Setup]
-AppId={{6811a736-4ffd-4dae-a7a7-459a6e3d572f}
+AppId={#MyAppId}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf64}\{#MyCompanyName}\{#MyProductName}
+DefaultDirName={#MyAppPf}\{#MyCompanyName}\{#MyProductName}
 DefaultGroupName={#MyProductName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
+#if MyAppArch == "x64"
 ArchitecturesInstallIn64BitMode=x64compatible
+#endif
 OutputDir={#WhereToOutput}
-OutputBaseFilename={#MyProductName}-setup-x64-{#MyAppVersion}
+OutputBaseFilename={#MyProductName}-setup-{#MyAppArchSuffix}-{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -62,7 +86,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 ; ETestStudio 主程序与 Qt 运行时
 Source: "{#WhereAreFiles}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#WhereAreFiles}\Qt5*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#WhereAreFiles}\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\{#MyVcRedist}"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Qt 运行时插件目录
 Source: "{#WhereAreFiles}\bearer\*.dll"; DestDir: "{app}\bearer"; Flags: ignoreversion

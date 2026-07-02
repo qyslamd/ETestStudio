@@ -258,6 +258,12 @@ endif()
 # make_package target — windeployqt + ISCC 打包
 if(EXISTS ${ISCC_EXECUTABLE})
     set(PACKAGE_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/dist")
+    # 目标架构：交给 .iss 区分 AppId / 安装目录 / vc_redist / 输出文件名
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(APP_ARCH "x64")
+    else()
+        set(APP_ARCH "x86")
+    endif()
     add_custom_target(make_package
         COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_OUTPUT_DIR}"
         COMMAND ${WINDEPLOYQT_EXECUTABLE}
@@ -275,9 +281,10 @@ if(EXISTS ${ISCC_EXECUTABLE})
             "/DMyAppExeName=${TARGET_NAME}.exe"
             "/DMySetupIcon=${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/app_icon.ico"
             "/DMyProductName=${PROJECT_NAME}"
+            "/DMyAppArch=${APP_ARCH}"
             "${CMAKE_CURRENT_SOURCE_DIR}/make_install_package.iss"
         WORKING_DIRECTORY "$<TARGET_FILE_DIR:${TARGET_NAME}>"
-        COMMENT "Building installer package with Inno Setup..."
+        COMMENT "Building installer package with Inno Setup (${APP_ARCH})..."
     )
     add_dependencies(make_package ${TARGET_NAME})
 endif()
