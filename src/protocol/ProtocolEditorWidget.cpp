@@ -759,8 +759,7 @@ void ProtocolEditorWidget::initSignals() {
           [this](icd::Node* node) {
             if (node) {
               property_panel_->showNode(*node);
-              bit_view_->highlightBlock(
-                  QString::fromStdString(std::string(node->name())));
+              bit_view_->highlightNode(node);
               showStatusMessage(
                   QStringLiteral("Node: %1  |  Offset: %2  |  Bit: %3~%4")
                       .arg(QString::fromStdString(std::string(node->name())))
@@ -770,50 +769,43 @@ void ProtocolEditorWidget::initSignals() {
             }
           });
 
-  // Bit block clicked → highlight block + property panel
-  connect(bit_view_, &IcdBitLayoutView::blockClicked, this,
-          [this](const QString& name) {
-            if (!current_frame_)
+  // Bit node clicked → highlight node + property panel
+  connect(bit_view_, &IcdBitLayoutView::nodeClicked, this,
+          [this](const icd::Node* node) {
+            if (!current_frame_ || !node) {
               return;
-            bit_view_->highlightBlock(name);
-            auto* node = const_cast<icd::Node*>(
-                current_frame_->find(name.toStdString()));
-            if (node) {
-              property_panel_->showNode(*node);
-              node_tree_->selectNode(node);
-              showStatusMessage(
-                  QStringLiteral("Node: %1  |  Offset: %2  |  Bit: %3~%4")
-                      .arg(QString::fromStdString(std::string(node->name())))
-                      .arg(node->offset())
-                      .arg(node->bit_offset())
-                      .arg(node->bit_offset() + node->bit_width() - 1));
             }
+            bit_view_->highlightNode(node);
+            auto* editable_node = const_cast<icd::Node*>(node);
+            property_panel_->showNode(*editable_node);
+            node_tree_->selectNode(node);
+            showStatusMessage(
+                QStringLiteral("Node: %1  |  Offset: %2  |  Bit: %3~%4")
+                    .arg(QString::fromStdString(std::string(node->name())))
+                    .arg(node->offset())
+                    .arg(node->bit_offset())
+                    .arg(node->bit_offset() + node->bit_width() - 1));
           });
 
-  // Bit block hover → reveal tree node (scroll only, no selection change)
-  connect(bit_view_, &IcdBitLayoutView::blockHovered, this,
-          [this](const QString& name, bool /*on*/) {
-            if (!current_frame_)
+  // Bit node hover → reveal tree node (scroll only, no selection change)
+  connect(bit_view_, &IcdBitLayoutView::nodeHovered, this,
+          [this](const icd::Node* node, bool /*on*/) {
+            if (!current_frame_ || !node) {
               return;
-            const auto* node = current_frame_->find(name.toStdString());
-            if (node) {
-              node_tree_->revealNode(node);
             }
+            node_tree_->revealNode(node);
           });
 
-  // Bit block context menu actions
+  // Bit node context menu actions
   connect(
-      bit_view_, &IcdBitLayoutView::contextMenuAction, this,
-      [this](const QString& name, const QString& action) {
-        if (!current_frame_)
+      bit_view_, &IcdBitLayoutView::nodeContextMenuAction, this,
+      [this](const icd::Node* node, const QString& action) {
+        if (!current_frame_ || !node)
           return;
         auto* frame = current_frame_;
+        const QString name = QString::fromStdString(std::string(node->name()));
 
         if (action == QStringLiteral("delete")) {
-          const auto* node = current_frame_->find(name.toStdString());
-          if (!node)
-            return;
-
           saveSnapshot();
           auto* parent = const_cast<icd::Node*>(node->parent());
           if (!parent) {
@@ -841,10 +833,6 @@ void ProtocolEditorWidget::initSignals() {
 
         } else if (action == QStringLiteral("addBefore") ||
                    action == QStringLiteral("addAfter")) {
-          const auto* node = current_frame_->find(name.toStdString());
-          if (!node)
-            return;
-
           saveSnapshot();
           auto new_node = std::make_unique<icd::Node>(
               "NewNode", "", 0, 0, 8, icd::ValueType::byte_, icd::Tag::none,

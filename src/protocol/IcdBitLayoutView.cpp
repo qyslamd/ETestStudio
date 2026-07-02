@@ -19,9 +19,6 @@
 
 namespace {
 
-// ============================================================
-// Group → Color mapping (semantic, not hash-based)
-// ============================================================
 struct GroupColor {
   QColor dark;
   QColor light;
@@ -39,7 +36,6 @@ static const QMap<QString, GroupColor> kGroupColors = {
 static const GroupColor kDefaultGroupColor = {QColor(127, 140, 141),
                                               QColor(149, 165, 166)};
 
-// Fallback palette for fields without explicit group/tag — cycles round-robin
 static const QVector<GroupColor> kPaletteCycle = {
     kGroupColors["header"], kGroupColors["payload"], kGroupColors["checksum"],
     kGroupColors["length"], kGroupColors["count"],   kGroupColors["address"],
@@ -79,45 +75,68 @@ static QColor resolveGroupColor(const icd::Node& node, bool dark) {
   return dark ? kDefaultGroupColor.dark : kDefaultGroupColor.light;
 }
 
-// Return a hue-shifted "gradient partner" for multi-hue gradients.
-// Each group's main color transitions toward the next color in a rainbow cycle.
 static QColor gradientPartner(const QColor& base) {
   int h = base.hue();
   int s = base.saturation();
   int v = base.value();
 
-  if (h >= 200 && h < 260)  // blue → purple
+  if (h >= 200 && h < 260) {
     return QColor::fromHsv(275, qMin(s + 10, 255), qMin(v + 20, 255));
-  if (h >= 90 && h < 170)  // green → teal
+  }
+  if (h >= 90 && h < 170) {
     return QColor::fromHsv(178, s, qMin(v + 15, 255));
-  if (h >= 350 || h < 15)  // red → orange
+  }
+  if (h >= 350 || h < 15) {
     return QColor::fromHsv(28, qMin(s + 5, 255), v);
-  if (h >= 30 && h < 65)  // yellow → lime
+  }
+  if (h >= 30 && h < 65) {
     return QColor::fromHsv(85, qMin(s + 10, 255), qMin(v + 10, 255));
-  if (h >= 260 && h < 295)  // purple → pink
+  }
+  if (h >= 260 && h < 295) {
     return QColor::fromHsv(325, s, qMin(v + 10, 255));
-  if (h >= 170 && h < 200)  // cyan → blue
+  }
+  if (h >= 170 && h < 200) {
     return QColor::fromHsv(218, s, qMin(v + 15, 255));
+  }
   return base.lighter(130);
+}
+
+static int absoluteStartBit(const icd::Node& node) {
+  return node.offset() * 8 + node.bit_offset();
+}
+
+static QString valueTypeText(const icd::Node& node) {
+  return QString::fromLatin1(etest::protocol::utils::valueTypeName(
+      node.value_type()));
+}
+
+static QString nodeNameText(const icd::Node& node) {
+  return QString::fromStdString(std::string(node.name()));
 }
 
 }  // anonymous namespace
 
 namespace etest::protocol {
 
-// ============================================================
-// FieldSectionItem
-// ============================================================
-FieldSectionItem::FieldSectionItem(const QString& name,
+LayoutNodeItem::LayoutNodeItem(QGraphicsItem* parent) : QGraphicsObject(parent) {}
+
+FieldSectionItem::FieldSectionItem(const icd::Node* node,
                                    const QString& value_type,
-                                   int byte_offset,
-                                   int start_bit,
-                                   int bit_width,
-                                   const QColor& color,
-                                   int cell_size,
-                                   int bits_per_row,
-                                   QGraphicsItem* parent)
-    : QGraphicsObject(parent),
+                                   const QColor& color, int cell_size,
+                                   int bits_per_row, QGraphicsItem* parent)
+    : FieldSectionItem(node ? nodeNameText(*node) : QString(), value_type,
+                       node ? node->offset() : 0, node ? node->bit_offset() : 0,
+                       node ? node->bit_width() : 0, color, cell_size,
+                       bits_per_row, parent) {
+  node_ = node;
+}
+
+FieldSectionItem::FieldSectionItem(const QString& name,
+                                   const QString& value_type, int byte_offset,
+                                   int start_bit, int bit_width,
+                                   const QColor& color, int cell_size,
+                                   int bits_per_row, QGraphicsItem* parent)
+    : LayoutNodeItem(parent),
       name_(name),
       value_type_(value_type),
       byte_offset_(byte_offset),
@@ -135,15 +154,17 @@ FieldSectionItem::FieldSectionItem(const QString& name,
 }
 
 int FieldSectionItem::totalHeight() const {
-  if (bit_width_ <= 0)
+  if (bit_width_ <= 0) {
     return kHeaderHeight;
+  }
   int rows = (bit_width_ + bits_per_row_ - 1) / bits_per_row_;
   return kHeaderHeight + rows * cell_size_;
 }
 
 int FieldSectionItem::sectionWidth() const {
-  if (bit_width_ <= 0)
+  if (bit_width_ <= 0) {
     return std::max(cell_size_, kMinSectionWidth);
+  }
   int cols = std::min(bit_width_, bits_per_row_);
   return std::max(cols * cell_size_, kMinSectionWidth);
 }
@@ -162,8 +183,17 @@ void FieldSectionItem::setHovered(bool on) {
   update();
 }
 
-void FieldSectionItem::paint(QPainter* painter,
-                             const QStyleOptionGraphicsItem*,
+void FieldSectionItem::setHighlightedNode(const icd::Node* node) {
+  setHighlighted(node_ && node_ == node);
+}
+
+void FieldSectionItem::setHoveredNode(const icd::Node* node, bool on) {
+  if (node_ && node_ == node) {
+    setHovered(on);
+  }
+}
+
+void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
                              QWidget*) {
   bool dark = etest::app::ThemeManager::instance().isDarkTheme();
 
@@ -172,29 +202,25 @@ void FieldSectionItem::paint(QPainter* painter,
   int sec_w = sectionWidth();
   int sec_h = totalHeight();
 
-  // ── Section background ──
   QColor bg = dark ? QColor(32, 32, 35) : QColor(245, 245, 247);
   if (highlighted_) {
     bg = dark ? QColor(38, 38, 42) : QColor(238, 238, 242);
   }
   painter->fillRect(0, 0, sec_w, sec_h, bg);
 
-  // ── Hover overlay (subtle, drawn before header) ──
   if (hovered_ && !highlighted_) {
     QColor ho = Qt::white;
     ho.setAlpha(dark ? 15 : 30);
     painter->fillRect(0, 0, sec_w, sec_h, ho);
   }
 
-  // ── Header bar (vibrant multi-hue gradient) ──
   int accent_w = highlighted_ ? 6 : 4;
   int sec_hdr = kHeaderHeight;
 
-  QColor c1 = color_;                   // main hue
-  QColor c2 = gradientPartner(color_);  // shifted hue (teal/purple/orange…)
+  QColor c1 = color_;
+  QColor c2 = gradientPartner(color_);
   QColor c_bright = color_.lighter(180);
 
-  // Left accent bar: vertical multi-hue gradient
   {
     int h = highlighted_ ? sec_h : sec_hdr;
     QLinearGradient g(0, 0, 0, h);
@@ -205,7 +231,6 @@ void FieldSectionItem::paint(QPainter* painter,
     painter->fillRect(0, 0, accent_w, h, g);
   }
 
-  // Header background: horizontal multi-hue gradient (fully opaque)
   {
     QLinearGradient g(0, 0, sec_w, 0);
     g.setColorAt(0.0, c1);
@@ -215,7 +240,6 @@ void FieldSectionItem::paint(QPainter* painter,
     painter->fillRect(0, 0, sec_w, sec_hdr, g);
   }
 
-  // Glossy highlight: thin white gradient at the top of the header
   {
     QLinearGradient g(0, 0, 0, sec_hdr * 0.55);
     g.setColorAt(0.0, QColor(255, 255, 255, 60));
@@ -224,7 +248,6 @@ void FieldSectionItem::paint(QPainter* painter,
     painter->fillRect(0, 0, sec_w, sec_hdr * 0.55, g);
   }
 
-  // Header bottom gradient separator line
   {
     QLinearGradient g(0, 0, sec_w, 0);
     g.setColorAt(0.0, c1.lighter(120));
@@ -235,17 +258,14 @@ void FieldSectionItem::paint(QPainter* painter,
     painter->drawLine(0, sec_hdr, sec_w, sec_hdr);
   }
 
-  // Header text (bright white)
   int global_start = byte_offset_ * 8 + start_bit_;
   int global_end = global_start + bit_width_ - 1;
-  QString range_str =
-      (bit_width_ > 1)
-          ? QStringLiteral("%1~%2").arg(global_start).arg(global_end)
-          : QString::number(global_start);
+  QString range_str = (bit_width_ > 1)
+                          ? QStringLiteral("%1~%2").arg(global_start).arg(global_end)
+                          : QString::number(global_start);
   QString header_text =
       QStringLiteral("%1  [%2 bits]").arg(name_).arg(range_str);
 
-  // Reserve space for badge on the right
   int badge_reserved = 0;
   if (!value_type_.isEmpty()) {
     QFont badge_font_tmp;
@@ -259,12 +279,10 @@ void FieldSectionItem::paint(QPainter* painter,
   painter->setFont(header_font_);
   QRectF name_rect(14, 0, sec_w - 14 - badge_reserved, sec_hdr);
   QString elided_header_text = painter->fontMetrics().elidedText(
-      header_text, Qt::ElideRight,
-      qMax(0, static_cast<int>(name_rect.width())));
+      header_text, Qt::ElideRight, qMax(0, static_cast<int>(name_rect.width())));
   painter->drawText(name_rect, Qt::AlignVCenter | Qt::AlignLeft,
                     elided_header_text);
 
-  // Value type badge (right-aligned)
   if (!value_type_.isEmpty()) {
     QFont badge_font;
     badge_font.setPointSize(8);
@@ -291,27 +309,23 @@ void FieldSectionItem::paint(QPainter* painter,
                       Qt::AlignCenter, value_type_);
   }
 
-  // ── Bit cells ──
   int global_base = byte_offset_ * 8 + start_bit_;
-
-  // Cell area background
   painter->fillRect(0, kHeaderHeight + 1, sec_w, sec_h - kHeaderHeight - 1,
                     dark ? QColor(28, 28, 30) : QColor(250, 250, 250));
 
   for (int r = 0; r < rows; ++r) {
     for (int c = 0; c < cols; ++c) {
       int local_idx = r * bits_per_row_ + c;
-      if (local_idx >= bit_width_)
+      if (local_idx >= bit_width_) {
         break;
+      }
 
       int cell_x = c * cell_size_;
       int cell_y = kHeaderHeight + r * cell_size_;
 
-      // Cell background
       painter->fillRect(cell_x + 1, cell_y + 1, cell_size_ - 2, cell_size_ - 2,
                         dark ? QColor(38, 38, 40) : QColor(238, 238, 240));
 
-      // Cell border (right + bottom only, spreadsheet style)
       QColor border_col = dark ? QColor(50, 50, 53) : QColor(222, 222, 225);
       painter->setPen(QPen(border_col, 1));
       painter->drawLine(cell_x + cell_size_, cell_y + 1, cell_x + cell_size_,
@@ -319,7 +333,6 @@ void FieldSectionItem::paint(QPainter* painter,
       painter->drawLine(cell_x + 1, cell_y + cell_size_, cell_x + cell_size_,
                         cell_y + cell_size_);
 
-      // Bit index text
       int global_bit = global_base + local_idx;
       painter->setPen(dark ? QColor(160, 160, 165) : QColor(130, 130, 135));
       painter->setFont(cell_font_);
@@ -329,37 +342,21 @@ void FieldSectionItem::paint(QPainter* painter,
     }
   }
 
-  // ── Selection indicator (most prominent layer) ──
   if (highlighted_) {
-    // Full-height left accent bar: multi-hue gradient
-    {
-      QLinearGradient g(0, 0, 0, sec_h);
-      g.setColorAt(0.0, color_.lighter(190));
-      g.setColorAt(0.3, color_);
-      g.setColorAt(0.6, c2);
-      g.setColorAt(1.0, c2.darker(130));
-      painter->fillRect(0, 0, 6, sec_h, g);
-    }
-
-    // Outer selection border: matching gradient
-    {
-      QLinearGradient g(0, 0, 0, sec_h);
-      g.setColorAt(0.0, dark ? Qt::white : color_.lighter(140));
-      g.setColorAt(0.4, color_);
-      g.setColorAt(0.7, c2);
-      g.setColorAt(1.0, c2.darker(120));
-      painter->setPen(QPen(g, 2));
-      painter->drawRect(1, 1, sec_w - 2, sec_h - 2);
-    }
+    QLinearGradient g(0, 0, 0, sec_h);
+    g.setColorAt(0.0, dark ? Qt::white : color_.lighter(140));
+    g.setColorAt(0.4, color_);
+    g.setColorAt(0.7, c2);
+    g.setColorAt(1.0, c2.darker(120));
+    painter->setPen(QPen(g, 2));
+    painter->drawRect(1, 1, sec_w - 2, sec_h - 2);
   }
 
-  // ── Hover border (subtle, shown only when not selected) ──
   if (hovered_ && !highlighted_) {
     painter->setPen(QPen(QColor(255, 255, 255, dark ? 50 : 100), 1));
     painter->drawRect(1, 1, sec_w - 2, sec_h - 2);
   }
 
-  // ── Bottom separator ──
   if (!highlighted_) {
     painter->setPen(QPen(dark ? QColor(45, 45, 48) : QColor(228, 228, 230), 1));
     painter->drawLine(4, sec_h - 1, sec_w, sec_h - 1);
@@ -369,7 +366,7 @@ void FieldSectionItem::paint(QPainter* painter,
 void FieldSectionItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
   if (!hovered_) {
     hovered_ = true;
-    emit hovered(name_, true);
+    emit hovered(node_, true);
   }
   update();
 }
@@ -377,13 +374,13 @@ void FieldSectionItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
 void FieldSectionItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
   if (hovered_) {
     hovered_ = false;
-    emit hovered(name_, false);
+    emit hovered(node_, false);
   }
   update();
 }
 
 void FieldSectionItem::mousePressEvent(QGraphicsSceneMouseEvent*) {
-  emit clicked(name_);
+  emit clicked(node_);
 }
 
 void FieldSectionItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
@@ -397,79 +394,424 @@ void FieldSectionItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
 
   QAction* chosen = menu.exec(event->screenPos());
   if (chosen == act_edit) {
-    emit clicked(name_);
+    emit clicked(node_);
   } else if (chosen == act_add_before) {
-    emit contextMenuAction(name_, QStringLiteral("addBefore"));
+    emit contextMenuAction(node_, QStringLiteral("addBefore"));
   } else if (chosen == act_add_after) {
-    emit contextMenuAction(name_, QStringLiteral("addAfter"));
+    emit contextMenuAction(node_, QStringLiteral("addAfter"));
   } else if (chosen == act_delete) {
-    emit contextMenuAction(name_, QStringLiteral("delete"));
+    emit contextMenuAction(node_, QStringLiteral("delete"));
   }
 }
 
-// ============================================================
-// IcdBitLayoutScene
-// ============================================================
+ChildFieldItem::ChildFieldItem(const icd::Node* node, int relative_start,
+                               int relative_end, const QString& value_type,
+                               const QColor& color, int cell_size,
+                               QGraphicsItem* parent)
+    : QGraphicsObject(parent),
+      node_(node),
+      relative_start_(relative_start),
+      relative_end_(relative_end),
+      value_type_(value_type),
+      color_(color),
+      cell_size_(cell_size) {
+  setAcceptHoverEvents(true);
+  setCursor(Qt::PointingHandCursor);
+  label_font_.setPointSize(8);
+  label_font_.setBold(true);
+}
+
+QRectF ChildFieldItem::boundingRect() const {
+  int bit_count = qMax(1, relative_end_ - relative_start_ + 1);
+  return QRectF(0, 0, qMax(bit_count * cell_size_, 24), 36);
+}
+
+void ChildFieldItem::setHighlighted(bool on) {
+  highlighted_ = on;
+  update();
+}
+
+void ChildFieldItem::setHovered(bool on) {
+  hovered_ = on;
+  update();
+}
+
+void ChildFieldItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
+                           QWidget*) {
+  bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+  QRectF rect = boundingRect().adjusted(1, 1, -1, -1);
+  QColor fill = highlighted_ ? color_.lighter(150) : color_.lighter(115);
+  if (hovered_ && !highlighted_) {
+    fill = fill.lighter(115);
+  }
+
+  painter->setPen(QPen(highlighted_ ? QColor(255, 255, 255)
+                                    : color_.darker(dark ? 120 : 105),
+                       highlighted_ ? 2 : 1));
+  painter->setBrush(fill);
+  painter->drawRoundedRect(rect, 5, 5);
+
+  QString text = node_ ? nodeNameText(*node_) : QString();
+  QString range = QStringLiteral("%1~%2").arg(relative_start_).arg(relative_end_);
+  if (relative_start_ == relative_end_) {
+    range = QString::number(relative_start_);
+  }
+  QString label = QStringLiteral("%1\n%2 %3").arg(text, range, value_type_);
+
+  painter->setPen(dark ? QColor(245, 245, 245) : QColor(35, 35, 35));
+  painter->setFont(label_font_);
+  QString elided = painter->fontMetrics().elidedText(
+      label, Qt::ElideRight, qMax(0, static_cast<int>(rect.width()) - 8));
+  painter->drawText(rect.adjusted(4, 2, -4, -2), Qt::AlignCenter, elided);
+}
+
+void ChildFieldItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
+  if (!hovered_) {
+    hovered_ = true;
+    emit hovered(node_, true);
+  }
+  update();
+}
+
+void ChildFieldItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
+  if (hovered_) {
+    hovered_ = false;
+    emit hovered(node_, false);
+  }
+  update();
+}
+
+void ChildFieldItem::mousePressEvent(QGraphicsSceneMouseEvent*) {
+  emit clicked(node_);
+}
+
+void ChildFieldItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
+  QMenu menu;
+  QAction* act_edit = menu.addAction(QStringLiteral("编辑"));
+  menu.addSeparator();
+  QAction* act_add_before = menu.addAction(QStringLiteral("在前面插入"));
+  QAction* act_add_after = menu.addAction(QStringLiteral("在后面插入"));
+  menu.addSeparator();
+  QAction* act_delete = menu.addAction(QStringLiteral("删除"));
+
+  QAction* chosen = menu.exec(event->screenPos());
+  if (chosen == act_edit) {
+    emit clicked(node_);
+  } else if (chosen == act_add_before) {
+    emit contextMenuAction(node_, QStringLiteral("addBefore"));
+  } else if (chosen == act_add_after) {
+    emit contextMenuAction(node_, QStringLiteral("addAfter"));
+  } else if (chosen == act_delete) {
+    emit contextMenuAction(node_, QStringLiteral("delete"));
+  }
+}
+
+ContainerFieldItem::ContainerFieldItem(const icd::Node* node,
+                                       const QString& value_type,
+                                       const QColor& color, int cell_size,
+                                       QGraphicsItem* parent)
+    : LayoutNodeItem(parent),
+      node_(node),
+      name_(node ? nodeNameText(*node) : QString()),
+      value_type_(value_type),
+      color_(color),
+      cell_size_(cell_size) {
+  setAcceptHoverEvents(true);
+  setCursor(Qt::PointingHandCursor);
+  header_font_.setPointSize(10);
+  header_font_.setBold(true);
+  cell_font_.setPointSize(7);
+  initChildren();
+}
+
+int ContainerFieldItem::parentStartBit() const {
+  return node_ ? absoluteStartBit(*node_) : 0;
+}
+
+void ContainerFieldItem::initChildren() {
+  if (!node_) {
+    return;
+  }
+
+  int parent_start = parentStartBit();
+  for (const auto& child : node_->children()) {
+    int child_start = absoluteStartBit(*child);
+    int relative_start = child_start - parent_start;
+    int relative_end = relative_start + child->bit_width() - 1;
+    auto* item = new ChildFieldItem(child.get(), relative_start, relative_end,
+                                    valueTypeText(*child), color_, cell_size_,
+                                    this);
+    item->setPos(relative_start * cell_size_, kBodyTop);
+    child_items_.append(item);
+
+    connect(item, &ChildFieldItem::clicked, this, &ContainerFieldItem::clicked);
+    connect(item, &ChildFieldItem::contextMenuAction, this,
+            &ContainerFieldItem::contextMenuAction);
+    connect(item, &ChildFieldItem::hovered, this, &ContainerFieldItem::hovered);
+  }
+}
+
+int ContainerFieldItem::sectionWidth() const {
+  if (!node_) {
+    return kMinSectionWidth;
+  }
+  return std::max(node_->bit_width() * cell_size_, kMinSectionWidth);
+}
+
+int ContainerFieldItem::totalHeight() const {
+  return kBodyTop + kBodyHeight + 10;
+}
+
+QRectF ContainerFieldItem::boundingRect() const {
+  return QRectF(0, 0, sectionWidth(), totalHeight());
+}
+
+bool ContainerFieldItem::containsChildNode(const icd::Node* node) const {
+  return childFieldItem(node) != nullptr;
+}
+
+QPair<int, int> ContainerFieldItem::childRelativeRange(
+    const icd::Node* node) const {
+  if (auto* item = childFieldItem(node)) {
+    return qMakePair(item->relativeStart(), item->relativeEnd());
+  }
+  return qMakePair(-1, -1);
+}
+
+ChildFieldItem* ContainerFieldItem::childFieldItem(const icd::Node* node) const {
+  for (auto* item : child_items_) {
+    if (item->node() == node) {
+      return item;
+    }
+  }
+  return nullptr;
+}
+
+void ContainerFieldItem::setHighlightedNode(const icd::Node* node) {
+  highlighted_ = node_ && node_ == node;
+  for (auto* child : child_items_) {
+    child->setHighlighted(child->node() == node);
+  }
+  update();
+}
+
+void ContainerFieldItem::setHoveredNode(const icd::Node* node, bool on) {
+  if (node_ && node_ == node) {
+    hovered_ = on;
+  }
+  for (auto* child : child_items_) {
+    if (child->node() == node) {
+      child->setHovered(on);
+    }
+  }
+  update();
+}
+
+void ContainerFieldItem::paint(QPainter* painter,
+                               const QStyleOptionGraphicsItem*, QWidget*) {
+  bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+  int sec_w = sectionWidth();
+  int sec_h = totalHeight();
+
+  QColor bg = dark ? QColor(30, 30, 33) : QColor(245, 245, 248);
+  painter->fillRect(0, 0, sec_w, sec_h, bg);
+
+  QColor c1 = color_;
+  QColor c2 = gradientPartner(color_);
+  QLinearGradient header_gradient(0, 0, sec_w, 0);
+  header_gradient.setColorAt(0.0, c1);
+  header_gradient.setColorAt(0.55, c2);
+  header_gradient.setColorAt(1.0, c2.darker(125));
+  painter->fillRect(0, 0, sec_w, kHeaderHeight, header_gradient);
+
+  QString range;
+  if (node_) {
+    int start = absoluteStartBit(*node_);
+    int end = start + node_->bit_width() - 1;
+    range = QStringLiteral("%1~%2").arg(start).arg(end);
+  }
+  QString title = QStringLiteral("%1  [%2 bits]  %3")
+                      .arg(name_, range, value_type_);
+
+  painter->setPen(Qt::white);
+  painter->setFont(header_font_);
+  painter->drawText(QRectF(14, 0, sec_w - 28, kHeaderHeight),
+                    Qt::AlignVCenter | Qt::AlignLeft,
+                    painter->fontMetrics().elidedText(title, Qt::ElideRight,
+                                                      sec_w - 28));
+
+  QRectF body(0, kBodyTop, node_ ? node_->bit_width() * cell_size_ : sec_w,
+              kBodyHeight - 16);
+  painter->setPen(QPen(dark ? QColor(70, 70, 75) : QColor(210, 210, 215), 1));
+  painter->setBrush(dark ? QColor(38, 38, 42) : QColor(252, 252, 253));
+  painter->drawRoundedRect(body, 6, 6);
+
+  if (node_) {
+    painter->setFont(cell_font_);
+    painter->setPen(dark ? QColor(150, 150, 155) : QColor(110, 110, 115));
+    for (int bit = 0; bit < node_->bit_width(); ++bit) {
+      int x = bit * cell_size_;
+      painter->drawLine(x, kBodyTop, x, kBodyTop + kBodyHeight - 16);
+      painter->drawText(QRectF(x, kBodyTop + kBodyHeight - 16, cell_size_, 14),
+                        Qt::AlignCenter, QString::number(bit));
+    }
+  }
+
+  if (highlighted_) {
+    painter->setPen(QPen(Qt::white, 2));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(1, 1, sec_w - 2, sec_h - 2);
+  } else if (hovered_) {
+    painter->setPen(QPen(QColor(255, 255, 255, dark ? 55 : 110), 1));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(1, 1, sec_w - 2, sec_h - 2);
+  }
+}
+
+void ContainerFieldItem::hoverEnterEvent(QGraphicsSceneHoverEvent*) {
+  if (!hovered_) {
+    hovered_ = true;
+    emit hovered(node_, true);
+  }
+  update();
+}
+
+void ContainerFieldItem::hoverLeaveEvent(QGraphicsSceneHoverEvent*) {
+  if (hovered_) {
+    hovered_ = false;
+    emit hovered(node_, false);
+  }
+  update();
+}
+
+void ContainerFieldItem::mousePressEvent(QGraphicsSceneMouseEvent*) {
+  emit clicked(node_);
+}
+
+void ContainerFieldItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
+  QMenu menu;
+  QAction* act_edit = menu.addAction(QStringLiteral("编辑"));
+  menu.addSeparator();
+  QAction* act_add_before = menu.addAction(QStringLiteral("在前面插入"));
+  QAction* act_add_after = menu.addAction(QStringLiteral("在后面插入"));
+  menu.addSeparator();
+  QAction* act_delete = menu.addAction(QStringLiteral("删除"));
+
+  QAction* chosen = menu.exec(event->screenPos());
+  if (chosen == act_edit) {
+    emit clicked(node_);
+  } else if (chosen == act_add_before) {
+    emit contextMenuAction(node_, QStringLiteral("addBefore"));
+  } else if (chosen == act_add_after) {
+    emit contextMenuAction(node_, QStringLiteral("addAfter"));
+  } else if (chosen == act_delete) {
+    emit contextMenuAction(node_, QStringLiteral("delete"));
+  }
+}
+
 IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent) : QGraphicsScene(parent) {
   setBackgroundBrush(etest::app::ThemeManager::instance().isDarkTheme()
                          ? QColor(24, 24, 26)
                          : QColor(252, 252, 253));
 }
 
+void IcdBitLayoutScene::appendLayoutItem(LayoutNodeItem* item) {
+  item->setPos(left_margin_, next_y_);
+  addItem(item);
+  items_.append(item);
+  next_y_ += item->totalHeight() + section_spacing_;
+
+  connect(item, &LayoutNodeItem::clicked, this,
+          &IcdBitLayoutScene::nodeClicked);
+  connect(item, &LayoutNodeItem::contextMenuAction, this,
+          &IcdBitLayoutScene::nodeContextMenuAction);
+  connect(item, &LayoutNodeItem::hovered, this,
+          &IcdBitLayoutScene::onNodeHovered);
+}
+
 FieldSectionItem* IcdBitLayoutScene::addBlock(const QString& name,
                                               const QString& value_type,
-                                              int byte_offset,
-                                              int start_bit,
+                                              int byte_offset, int start_bit,
                                               int bit_width,
                                               const QColor& color) {
   auto* item = new FieldSectionItem(name, value_type, byte_offset, start_bit,
                                     bit_width, color, cell_size_, 8);
-  item->setPos(left_margin_, next_y_);
-  addItem(item);
-  blocks_.append(item);
-  next_y_ += item->totalHeight() + section_spacing_;
+  appendLayoutItem(item);
+  return item;
+}
 
-  connect(item, &FieldSectionItem::clicked, this,
-          &IcdBitLayoutScene::blockClicked);
-  connect(item, &FieldSectionItem::contextMenuAction, this,
-          &IcdBitLayoutScene::contextMenuAction);
-  connect(item, &FieldSectionItem::hovered, this,
-          &IcdBitLayoutScene::onBlockHovered);
+FieldSectionItem* IcdBitLayoutScene::addField(const icd::Node* node,
+                                              const QString& value_type,
+                                              const QColor& color) {
+  auto* item = new FieldSectionItem(node, value_type, color, cell_size_, 8);
+  appendLayoutItem(item);
+  return item;
+}
 
+ContainerFieldItem* IcdBitLayoutScene::addContainer(const icd::Node* node,
+                                                    const QString& value_type,
+                                                    const QColor& color) {
+  auto* item = new ContainerFieldItem(node, value_type, color, cell_size_);
+  appendLayoutItem(item);
   return item;
 }
 
 void IcdBitLayoutScene::clearBlocks() {
-  for (auto* block : blocks_) {
-    removeItem(block);
-    delete block;
+  for (auto* item : items_) {
+    removeItem(item);
+    delete item;
   }
-  blocks_.clear();
+  items_.clear();
   next_y_ = left_margin_;
   section_spacing_ = 12;
-  selected_name_.clear();
+  selected_node_ = nullptr;
   setSceneRect(0, 0, 640, 480);
 }
 
-void IcdBitLayoutScene::highlightBlock(const QString& name) {
-  selected_name_ = name;
-  for (auto* block : blocks_) {
-    block->setHighlighted(block->name() == name);
+void IcdBitLayoutScene::highlightNode(const icd::Node* node) {
+  selected_node_ = node;
+  for (auto* item : items_) {
+    item->setHighlightedNode(node);
   }
 }
 
-void IcdBitLayoutScene::onBlockHovered(const QString& name, bool on) {
-  for (auto* block : blocks_) {
-    if (block->name() == name) {
-      block->setHovered(on);
+void IcdBitLayoutScene::onNodeHovered(const icd::Node* node, bool on) {
+  for (auto* item : items_) {
+    item->setHoveredNode(node, on);
+  }
+  emit nodeHovered(node, on);
+}
+
+int IcdBitLayoutScene::fieldItemCount() const {
+  int count = 0;
+  for (auto* item : items_) {
+    if (dynamic_cast<FieldSectionItem*>(item)) {
+      ++count;
     }
   }
-  emit blockHovered(name, on);
+  return count;
 }
 
-// ============================================================
-// IcdBitLayoutView
-// ============================================================
+int IcdBitLayoutScene::containerItemCount() const {
+  int count = 0;
+  for (auto* item : items_) {
+    if (dynamic_cast<ContainerFieldItem*>(item)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+QVector<ContainerFieldItem*> IcdBitLayoutScene::containerItems() const {
+  QVector<ContainerFieldItem*> containers;
+  for (auto* item : items_) {
+    if (auto* container = dynamic_cast<ContainerFieldItem*>(item)) {
+      containers.append(container);
+    }
+  }
+  return containers;
+}
+
 IcdBitLayoutView::IcdBitLayoutView(QWidget* parent) : QWidget(parent) {
   initUi();
 }
@@ -479,18 +821,14 @@ void IcdBitLayoutView::initUi() {
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
-  // Toolbar
   auto* toolbar = new QWidget(this);
   toolbar->setFixedHeight(32);
   auto* tb_layout = new QHBoxLayout(toolbar);
   tb_layout->setContentsMargins(8, 0, 8, 0);
   layout->addWidget(toolbar);
 
-  // QGraphicsView
   view_ = new QGraphicsView(this);
   view_->setRenderHint(QPainter::Antialiasing);
-  // 位视图只画色块/矩形/文字，不需要平滑缩放
-  // view_->setRenderHint(QPainter::SmoothPixmapTransform);
   view_->setDragMode(QGraphicsView::ScrollHandDrag);
   view_->setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
   view_->setBackgroundBrush(etest::app::ThemeManager::instance().isDarkTheme()
@@ -503,14 +841,13 @@ void IcdBitLayoutView::initUi() {
   scene_ = new IcdBitLayoutScene(this);
   view_->setScene(scene_);
 
-  connect(scene_, &IcdBitLayoutScene::blockClicked, this,
-          &IcdBitLayoutView::blockClicked);
-  connect(scene_, &IcdBitLayoutScene::contextMenuAction, this,
-          &IcdBitLayoutView::contextMenuAction);
-  connect(scene_, &IcdBitLayoutScene::blockHovered, this,
-          &IcdBitLayoutView::blockHovered);
+  connect(scene_, &IcdBitLayoutScene::nodeClicked, this,
+          &IcdBitLayoutView::nodeClicked);
+  connect(scene_, &IcdBitLayoutScene::nodeContextMenuAction, this,
+          &IcdBitLayoutView::nodeContextMenuAction);
+  connect(scene_, &IcdBitLayoutScene::nodeHovered, this,
+          &IcdBitLayoutView::nodeHovered);
 
-  // Theme switch: refresh backgrounds and reload blocks
   connect(&etest::app::ThemeManager::instance(),
           &etest::app::ThemeManager::themeChanged, this, [this](bool) {
             bool dark = etest::app::ThemeManager::instance().isDarkTheme();
@@ -530,47 +867,46 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
   last_frame_ = &frame;
   clearBlocks();
 
-  QVector<const icd::Node*> nodes;
-  for (const auto& root : frame.roots()) {
-    collectAllNodes(*root, nodes);
+  if (frame.roots().empty()) {
+    return;
   }
 
-  if (nodes.isEmpty())
-    return;
+  QVector<const icd::Node*> roots;
+  for (const auto& root : frame.roots()) {
+    roots.push_back(root.get());
+  }
 
-  // Sort by (offset, start_bit, bit_width desc) for parent-before-child order
-  std::sort(nodes.begin(), nodes.end(),
-            [](const icd::Node* a, const icd::Node* b) {
-              if (a->offset() != b->offset())
-                return a->offset() < b->offset();
-              if (a->bit_offset() != b->bit_offset())
-                return a->bit_offset() < b->bit_offset();
-              return a->bit_width() > b->bit_width();
-            });
+  std::sort(roots.begin(), roots.end(), [](const icd::Node* a, const icd::Node* b) {
+    if (a->offset() != b->offset()) {
+      return a->offset() < b->offset();
+    }
+    if (a->bit_offset() != b->bit_offset()) {
+      return a->bit_offset() < b->bit_offset();
+    }
+    return a->bit_width() > b->bit_width();
+  });
 
   bool dark = etest::app::ThemeManager::instance().isDarkTheme();
   int cycle_idx = 0;
 
-  for (auto* node : nodes) {
+  for (auto* node : roots) {
     QColor color = resolveGroupColor(*node, dark);
-
-    {
-      QString g = QString::fromStdString(node->attrs().group_name);
-      if (g.isEmpty())
-        g = tagToGroupName(node->tag());
-      bool has_known_color = (!g.isEmpty() && kGroupColors.contains(g));
-      if (!has_known_color) {
-        auto& gc = kPaletteCycle[cycle_idx % kPaletteCycle.size()];
-        color = dark ? gc.dark : gc.light;
-        ++cycle_idx;
-      }
+    QString g = QString::fromStdString(node->attrs().group_name);
+    if (g.isEmpty()) {
+      g = tagToGroupName(node->tag());
+    }
+    bool has_known_color = (!g.isEmpty() && kGroupColors.contains(g));
+    if (!has_known_color) {
+      const auto& gc = kPaletteCycle[cycle_idx % kPaletteCycle.size()];
+      color = dark ? gc.dark : gc.light;
+      ++cycle_idx;
     }
 
-    QString qname = QString::fromStdString(std::string(node->name()));
-    QString qtype = QString::fromLatin1(
-        etest::protocol::utils::valueTypeName(node->value_type()));
-    addBlock(qname, qtype, node->offset(), node->bit_offset(),
-             node->bit_width(), color);
+    if (node->children().empty()) {
+      scene_->addField(node, valueTypeText(*node), color);
+    } else {
+      scene_->addContainer(node, valueTypeText(*node), color);
+    }
   }
 
   QRectF content_rect =
@@ -580,18 +916,9 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
   view_->centerOn(0, 0);
 }
 
-void IcdBitLayoutView::collectAllNodes(const icd::Node& node,
-                                       QVector<const icd::Node*>& out) {
-  out.push_back(&node);
-  for (const auto& child : node.children()) {
-    collectAllNodes(*child, out);
-  }
-}
-
 FieldSectionItem* IcdBitLayoutView::addBlock(const QString& name,
                                              const QString& value_type,
-                                             int byte_offset,
-                                             int start_bit,
+                                             int byte_offset, int start_bit,
                                              int bit_width,
                                              const QColor& color) {
   return scene_->addBlock(name, value_type, byte_offset, start_bit, bit_width,
@@ -605,8 +932,8 @@ void IcdBitLayoutView::clearBlocks() {
   view_->centerOn(0, 0);
 }
 
-void IcdBitLayoutView::highlightBlock(const QString& name) {
-  scene_->highlightBlock(name);
+void IcdBitLayoutView::highlightNode(const icd::Node* node) {
+  scene_->highlightNode(node);
 }
 
 }  // namespace etest::protocol
