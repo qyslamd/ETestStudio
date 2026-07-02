@@ -9,6 +9,7 @@
 #include <QPair>
 #include <QPoint>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 #include <icd/frame.hpp>
@@ -19,6 +20,16 @@ namespace etest::protocol {
 
 class ChildFieldItem;
 class ContainerFieldItem;
+
+// ============================================================
+// 字段语义辅助函数
+// ============================================================
+// 构建节点 tooltip，包含描述、bit 范围、单位、缩放、枚举、LinkTo 等
+QString buildNodeTooltip(const icd::Node& node);
+// 构建节点 badge 列表，例如 "帧头"/"校验"/"信号值"/"大端"/"缩放"/"枚举"
+QStringList buildNodeBadges(const icd::Node& node);
+// 判断节点是否为大端字段（Tag::big_endian_value）
+bool isNodeBigEndian(const icd::Node& node);
 
 // ============================================================
 // LayoutNodeItem — 位布局项基类

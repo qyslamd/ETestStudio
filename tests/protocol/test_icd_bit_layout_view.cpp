@@ -4,6 +4,7 @@
 #include <QGraphicsView>
 #include <QScrollBar>
 #include <QSignalSpy>
+#include <QStringList>
 #include <QTest>
 #include <QWheelEvent>
 
@@ -180,4 +181,132 @@ TEST(IcdBitLayoutViewTest, ChildClickEmitsExactNodePointerForDuplicateNames) {
   ASSERT_EQ(spy.count(), 1);
   const auto emitted = qvariant_cast<const icd::Node*>(spy.takeFirst().at(0));
   EXPECT_EQ(emitted, expected_child);
+}
+
+// ============================================================
+// 第二阶段：字段语义可视化
+// ============================================================
+
+namespace {
+
+icd::NodeAttrs MakeAttrs() { return icd::NodeAttrs{}; }
+
+std::unique_ptr<icd::Node> MakeSemanticNode(
+    const std::string& name, const std::string& description, int offset,
+    int bit_offset, int bit_width, icd::ValueType value_type, icd::Tag tag,
+    icd::NodeAttrs attrs) {
+  return std::make_unique<icd::Node>(name, description, offset, bit_offset,
+                                     bit_width, value_type, tag,
+                                     std::move(attrs));
+}
+
+}  // namespace
+
+TEST(NodeSemanticTest, TooltipContainsDescriptionAndBasicRange) {
+  auto node = MakeSemanticNode("设定电流", "仅此项是大端", 4, 0, 16,
+                               icd::ValueType::word, icd::Tag::none,
+                               MakeAttrs());
+  const QString tooltip = etest::protocol::buildNodeTooltip(*node);
+
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("设定电流")));
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("仅此项是大端")));
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("uint16")));
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("Offset")));
+}
+
+TEST(NodeSemanticTest, TooltipContainsValueTextListEnum) {
+  auto attrs = MakeAttrs();
+  attrs.value_text_list = "不用=0,左单元=1,右单元=2,中间单元=3";
+  auto node = MakeSemanticNode("SDI", "2bit有效", 1, 0, 2,
+                               icd::ValueType::byte_, icd::Tag::none, attrs);
+  const QString tooltip = etest::protocol::buildNodeTooltip(*node);
+
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("不用=0")));
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("枚举")));
+}
+
+TEST(NodeSemanticTest, TooltipContainsUnitAndScale) {
+  auto attrs = MakeAttrs();
+  attrs.unit = "A";
+  attrs.is_scaled = true;
+  attrs.scale_a = 0.01f;
+  attrs.scale_b = 0.0f;
+  auto node = MakeSemanticNode("电流", "分辨率0.01", 4, 0, 16,
+                               icd::ValueType::word, icd::Tag::none, attrs);
+  const QString tooltip = etest::protocol::buildNodeTooltip(*node);
+
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("Unit: A")));
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("0.01")));
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("Scale")));
+}
+
+TEST(NodeSemanticTest, TooltipContainsLinkToAndSystemName) {
+  auto attrs = MakeAttrs();
+  attrs.link_to = "\\ComCHH50W_COM1\\ch1";
+  attrs.system_name = "5V导光板电源";
+  attrs.group_name = "5V导光板电源";
+  auto node = MakeSemanticNode("电流", "", 4, 0, 16,
+                               icd::ValueType::word, icd::Tag::none, attrs);
+  const QString tooltip = etest::protocol::buildNodeTooltip(*node);
+
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("ComCHH50W_COM1")));
+  EXPECT_TRUE(tooltip.contains(QStringLiteral("5V导光板电源")));
+}
+
+TEST(NodeSemanticTest, BadgesForChecksumTag) {
+  auto node = MakeSemanticNode("CRC", "crc校验", 6, 0, 16,
+                               icd::ValueType::word, icd::Tag::sum,
+                               MakeAttrs());
+  const QStringList badges = etest::protocol::buildNodeBadges(*node);
+  EXPECT_TRUE(badges.contains(QStringLiteral("校验")));
+}
+
+TEST(NodeSemanticTest, BadgesForSignalValueTag) {
+  auto node = MakeSemanticNode("电流", "", 4, 0, 16,
+                               icd::ValueType::word, icd::Tag::signal_in_value,
+                               MakeAttrs());
+  const QStringList badges = etest::protocol::buildNodeBadges(*node);
+  EXPECT_TRUE(badges.contains(QStringLiteral("信号值")));
+}
+
+TEST(NodeSemanticTest, BadgesForBigEndianTag) {
+  auto node = MakeSemanticNode("电流", "大端字段", 4, 0, 16,
+                               icd::ValueType::word,
+                               icd::Tag::big_endian_value, MakeAttrs());
+  const QStringList badges = etest::protocol::buildNodeBadges(*node);
+  EXPECT_TRUE(badges.contains(QStringLiteral("大端")));
+  EXPECT_TRUE(etest::protocol::isNodeBigEndian(*node));
+}
+
+TEST(NodeSemanticTest, BadgesForScaledField) {
+  auto attrs = MakeAttrs();
+  attrs.is_scaled = true;
+  attrs.scale_a = 0.01f;
+  auto node = MakeSemanticNode("电流", "", 4, 0, 16,
+                               icd::ValueType::word, icd::Tag::none, attrs);
+  const QStringList badges = etest::protocol::buildNodeBadges(*node);
+  EXPECT_TRUE(badges.contains(QStringLiteral("缩放")));
+}
+
+TEST(NodeSemanticTest, BadgesForEnumField) {
+  auto attrs = MakeAttrs();
+  attrs.value_text_list = "不用=0,左单元=1,右单元=2,中间单元=3";
+  auto node = MakeSemanticNode("SDI", "", 1, 0, 2, icd::ValueType::byte_,
+                               icd::Tag::none, attrs);
+  const QStringList badges = etest::protocol::buildNodeBadges(*node);
+  EXPECT_TRUE(badges.contains(QStringLiteral("枚举")));
+}
+
+TEST(NodeSemanticTest, BadgesForHeaderTag) {
+  auto node = MakeSemanticNode("byte0", "", 0, 0, 8, icd::ValueType::byte_,
+                               icd::Tag::head, MakeAttrs());
+  const QStringList badges = etest::protocol::buildNodeBadges(*node);
+  EXPECT_TRUE(badges.contains(QStringLiteral("帧头")));
+}
+
+TEST(NodeSemanticTest, IsNodeBigEndianFalseForLittleEndianDefault) {
+  auto node = MakeSemanticNode("电流", "", 4, 0, 16,
+                               icd::ValueType::word, icd::Tag::none,
+                               MakeAttrs());
+  EXPECT_FALSE(etest::protocol::isNodeBigEndian(*node));
 }

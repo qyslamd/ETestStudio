@@ -114,9 +114,137 @@ static QString nodeNameText(const icd::Node& node) {
   return QString::fromStdString(std::string(node.name()));
 }
 
+static QString tagSemanticName(icd::Tag tag) {
+  switch (tag) {
+    case icd::Tag::head:
+      return QStringLiteral("帧头");
+    case icd::Tag::length:
+      return QStringLiteral("长度");
+    case icd::Tag::count:
+      return QStringLiteral("计数");
+    case icd::Tag::sum:
+    case icd::Tag::sum2:
+    case icd::Tag::xor_:
+    case icd::Tag::xor1:
+    case icd::Tag::xor2:
+      return QStringLiteral("校验");
+    case icd::Tag::init_value:
+      return QStringLiteral("初值");
+    case icd::Tag::signal_in_value:
+      return QStringLiteral("信号值");
+    case icd::Tag::big_endian_value:
+      return QStringLiteral("大端");
+    default:
+      return {};
+  }
+}
+
+static bool looksLikeEnum(const QString& value_text_list) {
+  // 形如 "不用=0,左单元=1" 视为枚举定义
+  return value_text_list.contains('=') && value_text_list.contains(',');
+}
+
 }  // anonymous namespace
 
 namespace etest::protocol {
+
+QString buildNodeTooltip(const icd::Node& node) {
+  QString name = nodeNameText(node);
+  QString desc = QString::fromStdString(std::string(node.description()));
+  QString type_text =
+      QString::fromLatin1(utils::valueTypeName(node.value_type()));
+
+  int abs_start = node.offset() * 8 + node.bit_offset();
+  int abs_end = abs_start + node.bit_width() - 1;
+
+  QStringList lines;
+  lines << QStringLiteral("<b>%1</b>").arg(name);
+  if (!desc.isEmpty()) {
+    lines << desc;
+  }
+  lines << QStringLiteral("Type: %1 | Bit: %2~%3 (%4 bits) | Offset: %5")
+               .arg(type_text)
+               .arg(abs_start)
+               .arg(abs_end)
+               .arg(node.bit_width())
+               .arg(node.offset());
+
+  QString tag_name = tagSemanticName(node.tag());
+  if (!tag_name.isEmpty()) {
+    lines << QStringLiteral("Tag: %1").arg(tag_name);
+  }
+  if (isNodeBigEndian(node)) {
+    lines << QStringLiteral("ByteOrder: 大端");
+  }
+
+  const auto& attrs = node.attrs();
+  if (!attrs.unit.empty()) {
+    lines << QStringLiteral("Unit: %1")
+                 .arg(QString::fromStdString(attrs.unit));
+  }
+  if (attrs.is_scaled) {
+    QStringList scale_parts;
+    scale_parts << QStringLiteral("Scale");
+    if (attrs.scale_a.has_value()) {
+      scale_parts << QStringLiteral("A=%1").arg(*attrs.scale_a);
+    }
+    if (attrs.scale_b.has_value()) {
+      scale_parts << QStringLiteral("B=%1").arg(*attrs.scale_b);
+    }
+    lines << scale_parts.join(' ');
+  }
+  if (attrs.min.has_value() || attrs.max.has_value()) {
+    QString min_text = attrs.min.has_value()
+                           ? QString::number(*attrs.min)
+                           : QStringLiteral("-");
+    QString max_text = attrs.max.has_value()
+                           ? QString::number(*attrs.max)
+                           : QStringLiteral("-");
+    lines << QStringLiteral("Range: %1 ~ %2").arg(min_text, max_text);
+  }
+  if (!attrs.value_text_list.empty()) {
+    QString vtl = QString::fromStdString(attrs.value_text_list);
+    QString label = looksLikeEnum(vtl) ? QStringLiteral("枚举") : QStringLiteral("默认值");
+    lines << QStringLiteral("%1: %2").arg(label, vtl);
+  }
+  if (!attrs.link_to.empty()) {
+    lines << QStringLiteral("LinkTo: %1")
+                 .arg(QString::fromStdString(attrs.link_to));
+  }
+  if (!attrs.system_name.empty()) {
+    lines << QStringLiteral("System: %1")
+                 .arg(QString::fromStdString(attrs.system_name));
+  }
+  if (!attrs.group_name.empty()) {
+    lines << QStringLiteral("Group: %1")
+                 .arg(QString::fromStdString(attrs.group_name));
+  }
+
+  return lines.join(QStringLiteral("<br>"));
+}
+
+QStringList buildNodeBadges(const icd::Node& node) {
+  QStringList badges;
+  QString tag_name = tagSemanticName(node.tag());
+  if (!tag_name.isEmpty()) {
+    badges << tag_name;
+  }
+  if (isNodeBigEndian(node)) {
+    badges << QStringLiteral("大端");
+  }
+  if (node.attrs().is_scaled) {
+    badges << QStringLiteral("缩放");
+  }
+  QString vtl = QString::fromStdString(node.attrs().value_text_list);
+  if (looksLikeEnum(vtl)) {
+    badges << QStringLiteral("枚举");
+  }
+  return badges;
+}
+
+bool isNodeBigEndian(const icd::Node& node) {
+  return node.tag() == icd::Tag::big_endian_value;
+}
 
 LayoutNodeItem::LayoutNodeItem(QGraphicsItem* parent) : QGraphicsObject(parent) {}
 
@@ -129,6 +257,9 @@ FieldSectionItem::FieldSectionItem(const icd::Node* node,
                        node ? node->bit_width() : 0, color, cell_size,
                        bits_per_row, parent) {
   node_ = node;
+  if (node_) {
+    setToolTip(buildNodeTooltip(*node_));
+  }
 }
 
 FieldSectionItem::FieldSectionItem(const QString& name,
@@ -266,14 +397,26 @@ void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
   QString header_text =
       QStringLiteral("%1  [%2 bits]").arg(name_).arg(range_str);
 
-  int badge_reserved = 0;
+  QFont badge_font;
+  badge_font.setPointSize(8);
+  badge_font.setBold(true);
+  QFontMetrics badge_fm(badge_font);
+
+  QStringList sem_badges = node_ ? buildNodeBadges(*node_) : QStringList{};
+  int badge_pad = 6;
+  int badge_gap = 4;
+  int badge_h = badge_fm.height() + 4;
+
+  int value_type_w = 0;
   if (!value_type_.isEmpty()) {
-    QFont badge_font_tmp;
-    badge_font_tmp.setPointSize(8);
-    badge_font_tmp.setBold(true);
-    QFontMetrics fm_tmp(badge_font_tmp);
-    badge_reserved = fm_tmp.horizontalAdvance(value_type_) + 16;
+    value_type_w = badge_fm.horizontalAdvance(value_type_) + badge_pad * 2;
   }
+  int sem_badges_w = 0;
+  for (const auto& b : sem_badges) {
+    sem_badges_w += badge_fm.horizontalAdvance(b) + badge_pad * 2 + badge_gap;
+  }
+
+  int badge_reserved = value_type_w + sem_badges_w + 8;
 
   painter->setPen(highlighted_ ? Qt::white : c_bright);
   painter->setFont(header_font_);
@@ -283,30 +426,41 @@ void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
   painter->drawText(name_rect, Qt::AlignVCenter | Qt::AlignLeft,
                     elided_header_text);
 
-  if (!value_type_.isEmpty()) {
-    QFont badge_font;
-    badge_font.setPointSize(8);
-    badge_font.setBold(true);
-    painter->setFont(badge_font);
+  int cur_x = sec_w - 8;
+  painter->setFont(badge_font);
 
-    QFontMetrics fm(badge_font);
-    int badge_text_w = fm.horizontalAdvance(value_type_);
-    int badge_pad = 6;
-    int badge_w = badge_text_w + badge_pad * 2;
-    int badge_h = fm.height() + 4;
-    int badge_x = sec_w - badge_w - 8;
+  if (!value_type_.isEmpty()) {
+    int badge_w = badge_fm.horizontalAdvance(value_type_) + badge_pad * 2;
+    cur_x -= badge_w;
     int badge_y = (sec_hdr - badge_h) / 2;
 
     QColor badge_bg = c_bright;
     badge_bg.setAlpha(highlighted_ ? 80 : 50);
     painter->setPen(Qt::NoPen);
     painter->setBrush(badge_bg);
-    painter->drawRoundedRect(badge_x, badge_y, badge_w, badge_h, 4, 4);
+    painter->drawRoundedRect(cur_x, badge_y, badge_w, badge_h, 4, 4);
 
     painter->setPen(highlighted_ ? Qt::white : QColor(255, 255, 255, 220));
-    painter->setFont(badge_font);
-    painter->drawText(QRectF(badge_x, badge_y, badge_w, badge_h),
+    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h),
                       Qt::AlignCenter, value_type_);
+    cur_x -= badge_gap;
+  }
+
+  for (const auto& b : sem_badges) {
+    int badge_w = badge_fm.horizontalAdvance(b) + badge_pad * 2;
+    cur_x -= badge_w;
+    int badge_y = (sec_hdr - badge_h) / 2;
+
+    QColor badge_bg = highlighted_ ? QColor(255, 255, 255, 90)
+                                    : QColor(255, 255, 255, 45);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(badge_bg);
+    painter->drawRoundedRect(cur_x, badge_y, badge_w, badge_h, 4, 4);
+
+    painter->setPen(highlighted_ ? Qt::white : QColor(255, 255, 255, 230));
+    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h),
+                      Qt::AlignCenter, b);
+    cur_x -= badge_gap;
   }
 
   int global_base = byte_offset_ * 8 + start_bit_;
@@ -419,6 +573,9 @@ ChildFieldItem::ChildFieldItem(const icd::Node* node, int relative_start,
   setCursor(Qt::PointingHandCursor);
   label_font_.setPointSize(8);
   label_font_.setBold(true);
+  if (node_) {
+    setToolTip(buildNodeTooltip(*node_));
+  }
 }
 
 QRectF ChildFieldItem::boundingRect() const {
@@ -521,6 +678,9 @@ ContainerFieldItem::ContainerFieldItem(const icd::Node* node,
   header_font_.setPointSize(10);
   header_font_.setBold(true);
   cell_font_.setPointSize(7);
+  if (node_) {
+    setToolTip(buildNodeTooltip(*node_));
+  }
   initChildren();
 }
 
@@ -633,12 +793,44 @@ void ContainerFieldItem::paint(QPainter* painter,
   QString title = QStringLiteral("%1  [%2 bits]  %3")
                       .arg(name_, range, value_type_);
 
+  QStringList sem_badges = node_ ? buildNodeBadges(*node_) : QStringList{};
+  QFont badge_font;
+  badge_font.setPointSize(8);
+  badge_font.setBold(true);
+  QFontMetrics badge_fm(badge_font);
+  int badge_pad = 6;
+  int badge_gap = 4;
+  int badge_h = badge_fm.height() + 4;
+  int badges_total_w = 0;
+  for (const auto& b : sem_badges) {
+    badges_total_w += badge_fm.horizontalAdvance(b) + badge_pad * 2 + badge_gap;
+  }
+
   painter->setPen(Qt::white);
   painter->setFont(header_font_);
-  painter->drawText(QRectF(14, 0, sec_w - 28, kHeaderHeight),
+  painter->drawText(QRectF(14, 0, sec_w - 28 - badges_total_w, kHeaderHeight),
                     Qt::AlignVCenter | Qt::AlignLeft,
-                    painter->fontMetrics().elidedText(title, Qt::ElideRight,
-                                                      sec_w - 28));
+                    painter->fontMetrics().elidedText(
+                        title, Qt::ElideRight, sec_w - 28 - badges_total_w));
+
+  painter->setFont(badge_font);
+  int cur_x = sec_w - 8;
+  for (const auto& b : sem_badges) {
+    int badge_w = badge_fm.horizontalAdvance(b) + badge_pad * 2;
+    cur_x -= badge_w;
+    int badge_y = (kHeaderHeight - badge_h) / 2;
+
+    QColor badge_bg = highlighted_ ? QColor(255, 255, 255, 90)
+                                    : QColor(255, 255, 255, 45);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(badge_bg);
+    painter->drawRoundedRect(cur_x, badge_y, badge_w, badge_h, 4, 4);
+
+    painter->setPen(highlighted_ ? Qt::white : QColor(255, 255, 255, 230));
+    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h),
+                      Qt::AlignCenter, b);
+    cur_x -= badge_gap;
+  }
 
   QRectF body(0, kBodyTop, node_ ? node_->bit_width() * cell_size_ : sec_w,
               kBodyHeight - 16);
