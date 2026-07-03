@@ -1,77 +1,33 @@
 #include "TestProgramEditorWidget.h"
 
 #include <QAction>
+#include <QDockWidget>
 #include <QEvent>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMouseEvent>
-#include <QInputDialog>
+#include <QPointer>
+#include <QStandardItemModel>
 #include <QTabBar>
 #include <QTabWidget>
-#include <QTableWidget>
 #include <QTextEdit>
 #include <QToolBar>
 #include <QVBoxLayout>
-#include <QDockWidget>
 #include <QWidget>
 
-#include "CommandTypeDelegate.h"
 #include "StepDetailPanel.h"
+#include "StepTableWidget.h"
 #include "StepValidation.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
 
 namespace etest::app {
-
-// ── 列索引常量（相对于各命令类型的列布局） ──
-enum StepCol {
-  kColDesc = 0,       // 步骤说明
-  kColCmd = 1,        // 命令
-  kColTarget = 2,     // 目标 / 条件目标 / 期望值
-  kColValue = 3,      // 值 / 运算符 / 故障类型 / 期望值
-  kColExtra = 4,      // 延迟ms / 容差min / 循环次数 / 条件值
-  kColExtra2 = 5,     // 超时ms / 容差max / 间隔ms / 故障值
-  kColTimeout = 6,    // 超时ms
-  kStepColumnCount = 7
-};
-
-// ── subSteps 序列化辅助（QVector<TestStepData> → JSON → QByteArray） ──
-// QVector<TestStepData> 无法直接存入 QVariant，序列化为 JSON 字符串绕开此限制
-static QJsonArray subStepsToJsonArray(const QVector<TestStepData>& steps) {
-  QJsonArray arr;
-  for (const auto& s : steps) {
-    arr.append(testStepToJson(s));
-  }
-  return arr;
-}
-
-static QVector<TestStepData> subStepsFromJsonArray(const QJsonArray& arr) {
-  QVector<TestStepData> steps;
-  for (const auto& v : arr) {
-    steps.append(testStepFromJson(v.toObject()));
-  }
-  return steps;
-}
-
-static QByteArray serializeSubSteps(const QVector<TestStepData>& steps) {
-  return QJsonDocument(subStepsToJsonArray(steps)).toJson(QJsonDocument::Compact);
-}
-
-static QVector<TestStepData> deserializeSubSteps(const QByteArray& data) {
-  QJsonDocument doc = QJsonDocument::fromJson(data);
-  if (doc.isArray()) {
-    return subStepsFromJsonArray(doc.array());
-  }
-  return {};
-}
 
 TestProgramEditorWidget::TestProgramEditorWidget(const QString& filePath,
                                                  QWidget* parent)
@@ -170,21 +126,22 @@ void TestProgramEditorWidget::initUi() {
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
-  // ── Central：步骤表格 + 校验状态 ──
+  // ── Central：步骤表格 ──
   tab_widget_ = new QTabWidget(content);
   tab_widget_->tabBar()->installEventFilter(this);
 
-  setup_table_ = createStepTable(CommandTypeDelegate::Full);
-  tab_widget_->addTab(setup_table_, QStringLiteral("Setup"));
+  setup_table_ = new StepTableWidget(CommandTypeDelegate::Full, this);
+  tab_widget_->addTab(setup_table_, QStringLiteral("初始化"));
 
-  teardown_table_ = createStepTable(CommandTypeDelegate::Full);
-  tab_widget_->addTab(teardown_table_, QStringLiteral("Teardown"));
+  teardown_table_ = new StepTableWidget(CommandTypeDelegate::Full, this);
+  tab_widget_->addTab(teardown_table_, QStringLiteral("清理"));
 
   main_layout->addWidget(tab_widget_, 1);
 
   // ── 校验状态栏 ──
   validation_label_ = new QLabel(content);
-  validation_label_->setObjectName(QStringLiteral("testProgramValidationLabel"));
+  validation_label_->setObjectName(
+      QStringLiteral("testProgramValidationLabel"));
   validation_label_->setVisible(false);
   main_layout->addWidget(validation_label_);
 
@@ -226,80 +183,6 @@ void TestProgramEditorWidget::initUi() {
   detail_dock_->setTitleBarWidget(
       new ::etest::ui::DockTitleBar(QStringLiteral("步骤详情"), detail_dock_));
   addDockWidget(Qt::RightDockWidgetArea, detail_dock_);
-  updateActions();
-}
-
-QTableWidget* TestProgramEditorWidget::createStepTable(
-    CommandTypeDelegate::Mode delegateMode) {
-  auto* table = new QTableWidget(0, kStepColumnCount, this);
-  table->setHorizontalHeaderLabels(
-      {QStringLiteral("步骤说明"), QStringLiteral("命令"),
-       QStringLiteral("目标"), QStringLiteral("值"),
-       QStringLiteral("延迟(ms)"), QStringLiteral(""), QStringLiteral("超时(ms)")});
-
-  // 表头拉伸策略
-  table->horizontalHeader()->setStretchLastSection(false);
-  table->horizontalHeader()->setSectionResizeMode(kColDesc, QHeaderView::Stretch);
-  table->horizontalHeader()->setSectionResizeMode(kColCmd, QHeaderView::Fixed);
-  table->setColumnWidth(kColCmd, 120);
-  table->horizontalHeader()->setSectionResizeMode(
-      kColExtra, QHeaderView::ResizeToContents);
-  table->horizontalHeader()->setSectionResizeMode(
-      kColExtra2, QHeaderView::ResizeToContents);
-  table->horizontalHeader()->setSectionResizeMode(
-      kColTimeout, QHeaderView::ResizeToContents);
-
-  table->setSelectionBehavior(QAbstractItemView::SelectRows);
-  table->setSelectionMode(QAbstractItemView::SingleSelection);
-  table->verticalHeader()->setDefaultSectionSize(24);
-  table->setAlternatingRowColors(true);
-
-  // 拖拽排序
-  table->setDragDropMode(QAbstractItemView::InternalMove);
-  table->setDragEnabled(true);
-  table->setAcceptDrops(true);
-  table->setDropIndicatorShown(true);
-  table->setDragDropOverwriteMode(false);
-
-  // 命令列 ComboBox 委托
-  auto* cmdDelegate = new CommandTypeDelegate(delegateMode, this);
-  table->setItemDelegateForColumn(kColCmd, cmdDelegate);
-
-  connect(cmdDelegate, &CommandTypeDelegate::commandChanged, this,
-          [this, table](const QString&, const QString&, const QModelIndex& idx) {
-            if (loading_ || undo_redo_in_progress_) {
-              return;
-            }
-            updateColumnHeadersForCommand(table, idx.row());
-            onStepSelectionChanged();  // 刷新详情面板
-            saveSnapshot();
-            setModified(true);
-            updateActions();
-          });
-
-  return table;
-}
-
-void TestProgramEditorWidget::connectTableSignals(QTableWidget* table) {
-  connect(table, &QTableWidget::cellChanged, this,
-          &TestProgramEditorWidget::onDataChanged);
-  connect(table, &QTableWidget::itemSelectionChanged, this,
-          &TestProgramEditorWidget::onStepSelectionChanged);
-  connect(table, &QTableWidget::itemSelectionChanged, this,
-          &TestProgramEditorWidget::updateActions);
-  // 拖拽完成后重新编号
-  connect(table->model(), &QAbstractItemModel::rowsInserted, this,
-          [this, table]() {
-            if (!loading_ && !undo_redo_in_progress_) {
-              renumberSteps(table);
-            }
-          });
-  connect(table->model(), &QAbstractItemModel::rowsRemoved, this,
-          [this, table]() {
-            if (!loading_ && !undo_redo_in_progress_) {
-              renumberSteps(table);
-            }
-          });
 }
 
 void TestProgramEditorWidget::initSignals() {
@@ -308,11 +191,11 @@ void TestProgramEditorWidget::initSignals() {
   connect(suite_desc_edit_, &QTextEdit::textChanged, this,
           &TestProgramEditorWidget::onDataChanged);
 
-  connectTableSignals(setup_table_);
-  connectTableSignals(teardown_table_);
+  // StepTableWidget 信号
+  connectTable(setup_table_);
+  connectTable(teardown_table_);
 
   connect(tab_widget_, &QTabWidget::currentChanged, this, [this](int) {
-    // 切换 tab 时刷新校验状态
     updateActions();
     validateCurrentTable();
   });
@@ -338,19 +221,15 @@ void TestProgramEditorWidget::initSignals() {
     if (loading_ || undo_redo_in_progress_) {
       return;
     }
-    // 将 detail panel 中的 subSteps 写回当前行的 UserRole
-    auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
+    auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
     int row = table ? table->currentRow() : -1;
     if (table && row >= 0) {
-      QTableWidgetItem* cmdItem = table->item(row, kColCmd);
-      if (cmdItem) {
-        TestStepData panelStep = step_detail_panel_->stepData();
-        if (panelStep.isControlFlow()) {
-          TestStepData existing = loadStepExtData(cmdItem);
-          existing.subSteps = panelStep.subSteps;
-          existing.elseSubSteps = panelStep.elseSubSteps;
-          storeStepExtData(cmdItem, existing);
-        }
+      TestStepData panelStep = step_detail_panel_->stepData();
+      if (panelStep.isControlFlow()) {
+        TestStepData existing = table->stepExtData(row);
+        existing.subSteps = panelStep.subSteps;
+        existing.elseSubSteps = panelStep.elseSubSteps;
+        table->setStepExtData(row, existing);
       }
     }
     saveSnapshot();
@@ -359,91 +238,44 @@ void TestProgramEditorWidget::initSignals() {
   });
 }
 
-// ── 动态列头 ──
-
-// 返回每个命令类型的列映射
-static void getColumnMapping(const QString& cmd, const char** labels) {
-  // 初始化为隐藏
-  for (int i = 0; i < kStepColumnCount; ++i) {
-    labels[i] = nullptr;
-  }
-
-  labels[kColDesc] = "步骤说明";
-  labels[kColCmd] = "命令";
-
-  if (cmd == QStringLiteral("SET")) {
-    labels[kColTarget] = "目标";
-    labels[kColValue] = "值";
-    labels[kColExtra] = "延迟(ms)";
-    labels[kColTimeout] = "超时(ms)";
-  } else if (cmd == QStringLiteral("VERIFY")) {
-    labels[kColTarget] = "目标";
-    labels[kColValue] = "期望值";
-    labels[kColExtra] = "容差min";
-    labels[kColExtra2] = "容差max";
-    labels[kColTimeout] = "超时(ms)";
-  } else if (cmd == QStringLiteral("WAIT")) {
-    labels[kColTarget] = "条件目标";
-    labels[kColValue] = "运算符";
-    labels[kColExtra] = "条件值";
-    labels[kColExtra2] = "间隔(ms)";
-    labels[kColTimeout] = "超时(ms)";
-  } else if (cmd == QStringLiteral("DELAY")) {
-    labels[kColExtra] = "延迟值(ms)";
-  } else if (cmd == QStringLiteral("ACTION")) {
-    labels[kColTarget] = "提示信息";
-  } else if (cmd == QStringLiteral("LOG")) {
-    labels[kColTarget] = "日志内容";
-  } else if (cmd == QStringLiteral("LOOP")) {
-    labels[kColTarget] = "循环次数";
-    labels[kColValue] = "间隔(ms)";
-  } else if (cmd == QStringLiteral("WHILE")) {
-    labels[kColTarget] = "条件目标";
-    labels[kColValue] = "运算符";
-    labels[kColExtra] = "条件值";
-    labels[kColExtra2] = "间隔(ms)";
-    labels[kColTimeout] = "超时(ms)";
-  } else if (cmd == QStringLiteral("IF")) {
-    labels[kColTarget] = "条件目标";
-    labels[kColValue] = "运算符";
-    labels[kColExtra] = "条件值";
-  } else if (cmd == QStringLiteral("INJECT_FAULT")) {
-    labels[kColTarget] = "目标";
-    labels[kColValue] = "故障类型";
-    labels[kColExtra] = "故障值";
-  } else if (cmd == QStringLiteral("CLEAR_FAULT")) {
-    labels[kColTarget] = "目标";
-  } else if (cmd == QStringLiteral("PHOTO")) {
-    // 只保留 步骤说明 + 命令
-  } else if (cmd == QStringLiteral("RECORD")) {
-    labels[kColTarget] = "录制";
-  }
+void TestProgramEditorWidget::connectTable(StepTableWidget* table) {
+  connect(table, &StepTableWidget::cellDataChanged, this,
+          &TestProgramEditorWidget::onDataChanged);
+  connect(table, &StepTableWidget::stepSelectionChanged, this,
+          &TestProgramEditorWidget::onStepSelectionChanged);
+  connect(table, &StepTableWidget::stepSelectionChanged, this,
+          &TestProgramEditorWidget::updateActions);
+  // 命令列变更 → 动态列头调整
+  // 用 QPointer 防止表格删除后 lambda 仍持有悬空指针
+  auto* tablePtr = table;
+  QPointer<StepTableWidget> weakTable(tablePtr);
+  connect(table, &StepTableWidget::cellDataChanged, this,
+          [this, weakTable](int row, int col) {
+            if (!weakTable) {
+              return;  // 表格已删除
+            }
+            if (col == StepTableWidget::kColCmd) {
+              QString cmd = weakTable->cellText(row, col).trimmed().toUpper();
+              weakTable->applyCommand(row, cmd);
+            }
+          });
 }
 
-void TestProgramEditorWidget::updateColumnHeadersForCommand(
-    QTableWidget* table, int row) {
-  if (row < 0 || row >= table->rowCount()) {
-    return;
-  }
-
-  QTableWidgetItem* cmdItem = table->item(row, kColCmd);
-  QString cmd = cmdItem ? cmdItem->text().trimmed().toUpper() : QString();
-  if (cmd.isEmpty()) {
-    return;
-  }
-
-  const char* labels[kStepColumnCount] = {nullptr};
-  getColumnMapping(cmd, labels);
-
-  for (int c = 0; c < kStepColumnCount; ++c) {
-    if (labels[c] != nullptr) {
-      table->setHorizontalHeaderItem(c, new QTableWidgetItem(labels[c]));
-      table->setColumnHidden(c, false);
-    } else if (c != kColDesc && c != kColCmd) {
-      // 隐藏不相关的列（保留 步骤说明 和 命令 始终可见）
-      table->setColumnHidden(c, true);
-    }
-  }
+TestStepData TestProgramEditorWidget::readStepData(StepTableWidget* table,
+                                                int row) const {
+  TestStepData step;
+  // 优先读扩展数据（含子步骤/条件/容差等）
+  step = table->stepExtData(row);
+  // 用当前单元格值覆盖可见列（cmd/desc/target/value）
+  step.cmd = table->cellText(row, StepTableWidget::kColCmd).trimmed().toUpper();
+  step.description = table->cellText(row, StepTableWidget::kColDesc);
+  step.target = table->cellText(row, StepTableWidget::kColTarget);
+  step.value = table->cellText(row, StepTableWidget::kColValue);
+  step.delayMs =
+      table->cellText(row, StepTableWidget::kColExtra).toInt(nullptr, 10);
+  step.timeoutMs =
+      table->cellText(row, StepTableWidget::kColTimeout).toInt(nullptr, 10);
+  return step;
 }
 
 // ── 数据变更 ──
@@ -464,10 +296,9 @@ void TestProgramEditorWidget::onAddCase() {
   }
 
   int index = tab_widget_->count();
-  auto* table = createStepTable(CommandTypeDelegate::Full);
-  connectTableSignals(table);
-  QString caseName = QStringLiteral("测试用例 %1").arg(index - 1);
-  tab_widget_->addTab(table, caseName);
+  auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
+  connectTable(table);
+  tab_widget_->addTab(table, QStringLiteral("测试用例 %1").arg(index - 1));
   tab_widget_->setCurrentWidget(table);
 
   saveSnapshot();
@@ -502,7 +333,7 @@ void TestProgramEditorWidget::onAddStep() {
     return;
   }
 
-  auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
+  auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     return;
   }
@@ -510,23 +341,18 @@ void TestProgramEditorWidget::onAddStep() {
   int row = table->rowCount();
   table->setRowCount(row + 1);
 
-  bool wasBlocked = table->signalsBlocked();
-  table->blockSignals(true);
+  // 抑制 7 次 cellDataChanged 信号，避免污染 undo 栈
+  table->model()->blockSignals(true);
+  table->setCellText(row, StepTableWidget::kColDesc, QString());
+  table->setCellText(row, StepTableWidget::kColCmd, QStringLiteral("SET"));
+  table->setCellText(row, StepTableWidget::kColTarget, QString());
+  table->setCellText(row, StepTableWidget::kColValue, QString());
+  table->setCellText(row, StepTableWidget::kColExtra, QStringLiteral("0"));
+  table->setCellText(row, StepTableWidget::kColExtra2, QString());
+  table->setCellText(row, StepTableWidget::kColTimeout, QStringLiteral("5000"));
+  table->model()->blockSignals(false);
 
-  table->setItem(row, kColDesc, new QTableWidgetItem(QString()));
-  auto* cmdItem = new QTableWidgetItem(QStringLiteral("SET"));
-  cmdItem->setData(kStepDataRole, QVariantMap());
-  table->setItem(row, kColCmd, cmdItem);
-  table->setItem(row, kColTarget, new QTableWidgetItem(QString()));
-  table->setItem(row, kColValue, new QTableWidgetItem(QString()));
-  table->setItem(row, kColExtra, new QTableWidgetItem(QStringLiteral("0")));
-  table->setItem(row, kColExtra2, new QTableWidgetItem(QString()));
-  table->setItem(row, kColTimeout, new QTableWidgetItem(QStringLiteral("5000")));
-
-  table->blockSignals(wasBlocked);
-
-  updateColumnHeadersForCommand(table, row);
-  renumberSteps(table);
+  table->applyCommand(row, QStringLiteral("SET"));
   table->selectRow(row);
 
   saveSnapshot();
@@ -535,7 +361,7 @@ void TestProgramEditorWidget::onAddStep() {
 }
 
 void TestProgramEditorWidget::onRemoveStep() {
-  auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
+  auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     return;
   }
@@ -546,14 +372,13 @@ void TestProgramEditorWidget::onRemoveStep() {
   }
 
   table->removeRow(row);
-  renumberSteps(table);
   saveSnapshot();
   setModified(true);
   updateActions();
 }
 
 void TestProgramEditorWidget::onMoveUp() {
-  auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
+  auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     return;
   }
@@ -563,27 +388,24 @@ void TestProgramEditorWidget::onMoveUp() {
     return;
   }
 
-  // 通过拖拽行的方式交换
-  // 保存当前行数据，移除，在 row-1 处插入
-  QVector<QTableWidgetItem*> items(kStepColumnCount);
-  for (int c = 0; c < kStepColumnCount; ++c) {
-    items[c] = table->takeItem(row, c);
+  // 通过 QStandardItemModel 交换行
+  auto* model = qobject_cast<QStandardItemModel*>(table->model());
+  if (!model) {
+    return;
   }
-  table->removeRow(row);
-  table->insertRow(row - 1);
-  for (int c = 0; c < kStepColumnCount; ++c) {
-    table->setItem(row - 1, c, items[c]);
-  }
-
-  renumberSteps(table);
+  QList<QStandardItem*> items = model->takeRow(row);
+  model->insertRow(row - 1, items);
+  // 不用显式调 renumberSteps：rowsRemoved/rowsInserted 已在 setRowCount 批量模式外
+  // 自动触发 renumberSteps（见 StepTableWidget 构造函数连接）
   table->selectRow(row - 1);
+
   saveSnapshot();
   setModified(true);
   updateActions();
 }
 
 void TestProgramEditorWidget::onMoveDown() {
-  auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
+  auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     return;
   }
@@ -593,35 +415,22 @@ void TestProgramEditorWidget::onMoveDown() {
     return;
   }
 
-  // 与下行交换
-  QVector<QTableWidgetItem*> items(kStepColumnCount);
-  for (int c = 0; c < kStepColumnCount; ++c) {
-    items[c] = table->takeItem(row, c);
+  auto* model = qobject_cast<QStandardItemModel*>(table->model());
+  if (!model) {
+    return;
   }
-  table->removeRow(row);
-  table->insertRow(row + 1);
-  for (int c = 0; c < kStepColumnCount; ++c) {
-    table->setItem(row + 1, c, items[c]);
-  }
-
-  renumberSteps(table);
+  QList<QStandardItem*> items = model->takeRow(row);
+  model->insertRow(row + 1, items);
+  // 不用显式调 renumberSteps（同 onMoveUp）
   table->selectRow(row + 1);
+
   saveSnapshot();
   setModified(true);
   updateActions();
 }
 
-void TestProgramEditorWidget::renumberSteps(QTableWidget* table) {
-  for (int i = 0; i < table->rowCount(); ++i) {
-    table->verticalHeader()->setSectionHidden(i, false);
-    // 通过 model 设置行号
-    table->model()->setHeaderData(i, Qt::Vertical, QString::number(i + 1),
-                                  Qt::DisplayRole);
-  }
-}
-
 void TestProgramEditorWidget::onStepSelectionChanged() {
-  auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
+  auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     step_detail_panel_->clear();
     return;
@@ -633,119 +442,41 @@ void TestProgramEditorWidget::onStepSelectionChanged() {
     return;
   }
 
-  QString cmd;
-  QTableWidgetItem* cmdItem = table->item(row, kColCmd);
-  if (cmdItem) {
-    cmd = cmdItem->text().trimmed().toUpper();
-  }
-
-  // 从表格当前行构建 TestStepData
-  TestStepData step;
-  step.cmd = cmd;
-  if (table->item(row, kColDesc)) {
-    step.description = table->item(row, kColDesc)->text();
-  }
-  if (table->item(row, kColTarget)) {
-    step.target = table->item(row, kColTarget)->text();
-  }
-  if (table->item(row, kColValue)) {
-    step.value = table->item(row, kColValue)->text();
-  }
-
-  // 从 UserRole 加载扩展数据
-  if (cmdItem && cmdItem->data(kStepDataRole).isValid()) {
-    QVariantMap ext = cmdItem->data(kStepDataRole).toMap();
-    if (ext.contains("conditionTarget")) {
-      step.condition.target = ext["conditionTarget"].toString();
-    }
-    if (ext.contains("conditionOp")) {
-      step.condition.op = ext["conditionOp"].toString();
-    }
-    if (ext.contains("conditionValue")) {
-      step.condition.value = ext["conditionValue"];
-    }
-    if (ext.contains("tolMin")) {
-      step.tolerance.min = ext["tolMin"].toDouble();
-    }
-    if (ext.contains("tolMax")) {
-      step.tolerance.max = ext["tolMax"].toDouble();
-    }
-    if (ext.contains("tolEnabled")) {
-      step.tolerance.enabled = ext["tolEnabled"].toBool();
-    }
-    if (ext.contains("faultType")) {
-      step.fault.type = ext["faultType"].toString();
-    }
-    if (ext.contains("faultValue")) {
-      step.fault.value = ext["faultValue"];
-    }
-    if (ext.contains("loopCount")) {
-      step.loopCount = ext["loopCount"].toInt();
-    }
-    if (ext.contains("loopIntervalMs")) {
-      step.loopIntervalMs = ext["loopIntervalMs"].toInt();
-    }
-    if (ext.contains("subStepsJson")) {
-      step.subSteps = deserializeSubSteps(ext["subStepsJson"].toString().toUtf8());
-    }
-    if (ext.contains("elseSubStepsJson")) {
-      step.elseSubSteps = deserializeSubSteps(ext["elseSubStepsJson"].toString().toUtf8());
-    }
-  }
-
   // 始终填充面板，由面板内部根据命令类型切换页面
+  TestStepData step = readStepData(table, row);
   step_detail_panel_->setStepData(step, false);
 }
 
 // ── 校验 ──
 
 void TestProgramEditorWidget::validateCurrentTable() {
-  auto* table = qobject_cast<QTableWidget*>(tab_widget_->currentWidget());
+  // RAII 守护：setCellData 触发 signal chain 递归时早返；析构时复位
+  ValidateGuard guard(this);
+  if (!guard.shouldRun()) {
+    return;
+  }
+  auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     updateValidationLabel();
     return;
   }
 
-  // 校验当前表格中的所有可见行
   int errors = 0;
   int warnings = 0;
   QStringList details;
 
   for (int i = 0; i < table->rowCount(); ++i) {
-    QTableWidgetItem* cmdItem = table->item(i, kColCmd);
-    if (!cmdItem) {
-      continue;
-    }
-
-    TestStepData step = loadStepExtData(cmdItem);
-    step.cmd = table->item(i, kColCmd)
-                   ? table->item(i, kColCmd)->text()
-                   : QString();
-    step.description = table->item(i, kColDesc)
-                           ? table->item(i, kColDesc)->text()
-                           : QString();
-    step.target = table->item(i, kColTarget)
-                      ? table->item(i, kColTarget)->text()
-                      : QString();
-    step.value = table->item(i, kColValue)
-                     ? QVariant(table->item(i, kColValue)->text())
-                     : QVariant();
-    step.delayMs =
-        table->item(i, kColExtra) ? table->item(i, kColExtra)->text().toInt() : 0;
-    step.timeoutMs = table->item(i, kColTimeout)
-                         ? table->item(i, kColTimeout)->text().toInt()
-                         : 5000;
-
+    TestStepData step = readStepData(table, i);
     QStringList issues = StepValidation::validateStep(step);
     if (!issues.isEmpty()) {
       // 行标红
-      for (int c = 0; c < kStepColumnCount; ++c) {
-        if (table->item(i, c)) {
-          table->item(i, c)->setBackground(QColor(80, 30, 30));
-          table->item(i, c)->setToolTip(issues.join(QStringLiteral("\n")));
+      for (int c = 0; c < StepTableWidget::kColCount; ++c) {
+        if (table->cellData(i, c, Qt::DisplayRole).isValid()) {
+          table->setCellData(i, c, QColor(80, 30, 30), Qt::BackgroundRole);
+          table->setCellData(i, c, issues.join(QStringLiteral("\n")),
+                             Qt::ToolTipRole);
         }
       }
-      // 统计严重性
       for (const QString& issue : issues) {
         if (issue.contains(QStringLiteral("错误")) ||
             issue.contains(QStringLiteral("必须")) ||
@@ -757,18 +488,14 @@ void TestProgramEditorWidget::validateCurrentTable() {
         details.append(QStringLiteral("[行%1] %2").arg(i + 1).arg(issue));
       }
     } else {
-      // 清除错误样式
-      for (int c = 0; c < kStepColumnCount; ++c) {
-        if (table->item(i, c)) {
-          table->item(i, c)->setBackground(QColor());
-          table->item(i, c)->setToolTip(QString());
-        }
+      for (int c = 0; c < StepTableWidget::kColCount; ++c) {
+        table->setCellData(i, c, QVariant(), Qt::BackgroundRole);
+        table->setCellData(i, c, QVariant(), Qt::ToolTipRole);
       }
     }
   }
 
   if (errors > 0 || warnings > 0) {
-    // 显示摘要 + 首条错误详情
     QString labelText;
     if (errors > 0) {
       labelText = QStringLiteral("⚠ %1 个错误").arg(errors);
@@ -779,126 +506,44 @@ void TestProgramEditorWidget::validateCurrentTable() {
       }
       labelText += QStringLiteral("%1 个警告").arg(warnings);
     }
-    // 附加第一条具体错误便于快速定位
     if (!details.isEmpty()) {
       labelText += QStringLiteral(" · %1").arg(details.first());
     }
-    // 全部错误存入 tooltip
     validation_label_->setText(labelText);
     validation_label_->setToolTip(details.join(QStringLiteral("\n")));
     validation_label_->setVisible(true);
   } else {
     validation_label_->setVisible(false);
   }
+  // validating_ 由 ValidateGuard 析构时复位
 }
 
 void TestProgramEditorWidget::updateValidationLabel() {
-  // 简单版：仅隐藏标签
   validation_label_->setVisible(false);
-}
-
-// ── 扩展数据存取 ──
-
-void TestProgramEditorWidget::storeStepExtData(QTableWidgetItem* item,
-                                                const TestStepData& step) {
-  QVariantMap ext;
-  if (!step.condition.target.isEmpty()) {
-    ext["conditionTarget"] = step.condition.target;
-    ext["conditionOp"] = step.condition.op;
-    ext["conditionValue"] = step.condition.value;
-  }
-  if (step.tolerance.enabled) {
-    ext["tolMin"] = step.tolerance.min;
-    ext["tolMax"] = step.tolerance.max;
-    ext["tolEnabled"] = step.tolerance.enabled;
-  }
-  if (!step.fault.type.isEmpty()) {
-    ext["faultType"] = step.fault.type;
-    ext["faultValue"] = step.fault.value;
-  }
-  if (step.loopCount > 1 || step.loopIntervalMs > 0) {
-    ext["loopCount"] = step.loopCount;
-    ext["loopIntervalMs"] = step.loopIntervalMs;
-  }
-  // subSteps/elseSubSteps 序列化存入 UserRole（避免多控制流步骤时数据丢失）
-  if (!step.subSteps.isEmpty()) {
-    ext["subStepsJson"] = QString::fromUtf8(serializeSubSteps(step.subSteps));
-  }
-  if (!step.elseSubSteps.isEmpty()) {
-    ext["elseSubStepsJson"] = QString::fromUtf8(serializeSubSteps(step.elseSubSteps));
-  }
-  item->setData(kStepDataRole, ext);
-}
-
-TestStepData TestProgramEditorWidget::loadStepExtData(
-    const QTableWidgetItem* item) const {
-  TestStepData step;
-  if (!item || !item->data(kStepDataRole).isValid()) {
-    return step;
-  }
-  QVariantMap ext = item->data(kStepDataRole).toMap();
-  if (ext.contains("conditionTarget")) {
-    step.condition.target = ext["conditionTarget"].toString();
-  }
-  if (ext.contains("conditionOp")) {
-    step.condition.op = ext["conditionOp"].toString();
-  }
-  if (ext.contains("conditionValue")) {
-    step.condition.value = ext["conditionValue"];
-  }
-  if (ext.contains("tolMin")) {
-    step.tolerance.min = ext["tolMin"].toDouble();
-  }
-  if (ext.contains("tolMax")) {
-    step.tolerance.max = ext["tolMax"].toDouble();
-  }
-  if (ext.contains("tolEnabled")) {
-    step.tolerance.enabled = ext["tolEnabled"].toBool();
-  }
-  if (ext.contains("faultType")) {
-    step.fault.type = ext["faultType"].toString();
-  }
-  if (ext.contains("faultValue")) {
-    step.fault.value = ext["faultValue"];
-  }
-  if (ext.contains("loopCount")) {
-    step.loopCount = ext["loopCount"].toInt();
-  }
-  if (ext.contains("loopIntervalMs")) {
-    step.loopIntervalMs = ext["loopIntervalMs"].toInt();
-  }
-  if (ext.contains("subStepsJson")) {
-    step.subSteps = deserializeSubSteps(ext["subStepsJson"].toString().toUtf8());
-  }
-  if (ext.contains("elseSubStepsJson")) {
-    step.elseSubSteps = deserializeSubSteps(ext["elseSubStepsJson"].toString().toUtf8());
-  }
-  return step;
 }
 
 // ── 事件过滤（Tab 双击重命名） ──
 
 bool TestProgramEditorWidget::eventFilter(QObject* obj, QEvent* event) {
-  if (obj == tab_widget_->tabBar() && event->type() == QEvent::MouseButtonDblClick) {
+  if (obj == tab_widget_->tabBar() &&
+      event->type() == QEvent::MouseButtonDblClick) {
     auto* me = static_cast<QMouseEvent*>(event);
     int tabIdx = tab_widget_->tabBar()->tabAt(me->pos());
     if (tabIdx >= 2) {
-      // 内联重命名
       tab_widget_->tabBar()->setCurrentIndex(tabIdx);
-      // 简单实现：弹出 QInputDialog
       bool ok;
       QString newName = QInputDialog::getText(
-          this, QStringLiteral("重命名用例"),
-          QStringLiteral("用例名称:"), QLineEdit::Normal,
-          tab_widget_->tabText(tabIdx), &ok);
+          this, QStringLiteral("重命名用例"), QStringLiteral("用例名称:"),
+          QLineEdit::Normal, tab_widget_->tabText(tabIdx), &ok);
       if (ok && !newName.trimmed().isEmpty()) {
         tab_widget_->setTabText(tabIdx, newName.trimmed());
         saveSnapshot();
         setModified(true);
         updateActions();
       }
-      return true;
     }
+    // 不管是不是 case tab、是否成功重命名，都吃掉事件，避免冒泡触发菜单快捷键等
+    return true;
   }
   return QMainWindow::eventFilter(obj, event);
 }
@@ -1077,45 +722,28 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
   suite_name_edit_->setText(suite.name);
   suite_desc_edit_->setText(suite.description);
 
-  // Setup 步骤
-  setup_table_->setRowCount(suite.setup.size());
-  for (int i = 0; i < suite.setup.size(); ++i) {
-    const auto& step = suite.setup[i];
-    auto* cmdItem = new QTableWidgetItem(step.cmd);
-    storeStepExtData(cmdItem, step);
-    setup_table_->setItem(i, kColDesc, new QTableWidgetItem(step.description));
-    setup_table_->setItem(i, kColCmd, cmdItem);
-    setup_table_->setItem(i, kColTarget, new QTableWidgetItem(step.target));
-    setup_table_->setItem(i, kColValue,
-                          new QTableWidgetItem(step.value.toString()));
-    setup_table_->setItem(i, kColExtra,
-                          new QTableWidgetItem(QString::number(step.delayMs)));
-    setup_table_->setItem(i, kColExtra2, new QTableWidgetItem(QString()));
-    setup_table_->setItem(i, kColTimeout,
-                          new QTableWidgetItem(QString::number(step.timeoutMs)));
-    updateColumnHeadersForCommand(setup_table_, i);
-  }
-  renumberSteps(setup_table_);
+  // ── 填充表格（Setup / Teardown / Cases） ──
+  auto fillTable = [](StepTableWidget* table,
+                      const QVector<TestStepData>& steps) {
+    table->setRowCount(steps.size());
+    for (int i = 0; i < steps.size(); ++i) {
+      const auto& step = steps[i];
+      table->setCellText(i, StepTableWidget::kColDesc, step.description);
+      table->setCellText(i, StepTableWidget::kColCmd, step.cmd);
+      table->setCellText(i, StepTableWidget::kColTarget, step.target);
+      table->setCellText(i, StepTableWidget::kColValue, step.value.toString());
+      table->setCellText(i, StepTableWidget::kColExtra,
+                         QString::number(step.delayMs));
+      table->setCellText(i, StepTableWidget::kColExtra2, QString());
+      table->setCellText(i, StepTableWidget::kColTimeout,
+                         QString::number(step.timeoutMs));
+      table->setStepExtData(i, step);
+      table->applyCommand(i, step.cmd);
+    }
+  };
 
-  // Teardown 步骤
-  teardown_table_->setRowCount(suite.teardown.size());
-  for (int i = 0; i < suite.teardown.size(); ++i) {
-    const auto& step = suite.teardown[i];
-    auto* cmdItem = new QTableWidgetItem(step.cmd);
-    storeStepExtData(cmdItem, step);
-    teardown_table_->setItem(i, kColDesc, new QTableWidgetItem(step.description));
-    teardown_table_->setItem(i, kColCmd, cmdItem);
-    teardown_table_->setItem(i, kColTarget, new QTableWidgetItem(step.target));
-    teardown_table_->setItem(i, kColValue,
-                             new QTableWidgetItem(step.value.toString()));
-    teardown_table_->setItem(i, kColExtra,
-                             new QTableWidgetItem(QString::number(step.delayMs)));
-    teardown_table_->setItem(i, kColExtra2, new QTableWidgetItem(QString()));
-    teardown_table_->setItem(
-        i, kColTimeout, new QTableWidgetItem(QString::number(step.timeoutMs)));
-    updateColumnHeadersForCommand(teardown_table_, i);
-  }
-  renumberSteps(teardown_table_);
+  fillTable(setup_table_, suite.setup);
+  fillTable(teardown_table_, suite.teardown);
 
   // 删除旧的用例 tab（索引 2 及之后）
   while (tab_widget_->count() > 2) {
@@ -1126,30 +754,21 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
 
   // 用例 tab
   for (const auto& tc : suite.cases) {
-    auto* table = createStepTable(CommandTypeDelegate::Full);
-    connectTableSignals(table);
-    table->setRowCount(tc.steps.size());
-    for (int i = 0; i < tc.steps.size(); ++i) {
-      const auto& step = tc.steps[i];
-      auto* cmdItem = new QTableWidgetItem(step.cmd);
-      storeStepExtData(cmdItem, step);
-      table->setItem(i, kColDesc, new QTableWidgetItem(step.description));
-      table->setItem(i, kColCmd, cmdItem);
-      table->setItem(i, kColTarget, new QTableWidgetItem(step.target));
-      table->setItem(i, kColValue,
-                     new QTableWidgetItem(step.value.toString()));
-      table->setItem(i, kColExtra,
-                     new QTableWidgetItem(QString::number(step.delayMs)));
-      table->setItem(i, kColExtra2, new QTableWidgetItem(QString()));
-      table->setItem(
-          i, kColTimeout, new QTableWidgetItem(QString::number(step.timeoutMs)));
-      updateColumnHeadersForCommand(table, i);
-    }
-    renumberSteps(table);
+    auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
+    connectTable(table);
+    fillTable(table, tc.steps);
     tab_widget_->addTab(table, tc.name);
   }
 
-  // 默认选中第一个 tab
+  // 加载完成后清选区，避免半填状态触发 onStepSelectionChanged
+  setup_table_->clearSelection();
+  teardown_table_->clearSelection();
+  for (int i = 2; i < tab_widget_->count(); ++i) {
+    if (auto* t = qobject_cast<StepTableWidget*>(tab_widget_->widget(i))) {
+      t->clearSelection();
+    }
+  }
+
   tab_widget_->setCurrentIndex(0);
   updateActions();
 }
@@ -1160,84 +779,23 @@ TestProgramData TestProgramEditorWidget::uiToProgram() {
   suite.name = suite_name_edit_->text();
   suite.description = suite_desc_edit_->toPlainText();
 
-  // 解析表格行 → TestStepData 的通用函数
-  auto readStep = [this](QTableWidget* table, int i) -> TestStepData {
-    TestStepData step;
-    step.description = table->item(i, kColDesc)
-                           ? table->item(i, kColDesc)->text()
-                           : QString();
-    step.cmd = table->item(i, kColCmd) ? table->item(i, kColCmd)->text()
-                                        : QString();
-    step.target = table->item(i, kColTarget) ? table->item(i, kColTarget)->text()
-                                              : QString();
-    step.value = table->item(i, kColValue)
-                     ? QVariant(table->item(i, kColValue)->text())
-                     : QVariant();
-    step.delayMs =
-        table->item(i, kColExtra) ? table->item(i, kColExtra)->text().toInt() : 0;
-    step.timeoutMs = table->item(i, kColTimeout)
-                         ? table->item(i, kColTimeout)->text().toInt()
-                         : 5000;
-    // 从 item cmd 加载扩展数据
-    if (table->item(i, kColCmd)) {
-      auto ext = table->item(i, kColCmd)->data(
-          TestProgramEditorWidget::kStepDataRole);
-      if (ext.isValid()) {
-        QVariantMap m = ext.toMap();
-        if (m.contains("conditionTarget")) {
-          step.condition.target = m["conditionTarget"].toString();
-          step.condition.op = m["conditionOp"].toString();
-          step.condition.value = m["conditionValue"];
-        }
-        if (m.contains("tolEnabled")) {
-          step.tolerance.enabled = m["tolEnabled"].toBool();
-          step.tolerance.min = m["tolMin"].toDouble();
-          step.tolerance.max = m["tolMax"].toDouble();
-        }
-        if (m.contains("faultType")) {
-          step.fault.type = m["faultType"].toString();
-          step.fault.value = m["faultValue"];
-        }
-        if (m.contains("loopCount")) {
-          step.loopCount = m["loopCount"].toInt();
-          step.loopIntervalMs = m["loopIntervalMs"].toInt();
-        }
-        if (m.contains("subStepsJson")) {
-          step.subSteps = deserializeSubSteps(m["subStepsJson"].toString().toUtf8());
-        }
-        if (m.contains("elseSubStepsJson")) {
-          step.elseSubSteps = deserializeSubSteps(m["elseSubStepsJson"].toString().toUtf8());
-        }
-      }
-    }
-    return step;
-  };
-
-  // Setup
   for (int i = 0; i < setup_table_->rowCount(); ++i) {
-    suite.setup.append(readStep(setup_table_, i));
+    suite.setup.append(readStepData(setup_table_, i));
   }
-
-  // Teardown
   for (int i = 0; i < teardown_table_->rowCount(); ++i) {
-    suite.teardown.append(readStep(teardown_table_, i));
+    suite.teardown.append(readStepData(teardown_table_, i));
   }
 
-  // 用例 tab（索引 2 开始）
   for (int t = 2; t < tab_widget_->count(); ++t) {
-    auto* table = qobject_cast<QTableWidget*>(tab_widget_->widget(t));
+    auto* table = qobject_cast<StepTableWidget*>(tab_widget_->widget(t));
     if (!table) {
       continue;
     }
-
     TestCaseData tc;
     tc.name = tab_widget_->tabText(t);
-    tc.description = QString();
-
     for (int i = 0; i < table->rowCount(); ++i) {
-      tc.steps.append(readStep(table, i));
+      tc.steps.append(readStepData(table, i));
     }
-
     suite.cases.append(tc);
   }
 
@@ -1267,23 +825,29 @@ void TestProgramEditorWidget::updateActions() {
     redo_action_->setEnabled(canRedo());
   }
   if (remove_case_action_) {
-    remove_case_action_->setEnabled(
-        tab_widget_ && tab_widget_->currentIndex() >= 2);
+    remove_case_action_->setEnabled(tab_widget_ &&
+                                    tab_widget_->currentIndex() >= 2);
   }
   if (remove_step_action_) {
-    auto* table = tab_widget_
-                      ? qobject_cast<QTableWidget*>(tab_widget_->currentWidget())
-                      : nullptr;
+    auto* table =
+        tab_widget_
+            ? qobject_cast<StepTableWidget*>(tab_widget_->currentWidget())
+            : nullptr;
     remove_step_action_->setEnabled(table && table->currentRow() >= 0);
   }
-  if (move_up_action_) {
-    auto* table = tab_widget_
-                      ? qobject_cast<QTableWidget*>(tab_widget_->currentWidget())
-                      : nullptr;
+  if (move_up_action_ || move_down_action_) {
+    auto* table =
+        tab_widget_
+            ? qobject_cast<StepTableWidget*>(tab_widget_->currentWidget())
+            : nullptr;
     int row = table ? table->currentRow() : -1;
-    move_up_action_->setEnabled(table && row > 0);
-    move_down_action_->setEnabled(table && row >= 0 &&
-                                  row < table->rowCount() - 1);
+    if (move_up_action_) {
+      move_up_action_->setEnabled(table && row > 0);
+    }
+    if (move_down_action_) {
+      move_down_action_->setEnabled(table && row >= 0 &&
+                                    row < table->rowCount() - 1);
+    }
   }
 }
 

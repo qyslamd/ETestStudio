@@ -56,6 +56,11 @@ class StepDetailPanel : public QWidget {
   // 根据命令类型切换到对应的页面
   void switchToPageForCommand(const QString& cmd);
 
+  // 把当前页面的控件值刷回 cache_（切换页前必须调用）
+  void writePageToCache();
+  // 把 cache_ 写入当前页的控件
+  void fillPageFromCache();
+
   // 创建各页面
   QWidget* createEmptyPage();
   QWidget* createSetVerifyPage();
@@ -68,6 +73,9 @@ class StepDetailPanel : public QWidget {
 
   // 创建子步骤表格
   QTableWidget* createSubStepTable(QWidget* parent);
+
+  // 始终反映面板内的最新值；setStepData 初始化，切页/控件改动时刷新
+  TestStepData cache_;
 
   QStackedWidget* stack_;
 

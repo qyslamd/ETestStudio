@@ -85,6 +85,7 @@ QWidget* StepDetailPanel::createSetVerifyPage() {
                      tol_min_spin_->setEnabled(checked);
                      tol_max_spin_->setEnabled(checked);
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
@@ -92,6 +93,7 @@ QWidget* StepDetailPanel::createSetVerifyPage() {
                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
@@ -99,6 +101,7 @@ QWidget* StepDetailPanel::createSetVerifyPage() {
                    QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
@@ -128,18 +131,21 @@ QWidget* StepDetailPanel::createConditionPage() {
   QObject::connect(cond_target_edit_, &QLineEdit::textChanged, this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
   QObject::connect(cond_op_combo_, &QComboBox::currentTextChanged, this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
   QObject::connect(cond_value_edit_, &QLineEdit::textChanged, this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
@@ -174,12 +180,14 @@ QWidget* StepDetailPanel::createLoopPage() {
   QObject::connect(loop_count_edit_, &QLineEdit::textChanged, this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
   QObject::connect(loop_interval_edit_, &QLineEdit::textChanged, this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
@@ -226,6 +234,7 @@ QWidget* StepDetailPanel::createWhilePage() {
   // 连接信号
   auto connectWhile = [this]() {
     if (!internal_update_) {
+      writePageToCache();
       emit dataChanged();
     }
   };
@@ -276,6 +285,7 @@ QWidget* StepDetailPanel::createIfPage() {
 
   auto connectIf = [this]() {
     if (!internal_update_) {
+      writePageToCache();
       emit dataChanged();
     }
   };
@@ -304,12 +314,14 @@ QWidget* StepDetailPanel::createFaultPage() {
   QObject::connect(fault_type_edit_, &QLineEdit::textChanged, this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
   QObject::connect(fault_value_edit_, &QLineEdit::textChanged, this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
@@ -330,6 +342,7 @@ QWidget* StepDetailPanel::createActionLogPage() {
   QObject::connect(action_log_edit_, &QLineEdit::textChanged, this,
                    [this]() {
                      if (!internal_update_) {
+                       writePageToCache();
                        emit dataChanged();
                      }
                    });
@@ -355,40 +368,140 @@ QTableWidget* StepDetailPanel::createSubStepTable(QWidget* parent) {
   auto* delegate = new CommandTypeDelegate(CommandTypeDelegate::FlatOnly, this);
   table->setItemDelegateForColumn(1, delegate);
 
+  // 子步骤表格的 cell 改动需要触发 StepDetailPanel::dataChanged，
+  // 父 TestProgramEditorWidget 才会把子步骤写回主行的 UserRole
+  QObject::connect(table, &QTableWidget::itemChanged, this,
+                   [this](QTableWidgetItem*) { emit dataChanged(); });
+
   return table;
 }
 
 // ── 公共接口 ──
 
-void StepDetailPanel::setStepData(const TestStepData& step, bool readOnly) {
-  read_only_ = readOnly;
-  current_cmd_ = step.cmd.trimmed().toUpper();
-  internal_update_ = true;
-
-  switchToPageForCommand(current_cmd_);
-
-  // 根据页面类型填充数据
+// 把当前页可见的控件值抓回 cache_，避免切页后旧页数据丢失
+void StepDetailPanel::writePageToCache() {
+  // 即使 cache_ 的 cmd 与 current_cmd_ 不一致（极端情况），仍以 current_cmd_ 为准
+  cache_.cmd = current_cmd_;
   int pageIdx = stack_->currentIndex();
 
   if (pageIdx == kPageSetVerify) {
-    // VERIFY tolerance
-    tol_enable_check_->setChecked(step.tolerance.enabled);
-    tol_min_spin_->setValue(step.tolerance.min);
-    tol_max_spin_->setValue(step.tolerance.max);
+    cache_.tolerance.enabled = tol_enable_check_->isChecked();
+    cache_.tolerance.min = tol_min_spin_->value();
+    cache_.tolerance.max = tol_max_spin_->value();
   } else if (pageIdx == kPageCondition) {
-    // WAIT condition
-    cond_target_edit_->setText(step.condition.target);
-    int opIdx = cond_op_combo_->findText(step.condition.op);
+    cache_.condition.target = cond_target_edit_->text();
+    cache_.condition.op = cond_op_combo_->currentText();
+    cache_.condition.value = cond_value_edit_->text();
+  } else if (pageIdx == kPageLoop) {
+    cache_.loopCount = loop_count_edit_->text().toInt();
+    cache_.loopIntervalMs = loop_interval_edit_->text().toInt();
+    QVector<TestStepData> subs;
+    for (int i = 0; i < loop_sub_table_->rowCount(); ++i) {
+      TestStepData s;
+      s.description = loop_sub_table_->item(i, 0)
+                         ? loop_sub_table_->item(i, 0)->text() : QString();
+      s.cmd = loop_sub_table_->item(i, 1) ? loop_sub_table_->item(i, 1)->text()
+                                           : QString();
+      s.target = loop_sub_table_->item(i, 2)
+                     ? loop_sub_table_->item(i, 2)->text() : QString();
+      s.value = loop_sub_table_->item(i, 3)
+                    ? QVariant(loop_sub_table_->item(i, 3)->text())
+                    : QVariant();
+      s.delayMs = loop_sub_table_->item(i, 4)
+                      ? loop_sub_table_->item(i, 4)->text().toInt() : 0;
+      subs.append(s);
+    }
+    cache_.subSteps = subs;
+  } else if (pageIdx == kPageWhile) {
+    cache_.condition.target = while_target_edit_->text();
+    cache_.condition.op = while_op_combo_->currentText();
+    cache_.condition.value = while_value_edit_->text();
+    cache_.loopIntervalMs = while_interval_edit_->text().toInt();
+    cache_.timeoutMs = while_timeout_edit_->text().toInt();
+    QVector<TestStepData> subs;
+    for (int i = 0; i < while_sub_table_->rowCount(); ++i) {
+      TestStepData s;
+      s.description = while_sub_table_->item(i, 0)
+                         ? while_sub_table_->item(i, 0)->text() : QString();
+      s.cmd = while_sub_table_->item(i, 1) ? while_sub_table_->item(i, 1)->text()
+                                           : QString();
+      s.target = while_sub_table_->item(i, 2)
+                     ? while_sub_table_->item(i, 2)->text() : QString();
+      s.value = while_sub_table_->item(i, 3)
+                    ? QVariant(while_sub_table_->item(i, 3)->text())
+                    : QVariant();
+      s.delayMs = while_sub_table_->item(i, 4)
+                      ? while_sub_table_->item(i, 4)->text().toInt() : 0;
+      subs.append(s);
+    }
+    cache_.subSteps = subs;
+  } else if (pageIdx == kPageIf) {
+    cache_.condition.target = if_target_edit_->text();
+    cache_.condition.op = if_op_combo_->currentText();
+    cache_.condition.value = if_value_edit_->text();
+    QVector<TestStepData> thenSubs;
+    for (int i = 0; i < if_then_table_->rowCount(); ++i) {
+      TestStepData s;
+      s.description = if_then_table_->item(i, 0)
+                         ? if_then_table_->item(i, 0)->text() : QString();
+      s.cmd = if_then_table_->item(i, 1) ? if_then_table_->item(i, 1)->text()
+                                          : QString();
+      s.target = if_then_table_->item(i, 2)
+                     ? if_then_table_->item(i, 2)->text() : QString();
+      s.value = if_then_table_->item(i, 3)
+                    ? QVariant(if_then_table_->item(i, 3)->text())
+                    : QVariant();
+      s.delayMs = if_then_table_->item(i, 4)
+                      ? if_then_table_->item(i, 4)->text().toInt() : 0;
+      thenSubs.append(s);
+    }
+    cache_.subSteps = thenSubs;
+    QVector<TestStepData> elseSubs;
+    for (int i = 0; i < if_else_table_->rowCount(); ++i) {
+      TestStepData s;
+      s.description = if_else_table_->item(i, 0)
+                         ? if_else_table_->item(i, 0)->text() : QString();
+      s.cmd = if_else_table_->item(i, 1) ? if_else_table_->item(i, 1)->text()
+                                           : QString();
+      s.target = if_else_table_->item(i, 2)
+                     ? if_else_table_->item(i, 2)->text() : QString();
+      s.value = if_else_table_->item(i, 3)
+                    ? QVariant(if_else_table_->item(i, 3)->text())
+                    : QVariant();
+      s.delayMs = if_else_table_->item(i, 4)
+                      ? if_else_table_->item(i, 4)->text().toInt() : 0;
+      elseSubs.append(s);
+    }
+    cache_.elseSubSteps = elseSubs;
+  } else if (pageIdx == kPageFault) {
+    cache_.fault.type = fault_type_edit_->text();
+    cache_.fault.value = fault_value_edit_->text();
+  } else if (pageIdx == kPageActionLog) {
+    cache_.description = action_log_edit_->text();
+  }
+}
+
+// 从 cache_ 把数据写入当前页可见的控件
+void StepDetailPanel::fillPageFromCache() {
+  int pageIdx = stack_->currentIndex();
+
+  if (pageIdx == kPageSetVerify) {
+    tol_enable_check_->setChecked(cache_.tolerance.enabled);
+    tol_min_spin_->setValue(cache_.tolerance.min);
+    tol_max_spin_->setValue(cache_.tolerance.max);
+  } else if (pageIdx == kPageCondition) {
+    cond_target_edit_->setText(cache_.condition.target);
+    int opIdx = cond_op_combo_->findText(cache_.condition.op);
     if (opIdx >= 0) {
       cond_op_combo_->setCurrentIndex(opIdx);
     }
-    cond_value_edit_->setText(step.condition.value.toString());
+    cond_value_edit_->setText(cache_.condition.value.toString());
   } else if (pageIdx == kPageLoop) {
-    loop_count_edit_->setText(QString::number(step.loopCount));
-    loop_interval_edit_->setText(QString::number(step.loopIntervalMs));
-    loop_sub_table_->setRowCount(step.subSteps.size());
-    for (int i = 0; i < step.subSteps.size(); ++i) {
-      const auto& s = step.subSteps[i];
+    loop_count_edit_->setText(QString::number(cache_.loopCount));
+    loop_interval_edit_->setText(QString::number(cache_.loopIntervalMs));
+    loop_sub_table_->setRowCount(cache_.subSteps.size());
+    for (int i = 0; i < cache_.subSteps.size(); ++i) {
+      const auto& s = cache_.subSteps[i];
       loop_sub_table_->setItem(i, 0, new QTableWidgetItem(s.description));
       loop_sub_table_->setItem(i, 1, new QTableWidgetItem(s.cmd));
       loop_sub_table_->setItem(i, 2, new QTableWidgetItem(s.target));
@@ -397,17 +510,17 @@ void StepDetailPanel::setStepData(const TestStepData& step, bool readOnly) {
           i, 4, new QTableWidgetItem(QString::number(s.delayMs)));
     }
   } else if (pageIdx == kPageWhile) {
-    while_target_edit_->setText(step.condition.target);
-    int opIdx = while_op_combo_->findText(step.condition.op);
+    while_target_edit_->setText(cache_.condition.target);
+    int opIdx = while_op_combo_->findText(cache_.condition.op);
     if (opIdx >= 0) {
       while_op_combo_->setCurrentIndex(opIdx);
     }
-    while_value_edit_->setText(step.condition.value.toString());
-    while_interval_edit_->setText(QString::number(step.loopIntervalMs));
-    while_timeout_edit_->setText(QString::number(step.timeoutMs));
-    while_sub_table_->setRowCount(step.subSteps.size());
-    for (int i = 0; i < step.subSteps.size(); ++i) {
-      const auto& s = step.subSteps[i];
+    while_value_edit_->setText(cache_.condition.value.toString());
+    while_interval_edit_->setText(QString::number(cache_.loopIntervalMs));
+    while_timeout_edit_->setText(QString::number(cache_.timeoutMs));
+    while_sub_table_->setRowCount(cache_.subSteps.size());
+    for (int i = 0; i < cache_.subSteps.size(); ++i) {
+      const auto& s = cache_.subSteps[i];
       while_sub_table_->setItem(i, 0, new QTableWidgetItem(s.description));
       while_sub_table_->setItem(i, 1, new QTableWidgetItem(s.cmd));
       while_sub_table_->setItem(i, 2, new QTableWidgetItem(s.target));
@@ -416,16 +529,15 @@ void StepDetailPanel::setStepData(const TestStepData& step, bool readOnly) {
           i, 4, new QTableWidgetItem(QString::number(s.delayMs)));
     }
   } else if (pageIdx == kPageIf) {
-    if_target_edit_->setText(step.condition.target);
-    int opIdx = if_op_combo_->findText(step.condition.op);
+    if_target_edit_->setText(cache_.condition.target);
+    int opIdx = if_op_combo_->findText(cache_.condition.op);
     if (opIdx >= 0) {
       if_op_combo_->setCurrentIndex(opIdx);
     }
-    if_value_edit_->setText(step.condition.value.toString());
-    // Then
-    if_then_table_->setRowCount(step.subSteps.size());
-    for (int i = 0; i < step.subSteps.size(); ++i) {
-      const auto& s = step.subSteps[i];
+    if_value_edit_->setText(cache_.condition.value.toString());
+    if_then_table_->setRowCount(cache_.subSteps.size());
+    for (int i = 0; i < cache_.subSteps.size(); ++i) {
+      const auto& s = cache_.subSteps[i];
       if_then_table_->setItem(i, 0, new QTableWidgetItem(s.description));
       if_then_table_->setItem(i, 1, new QTableWidgetItem(s.cmd));
       if_then_table_->setItem(i, 2, new QTableWidgetItem(s.target));
@@ -433,10 +545,9 @@ void StepDetailPanel::setStepData(const TestStepData& step, bool readOnly) {
       if_then_table_->setItem(
           i, 4, new QTableWidgetItem(QString::number(s.delayMs)));
     }
-    // Else
-    if_else_table_->setRowCount(step.elseSubSteps.size());
-    for (int i = 0; i < step.elseSubSteps.size(); ++i) {
-      const auto& s = step.elseSubSteps[i];
+    if_else_table_->setRowCount(cache_.elseSubSteps.size());
+    for (int i = 0; i < cache_.elseSubSteps.size(); ++i) {
+      const auto& s = cache_.elseSubSteps[i];
       if_else_table_->setItem(i, 0, new QTableWidgetItem(s.description));
       if_else_table_->setItem(i, 1, new QTableWidgetItem(s.cmd));
       if_else_table_->setItem(i, 2, new QTableWidgetItem(s.target));
@@ -445,19 +556,36 @@ void StepDetailPanel::setStepData(const TestStepData& step, bool readOnly) {
           i, 4, new QTableWidgetItem(QString::number(s.delayMs)));
     }
   } else if (pageIdx == kPageFault) {
-    fault_type_edit_->setText(step.fault.type);
-    fault_value_edit_->setText(step.fault.value.toString());
+    fault_type_edit_->setText(cache_.fault.type);
+    fault_value_edit_->setText(cache_.fault.value.toString());
   } else if (pageIdx == kPageActionLog) {
-    action_log_edit_->setText(step.description);
+    action_log_edit_->setText(cache_.description);
   }
+}
+
+void StepDetailPanel::setStepData(const TestStepData& step, bool readOnly) {
+  read_only_ = readOnly;
+  // 在切页前先抓回当前页所有未保存的改动，防止切页时丢失
+  writePageToCache();
+  current_cmd_ = step.cmd.trimmed().toUpper();
+  cache_ = step;  // 先把新数据整体写入 cache
+  cache_.cmd = current_cmd_;
+  internal_update_ = true;
+
+  switchToPageForCommand(current_cmd_);
+
+  // 从 cache_ 把数据写入当前页（cache_ 在前面已设为新 step）
+  fillPageFromCache();
 
   internal_update_ = false;
 }
 
 TestStepData StepDetailPanel::stepData() const {
-  TestStepData step;
-  step.cmd = current_cmd_;
-
+  // 始终从 cache_ 出发，再用当前页可见控件的"最新值"覆盖对应字段
+  // （cache_ 在 setStepData / 控件 signal 链路中已更新）
+  TestStepData step = cache_;
+  // const 成员函数不能直接 writePageToCache，但 cache_ 在控件改动时已经更新过
+  // 这里只做"当前页可能比 cache 更新"的覆盖
   int pageIdx = stack_->currentIndex();
 
   if (pageIdx == kPageSetVerify) {
@@ -471,68 +599,84 @@ TestStepData StepDetailPanel::stepData() const {
   } else if (pageIdx == kPageLoop) {
     step.loopCount = loop_count_edit_->text().toInt();
     step.loopIntervalMs = loop_interval_edit_->text().toInt();
+    QVector<TestStepData> subs;
     for (int i = 0; i < loop_sub_table_->rowCount(); ++i) {
       TestStepData s;
-      s.description =
-          loop_sub_table_->item(i, 0) ? loop_sub_table_->item(i, 0)->text() : QString();
-      s.cmd = loop_sub_table_->item(i, 1) ? loop_sub_table_->item(i, 1)->text() : QString();
-      s.target = loop_sub_table_->item(i, 2) ? loop_sub_table_->item(i, 2)->text() : QString();
+      s.description = loop_sub_table_->item(i, 0)
+                         ? loop_sub_table_->item(i, 0)->text() : QString();
+      s.cmd = loop_sub_table_->item(i, 1) ? loop_sub_table_->item(i, 1)->text()
+                                           : QString();
+      s.target = loop_sub_table_->item(i, 2)
+                     ? loop_sub_table_->item(i, 2)->text() : QString();
       s.value = loop_sub_table_->item(i, 3)
                     ? QVariant(loop_sub_table_->item(i, 3)->text())
                     : QVariant();
-      s.delayMs =
-          loop_sub_table_->item(i, 4) ? loop_sub_table_->item(i, 4)->text().toInt() : 0;
-      step.subSteps.append(s);
+      s.delayMs = loop_sub_table_->item(i, 4)
+                      ? loop_sub_table_->item(i, 4)->text().toInt() : 0;
+      subs.append(s);
     }
+    step.subSteps = subs;
   } else if (pageIdx == kPageWhile) {
     step.condition.target = while_target_edit_->text();
     step.condition.op = while_op_combo_->currentText();
     step.condition.value = while_value_edit_->text();
     step.loopIntervalMs = while_interval_edit_->text().toInt();
     step.timeoutMs = while_timeout_edit_->text().toInt();
+    QVector<TestStepData> subs;
     for (int i = 0; i < while_sub_table_->rowCount(); ++i) {
       TestStepData s;
-      s.description =
-          while_sub_table_->item(i, 0) ? while_sub_table_->item(i, 0)->text() : QString();
-      s.cmd = while_sub_table_->item(i, 1) ? while_sub_table_->item(i, 1)->text() : QString();
-      s.target = while_sub_table_->item(i, 2) ? while_sub_table_->item(i, 2)->text() : QString();
+      s.description = while_sub_table_->item(i, 0)
+                         ? while_sub_table_->item(i, 0)->text() : QString();
+      s.cmd = while_sub_table_->item(i, 1) ? while_sub_table_->item(i, 1)->text()
+                                           : QString();
+      s.target = while_sub_table_->item(i, 2)
+                     ? while_sub_table_->item(i, 2)->text() : QString();
       s.value = while_sub_table_->item(i, 3)
                     ? QVariant(while_sub_table_->item(i, 3)->text())
                     : QVariant();
-      s.delayMs =
-          while_sub_table_->item(i, 4) ? while_sub_table_->item(i, 4)->text().toInt() : 0;
-      step.subSteps.append(s);
+      s.delayMs = while_sub_table_->item(i, 4)
+                      ? while_sub_table_->item(i, 4)->text().toInt() : 0;
+      subs.append(s);
     }
+    step.subSteps = subs;
   } else if (pageIdx == kPageIf) {
     step.condition.target = if_target_edit_->text();
     step.condition.op = if_op_combo_->currentText();
     step.condition.value = if_value_edit_->text();
+    QVector<TestStepData> thenSubs;
     for (int i = 0; i < if_then_table_->rowCount(); ++i) {
       TestStepData s;
-      s.description =
-          if_then_table_->item(i, 0) ? if_then_table_->item(i, 0)->text() : QString();
-      s.cmd = if_then_table_->item(i, 1) ? if_then_table_->item(i, 1)->text() : QString();
-      s.target = if_then_table_->item(i, 2) ? if_then_table_->item(i, 2)->text() : QString();
+      s.description = if_then_table_->item(i, 0)
+                         ? if_then_table_->item(i, 0)->text() : QString();
+      s.cmd = if_then_table_->item(i, 1) ? if_then_table_->item(i, 1)->text()
+                                          : QString();
+      s.target = if_then_table_->item(i, 2)
+                     ? if_then_table_->item(i, 2)->text() : QString();
       s.value = if_then_table_->item(i, 3)
                     ? QVariant(if_then_table_->item(i, 3)->text())
                     : QVariant();
-      s.delayMs =
-          if_then_table_->item(i, 4) ? if_then_table_->item(i, 4)->text().toInt() : 0;
-      step.subSteps.append(s);
+      s.delayMs = if_then_table_->item(i, 4)
+                      ? if_then_table_->item(i, 4)->text().toInt() : 0;
+      thenSubs.append(s);
     }
+    step.subSteps = thenSubs;
+    QVector<TestStepData> elseSubs;
     for (int i = 0; i < if_else_table_->rowCount(); ++i) {
       TestStepData s;
-      s.description =
-          if_else_table_->item(i, 0) ? if_else_table_->item(i, 0)->text() : QString();
-      s.cmd = if_else_table_->item(i, 1) ? if_else_table_->item(i, 1)->text() : QString();
-      s.target = if_else_table_->item(i, 2) ? if_else_table_->item(i, 2)->text() : QString();
+      s.description = if_else_table_->item(i, 0)
+                         ? if_else_table_->item(i, 0)->text() : QString();
+      s.cmd = if_else_table_->item(i, 1) ? if_else_table_->item(i, 1)->text()
+                                           : QString();
+      s.target = if_else_table_->item(i, 2)
+                     ? if_else_table_->item(i, 2)->text() : QString();
       s.value = if_else_table_->item(i, 3)
                     ? QVariant(if_else_table_->item(i, 3)->text())
                     : QVariant();
-      s.delayMs =
-          if_else_table_->item(i, 4) ? if_else_table_->item(i, 4)->text().toInt() : 0;
-      step.elseSubSteps.append(s);
+      s.delayMs = if_else_table_->item(i, 4)
+                      ? if_else_table_->item(i, 4)->text().toInt() : 0;
+      elseSubs.append(s);
     }
+    step.elseSubSteps = elseSubs;
   } else if (pageIdx == kPageFault) {
     step.fault.type = fault_type_edit_->text();
     step.fault.value = fault_value_edit_->text();

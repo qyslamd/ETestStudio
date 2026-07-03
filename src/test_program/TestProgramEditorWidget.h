@@ -7,8 +7,8 @@
 #include "api/IEditor.h"
 #include "TestProgramData.h"
 
-#include "CommandTypeDelegate.h"
 #include "StepDetailPanel.h"
+#include "StepTableWidget.h"
 
 #include <QDockWidget>
 
@@ -16,8 +16,6 @@ class QAction;
 class QDockWidget;
 class QLabel;
 class QLineEdit;
-class QTableWidget;
-class QTableWidgetItem;
 class QTabWidget;
 class QTextEdit;
 
@@ -75,26 +73,21 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   bool saveFile(const QString& path);
   void loadProgramToUi(const TestProgramData& suite);
   TestProgramData uiToProgram();
-  QTableWidget* createStepTable(CommandTypeDelegate::Mode delegateMode);
-  void connectTableSignals(QTableWidget* table);
   void setModified(bool modified);
   void saveSnapshot();
   void restoreState(const TestProgramData& state);
   void resetSnapshots(bool clean);
   void updateActions();
-  void renumberSteps(QTableWidget* table);
-
-  // 动态列头
-  void updateColumnHeadersForCommand(QTableWidget* table, int row);
 
   // 校验
   void validateCurrentTable();
   void updateValidationLabel();
 
-  // 扩展数据存取
-  void storeStepExtData(QTableWidgetItem* item, const TestStepData& step);
-  TestStepData loadStepExtData(const QTableWidgetItem* item) const;
-  static constexpr int kStepDataRole = Qt::UserRole + 1;
+  // 把 StepTableWidget 信号接到 TestProgramEditorWidget 的槽
+  void connectTable(StepTableWidget* table);
+
+  // 从表格行读取 TestStepData（cmd/desc/target/value/delayMs/timeoutMs + ext）
+  TestStepData readStepData(StepTableWidget* table, int row) const;
 
   QLineEdit* suite_name_edit_ = nullptr;
   QTextEdit* suite_desc_edit_ = nullptr;
@@ -114,14 +107,32 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   QAction* redo_action_ = nullptr;
 
   // 固定索引: 0=setup, 1=teardown, 2+=cases
-  QTableWidget* setup_table_ = nullptr;
-  QTableWidget* teardown_table_ = nullptr;
+  StepTableWidget* setup_table_ = nullptr;
+  StepTableWidget* teardown_table_ = nullptr;
 
   QString current_file_;
   bool modified_ = false;
   bool loading_ = false;
   bool embedded_ = false;
   bool undo_redo_in_progress_ = false;
+  bool validating_ = false;
+  // RAII 守护：validateCurrentTable 在 setCellData 信号链递归时不会重入
+  struct ValidateGuard {
+    TestProgramEditorWidget* self;
+    bool prev;
+    explicit ValidateGuard(TestProgramEditorWidget* s)
+        : self(s), prev(s->validating_) {
+      if (prev) {
+        self = nullptr;  // 标记重入
+      } else {
+        self->validating_ = true;
+      }
+    }
+    ~ValidateGuard() {
+      if (self) self->validating_ = false;
+    }
+    bool shouldRun() const { return self != nullptr; }
+  };
 
   // 快照式撤销/重做
   QVector<TestProgramData> snapshots_;

@@ -12,6 +12,8 @@ add_library(${TARGET_NAME} STATIC
     StepValidation.cpp
     StepValidation.h
     SignalSelectionInterface.h
+    StepTableWidget.cpp
+    StepTableWidget.h
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC

@@ -86,7 +86,7 @@ struct TestProgramData {
 
 // ── 序列化 ──
 QJsonObject testStepToJson(const TestStepData& step);
-TestStepData testStepFromJson(const QJsonObject& obj);
+TestStepData testStepFromJson(const QJsonObject& obj, int depth = 0);
 
 QJsonObject testCaseToJson(const TestCaseData& tc);
 TestCaseData testCaseFromJson(const QJsonObject& obj);

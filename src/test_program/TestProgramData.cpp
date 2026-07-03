@@ -12,7 +12,9 @@ namespace etest::app {
 // ── ConditionExpr ──
 
 static QJsonObject conditionExprToJson(const ConditionExpr& expr) {
-  if (expr.target.isEmpty()) {
+  // 三个字段都为空时才视为未设置 condition；否则即便 target 为空也保留
+  // op/value，避免 setData(QVariant("==") + 5) 的输入被吞
+  if (expr.target.isEmpty() && expr.op.isEmpty() && !expr.value.isValid()) {
     return {};
   }
   QJsonObject obj;
@@ -84,10 +86,15 @@ static QJsonArray stepsToJsonArray(const QVector<TestStepData>& steps) {
   return arr;
 }
 
-static QVector<TestStepData> stepsFromJsonArray(const QJsonArray& arr) {
+// 反序列化子步骤的 JSON 数组
+// maxDepth 防止恶意/损坏文件因递归 subSteps 导致栈溢出
+static QVector<TestStepData> stepsFromJsonArray(const QJsonArray& arr, int depth) {
+  if (depth > 32) {  // 实际只支持一层 LOOP/WHILE/IF 嵌套；32 是宽松上限
+    return {};
+  }
   QVector<TestStepData> steps;
   for (const auto& v : arr) {
-    steps.append(testStepFromJson(v.toObject()));
+    steps.append(testStepFromJson(v.toObject(), depth + 1));
   }
   return steps;
 }
@@ -129,7 +136,7 @@ QJsonObject testStepToJson(const TestStepData& step) {
   return obj;
 }
 
-TestStepData testStepFromJson(const QJsonObject& obj) {
+TestStepData testStepFromJson(const QJsonObject& obj, int depth) {
   TestStepData step;
   step.cmd = obj["cmd"].toString();
   step.target = obj["target"].toString();
@@ -155,10 +162,10 @@ TestStepData testStepFromJson(const QJsonObject& obj) {
     step.loopIntervalMs = obj["loopIntervalMs"].toInt();
   }
   if (obj.contains("subSteps")) {
-    step.subSteps = stepsFromJsonArray(obj["subSteps"].toArray());
+    step.subSteps = stepsFromJsonArray(obj["subSteps"].toArray(), depth);
   }
   if (obj.contains("elseSubSteps")) {
-    step.elseSubSteps = stepsFromJsonArray(obj["elseSubSteps"].toArray());
+    step.elseSubSteps = stepsFromJsonArray(obj["elseSubSteps"].toArray(), depth);
   }
 
   return step;
@@ -187,9 +194,8 @@ TestCaseData testCaseFromJson(const QJsonObject& obj) {
 
   const auto stepsArr = obj["steps"].toArray();
   for (const auto& v : stepsArr) {
-    tc.steps.append(testStepFromJson(v.toObject()));
+    tc.steps.append(testStepFromJson(v.toObject(), 0));
   }
-
   return tc;
 }
 
@@ -233,12 +239,12 @@ TestProgramData testProgramFromJson(const QJsonObject& obj) {
 
   const auto setupArr = obj["setup"].toArray();
   for (const auto& v : setupArr) {
-    suite.setup.append(testStepFromJson(v.toObject()));
+    suite.setup.append(testStepFromJson(v.toObject(), 0));
   }
 
   const auto teardownArr = obj["teardown"].toArray();
   for (const auto& v : teardownArr) {
-    suite.teardown.append(testStepFromJson(v.toObject()));
+    suite.teardown.append(testStepFromJson(v.toObject(), 0));
   }
 
   const auto casesArr = obj["cases"].toArray();
@@ -252,13 +258,36 @@ TestProgramData testProgramFromJson(const QJsonObject& obj) {
 // ── 文件 I/O ──
 
 bool saveTestProgram(const QString& filePath, const TestProgramData& suite) {
-  QFile file(filePath);
-  if (!file.open(QIODevice::WriteOnly)) {
+  // 原子写：先写到临时文件，flush + close 成功后再 rename 覆盖原文件，
+  // 避免中途崩溃/断电留下半截文件损坏原内容
+  const QString tmpPath = filePath + QStringLiteral(".tmp");
+
+  QFile file(tmpPath);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     return false;
   }
+
   QJsonDocument doc(testProgramToJson(suite));
-  file.write(doc.toJson(QJsonDocument::Indented));
+  const qint64 written = file.write(doc.toJson(QJsonDocument::Indented));
+  if (!file.flush() || written < 0) {
+    file.close();
+    QFile::remove(tmpPath);
+    return false;
+  }
   file.close();
+  if (file.error() != QFileDevice::NoError) {
+    QFile::remove(tmpPath);
+    return false;
+  }
+
+  // 写入成功，原子替换原文件
+  if (QFile::exists(filePath)) {
+    QFile::remove(filePath);
+  }
+  if (!QFile::rename(tmpPath, filePath)) {
+    QFile::remove(tmpPath);
+    return false;
+  }
   return true;
 }
 
