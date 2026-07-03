@@ -65,6 +65,7 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void onMoveUp();
   void onMoveDown();
   void onStepSelectionChanged();
+  void reloadToolbarIcons();
 
  private:
   void initUi();

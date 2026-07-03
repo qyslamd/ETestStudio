@@ -621,6 +621,21 @@ void ProtocolEditorWidget::initUi() {
   toolbar->setMovable(false);
   toolbar->setFloatable(false);
 
+  // 撤销 / 重做
+  undo_action_ = new QAction(protoIcon(QStringLiteral("undo")),
+                             QStringLiteral("撤销"), this);
+  undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
+  undo_action_->setEnabled(false);
+  toolbar->addAction(undo_action_);
+
+  redo_action_ = new QAction(protoIcon(QStringLiteral("redo")),
+                             QStringLiteral("重做"), this);
+  redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
+  redo_action_->setEnabled(false);
+  toolbar->addAction(redo_action_);
+
+  toolbar->addSeparator();
+
   // 新建帧
   new_frame_action_ =
       new QAction(protoIcon(QStringLiteral("protocol_new_frame")),
@@ -653,21 +668,6 @@ void ProtocolEditorWidget::initUi() {
   delete_selected_action_->setToolTip(QStringLiteral("删除选中的字段"));
   delete_selected_action_->setEnabled(false);
   toolbar->addAction(delete_selected_action_);
-
-  toolbar->addSeparator();
-
-  // 撤销 / 重做
-  undo_action_ = new QAction(protoIcon(QStringLiteral("undo")),
-                             QStringLiteral("撤销"), this);
-  undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
-  undo_action_->setEnabled(false);
-  toolbar->addAction(undo_action_);
-
-  redo_action_ = new QAction(protoIcon(QStringLiteral("redo")),
-                             QStringLiteral("重做"), this);
-  redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
-  redo_action_->setEnabled(false);
-  toolbar->addAction(redo_action_);
 
   toolbar->addSeparator();
 

@@ -26,6 +26,8 @@
 #include "StepTableWidget.h"
 #include "StepValidation.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
+#include "common/AppIconProvider.h"
+#include "common/ThemeManager.h"
 
 namespace etest::app {
 
@@ -77,49 +79,67 @@ void TestProgramEditorWidget::newProgram() {
 void TestProgramEditorWidget::initUi() {
   setAutoFillBackground(true);
 
+  // ── Icon loader (theme-aware) ──
+  auto tpIcon = [](const QString& name) {
+    return etest::app::AppIconProvider::instance().icon(name);
+  };
+
   // ── QToolBar ──
   auto* toolbar = addToolBar(QStringLiteral("测试程序工具栏"));
   toolbar->setObjectName(QStringLiteral("testProgramToolbar"));
   toolbar->setMovable(false);
   toolbar->setFloatable(false);
 
-  add_case_action_ = new QAction(QStringLiteral("添加用例"), this);
+  // ── 撤销 / 重做 ──
+  undo_action_ = new QAction(tpIcon(QStringLiteral("undo")),
+                             QStringLiteral("撤销"), this);
+  undo_action_->setShortcut(QKeySequence::Undo);
+  undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
+  undo_action_->setEnabled(false);
+  toolbar->addAction(undo_action_);
+
+  redo_action_ = new QAction(tpIcon(QStringLiteral("redo")),
+                             QStringLiteral("重做"), this);
+  redo_action_->setShortcut(QKeySequence::Redo);
+  redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
+  redo_action_->setEnabled(false);
+  toolbar->addAction(redo_action_);
+
+  toolbar->addSeparator();
+
+  add_case_action_ = new QAction(tpIcon(QStringLiteral("testprog_add_case")),
+                                 QStringLiteral("添加用例"), this);
   add_case_action_->setToolTip(QStringLiteral("添加测试用例"));
   toolbar->addAction(add_case_action_);
 
-  remove_case_action_ = new QAction(QStringLiteral("删除用例"), this);
+  remove_case_action_ = new QAction(
+      tpIcon(QStringLiteral("testprog_remove_case")),
+      QStringLiteral("删除用例"), this);
   remove_case_action_->setToolTip(QStringLiteral("删除当前测试用例"));
   toolbar->addAction(remove_case_action_);
 
   toolbar->addSeparator();
 
-  add_step_action_ = new QAction(QStringLiteral("添加步骤"), this);
+  add_step_action_ = new QAction(tpIcon(QStringLiteral("testprog_add_step")),
+                                 QStringLiteral("添加步骤"), this);
   add_step_action_->setToolTip(QStringLiteral("添加测试步骤"));
   toolbar->addAction(add_step_action_);
 
-  remove_step_action_ = new QAction(QStringLiteral("删除步骤"), this);
+  remove_step_action_ = new QAction(
+      tpIcon(QStringLiteral("testprog_remove_step")),
+      QStringLiteral("删除步骤"), this);
   remove_step_action_->setToolTip(QStringLiteral("删除当前测试步骤"));
   toolbar->addAction(remove_step_action_);
 
-  move_up_action_ = new QAction(QStringLiteral("上移"), this);
+  move_up_action_ = new QAction(tpIcon(QStringLiteral("testprog_move_up")),
+                                QStringLiteral("上移"), this);
   move_up_action_->setToolTip(QStringLiteral("上移步骤"));
   toolbar->addAction(move_up_action_);
 
-  move_down_action_ = new QAction(QStringLiteral("下移"), this);
+  move_down_action_ = new QAction(tpIcon(QStringLiteral("testprog_move_down")),
+                                  QStringLiteral("下移"), this);
   move_down_action_->setToolTip(QStringLiteral("下移步骤"));
   toolbar->addAction(move_down_action_);
-
-  toolbar->addSeparator();
-
-  undo_action_ = new QAction(QStringLiteral("撤销"), this);
-  undo_action_->setShortcut(QKeySequence::Undo);
-  undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
-  toolbar->addAction(undo_action_);
-
-  redo_action_ = new QAction(QStringLiteral("重做"), this);
-  redo_action_->setShortcut(QKeySequence::Redo);
-  redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
-  toolbar->addAction(redo_action_);
 
   auto* content = new QWidget(this);
   auto* main_layout = new QVBoxLayout(content);
@@ -236,6 +256,11 @@ void TestProgramEditorWidget::initSignals() {
     setModified(true);
     updateActions();
   });
+
+  // 主题切换 → 重新加载 toolbar 图标
+  connect(&etest::app::ThemeManager::instance(),
+          &etest::app::ThemeManager::themeChanged, this,
+          &TestProgramEditorWidget::reloadToolbarIcons);
 }
 
 void TestProgramEditorWidget::connectTable(StepTableWidget* table) {
@@ -849,6 +874,20 @@ void TestProgramEditorWidget::updateActions() {
                                     row < table->rowCount() - 1);
     }
   }
+}
+
+void TestProgramEditorWidget::reloadToolbarIcons() {
+  auto icon = [](const QString& name) {
+    return etest::app::AppIconProvider::instance().icon(name);
+  };
+  add_case_action_->setIcon(icon(QStringLiteral("testprog_add_case")));
+  remove_case_action_->setIcon(icon(QStringLiteral("testprog_remove_case")));
+  add_step_action_->setIcon(icon(QStringLiteral("testprog_add_step")));
+  remove_step_action_->setIcon(icon(QStringLiteral("testprog_remove_step")));
+  move_up_action_->setIcon(icon(QStringLiteral("testprog_move_up")));
+  move_down_action_->setIcon(icon(QStringLiteral("testprog_move_down")));
+  undo_action_->setIcon(icon(QStringLiteral("undo")));
+  redo_action_->setIcon(icon(QStringLiteral("redo")));
 }
 
 }  // namespace etest::app
