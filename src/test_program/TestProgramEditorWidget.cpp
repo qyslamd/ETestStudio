@@ -218,7 +218,7 @@ void TestProgramEditorWidget::initSignals() {
 
   // 详情面板数据变更 → 同步子步骤到当前行的 UserRole
   connect(step_detail_panel_, &StepDetailPanel::dataChanged, this, [this]() {
-    if (loading_ || undo_redo_in_progress_) {
+    if (loading_ || undo_redo_in_progress_ || validating_) {
       return;
     }
     auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
@@ -281,7 +281,7 @@ TestStepData TestProgramEditorWidget::readStepData(StepTableWidget* table,
 // ── 数据变更 ──
 
 void TestProgramEditorWidget::onDataChanged() {
-  if (loading_ || undo_redo_in_progress_) {
+  if (loading_ || undo_redo_in_progress_ || validating_) {
     return;
   }
   saveSnapshot();
