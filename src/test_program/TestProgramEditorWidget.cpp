@@ -26,6 +26,7 @@
 #include "StepTableWidget.h"
 #include "StepValidation.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
+#include "libui/tab_bar/TabBarStyle.h"
 #include "common/AppIconProvider.h"
 #include "common/ThemeManager.h"
 
@@ -149,6 +150,8 @@ void TestProgramEditorWidget::initUi() {
   // ── Central：步骤表格 ──
   tab_widget_ = new QTabWidget(content);
   tab_widget_->tabBar()->installEventFilter(this);
+  // Chrome 风格 tab 形状（参考 draw_tab_shape demo）
+  tab_widget_->tabBar()->setStyle(new TabBarStyle());
 
   setup_table_ = new StepTableWidget(CommandTypeDelegate::Full, this);
   tab_widget_->addTab(setup_table_, QStringLiteral("初始化"));

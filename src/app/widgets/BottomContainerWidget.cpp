@@ -7,6 +7,7 @@
 
 #include "AppIconProvider.h"
 #include "ThemeManager.h"
+#include "libui/tab_bar/TabBarStyle.h"
 
 namespace etest::app {
 
@@ -31,6 +32,8 @@ void BottomContainerWidget::setupUi() {
   tab_widget_->setDocumentMode(true);
   tab_widget_->tabBar()->setMovable(true);
   tab_widget_->setAutoFillBackground(true);
+  // Chrome 风格 tab 形状（参考 draw_tab_shape demo）
+  tab_widget_->tabBar()->setStyle(new TabBarStyle());
 
   // 关闭按钮
   close_button_ = new QToolButton(this);
