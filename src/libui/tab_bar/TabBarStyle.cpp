@@ -5,13 +5,33 @@
 
 TabBarStyle::TabBarStyle() : QProxyStyle() {}
 
+void TabBarStyle::setDarkTheme(bool dark) { dark_ = dark; }
+
+// ── 主题色（dark_ 派生） ──
+
+QColor TabBarStyle::selectedColor() const {
+  // 选中：dark 主题下用更亮的灰，与 tab bar 背景有清晰对比
+  return dark_ ? QColor(0x4A, 0x4A, 0x4D) : QColor(0xFF, 0xFF, 0xFF);
+}
+QColor TabBarStyle::hoveredColor() const {
+  return dark_ ? QColor(0x3A, 0x3A, 0x3D) : QColor(0xE6, 0xE6, 0xE6);
+}
+QColor TabBarStyle::dividerColor() const {
+  return dark_ ? QColor(0x3C, 0x3C, 0x3C) : QColor(0xE0, 0xE0, 0xE0);
+}
+QColor TabBarStyle::textColor(bool selected) const {
+  if (selected) return QColor(0xFF, 0xFF, 0xFF);
+  return dark_ ? QColor(0xCC, 0xCC, 0xCC) : QColor(0x66, 0x66, 0x66);
+}
+
 QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
                                     const QStyleOption* option,
                                     const QSize& size,
                                     const QWidget* widget) const {
   if (type == CT_TabBarTab) {
     QSize ret(size);
-    ret.rheight() = 36;
+    ret.rheight() = 28;
+    ret.rwidth() = 100;  // 固定 tab 宽度；超出部分由 tab bar elide 处理
     return ret;
   }
   return QProxyStyle::sizeFromContents(type, option, size, widget);
@@ -22,6 +42,9 @@ void TabBarStyle::drawControl(QStyle::ControlElement element,
                               QPainter* p,
                               const QWidget* w) const {
   switch (element) {
+    case CE_TabBarTabLabel:
+      drawTabBarTabLabel(opt, p, w);
+      break;
     case CE_TabBarTabShape:
       drawTabBarTabShape(opt, p, w);
       break;
@@ -41,7 +64,7 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(123, 104, 238));
+    painter->setBrush(selectedColor());
     QPolygonF polygon = path.toFillPolygon();
     painter->drawPolygon(polygon);
     painter->restore();
@@ -52,7 +75,7 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(Qt::NoPen);
-    painter->setBrush(Qt::green);
+    painter->setBrush(hoveredColor());
     QPolygonF polygon = path.toFillPolygon();
     painter->drawPolygon(polygon);
     painter->restore();
@@ -60,11 +83,33 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
   } else {
     auto line = getDividingLine(option);
     painter->save();
-    painter->setPen(QPen(QColor(79, 106, 25), 1, Qt::SolidLine, Qt::FlatCap,
+    painter->setPen(QPen(dividerColor(), 1, Qt::SolidLine, Qt::FlatCap,
                          Qt::MiterJoin));
     painter->drawLine(line);
     painter->restore();
   }
+}
+
+// ── tab 文字（主题色绘制） ──
+
+void TabBarStyle::drawTabBarTabLabel(const QStyleOption* option,
+                                     QPainter* painter,
+                                     const QWidget* widget) const {
+  auto tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
+  if (!tabOption) return;
+
+  const bool selected = tabOption->state.testFlag(QStyle::State_Selected);
+
+  // 文字区域：tab 矩形去掉左右各 8px 边距，居中显示
+  QRect r = tabOption->rect;
+  QRect textRect = r.adjusted(8, 0, -8, 0);
+
+  painter->save();
+  painter->setPen(textColor(selected));
+  QTextOption opt(Qt::AlignCenter | Qt::AlignVCenter);
+  opt.setWrapMode(QTextOption::NoWrap);
+  painter->drawText(textRect, tabOption->text, opt);
+  painter->restore();
 }
 
 QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {

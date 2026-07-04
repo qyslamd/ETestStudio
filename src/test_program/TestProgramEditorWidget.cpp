@@ -150,8 +150,12 @@ void TestProgramEditorWidget::initUi() {
   // ── Central：步骤表格 ──
   tab_widget_ = new QTabWidget(content);
   tab_widget_->tabBar()->installEventFilter(this);
+  tab_widget_->tabBar()->setElideMode(Qt::ElideRight);
+  tab_widget_->tabBar()->setUsesScrollButtons(true);
   // Chrome 风格 tab 形状（参考 draw_tab_shape demo）
-  tab_widget_->tabBar()->setStyle(new TabBarStyle());
+  auto* tabStyle = new TabBarStyle();
+  tabStyle->setDarkTheme(etest::app::ThemeManager::instance().isDarkTheme());
+  tab_widget_->tabBar()->setStyle(tabStyle);
 
   setup_table_ = new StepTableWidget(CommandTypeDelegate::Full, this);
   tab_widget_->addTab(setup_table_, QStringLiteral("初始化"));
@@ -264,6 +268,17 @@ void TestProgramEditorWidget::initSignals() {
   connect(&etest::app::ThemeManager::instance(),
           &etest::app::ThemeManager::themeChanged, this,
           &TestProgramEditorWidget::reloadToolbarIcons);
+
+  // 主题切换 → 更新 tab 颜色
+  connect(&etest::app::ThemeManager::instance(),
+          &etest::app::ThemeManager::themeChanged, this,
+          [this](bool isDark) {
+            if (auto* ts = static_cast<TabBarStyle*>(
+                    tab_widget_->tabBar()->style())) {
+              ts->setDarkTheme(isDark);
+              tab_widget_->tabBar()->update();
+            }
+          });
 }
 
 void TestProgramEditorWidget::connectTable(StepTableWidget* table) {

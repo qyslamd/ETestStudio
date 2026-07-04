@@ -112,8 +112,6 @@ StepTableWidget::StepTableWidget(CommandTypeDelegate::Mode delegateMode,
   // 模型数据变更转发
   connect(model_, &QStandardItemModel::itemChanged, this,
           [this](QStandardItem* item) {
-            fprintf(stderr, "DBG itemChanged row=%d col=%d\n",
-                    item->row(), item->column());
             emit cellDataChanged(item->row(), item->column());
           });
 

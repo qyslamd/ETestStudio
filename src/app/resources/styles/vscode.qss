@@ -157,24 +157,10 @@ QSplitter::handle:vertical:hover {
     background-color: #007ACC;
 }
 
-/* Tab Widget */
+/* Tab Widget — 由 TabBarStyle 全权自绘，不使用 QSS */
 QTabWidget::pane {
     border: none;
     background-color: #1E1E1E;
-}
-QTabBar::tab {
-    background-color: #2D2D2D;
-    color: #858585;
-    border: none;
-    padding: 6px 12px;
-    margin-right: 1px;
-}
-QTabBar::tab:selected {
-    background-color: #1E1E1E;
-    color: #FFFFFF;
-}
-QTabBar::tab:hover:!selected {
-    color: #FFFFFF;
 }
 
 /* 文本编辑区 */
@@ -771,21 +757,6 @@ TestProgramEditorWidget QTabWidget::pane {
     border: 1px solid #3C3C3C;
     background-color: #252526;
 }
-TestProgramEditorWidget QTabBar::tab {
-    background-color: #2D2D2D;
-    color: #CCCCCC;
-    border: none;
-    padding: 6px 16px;
-    margin-right: 2px;
-}
-TestProgramEditorWidget QTabBar::tab:selected {
-    background-color: #1E1E1E;
-    color: #FFFFFF;
-    border-bottom: 2px solid #007ACC;
-}
-TestProgramEditorWidget QTabBar::tab:hover {
-    background-color: #3C3C3C;
-}
 #testProgramEditorToolbar {
     background-color: #252526;
     border-bottom: 1px solid #1E1E1E;
@@ -1064,24 +1035,6 @@ etest--app--BottomContainerWidget QTabWidget {
 etest--app--BottomContainerWidget QTabWidget::pane {
     border: none;
     background-color: #1E1E1E;
-}
-etest--app--BottomContainerWidget QTabBar {
-    background-color: #2D2D2D;
-}
-etest--app--BottomContainerWidget QTabBar::tab {
-    background-color: #2D2D2D;
-    color: #858585;
-    border: none;
-    padding: 4px 12px;
-    margin-right: 1px;
-}
-etest--app--BottomContainerWidget QTabBar::tab:selected {
-    background-color: #1E1E1E;
-    color: #FFFFFF;
-    border-bottom: 1px solid #007ACC;
-}
-etest--app--BottomContainerWidget QTabBar::tab:hover:!selected {
-    color: #FFFFFF;
 }
 etest--app--BottomContainerWidget QToolButton {
     background-color: transparent;
