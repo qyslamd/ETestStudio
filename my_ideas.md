@@ -66,7 +66,7 @@
   - 切换开销：低频操作（秒级），懒加载 category 缓存可避免重复构造
 
 - [ ] **谷歌20206新图标风格提示词记录**
-  - 谷歌2026风格图标，极简几何图形，流畅的彩色渐变（蓝红黄绿），柔和投影，毛玻璃质感，圆角，干净白底，等轴测3D倾斜，现代扁平设计，高清矢量。
+  - 谷歌2026风格图标，极简几何图形，流畅的彩色渐变（蓝红黄绿），柔和投影，毛玻璃质感，圆角，干净白底，等轴测3D倾斜，现代扁平设计，高清矢量。图标无背景。
   - Google 2026 style icon, minimalist geometric shape, smooth colorful gradient (blue, red, yellow, green), soft shadow, frosted glass texture, rounded corners, clean white background, 3D isometric tilt, modern flat design, high quality, 8k, vector illustration.
   
 ## 已完成

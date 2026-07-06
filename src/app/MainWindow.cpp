@@ -925,9 +925,12 @@ void MainWindow::lazyInit() {
   output_panel_ = new OutputPanel(this);
   problems_panel_ = new ProblemsPanel(this);
   terminal_panel_ = new TerminalPanel(this);
-  bottom_container_->addPanel(QStringLiteral("输出"), output_panel_);
-  bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_);
-  bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_);
+  bottom_container_->addPanel(QStringLiteral("输出"), output_panel_,
+                              QStringLiteral("tab_output"));
+  bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_,
+                              QStringLiteral("tab_problems"));
+  bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_,
+                              QStringLiteral("tab_terminal"));
   LOG_INFO("LAZY", "  [3/12] 底部面板: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="4 4 16 16">
+  <defs>
+    <linearGradient id="termGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5bb974"/>
+      <stop offset="100%" stop-color="#1e8e3e"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(5, 4.5) skewY(-5) skewX(2)">
+    <rect x="0" y="0" width="14" height="14" rx="3" fill="url(#termGrad)" opacity="0.95"/>
+    <path d="M3.5 5.5 L6.5 7 L3.5 8.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95"/>
+    <line x1="8" y1="9" x2="11" y2="9" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.85"/>
+  </g>
+</svg>

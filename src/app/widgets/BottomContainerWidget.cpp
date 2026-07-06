@@ -67,7 +67,7 @@ void BottomContainerWidget::setupUi() {
             close_button_->setIcon(AppIconProvider::instance().icon("close"));
           });
 
-  // Theme change: update tab bar colors
+  // Theme change: update tab bar colors and tab icons
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
           [this](bool isDark) {
             if (auto* ts = static_cast<TabBarStyle*>(
@@ -75,11 +75,23 @@ void BottomContainerWidget::setupUi() {
               ts->setDarkTheme(isDark);
               tab_widget_->tabBar()->update();
             }
+            for (int i = 0; i < tab_icon_names_.size(); ++i) {
+              if (!tab_icon_names_.at(i).isEmpty()) {
+                tab_widget_->setTabIcon(
+                    i, AppIconProvider::instance().icon(tab_icon_names_.at(i)));
+              }
+            }
           });
 }
 
-void BottomContainerWidget::addPanel(const QString& title, QWidget* panel) {
-  tab_widget_->addTab(panel, title);
+void BottomContainerWidget::addPanel(const QString& title, QWidget* panel,
+                                     const QString& iconName) {
+  int index = tab_widget_->addTab(panel, title);
+  tab_icon_names_.append(iconName);
+  if (!iconName.isEmpty()) {
+    tab_widget_->setTabIcon(index,
+                            AppIconProvider::instance().icon(iconName));
+  }
 }
 
 void BottomContainerWidget::setCurrentPanel(int index) {
