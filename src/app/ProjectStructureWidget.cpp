@@ -21,7 +21,7 @@
 #include <QListView>
 #include <QMenu>
 #include <QMessageBox>
-#include <QPushButton>
+#include <QToolButton>
 #include <QScrollArea>
 #include <QSet>
 #include <QSplitter>
@@ -109,13 +109,15 @@ void ProjectStructureWidget::initUi() {
   btn_grid->setSpacing(8);
 
   // 第 0 行：项目级操作
-  new_proj_btn_ = new QPushButton(QStringLiteral("新建项目"), card1);
+  new_proj_btn_ = new QToolButton(card1);
+  new_proj_btn_->setText(QStringLiteral("新建项目"));
   new_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
   new_proj_btn_->setFixedHeight(28);
   new_proj_btn_->setCursor(Qt::PointingHandCursor);
   btn_grid->addWidget(new_proj_btn_, 0, 0);
 
-  open_proj_btn_ = new QPushButton(QStringLiteral("打开项目"), card1);
+  open_proj_btn_ = new QToolButton(card1);
+  open_proj_btn_->setText(QStringLiteral("打开项目"));
   open_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
   open_proj_btn_->setFixedHeight(28);
   open_proj_btn_->setCursor(Qt::PointingHandCursor);
@@ -134,7 +136,8 @@ void ProjectStructureWidget::initUi() {
   static const int kCols[] = {0, 1, 0, 1};
   for (int i = 0; i < quickCats.size(); ++i) {
     const auto& cat = quickCats[i];
-    auto* btn = new QPushButton(cat.displayName, card1);
+    auto* btn = new QToolButton(card1);
+    btn->setText(cat.displayName);
     btn->setObjectName(QStringLiteral("PhQuickBtn"));
     btn->setFixedHeight(28);
     btn->setProperty("catId", cat.id);
@@ -275,12 +278,12 @@ void ProjectStructureWidget::initUi() {
 void ProjectStructureWidget::initSignals() {
   // 快捷按钮
   auto quickBtns =
-      page_default_->findChildren<QPushButton*>(QStringLiteral("PhQuickBtn"));
+      page_default_->findChildren<QToolButton*>(QStringLiteral("PhQuickBtn"));
   for (auto* btn : quickBtns) {
     QString catId = btn->property("catId").toString();
     QString ext = btn->property("ext").toString();
     QString baseName = btn->property("baseName").toString();
-    connect(btn, &QPushButton::clicked, this, [this, catId, ext, baseName]() {
+    connect(btn, &QAbstractButton::clicked, this, [this, catId, ext, baseName]() {
       if (project_path_.isEmpty()) {
         createStandaloneFile(ext, baseName);
       } else {
@@ -290,9 +293,9 @@ void ProjectStructureWidget::initSignals() {
   }
 
   // 项目管理按钮
-  connect(new_proj_btn_, &QPushButton::clicked, this,
+  connect(new_proj_btn_, &QAbstractButton::clicked, this,
           &ProjectStructureWidget::newProjectRequested);
-  connect(open_proj_btn_, &QPushButton::clicked, this,
+  connect(open_proj_btn_, &QAbstractButton::clicked, this,
           &ProjectStructureWidget::openProjectRequested);
 
   // 文件监视器

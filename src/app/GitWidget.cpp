@@ -214,7 +214,7 @@ void GitWidget::initUi() {
   auto* titleLabel = new QLabel(QStringLiteral("源代码管理"), this);
   titleLabel->setObjectName(QStringLiteral("gitTitleLabel"));
 
-  refresh_button_ = new QPushButton(this);
+  refresh_button_ = new QToolButton(this);
   refresh_button_->setObjectName("refresh_button_");
   refresh_button_->setToolTip(QStringLiteral("刷新"));
   refresh_button_->setFixedSize(26, 26);
@@ -251,7 +251,8 @@ void GitWidget::initUi() {
   commit_input_->setFixedHeight(60);
   commit_input_->setAcceptRichText(false);
 
-  commit_button_ = new QPushButton(QStringLiteral("提交"), this);
+  commit_button_ = new QToolButton(this);
+  commit_button_->setText(QStringLiteral("提交"));
   commit_button_->setFixedSize(60, 28);
   commit_button_->setToolTip(QStringLiteral("提交 (Ctrl+Enter)"));
 
@@ -294,7 +295,7 @@ void GitWidget::initUi() {
 }
 
 void GitWidget::initSignals() {
-  connect(refresh_button_, &QPushButton::clicked, this, &GitWidget::refresh);
+  connect(refresh_button_, &QAbstractButton::clicked, this, &GitWidget::refresh);
 
   // Theme change: refresh git icons
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
@@ -302,7 +303,7 @@ void GitWidget::initSignals() {
             refresh_button_->setIcon(AppIconProvider::instance().icon("refresh"));
           });
 
-  connect(commit_button_, &QPushButton::clicked, this, [this]() {
+  connect(commit_button_, &QAbstractButton::clicked, this, [this]() {
     doCommit(commit_input_->toPlainText());
   });
 

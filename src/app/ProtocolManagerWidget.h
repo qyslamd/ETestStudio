@@ -15,7 +15,7 @@
 #include <icd/repository.hpp>
 
 class QLabel;
-class QPushButton;
+class QToolButton;
 
 namespace etest::app {
 
@@ -92,9 +92,9 @@ class ProtocolManagerWidget : public QWidget {
   // 无 ICDConfig 时的占位提示
   QWidget* empty_state_ = nullptr;
   // 工具栏按钮
-  QPushButton* new_frame_btn_ = nullptr;
-  QPushButton* import_btn_ = nullptr;
-  QPushButton* refresh_btn_ = nullptr;
+  QToolButton* new_frame_btn_ = nullptr;
+  QToolButton* import_btn_ = nullptr;
+  QToolButton* refresh_btn_ = nullptr;
   // 顶部标题（显示当前 ICDConfig 文件名）
   QLabel* config_label_ = nullptr;
   // 底部状态栏（显示帧总数、启用数）

@@ -3,7 +3,7 @@
 #include <QPixmap>
 #include <QWidget>
 
-class QPushButton;
+class QToolButton;
 class SaverWidgetBase;
 
 /// 覆盖 MainWindow 客户区的叠加层，空闲时显示屏保内容
@@ -31,6 +31,6 @@ class TuxSaverOverlay : public QWidget {
 
   SaverWidgetBase* saver_ = nullptr;
   QString last_mode_;
-  QPushButton* close_btn_ = nullptr;
+  QToolButton* close_btn_ = nullptr;
   QPixmap background_;
 };

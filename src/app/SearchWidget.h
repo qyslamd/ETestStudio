@@ -4,7 +4,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QPushButton>
+#include <QToolButton>
 #include <QSplitter>
 #include <QToolButton>
 #include <QTreeWidget>
@@ -38,7 +38,7 @@ class SearchWidget : public QWidget {
   void onMatchModeToggled();
 
   QLineEdit* search_input_ = nullptr;
-  QPushButton* search_button_ = nullptr;
+  QToolButton* search_button_ = nullptr;
   QToolButton* case_sensitive_btn_ = nullptr;
   QToolButton* whole_word_btn_ = nullptr;
   QToolButton* regex_mode_btn_ = nullptr;

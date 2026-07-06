@@ -506,7 +506,7 @@ QWidget#sidebarActivityBar {
     background-color: #333333;
     border-right: 1px solid #252526;
 }
-QWidget#sidebarActivityBar QPushButton {
+QWidget#sidebarActivityBar QToolButton {
     background-color: transparent;
     border: none;
     border-left: 2px solid transparent;
@@ -515,11 +515,11 @@ QWidget#sidebarActivityBar QPushButton {
     padding: 0px;
     margin: 0px;
 }
-QWidget#sidebarActivityBar QPushButton:hover {
+QWidget#sidebarActivityBar QToolButton:hover {
     background-color: #2A2D2E;
     color: #FFFFFF;
 }
-QWidget#sidebarActivityBar QPushButton:checked {
+QWidget#sidebarActivityBar QToolButton:checked {
     border-left: 2px solid #007ACC;
     color: #FFFFFF;
     background-color: #2A2D2E;
@@ -603,25 +603,24 @@ ProtocolManagerWidget QHeaderView::section:last {
     font-size: 12px;
     font-weight: 600;
 }
-ProtocolManagerWidget QPushButton#protocolManagerRefreshBtn {
+ProtocolManagerWidget QToolButton#protocolManagerRefreshBtn {
     background-color: transparent;
     border: none;
     padding: 0px;
+    border-radius: 3px;
 }
-ProtocolManagerWidget QPushButton#protocolManagerRefreshBtn:hover {
+ProtocolManagerWidget QToolButton#protocolManagerRefreshBtn:hover {
     background-color: #505050;
-    border-radius: 3px;
 }
-ProtocolManagerWidget QPushButton#protocolManagerRefreshBtn:pressed {
+ProtocolManagerWidget QToolButton#protocolManagerRefreshBtn:pressed {
     background-color: #094771;
-    border-radius: 3px;
 }
 
 #protocolManagerToolbar {
     background-color: #252526;
     border-bottom: 1px solid #1E1E1E;
 }
-#protocolManagerNewFrameBtn, #protocolManagerImportBtn {
+QToolButton#protocolManagerNewFrameBtn, QToolButton#protocolManagerImportBtn {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #454545;
@@ -629,10 +628,10 @@ ProtocolManagerWidget QPushButton#protocolManagerRefreshBtn:pressed {
     padding: 2px 10px;
     font-size: 12px;
 }
-#protocolManagerNewFrameBtn:hover, #protocolManagerImportBtn:hover {
+QToolButton#protocolManagerNewFrameBtn:hover, QToolButton#protocolManagerImportBtn:hover {
     background-color: #505050;
 }
-#protocolManagerNewFrameBtn:pressed, #protocolManagerImportBtn:pressed {
+QToolButton#protocolManagerNewFrameBtn:pressed, QToolButton#protocolManagerImportBtn:pressed {
     background-color: #2D2D2D;
 }
 
@@ -878,14 +877,14 @@ etest--app--SearchWidget QLineEdit {
 etest--app--SearchWidget QLineEdit:focus {
     border-color: #007ACC;
 }
-etest--app--SearchWidget QPushButton {
+etest--app--SearchWidget QToolButton {
     background-color: transparent;
     border: 1px solid #3C3C3C;
     border-radius: 2px;
     color: #CCCCCC;
     padding: 2px;
 }
-etest--app--SearchWidget QPushButton:hover {
+etest--app--SearchWidget QToolButton:hover {
     background-color: #505050;
     border-color: #007ACC;
 }
@@ -981,25 +980,12 @@ GitWidget QTextEdit {
 GitWidget QTextEdit:focus {
     border-color: #007ACC;
 }
-GitWidget QPushButton {
-    background-color: #0E639C;
-    color: #FFFFFF;
-    border: 1px solid #0E639C;
-    border-radius: 2px;
-    padding: 2px 6px;
-}
-GitWidget QPushButton:hover {
-    background-color: #1177BB;
-}
-GitWidget QPushButton:pressed {
-    background-color: #0D5A8F;
-}
-GitWidget QPushButton#refresh_button_ {
+GitWidget QToolButton#refresh_button_ {
     background-color: transparent;
     border: none;
     padding: 0px;
 }
-GitWidget QPushButton#refresh_button_:hover {
+GitWidget QToolButton#refresh_button_:hover {
     background-color: #505050;
     border-radius: 3px;
 }
@@ -1450,20 +1436,7 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
     image: url(:/resources/icons/svg/checkbox_indeterminate.svg);
 }
 
-/* 设置页中的按钮 */
-etest--app--SettingsDialog QPushButton {
-    background-color: #0E639C;
-    color: #FFFFFF;
-    border: 1px solid #0E639C;
-    border-radius: 2px;
-    padding: 5px 16px;
-}
-etest--app--SettingsDialog QPushButton:hover {
-    background-color: #1177BB;
-}
-etest--app--SettingsDialog QPushButton:pressed {
-    background-color: #0D5A8F;
-}
+/* 设置页中的按钮 — 已由全局 QPushButton 统一样式覆盖 */
 
 /* ==================== AboutDialog ==================== */
 #aboutContent {
@@ -1710,7 +1683,7 @@ QLabel#HintText {
     color: #CCCCCC;
     font-size: 12px;
 }
-QPushButton#HintActionBtn {
+QToolButton#HintActionBtn {
     background-color: #2D2D2D;
     color: #75BEFF;
     border: 1px solid #3C3C3C;
@@ -1718,17 +1691,17 @@ QPushButton#HintActionBtn {
     font-size: 11px;
     padding: 0 8px;
 }
-QPushButton#HintActionBtn:hover {
+QToolButton#HintActionBtn:hover {
     background-color: #383838;
     border-color: #569CD6;
 }
-QPushButton#HintCloseBtn {
+QToolButton#HintCloseBtn {
     background: transparent;
     border: none;
     color: #666;
     font-size: 12px;
 }
-QPushButton#HintCloseBtn:hover {
+QToolButton#HintCloseBtn:hover {
     color: #FFFFFF;
 }
 
@@ -1759,7 +1732,7 @@ QLabel#PhSectionLabel {
 }
 
 /* Project action buttons (新建项目/打开项目) */
-QPushButton#PhProjectBtn {
+QToolButton#PhProjectBtn {
     background-color: #2D2D2D;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
@@ -1767,11 +1740,11 @@ QPushButton#PhProjectBtn {
     padding: 0 8px;
     font-size: 12px;
 }
-QPushButton#PhProjectBtn:hover {
+QToolButton#PhProjectBtn:hover {
     background-color: #383838;
     border-color: #007ACC;
 }
-QPushButton#PhProjectBtn:pressed {
+QToolButton#PhProjectBtn:pressed {
     background-color: #094771;
 }
 
@@ -1798,7 +1771,7 @@ QFrame#PhCard {
 QFrame#PhCard:hover {
     border-color: #007ACC;
 }
-QPushButton#PhQuickBtn {
+QToolButton#PhQuickBtn {
     background-color: #2D2D2D;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
@@ -1806,11 +1779,11 @@ QPushButton#PhQuickBtn {
     padding: 0 8px;
     font-size: 12px;
 }
-QPushButton#PhQuickBtn:hover {
+QToolButton#PhQuickBtn:hover {
     background-color: #383838;
     border-color: #007ACC;
 }
-QPushButton#PhQuickBtn:pressed {
+QToolButton#PhQuickBtn:pressed {
     background-color: #094771;
 }
 
@@ -1842,15 +1815,15 @@ QLabel#dockTitleBarLabel {
     font-size: 12px;
     background: transparent;
 }
-QPushButton#dockFloatButton, QPushButton#dockCloseButton {
+QToolButton#dockFloatButton, QToolButton#dockCloseButton {
     border: none;
     border-radius: 4px;
     background: transparent;
 }
-QPushButton#dockFloatButton:hover, QPushButton#dockCloseButton:hover {
+QToolButton#dockFloatButton:hover, QToolButton#dockCloseButton:hover {
     background: rgba(255, 255, 255, 0.1);
 }
-QPushButton#dockFloatButton:pressed, QPushButton#dockCloseButton:pressed {
+QToolButton#dockFloatButton:pressed, QToolButton#dockCloseButton:pressed {
     background: rgba(255, 255, 255, 0.18);
 }
 
@@ -1870,20 +1843,20 @@ QToolButton#PhOpenFilesHeaderBtn {
 }
 
 /* ==================== TuxSaverOverlay ==================== */
-QPushButton#saverCloseBtn {
+QToolButton#saverCloseBtn {
     color: rgba(255,255,255,160);
     background: rgba(255,255,255,25);
     border: 1px solid rgba(255,255,255,40);
     font-size: 16px;
     border-radius: 16px;
 }
-QPushButton#saverCloseBtn:hover {
+QToolButton#saverCloseBtn:hover {
     background: rgba(255,80,80,160);
     color: white;
     border-color: rgba(255,80,80,230);
     border-width: 1.5px;
 }
-QPushButton#saverCloseBtn:pressed {
+QToolButton#saverCloseBtn:pressed {
     background: rgba(200,50,50,180);
     color: white;
     border-color: rgba(200,50,50,220);

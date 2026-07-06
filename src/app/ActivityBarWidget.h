@@ -3,8 +3,8 @@
 
 #include <QEvent>
 #include <QIcon>
-#include <QPushButton>
 #include <QString>
+#include <QToolButton>
 #include <QVector>
 #include <QWidget>
 
@@ -40,17 +40,17 @@ class ActivityBarWidget : public QWidget {
 
  private:
   void setupUi();
-  QPushButton* createButton(const QString& tooltip);
+  QToolButton* createButton(const QString& tooltip);
   void updateActiveIconSize();
   bool eventFilter(QObject* obj, QEvent* event) override;
 
   enum { kNormalIconSize = 24, kActiveIconSize = 36 };
 
   QVector<ActivityBarPageInfo> pages_;
-  QVector<QPushButton*> buttons_;
+  QVector<QToolButton*> buttons_;
   QVBoxLayout* top_layout_ = nullptr;
-  QPushButton* settings_btn_ = nullptr;
-  QPushButton* login_btn_ = nullptr;
+  QToolButton* settings_btn_ = nullptr;
+  QToolButton* login_btn_ = nullptr;
   QString active_page_id_;
 };
 

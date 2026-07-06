@@ -2,7 +2,7 @@
 #define ETEST_APP_GIT_WIDGET_H_
 
 #include <QLabel>
-#include <QPushButton>
+#include <QToolButton>
 #include <QStackedWidget>
 #include <QTextEdit>
 #include <QTreeWidget>
@@ -41,9 +41,9 @@ class GitWidget : public QWidget {
 
   QLabel* branch_label_ = nullptr;
   QTextEdit* commit_input_ = nullptr;
-  QPushButton* commit_button_ = nullptr;
+  QToolButton* commit_button_ = nullptr;
   QTreeWidget* changes_tree_ = nullptr;
-  QPushButton* refresh_button_ = nullptr;
+  QToolButton* refresh_button_ = nullptr;
   QStackedWidget* stack_ = nullptr;
   QWidget* content_widget_ = nullptr;
   QWidget* empty_widget_ = nullptr;

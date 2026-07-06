@@ -6,7 +6,6 @@
 #include <functional>
 
 class QLabel;
-class QPushButton;
 
 namespace etest::app {
 

@@ -3,7 +3,7 @@
 #include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 namespace etest::app {
@@ -61,25 +61,26 @@ QWidget* HintBarWidget::createHintItem(const HintData& data) {
   textLabel->setText(elided);
   textLabel->setFixedHeight(kItemHeight);
 
-  QPushButton* actionBtn = nullptr;
+  QToolButton* actionBtn = nullptr;
   if (data.action) {
-    actionBtn = new QPushButton(data.actionLabel.isEmpty()
-                                    ? QStringLiteral("操作")
-                                    : data.actionLabel,
-                                container);
+    actionBtn = new QToolButton(container);
+    actionBtn->setText(data.actionLabel.isEmpty()
+                           ? QStringLiteral("操作")
+                           : data.actionLabel);
     actionBtn->setObjectName(QStringLiteral("HintActionBtn"));
     actionBtn->setFixedSize(40, 20);
     actionBtn->setCursor(Qt::PointingHandCursor);
-    connect(actionBtn, &QPushButton::clicked, this,
+    connect(actionBtn, &QAbstractButton::clicked, this,
             [action = data.action] { action(); });
   }
 
-  auto* closeBtn = new QPushButton(QStringLiteral("✕"), container);
+  auto* closeBtn = new QToolButton(container);
+  closeBtn->setText(QStringLiteral("✕"));
   closeBtn->setObjectName(QStringLiteral("HintCloseBtn"));
   closeBtn->setFixedSize(20, 20);
   closeBtn->setCursor(Qt::PointingHandCursor);
 
-  connect(closeBtn, &QPushButton::clicked, this, [this, container]() {
+  connect(closeBtn, &QAbstractButton::clicked, this, [this, container]() {
     for (int i = 0; i < active_hints_.size(); ++i) {
       if (active_hints_[i].container == container) {
         dismissHint(i);

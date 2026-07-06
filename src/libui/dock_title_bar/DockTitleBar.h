@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QLabel>
-#include <QPushButton>
+#include <QToolButton>
 #include <QWidget>
 
 class QDockWidget;
@@ -25,8 +25,8 @@ class DockTitleBar : public QWidget {
 
   QDockWidget* dock_widget_;
   QLabel* title_label_;
-  QPushButton* float_btn_ = nullptr;
-  QPushButton* close_btn_ = nullptr;
+  QToolButton* float_btn_ = nullptr;
+  QToolButton* close_btn_ = nullptr;
 };
 
 }  // namespace etest::ui

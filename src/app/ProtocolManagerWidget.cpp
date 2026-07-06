@@ -11,6 +11,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QToolButton>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
@@ -138,7 +139,7 @@ void ProtocolManagerWidget::setupUi() {
   title_layout->addWidget(config_label_);
   title_layout->addStretch();
 
-  refresh_btn_ = new QPushButton(this);
+  refresh_btn_ = new QToolButton(this);
   refresh_btn_->setObjectName(QStringLiteral("protocolManagerRefreshBtn"));
   refresh_btn_->setFixedSize(26, 26);
   refresh_btn_->setToolTip(QStringLiteral("刷新"));
@@ -155,11 +156,13 @@ void ProtocolManagerWidget::setupUi() {
   toolbar_layout->setContentsMargins(8, 4, 8, 4);
   toolbar_layout->setSpacing(4);
 
-  new_frame_btn_ = new QPushButton(QStringLiteral("+ 新建帧"), this);
+  new_frame_btn_ = new QToolButton(this);
+  new_frame_btn_->setText(QStringLiteral("+ 新建帧"));
   new_frame_btn_->setObjectName(QStringLiteral("protocolManagerNewFrameBtn"));
   new_frame_btn_->setFixedHeight(22);
 
-  import_btn_ = new QPushButton(QStringLiteral("导入XML"), this);
+  import_btn_ = new QToolButton(this);
+  import_btn_->setText(QStringLiteral("导入XML"));
   import_btn_->setObjectName(QStringLiteral("protocolManagerImportBtn"));
   import_btn_->setFixedHeight(22);
 
@@ -248,11 +251,11 @@ void ProtocolManagerWidget::initSignals() {
           this, &ProtocolManagerWidget::onContextMenu);
 
   // 工具栏
-  connect(new_frame_btn_, &QPushButton::clicked,
+  connect(new_frame_btn_, &QAbstractButton::clicked,
           this, &ProtocolManagerWidget::onNewFrame);
-  connect(import_btn_, &QPushButton::clicked,
+  connect(import_btn_, &QAbstractButton::clicked,
           this, &ProtocolManagerWidget::onImportXml);
-  connect(refresh_btn_, &QPushButton::clicked,
+  connect(refresh_btn_, &QAbstractButton::clicked,
           this, &ProtocolManagerWidget::onRefresh);
 
   // 主题切换：刷新图标

@@ -18,7 +18,7 @@ class QListView;
 class QMenu;
 class QStandardItemModel;
 class QPoint;
-class QPushButton;
+class QToolButton;
 class QScrollArea;
 class QSplitter;
 class QToolButton;
@@ -140,8 +140,8 @@ class ProjectStructureWidget : public QWidget {
   QStandardItemModel* recent_projects_model_ = nullptr;
   QListView* recent_files_view_ = nullptr;
   QStandardItemModel* recent_files_model_ = nullptr;
-  QPushButton* new_proj_btn_ = nullptr;
-  QPushButton* open_proj_btn_ = nullptr;
+  QToolButton* new_proj_btn_ = nullptr;
+  QToolButton* open_proj_btn_ = nullptr;
   QFileSystemWatcher* file_watcher_ = nullptr;
   QTimer* debounce_timer_ = nullptr;
 

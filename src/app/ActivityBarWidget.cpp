@@ -37,13 +37,13 @@ void ActivityBarWidget::setupUi() {
   login_btn_->setIcon(AppIconProvider::instance().icon(QStringLiteral("account")));
   login_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   bottom_layout->addWidget(login_btn_);
-  connect(login_btn_, &QPushButton::clicked, this,
+  connect(login_btn_, &QAbstractButton::clicked, this,
           &ActivityBarWidget::loginTriggered);
   settings_btn_ = createButton(QStringLiteral("设置"));
   settings_btn_->setIcon(AppIconProvider::instance().icon(QStringLiteral("settings")));
   settings_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   bottom_layout->addWidget(settings_btn_);
-  connect(settings_btn_, &QPushButton::clicked, this,
+  connect(settings_btn_, &QAbstractButton::clicked, this,
           &ActivityBarWidget::settingsTriggered);
   layout->addLayout(bottom_layout);
 }
@@ -63,7 +63,7 @@ void ActivityBarWidget::addPage(const QString& id, const QString& tooltip,
   buttons_.append(btn);
   top_layout_->addWidget(btn);
 
-  connect(btn, &QPushButton::clicked, this, [this, id]() {
+  connect(btn, &QAbstractButton::clicked, this, [this, id]() {
     emit pageClicked(id);
   });
 
@@ -115,12 +115,12 @@ void ActivityBarWidget::updateActiveIconSize() {
   }
 }
 
-QPushButton* ActivityBarWidget::createButton(const QString& tooltip) {
-  auto* btn = new QPushButton(this);
+QToolButton* ActivityBarWidget::createButton(const QString& tooltip) {
+  auto* btn = new QToolButton(this);
   btn->setToolTip(tooltip);
   btn->setFixedSize(48, 40);
   btn->setCheckable(true);
-  btn->setFlat(true);
+  btn->setAutoRaise(true);
   btn->setFocusPolicy(Qt::NoFocus);
   btn->setObjectName(QStringLiteral("ActivityBarBtn"));
   btn->installEventFilter(this);
@@ -152,7 +152,7 @@ QString ActivityBarWidget::activePageId() const {
 }
 
 bool ActivityBarWidget::eventFilter(QObject* obj, QEvent* event) {
-  auto* btn = qobject_cast<QPushButton*>(obj);
+  auto* btn = qobject_cast<QToolButton*>(obj);
   if (!btn)
     return QWidget::eventFilter(obj, event);
 

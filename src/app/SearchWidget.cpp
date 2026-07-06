@@ -55,7 +55,7 @@ void SearchWidget::initUi() {
   search_input_->setPlaceholderText(QStringLiteral("搜索"));
   search_input_->setClearButtonEnabled(true);
 
-  search_button_ = new QPushButton(this);
+  search_button_ = new QToolButton(this);
   search_button_->setToolTip(QStringLiteral("搜索"));
   search_button_->setFixedSize(26, 26);
   search_button_->setIcon(AppIconProvider::instance().icon("search"));
@@ -151,7 +151,7 @@ void SearchWidget::initUi() {
 void SearchWidget::initSignals() {
   connect(search_input_, &QLineEdit::returnPressed, this,
           &SearchWidget::performSearch);
-  connect(search_button_, &QPushButton::clicked, this,
+  connect(search_button_, &QAbstractButton::clicked, this,
           &SearchWidget::performSearch);
 
   // Theme change: refresh search icon

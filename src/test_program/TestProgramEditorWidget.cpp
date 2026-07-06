@@ -298,7 +298,7 @@ void TestProgramEditorWidget::initUi() {
   auto* vt_title_bar = new ::etest::ui::DockTitleBar(QStringLiteral("标签页"),
                                                      vertical_tabs_dock_);
   // 不允许浮动：藏掉标题栏的浮动按钮
-  if (auto* float_btn = vt_title_bar->findChild<QPushButton*>(
+  if (auto* float_btn = vt_title_bar->findChild<QToolButton*>(
           QStringLiteral("dockFloatButton"))) {
     float_btn->setVisible(false);
   }

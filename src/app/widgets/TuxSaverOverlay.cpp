@@ -1,7 +1,7 @@
 #include "TuxSaverOverlay.h"
 
 #include <QPainter>
-#include <QPushButton>
+#include <QToolButton>
 
 #include "AppIconProvider.h"
 #include "ConfigDefs.h"
@@ -20,7 +20,7 @@ TuxSaverOverlay::TuxSaverOverlay(QWidget* parent) : QWidget(parent) {
   initSaver();
 
   // ── Close button ──
-  close_btn_ = new QPushButton(this);
+  close_btn_ = new QToolButton(this);
   close_btn_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("close")));
   close_btn_->setIconSize(QSize(16, 16));
@@ -29,7 +29,7 @@ TuxSaverOverlay::TuxSaverOverlay(QWidget* parent) : QWidget(parent) {
   close_btn_->setCursor(Qt::PointingHandCursor);
   close_btn_->setToolTip(QStringLiteral("关闭屏保"));
 
-  connect(close_btn_, &QPushButton::clicked, this, [this]() {
+  connect(close_btn_, &QAbstractButton::clicked, this, [this]() {
     deactivate();
     emit closed();
   });

@@ -24,24 +24,24 @@ DockTitleBar::DockTitleBar(const QString& title,
   lay->addWidget(title_label_);
   lay->addStretch();
 
-  float_btn_ = new QPushButton(this);
+  float_btn_ = new QToolButton(this);
   float_btn_->setObjectName(QStringLiteral("dockFloatButton"));
   float_btn_->setFixedSize(24, 24);
-  float_btn_->setFlat(true);
+  float_btn_->setAutoRaise(true);
   float_btn_->setToolTip(QStringLiteral("浮动/停靠"));
   float_btn_->setCursor(Qt::ArrowCursor);
-  connect(float_btn_, &QPushButton::clicked, this, [this]() {
+  connect(float_btn_, &QAbstractButton::clicked, this, [this]() {
     dock_widget_->setFloating(!dock_widget_->isFloating());
   });
   lay->addWidget(float_btn_);
 
-  close_btn_ = new QPushButton(this);
+  close_btn_ = new QToolButton(this);
   close_btn_->setObjectName(QStringLiteral("dockCloseButton"));
   close_btn_->setFixedSize(24, 24);
-  close_btn_->setFlat(true);
+  close_btn_->setAutoRaise(true);
   close_btn_->setToolTip(QStringLiteral("关闭"));
   close_btn_->setCursor(Qt::ArrowCursor);
-  connect(close_btn_, &QPushButton::clicked, dock_widget_, &QDockWidget::close);
+  connect(close_btn_, &QAbstractButton::clicked, dock_widget_, &QDockWidget::close);
   lay->addWidget(close_btn_);
 
   setFixedHeight(32);
