@@ -26,16 +26,17 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "ConfigManager.h"
 #include "StepDetailPanel.h"
 #include "StepTableWidget.h"
 #include "StepValidation.h"
 #include "VerticalTabListDelegate.h"
-#include "ConfigManager.h"
 #include "common/AppIconProvider.h"
 #include "common/ThemeManager.h"
 #include "config/ConfigDefs.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "libui/tab_bar/TabBarStyle.h"
+
 
 namespace etest::app {
 
@@ -149,14 +150,17 @@ void TestProgramEditorWidget::initUi() {
   move_down_action_->setToolTip(QStringLiteral("下移步骤"));
   toolbar->addAction(move_down_action_);
 
+  auto* spacer = new QWidget(toolbar);
+  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(spacer);
+
   toolbar->addSeparator();
 
   // 切换标签栏方向（横向 QTabBar / 纵向 QListView）
   toggle_orientation_action_ =
       new QAction(tpIcon(QStringLiteral("testprog_tab_vertical")),
                   QStringLiteral("纵向标签"), this);
-  toggle_orientation_action_->setToolTip(
-      QStringLiteral("切换纵向/横向标签栏"));
+  toggle_orientation_action_->setToolTip(QStringLiteral("切换纵向/横向标签栏"));
   toggle_orientation_action_->setCheckable(true);
   toolbar->addAction(toggle_orientation_action_);
 
@@ -253,8 +257,8 @@ void TestProgramEditorWidget::initUi() {
   vertical_tabs_dock_->setWidget(vertical_tabs_view_);
   vertical_tabs_dock_->setAllowedAreas(Qt::LeftDockWidgetArea);
   vertical_tabs_dock_->setFeatures(QDockWidget::DockWidgetClosable);
-  auto* vt_title_bar = new ::etest::ui::DockTitleBar(
-      QStringLiteral("标签页"), vertical_tabs_dock_);
+  auto* vt_title_bar = new ::etest::ui::DockTitleBar(QStringLiteral("标签页"),
+                                                     vertical_tabs_dock_);
   // 不允许浮动：藏掉标题栏的浮动按钮
   if (auto* float_btn = vt_title_bar->findChild<QPushButton*>(
           QStringLiteral("dockFloatButton"))) {
@@ -267,10 +271,9 @@ void TestProgramEditorWidget::initUi() {
 
   // 初始方向（默认水平）
   const QString orient =
-      etest::core::config::ConfigManager::instance()
-          .get<QString>(
-              etest::core::config::CONFIG_TEST_PROGRAM_TAB_ORIENTATION,
-              QStringLiteral("horizontal"));
+      etest::core::config::ConfigManager::instance().get<QString>(
+          etest::core::config::CONFIG_TEST_PROGRAM_TAB_ORIENTATION,
+          QStringLiteral("horizontal"));
   applyTabOrientation(orient == QLatin1String("vertical"));
 }
 
@@ -354,7 +357,8 @@ void TestProgramEditorWidget::initSignals() {
   // 切换方向
   connect(toggle_orientation_action_, &QAction::toggled, this,
           [this](bool vertical) { applyTabOrientation(vertical); });
-  // dock 关闭按钮 → 切回水平（程序内 setVisible 触发的由 applying_orientation_ 拦截）
+  // dock 关闭按钮 → 切回水平（程序内 setVisible 触发的由 applying_orientation_
+  // 拦截）
   connect(vertical_tabs_dock_, &QDockWidget::visibilityChanged, this,
           [this](bool visible) {
             if (!applying_orientation_) {
@@ -395,13 +399,12 @@ void TestProgramEditorWidget::initSignals() {
             }
             int idx = cur.data(VerticalTabRole::TabIndexRole).toInt();
             QMenu menu(vertical_tabs_view_);
-            menu.setObjectName(
-                QStringLiteral("testProgramVerticalTabsMenu"));
+            menu.setObjectName(QStringLiteral("testProgramVerticalTabsMenu"));
             if (idx >= 2) {
               auto* renameAction = menu.addAction(QStringLiteral("重命名"));
               auto* closeAction = menu.addAction(QStringLiteral("关闭用例"));
-              QAction* chosen = menu.exec(
-                  vertical_tabs_view_->viewport()->mapToGlobal(pos));
+              QAction* chosen =
+                  menu.exec(vertical_tabs_view_->viewport()->mapToGlobal(pos));
               if (chosen == renameAction) {
                 renameCase(idx);
               } else if (chosen == closeAction) {
