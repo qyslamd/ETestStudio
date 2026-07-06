@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#ff7043" flood-opacity="0.25"/>
+    </filter>
+    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#f8f9fa" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="handleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff59d"/>
+      <stop offset="100%" stop-color="#fbc02d"/>
+    </linearGradient>
+    <linearGradient id="cleanGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffab91"/>
+      <stop offset="50%" stop-color="#ff5252"/>
+      <stop offset="100%" stop-color="#e53935"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#cardBg)" filter="url(#shadow)" stroke="#e0e0e0" stroke-width="0.5"/>
+  <g transform="translate(3, 2) skewY(-6) skewX(3)">
+    <line x1="4" y1="9.5" x2="11.5" y2="2" stroke="url(#handleGrad)" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M1 9.5 L7 9.5 L8 14 L0 14 Z" fill="url(#cleanGrad)"/>
+    <circle cx="9.5" cy="13.5" r="0.9" fill="#ff7043" opacity="0.55"/>
+    <circle cx="11" cy="14.2" r="0.7" fill="#ff7043" opacity="0.4"/>
+  </g>
+</svg>

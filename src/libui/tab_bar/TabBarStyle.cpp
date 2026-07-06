@@ -105,15 +105,35 @@ void TabBarStyle::drawTabBarTabLabel(const QStyleOption* option,
 
   const bool selected = tabOption->state.testFlag(QStyle::State_Selected);
 
-  // 文字区域：tab 矩形去掉左右各 8px 边距，居中显示
+  // 文字区域：tab 矩形去掉左右各 8px 边距
   QRect r = tabOption->rect;
   QRect textRect = r.adjusted(8, 0, -8, 0);
 
   painter->save();
   painter->setPen(textColor(selected));
-  QTextOption opt(Qt::AlignCenter | Qt::AlignVCenter);
+
+  // 绘制图标（如有）：左侧 8px 边距、垂直居中；文字区域右移到图标之后
+  if (!tabOption->icon.isNull()) {
+    int iconSize = pixelMetric(QStyle::PM_TabBarIconSize, option, widget);
+    if (iconSize <= 0) {
+      iconSize = 16;
+    }
+    QRect iconRect(r.left() + 8, r.top() + (r.height() - iconSize) / 2,
+                   iconSize, iconSize);
+    tabOption->icon.paint(painter, iconRect, Qt::AlignCenter, QIcon::Normal);
+    textRect.setLeft(iconRect.right() + 4);
+  }
+
+  // 有图标时文字左对齐紧随图标，无图标时居中
+  Qt::Alignment align = tabOption->icon.isNull()
+                            ? (Qt::AlignCenter | Qt::AlignVCenter)
+                            : (Qt::AlignLeft | Qt::AlignVCenter);
+  QTextOption opt(align);
   opt.setWrapMode(QTextOption::NoWrap);
-  painter->drawText(textRect, tabOption->text, opt);
+  // tab 宽度固定，文字过长手动右省略
+  QString text = painter->fontMetrics().elidedText(
+      tabOption->text, Qt::ElideRight, textRect.width());
+  painter->drawText(textRect, text, opt);
   painter->restore();
 }
 

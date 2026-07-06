@@ -14,6 +14,7 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPointer>
+#include <QSize>
 #include <QStandardItemModel>
 #include <QTabBar>
 #include <QTabWidget>
@@ -25,10 +26,10 @@
 #include "StepDetailPanel.h"
 #include "StepTableWidget.h"
 #include "StepValidation.h"
-#include "libui/dock_title_bar/DockTitleBar.h"
-#include "libui/tab_bar/TabBarStyle.h"
 #include "common/AppIconProvider.h"
 #include "common/ThemeManager.h"
+#include "libui/dock_title_bar/DockTitleBar.h"
+#include "libui/tab_bar/TabBarStyle.h"
 
 namespace etest::app {
 
@@ -92,15 +93,15 @@ void TestProgramEditorWidget::initUi() {
   toolbar->setFloatable(false);
 
   // ── 撤销 / 重做 ──
-  undo_action_ = new QAction(tpIcon(QStringLiteral("undo")),
-                             QStringLiteral("撤销"), this);
+  undo_action_ =
+      new QAction(tpIcon(QStringLiteral("undo")), QStringLiteral("撤销"), this);
   undo_action_->setShortcut(QKeySequence::Undo);
   undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
   undo_action_->setEnabled(false);
   toolbar->addAction(undo_action_);
 
-  redo_action_ = new QAction(tpIcon(QStringLiteral("redo")),
-                             QStringLiteral("重做"), this);
+  redo_action_ =
+      new QAction(tpIcon(QStringLiteral("redo")), QStringLiteral("重做"), this);
   redo_action_->setShortcut(QKeySequence::Redo);
   redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
   redo_action_->setEnabled(false);
@@ -113,9 +114,9 @@ void TestProgramEditorWidget::initUi() {
   add_case_action_->setToolTip(QStringLiteral("添加测试用例"));
   toolbar->addAction(add_case_action_);
 
-  remove_case_action_ = new QAction(
-      tpIcon(QStringLiteral("testprog_remove_case")),
-      QStringLiteral("删除用例"), this);
+  remove_case_action_ =
+      new QAction(tpIcon(QStringLiteral("testprog_remove_case")),
+                  QStringLiteral("删除用例"), this);
   remove_case_action_->setToolTip(QStringLiteral("删除当前测试用例"));
   toolbar->addAction(remove_case_action_);
 
@@ -126,9 +127,9 @@ void TestProgramEditorWidget::initUi() {
   add_step_action_->setToolTip(QStringLiteral("添加测试步骤"));
   toolbar->addAction(add_step_action_);
 
-  remove_step_action_ = new QAction(
-      tpIcon(QStringLiteral("testprog_remove_step")),
-      QStringLiteral("删除步骤"), this);
+  remove_step_action_ =
+      new QAction(tpIcon(QStringLiteral("testprog_remove_step")),
+                  QStringLiteral("删除步骤"), this);
   remove_step_action_->setToolTip(QStringLiteral("删除当前测试步骤"));
   toolbar->addAction(remove_step_action_);
 
@@ -156,12 +157,17 @@ void TestProgramEditorWidget::initUi() {
   auto* tabStyle = new TabBarStyle();
   tabStyle->setDarkTheme(etest::app::ThemeManager::instance().isDarkTheme());
   tab_widget_->tabBar()->setStyle(tabStyle);
+  tab_widget_->tabBar()->setMovable(false);
+  tab_widget_->setIconSize(QSize(16, 16));
 
   setup_table_ = new StepTableWidget(CommandTypeDelegate::Full, this);
-  tab_widget_->addTab(setup_table_, QStringLiteral("初始化"));
+  tab_widget_->addTab(setup_table_, tpIcon(QStringLiteral("testprog_tab_init")),
+                      QStringLiteral("初始化"));
 
   teardown_table_ = new StepTableWidget(CommandTypeDelegate::Full, this);
-  tab_widget_->addTab(teardown_table_, QStringLiteral("清理"));
+  tab_widget_->addTab(teardown_table_,
+                      tpIcon(QStringLiteral("testprog_tab_cleanup")),
+                      QStringLiteral("清理"));
 
   main_layout->addWidget(tab_widget_, 1);
 
@@ -271,10 +277,9 @@ void TestProgramEditorWidget::initSignals() {
 
   // 主题切换 → 更新 tab 颜色
   connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this,
-          [this](bool isDark) {
-            if (auto* ts = static_cast<TabBarStyle*>(
-                    tab_widget_->tabBar()->style())) {
+          &etest::app::ThemeManager::themeChanged, this, [this](bool isDark) {
+            if (auto* ts =
+                    static_cast<TabBarStyle*>(tab_widget_->tabBar()->style())) {
               ts->setDarkTheme(isDark);
               tab_widget_->tabBar()->update();
             }
@@ -305,7 +310,7 @@ void TestProgramEditorWidget::connectTable(StepTableWidget* table) {
 }
 
 TestStepData TestProgramEditorWidget::readStepData(StepTableWidget* table,
-                                                int row) const {
+                                                   int row) const {
   TestStepData step;
   // 优先读扩展数据（含子步骤/条件/容差等）
   step = table->stepExtData(row);
@@ -341,7 +346,10 @@ void TestProgramEditorWidget::onAddCase() {
   int index = tab_widget_->count();
   auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
   connectTable(table);
-  tab_widget_->addTab(table, QStringLiteral("测试用例 %1").arg(index - 1));
+  tab_widget_->addTab(table,
+                      etest::app::AppIconProvider::instance().icon(
+                          QStringLiteral("testprog_tab_case")),
+                      QStringLiteral("测试用例 %1").arg(index - 1));
   tab_widget_->setCurrentWidget(table);
 
   saveSnapshot();
@@ -438,8 +446,8 @@ void TestProgramEditorWidget::onMoveUp() {
   }
   QList<QStandardItem*> items = model->takeRow(row);
   model->insertRow(row - 1, items);
-  // 不用显式调 renumberSteps：rowsRemoved/rowsInserted 已在 setRowCount 批量模式外
-  // 自动触发 renumberSteps（见 StepTableWidget 构造函数连接）
+  // 不用显式调 renumberSteps：rowsRemoved/rowsInserted 已在 setRowCount
+  // 批量模式外 自动触发 renumberSteps（见 StepTableWidget 构造函数连接）
   table->selectRow(row - 1);
 
   saveSnapshot();
@@ -800,7 +808,10 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
     auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
     connectTable(table);
     fillTable(table, tc.steps);
-    tab_widget_->addTab(table, tc.name);
+    tab_widget_->addTab(table,
+                        etest::app::AppIconProvider::instance().icon(
+                            QStringLiteral("testprog_tab_case")),
+                        tc.name);
   }
 
   // 加载完成后清选区，避免半填状态触发 onStepSelectionChanged
