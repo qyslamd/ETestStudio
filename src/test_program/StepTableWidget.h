@@ -11,7 +11,7 @@ class QStandardItemModel;
 namespace etest::app {
 
 // 步骤表格控件 — 替代 QTableWidget，使用 QTableView + QStandardItemModel，
-// 封装步骤编辑所需的列头动态切换、扩展数据存取、拖拽排序等功能。
+// 封装步骤编辑所需的扩展数据存取、拖拽排序等功能。列头固定，不随命令类型变化。
 class StepTableWidget : public QTableView {
   Q_OBJECT
 
@@ -22,8 +22,8 @@ class StepTableWidget : public QTableView {
     kColCmd = 1,      // 命令
     kColTarget = 2,   // 目标 / 条件目标 / 期望值
     kColValue = 3,    // 值 / 运算符 / 故障类型 / 期望值
-    kColExtra = 4,    // 延迟ms / 容差min / 循环次数 / 条件值
-    kColExtra2 = 5,   // 超时ms / 容差max / 间隔ms / 故障值
+    kColExtra = 4,    // 延迟ms / 容差min / 条件值 / 故障值（按命令，固定列）
+    kColExtra2 = 5,   // 容差max / 间隔ms（按命令，固定列）
     kColTimeout = 6,  // 超时ms
     kColCount = 7
   };
@@ -49,11 +49,11 @@ class StepTableWidget : public QTableView {
   void setStepExtData(int row, const TestStepData& step);
   TestStepData stepExtData(int row) const;
 
-  // ── 根据命令类型调整列头显示/隐藏 ──
-  void applyCommand(int row, const QString& cmd);
-
   // ── 重新编号（vertical header） ──
   void renumberSteps();
+
+  // ── 按当前字体刷新行高（主题切换/构造后调用，避免 cell editor 字体被截断） ──
+  void refreshRowHeight();
 
  signals:
   void cellDataChanged(int row, int column);

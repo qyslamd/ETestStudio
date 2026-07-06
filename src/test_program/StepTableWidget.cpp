@@ -40,63 +40,6 @@ static QVector<TestStepData> deserializeSubSteps(const QByteArray& data) {
   return {};
 }
 
-// ── 列映射表 ──
-
-static void getColumnMapping(const QString& cmd, const char** labels) {
-  for (int i = 0; i < StepTableWidget::kColCount; ++i) {
-    labels[i] = nullptr;
-  }
-  labels[StepTableWidget::kColDesc] = "步骤说明";
-  labels[StepTableWidget::kColCmd] = "命令";
-
-  if (cmd == QStringLiteral("SET")) {
-    labels[StepTableWidget::kColTarget] = "目标";
-    labels[StepTableWidget::kColValue] = "值";
-    labels[StepTableWidget::kColExtra] = "延迟(ms)";
-    labels[StepTableWidget::kColTimeout] = "超时(ms)";
-  } else if (cmd == QStringLiteral("VERIFY")) {
-    labels[StepTableWidget::kColTarget] = "目标";
-    labels[StepTableWidget::kColValue] = "期望值";
-    labels[StepTableWidget::kColExtra] = "容差min";
-    labels[StepTableWidget::kColExtra2] = "容差max";
-    labels[StepTableWidget::kColTimeout] = "超时(ms)";
-  } else if (cmd == QStringLiteral("WAIT")) {
-    labels[StepTableWidget::kColTarget] = "条件目标";
-    labels[StepTableWidget::kColValue] = "运算符";
-    labels[StepTableWidget::kColExtra] = "条件值";
-    labels[StepTableWidget::kColExtra2] = "间隔(ms)";
-    labels[StepTableWidget::kColTimeout] = "超时(ms)";
-  } else if (cmd == QStringLiteral("DELAY")) {
-    labels[StepTableWidget::kColExtra] = "延迟值(ms)";
-  } else if (cmd == QStringLiteral("ACTION")) {
-    labels[StepTableWidget::kColTarget] = "提示信息";
-  } else if (cmd == QStringLiteral("LOG")) {
-    labels[StepTableWidget::kColTarget] = "日志内容";
-  } else if (cmd == QStringLiteral("LOOP")) {
-    labels[StepTableWidget::kColTarget] = "循环次数";
-    labels[StepTableWidget::kColValue] = "间隔(ms)";
-  } else if (cmd == QStringLiteral("WHILE")) {
-    labels[StepTableWidget::kColTarget] = "条件目标";
-    labels[StepTableWidget::kColValue] = "运算符";
-    labels[StepTableWidget::kColExtra] = "条件值";
-    labels[StepTableWidget::kColExtra2] = "间隔(ms)";
-    labels[StepTableWidget::kColTimeout] = "超时(ms)";
-  } else if (cmd == QStringLiteral("IF")) {
-    labels[StepTableWidget::kColTarget] = "条件目标";
-    labels[StepTableWidget::kColValue] = "运算符";
-    labels[StepTableWidget::kColExtra] = "条件值";
-  } else if (cmd == QStringLiteral("INJECT_FAULT")) {
-    labels[StepTableWidget::kColTarget] = "目标";
-    labels[StepTableWidget::kColValue] = "故障类型";
-    labels[StepTableWidget::kColExtra] = "故障值";
-  } else if (cmd == QStringLiteral("CLEAR_FAULT")) {
-    labels[StepTableWidget::kColTarget] = "目标";
-  } else if (cmd == QStringLiteral("RECORD")) {
-    labels[StepTableWidget::kColTarget] = "录制";
-  }
-  // PHOTO: 只保留 步骤说明 + 命令
-}
-
 // ── 构造 ──
 
 StepTableWidget::StepTableWidget(CommandTypeDelegate::Mode delegateMode,
@@ -132,10 +75,12 @@ StepTableWidget::StepTableWidget(CommandTypeDelegate::Mode delegateMode,
 
 void StepTableWidget::setupModel() {
   model_ = new QStandardItemModel(0, kColCount, this);
+  // 列头固定，不随命令类型变化；参数1/参数2 列的含义由命令决定（见 extraCellText）
   model_->setHorizontalHeaderLabels(
       {QStringLiteral("步骤说明"), QStringLiteral("命令"),
        QStringLiteral("目标"), QStringLiteral("值"),
-       QStringLiteral("延迟(ms)"), QStringLiteral(""), QStringLiteral("超时(ms)")});
+       QStringLiteral("参数1"), QStringLiteral("参数2"),
+       QStringLiteral("超时(ms)")});
   setModel(model_);
 }
 
@@ -151,7 +96,7 @@ void StepTableWidget::setupView() {
 
   setSelectionBehavior(QAbstractItemView::SelectRows);
   setSelectionMode(QAbstractItemView::SingleSelection);
-  verticalHeader()->setDefaultSectionSize(24);
+  refreshRowHeight();
   setAlternatingRowColors(true);
 
   // 拖拽排序
@@ -304,26 +249,6 @@ TestStepData StepTableWidget::stepExtData(int row) const {
   return step;
 }
 
-// ── 动态列头 ──
-
-void StepTableWidget::applyCommand(int row, const QString& cmd) {
-  if (cmd.isEmpty()) {
-    return;
-  }
-  const char* labels[kColCount] = {nullptr};
-  getColumnMapping(cmd, labels);
-
-  for (int c = 0; c < kColCount; ++c) {
-    if (labels[c] != nullptr) {
-      model_->setHeaderData(c, Qt::Horizontal, QString::fromUtf8(labels[c]),
-                            Qt::DisplayRole);
-      setColumnHidden(c, false);
-    } else if (c != kColDesc && c != kColCmd) {
-      setColumnHidden(c, true);
-    }
-  }
-}
-
 // ── 重新编号 ──
 
 void StepTableWidget::renumberSteps() {
@@ -332,6 +257,12 @@ void StepTableWidget::renumberSteps() {
     model_->setHeaderData(i, Qt::Vertical, QString::number(i + 1),
                           Qt::DisplayRole);
   }
+}
+
+void StepTableWidget::refreshRowHeight() {
+  // 行高 = 字体高度 + 余量；余量容纳 cell editor 的 QLineEdit 边框及 QSS padding，
+  // 避免主题字体较大时编辑器字体被截断
+  verticalHeader()->setDefaultSectionSize(fontMetrics().height() + 12);
 }
 
 }  // namespace etest::app

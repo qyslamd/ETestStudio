@@ -40,6 +40,44 @@
 
 namespace etest::app {
 
+namespace {
+
+// kColExtra 是动态含义列，按命令返回应显示的文本：
+//   SET/DELAY=延迟(ms), VERIFY=容差min, WAIT/WHILE/IF=条件值, INJECT_FAULT=故障值
+QString extraCellText(const TestStepData& step) {
+  const QString& cmd = step.cmd;
+  if (cmd == QStringLiteral("SET") || cmd == QStringLiteral("DELAY")) {
+    return QString::number(step.delayMs);
+  }
+  if (cmd == QStringLiteral("VERIFY")) {
+    return step.tolerance.enabled ? QString::number(step.tolerance.min)
+                                  : QString();
+  }
+  if (cmd == QStringLiteral("WAIT") || cmd == QStringLiteral("WHILE") ||
+      cmd == QStringLiteral("IF")) {
+    return step.condition.value.toString();
+  }
+  if (cmd == QStringLiteral("INJECT_FAULT")) {
+    return step.fault.value.toString();
+  }
+  return QString();
+}
+
+// kColExtra2 动态列：VERIFY=容差max, WAIT/WHILE=间隔(ms)
+QString extra2CellText(const TestStepData& step) {
+  const QString& cmd = step.cmd;
+  if (cmd == QStringLiteral("VERIFY")) {
+    return step.tolerance.enabled ? QString::number(step.tolerance.max)
+                                  : QString();
+  }
+  if (cmd == QStringLiteral("WAIT") || cmd == QStringLiteral("WHILE")) {
+    return QString::number(step.loopIntervalMs);
+  }
+  return QString();
+}
+
+}  // namespace
+
 TestProgramEditorWidget::TestProgramEditorWidget(const QString& filePath,
                                                  QWidget* parent)
     : QMainWindow(parent) {
@@ -317,7 +355,9 @@ void TestProgramEditorWidget::initSignals() {
   connect(redo_action_, &QAction::triggered, this,
           &TestProgramEditorWidget::redo);
 
-  // 详情面板数据变更 → 同步子步骤到当前行的 UserRole
+  // 详情面板数据变更 → 同步扩展字段到当前行的 UserRole
+  // 面板是扩展字段（容差/故障/条件/循环参数/子步骤）的唯一编辑入口，需全量回写；
+  // 可见列（cmd/desc/target/value/delay/timeout）由 readStepData 保存时从单元格覆盖。
   connect(step_detail_panel_, &StepDetailPanel::dataChanged, this, [this]() {
     if (loading_ || undo_redo_in_progress_ || validating_) {
       return;
@@ -326,12 +366,22 @@ void TestProgramEditorWidget::initSignals() {
     int row = table ? table->currentRow() : -1;
     if (table && row >= 0) {
       TestStepData panelStep = step_detail_panel_->stepData();
-      if (panelStep.isControlFlow()) {
-        TestStepData existing = table->stepExtData(row);
-        existing.subSteps = panelStep.subSteps;
-        existing.elseSubSteps = panelStep.elseSubSteps;
-        table->setStepExtData(row, existing);
-      }
+      TestStepData existing = table->stepExtData(row);
+      existing.tolerance = panelStep.tolerance;
+      existing.fault = panelStep.fault;
+      existing.condition = panelStep.condition;
+      existing.loopCount = panelStep.loopCount;
+      existing.loopIntervalMs = panelStep.loopIntervalMs;
+      existing.subSteps = panelStep.subSteps;
+      existing.elseSubSteps = panelStep.elseSubSteps;
+      table->setStepExtData(row, existing);
+      // 同步动态列显示（容差/条件/故障/间隔），阻塞信号避免重复入快照
+      table->model()->blockSignals(true);
+      table->setCellText(row, StepTableWidget::kColExtra,
+                         extraCellText(existing));
+      table->setCellText(row, StepTableWidget::kColExtra2,
+                         extra2CellText(existing));
+      table->model()->blockSignals(false);
     }
     saveSnapshot();
     setModified(true);
@@ -350,6 +400,20 @@ void TestProgramEditorWidget::initSignals() {
                     static_cast<TabBarStyle*>(tab_widget_->tabBar()->style())) {
               ts->setDarkTheme(isDark);
               tab_widget_->tabBar()->update();
+            }
+          });
+
+  // 主题切换 → 刷新表格行高（按新字体动态算，避免 editor 字体被截断）
+  connect(&etest::app::ThemeManager::instance(),
+          &etest::app::ThemeManager::themeChanged, this, [this]() {
+            setup_table_->refreshRowHeight();
+            teardown_table_->refreshRowHeight();
+            for (int t = 2; t < tab_widget_->count(); ++t) {
+              auto* table =
+                  qobject_cast<StepTableWidget*>(tab_widget_->widget(t));
+              if (table) {
+                table->refreshRowHeight();
+              }
             }
           });
 
@@ -429,14 +493,21 @@ void TestProgramEditorWidget::connectTable(StepTableWidget* table) {
   // 用 QPointer 防止表格删除后 lambda 仍持有悬空指针
   auto* tablePtr = table;
   QPointer<StepTableWidget> weakTable(tablePtr);
+  // 命令列变更 → 按新命令重新填充 参数1/参数2 列显示（列头固定，仅刷新值）
   connect(table, &StepTableWidget::cellDataChanged, this,
           [this, weakTable](int row, int col) {
             if (!weakTable) {
               return;  // 表格已删除
             }
             if (col == StepTableWidget::kColCmd) {
-              QString cmd = weakTable->cellText(row, col).trimmed().toUpper();
-              weakTable->applyCommand(row, cmd);
+              TestStepData step = weakTable->stepExtData(row);
+              step.cmd = weakTable->cellText(row, col).trimmed().toUpper();
+              weakTable->model()->blockSignals(true);
+              weakTable->setCellText(row, StepTableWidget::kColExtra,
+                                     extraCellText(step));
+              weakTable->setCellText(row, StepTableWidget::kColExtra2,
+                                     extra2CellText(step));
+              weakTable->model()->blockSignals(false);
             }
           });
 }
@@ -451,8 +522,13 @@ TestStepData TestProgramEditorWidget::readStepData(StepTableWidget* table,
   step.description = table->cellText(row, StepTableWidget::kColDesc);
   step.target = table->cellText(row, StepTableWidget::kColTarget);
   step.value = table->cellText(row, StepTableWidget::kColValue);
-  step.delayMs =
-      table->cellText(row, StepTableWidget::kColExtra).toInt(nullptr, 10);
+  // kColExtra 动态列：仅 SET/DELAY 的"延迟"从单元格读（cell 是该字段编辑入口）；
+  // VERIFY/WAIT/WHILE/IF/INJECT_FAULT 的 kColExtra(kColExtra2) 是纯显示
+  // （容差/条件/故障等扩展字段以 ext data 为准），不在此覆盖，避免污染 delayMs
+  if (step.cmd == QStringLiteral("SET") || step.cmd == QStringLiteral("DELAY")) {
+    step.delayMs =
+        table->cellText(row, StepTableWidget::kColExtra).toInt(nullptr, 10);
+  }
   step.timeoutMs =
       table->cellText(row, StepTableWidget::kColTimeout).toInt(nullptr, 10);
   return step;
@@ -518,7 +594,6 @@ void TestProgramEditorWidget::onAddStep() {
   table->setCellText(row, StepTableWidget::kColTimeout, QStringLiteral("5000"));
   table->model()->blockSignals(false);
 
-  table->applyCommand(row, QStringLiteral("SET"));
   table->selectRow(row);
 
   saveSnapshot();
@@ -889,13 +964,11 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
       table->setCellText(i, StepTableWidget::kColCmd, step.cmd);
       table->setCellText(i, StepTableWidget::kColTarget, step.target);
       table->setCellText(i, StepTableWidget::kColValue, step.value.toString());
-      table->setCellText(i, StepTableWidget::kColExtra,
-                         QString::number(step.delayMs));
-      table->setCellText(i, StepTableWidget::kColExtra2, QString());
+      table->setCellText(i, StepTableWidget::kColExtra, extraCellText(step));
+      table->setCellText(i, StepTableWidget::kColExtra2, extra2CellText(step));
       table->setCellText(i, StepTableWidget::kColTimeout,
                          QString::number(step.timeoutMs));
       table->setStepExtData(i, step);
-      table->applyCommand(i, step.cmd);
     }
   };
 
