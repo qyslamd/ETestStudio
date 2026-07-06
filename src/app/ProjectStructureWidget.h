@@ -3,14 +3,14 @@
 
 #include <QMap>
 #include <QSet>
-#include <QStandardItemModel>
 #include <QStackedWidget>
+#include <QStandardItemModel>
 
+#include <QString>
+#include <QWidget>
 #include "plugin/IDevicePlugin.h"
 #include "plugin/PluginManager.h"
 #include "widgets/OpenFileDelegate.h"
-#include <QString>
-#include <QWidget>
 
 class QFileSystemWatcher;
 class QLabel;
@@ -19,6 +19,7 @@ class QMenu;
 class QStandardItemModel;
 class QPoint;
 class QToolButton;
+class QPushButton;
 class QScrollArea;
 class QSplitter;
 class QToolButton;
@@ -30,17 +31,17 @@ namespace etest::app {
 // 自定义 role 常量（Qt::UserRole + 偏移）
 enum ProjectNodeRole {
   NodeTypeRole = Qt::UserRole + 1,  // "root" | "category" | "file"
-  RelativePathRole,                  // 相对于项目根目录的路径
-  CategoryIdRole,                    // category 的标识（如 "protocol"）
+  RelativePathRole,                 // 相对于项目根目录的路径
+  CategoryIdRole,                   // category 的标识（如 "protocol"）
 };
 
 struct CategoryInfo {
-  QString id;          // 目录名，如 "protocol"
-  QString displayName; // 显示名，如 "协议"
-  QString dirPath;     // 相对于项目根的实际路径
-  QString iconName;    // 图标名称
-  QString newFileExt;  // 在此分类下新建文件的默认扩展名，空表示不支持新建
-  QString newFileLabel; // "新建"菜单项的标签，如"新建协议文件"
+  QString id;            // 目录名，如 "protocol"
+  QString displayName;   // 显示名，如 "协议"
+  QString dirPath;       // 相对于项目根的实际路径
+  QString iconName;      // 图标名称
+  QString newFileExt;    // 在此分类下新建文件的默认扩展名，空表示不支持新建
+  QString newFileLabel;  // "新建"菜单项的标签，如"新建协议文件"
 };
 
 class ProjectStructureWidget : public QWidget {
@@ -87,7 +88,7 @@ class ProjectStructureWidget : public QWidget {
   void onFileOpened(const QString& path);
   void onFileClosed(const QString& path);
 
-  private slots:
+ private slots:
   void onCustomContextMenu(const QPoint& pos);
   void onItemDoubleClicked(const QModelIndex& index);
   void onItemChanged(QStandardItem* item);
@@ -100,10 +101,10 @@ class ProjectStructureWidget : public QWidget {
   void onDirectoryChanged(const QString& path);
 
   // 文件操作
-  void createNewFile(const QString& categoryId, const QString& extension,
+  void createNewFile(const QString& categoryId,
+                     const QString& extension,
                      const QString& baseName);
-  void createStandaloneFile(const QString& extension,
-                            const QString& baseName);
+  void createStandaloneFile(const QString& extension, const QString& baseName);
   void deleteSelectedFile();
   void copyFilePath();
   void copyRelativePath();
@@ -135,20 +136,20 @@ class ProjectStructureWidget : public QWidget {
   QTreeView* tree_view_;
   QStandardItemModel* model_;
   QWidget* page_default_ = nullptr;
-  QToolButton* recent_projects_header_btn_ = nullptr;
+
   QListView* recent_projects_view_ = nullptr;
   QStandardItemModel* recent_projects_model_ = nullptr;
   QListView* recent_files_view_ = nullptr;
   QStandardItemModel* recent_files_model_ = nullptr;
-  QToolButton* new_proj_btn_ = nullptr;
-  QToolButton* open_proj_btn_ = nullptr;
+  QPushButton* new_proj_btn_ = nullptr;
+  QPushButton* open_proj_btn_ = nullptr;
   QFileSystemWatcher* file_watcher_ = nullptr;
   QTimer* debounce_timer_ = nullptr;
 
   QWidget* page_project_ = nullptr;
   QSplitter* tree_splitter_ = nullptr;
   QWidget* open_files_widget_ = nullptr;
-  QToolButton* open_files_header_btn_ = nullptr;
+  QLabel* open_files_header_label_ = nullptr;
   QListView* open_files_view_ = nullptr;
   QStandardItemModel* open_files_model_ = nullptr;
   OpenFileDelegate* open_file_delegate_ = nullptr;
@@ -156,7 +157,8 @@ class ProjectStructureWidget : public QWidget {
   QString project_path_;
   QStandardItem* root_item_ = nullptr;
   QSet<QString> debounce_timer_queued_paths_;
-  // 新建文件后,短时间内忽略该目录的 watcher 刷新(避免破坏刚打开的 inline editor)
+  // 新建文件后,短时间内忽略该目录的 watcher 刷新(避免破坏刚打开的 inline
+  // editor)
   QSet<QString> suppressed_watch_paths_;
 
   // 用于重命名时跟踪旧路径

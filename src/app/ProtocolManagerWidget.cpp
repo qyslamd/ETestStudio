@@ -75,18 +75,23 @@ int ProtocolManagerWidget::calcFrameLength(const icd::Frame& frame) {
 
 QString ProtocolManagerWidget::frameTypeDisplayName(icd::FrameType type) {
   switch (type) {
-    case icd::FrameType::cmd:      return QStringLiteral("CMD");
-    case icd::FrameType::data_cmd: return QStringLiteral("DATACFG");
+    case icd::FrameType::cmd:
+      return QStringLiteral("CMD");
+    case icd::FrameType::data_cmd:
+      return QStringLiteral("DATACFG");
     case icd::FrameType::data:
-    default:                       return QStringLiteral("DATA");
+    default:
+      return QStringLiteral("DATA");
   }
 }
 
 QString ProtocolManagerWidget::byteOrderDisplayName(icd::ByteOrder order) {
   switch (order) {
-    case icd::ByteOrder::big_endian:    return QStringLiteral("BE");
+    case icd::ByteOrder::big_endian:
+      return QStringLiteral("BE");
     case icd::ByteOrder::little_endian:
-    default:                            return QStringLiteral("LE");
+    default:
+      return QStringLiteral("LE");
   }
 }
 
@@ -94,16 +99,19 @@ QString ProtocolManagerWidget::findIcdConfigPath(const QString& projectRoot) {
   if (projectRoot.isEmpty()) {
     return {};
   }
-  QDir protocol_dir(QDir(projectRoot).absoluteFilePath(QStringLiteral("protocol")));
+  QDir protocol_dir(
+      QDir(projectRoot).absoluteFilePath(QStringLiteral("protocol")));
   if (!protocol_dir.exists()) {
     return {};
   }
   // 优先 XML，回退 JSON
-  const QString xml_path = protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.xml"));
+  const QString xml_path =
+      protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.xml"));
   if (QFile::exists(xml_path)) {
     return xml_path;
   }
-  const QString json_path = protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.json"));
+  const QString json_path =
+      protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.json"));
   if (QFile::exists(json_path)) {
     return json_path;
   }
@@ -156,15 +164,11 @@ void ProtocolManagerWidget::setupUi() {
   toolbar_layout->setContentsMargins(8, 4, 8, 4);
   toolbar_layout->setSpacing(4);
 
-  new_frame_btn_ = new QToolButton(this);
+  new_frame_btn_ = new QPushButton(this);
   new_frame_btn_->setText(QStringLiteral("+ 新建帧"));
-  new_frame_btn_->setObjectName(QStringLiteral("protocolManagerNewFrameBtn"));
-  new_frame_btn_->setFixedHeight(22);
 
-  import_btn_ = new QToolButton(this);
+  import_btn_ = new QPushButton(this);
   import_btn_->setText(QStringLiteral("导入XML"));
-  import_btn_->setObjectName(QStringLiteral("protocolManagerImportBtn"));
-  import_btn_->setFixedHeight(22);
 
   toolbar_layout->addWidget(new_frame_btn_);
   toolbar_layout->addWidget(import_btn_);
@@ -209,7 +213,8 @@ void ProtocolManagerWidget::setupUi() {
   empty_text->setAlignment(Qt::AlignCenter);
   empty_layout->addWidget(empty_text);
 
-  auto* create_btn = new QPushButton(QStringLiteral("创建 ICDConfig"), empty_state_);
+  auto* create_btn =
+      new QPushButton(QStringLiteral("创建 ICDConfig"), empty_state_);
   create_btn->setObjectName(QStringLiteral("protocolManagerCreateBtn"));
   create_btn->setFixedHeight(24);
   empty_layout->addWidget(create_btn, 0, Qt::AlignHCenter);
@@ -218,8 +223,8 @@ void ProtocolManagerWidget::setupUi() {
   root_layout->addWidget(empty_state_);
 
   // 连接 create_btn 的 clicked 到 onNewIcdConfig
-  connect(create_btn, &QPushButton::clicked,
-          this, &ProtocolManagerWidget::onNewIcdConfig);
+  connect(create_btn, &QPushButton::clicked, this,
+          &ProtocolManagerWidget::onNewIcdConfig);
 
   // ── 底部状态栏 ──
   auto* status_bar = new QWidget(this);
@@ -239,24 +244,22 @@ void ProtocolManagerWidget::setupUi() {
 
 void ProtocolManagerWidget::initSignals() {
   // 双击帧条目打开 ICDConfig
-  connect(tree_, &QTreeWidget::itemDoubleClicked,
-          this, [this](QTreeWidgetItem* item, int /*column*/) {
-            onOpenFrame(item);
-          });
+  connect(tree_, &QTreeWidget::itemDoubleClicked, this,
+          [this](QTreeWidgetItem* item, int /*column*/) { onOpenFrame(item); });
   // 复选框状态改变（Enable 切换）
-  connect(tree_, &QTreeWidget::itemChanged,
-          this, &ProtocolManagerWidget::onItemChanged);
+  connect(tree_, &QTreeWidget::itemChanged, this,
+          &ProtocolManagerWidget::onItemChanged);
   // 右键菜单
-  connect(tree_, &QTreeWidget::customContextMenuRequested,
-          this, &ProtocolManagerWidget::onContextMenu);
+  connect(tree_, &QTreeWidget::customContextMenuRequested, this,
+          &ProtocolManagerWidget::onContextMenu);
 
   // 工具栏
-  connect(new_frame_btn_, &QAbstractButton::clicked,
-          this, &ProtocolManagerWidget::onNewFrame);
-  connect(import_btn_, &QAbstractButton::clicked,
-          this, &ProtocolManagerWidget::onImportXml);
-  connect(refresh_btn_, &QAbstractButton::clicked,
-          this, &ProtocolManagerWidget::onRefresh);
+  connect(new_frame_btn_, &QAbstractButton::clicked, this,
+          &ProtocolManagerWidget::onNewFrame);
+  connect(import_btn_, &QAbstractButton::clicked, this,
+          &ProtocolManagerWidget::onImportXml);
+  connect(refresh_btn_, &QAbstractButton::clicked, this,
+          &ProtocolManagerWidget::onRefresh);
 
   // 主题切换：刷新图标
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
@@ -328,8 +331,8 @@ void ProtocolManagerWidget::refreshListImpl() {
     auto* text = empty_state_->findChild<QLabel*>(
         QStringLiteral("protocolManagerEmptyText"));
     if (text) {
-      text->setText(
-          QStringLiteral("此项目尚无 ICDConfig.xml/json。\n点击下方按钮创建一个空白配置。"));
+      text->setText(QStringLiteral(
+          "此项目尚无 ICDConfig.xml/json。\n点击下方按钮创建一个空白配置。"));
     }
     file_entries_.clear();
     repo_.reset();
@@ -348,11 +351,10 @@ void ProtocolManagerWidget::refreshListImpl() {
     auto* text = empty_state_->findChild<QLabel*>(
         QStringLiteral("protocolManagerEmptyText"));
     if (text) {
-      const QString detail = load_error_.isEmpty()
-                                ? QStringLiteral("未知错误")
-                                : load_error_;
-      text->setText(QStringLiteral("无法加载 ICDConfig。\n%1\n%2")
-                        .arg(detail, path));
+      const QString detail =
+          load_error_.isEmpty() ? QStringLiteral("未知错误") : load_error_;
+      text->setText(
+          QStringLiteral("无法加载 ICDConfig。\n%1\n%2").arg(detail, path));
     }
     file_entries_.clear();
     repo_.reset();
@@ -380,9 +382,9 @@ void ProtocolManagerWidget::refreshListImpl() {
 }
 
 // ── 加载 ICDConfig ───────────────────────────────────────────
-// 健壮加载：先解析 config XML 得到 file_entries_，再 best-effort 构造 Repository。
-// 即使部分帧文件缺失也能展示列表（长度为 "?"），只有关键的 config XML
-// 本身无法解析时才返回 false。
+// 健壮加载：先解析 config XML 得到 file_entries_，再 best-effort 构造
+// Repository。 即使部分帧文件缺失也能展示列表（长度为 "?"），只有关键的 config
+// XML 本身无法解析时才返回 false。
 bool ProtocolManagerWidget::loadIcdConfig() {
   load_error_ = QString();
   if (config_path_.empty()) {
@@ -398,7 +400,8 @@ bool ProtocolManagerWidget::loadIcdConfig() {
     auto load_result = icd::Loader::init_with_metadata(config_path_);
     if (load_result) {
       config_format_ = load_result->format;
-      repo_ = std::make_shared<icd::Repository>(std::move(load_result->repository));
+      repo_ =
+          std::make_shared<icd::Repository>(std::move(load_result->repository));
       file_entries_ = std::move(load_result->file_entries);
       return true;
     }
@@ -408,8 +411,9 @@ bool ProtocolManagerWidget::loadIcdConfig() {
 
   config_result = icd::format::parse_xml_config(config_path_);
   if (!config_result) {
-    load_error_ = QStringLiteral("解析 ICDConfig.xml 失败：%1")
-                      .arg(QString::fromStdString(config_result.error().message));
+    load_error_ =
+        QStringLiteral("解析 ICDConfig.xml 失败：%1")
+            .arg(QString::fromStdString(config_result.error().message));
     return false;
   }
   config_format_ = icd::Format::xml;
@@ -425,9 +429,8 @@ bool ProtocolManagerWidget::loadIcdConfig() {
     info.path = sf.path;
     info.type = sf.type.value_or(icd::FrameType::data);
     info.order = sf.order.value_or(icd::ByteOrder::little_endian);
-    info.format = (sf.format == icd::Format::auto_detect)
-                      ? icd::Format::xml
-                      : sf.format;
+    info.format =
+        (sf.format == icd::Format::auto_detect) ? icd::Format::xml : sf.format;
     info.enable = sf.enable.value_or(true);
     info.word_type = sf.word_type.value_or(0u);
     file_entries_.push_back(std::move(info));
@@ -460,9 +463,8 @@ bool ProtocolManagerWidget::loadIcdConfig() {
       frames.push_back(std::move(placeholder));
       continue;
     }
-    auto fmt = (entry.format == icd::Format::auto_detect)
-                   ? icd::Format::xml
-                   : entry.format;
+    auto fmt = (entry.format == icd::Format::auto_detect) ? icd::Format::xml
+                                                          : entry.format;
     tl::expected<icd::schema::SchemaFrameDef, icd::Error> fr;
     if (fmt == icd::Format::json) {
       fr = icd::format::parse_json_frame(abs_path);
@@ -497,12 +499,13 @@ bool ProtocolManagerWidget::loadIcdConfig() {
   } else {
     // Repository 构建失败也容忍：repo_ 留空，长度列显示 "?"
     repo_.reset();
-    load_error_ = QStringLiteral("部分帧解析失败：%1 个成功，%2 个失败\n%3")
-                      .arg(loaded)
-                      .arg(failed)
-                      .arg(missing_paths.isEmpty()
-                               ? QString()
-                               : QStringLiteral("缺失：%1").arg(missing_paths.size()));
+    load_error_ =
+        QStringLiteral("部分帧解析失败：%1 个成功，%2 个失败\n%3")
+            .arg(loaded)
+            .arg(failed)
+            .arg(missing_paths.isEmpty()
+                     ? QString()
+                     : QStringLiteral("缺失：%1").arg(missing_paths.size()));
   }
   return true;
 }
@@ -536,15 +539,15 @@ void ProtocolManagerWidget::populateTree() {
   // 根节点：ICDConfig 配置项聚合
   config_root_item_ = new QTreeWidgetItem(tree_);
   config_root_item_->setText(0, QStringLiteral("ICDConfig"));
-  config_root_item_->setData(0, Qt::UserRole, QString::fromStdString(
-      config_path_.string()));
+  config_root_item_->setData(0, Qt::UserRole,
+                             QString::fromStdString(config_path_.string()));
   config_root_item_->setExpanded(true);
   QFont f = config_root_item_->font(0);
   f.setBold(true);
   config_root_item_->setFont(0, f);
   // 根节点禁用复选框
-  config_root_item_->setFlags(config_root_item_->flags()
-                              & ~Qt::ItemIsUserCheckable);
+  config_root_item_->setFlags(config_root_item_->flags() &
+                              ~Qt::ItemIsUserCheckable);
 
   // 按 file_entries_ 顺序生成子节点
   for (size_t i = 0; i < file_entries_.size(); ++i) {
@@ -562,8 +565,8 @@ void ProtocolManagerWidget::populateTree() {
     }
 
     auto* item = new QTreeWidgetItem(config_root_item_);
-    QString label = QString::fromStdString(
-        entry.name.empty() ? entry.path : entry.name);
+    QString label =
+        QString::fromStdString(entry.name.empty() ? entry.path : entry.name);
     item->setText(0, label);
     item->setToolTip(0, QString::fromStdString(entry.path));
     item->setData(0, kRoleFrameId, entry.id);
@@ -612,16 +615,16 @@ void ProtocolManagerWidget::onItemChanged(QTreeWidgetItem* item, int column) {
     QFont f = item->font(c);
     f.setStrikeOut(!new_enable);
     item->setFont(c, f);
-    item->setForeground(c, QBrush(new_enable
-                                      ? QColor(Qt::white)
-                                      : QColor(120, 120, 120)));
+    item->setForeground(
+        c, QBrush(new_enable ? QColor(Qt::white) : QColor(120, 120, 120)));
   }
   // 写回
   if (!saveIcdConfig()) {
     QMessageBox::warning(this, QStringLiteral("保存失败"),
                          QStringLiteral("无法写回 ICDConfig 文件。"));
     // 回滚 UI
-    item->setCheckState(0, file_entries_[idx].enable ? Qt::Checked : Qt::Unchecked);
+    item->setCheckState(
+        0, file_entries_[idx].enable ? Qt::Checked : Qt::Unchecked);
   } else {
     updateStatusLabel();
   }
@@ -639,8 +642,9 @@ void ProtocolManagerWidget::updateStatusLabel() {
       ++enabled;
     }
   }
-  status_label_->setText(
-      QStringLiteral("共 %1 帧，启用 %2").arg(file_entries_.size()).arg(enabled));
+  status_label_->setText(QStringLiteral("共 %1 帧，启用 %2")
+                             .arg(file_entries_.size())
+                             .arg(enabled));
 }
 
 // ── 创建空白 ICDConfig ───────────────────────────────────────
@@ -657,15 +661,18 @@ void ProtocolManagerWidget::onNewIcdConfig() {
   }
   // protocol 目录可能还不存在
   QDir protocol_dir(QDir(root).absoluteFilePath(QStringLiteral("protocol")));
-  if (!protocol_dir.exists() && !QDir(root).mkpath(QStringLiteral("protocol"))) {
+  if (!protocol_dir.exists() &&
+      !QDir(root).mkpath(QStringLiteral("protocol"))) {
     QMessageBox::warning(this, QStringLiteral("创建失败"),
                          QStringLiteral("无法创建 protocol 目录。"));
     return;
   }
-  const QString target = protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.xml"));
+  const QString target =
+      protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.xml"));
   if (QFile::exists(target)) {
-    QMessageBox::information(this, QStringLiteral("已存在"),
-                             QStringLiteral("ICDConfig.xml 已存在：%1").arg(target));
+    QMessageBox::information(
+        this, QStringLiteral("已存在"),
+        QStringLiteral("ICDConfig.xml 已存在：%1").arg(target));
     refreshList();
     return;
   }
@@ -710,18 +717,17 @@ void ProtocolManagerWidget::onNewFrame() {
       QStringLiteral("DATACFG"),
   };
   bool ok = false;
-  const QString type_str = QInputDialog::getItem(
-      this, QStringLiteral("新建帧"),
-      QStringLiteral("帧类型："), types, 1, false, &ok);
+  const QString type_str =
+      QInputDialog::getItem(this, QStringLiteral("新建帧"),
+                            QStringLiteral("帧类型："), types, 1, false, &ok);
   if (!ok) {
     return;
   }
 
   bool ok2 = false;
   const QString name = QInputDialog::getText(
-      this, QStringLiteral("新建帧"),
-      QStringLiteral("帧名称："), QLineEdit::Normal,
-      QStringLiteral("NewFrame"), &ok2);
+      this, QStringLiteral("新建帧"), QStringLiteral("帧名称："),
+      QLineEdit::Normal, QStringLiteral("NewFrame"), &ok2);
   if (!ok2 || name.trimmed().isEmpty()) {
     return;
   }
@@ -745,23 +751,21 @@ void ProtocolManagerWidget::onNewFrame() {
   QString safe_name = name.trimmed();
   // 简单 sanitize：替换 Windows 非法文件名字符
   for (QChar& ch : safe_name) {
-    if (ch == QLatin1Char('/') || ch == QLatin1Char('\\')
-        || ch == QLatin1Char(':') || ch == QLatin1Char('*')
-        || ch == QLatin1Char('?') || ch == QLatin1Char('"')
-        || ch == QLatin1Char('<') || ch == QLatin1Char('>')
-        || ch == QLatin1Char('|')) {
+    if (ch == QLatin1Char('/') || ch == QLatin1Char('\\') ||
+        ch == QLatin1Char(':') || ch == QLatin1Char('*') ||
+        ch == QLatin1Char('?') || ch == QLatin1Char('"') ||
+        ch == QLatin1Char('<') || ch == QLatin1Char('>') ||
+        ch == QLatin1Char('|')) {
       ch = QLatin1Char('_');
     }
   }
   // 新建帧的 rel 路径：name 是用户输入，可能含中文，统一用 wstring
-  const std::filesystem::path rel_path(
-      safe_name.toStdWString() + L".xml");
-  const std::filesystem::path abs_path =
-      config_path_.parent_path() / rel_path;
+  const std::filesystem::path rel_path(safe_name.toStdWString() + L".xml");
+  const std::filesystem::path abs_path = config_path_.parent_path() / rel_path;
 
   // 创建空 Frame，写入 frame file
-  icd::Frame frame(new_id, safe_name.toStdString(), "",
-                   ft, icd::ByteOrder::little_endian);
+  icd::Frame frame(new_id, safe_name.toStdString(), "", ft,
+                   icd::ByteOrder::little_endian);
   auto ser = icd::format::serialize_xml_frame_file(abs_path, frame);
   if (!ser) {
     QMessageBox::warning(this, QStringLiteral("新建失败"),
@@ -824,14 +828,17 @@ void ProtocolManagerWidget::onImportXml() {
   const bool is_frame = head.contains("<ICDData");
 
   if (!is_config && !is_frame) {
-    QMessageBox::warning(this, QStringLiteral("导入失败"),
-        QStringLiteral("无法识别的 XML 格式，需要 <ICDConfig> 或 <ICDData> 根元素。"));
+    QMessageBox::warning(
+        this, QStringLiteral("导入失败"),
+        QStringLiteral(
+            "无法识别的 XML 格式，需要 <ICDConfig> 或 <ICDData> 根元素。"));
     return;
   }
 
   // 如果没有 ICDConfig，单帧导入后直接创建一个空配置并写回
   if (config_path_.empty() || !repo_) {
-    QMessageBox::information(this, QStringLiteral("提示"),
+    QMessageBox::information(
+        this, QStringLiteral("提示"),
         QStringLiteral("请先创建 ICDConfig，然后再导入帧。"));
     return;
   }
@@ -843,7 +850,8 @@ void ProtocolManagerWidget::onImportXml() {
   if (is_frame) {
     auto frame_result = icd::format::parse_xml_frame(in_path);
     if (!frame_result) {
-      QMessageBox::warning(this, QStringLiteral("导入失败"),
+      QMessageBox::warning(
+          this, QStringLiteral("导入失败"),
           QStringLiteral("解析 XML 帧失败：%1")
               .arg(QString::fromStdString(frame_result.error().message)));
       return;
@@ -863,7 +871,8 @@ void ProtocolManagerWidget::onImportXml() {
     // 复制源文件到 protocol 目录（保持原始 XML 内容）
     if (!QFile::copy(xml_path, QString::fromStdString(abs_path.string()))) {
       QMessageBox::warning(this, QStringLiteral("导入失败"),
-          QStringLiteral("复制失败：%1").arg(QString::fromStdString(abs_path.string())));
+                           QStringLiteral("复制失败：%1")
+                               .arg(QString::fromStdString(abs_path.string())));
       return;
     }
 
@@ -946,26 +955,22 @@ void ProtocolManagerWidget::onContextMenu(const QPoint& pos) {
   auto* menu = new QMenu(this);
 
   auto* open_act = menu->addAction(QStringLiteral("打开编辑"));
-  connect(open_act, &QAction::triggered, this, [this, item]() {
-    onOpenFrame(item);
-  });
+  connect(open_act, &QAction::triggered, this,
+          [this, item]() { onOpenFrame(item); });
 
   auto* toggle_act = menu->addAction(QStringLiteral("切换启用"));
-  connect(toggle_act, &QAction::triggered, this, [this, item]() {
-    onToggleEnable(item);
-  });
+  connect(toggle_act, &QAction::triggered, this,
+          [this, item]() { onToggleEnable(item); });
 
   menu->addSeparator();
 
   auto* rename_act = menu->addAction(QStringLiteral("重命名"));
-  connect(rename_act, &QAction::triggered, this, [this, item]() {
-    onRenameFrame(item);
-  });
+  connect(rename_act, &QAction::triggered, this,
+          [this, item]() { onRenameFrame(item); });
 
   auto* remove_act = menu->addAction(QStringLiteral("删除"));
-  connect(remove_act, &QAction::triggered, this, [this, item]() {
-    onRemoveFrame(item);
-  });
+  connect(remove_act, &QAction::triggered, this,
+          [this, item]() { onRemoveFrame(item); });
 
   menu->exec(tree_->mapToGlobal(pos));
   menu->deleteLater();
@@ -998,9 +1003,8 @@ void ProtocolManagerWidget::onRenameFrame(QTreeWidgetItem* item) {
   }
   bool ok = false;
   const QString new_name = QInputDialog::getText(
-      this, QStringLiteral("重命名帧"),
-      QStringLiteral("新名称："), QLineEdit::Normal,
-      QString::fromStdString(file_entries_[idx].name), &ok);
+      this, QStringLiteral("重命名帧"), QStringLiteral("新名称："),
+      QLineEdit::Normal, QString::fromStdString(file_entries_[idx].name), &ok);
   if (!ok || new_name.trimmed().isEmpty()) {
     return;
   }

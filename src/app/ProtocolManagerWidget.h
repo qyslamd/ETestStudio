@@ -16,6 +16,7 @@
 
 class QLabel;
 class QToolButton;
+class QPushButton;
 
 namespace etest::app {
 
@@ -61,7 +62,8 @@ class ProtocolManagerWidget : public QWidget {
   void setupUi();
   // 连接信号槽
   void initSignals();
-  // refreshList 的实际实现（外面包了 try-catch 防止 filesystem 异常导致应用崩溃）
+  // refreshList 的实际实现（外面包了 try-catch 防止 filesystem
+  // 异常导致应用崩溃）
   void refreshListImpl();
 
   // 加载项目的 ICDConfig 并填充到 tree_，返回是否成功
@@ -92,8 +94,8 @@ class ProtocolManagerWidget : public QWidget {
   // 无 ICDConfig 时的占位提示
   QWidget* empty_state_ = nullptr;
   // 工具栏按钮
-  QToolButton* new_frame_btn_ = nullptr;
-  QToolButton* import_btn_ = nullptr;
+  QPushButton* new_frame_btn_ = nullptr;
+  QPushButton* import_btn_ = nullptr;
   QToolButton* refresh_btn_ = nullptr;
   // 顶部标题（显示当前 ICDConfig 文件名）
   QLabel* config_label_ = nullptr;

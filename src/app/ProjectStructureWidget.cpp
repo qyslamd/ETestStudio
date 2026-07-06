@@ -21,7 +21,7 @@
 #include <QListView>
 #include <QMenu>
 #include <QMessageBox>
-#include <QToolButton>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QSet>
 #include <QSplitter>
@@ -109,14 +109,14 @@ void ProjectStructureWidget::initUi() {
   btn_grid->setSpacing(8);
 
   // 第 0 行：项目级操作
-  new_proj_btn_ = new QToolButton(card1);
+  new_proj_btn_ = new QPushButton(card1);
   new_proj_btn_->setText(QStringLiteral("新建项目"));
   new_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
   new_proj_btn_->setFixedHeight(28);
   new_proj_btn_->setCursor(Qt::PointingHandCursor);
   btn_grid->addWidget(new_proj_btn_, 0, 0);
 
-  open_proj_btn_ = new QToolButton(card1);
+  open_proj_btn_ = new QPushButton(card1);
   open_proj_btn_->setText(QStringLiteral("打开项目"));
   open_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
   open_proj_btn_->setFixedHeight(28);
@@ -136,7 +136,7 @@ void ProjectStructureWidget::initUi() {
   static const int kCols[] = {0, 1, 0, 1};
   for (int i = 0; i < quickCats.size(); ++i) {
     const auto& cat = quickCats[i];
-    auto* btn = new QToolButton(card1);
+    auto* btn = new QPushButton(card1);
     btn->setText(cat.displayName);
     btn->setObjectName(QStringLiteral("PhQuickBtn"));
     btn->setFixedHeight(28);
@@ -162,13 +162,9 @@ void ProjectStructureWidget::initUi() {
   c3_layout->setSpacing(6);
 
   // 最近项目（紧凑列表，复用 OpenFileDelegate，与已打开文件列表风格一致）
-  recent_projects_header_btn_ = new QToolButton(card3);
-  recent_projects_header_btn_->setObjectName(
-      QStringLiteral("PhOpenFilesHeaderBtn"));
-  recent_projects_header_btn_->setCheckable(false);
-  recent_projects_header_btn_->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  recent_projects_header_btn_->setText(QStringLiteral("最近项目"));
-  c3_layout->addWidget(recent_projects_header_btn_);
+  auto* recent_proj_label = new QLabel(QStringLiteral("最近项目"), card3);
+  recent_proj_label->setObjectName(QStringLiteral("PhSectionLabel"));
+  c3_layout->addWidget(recent_proj_label);
 
   recent_projects_view_ = new QListView();
   recent_projects_view_->setFrameShape(QFrame::NoFrame);
@@ -216,12 +212,10 @@ void ProjectStructureWidget::initUi() {
   of_layout->setContentsMargins(0, 0, 0, 0);
   of_layout->setSpacing(0);
 
-  open_files_header_btn_ = new QToolButton(open_files_widget_);
-  open_files_header_btn_->setObjectName(QStringLiteral("PhOpenFilesHeaderBtn"));
-  open_files_header_btn_->setCheckable(false);
-  open_files_header_btn_->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  open_files_header_btn_->setText(QStringLiteral("已打开 (0)"));
-  of_layout->addWidget(open_files_header_btn_);
+  open_files_header_label_ = new QLabel(open_files_widget_);
+  open_files_header_label_->setObjectName(QStringLiteral("PhSectionLabel"));
+  open_files_header_label_->setText(QStringLiteral("已打开 (0)"));
+  of_layout->addWidget(open_files_header_label_);
 
   open_files_view_ = new QListView();
   open_files_view_->setFrameShape(QFrame::NoFrame);
@@ -278,18 +272,19 @@ void ProjectStructureWidget::initUi() {
 void ProjectStructureWidget::initSignals() {
   // 快捷按钮
   auto quickBtns =
-      page_default_->findChildren<QToolButton*>(QStringLiteral("PhQuickBtn"));
+      page_default_->findChildren<QPushButton*>(QStringLiteral("PhQuickBtn"));
   for (auto* btn : quickBtns) {
     QString catId = btn->property("catId").toString();
     QString ext = btn->property("ext").toString();
     QString baseName = btn->property("baseName").toString();
-    connect(btn, &QAbstractButton::clicked, this, [this, catId, ext, baseName]() {
-      if (project_path_.isEmpty()) {
-        createStandaloneFile(ext, baseName);
-      } else {
-        createNewFile(catId, ext, baseName);
-      }
-    });
+    connect(btn, &QAbstractButton::clicked, this,
+            [this, catId, ext, baseName]() {
+              if (project_path_.isEmpty()) {
+                createStandaloneFile(ext, baseName);
+              } else {
+                createNewFile(catId, ext, baseName);
+              }
+            });
   }
 
   // 项目管理按钮
@@ -359,30 +354,30 @@ void ProjectStructureWidget::initSignals() {
               if (!path.isEmpty())
                 emit projectOpenRequested(path);
             });
-    connect(recent_projects_view_, &QListView::customContextMenuRequested,
-            this, [this](const QPoint& pos) {
-              QModelIndex index = recent_projects_view_->indexAt(pos);
-              if (!index.isValid())
-                return;
-              QString path = index.data(FilePathRole).toString();
-              if (path.isEmpty())
-                return;
+    connect(
+        recent_projects_view_, &QListView::customContextMenuRequested, this,
+        [this](const QPoint& pos) {
+          QModelIndex index = recent_projects_view_->indexAt(pos);
+          if (!index.isValid())
+            return;
+          QString path = index.data(FilePathRole).toString();
+          if (path.isEmpty())
+            return;
 
-              QMenu menu(recent_projects_view_);
-              menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
-              auto* removeAction =
-                  menu.addAction(QStringLiteral("从列表中移除"));
-              if (menu.exec(recent_projects_view_->viewport()->mapToGlobal(
-                      pos)) == removeAction) {
-                auto& cfg = etest::core::config::ConfigManager::instance();
-                QStringList recentList = cfg.get<QStringList>(
-                    etest::core::config::CONFIG_RECENT_PROJECT_LIST);
-                recentList.removeAll(path);
-                cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST,
-                        recentList);
-                refreshRecentProjects();
-              }
-            });
+          QMenu menu(recent_projects_view_);
+          menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+          auto* removeAction = menu.addAction(QStringLiteral("从列表中移除"));
+          if (menu.exec(recent_projects_view_->viewport()->mapToGlobal(pos)) ==
+              removeAction) {
+            auto& cfg = etest::core::config::ConfigManager::instance();
+            QStringList recentList = cfg.get<QStringList>(
+                etest::core::config::CONFIG_RECENT_PROJECT_LIST);
+            recentList.removeAll(path);
+            cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST,
+                    recentList);
+            refreshRecentProjects();
+          }
+        });
   }
 
   // ── 最近文件列表 ──
@@ -956,7 +951,8 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
     suppressed_watch_paths_.remove(fullDir);
   });
 
-  // 同步把新文件 item 添加到 model 对应分类下(避免依赖 QFileSystemWatcher 防抖刷新)
+  // 同步把新文件 item 添加到 model 对应分类下(避免依赖 QFileSystemWatcher
+  // 防抖刷新)
   QString effectiveCatId = categoryId;
   if (effectiveCatId.isEmpty()) {
     effectiveCatId = QStringLiteral("other");
@@ -1413,7 +1409,7 @@ void ProjectStructureWidget::clearOpenFiles() {
 
 void ProjectStructureWidget::updateOpenFilesCount() {
   int count = open_files_model_->rowCount();
-  open_files_header_btn_->setText(QStringLiteral("已打开 (%1)").arg(count));
+  open_files_header_label_->setText(QStringLiteral("已打开 (%1)").arg(count));
 }
 
 // ── 最近文件 ──

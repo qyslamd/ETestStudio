@@ -39,7 +39,6 @@ void TestProgramManagerWidget::setupUi() {
 
   new_btn_ = new QPushButton(QStringLiteral("+ 新建"), this);
   new_btn_->setObjectName(QStringLiteral("testProgramNewBtn"));
-  new_btn_->setFixedHeight(24);
 
   toolbar_layout->addWidget(new_btn_);
   toolbar_layout->addStretch();
@@ -60,26 +59,28 @@ void TestProgramManagerWidget::setupUi() {
 }
 
 void TestProgramManagerWidget::initSignals() {
-  connect(tree_, &QTreeWidget::itemDoubleClicked,
-          this, &TestProgramManagerWidget::onItemDoubleClicked);
-  connect(tree_, &QTreeWidget::customContextMenuRequested,
-          this, &TestProgramManagerWidget::onCustomContextMenu);
+  connect(tree_, &QTreeWidget::itemDoubleClicked, this,
+          &TestProgramManagerWidget::onItemDoubleClicked);
+  connect(tree_, &QTreeWidget::customContextMenuRequested, this,
+          &TestProgramManagerWidget::onCustomContextMenu);
 
-  connect(new_btn_, &QPushButton::clicked,
-          this, &TestProgramManagerWidget::onNewTestProgram);
+  connect(new_btn_, &QPushButton::clicked, this,
+          &TestProgramManagerWidget::onNewTestProgram);
 }
 
 void TestProgramManagerWidget::refreshList() {
   tree_->clear();
 
   auto& pm = ProjectManager::instance();
-  if (!pm.isProjectOpen()) return;
+  if (!pm.isProjectOpen())
+    return;
 
   auto* project = pm.currentProject();
-  if (!project) return;
+  if (!project)
+    return;
 
-  const QStringList tcaseFiles = project->scanDirectory(
-      QStringLiteral("cases"), QStringLiteral("etprog"));
+  const QStringList tcaseFiles =
+      project->scanDirectory(QStringLiteral("cases"), QStringLiteral("etprog"));
   for (const QString& absPath : tcaseFiles) {
     auto* item = new QTreeWidgetItem(tree_);
     item->setText(0, QFileInfo(absPath).completeBaseName());
@@ -100,44 +101,46 @@ void TestProgramManagerWidget::refreshList() {
 }
 
 void TestProgramManagerWidget::onItemDoubleClicked(QTreeWidgetItem* item,
-                                                 int column) {
+                                                   int column) {
   Q_UNUSED(column);
-  if (!item) return;
+  if (!item)
+    return;
 
   QString filePath = item->data(0, Qt::UserRole).toString();
-  if (filePath.isEmpty()) return;
+  if (filePath.isEmpty())
+    return;
 
   emit openFileRequested(filePath);
 }
 
 void TestProgramManagerWidget::onCustomContextMenu(const QPoint& pos) {
   QTreeWidgetItem* item = tree_->itemAt(pos);
-  if (!item) return;
+  if (!item)
+    return;
 
   // 只在文件节点（顶层节点）上显示右键菜单
-  if (item->parent()) return;
+  if (item->parent())
+    return;
 
   QString filePath = item->data(0, Qt::UserRole).toString();
-  if (filePath.isEmpty()) return;
+  if (filePath.isEmpty())
+    return;
 
   auto* menu = new QMenu(this);
 
   auto* openAction = menu->addAction(QStringLiteral("打开"));
-  connect(openAction, &QAction::triggered, this, [this, filePath]() {
-    emit openFileRequested(filePath);
-  });
+  connect(openAction, &QAction::triggered, this,
+          [this, filePath]() { emit openFileRequested(filePath); });
 
   menu->addSeparator();
 
   auto* renameAction = menu->addAction(QStringLiteral("重命名"));
-  connect(renameAction, &QAction::triggered, this, [this, filePath]() {
-    renameTestProgramFile(filePath);
-  });
+  connect(renameAction, &QAction::triggered, this,
+          [this, filePath]() { renameTestProgramFile(filePath); });
 
   auto* removeAction = menu->addAction(QStringLiteral("删除"));
-  connect(removeAction, &QAction::triggered, this, [this, filePath]() {
-    removeTestProgramFile(filePath);
-  });
+  connect(removeAction, &QAction::triggered, this,
+          [this, filePath]() { removeTestProgramFile(filePath); });
 
   menu->exec(tree_->mapToGlobal(pos));
   menu->deleteLater();
@@ -152,14 +155,16 @@ void TestProgramManagerWidget::onNewTestProgram() {
   }
 
   QString rootPath = pm.currentProjectRoot();
-  if (rootPath.isEmpty()) return;
+  if (rootPath.isEmpty())
+    return;
 
   bool ok;
   QString name = QInputDialog::getText(
       this, QStringLiteral("新建测试用例"),
-      QStringLiteral("文件名称（不含扩展名）:"),
-      QLineEdit::Normal, QStringLiteral("new_test_program"), &ok);
-  if (!ok || name.trimmed().isEmpty()) return;
+      QStringLiteral("文件名称（不含扩展名）:"), QLineEdit::Normal,
+      QStringLiteral("new_test_program"), &ok);
+  if (!ok || name.trimmed().isEmpty())
+    return;
 
   name = name.trimmed();
   QString fileName = name + QStringLiteral(".etprog");
@@ -193,22 +198,23 @@ void TestProgramManagerWidget::onNewTestProgram() {
 
 bool TestProgramManagerWidget::renameTestProgramFile(const QString& oldPath) {
   auto& pm = ProjectManager::instance();
-  if (!pm.isProjectOpen()) return false;
+  if (!pm.isProjectOpen())
+    return false;
 
   bool ok;
   QString newName = QInputDialog::getText(
-      this, QStringLiteral("重命名"),
-      QStringLiteral("新名称（不含扩展名）:"),
-      QLineEdit::Normal,
-      QFileInfo(oldPath).completeBaseName(), &ok);
-  if (!ok || newName.trimmed().isEmpty()) return false;
+      this, QStringLiteral("重命名"), QStringLiteral("新名称（不含扩展名）:"),
+      QLineEdit::Normal, QFileInfo(oldPath).completeBaseName(), &ok);
+  if (!ok || newName.trimmed().isEmpty())
+    return false;
 
   newName = newName.trimmed();
   QString newFileName = newName + QStringLiteral(".etprog");
   QFileInfo fi(oldPath);
   QString newPath = fi.absolutePath() + QStringLiteral("/") + newFileName;
 
-  if (oldPath == newPath) return true;
+  if (oldPath == newPath)
+    return true;
 
   if (QFile::exists(newPath)) {
     QMessageBox::warning(this, QStringLiteral("重命名失败"),
@@ -229,14 +235,16 @@ bool TestProgramManagerWidget::renameTestProgramFile(const QString& oldPath) {
 
 bool TestProgramManagerWidget::removeTestProgramFile(const QString& filePath) {
   auto& pm = ProjectManager::instance();
-  if (!pm.isProjectOpen()) return false;
+  if (!pm.isProjectOpen())
+    return false;
 
   int ret = QMessageBox::question(
       this, QStringLiteral("确认删除"),
       QStringLiteral("确定要删除测试用例文件吗？\n%1\n\n文件将被删除。")
           .arg(filePath),
       QMessageBox::Yes | QMessageBox::No);
-  if (ret != QMessageBox::Yes) return false;
+  if (ret != QMessageBox::Yes)
+    return false;
 
   // 删除文件
   QFile::remove(filePath);

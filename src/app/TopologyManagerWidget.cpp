@@ -5,7 +5,6 @@
 #include <QFileInfo>
 #include <QHeaderView>
 
-#include "AppIconProvider.h"
 #include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -16,6 +15,7 @@
 #include <QTimer>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
+#include "AppIconProvider.h"
 
 #include "project/ProjectManager.h"
 
@@ -25,17 +25,22 @@ using namespace etest::core::project;
 
 // ── 工具：方向枚举 → 简短显示文本 ──
 static QString directionShortText(const QString& dir) {
-  if (dir == QStringLiteral("input"))  return QStringLiteral("IN");
-  if (dir == QStringLiteral("output")) return QStringLiteral("OUT");
-  if (dir == QStringLiteral("bidirectional")) return QStringLiteral("BIDIR");
+  if (dir == QStringLiteral("input"))
+    return QStringLiteral("IN");
+  if (dir == QStringLiteral("output"))
+    return QStringLiteral("OUT");
+  if (dir == QStringLiteral("bidirectional"))
+    return QStringLiteral("BIDIR");
   return dir;
 }
 
 // ── 工具：功能类型 → 显示文本（过长时截断） ──
 static QString functionTypeDisplay(const QString& ft) {
-  if (ft.isEmpty()) return QString();
+  if (ft.isEmpty())
+    return QString();
   // CamelCase 转 friendly 名称；太长就截取
-  if (ft.length() > 12) return ft.left(10) + QStringLiteral("..");
+  if (ft.length() > 12)
+    return ft.left(10) + QStringLiteral("..");
   return ft;
 }
 
@@ -67,7 +72,6 @@ void TopologyManagerWidget::setupUi() {
 
   new_btn_ = new QPushButton(QStringLiteral("+ 新建"), this);
   new_btn_->setObjectName(QStringLiteral("topologyNewBtn"));
-  new_btn_->setFixedHeight(24);
 
   toolbar_layout->addWidget(new_btn_);
   toolbar_layout->addStretch();
@@ -88,33 +92,33 @@ void TopologyManagerWidget::setupUi() {
 }
 
 void TopologyManagerWidget::initSignals() {
-  connect(tree_, &QTreeWidget::itemDoubleClicked,
-          this, &TopologyManagerWidget::onItemDoubleClicked);
-  connect(tree_, &QTreeWidget::customContextMenuRequested,
-          this, &TopologyManagerWidget::onCustomContextMenu);
+  connect(tree_, &QTreeWidget::itemDoubleClicked, this,
+          &TopologyManagerWidget::onItemDoubleClicked);
+  connect(tree_, &QTreeWidget::customContextMenuRequested, this,
+          &TopologyManagerWidget::onCustomContextMenu);
 
-  connect(new_btn_, &QPushButton::clicked,
-          this, &TopologyManagerWidget::onNewTopology);
+  connect(new_btn_, &QPushButton::clicked, this,
+          &TopologyManagerWidget::onNewTopology);
 
   // 搜索防抖
   search_timer_ = new QTimer(this);
   search_timer_->setSingleShot(true);
-  connect(search_edit_, &QLineEdit::textChanged, this, [this]() {
-    search_timer_->start(200);
-  });
-  connect(search_timer_, &QTimer::timeout, this, [this]() {
-    applySearchFilter(search_edit_->text());
-  });
+  connect(search_edit_, &QLineEdit::textChanged, this,
+          [this]() { search_timer_->start(200); });
+  connect(search_timer_, &QTimer::timeout, this,
+          [this]() { applySearchFilter(search_edit_->text()); });
 }
 
 void TopologyManagerWidget::refreshList() {
   tree_->clear();
 
   auto& pm = ProjectManager::instance();
-  if (!pm.isProjectOpen()) return;
+  if (!pm.isProjectOpen())
+    return;
 
   auto* project = pm.currentProject();
-  if (!project) return;
+  if (!project)
+    return;
 
   const QStringList topoFiles = project->scanDirectory(
       QStringLiteral("topology"), QStringLiteral("etopo"));
@@ -123,7 +127,8 @@ void TopologyManagerWidget::refreshList() {
     item->setText(0, QFileInfo(absPath).completeBaseName());
     item->setData(0, Qt::UserRole, absPath);
     item->setToolTip(0, absPath);
-    item->setIcon(0, AppIconProvider::instance().icon(QStringLiteral("topology")));
+    item->setIcon(0,
+                  AppIconProvider::instance().icon(QStringLiteral("topology")));
 
     // 解析 JSON 加预览子节点
     addPreviewNodes(item, absPath);
@@ -161,7 +166,8 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
   QJsonObject root = doc.object();
 
   QIcon uutIcon = AppIconProvider::instance().icon(QStringLiteral("topo_uut"));
-  QIcon deviceIcon = AppIconProvider::instance().icon(QStringLiteral("topo_device"));
+  QIcon deviceIcon =
+      AppIconProvider::instance().icon(QStringLiteral("topo_device"));
 
   // ── Products (UUT) ──
   QJsonArray products = root[QStringLiteral("products")].toArray();
@@ -177,8 +183,8 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
     for (const auto& pv : ports) {
       QJsonObject portObj = pv.toObject();
       QString portName = portObj[QStringLiteral("name")].toString();
-      QString dir = directionShortText(
-          portObj[QStringLiteral("direction")].toString());
+      QString dir =
+          directionShortText(portObj[QStringLiteral("direction")].toString());
       QString ft = functionTypeDisplay(
           portObj[QStringLiteral("functionType")].toString());
       QString portText =
@@ -205,8 +211,8 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
     for (const auto& pv : ports) {
       QJsonObject portObj = pv.toObject();
       QString portName = portObj[QStringLiteral("name")].toString();
-      QString dir = directionShortText(
-          portObj[QStringLiteral("direction")].toString());
+      QString dir =
+          directionShortText(portObj[QStringLiteral("direction")].toString());
       QString ft = functionTypeDisplay(
           portObj[QStringLiteral("functionType")].toString());
       QString portText =
@@ -226,10 +232,8 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
     QString devType = mObj[QStringLiteral("deviceType")].toString();
     int ch = mObj[QStringLiteral("channelCount")].toInt(1);
     auto* child = new QTreeWidgetItem(fileItem);
-    child->setText(0,
-                   QStringLiteral("监视: %1 (%2, %3CH)")
-                       .arg(name, devType)
-                       .arg(ch));
+    child->setText(
+        0, QStringLiteral("监视: %1 (%2, %3CH)").arg(name, devType).arg(ch));
   }
 
   // ── Connections ──
@@ -240,8 +244,8 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
     QString product = cObj[QStringLiteral("product")].toString();
     QString port = cObj[QStringLiteral("port")].toString();
     auto* child = new QTreeWidgetItem(fileItem);
-    child->setText(0, QStringLiteral("连接: %1 → %2.%3")
-                          .arg(device, product, port));
+    child->setText(
+        0, QStringLiteral("连接: %1 → %2.%3").arg(device, product, port));
   }
 }
 
@@ -283,12 +287,14 @@ void TopologyManagerWidget::applySearchFilter(const QString& keyword) {
 }
 
 void TopologyManagerWidget::onItemDoubleClicked(QTreeWidgetItem* item,
-                                                 int column) {
+                                                int column) {
   Q_UNUSED(column);
-  if (!item) return;
+  if (!item)
+    return;
 
   QString filePath = item->data(0, Qt::UserRole).toString();
-  if (filePath.isEmpty()) return;
+  if (filePath.isEmpty())
+    return;
 
   // 只在文件节点（顶层节点）上打开编辑器
   if (!item->parent()) {
@@ -298,32 +304,32 @@ void TopologyManagerWidget::onItemDoubleClicked(QTreeWidgetItem* item,
 
 void TopologyManagerWidget::onCustomContextMenu(const QPoint& pos) {
   QTreeWidgetItem* item = tree_->itemAt(pos);
-  if (!item) return;
+  if (!item)
+    return;
 
   // 只在文件节点（顶层节点）上显示右键菜单
-  if (item->parent()) return;
+  if (item->parent())
+    return;
 
   QString filePath = item->data(0, Qt::UserRole).toString();
-  if (filePath.isEmpty()) return;
+  if (filePath.isEmpty())
+    return;
 
   auto* menu = new QMenu(this);
 
   auto* openAction = menu->addAction(QStringLiteral("打开"));
-  connect(openAction, &QAction::triggered, this, [this, filePath]() {
-    emit openFileRequested(filePath);
-  });
+  connect(openAction, &QAction::triggered, this,
+          [this, filePath]() { emit openFileRequested(filePath); });
 
   menu->addSeparator();
 
   auto* renameAction = menu->addAction(QStringLiteral("重命名"));
-  connect(renameAction, &QAction::triggered, this, [this, filePath]() {
-    renameTopologyFile(filePath);
-  });
+  connect(renameAction, &QAction::triggered, this,
+          [this, filePath]() { renameTopologyFile(filePath); });
 
   auto* removeAction = menu->addAction(QStringLiteral("删除"));
-  connect(removeAction, &QAction::triggered, this, [this, filePath]() {
-    removeTopologyFile(filePath);
-  });
+  connect(removeAction, &QAction::triggered, this,
+          [this, filePath]() { removeTopologyFile(filePath); });
 
   menu->exec(tree_->mapToGlobal(pos));
   menu->deleteLater();
@@ -338,14 +344,16 @@ void TopologyManagerWidget::onNewTopology() {
   }
 
   QString rootPath = pm.currentProjectRoot();
-  if (rootPath.isEmpty()) return;
+  if (rootPath.isEmpty())
+    return;
 
   bool ok;
   QString name = QInputDialog::getText(
       this, QStringLiteral("新建拓扑文件"),
-      QStringLiteral("文件名称（不含扩展名）:"),
-      QLineEdit::Normal, QStringLiteral("new_topology"), &ok);
-  if (!ok || name.trimmed().isEmpty()) return;
+      QStringLiteral("文件名称（不含扩展名）:"), QLineEdit::Normal,
+      QStringLiteral("new_topology"), &ok);
+  if (!ok || name.trimmed().isEmpty())
+    return;
 
   name = name.trimmed();
   QString fileName = name + QStringLiteral(".etopo");
@@ -387,22 +395,23 @@ void TopologyManagerWidget::onNewTopology() {
 
 bool TopologyManagerWidget::renameTopologyFile(const QString& oldPath) {
   auto& pm = ProjectManager::instance();
-  if (!pm.isProjectOpen()) return false;
+  if (!pm.isProjectOpen())
+    return false;
 
   bool ok;
   QString newName = QInputDialog::getText(
-      this, QStringLiteral("重命名"),
-      QStringLiteral("新名称（不含扩展名）:"),
-      QLineEdit::Normal,
-      QFileInfo(oldPath).completeBaseName(), &ok);
-  if (!ok || newName.trimmed().isEmpty()) return false;
+      this, QStringLiteral("重命名"), QStringLiteral("新名称（不含扩展名）:"),
+      QLineEdit::Normal, QFileInfo(oldPath).completeBaseName(), &ok);
+  if (!ok || newName.trimmed().isEmpty())
+    return false;
 
   newName = newName.trimmed();
   QString newFileName = newName + QStringLiteral(".etopo");
   QFileInfo fi(oldPath);
   QString newPath = fi.absolutePath() + QStringLiteral("/") + newFileName;
 
-  if (oldPath == newPath) return true;
+  if (oldPath == newPath)
+    return true;
 
   if (QFile::exists(newPath)) {
     QMessageBox::warning(this, QStringLiteral("重命名失败"),
@@ -423,14 +432,16 @@ bool TopologyManagerWidget::renameTopologyFile(const QString& oldPath) {
 
 bool TopologyManagerWidget::removeTopologyFile(const QString& filePath) {
   auto& pm = ProjectManager::instance();
-  if (!pm.isProjectOpen()) return false;
+  if (!pm.isProjectOpen())
+    return false;
 
   int ret = QMessageBox::question(
       this, QStringLiteral("确认删除"),
       QStringLiteral("确定要删除拓扑文件吗？\n%1\n\n文件将被删除。")
           .arg(filePath),
       QMessageBox::Yes | QMessageBox::No);
-  if (ret != QMessageBox::Yes) return false;
+  if (ret != QMessageBox::Yes)
+    return false;
 
   // 删除文件
   QFile::remove(filePath);
