@@ -36,7 +36,6 @@
 #include "ConfigManager.h"
 #include "TestProgramData.h"
 #include "config/ConfigDefs.h"
-#include "widgets/RecentProjectCard.h"
 
 namespace etest::app {
 
@@ -105,10 +104,24 @@ void ProjectStructureWidget::initUi() {
   ph_desc->setWordWrap(true);
   c1_layout->addWidget(ph_desc);
 
-  // 快捷操作 — 2×2 grid，复用 defaultCategories
+  // 快捷操作 — 3×2 grid：项目操作 + 新建文件快捷操作
   auto* btn_grid = new QGridLayout();
   btn_grid->setSpacing(8);
 
+  // 第 0 行：项目级操作
+  new_proj_btn_ = new QPushButton(QStringLiteral("新建项目"), card1);
+  new_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
+  new_proj_btn_->setFixedHeight(28);
+  new_proj_btn_->setCursor(Qt::PointingHandCursor);
+  btn_grid->addWidget(new_proj_btn_, 0, 0);
+
+  open_proj_btn_ = new QPushButton(QStringLiteral("打开项目"), card1);
+  open_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
+  open_proj_btn_->setFixedHeight(28);
+  open_proj_btn_->setCursor(Qt::PointingHandCursor);
+  btn_grid->addWidget(open_proj_btn_, 0, 1);
+
+  // 第 1~2 行：新建文件快捷操作（复用 defaultCategories）
   QList<CategoryInfo> quickCats;
   for (const auto& cat : defaultCategories()) {
     if (!cat.newFileExt.isEmpty()) {
@@ -117,7 +130,7 @@ void ProjectStructureWidget::initUi() {
         break;
     }
   }
-  static const int kRows[] = {0, 0, 1, 1};
+  static const int kRows[] = {1, 1, 2, 2};
   static const int kCols[] = {0, 1, 0, 1};
   for (int i = 0; i < quickCats.size(); ++i) {
     const auto& cat = quickCats[i];
@@ -138,37 +151,6 @@ void ProjectStructureWidget::initUi() {
 
   sc_layout->addWidget(card1);
 
-  // ── 卡片 2：项目管理 ──
-  auto* card2 = new QFrame(scroll_content);
-  card2->setObjectName(QStringLiteral("PhCard"));
-  auto* c2_layout = new QVBoxLayout(card2);
-  c2_layout->setContentsMargins(9, 9, 9, 9);
-  c2_layout->setSpacing(6);
-
-  auto* proj_section_label = new QLabel(QStringLiteral("项目管理"), card2);
-  proj_section_label->setObjectName(QStringLiteral("PhSectionLabel"));
-  c2_layout->addWidget(proj_section_label);
-
-  new_proj_btn_ = new QPushButton(QStringLiteral("  新建项目"), card2);
-  new_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
-  new_proj_btn_->setFixedHeight(32);
-  new_proj_btn_->setCursor(Qt::PointingHandCursor);
-
-  open_proj_btn_ = new QPushButton(QStringLiteral("  打开项目"), card2);
-  open_proj_btn_->setObjectName(QStringLiteral("PhProjectBtn"));
-  open_proj_btn_->setFixedHeight(32);
-  open_proj_btn_->setCursor(Qt::PointingHandCursor);
-
-  auto* proj_btn_layout = new QHBoxLayout();
-  proj_btn_layout->setSpacing(8);
-  proj_btn_layout->addStretch();
-  proj_btn_layout->addWidget(new_proj_btn_);
-  proj_btn_layout->addWidget(open_proj_btn_);
-  proj_btn_layout->addStretch();
-  c2_layout->addLayout(proj_btn_layout);
-
-  sc_layout->addWidget(card2);
-
   // ── 卡片 3：最近浏览 ──
   auto* card3 = new QFrame(scroll_content);
   card3->setObjectName(QStringLiteral("PhCard"));
@@ -176,13 +158,25 @@ void ProjectStructureWidget::initUi() {
   c3_layout->setContentsMargins(9, 9, 9, 9);
   c3_layout->setSpacing(6);
 
-  auto* recent_section_label = new QLabel(QStringLiteral("最近项目"), card3);
-  recent_section_label->setObjectName(QStringLiteral("PhSectionLabel"));
-  c3_layout->addWidget(recent_section_label);
+  // 最近项目（紧凑列表，复用 OpenFileDelegate，与已打开文件列表风格一致）
+  recent_projects_header_btn_ = new QToolButton(card3);
+  recent_projects_header_btn_->setObjectName(
+      QStringLiteral("PhOpenFilesHeaderBtn"));
+  recent_projects_header_btn_->setCheckable(false);
+  recent_projects_header_btn_->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  recent_projects_header_btn_->setText(QStringLiteral("最近项目"));
+  c3_layout->addWidget(recent_projects_header_btn_);
 
-  recent_container_ = new QWidget(card3);
-  recent_container_->setObjectName(QStringLiteral("PhRecentContainer"));
-  c3_layout->addWidget(recent_container_);
+  recent_projects_view_ = new QListView();
+  recent_projects_view_->setFrameShape(QFrame::NoFrame);
+  recent_projects_view_->setMouseTracking(true);
+  recent_projects_view_->setContextMenuPolicy(Qt::CustomContextMenu);
+  recent_projects_model_ = new QStandardItemModel(this);
+  recent_projects_view_->setModel(recent_projects_model_);
+  auto* rp_delegate = new OpenFileDelegate(this);
+  rp_delegate->setCloseButtonVisible(false);
+  recent_projects_view_->setItemDelegate(rp_delegate);
+  c3_layout->addWidget(recent_projects_view_);
 
   auto* recent_file_label = new QLabel(QStringLiteral("最近文件"), card3);
   recent_file_label->setObjectName(QStringLiteral("PhSectionLabel"));
@@ -353,6 +347,40 @@ void ProjectStructureWidget::initSignals() {
           });
   connect(open_file_delegate_, &OpenFileDelegate::closeRequested, this,
           &ProjectStructureWidget::openFileCloseRequested);
+
+  // ── 最近项目列表 ──
+  if (recent_projects_view_) {
+    connect(recent_projects_view_, &QListView::clicked, this,
+            [this](const QModelIndex& index) {
+              QString path = index.data(FilePathRole).toString();
+              if (!path.isEmpty())
+                emit projectOpenRequested(path);
+            });
+    connect(recent_projects_view_, &QListView::customContextMenuRequested,
+            this, [this](const QPoint& pos) {
+              QModelIndex index = recent_projects_view_->indexAt(pos);
+              if (!index.isValid())
+                return;
+              QString path = index.data(FilePathRole).toString();
+              if (path.isEmpty())
+                return;
+
+              QMenu menu(recent_projects_view_);
+              menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+              auto* removeAction =
+                  menu.addAction(QStringLiteral("从列表中移除"));
+              if (menu.exec(recent_projects_view_->viewport()->mapToGlobal(
+                      pos)) == removeAction) {
+                auto& cfg = etest::core::config::ConfigManager::instance();
+                QStringList recentList = cfg.get<QStringList>(
+                    etest::core::config::CONFIG_RECENT_PROJECT_LIST);
+                recentList.removeAll(path);
+                cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST,
+                        recentList);
+                refreshRecentProjects();
+              }
+            });
+  }
 
   // ── 最近文件列表 ──
   if (recent_files_view_) {
@@ -1288,39 +1316,15 @@ static QString newFileBaseName(const QString& base, const QString& dir) {
 // ── 占位页：刷新最近项目列表 ──
 
 void ProjectStructureWidget::refreshRecentProjects() {
-  if (!recent_container_)
+  if (!recent_projects_model_)
     return;
-
-  // 清空旧条目
-  QLayout* recent_layout = recent_container_->layout();
-  if (recent_layout) {
-    QLayoutItem* child;
-    while ((child = recent_layout->takeAt(0)) != nullptr) {
-      if (child->widget()) {
-        child->widget()->deleteLater();
-      }
-      delete child;
-    }
-  } else {
-    recent_layout = new QVBoxLayout(recent_container_);
-    recent_layout->setContentsMargins(0, 0, 0, 0);
-    recent_layout->setSpacing(6);
-  }
+  recent_projects_model_->clear();
 
   auto& cfg = etest::core::config::ConfigManager::instance();
   QStringList recentList =
       cfg.get<QStringList>(etest::core::config::CONFIG_RECENT_PROJECT_LIST);
   QVariantMap timestamps = cfg.get<QVariantMap>(
       etest::core::config::CONFIG_RECENT_PROJECT_TIMESTAMPS);
-
-  if (recentList.isEmpty()) {
-    auto* empty_label =
-        new QLabel(QStringLiteral("暂无最近项目"), recent_container_);
-    empty_label->setObjectName(QStringLiteral("PhRecentEmpty"));
-    empty_label->setAlignment(Qt::AlignCenter);
-    recent_layout->addWidget(empty_label);
-    return;
-  }
 
   for (const QString& path : recentList) {
     QFileInfo fi(path);
@@ -1334,24 +1338,20 @@ void ProjectStructureWidget::refreshRecentProjects() {
       timeStr = dt.toString(QStringLiteral("yyyy-MM-dd hh:mm"));
     }
 
-    auto* card = new RecentProjectCard(path, displayName, fi.absolutePath(),
-                                       timeStr, recent_container_);
-    card->setObjectName(QStringLiteral("PhRecentCard"));
-    card->setAttribute(Qt::WA_StyledBackground);
-    connect(card, &RecentProjectCard::openRequested, this,
-            &ProjectStructureWidget::projectOpenRequested);
-    connect(card, &RecentProjectCard::removeRequested, this,
-            [this](const QString& p) {
-              auto& cfg = etest::core::config::ConfigManager::instance();
-              QStringList recentList = cfg.get<QStringList>(
-                  etest::core::config::CONFIG_RECENT_PROJECT_LIST);
-              recentList.removeAll(p);
-              cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST,
-                      recentList);
-              refreshRecentProjects();
-            });
+    auto* item = new QStandardItem(displayName);
+    item->setEditable(false);
+    item->setData(path, FilePathRole);
+    item->setData(fi.absolutePath(), DirPathRole);
+    QString tooltip = path;
+    if (!timeStr.isEmpty())
+      tooltip += QStringLiteral("\n") + timeStr;
+    item->setToolTip(tooltip);
+    recent_projects_model_->appendRow(item);
+  }
 
-    recent_layout->addWidget(card);
+  // 无最近项目时隐藏列表
+  if (recent_projects_view_) {
+    recent_projects_view_->setVisible(!recentList.isEmpty());
   }
 }
 

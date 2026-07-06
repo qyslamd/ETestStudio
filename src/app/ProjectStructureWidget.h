@@ -135,7 +135,9 @@ class ProjectStructureWidget : public QWidget {
   QTreeView* tree_view_;
   QStandardItemModel* model_;
   QWidget* page_default_ = nullptr;
-  QWidget* recent_container_ = nullptr;
+  QToolButton* recent_projects_header_btn_ = nullptr;
+  QListView* recent_projects_view_ = nullptr;
+  QStandardItemModel* recent_projects_model_ = nullptr;
   QListView* recent_files_view_ = nullptr;
   QStandardItemModel* recent_files_model_ = nullptr;
   QPushButton* new_proj_btn_ = nullptr;
