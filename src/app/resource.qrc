@@ -186,6 +186,10 @@
         <file>resources/icons/svg/testprog_tab_cleanup_light.svg</file>
         <file>resources/icons/svg/testprog_tab_case_dark.svg</file>
         <file>resources/icons/svg/testprog_tab_case_light.svg</file>
+        <file>resources/icons/svg/testprog_tab_horizontal_dark.svg</file>
+        <file>resources/icons/svg/testprog_tab_horizontal_light.svg</file>
+        <file>resources/icons/svg/testprog_tab_vertical_dark.svg</file>
+        <file>resources/icons/svg/testprog_tab_vertical_light.svg</file>
         <file alias="translations/ads_zh_CN.qm">resources/translations/ads_zh_CN.qm</file>
         <file alias="translations/SARibbon_zh_CN.qm">resources/translations/SARibbon_zh_CN.qm</file>
         <file>resources/data/poems.db</file>

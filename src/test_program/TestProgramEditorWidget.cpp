@@ -9,11 +9,14 @@
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListView>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPointer>
+#include <QPushButton>
+#include <QSignalBlocker>
 #include <QSize>
 #include <QStandardItemModel>
 #include <QTabBar>
@@ -26,8 +29,11 @@
 #include "StepDetailPanel.h"
 #include "StepTableWidget.h"
 #include "StepValidation.h"
+#include "VerticalTabListDelegate.h"
+#include "ConfigManager.h"
 #include "common/AppIconProvider.h"
 #include "common/ThemeManager.h"
+#include "config/ConfigDefs.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "libui/tab_bar/TabBarStyle.h"
 
@@ -143,6 +149,17 @@ void TestProgramEditorWidget::initUi() {
   move_down_action_->setToolTip(QStringLiteral("下移步骤"));
   toolbar->addAction(move_down_action_);
 
+  toolbar->addSeparator();
+
+  // 切换标签栏方向（横向 QTabBar / 纵向 QListView）
+  toggle_orientation_action_ =
+      new QAction(tpIcon(QStringLiteral("testprog_tab_vertical")),
+                  QStringLiteral("纵向标签"), this);
+  toggle_orientation_action_->setToolTip(
+      QStringLiteral("切换纵向/横向标签栏"));
+  toggle_orientation_action_->setCheckable(true);
+  toolbar->addAction(toggle_orientation_action_);
+
   auto* content = new QWidget(this);
   auto* main_layout = new QVBoxLayout(content);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -216,6 +233,45 @@ void TestProgramEditorWidget::initUi() {
   detail_dock_->setTitleBarWidget(
       new ::etest::ui::DockTitleBar(QStringLiteral("步骤详情"), detail_dock_));
   addDockWidget(Qt::RightDockWidgetArea, detail_dock_);
+
+  // ── Vertical Tabs Dock：Edge 风格垂直标签栏 ──
+  vertical_tabs_view_ = new QListView(this);
+  vertical_tabs_view_->setFrameShape(QFrame::NoFrame);
+  vertical_tabs_view_->setMouseTracking(true);
+  vertical_tabs_view_->setSelectionMode(QAbstractItemView::SingleSelection);
+  vertical_tabs_view_->setContextMenuPolicy(Qt::CustomContextMenu);
+  vertical_tabs_view_->setUniformItemSizes(true);
+  vertical_tabs_view_->setIconSize(QSize(16, 16));
+  vertical_tabs_model_ = new QStandardItemModel(this);
+  vertical_tabs_view_->setModel(vertical_tabs_model_);
+  vertical_tabs_delegate_ = new VerticalTabListDelegate(this);
+  vertical_tabs_view_->setItemDelegate(vertical_tabs_delegate_);
+
+  vertical_tabs_dock_ = new QDockWidget(QStringLiteral("标签页"), this);
+  vertical_tabs_dock_->setObjectName(
+      QStringLiteral("testProgramVerticalTabsDock"));
+  vertical_tabs_dock_->setWidget(vertical_tabs_view_);
+  vertical_tabs_dock_->setAllowedAreas(Qt::LeftDockWidgetArea);
+  vertical_tabs_dock_->setFeatures(QDockWidget::DockWidgetClosable);
+  auto* vt_title_bar = new ::etest::ui::DockTitleBar(
+      QStringLiteral("标签页"), vertical_tabs_dock_);
+  // 不允许浮动：藏掉标题栏的浮动按钮
+  if (auto* float_btn = vt_title_bar->findChild<QPushButton*>(
+          QStringLiteral("dockFloatButton"))) {
+    float_btn->setVisible(false);
+  }
+  vertical_tabs_dock_->setTitleBarWidget(vt_title_bar);
+  addDockWidget(Qt::LeftDockWidgetArea, vertical_tabs_dock_);
+
+  rebuildVerticalTabs();
+
+  // 初始方向（默认水平）
+  const QString orient =
+      etest::core::config::ConfigManager::instance()
+          .get<QString>(
+              etest::core::config::CONFIG_TEST_PROGRAM_TAB_ORIENTATION,
+              QStringLiteral("horizontal"));
+  applyTabOrientation(orient == QLatin1String("vertical"));
 }
 
 void TestProgramEditorWidget::initSignals() {
@@ -228,7 +284,16 @@ void TestProgramEditorWidget::initSignals() {
   connectTable(setup_table_);
   connectTable(teardown_table_);
 
-  connect(tab_widget_, &QTabWidget::currentChanged, this, [this](int) {
+  connect(tab_widget_, &QTabWidget::currentChanged, this, [this](int idx) {
+    // 同步纵向标签列表选中
+    if (!syncing_vertical_tabs_ && vertical_tabs_model_) {
+      syncing_vertical_tabs_ = true;
+      if (idx >= 0 && idx < vertical_tabs_model_->rowCount()) {
+        vertical_tabs_view_->setCurrentIndex(
+            vertical_tabs_model_->index(idx, 0));
+      }
+      syncing_vertical_tabs_ = false;
+    }
     updateActions();
     validateCurrentTable();
   });
@@ -284,6 +349,70 @@ void TestProgramEditorWidget::initSignals() {
               tab_widget_->tabBar()->update();
             }
           });
+
+  // ── 纵向标签栏 ──
+  // 切换方向
+  connect(toggle_orientation_action_, &QAction::toggled, this,
+          [this](bool vertical) { applyTabOrientation(vertical); });
+  // dock 关闭按钮 → 切回水平（程序内 setVisible 触发的由 applying_orientation_ 拦截）
+  connect(vertical_tabs_dock_, &QDockWidget::visibilityChanged, this,
+          [this](bool visible) {
+            if (!applying_orientation_) {
+              applyTabOrientation(visible);
+            }
+          });
+
+  // list → tab 同步
+  connect(vertical_tabs_view_->selectionModel(),
+          &QItemSelectionModel::currentChanged, this,
+          [this](const QModelIndex& cur) {
+            if (syncing_vertical_tabs_ || !cur.isValid()) {
+              return;
+            }
+            int idx = cur.data(VerticalTabRole::TabIndexRole).toInt();
+            if (idx >= 0 && idx < tab_widget_->count()) {
+              syncing_vertical_tabs_ = true;
+              tab_widget_->setCurrentIndex(idx);
+              syncing_vertical_tabs_ = false;
+            }
+          });
+
+  // 双击重命名（仅用例）
+  connect(vertical_tabs_view_, &QListView::doubleClicked, this,
+          [this](const QModelIndex& cur) {
+            int idx = cur.data(VerticalTabRole::TabIndexRole).toInt();
+            if (idx >= 2) {
+              renameCase(idx);
+            }
+          });
+
+  // 右键菜单
+  connect(vertical_tabs_view_, &QListView::customContextMenuRequested, this,
+          [this](const QPoint& pos) {
+            QModelIndex cur = vertical_tabs_view_->indexAt(pos);
+            if (!cur.isValid()) {
+              return;
+            }
+            int idx = cur.data(VerticalTabRole::TabIndexRole).toInt();
+            QMenu menu(vertical_tabs_view_);
+            menu.setObjectName(
+                QStringLiteral("testProgramVerticalTabsMenu"));
+            if (idx >= 2) {
+              auto* renameAction = menu.addAction(QStringLiteral("重命名"));
+              auto* closeAction = menu.addAction(QStringLiteral("关闭用例"));
+              QAction* chosen = menu.exec(
+                  vertical_tabs_view_->viewport()->mapToGlobal(pos));
+              if (chosen == renameAction) {
+                renameCase(idx);
+              } else if (chosen == closeAction) {
+                removeCaseAt(idx, false);
+              }
+            }
+          });
+
+  // delegate 关闭按钮
+  connect(vertical_tabs_delegate_, &VerticalTabListDelegate::closeRequested,
+          this, [this](int idx) { removeCaseAt(idx, false); });
 }
 
 void TestProgramEditorWidget::connectTable(StepTableWidget* table) {
@@ -352,31 +481,14 @@ void TestProgramEditorWidget::onAddCase() {
                       QStringLiteral("测试用例 %1").arg(index - 1));
   tab_widget_->setCurrentWidget(table);
 
+  rebuildVerticalTabs();
   saveSnapshot();
   setModified(true);
   updateActions();
 }
 
 void TestProgramEditorWidget::onRemoveCase() {
-  int index = tab_widget_->currentIndex();
-  if (index < 2) {
-    return;
-  }
-
-  int ret = QMessageBox::question(this, QStringLiteral("删除用例"),
-                                  QStringLiteral("确定删除当前测试用例？"),
-                                  QMessageBox::Yes | QMessageBox::No);
-  if (ret != QMessageBox::Yes) {
-    return;
-  }
-
-  QWidget* w = tab_widget_->widget(index);
-  tab_widget_->removeTab(index);
-  delete w;
-
-  saveSnapshot();
-  setModified(true);
-  updateActions();
+  removeCaseAt(tab_widget_->currentIndex(), true);
 }
 
 void TestProgramEditorWidget::onAddStep() {
@@ -582,16 +694,7 @@ bool TestProgramEditorWidget::eventFilter(QObject* obj, QEvent* event) {
     int tabIdx = tab_widget_->tabBar()->tabAt(me->pos());
     if (tabIdx >= 2) {
       tab_widget_->tabBar()->setCurrentIndex(tabIdx);
-      bool ok;
-      QString newName = QInputDialog::getText(
-          this, QStringLiteral("重命名用例"), QStringLiteral("用例名称:"),
-          QLineEdit::Normal, tab_widget_->tabText(tabIdx), &ok);
-      if (ok && !newName.trimmed().isEmpty()) {
-        tab_widget_->setTabText(tabIdx, newName.trimmed());
-        saveSnapshot();
-        setModified(true);
-        updateActions();
-      }
+      renameCase(tabIdx);
     }
     // 不管是不是 case tab、是否成功重命名，都吃掉事件，避免冒泡触发菜单快捷键等
     return true;
@@ -824,6 +927,7 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
   }
 
   tab_widget_->setCurrentIndex(0);
+  rebuildVerticalTabs();
   updateActions();
 }
 
@@ -917,6 +1021,130 @@ void TestProgramEditorWidget::reloadToolbarIcons() {
   move_down_action_->setIcon(icon(QStringLiteral("testprog_move_down")));
   undo_action_->setIcon(icon(QStringLiteral("undo")));
   redo_action_->setIcon(icon(QStringLiteral("redo")));
+  if (toggle_orientation_action_) {
+    bool vertical = toggle_orientation_action_->isChecked();
+    toggle_orientation_action_->setIcon(
+        icon(vertical ? QStringLiteral("testprog_tab_horizontal")
+                      : QStringLiteral("testprog_tab_vertical")));
+  }
+  reloadTabIcons();
+}
+
+// ── 纵向标签栏 ──
+
+void TestProgramEditorWidget::rebuildVerticalTabs() {
+  if (!vertical_tabs_model_) {
+    return;
+  }
+  vertical_tabs_model_->clear();
+  for (int i = 0; i < tab_widget_->count(); ++i) {
+    auto* item = new QStandardItem;
+    item->setIcon(tab_widget_->tabIcon(i));
+    item->setText(tab_widget_->tabText(i));
+    item->setEditable(false);
+    item->setData(i, VerticalTabRole::TabIndexRole);
+    item->setData(i >= 2, VerticalTabRole::ClosableRole);
+    vertical_tabs_model_->appendRow(item);
+  }
+  int cur = tab_widget_->currentIndex();
+  if (cur >= 0 && cur < vertical_tabs_model_->rowCount()) {
+    syncing_vertical_tabs_ = true;
+    vertical_tabs_view_->setCurrentIndex(vertical_tabs_model_->index(cur, 0));
+    syncing_vertical_tabs_ = false;
+  }
+}
+
+void TestProgramEditorWidget::applyTabOrientation(bool vertical) {
+  if (applying_orientation_) {
+    return;
+  }
+  applying_orientation_ = true;
+
+  vertical_tabs_dock_->setVisible(vertical);
+  // 隐藏 tabBar 时压高为 0，避免残留间隙
+  auto* bar = tab_widget_->tabBar();
+  if (vertical) {
+    bar->setVisible(false);
+    bar->setFixedHeight(0);
+  } else {
+    bar->setMaximumHeight(QWIDGETSIZE_MAX);
+    bar->setMinimumHeight(0);
+    bar->setVisible(true);
+  }
+
+  if (toggle_orientation_action_) {
+    QSignalBlocker blocker(toggle_orientation_action_);
+    toggle_orientation_action_->setChecked(vertical);
+    toggle_orientation_action_->setIcon(
+        etest::app::AppIconProvider::instance().icon(
+            vertical ? QStringLiteral("testprog_tab_horizontal")
+                     : QStringLiteral("testprog_tab_vertical")));
+  }
+
+  etest::core::config::ConfigManager::instance().set(
+      etest::core::config::CONFIG_TEST_PROGRAM_TAB_ORIENTATION,
+      vertical ? QStringLiteral("vertical") : QStringLiteral("horizontal"));
+
+  applying_orientation_ = false;
+}
+
+void TestProgramEditorWidget::removeCaseAt(int index, bool confirm) {
+  if (index < 2 || index >= tab_widget_->count()) {
+    return;
+  }
+  if (confirm) {
+    int ret = QMessageBox::question(this, QStringLiteral("删除用例"),
+                                    QStringLiteral("确定删除当前测试用例？"),
+                                    QMessageBox::Yes | QMessageBox::No);
+    if (ret != QMessageBox::Yes) {
+      return;
+    }
+  }
+
+  QWidget* w = tab_widget_->widget(index);
+  tab_widget_->removeTab(index);
+  delete w;
+
+  rebuildVerticalTabs();
+  saveSnapshot();
+  setModified(true);
+  updateActions();
+}
+
+void TestProgramEditorWidget::renameCase(int index) {
+  if (index < 2 || index >= tab_widget_->count()) {
+    return;
+  }
+  bool ok;
+  QString newName = QInputDialog::getText(
+      this, QStringLiteral("重命名用例"), QStringLiteral("用例名称:"),
+      QLineEdit::Normal, tab_widget_->tabText(index), &ok);
+  if (ok && !newName.trimmed().isEmpty()) {
+    tab_widget_->setTabText(index, newName.trimmed());
+    rebuildVerticalTabs();
+    saveSnapshot();
+    setModified(true);
+    updateActions();
+  }
+}
+
+void TestProgramEditorWidget::reloadTabIcons() {
+  if (!tab_widget_) {
+    return;
+  }
+  auto icon = [](const QString& name) {
+    return etest::app::AppIconProvider::instance().icon(name);
+  };
+  if (tab_widget_->count() > 0) {
+    tab_widget_->setTabIcon(0, icon(QStringLiteral("testprog_tab_init")));
+  }
+  if (tab_widget_->count() > 1) {
+    tab_widget_->setTabIcon(1, icon(QStringLiteral("testprog_tab_cleanup")));
+  }
+  for (int i = 2; i < tab_widget_->count(); ++i) {
+    tab_widget_->setTabIcon(i, icon(QStringLiteral("testprog_tab_case")));
+  }
+  rebuildVerticalTabs();
 }
 
 }  // namespace etest::app

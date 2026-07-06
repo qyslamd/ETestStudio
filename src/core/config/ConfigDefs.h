@@ -144,6 +144,10 @@ constexpr bool CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB = true;
 constexpr const char* CONFIG_PROTOCOL_SPLITTER_STATE =
     "editor/protocol_splitter";
 
+// 测试程序编辑器：标签栏方向（horizontal / vertical）
+constexpr const char* CONFIG_TEST_PROGRAM_TAB_ORIENTATION =
+    "test_program/tab_orientation";
+
 // 终端配置组
 constexpr const char* CONFIG_TERMINAL_SHELL = "terminal/shell";
 constexpr const char* CONFIG_TERMINAL_FONT_SIZE = "terminal/font_size";

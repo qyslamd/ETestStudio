@@ -14,6 +14,8 @@ add_library(${TARGET_NAME} STATIC
     SignalSelectionInterface.h
     StepTableWidget.cpp
     StepTableWidget.h
+    VerticalTabListDelegate.cpp
+    VerticalTabListDelegate.h
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC

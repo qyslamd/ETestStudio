@@ -16,10 +16,14 @@ class QAction;
 class QDockWidget;
 class QLabel;
 class QLineEdit;
+class QListView;
+class QStandardItemModel;
 class QTabWidget;
 class QTextEdit;
 
 namespace etest::app {
+
+class VerticalTabListDelegate;
 
 class TestProgramEditorWidget : public QMainWindow, public IEditor {
   Q_OBJECT
@@ -80,6 +84,13 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void resetSnapshots(bool clean);
   void updateActions();
 
+  // 纵向标签栏（Edge 风格垂直标签）
+  void rebuildVerticalTabs();
+  void applyTabOrientation(bool vertical);
+  void removeCaseAt(int index, bool confirm);
+  void renameCase(int index);
+  void reloadTabIcons();
+
   // 校验
   void validateCurrentTable();
   void updateValidationLabel();
@@ -97,6 +108,15 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   QDockWidget* detail_dock_ = nullptr;
   StepDetailPanel* step_detail_panel_ = nullptr;
   QLabel* validation_label_ = nullptr;
+
+  // 纵向标签栏
+  QDockWidget* vertical_tabs_dock_ = nullptr;
+  QListView* vertical_tabs_view_ = nullptr;
+  QStandardItemModel* vertical_tabs_model_ = nullptr;
+  VerticalTabListDelegate* vertical_tabs_delegate_ = nullptr;
+  QAction* toggle_orientation_action_ = nullptr;
+  bool syncing_vertical_tabs_ = false;
+  bool applying_orientation_ = false;
 
   QAction* add_case_action_ = nullptr;
   QAction* remove_case_action_ = nullptr;
