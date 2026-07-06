@@ -1,12 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="3.5 3 18 18.5">
   <defs>
-    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#00acc1" flood-opacity="0.2"/>
-    </filter>
-    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#f8f9fa" stop-opacity="0.85"/>
-    </linearGradient>
     <linearGradient id="sliderGrad1" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#26c6da"/>
       <stop offset="100%" stop-color="#0097a7"/>
@@ -24,23 +17,21 @@
       <stop offset="100%" stop-color="#e0f7fa"/>
     </linearGradient>
   </defs>
-  <!-- Card -->
-  <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#cardBg)" filter="url(#shadow)" stroke="#e0e0e0" stroke-width="0.5"/>
   <!-- Sliders with isometric tilt -->
   <g transform="translate(1, 1) skewY(-5) skewX(2)">
     <!-- Slider 1 -->
     <rect x="4" y="4" width="14" height="3" rx="1.5" fill="url(#sliderGrad1)" opacity="0.3"/>
     <rect x="4" y="4.5" width="8" height="2" rx="1" fill="url(#sliderGrad1)"/>
-    <circle cx="12" cy="5.5" r="2.5" fill="url(#knobGrad)" stroke="#0097a7" stroke-width="0.8" filter="url(#shadow)"/>
+    <circle cx="12" cy="5.5" r="2.5" fill="url(#knobGrad)" stroke="#0097a7" stroke-width="0.8"/>
 
     <!-- Slider 2 -->
     <rect x="4" y="10" width="14" height="3" rx="1.5" fill="url(#sliderGrad2)" opacity="0.3"/>
     <rect x="4" y="10.5" width="5" height="2" rx="1" fill="url(#sliderGrad2)"/>
-    <circle cx="9" cy="11.5" r="2.5" fill="url(#knobGrad)" stroke="#00acc1" stroke-width="0.8" filter="url(#shadow)"/>
+    <circle cx="9" cy="11.5" r="2.5" fill="url(#knobGrad)" stroke="#00acc1" stroke-width="0.8"/>
 
     <!-- Slider 3 -->
     <rect x="4" y="16" width="14" height="3" rx="1.5" fill="url(#sliderGrad3)" opacity="0.3"/>
     <rect x="4" y="16.5" width="11" height="2" rx="1" fill="url(#sliderGrad3)"/>
-    <circle cx="15" cy="17.5" r="2.5" fill="url(#knobGrad)" stroke="#26c6da" stroke-width="0.8" filter="url(#shadow)"/>
+    <circle cx="15" cy="17.5" r="2.5" fill="url(#knobGrad)" stroke="#26c6da" stroke-width="0.8"/>
   </g>
 </svg>

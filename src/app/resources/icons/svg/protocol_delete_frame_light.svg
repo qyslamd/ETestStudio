@@ -1,20 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="6.5 1 16.5 16">
   <defs>
-    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#ef5350" flood-opacity="0.2"/>
-    </filter>
-    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#f8f9fa" stop-opacity="0.85"/>
-    </linearGradient>
     <linearGradient id="trashGrad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#ef9a9a"/>
       <stop offset="50%" stop-color="#ef5350"/>
       <stop offset="100%" stop-color="#e53935"/>
     </linearGradient>
   </defs>
-  <!-- Card -->
-  <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#cardBg)" filter="url(#shadow)" stroke="#e0e0e0" stroke-width="0.5"/>
   <!-- Trash can icon (isometric) -->
   <g transform="translate(12, 11) skewY(-6) skewX(3)">
     <g transform="translate(-5, -6)">

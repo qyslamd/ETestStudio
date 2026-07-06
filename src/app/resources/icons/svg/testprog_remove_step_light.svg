@@ -1,19 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="2.5 0.5 20.5 19">
   <defs>
-    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#ff9800" flood-opacity="0.2"/>
-    </filter>
-    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#f8f9fa" stop-opacity="0.85"/>
-    </linearGradient>
     <linearGradient id="listGrad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#ffcc80"/>
       <stop offset="50%" stop-color="#ff9800"/>
       <stop offset="100%" stop-color="#f57c00"/>
     </linearGradient>
   </defs>
-  <rect x="1" y="1" width="22" height="22" rx="5" fill="url(#cardBg)" filter="url(#shadow)" stroke="#e0e0e0" stroke-width="0.5"/>
   <g transform="translate(3, 4.5) skewY(-5) skewX(2)">
     <rect x="0" y="0" width="12" height="14" rx="2.5" fill="url(#listGrad)" opacity="0.92"/>
     <rect x="2.5" y="3" width="7" height="1" rx="0.5" fill="#ffffff" opacity="0.5"/>
