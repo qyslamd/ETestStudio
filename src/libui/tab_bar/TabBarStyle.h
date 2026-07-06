@@ -39,6 +39,7 @@ class TabBarStyle : public QProxyStyle {
   QColor hoveredColor() const;
   QColor dividerColor() const;
   QColor textColor(bool selected) const;
+  QColor borderColor() const;
 
  private:
   const qreal topMargin = 0.0;

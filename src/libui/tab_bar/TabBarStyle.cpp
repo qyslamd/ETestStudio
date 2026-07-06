@@ -24,6 +24,10 @@ QColor TabBarStyle::textColor(bool selected) const {
   if (selected) return dark_ ? QColor(0xFF, 0xFF, 0xFF) : QColor(0x33, 0x33, 0x33);
   return dark_ ? QColor(0xCC, 0xCC, 0xCC) : QColor(0x88, 0x88, 0x88);
 }
+QColor TabBarStyle::borderColor() const {
+  // 选中 tab 的外轮廓：light 下浅灰描边分隔白色 tab 与浅色背景
+  return dark_ ? QColor(0x00, 0x00, 0x00, 0x00) : QColor(0xD0, 0xD0, 0xD0);
+}
 
 QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
                                     const QStyleOption* option,
@@ -64,7 +68,7 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
-    painter->setPen(Qt::NoPen);
+    painter->setPen(QPen(borderColor(), 1));
     painter->setBrush(selectedColor());
     QPolygonF polygon = path.toFillPolygon();
     painter->drawPolygon(polygon);
