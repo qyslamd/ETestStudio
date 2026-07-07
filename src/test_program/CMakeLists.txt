@@ -16,6 +16,7 @@ add_library(${TARGET_NAME} STATIC
     StepTableWidget.h
     sub_step_table_widget.cpp
     sub_step_table_widget.h
+    control_flow_config.h
     VerticalTabListDelegate.cpp
     VerticalTabListDelegate.h
 )

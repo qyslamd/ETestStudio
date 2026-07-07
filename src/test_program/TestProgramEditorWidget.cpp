@@ -27,6 +27,7 @@
 #include <QWidget>
 
 #include "ConfigManager.h"
+#include "control_flow_config.h"
 #include "StepDetailPanel.h"
 #include "StepTableWidget.h"
 #include "StepValidation.h"
@@ -53,8 +54,9 @@ QString extraCellText(const TestStepData& step) {
     return step.tolerance.enabled ? QString::number(step.tolerance.min)
                                   : QString();
   }
-  if (cmd == QStringLiteral("WAIT") || cmd == QStringLiteral("WHILE") ||
-      cmd == QStringLiteral("IF")) {
+  if (cmd == QStringLiteral("WAIT") ||
+      (kControlFlowEnabled && (cmd == QStringLiteral("WHILE") ||
+                               cmd == QStringLiteral("IF")))) {
     return step.condition.value.toString();
   }
   if (cmd == QStringLiteral("INJECT_FAULT")) {
@@ -70,7 +72,8 @@ QString extra2CellText(const TestStepData& step) {
     return step.tolerance.enabled ? QString::number(step.tolerance.max)
                                   : QString();
   }
-  if (cmd == QStringLiteral("WAIT") || cmd == QStringLiteral("WHILE")) {
+  if (cmd == QStringLiteral("WAIT") ||
+      (kControlFlowEnabled && cmd == QStringLiteral("WHILE"))) {
     return QString::number(step.loopIntervalMs);
   }
   return QString();

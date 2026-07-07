@@ -2,14 +2,19 @@
 
 #include <QComboBox>
 
+#include "control_flow_config.h"
+
 CommandTypeDelegate::CommandTypeDelegate(Mode mode, QObject* parent)
     : QStyledItemDelegate(parent) {
   if (mode == Full) {
     items_ << QStringLiteral("SET") << QStringLiteral("VERIFY")
            << QStringLiteral("WAIT") << QStringLiteral("DELAY")
-           << QStringLiteral("ACTION") << QStringLiteral("LOG")
-           << QStringLiteral("LOOP") << QStringLiteral("WHILE")
-           << QStringLiteral("IF") << QStringLiteral("INJECT_FAULT")
+           << QStringLiteral("ACTION") << QStringLiteral("LOG");
+    if (etest::app::kControlFlowEnabled) {
+      items_ << QStringLiteral("LOOP") << QStringLiteral("WHILE")
+             << QStringLiteral("IF");
+    }
+    items_ << QStringLiteral("INJECT_FAULT")
            << QStringLiteral("CLEAR_FAULT") << QStringLiteral("PHOTO")
            << QStringLiteral("RECORD");
   } else {

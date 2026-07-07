@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 
 #include "CommandTypeDelegate.h"
+#include "control_flow_config.h"
 #include "sub_step_table_widget.h"
 
 namespace etest::app {
@@ -519,11 +520,11 @@ void StepDetailPanel::switchToPageForCommand(const QString& cmd) {
   } else if (cmd == QStringLiteral("WAIT")) {
     stack_->setCurrentIndex(kPageCondition);
   } else if (cmd == QStringLiteral("LOOP")) {
-    stack_->setCurrentIndex(kPageLoop);
+    stack_->setCurrentIndex(kControlFlowEnabled ? kPageLoop : kPageEmpty);
   } else if (cmd == QStringLiteral("WHILE")) {
-    stack_->setCurrentIndex(kPageWhile);
+    stack_->setCurrentIndex(kControlFlowEnabled ? kPageWhile : kPageEmpty);
   } else if (cmd == QStringLiteral("IF")) {
-    stack_->setCurrentIndex(kPageIf);
+    stack_->setCurrentIndex(kControlFlowEnabled ? kPageIf : kPageEmpty);
   } else if (cmd == QStringLiteral("INJECT_FAULT")) {
     stack_->setCurrentIndex(kPageFault);
   } else if (cmd == QStringLiteral("ACTION") || cmd == QStringLiteral("LOG")) {

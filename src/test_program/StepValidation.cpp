@@ -1,5 +1,7 @@
 #include "StepValidation.h"
 
+#include "control_flow_config.h"
+
 namespace etest::app {
 namespace StepValidation {
 
@@ -53,14 +55,14 @@ QStringList validateStep(const TestStepData& step) {
     if (step.delayMs <= 0) {
       issues << QStringLiteral("DELAY: 延迟值必须大于0");
     }
-  } else if (cmd == QStringLiteral("LOOP")) {
+  } else if (kControlFlowEnabled && cmd == QStringLiteral("LOOP")) {
     if (step.loopCount < 1) {
       issues << QStringLiteral("LOOP: 循环次数必须 >= 1");
     }
     if (step.subSteps.isEmpty()) {
       issues << QStringLiteral("LOOP: 至少需要一个循环体步骤");
     }
-  } else if (cmd == QStringLiteral("WHILE")) {
+  } else if (kControlFlowEnabled && cmd == QStringLiteral("WHILE")) {
     if (step.condition.target.trimmed().isEmpty()) {
       issues << QStringLiteral("WHILE: 条件目标不能为空");
     }
@@ -70,7 +72,7 @@ QStringList validateStep(const TestStepData& step) {
     if (step.subSteps.isEmpty()) {
       issues << QStringLiteral("WHILE: 至少需要一个循环体步骤");
     }
-  } else if (cmd == QStringLiteral("IF")) {
+  } else if (kControlFlowEnabled && cmd == QStringLiteral("IF")) {
     if (step.condition.target.trimmed().isEmpty()) {
       issues << QStringLiteral("IF: 条件目标不能为空");
     }
