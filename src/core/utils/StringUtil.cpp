@@ -43,7 +43,11 @@ QString StringUtil::fromLatin1(const QByteArray& ba) {
 }
 
 QStringList StringUtil::split(const QString& str, const QString& sep, bool skipEmpty) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+  auto behavior = skipEmpty ? Qt::SkipEmptyParts : Qt::KeepEmptyParts;
+#else
   auto behavior = skipEmpty ? QString::SkipEmptyParts : QString::KeepEmptyParts;
+#endif
   return str.split(sep, behavior);
 }
 

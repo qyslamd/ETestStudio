@@ -39,7 +39,12 @@ PluginManager::PluginManager() : QObject(nullptr), m_impl(new Impl()) {
   ConfigManager& cfg = ConfigManager::instance();
   QString customPaths = cfg.get<QString>(CONFIG_PLUGIN_SEARCH_PATHS);
   if (!customPaths.isEmpty()) {
-    for (const QString& p : customPaths.split(';', QString::SkipEmptyParts)) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    const auto parts = customPaths.split(';', Qt::SkipEmptyParts);
+#else
+    const auto parts = customPaths.split(';', QString::SkipEmptyParts);
+#endif
+    for (const QString& p : parts) {
       QString trimmed = p.trimmed();
       if (!trimmed.isEmpty() && !m_impl->search_paths_.contains(trimmed)) {
         m_impl->search_paths_.append(trimmed);

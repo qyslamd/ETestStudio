@@ -853,9 +853,16 @@ void PropertyPanelWidget::onPortAllowedTypesChanged() {
   if (prod && editing_port_index_ < prod->ports.size()) {
     auto oldTypes = prod->ports[editing_port_index_].allowedDeviceTypes;
     QString text = port_allowed_types_edit_->currentText().trimmed();
-    auto newTypes = text.isEmpty() ? QStringList()
-                                   : text.split(QStringLiteral(", "),
-                                                QString::SkipEmptyParts);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    auto newTypes = text.isEmpty()
+                        ? QStringList()
+                        : text.split(QStringLiteral(", "), Qt::SkipEmptyParts);
+#else
+    auto newTypes =
+        text.isEmpty()
+            ? QStringList()
+            : text.split(QStringLiteral(", "), QString::SkipEmptyParts);
+#endif
     int pIdx = editing_port_product_, poIdx = editing_port_index_;
     auto* cmd = new PropertyCommand(
         doc_,

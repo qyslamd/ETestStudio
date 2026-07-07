@@ -206,7 +206,7 @@ QString WisdomWidget::formatSentence(const QString& text) const {
   // Split by Chinese punctuation for natural line breaks
   QStringList clauses =
       text.split(QRegularExpression(QStringLiteral("[，。；！？、]")),
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
                  Qt::SkipEmptyParts);
 #else
                  QString::SkipEmptyParts);
@@ -227,7 +227,7 @@ void WisdomWidget::computeOptimalFont() {
   for (const auto& poem : poems_) {
     QStringList clauses =
         poem.sentence.split(QRegularExpression(QStringLiteral("[，。；！？、]")),
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
                             Qt::SkipEmptyParts);
 #else
                             QString::SkipEmptyParts);
