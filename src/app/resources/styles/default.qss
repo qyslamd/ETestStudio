@@ -88,6 +88,31 @@ QSplitter::handle:hover {
 }
 
 /* ==================== TopologyEditorWidget ==================== */
+QToolBar#topologyToolbar {
+    background-color: #F0F0F0;
+    border-bottom: 1px solid #D0D0D0;
+    spacing: 2px;
+    padding: 2px;
+}
+QToolBar#topologyToolbar QToolButton:checked {
+    background-color: #D6EAF8;
+    border: 1px solid #99CCFF;
+    border-radius: 3px;
+}
+
+/* ==================== ProtocolEditorWidget ==================== */
+QToolBar#protocolToolbar {
+    background-color: #F0F0F0;
+    border-bottom: 1px solid #D0D0D0;
+    spacing: 2px;
+    padding: 2px;
+}
+QToolBar#protocolToolbar QToolButton:checked {
+    background-color: #D6EAF8;
+    border: 1px solid #99CCFF;
+    border-radius: 3px;
+}
+
 QWidget#PhLoadingOverlay {
     background-color: #FFFFFF;
 }

@@ -1073,6 +1073,11 @@ etest--app--TerminalPanel QPlainTextEdit {
     background-color: #2d2d2d;
     border-bottom: 1px solid #3c3c3c;
 }
+#protocolToolbar QToolButton:checked {
+    background-color: #094771;
+    border: 1px solid #1A6BB5;
+    border-radius: 3px;
+}
 #protocolTitleLabel {
     font-weight: bold;
     color: #cccccc;
@@ -1105,6 +1110,11 @@ QToolBar#topologyToolbar {
     border-bottom: 1px solid #252526;
     spacing: 2px;
     padding: 2px;
+}
+QToolBar#topologyToolbar QToolButton:checked {
+    background-color: #094771;
+    border: 1px solid #1A6BB5;
+    border-radius: 3px;
 }
 QLabel#topologyZoomLabel {
     padding: 0 4px;
