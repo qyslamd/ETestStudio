@@ -16,6 +16,8 @@ class QPushButton;
 
 namespace etest::app {
 
+class SubStepTableWidget;
+
 // 步骤详情面板：为控制流步骤（LOOP/WHILE/IF）提供子步骤编辑，
 // 以及 VERIFY 容差、WAIT 条件、INJECT_FAULT 配置等复杂字段的编辑。
 class StepDetailPanel : public QWidget {
@@ -72,7 +74,7 @@ class StepDetailPanel : public QWidget {
   QWidget* createActionLogPage();
 
   // 创建子步骤表格
-  QTableWidget* createSubStepTable(QWidget* parent);
+  SubStepTableWidget* createSubStepTable(QWidget* parent);
 
   // 始终反映面板内的最新值；setStepData 初始化，切页/控件改动时刷新
   TestStepData cache_;
@@ -95,22 +97,21 @@ class StepDetailPanel : public QWidget {
   // Loop page
   QLineEdit* loop_count_edit_ = nullptr;
   QLineEdit* loop_interval_edit_ = nullptr;
-  QTableWidget* loop_sub_table_ = nullptr;
+  SubStepTableWidget* loop_sub_table_ = nullptr;
 
   // While page
   QLineEdit* while_target_edit_ = nullptr;
   QComboBox* while_op_combo_ = nullptr;
   QLineEdit* while_value_edit_ = nullptr;
   QLineEdit* while_interval_edit_ = nullptr;
-  QLineEdit* while_timeout_edit_ = nullptr;
-  QTableWidget* while_sub_table_ = nullptr;
+  SubStepTableWidget* while_sub_table_ = nullptr;
 
   // If page
   QLineEdit* if_target_edit_ = nullptr;
   QComboBox* if_op_combo_ = nullptr;
   QLineEdit* if_value_edit_ = nullptr;
-  QTableWidget* if_then_table_ = nullptr;
-  QTableWidget* if_else_table_ = nullptr;
+  SubStepTableWidget* if_then_table_ = nullptr;
+  SubStepTableWidget* if_else_table_ = nullptr;
 
   // Fault page
   QLineEdit* fault_type_edit_ = nullptr;

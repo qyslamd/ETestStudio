@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 
 #include "CommandTypeDelegate.h"
+#include "sub_step_table_widget.h"
 
 namespace etest::app {
 
@@ -217,9 +218,6 @@ QWidget* StepDetailPanel::createWhilePage() {
   while_interval_edit_ = new QLineEdit(QStringLiteral("0"), page);
   form->addRow(QStringLiteral("间隔(ms):"), while_interval_edit_);
 
-  while_timeout_edit_ = new QLineEdit(QStringLiteral("30000"), page);
-  form->addRow(QStringLiteral("超时(ms):"), while_timeout_edit_);
-
   layout->addLayout(form);
 
   auto* subLabel = new QLabel(QStringLiteral("循环体步骤:"), page);
@@ -242,8 +240,6 @@ QWidget* StepDetailPanel::createWhilePage() {
   QObject::connect(while_value_edit_, &QLineEdit::textChanged, this,
                    connectWhile);
   QObject::connect(while_interval_edit_, &QLineEdit::textChanged, this,
-                   connectWhile);
-  QObject::connect(while_timeout_edit_, &QLineEdit::textChanged, this,
                    connectWhile);
 
   return page;
@@ -352,27 +348,16 @@ QWidget* StepDetailPanel::createActionLogPage() {
 
 // ── 子步骤表格 ──
 
-QTableWidget* StepDetailPanel::createSubStepTable(QWidget* parent) {
-  auto* table = new QTableWidget(0, 5, parent);
-  table->setHorizontalHeaderLabels(
-      {QStringLiteral("步骤说明"), QStringLiteral("命令"),
-       QStringLiteral("目标"), QStringLiteral("值"),
-       QStringLiteral("延迟(ms)")});
-  table->horizontalHeader()->setStretchLastSection(true);
-  table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-  table->setSelectionBehavior(QAbstractItemView::SelectRows);
-  table->verticalHeader()->setVisible(false);
-  table->setAlternatingRowColors(true);
-
-  // FlatOnly delegate
-  auto* delegate = new CommandTypeDelegate(CommandTypeDelegate::FlatOnly, this);
-  table->setItemDelegateForColumn(1, delegate);
-
-  // 子步骤表格的 cell 改动需要触发 StepDetailPanel::dataChanged，
-  // 父 TestProgramEditorWidget 才会把子步骤写回主行的 UserRole
-  QObject::connect(table, &QTableWidget::itemChanged, this,
-                   [this](QTableWidgetItem*) { emit dataChanged(); });
-
+SubStepTableWidget* StepDetailPanel::createSubStepTable(QWidget* parent) {
+  auto* table = new SubStepTableWidget(parent);
+  // 子步骤表编辑（行增删移动/单元格改动）→ 抓回 cache_ + 通知父组件把子步骤
+  // 写回主行 ext data。setSubSteps 程序化填充时不发此信号，避免切步骤/加载误触发。
+  connect(table, &SubStepTableWidget::subStepsChanged, this, [this]() {
+    if (!internal_update_) {
+      writePageToCache();
+      emit dataChanged();
+    }
+  });
   return table;
 }
 
@@ -396,95 +381,19 @@ void StepDetailPanel::writePageToCache() {
   } else if (pageIdx == kPageLoop) {
     cache_.loopCount = loop_count_edit_->text().toInt();
     cache_.loopIntervalMs = loop_interval_edit_->text().toInt();
-    QVector<TestStepData> subs;
-    for (int i = 0; i < loop_sub_table_->rowCount(); ++i) {
-      TestStepData s;
-      s.description = loop_sub_table_->item(i, 0)
-                          ? loop_sub_table_->item(i, 0)->text()
-                          : QString();
-      s.cmd = loop_sub_table_->item(i, 1) ? loop_sub_table_->item(i, 1)->text()
-                                          : QString();
-      s.target = loop_sub_table_->item(i, 2)
-                     ? loop_sub_table_->item(i, 2)->text()
-                     : QString();
-      s.value = loop_sub_table_->item(i, 3)
-                    ? QVariant(loop_sub_table_->item(i, 3)->text())
-                    : QVariant();
-      s.delayMs = loop_sub_table_->item(i, 4)
-                      ? loop_sub_table_->item(i, 4)->text().toInt()
-                      : 0;
-      subs.append(s);
-    }
-    cache_.subSteps = subs;
+    cache_.subSteps = loop_sub_table_->subSteps();
   } else if (pageIdx == kPageWhile) {
     cache_.condition.target = while_target_edit_->text();
     cache_.condition.op = while_op_combo_->currentText();
     cache_.condition.value = while_value_edit_->text();
     cache_.loopIntervalMs = while_interval_edit_->text().toInt();
-    cache_.timeoutMs = while_timeout_edit_->text().toInt();
-    QVector<TestStepData> subs;
-    for (int i = 0; i < while_sub_table_->rowCount(); ++i) {
-      TestStepData s;
-      s.description = while_sub_table_->item(i, 0)
-                          ? while_sub_table_->item(i, 0)->text()
-                          : QString();
-      s.cmd = while_sub_table_->item(i, 1)
-                  ? while_sub_table_->item(i, 1)->text()
-                  : QString();
-      s.target = while_sub_table_->item(i, 2)
-                     ? while_sub_table_->item(i, 2)->text()
-                     : QString();
-      s.value = while_sub_table_->item(i, 3)
-                    ? QVariant(while_sub_table_->item(i, 3)->text())
-                    : QVariant();
-      s.delayMs = while_sub_table_->item(i, 4)
-                      ? while_sub_table_->item(i, 4)->text().toInt()
-                      : 0;
-      subs.append(s);
-    }
-    cache_.subSteps = subs;
+    cache_.subSteps = while_sub_table_->subSteps();
   } else if (pageIdx == kPageIf) {
     cache_.condition.target = if_target_edit_->text();
     cache_.condition.op = if_op_combo_->currentText();
     cache_.condition.value = if_value_edit_->text();
-    QVector<TestStepData> thenSubs;
-    for (int i = 0; i < if_then_table_->rowCount(); ++i) {
-      TestStepData s;
-      s.description = if_then_table_->item(i, 0)
-                          ? if_then_table_->item(i, 0)->text()
-                          : QString();
-      s.cmd = if_then_table_->item(i, 1) ? if_then_table_->item(i, 1)->text()
-                                         : QString();
-      s.target = if_then_table_->item(i, 2) ? if_then_table_->item(i, 2)->text()
-                                            : QString();
-      s.value = if_then_table_->item(i, 3)
-                    ? QVariant(if_then_table_->item(i, 3)->text())
-                    : QVariant();
-      s.delayMs = if_then_table_->item(i, 4)
-                      ? if_then_table_->item(i, 4)->text().toInt()
-                      : 0;
-      thenSubs.append(s);
-    }
-    cache_.subSteps = thenSubs;
-    QVector<TestStepData> elseSubs;
-    for (int i = 0; i < if_else_table_->rowCount(); ++i) {
-      TestStepData s;
-      s.description = if_else_table_->item(i, 0)
-                          ? if_else_table_->item(i, 0)->text()
-                          : QString();
-      s.cmd = if_else_table_->item(i, 1) ? if_else_table_->item(i, 1)->text()
-                                         : QString();
-      s.target = if_else_table_->item(i, 2) ? if_else_table_->item(i, 2)->text()
-                                            : QString();
-      s.value = if_else_table_->item(i, 3)
-                    ? QVariant(if_else_table_->item(i, 3)->text())
-                    : QVariant();
-      s.delayMs = if_else_table_->item(i, 4)
-                      ? if_else_table_->item(i, 4)->text().toInt()
-                      : 0;
-      elseSubs.append(s);
-    }
-    cache_.elseSubSteps = elseSubs;
+    cache_.subSteps = if_then_table_->subSteps();
+    cache_.elseSubSteps = if_else_table_->subSteps();
   } else if (pageIdx == kPageFault) {
     cache_.fault.type = fault_type_edit_->text();
     cache_.fault.value = fault_value_edit_->text();
@@ -511,16 +420,7 @@ void StepDetailPanel::fillPageFromCache() {
   } else if (pageIdx == kPageLoop) {
     loop_count_edit_->setText(QString::number(cache_.loopCount));
     loop_interval_edit_->setText(QString::number(cache_.loopIntervalMs));
-    loop_sub_table_->setRowCount(cache_.subSteps.size());
-    for (int i = 0; i < cache_.subSteps.size(); ++i) {
-      const auto& s = cache_.subSteps[i];
-      loop_sub_table_->setItem(i, 0, new QTableWidgetItem(s.description));
-      loop_sub_table_->setItem(i, 1, new QTableWidgetItem(s.cmd));
-      loop_sub_table_->setItem(i, 2, new QTableWidgetItem(s.target));
-      loop_sub_table_->setItem(i, 3, new QTableWidgetItem(s.value.toString()));
-      loop_sub_table_->setItem(
-          i, 4, new QTableWidgetItem(QString::number(s.delayMs)));
-    }
+    loop_sub_table_->setSubSteps(cache_.subSteps);
   } else if (pageIdx == kPageWhile) {
     while_target_edit_->setText(cache_.condition.target);
     int opIdx = while_op_combo_->findText(cache_.condition.op);
@@ -529,17 +429,7 @@ void StepDetailPanel::fillPageFromCache() {
     }
     while_value_edit_->setText(cache_.condition.value.toString());
     while_interval_edit_->setText(QString::number(cache_.loopIntervalMs));
-    while_timeout_edit_->setText(QString::number(cache_.timeoutMs));
-    while_sub_table_->setRowCount(cache_.subSteps.size());
-    for (int i = 0; i < cache_.subSteps.size(); ++i) {
-      const auto& s = cache_.subSteps[i];
-      while_sub_table_->setItem(i, 0, new QTableWidgetItem(s.description));
-      while_sub_table_->setItem(i, 1, new QTableWidgetItem(s.cmd));
-      while_sub_table_->setItem(i, 2, new QTableWidgetItem(s.target));
-      while_sub_table_->setItem(i, 3, new QTableWidgetItem(s.value.toString()));
-      while_sub_table_->setItem(
-          i, 4, new QTableWidgetItem(QString::number(s.delayMs)));
-    }
+    while_sub_table_->setSubSteps(cache_.subSteps);
   } else if (pageIdx == kPageIf) {
     if_target_edit_->setText(cache_.condition.target);
     int opIdx = if_op_combo_->findText(cache_.condition.op);
@@ -547,26 +437,8 @@ void StepDetailPanel::fillPageFromCache() {
       if_op_combo_->setCurrentIndex(opIdx);
     }
     if_value_edit_->setText(cache_.condition.value.toString());
-    if_then_table_->setRowCount(cache_.subSteps.size());
-    for (int i = 0; i < cache_.subSteps.size(); ++i) {
-      const auto& s = cache_.subSteps[i];
-      if_then_table_->setItem(i, 0, new QTableWidgetItem(s.description));
-      if_then_table_->setItem(i, 1, new QTableWidgetItem(s.cmd));
-      if_then_table_->setItem(i, 2, new QTableWidgetItem(s.target));
-      if_then_table_->setItem(i, 3, new QTableWidgetItem(s.value.toString()));
-      if_then_table_->setItem(i, 4,
-                              new QTableWidgetItem(QString::number(s.delayMs)));
-    }
-    if_else_table_->setRowCount(cache_.elseSubSteps.size());
-    for (int i = 0; i < cache_.elseSubSteps.size(); ++i) {
-      const auto& s = cache_.elseSubSteps[i];
-      if_else_table_->setItem(i, 0, new QTableWidgetItem(s.description));
-      if_else_table_->setItem(i, 1, new QTableWidgetItem(s.cmd));
-      if_else_table_->setItem(i, 2, new QTableWidgetItem(s.target));
-      if_else_table_->setItem(i, 3, new QTableWidgetItem(s.value.toString()));
-      if_else_table_->setItem(i, 4,
-                              new QTableWidgetItem(QString::number(s.delayMs)));
-    }
+    if_then_table_->setSubSteps(cache_.subSteps);
+    if_else_table_->setSubSteps(cache_.elseSubSteps);
   } else if (pageIdx == kPageFault) {
     fault_type_edit_->setText(cache_.fault.type);
     fault_value_edit_->setText(cache_.fault.value.toString());
@@ -611,95 +483,19 @@ TestStepData StepDetailPanel::stepData() const {
   } else if (pageIdx == kPageLoop) {
     step.loopCount = loop_count_edit_->text().toInt();
     step.loopIntervalMs = loop_interval_edit_->text().toInt();
-    QVector<TestStepData> subs;
-    for (int i = 0; i < loop_sub_table_->rowCount(); ++i) {
-      TestStepData s;
-      s.description = loop_sub_table_->item(i, 0)
-                          ? loop_sub_table_->item(i, 0)->text()
-                          : QString();
-      s.cmd = loop_sub_table_->item(i, 1) ? loop_sub_table_->item(i, 1)->text()
-                                          : QString();
-      s.target = loop_sub_table_->item(i, 2)
-                     ? loop_sub_table_->item(i, 2)->text()
-                     : QString();
-      s.value = loop_sub_table_->item(i, 3)
-                    ? QVariant(loop_sub_table_->item(i, 3)->text())
-                    : QVariant();
-      s.delayMs = loop_sub_table_->item(i, 4)
-                      ? loop_sub_table_->item(i, 4)->text().toInt()
-                      : 0;
-      subs.append(s);
-    }
-    step.subSteps = subs;
+    step.subSteps = loop_sub_table_->subSteps();
   } else if (pageIdx == kPageWhile) {
     step.condition.target = while_target_edit_->text();
     step.condition.op = while_op_combo_->currentText();
     step.condition.value = while_value_edit_->text();
     step.loopIntervalMs = while_interval_edit_->text().toInt();
-    step.timeoutMs = while_timeout_edit_->text().toInt();
-    QVector<TestStepData> subs;
-    for (int i = 0; i < while_sub_table_->rowCount(); ++i) {
-      TestStepData s;
-      s.description = while_sub_table_->item(i, 0)
-                          ? while_sub_table_->item(i, 0)->text()
-                          : QString();
-      s.cmd = while_sub_table_->item(i, 1)
-                  ? while_sub_table_->item(i, 1)->text()
-                  : QString();
-      s.target = while_sub_table_->item(i, 2)
-                     ? while_sub_table_->item(i, 2)->text()
-                     : QString();
-      s.value = while_sub_table_->item(i, 3)
-                    ? QVariant(while_sub_table_->item(i, 3)->text())
-                    : QVariant();
-      s.delayMs = while_sub_table_->item(i, 4)
-                      ? while_sub_table_->item(i, 4)->text().toInt()
-                      : 0;
-      subs.append(s);
-    }
-    step.subSteps = subs;
+    step.subSteps = while_sub_table_->subSteps();
   } else if (pageIdx == kPageIf) {
     step.condition.target = if_target_edit_->text();
     step.condition.op = if_op_combo_->currentText();
     step.condition.value = if_value_edit_->text();
-    QVector<TestStepData> thenSubs;
-    for (int i = 0; i < if_then_table_->rowCount(); ++i) {
-      TestStepData s;
-      s.description = if_then_table_->item(i, 0)
-                          ? if_then_table_->item(i, 0)->text()
-                          : QString();
-      s.cmd = if_then_table_->item(i, 1) ? if_then_table_->item(i, 1)->text()
-                                         : QString();
-      s.target = if_then_table_->item(i, 2) ? if_then_table_->item(i, 2)->text()
-                                            : QString();
-      s.value = if_then_table_->item(i, 3)
-                    ? QVariant(if_then_table_->item(i, 3)->text())
-                    : QVariant();
-      s.delayMs = if_then_table_->item(i, 4)
-                      ? if_then_table_->item(i, 4)->text().toInt()
-                      : 0;
-      thenSubs.append(s);
-    }
-    step.subSteps = thenSubs;
-    QVector<TestStepData> elseSubs;
-    for (int i = 0; i < if_else_table_->rowCount(); ++i) {
-      TestStepData s;
-      s.description = if_else_table_->item(i, 0)
-                          ? if_else_table_->item(i, 0)->text()
-                          : QString();
-      s.cmd = if_else_table_->item(i, 1) ? if_else_table_->item(i, 1)->text()
-                                         : QString();
-      s.target = if_else_table_->item(i, 2) ? if_else_table_->item(i, 2)->text()
-                                            : QString();
-      s.value = if_else_table_->item(i, 3)
-                    ? QVariant(if_else_table_->item(i, 3)->text())
-                    : QVariant();
-      s.delayMs = if_else_table_->item(i, 4)
-                      ? if_else_table_->item(i, 4)->text().toInt()
-                      : 0;
-      elseSubs.append(s);
-    }
-    step.elseSubSteps = elseSubs;
+    step.subSteps = if_then_table_->subSteps();
+    step.elseSubSteps = if_else_table_->subSteps();
   } else if (pageIdx == kPageFault) {
     step.fault.type = fault_type_edit_->text();
     step.fault.value = fault_value_edit_->text();
