@@ -27,7 +27,13 @@ constexpr const char* CONFIG_SIDEBAR_VISIBLE = "sidebar/visible";
 constexpr const char* CONFIG_SIDEBAR_EXPANDED_WIDTH = "sidebar/expanded_width";
 constexpr const char* CONFIG_SIDEBAR_ACTIVE_PAGE = "sidebar/active_page";
 
-// 底部面板状态
+// 底部面板状态（逐面板）
+constexpr const char* CONFIG_BOTTOM_PANEL_OUTPUT_VISIBLE =
+    "bottom_panel/output_visible";
+constexpr const char* CONFIG_BOTTOM_PANEL_PROBLEMS_VISIBLE =
+    "bottom_panel/problems_visible";
+constexpr const char* CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE =
+    "bottom_panel/terminal_visible";
 constexpr const char* CONFIG_BOTTOM_PANEL_VISIBLE = "bottom_panel/visible";
 constexpr const char* CONFIG_BOTTOM_PANEL_HEIGHT = "bottom_panel/height";
 

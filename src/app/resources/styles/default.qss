@@ -881,3 +881,15 @@ QPushButton:disabled {
     color: #AAAAAA;
     border-color: #D0D0D0;
 }
+
+/* ==================== Tab Close Button (Light) ==================== */
+#bottomTabWidget QTabBar::close-button {
+    image: url(:/resources/icons/svg/close_dark.svg);
+    subcontrol-position: right;
+    width: 20px;
+    height: 20px;
+}
+#bottomTabWidget QTabBar::close-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 2px;
+}

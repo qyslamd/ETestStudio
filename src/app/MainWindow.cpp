@@ -286,12 +286,19 @@ void MainWindow::initSignalsEarly() {
 }
 
 void MainWindow::initSignalsLate() {
-  // 视图菜单：输出面板显隐
-  connect(view_panel_action_, &QAction::triggered, this, [this](bool checked) {
-    if (checked) {
+  // 辅助 lambda：根据面板显隐状态更新容器显隐
+  auto updateContainerVisibility = [this]() {
+    bool anyVisible = false;
+    for (int i = 0; i < bottom_container_->count(); ++i) {
+      if (bottom_container_->isPanelVisible(i)) {
+        anyVisible = true;
+        break;
+      }
+    }
+    if (anyVisible) {
       bottom_container_->show();
       auto sizes = v_splitter_->sizes();
-      if (sizes.size() >= 2) {
+      if (sizes.size() >= 2 && sizes[1] <= 0) {
         sizes[1] = bottom_container_height_;
         v_splitter_->setSizes(sizes);
       }
@@ -302,7 +309,30 @@ void MainWindow::initSignalsLate() {
       }
       bottom_container_->hide();
     }
-  });
+  };
+
+  // 视图菜单：逐面板显隐
+  connect(view_output_action_, &QAction::triggered, this,
+          [this, updateContainerVisibility](bool checked) {
+            int idx = bottom_container_->indexOf(output_panel_);
+            if (idx >= 0)
+              bottom_container_->setPanelVisible(idx, checked);
+            updateContainerVisibility();
+          });
+  connect(view_problems_action_, &QAction::triggered, this,
+          [this, updateContainerVisibility](bool checked) {
+            int idx = bottom_container_->indexOf(problems_panel_);
+            if (idx >= 0)
+              bottom_container_->setPanelVisible(idx, checked);
+            updateContainerVisibility();
+          });
+  connect(view_terminal_action_, &QAction::triggered, this,
+          [this, updateContainerVisibility](bool checked) {
+            int idx = bottom_container_->indexOf(terminal_panel_);
+            if (idx >= 0)
+              bottom_container_->setPanelVisible(idx, checked);
+            updateContainerVisibility();
+          });
 
   // 视图菜单：辅助侧边栏显隐
   connect(view_aux_sidebar_action_, &QAction::triggered, this,
@@ -811,17 +841,22 @@ void MainWindow::initSignalsLate() {
             &OutputPanel::appendLog);
   }
 
-  // 底部面板关闭按钮
-  connect(bottom_container_, &BottomContainerWidget::panelClosed, this,
-          [this]() {
-            auto sizes = v_splitter_->sizes();
-            if (sizes.size() >= 2) {
-              bottom_container_height_ = sizes[1];
-            }
-            bottom_container_->hide();
-            if (view_panel_action_) {
-              view_panel_action_->setChecked(false);
-            }
+  // Tab 关闭 → 同步 action 状态 + 更新容器显隐
+  connect(bottom_container_, &BottomContainerWidget::panelVisibilityChanged,
+          this, [this, updateContainerVisibility]() {
+            int outIdx = bottom_container_->indexOf(output_panel_);
+            int probIdx = bottom_container_->indexOf(problems_panel_);
+            int termIdx = bottom_container_->indexOf(terminal_panel_);
+            if (outIdx >= 0)
+              view_output_action_->setChecked(
+                  bottom_container_->isPanelVisible(outIdx));
+            if (probIdx >= 0)
+              view_problems_action_->setChecked(
+                  bottom_container_->isPanelVisible(probIdx));
+            if (termIdx >= 0)
+              view_terminal_action_->setChecked(
+                  bottom_container_->isPanelVisible(termIdx));
+            updateContainerVisibility();
           });
 
   // 登录认证成功/登出
@@ -985,13 +1020,28 @@ void MainWindow::lazyInit() {
     LOG_INFO("LAZY", "  [9/12] 提示消息: {} ms", step_timer.elapsed());
   }
 
-  // 10. 恢复底部面板状态（侧边栏页面已在 step [2/12] 恢复）
+  // 10. 恢复底部面板状态（逐面板可见性 + 容器显隐）
   step_timer.restart();
   {
     auto& cfg = ConfigManager::instance();
     bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
-    bool bottomVisible = cfg.get<bool>(CONFIG_BOTTOM_PANEL_VISIBLE, true);
-    if (bottomVisible) {
+    bool outVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_OUTPUT_VISIBLE, true);
+    bool probVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_PROBLEMS_VISIBLE, true);
+    bool termVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE, true);
+
+    int outIdx = bottom_container_->indexOf(output_panel_);
+    int probIdx = bottom_container_->indexOf(problems_panel_);
+    int termIdx = bottom_container_->indexOf(terminal_panel_);
+    if (outIdx >= 0) bottom_container_->setPanelVisible(outIdx, outVis);
+    if (probIdx >= 0) bottom_container_->setPanelVisible(probIdx, probVis);
+    if (termIdx >= 0) bottom_container_->setPanelVisible(termIdx, termVis);
+
+    view_output_action_->setChecked(outVis);
+    view_problems_action_->setChecked(probVis);
+    view_terminal_action_->setChecked(termVis);
+
+    bool anyVisible = outVis || probVis || termVis;
+    if (anyVisible) {
       bottom_container_->show();
       auto vSizes = v_splitter_->sizes();
       if (vSizes.size() >= 2 && vSizes[1] <= 0) {
@@ -1000,9 +1050,6 @@ void MainWindow::lazyInit() {
       }
     } else {
       bottom_container_->hide();
-    }
-    if (view_panel_action_) {
-      view_panel_action_->setChecked(bottomVisible);
     }
   }
   LOG_INFO("LAZY", "  [10/12] 恢复底部面板: {} ms", step_timer.elapsed());
@@ -1817,13 +1864,26 @@ void MainWindow::setupRibbon() {
     });
     panel_panels->addLargeAction(act_welcome);
 
-    view_panel_action_ = new QAction(QStringLiteral("输出面板"), this);
-    view_panel_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("output_panel")));
-    view_panel_action_->setCheckable(true);
-    view_panel_action_->setChecked(true);
-    view_panel_action_->setShortcut(QStringLiteral("Ctrl+J"));
-    panel_panels->addLargeAction(view_panel_action_);
+    view_output_action_ = new QAction(QStringLiteral("输出"), this);
+    view_output_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("tab_output")));
+    view_output_action_->setCheckable(true);
+    view_output_action_->setChecked(true);
+    panel_panels->addLargeAction(view_output_action_);
+
+    view_problems_action_ = new QAction(QStringLiteral("问题"), this);
+    view_problems_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("tab_problems")));
+    view_problems_action_->setCheckable(true);
+    view_problems_action_->setChecked(true);
+    panel_panels->addLargeAction(view_problems_action_);
+
+    view_terminal_action_ = new QAction(QStringLiteral("终端"), this);
+    view_terminal_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("tab_terminal")));
+    view_terminal_action_->setCheckable(true);
+    view_terminal_action_->setChecked(true);
+    panel_panels->addLargeAction(view_terminal_action_);
 
     view_aux_sidebar_action_ = new QAction(QStringLiteral("辅助侧边栏"), this);
     view_aux_sidebar_action_->setIcon(
@@ -1912,9 +1972,20 @@ void MainWindow::saveWindowState() {
   // 侧边栏展开宽度（会话间记忆）
   cfg.set(CONFIG_SIDEBAR_EXPANDED_WIDTH, sidebar_expanded_width_);
 
-  // 底部面板状态
+  // 底部面板状态（逐面板可见性 + 容器高度）
+  int outIdx = bottom_container_->indexOf(output_panel_);
+  int probIdx = bottom_container_->indexOf(problems_panel_);
+  int termIdx = bottom_container_->indexOf(terminal_panel_);
+  if (outIdx >= 0)
+    cfg.set(CONFIG_BOTTOM_PANEL_OUTPUT_VISIBLE,
+            bottom_container_->isPanelVisible(outIdx));
+  if (probIdx >= 0)
+    cfg.set(CONFIG_BOTTOM_PANEL_PROBLEMS_VISIBLE,
+            bottom_container_->isPanelVisible(probIdx));
+  if (termIdx >= 0)
+    cfg.set(CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE,
+            bottom_container_->isPanelVisible(termIdx));
   cfg.set(CONFIG_BOTTOM_PANEL_HEIGHT, bottom_container_height_);
-  cfg.set(CONFIG_BOTTOM_PANEL_VISIBLE, bottom_container_->isVisible());
 
   // 辅助侧边栏状态（已由 h_splitter_->saveState() 保存）
 }

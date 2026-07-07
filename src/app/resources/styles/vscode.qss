@@ -1847,3 +1847,15 @@ QToolButton#saverCloseBtn:pressed {
     color: white;
     border-color: rgba(200,50,50,220);
 }
+
+/* ==================== Tab Close Button (Dark) ==================== */
+#bottomTabWidget QTabBar::close-button {
+    image: url(:/resources/icons/svg/close_light.svg);
+    subcontrol-position: right;
+    width: 20px;
+    height: 20px;
+}
+#bottomTabWidget QTabBar::close-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}

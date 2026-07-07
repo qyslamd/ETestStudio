@@ -6,8 +6,6 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-class QToolButton;
-
 namespace etest::app {
 
 class BottomContainerWidget : public QWidget {
@@ -19,17 +17,22 @@ class BottomContainerWidget : public QWidget {
   void addPanel(const QString& title,
                 QWidget* panel,
                 const QString& iconName = {});
+
+  void setPanelVisible(int index, bool visible);
+  bool isPanelVisible(int index) const;
+  int indexOf(QWidget* panel) const;
+  int count() const;
+
   void setCurrentPanel(int index);
   int currentPanelIndex() const;
 
  signals:
-  void panelClosed();
+  void panelVisibilityChanged();
 
  private:
   void initUi();
 
   QTabWidget* tab_widget_;
-  QToolButton* close_button_;
   QStringList tab_icon_names_;
 };
 
