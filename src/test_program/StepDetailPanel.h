@@ -38,7 +38,7 @@ class StepDetailPanel : public QWidget {
   void dataChanged();
 
  private:
-  void setupUi();
+  void initUi();
 
   // 页面索引
   enum PageIndex {

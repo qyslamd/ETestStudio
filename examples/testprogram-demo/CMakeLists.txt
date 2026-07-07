@@ -10,12 +10,14 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     Qt5::Gui
     etest_core
     etest_program
+    etest_ui
     spdlog::spdlog
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/libui
     ${CMAKE_SOURCE_DIR}/3rdparty/spdlog-1.17.0/include
 )
 

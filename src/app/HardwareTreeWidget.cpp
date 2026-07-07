@@ -12,7 +12,7 @@ namespace etest::app {
 using namespace etest::core::plugin;
 
 HardwareTreeWidget::HardwareTreeWidget(QWidget* parent) : QWidget(parent) {
-  setupUi();
+  initUi();
   initSignals();
 }
 
@@ -22,7 +22,7 @@ HardwareTreeWidget::~HardwareTreeWidget() {
   }
 }
 
-void HardwareTreeWidget::setupUi() {
+void HardwareTreeWidget::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
@@ -63,14 +63,17 @@ void HardwareTreeWidget::refreshTree() {
   QMap<QString, QMap<QString, QList<QPair<QString, PluginMetaData>>>> groups;
 
   for (const auto& meta : allPlugins) {
-    if (meta.category != "device" || meta.device_type.isEmpty()) continue;
+    if (meta.category != "device" || meta.device_type.isEmpty())
+      continue;
 
     // 需要获取DeviceInfo中的manufacturer
     IDevicePlugin* device = pm.pluginAs<IDevicePlugin>(meta.id);
-    if (!device) continue;
+    if (!device)
+      continue;
 
     QString manufacturer = device->deviceInfo().manufacturer;
-    if (manufacturer.isEmpty()) manufacturer = QStringLiteral("未知厂家");
+    if (manufacturer.isEmpty())
+      manufacturer = QStringLiteral("未知厂家");
 
     groups[manufacturer][meta.device_type].append({meta.id, meta});
   }
@@ -95,12 +98,12 @@ void HardwareTreeWidget::refreshTree() {
       for (const auto& pair : devices) {
         // 三级节点：设备实例
         IDevicePlugin* device = pm.pluginAs<IDevicePlugin>(pair.first);
-        if (!device) continue;
+        if (!device)
+          continue;
 
         auto* deviceItem = new QTreeWidgetItem(typeItem);
-        deviceItem->setText(
-            0, pair.second.name + QStringLiteral(" ") +
-                   statusText(device->deviceStatus()));
+        deviceItem->setText(0, pair.second.name + QStringLiteral(" ") +
+                                   statusText(device->deviceStatus()));
         deviceItem->setData(0, Qt::UserRole, QStringLiteral("device"));
         deviceItem->setData(0, Qt::UserRole + 1, pair.first);
 
@@ -114,7 +117,7 @@ void HardwareTreeWidget::refreshTree() {
 }
 
 void HardwareTreeWidget::highlightDeviceType(const QString& deviceType,
-                                              const QString& pluginId) {
+                                             const QString& pluginId) {
   // Iterate all leaf (device-level) items to find a match
   QTreeWidgetItemIterator it(tree_);
   while (*it) {
@@ -131,7 +134,8 @@ void HardwareTreeWidget::highlightDeviceType(const QString& deviceType,
   // Fallback: try matching by device type display name
   QTreeWidgetItemIterator it2(tree_);
   while (*it2) {
-    if ((*it2)->data(0, Qt::UserRole).toString() == QLatin1String("device_type")) {
+    if ((*it2)->data(0, Qt::UserRole).toString() ==
+        QLatin1String("device_type")) {
       if ((*it2)->text(0).contains(deviceType, Qt::CaseInsensitive)) {
         tree_->setCurrentItem(*it2);
         tree_->scrollToItem(*it2);
@@ -146,12 +150,14 @@ void HardwareTreeWidget::onItemDoubleClicked(QTreeWidgetItem* item,
                                              int column) {
   Q_UNUSED(column);
 
-  if (item->data(0, Qt::UserRole).toString() != "device") return;
+  if (item->data(0, Qt::UserRole).toString() != "device")
+    return;
 
   QString pluginId = item->data(0, Qt::UserRole + 1).toString();
   auto& pm = PluginManager::instance();
   IDevicePlugin* device = pm.pluginAs<IDevicePlugin>(pluginId);
-  if (!device) return;
+  if (!device)
+    return;
 
   if (device->deviceStatus() == DeviceStatus::Offline) {
     device->openDevice();
@@ -165,12 +171,14 @@ void HardwareTreeWidget::onItemDoubleClicked(QTreeWidgetItem* item,
 
 void HardwareTreeWidget::onCustomContextMenu(const QPoint& pos) {
   QTreeWidgetItem* item = tree_->itemAt(pos);
-  if (!item || item->data(0, Qt::UserRole).toString() != "device") return;
+  if (!item || item->data(0, Qt::UserRole).toString() != "device")
+    return;
 
   QString pluginId = item->data(0, Qt::UserRole + 1).toString();
   auto& pm = PluginManager::instance();
   IDevicePlugin* device = pm.pluginAs<IDevicePlugin>(pluginId);
-  if (!device) return;
+  if (!device)
+    return;
 
   auto* menu = new QMenu(this);
 
@@ -205,7 +213,8 @@ void HardwareTreeWidget::updateDeviceStatus() {
   for (auto it = device_items_.constBegin(); it != device_items_.constEnd();
        ++it) {
     IDevicePlugin* device = pm.pluginAs<IDevicePlugin>(it.key());
-    if (!device) continue;
+    if (!device)
+      continue;
 
     QTreeWidgetItem* item = it.value();
     item->setText(0, device->metaData().name + QStringLiteral(" ") +
@@ -225,7 +234,8 @@ QString HardwareTreeWidget::deviceTypeDisplayName(
   return names.value(deviceType, deviceType);
 }
 
-QString HardwareTreeWidget::statusText(etest::core::plugin::DeviceStatus status) const {
+QString HardwareTreeWidget::statusText(
+    etest::core::plugin::DeviceStatus status) const {
   switch (status) {
     case DeviceStatus::Online:
       return QStringLiteral("[在线]");

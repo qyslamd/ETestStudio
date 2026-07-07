@@ -20,7 +20,7 @@ class TestProgramManagerWidget : public QWidget {
   void openFileRequested(const QString& filePath);
 
  private:
-  void setupUi();
+  void initUi();
   void initSignals();
 
   void onItemDoubleClicked(QTreeWidgetItem* item, int column);

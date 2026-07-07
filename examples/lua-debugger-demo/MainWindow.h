@@ -20,64 +20,64 @@ class QPushButton;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
-    Q_OBJECT
-public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() override;
+  Q_OBJECT
+ public:
+  explicit MainWindow(QWidget* parent = nullptr);
+  ~MainWindow() override;
 
-protected:
-    void closeEvent(QCloseEvent *event) override;
+ protected:
+  void closeEvent(QCloseEvent* event) override;
 
-private slots:
-    void onRun();
-    void onPause();
-    void onStop();
-    void onStepInto();
-    void onStepOver();
-    void onStepOut();
-    void onReset();
-    void onBreakpointToggled(int line, bool set);
-    void onLineChanged(int line);
-    void onPaused(const DebugSnapshot &snapshot);
-    void onFinished();
-    void onError(const QString &message);
-    void onOutput(const QString &text);
-    void onStackFrameClicked(int index);
-    void onEvalRequested();
-    void onEvalResult(const QString &result);
+ private slots:
+  void onRun();
+  void onPause();
+  void onStop();
+  void onStepInto();
+  void onStepOver();
+  void onStepOut();
+  void onReset();
+  void onBreakpointToggled(int line, bool set);
+  void onLineChanged(int line);
+  void onPaused(const DebugSnapshot& snapshot);
+  void onFinished();
+  void onError(const QString& message);
+  void onOutput(const QString& text);
+  void onStackFrameClicked(int index);
+  void onEvalRequested();
+  void onEvalResult(const QString& result);
 
-private:
-    void setupUi();
-    void setupToolbar();
-    void setupEditorPanel();
-    void setupDebugPanels();
-    void setupConnections();
-    void updateButtonStates();
-    void setDefaultScript();
+ private:
+  void initUi();
+  void setupToolbar();
+  void setupEditorPanel();
+  void setupDebugPanels();
+  void setupConnections();
+  void updateButtonStates();
+  void setDefaultScript();
 
-    LuaDebugger *debugger_;
-    LuaEditor *editor_;
+  LuaDebugger* debugger_;
+  LuaEditor* editor_;
 
-    QToolBar *toolbar_;
-    QAction *actRun_;
-    QAction *actPause_;
-    QAction *actStop_;
-    QAction *actStepInto_;
-    QAction *actStepOver_;
-    QAction *actStepOut_;
-    QAction *actReset_;
+  QToolBar* toolbar_;
+  QAction* actRun_;
+  QAction* actPause_;
+  QAction* actStop_;
+  QAction* actStepInto_;
+  QAction* actStepOver_;
+  QAction* actStepOut_;
+  QAction* actReset_;
 
-    QSplitter *vertSplitter_;
-    QSplitter *horiSplitter_;
-    QTabWidget *debugTabs_;
-    QTreeWidget *varTree_;
-    QListWidget *callStack_;
-    QTextEdit *output_;
-    QLabel *statusLabel_;
+  QSplitter* vertSplitter_;
+  QSplitter* horiSplitter_;
+  QTabWidget* debugTabs_;
+  QTreeWidget* varTree_;
+  QListWidget* callStack_;
+  QTextEdit* output_;
+  QLabel* statusLabel_;
 
-    QLineEdit *watchInput_;
-    QPushButton *watchBtn_;
-    QLabel *watchResult_;
+  QLineEdit* watchInput_;
+  QPushButton* watchBtn_;
+  QLabel* watchResult_;
 };
 
 #endif

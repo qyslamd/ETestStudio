@@ -14,7 +14,7 @@ class ProblemsPanel : public QWidget {
   explicit ProblemsPanel(QWidget* parent = nullptr);
 
  private:
-  void setupUi();
+  void initUi();
 
   QTableWidget* table_;
 };

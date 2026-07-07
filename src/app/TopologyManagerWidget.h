@@ -25,7 +25,7 @@ class TopologyManagerWidget : public QWidget {
   void openFileRequested(const QString& filePath);
 
  private:
-  void setupUi();
+  void initUi();
   void initSignals();
 
   // 树操作

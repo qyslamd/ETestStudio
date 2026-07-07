@@ -17,11 +17,10 @@ class HardwareTreeWidget : public QWidget {
   ~HardwareTreeWidget() override;
 
   void refreshTree();
-  void highlightDeviceType(const QString& deviceType,
-                           const QString& pluginId);
+  void highlightDeviceType(const QString& deviceType, const QString& pluginId);
 
  private:
-  void setupUi();
+  void initUi();
   void initSignals();
 
   void onItemDoubleClicked(QTreeWidgetItem* item, int column);

@@ -19,15 +19,15 @@ class TopologyManagerWidget;
 
 // ── 预定义页面 ID 常量 ──
 namespace PageId {
-    constexpr auto kProjectOverview = "project_overview";
-    constexpr auto kTopology        = "topology";
-    constexpr auto kHardware        = "hardware";
-    constexpr auto kProtocol        = "protocol";
-    constexpr auto kTestProgram     = "testprogram";
-    constexpr auto kRun             = "run";
-    constexpr auto kReport          = "report";
-    constexpr auto kSearch          = "search";
-    constexpr auto kGit             = "git";
+constexpr auto kProjectOverview = "project_overview";
+constexpr auto kTopology = "topology";
+constexpr auto kHardware = "hardware";
+constexpr auto kProtocol = "protocol";
+constexpr auto kTestProgram = "testprogram";
+constexpr auto kRun = "run";
+constexpr auto kReport = "report";
+constexpr auto kSearch = "search";
+constexpr auto kGit = "git";
 }  // namespace PageId
 
 class SidebarWidget : public QWidget {
@@ -55,7 +55,7 @@ class SidebarWidget : public QWidget {
   TopologyManagerWidget* topologyManager() const;
 
  private:
-  void setupUi();
+  void initUi();
 
   QStackedWidget* stack_;
   QLabel* title_label_;

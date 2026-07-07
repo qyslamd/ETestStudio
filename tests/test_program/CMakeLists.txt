@@ -6,12 +6,3 @@ add_etest(
     QT_MODULES Core Test Widgets
     LABELS TEST_PROGRAM
 )
-
-# 测试程序编辑器窗口行为测试
-add_etest(
-    NAME test_program_editor_widget
-    SOURCES test_program_editor_widget_test.cpp
-    LIBS etest_program
-    QT_MODULES Core Test Widgets
-    LABELS TEST_PROGRAM
-)

@@ -24,12 +24,16 @@ class ActivityBarWidget : public QWidget {
  public:
   explicit ActivityBarWidget(QWidget* parent = nullptr);
 
-  void addPage(const QString& id, const QString& tooltip, const QString& iconName);
+  void addPage(const QString& id,
+               const QString& tooltip,
+               const QString& iconName);
   void setActivePageId(const QString& id);
   void clearActivePage();
   QString activePageId() const;
   void reloadIcons();
-  void setLoginState(bool loggedIn, const QString& userName, const QString& role);
+  void setLoginState(bool loggedIn,
+                     const QString& userName,
+                     const QString& role);
   void setLoginActive(bool active);
   void setSettingsActive(bool active);
 
@@ -39,7 +43,7 @@ class ActivityBarWidget : public QWidget {
   void loginTriggered();
 
  private:
-  void setupUi();
+  void initUi();
   QToolButton* createButton(const QString& tooltip);
   void updateActiveIconSize();
   bool eventFilter(QObject* obj, QEvent* event) override;

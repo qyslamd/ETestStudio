@@ -45,6 +45,7 @@ void IcdFramePreviewPanel::initUi() {
 
   // 结果列表
   result_list_ = new QListWidget(this);
+  result_list_->setFrameShape(QFrame::NoFrame);
   result_list_->setObjectName(QStringLiteral("icdFramePreviewResult"));
   outer->addWidget(result_list_, 1);
 
@@ -52,14 +53,13 @@ void IcdFramePreviewPanel::initUi() {
           &IcdFramePreviewPanel::runPreview);
   connect(hex_input_, &QLineEdit::returnPressed, this,
           &IcdFramePreviewPanel::runPreview);
-  connect(result_list_, &QListWidget::currentRowChanged, this,
-          [this](int row) {
-            if (row < 0 || row >= row_nodes_.size()) {
-              emit nodeActivated(nullptr);
-              return;
-            }
-            emit nodeActivated(row_nodes_[row]);
-          });
+  connect(result_list_, &QListWidget::currentRowChanged, this, [this](int row) {
+    if (row < 0 || row >= row_nodes_.size()) {
+      emit nodeActivated(nullptr);
+      return;
+    }
+    emit nodeActivated(row_nodes_[row]);
+  });
 
   clearResult();
 }

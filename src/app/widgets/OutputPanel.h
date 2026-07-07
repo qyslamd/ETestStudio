@@ -19,7 +19,7 @@ class OutputPanel : public QWidget {
   void clearLog();
 
  private:
-  void setupUi();
+  void initUi();
   QString levelColor(int level) const;
   QString levelName(int level) const;
 

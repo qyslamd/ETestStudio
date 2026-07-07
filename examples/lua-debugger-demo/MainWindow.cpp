@@ -20,7 +20,7 @@
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   debugger_ = new LuaDebugger(this);
-  setupUi();
+  initUi();
   setupToolbar();
   setupEditorPanel();
   setupDebugPanels();
@@ -50,7 +50,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   event->accept();
 }
 
-void MainWindow::setupUi() {
+void MainWindow::initUi() {
   vertSplitter_ = new QSplitter(Qt::Vertical, this);
   setCentralWidget(vertSplitter_);
 
@@ -97,9 +97,9 @@ void MainWindow::setupDebugPanels() {
   callStack_ = new QListWidget(this);
   debugTabs_->addTab(callStack_, "调用栈");
 
-  auto *watchTab = new QWidget(this);
-  auto *watchLayout = new QVBoxLayout(watchTab);
-  auto *watchHeader = new QHBoxLayout();
+  auto* watchTab = new QWidget(this);
+  auto* watchLayout = new QVBoxLayout(watchTab);
+  auto* watchHeader = new QHBoxLayout();
   watchInput_ = new QLineEdit(this);
   watchInput_->setPlaceholderText("输入 Lua 表达式，如: target_temp + 5");
   watchBtn_ = new QPushButton("求值", this);
@@ -154,8 +154,10 @@ void MainWindow::setupConnections() {
   connect(debugger_, &LuaDebugger::output, this, &MainWindow::onOutput);
 
   connect(watchBtn_, &QPushButton::clicked, this, &MainWindow::onEvalRequested);
-  connect(watchInput_, &QLineEdit::returnPressed, this, &MainWindow::onEvalRequested);
-  connect(debugger_, &LuaDebugger::evalResultReady, this, &MainWindow::onEvalResult);
+  connect(watchInput_, &QLineEdit::returnPressed, this,
+          &MainWindow::onEvalRequested);
+  connect(debugger_, &LuaDebugger::evalResultReady, this,
+          &MainWindow::onEvalResult);
 }
 
 void MainWindow::updateButtonStates() {
@@ -377,7 +379,7 @@ void MainWindow::onEvalRequested() {
   debugger_->requestEval(expr);
 }
 
-void MainWindow::onEvalResult(const QString &result) {
+void MainWindow::onEvalResult(const QString& result) {
   watchResult_->setText(result);
   watchBtn_->setEnabled(true);
   watchInput_->setEnabled(true);

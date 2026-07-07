@@ -35,6 +35,7 @@ void TerminalPanel::initUi() {
   layout->setSpacing(0);
 
   display_ = new QPlainTextEdit(this);
+  display_->setFrameShape(QFrame::NoFrame);
   display_->setReadOnly(false);
   display_->setFont(QFont("Consolas", 11));
   display_->setLineWrapMode(QPlainTextEdit::NoWrap);

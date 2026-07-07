@@ -16,7 +16,7 @@ namespace etest::app {
 
 ImageViewerWidget::ImageViewerWidget(const QString& filePath, QWidget* parent)
     : QWidget(parent), file_path_(filePath) {
-  setupUi();
+  initUi();
   loadFile();
 
   // Theme change: refresh background brush
@@ -34,30 +34,50 @@ QString ImageViewerWidget::displayName() const {
   return QFileInfo(file_path_).fileName();
 }
 
-bool ImageViewerWidget::isModified() const { return false; }
+bool ImageViewerWidget::isModified() const {
+  return false;
+}
 
-bool ImageViewerWidget::save() { return false; }
+bool ImageViewerWidget::save() {
+  return false;
+}
 
-bool ImageViewerWidget::saveAs(const QString& /*path*/) { return false; }
+bool ImageViewerWidget::saveAs(const QString& /*path*/) {
+  return false;
+}
 
-QString ImageViewerWidget::filePath() const { return file_path_; }
+QString ImageViewerWidget::filePath() const {
+  return file_path_;
+}
 
-QString ImageViewerWidget::editorId() const { return file_path_; }
+QString ImageViewerWidget::editorId() const {
+  return file_path_;
+}
 
-QWidget* ImageViewerWidget::widget() { return this; }
+QWidget* ImageViewerWidget::widget() {
+  return this;
+}
 
-QString ImageViewerWidget::editorType() const { return QStringLiteral("image"); }
+QString ImageViewerWidget::editorType() const {
+  return QStringLiteral("image");
+}
 
-QObject* ImageViewerWidget::signalObject() { return this; }
+QObject* ImageViewerWidget::signalObject() {
+  return this;
+}
 
-bool ImageViewerWidget::canUndo() const { return false; }
-bool ImageViewerWidget::canRedo() const { return false; }
+bool ImageViewerWidget::canUndo() const {
+  return false;
+}
+bool ImageViewerWidget::canRedo() const {
+  return false;
+}
 void ImageViewerWidget::undo() {}
 void ImageViewerWidget::redo() {}
 
 // ── UI setup ─────────────────────────────────────────────────────
 
-void ImageViewerWidget::setupUi() {
+void ImageViewerWidget::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
@@ -152,8 +172,8 @@ void ImageViewerWidget::mouseMoveEvent(QMouseEvent* event) {
     last_pan_point_ = event->pos();
     view_->horizontalScrollBar()->setValue(
         view_->horizontalScrollBar()->value() - delta.x());
-    view_->verticalScrollBar()->setValue(
-        view_->verticalScrollBar()->value() - delta.y());
+    view_->verticalScrollBar()->setValue(view_->verticalScrollBar()->value() -
+                                         delta.y());
     event->accept();
     return;
   }

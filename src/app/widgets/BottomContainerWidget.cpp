@@ -11,11 +11,12 @@
 
 namespace etest::app {
 
-BottomContainerWidget::BottomContainerWidget(QWidget* parent) : QWidget(parent) {
-  setupUi();
+BottomContainerWidget::BottomContainerWidget(QWidget* parent)
+    : QWidget(parent) {
+  initUi();
 }
 
-void BottomContainerWidget::setupUi() {
+void BottomContainerWidget::initUi() {
   setAutoFillBackground(true);
 
   auto* main_layout = new QVBoxLayout(this);
@@ -70,8 +71,8 @@ void BottomContainerWidget::setupUi() {
   // Theme change: update tab bar colors and tab icons
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
           [this](bool isDark) {
-            if (auto* ts = static_cast<TabBarStyle*>(
-                    tab_widget_->tabBar()->style())) {
+            if (auto* ts =
+                    static_cast<TabBarStyle*>(tab_widget_->tabBar()->style())) {
               ts->setDarkTheme(isDark);
               tab_widget_->tabBar()->update();
             }
@@ -84,13 +85,13 @@ void BottomContainerWidget::setupUi() {
           });
 }
 
-void BottomContainerWidget::addPanel(const QString& title, QWidget* panel,
+void BottomContainerWidget::addPanel(const QString& title,
+                                     QWidget* panel,
                                      const QString& iconName) {
   int index = tab_widget_->addTab(panel, title);
   tab_icon_names_.append(iconName);
   if (!iconName.isEmpty()) {
-    tab_widget_->setTabIcon(index,
-                            AppIconProvider::instance().icon(iconName));
+    tab_widget_->setTabIcon(index, AppIconProvider::instance().icon(iconName));
   }
 }
 

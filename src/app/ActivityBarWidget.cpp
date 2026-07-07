@@ -8,13 +8,13 @@
 namespace etest::app {
 
 ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
-  setupUi();
+  initUi();
 
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
           &ActivityBarWidget::reloadIcons);
 }
 
-void ActivityBarWidget::setupUi() {
+void ActivityBarWidget::initUi() {
   setFixedWidth(48);
   setObjectName(QStringLiteral("sidebarActivityBar"));
 
@@ -34,13 +34,15 @@ void ActivityBarWidget::setupUi() {
   bottom_layout->setSpacing(0);
   bottom_layout->setContentsMargins(0, 0, 0, 0);
   login_btn_ = createButton(QStringLiteral("登录"));
-  login_btn_->setIcon(AppIconProvider::instance().icon(QStringLiteral("account")));
+  login_btn_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("account")));
   login_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   bottom_layout->addWidget(login_btn_);
   connect(login_btn_, &QAbstractButton::clicked, this,
           &ActivityBarWidget::loginTriggered);
   settings_btn_ = createButton(QStringLiteral("设置"));
-  settings_btn_->setIcon(AppIconProvider::instance().icon(QStringLiteral("settings")));
+  settings_btn_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("settings")));
   settings_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   bottom_layout->addWidget(settings_btn_);
   connect(settings_btn_, &QAbstractButton::clicked, this,
@@ -48,11 +50,13 @@ void ActivityBarWidget::setupUi() {
   layout->addLayout(bottom_layout);
 }
 
-void ActivityBarWidget::addPage(const QString& id, const QString& tooltip,
+void ActivityBarWidget::addPage(const QString& id,
+                                const QString& tooltip,
                                 const QString& iconName) {
   // 不重复添加相同 ID 的按钮
   for (const auto& p : pages_) {
-    if (p.id == id) return;
+    if (p.id == id)
+      return;
   }
 
   pages_.append({id, iconName, tooltip});
@@ -63,9 +67,8 @@ void ActivityBarWidget::addPage(const QString& id, const QString& tooltip,
   buttons_.append(btn);
   top_layout_->addWidget(btn);
 
-  connect(btn, &QAbstractButton::clicked, this, [this, id]() {
-    emit pageClicked(id);
-  });
+  connect(btn, &QAbstractButton::clicked, this,
+          [this, id]() { emit pageClicked(id); });
 
   // 默认选中第一个添加的页面
   if (buttons_.size() == 1) {
@@ -78,18 +81,22 @@ void ActivityBarWidget::reloadIcons() {
     buttons_[i]->setIcon(AppIconProvider::instance().icon(pages_[i].iconName));
   }
   if (login_btn_) {
-    login_btn_->setIcon(AppIconProvider::instance().icon(QStringLiteral("account")));
+    login_btn_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("account")));
   }
   if (settings_btn_) {
-    settings_btn_->setIcon(AppIconProvider::instance().icon(QStringLiteral("settings")));
+    settings_btn_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("settings")));
   }
   updateActiveIconSize();
 }
 
-void ActivityBarWidget::setLoginState(bool loggedIn, const QString& userName,
+void ActivityBarWidget::setLoginState(bool loggedIn,
+                                      const QString& userName,
                                       const QString& role) {
   if (loggedIn) {
-    login_btn_->setToolTip(QStringLiteral("当前用户：%1 (%2)").arg(userName).arg(role));
+    login_btn_->setToolTip(
+        QStringLiteral("当前用户：%1 (%2)").arg(userName).arg(role));
   } else {
     login_btn_->setToolTip(QStringLiteral("登录"));
   }

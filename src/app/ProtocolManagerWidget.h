@@ -59,7 +59,7 @@ class ProtocolManagerWidget : public QWidget {
 
  private:
   // 装配 UI 控件与分层布局
-  void setupUi();
+  void initUi();
   // 连接信号槽
   void initSignals();
   // refreshList 的实际实现（外面包了 try-catch 防止 filesystem

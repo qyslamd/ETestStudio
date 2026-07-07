@@ -36,7 +36,7 @@ class ImageViewerWidget : public QWidget, public IEditor {
   void redo() override;
 
  private:
-  void setupUi();
+  void initUi();
   void loadFile();
   void fitToWindow();
 

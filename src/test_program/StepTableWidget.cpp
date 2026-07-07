@@ -29,7 +29,8 @@ static QVector<TestStepData> subStepsFromJsonArray(const QJsonArray& arr) {
 }
 
 static QByteArray serializeSubSteps(const QVector<TestStepData>& steps) {
-  return QJsonDocument(subStepsToJsonArray(steps)).toJson(QJsonDocument::Compact);
+  return QJsonDocument(subStepsToJsonArray(steps))
+      .toJson(QJsonDocument::Compact);
 }
 
 static QVector<TestStepData> deserializeSubSteps(const QByteArray& data) {
@@ -65,34 +66,42 @@ StepTableWidget::StepTableWidget(CommandTypeDelegate::Mode delegateMode,
   // 拖拽完成后重新编号
   connect(model_, &QAbstractItemModel::rowsInserted, this,
           [this](QModelIndex, int, int) {
-            if (!batch_renumber_) renumberSteps();
+            if (!batch_renumber_)
+              renumberSteps();
           });
   connect(model_, &QAbstractItemModel::rowsRemoved, this,
           [this](QModelIndex, int, int) {
-            if (!batch_renumber_) renumberSteps();
+            if (!batch_renumber_)
+              renumberSteps();
           });
 }
 
 void StepTableWidget::setupModel() {
   model_ = new QStandardItemModel(0, kColCount, this);
-  // 列头固定，不随命令类型变化；参数1/参数2 列的含义由命令决定（见 extraCellText）
+  // 列头固定，不随命令类型变化；参数1/参数2 列的含义由命令决定（见
+  // extraCellText）
   model_->setHorizontalHeaderLabels(
       {QStringLiteral("步骤说明"), QStringLiteral("命令"),
-       QStringLiteral("目标"), QStringLiteral("值"),
-       QStringLiteral("参数1"), QStringLiteral("参数2"),
-       QStringLiteral("超时(ms)")});
+       QStringLiteral("目标"), QStringLiteral("值"), QStringLiteral("参数1"),
+       QStringLiteral("参数2"), QStringLiteral("超时(ms)")});
   setModel(model_);
 }
 
 void StepTableWidget::setupView() {
+  // 无QFrame的边框
+  setFrameShape(QFrame::NoFrame);
+
   // 表头拉伸策略
   horizontalHeader()->setStretchLastSection(false);
   horizontalHeader()->setSectionResizeMode(kColDesc, QHeaderView::Stretch);
   horizontalHeader()->setSectionResizeMode(kColCmd, QHeaderView::Fixed);
   setColumnWidth(kColCmd, 120);
-  horizontalHeader()->setSectionResizeMode(kColExtra, QHeaderView::ResizeToContents);
-  horizontalHeader()->setSectionResizeMode(kColExtra2, QHeaderView::ResizeToContents);
-  horizontalHeader()->setSectionResizeMode(kColTimeout, QHeaderView::ResizeToContents);
+  horizontalHeader()->setSectionResizeMode(kColExtra,
+                                           QHeaderView::ResizeToContents);
+  horizontalHeader()->setSectionResizeMode(kColExtra2,
+                                           QHeaderView::ResizeToContents);
+  horizontalHeader()->setSectionResizeMode(kColTimeout,
+                                           QHeaderView::ResizeToContents);
 
   setSelectionBehavior(QAbstractItemView::SelectRows);
   setSelectionMode(QAbstractItemView::SingleSelection);
@@ -156,7 +165,9 @@ QString StepTableWidget::cellText(int row, int col) const {
   return item ? item->text() : QString();
 }
 
-void StepTableWidget::setCellData(int row, int col, const QVariant& value,
+void StepTableWidget::setCellData(int row,
+                                  int col,
+                                  const QVariant& value,
                                   int role) {
   QStandardItem* item = model_->item(row, col);
   if (!item) {
@@ -198,7 +209,8 @@ void StepTableWidget::setStepExtData(int row, const TestStepData& step) {
     ext["subStepsJson"] = QString::fromUtf8(serializeSubSteps(step.subSteps));
   }
   if (!step.elseSubSteps.isEmpty()) {
-    ext["elseSubStepsJson"] = QString::fromUtf8(serializeSubSteps(step.elseSubSteps));
+    ext["elseSubStepsJson"] =
+        QString::fromUtf8(serializeSubSteps(step.elseSubSteps));
   }
 
   QStandardItem* item = model_->item(row, kColCmd);
@@ -240,7 +252,8 @@ TestStepData StepTableWidget::stepExtData(int row) const {
     step.loopIntervalMs = ext["loopIntervalMs"].toInt();
   }
   if (ext.contains("subStepsJson")) {
-    step.subSteps = deserializeSubSteps(ext["subStepsJson"].toString().toUtf8());
+    step.subSteps =
+        deserializeSubSteps(ext["subStepsJson"].toString().toUtf8());
   }
   if (ext.contains("elseSubStepsJson")) {
     step.elseSubSteps =
@@ -260,8 +273,8 @@ void StepTableWidget::renumberSteps() {
 }
 
 void StepTableWidget::refreshRowHeight() {
-  // 行高 = 字体高度 + 余量；余量容纳 cell editor 的 QLineEdit 边框及 QSS padding，
-  // 避免主题字体较大时编辑器字体被截断
+  // 行高 = 字体高度 + 余量；余量容纳 cell editor 的 QLineEdit 边框及 QSS
+  // padding， 避免主题字体较大时编辑器字体被截断
   verticalHeader()->setDefaultSectionSize(fontMetrics().height() + 12);
 }
 

@@ -121,14 +121,14 @@ QString ProtocolManagerWidget::findIcdConfigPath(const QString& projectRoot) {
 // ── 构造/析构 ────────────────────────────────────────────────
 ProtocolManagerWidget::ProtocolManagerWidget(QWidget* parent)
     : QWidget(parent) {
-  setupUi();
+  initUi();
   initSignals();
 }
 
 ProtocolManagerWidget::~ProtocolManagerWidget() = default;
 
 // ── UI 装配 ──────────────────────────────────────────────────
-void ProtocolManagerWidget::setupUi() {
+void ProtocolManagerWidget::initUi() {
   auto* root_layout = new QVBoxLayout(this);
   root_layout->setContentsMargins(0, 0, 0, 0);
   root_layout->setSpacing(0);

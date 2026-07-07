@@ -12,10 +12,10 @@
 namespace etest::app {
 
 SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
-  setupUi();
+  initUi();
 }
 
-void SidebarWidget::setupUi() {
+void SidebarWidget::initUi() {
   auto* outer_layout = new QHBoxLayout(this);
   outer_layout->setContentsMargins(0, 0, 0, 0);
   outer_layout->setSpacing(0);
@@ -48,9 +48,11 @@ void SidebarWidget::setupUi() {
   outer_layout->addWidget(content_panel_);
 }
 
-void SidebarWidget::addPage(const QString& id, QWidget* page,
+void SidebarWidget::addPage(const QString& id,
+                            QWidget* page,
                             const QString& title) {
-  if (id_to_index_.contains(id)) return;
+  if (id_to_index_.contains(id))
+    return;
 
   int index = stack_->count();
   id_to_index_[id] = index;

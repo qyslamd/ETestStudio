@@ -46,11 +46,11 @@ static QString functionTypeDisplay(const QString& ft) {
 
 TopologyManagerWidget::TopologyManagerWidget(QWidget* parent)
     : QWidget(parent) {
-  setupUi();
+  initUi();
   initSignals();
 }
 
-void TopologyManagerWidget::setupUi() {
+void TopologyManagerWidget::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);

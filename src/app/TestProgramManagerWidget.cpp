@@ -21,11 +21,11 @@ using namespace etest::core::project;
 
 TestProgramManagerWidget::TestProgramManagerWidget(QWidget* parent)
     : QWidget(parent) {
-  setupUi();
+  initUi();
   initSignals();
 }
 
-void TestProgramManagerWidget::setupUi() {
+void TestProgramManagerWidget::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);

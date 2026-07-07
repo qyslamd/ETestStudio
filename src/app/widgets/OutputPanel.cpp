@@ -8,7 +8,7 @@
 namespace etest::app {
 
 OutputPanel::OutputPanel(QWidget* parent) : QWidget(parent) {
-  setupUi();
+  initUi();
 
   // 拉取 Logger::init() 之后到本构造之间的历史日志。
   // drain() 在 connect 之后同步触发 onHistoricalLogs 槽，槽内循环 appendLog
@@ -28,12 +28,13 @@ void OutputPanel::onHistoricalLogs(
   }
 }
 
-void OutputPanel::setupUi() {
+void OutputPanel::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
   text_edit_ = new QTextEdit(this);
   text_edit_->setReadOnly(true);
+  text_edit_->setFrameShape(QFrame::NoFrame);
   text_edit_->setPlaceholderText(QStringLiteral("输出信息将显示在此处..."));
   layout->addWidget(text_edit_);
 }

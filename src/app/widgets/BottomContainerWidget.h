@@ -16,7 +16,8 @@ class BottomContainerWidget : public QWidget {
  public:
   explicit BottomContainerWidget(QWidget* parent = nullptr);
 
-  void addPanel(const QString& title, QWidget* panel,
+  void addPanel(const QString& title,
+                QWidget* panel,
                 const QString& iconName = {});
   void setCurrentPanel(int index);
   int currentPanelIndex() const;
@@ -25,7 +26,7 @@ class BottomContainerWidget : public QWidget {
   void panelClosed();
 
  private:
-  void setupUi();
+  void initUi();
 
   QTabWidget* tab_widget_;
   QToolButton* close_button_;

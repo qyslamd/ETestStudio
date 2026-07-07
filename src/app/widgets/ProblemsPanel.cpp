@@ -4,14 +4,15 @@
 namespace etest::app {
 
 ProblemsPanel::ProblemsPanel(QWidget* parent) : QWidget(parent) {
-  setupUi();
+  initUi();
 }
 
-void ProblemsPanel::setupUi() {
+void ProblemsPanel::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
   table_ = new QTableWidget(this);
+  table_->setFrameShape(QFrame::NoFrame);
   table_->setColumnCount(4);
   table_->setHorizontalHeaderLabels(
       {QStringLiteral("文件"), QStringLiteral("行"), QStringLiteral("描述"),
