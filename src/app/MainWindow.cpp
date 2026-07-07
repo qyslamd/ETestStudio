@@ -15,6 +15,7 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
+#include <QProcess>
 #include <QScrollBar>
 #include <QShortcut>
 #include <QSplitter>
@@ -1916,6 +1917,32 @@ void MainWindow::setupRibbon() {
       settings_dialog_->activateWindow();
     });
     panel_tools->addLargeAction(act_settings);
+
+    panel_tools->addSeparator();
+
+    auto addDemoAction = [&](QAction*& act, const QString& name,
+                             const QString& exeName) {
+      act = new QAction(name, this);
+      act->setIcon(
+          AppIconProvider::instance().icon(QStringLiteral("ribbon_about")));
+      QObject::connect(act, &QAction::triggered, this, [exeName]() {
+        QString path = QApplication::applicationDirPath() + QStringLiteral("/") +
+                       exeName;
+        if (!QProcess::startDetached(path)) {
+          QMessageBox::warning(nullptr, QStringLiteral("启动失败"),
+                               QStringLiteral("无法启动 %1\n路径: %2")
+                                   .arg(exeName, path));
+        }
+      });
+      panel_tools->addLargeAction(act);
+    };
+    addDemoAction(demo_topology_action_, QStringLiteral("拓扑编辑器 Demo"),
+                  QStringLiteral("topology-demo.exe"));
+    addDemoAction(demo_protocol_action_, QStringLiteral("帧协议编辑器 Demo"),
+                  QStringLiteral("protocol-demo.exe"));
+    addDemoAction(demo_testprogram_action_,
+                  QStringLiteral("测试程序编辑器 Demo"),
+                  QStringLiteral("testprogram-demo.exe"));
   }
 
   // ============================================================

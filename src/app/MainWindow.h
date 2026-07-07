@@ -178,6 +178,11 @@ class MainWindow : public SARibbonMainWindow {
   QAction* login_user_info_action_ = nullptr;
   QAction* login_manage_users_action_ = nullptr;
 
+  // Demo 启动
+  QAction* demo_topology_action_ = nullptr;
+  QAction* demo_protocol_action_ = nullptr;
+  QAction* demo_testprogram_action_ = nullptr;
+
   // 当前编辑器的信号连接
   QMetaObject::Connection current_editor_modification_connection_;
   QMetaObject::Connection current_editor_selection_connection_;
