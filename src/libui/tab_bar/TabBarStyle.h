@@ -2,14 +2,18 @@
 #define ETEST_UI_TAB_BAR_STYLE_H_
 
 #include <QProxyStyle>
+class QTabBar;
 
 // Chrome 风格的圆角 Tab 自绘样式（参考 draw_tab_shape demo）
 class TabBarStyle : public QProxyStyle {
  public:
   TabBarStyle();
 
+  // 工厂方法：创建样式并安装到 QTabBar，自动监听主题切换
+  static void install(QTabBar* tabBar);
+
   // 主题切换：dark=true 深色主题，false 浅色
-  // 调用后必须 tabBar()->update() 触发重绘
+  // 安装后无需手动调用，install 已自动处理
   void setDarkTheme(bool dark);
   bool isDarkTheme() const { return dark_; }
 
@@ -35,7 +39,7 @@ class TabBarStyle : public QProxyStyle {
   QLineF getDividingLine(const QStyleOption* option) const;
 
   // 主题色（根据 dark_ 选择）
-  QColor selectedColor() const;
+  QBrush selectedBrush(const QRect& tabRect) const;
   QColor hoveredColor() const;
   QColor dividerColor() const;
   QColor textColor(bool selected) const;

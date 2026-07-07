@@ -2,26 +2,49 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QStyleOption>
+#include <QTabBar>
+
+#include "core/common/ThemeManager.h"
 
 TabBarStyle::TabBarStyle() : QProxyStyle() {}
 
-void TabBarStyle::setDarkTheme(bool dark) { dark_ = dark; }
+void TabBarStyle::install(QTabBar* tabBar) {
+  auto* style = new TabBarStyle();
+  style->dark_ = etest::app::ThemeManager::instance().isDarkTheme();
+  tabBar->setStyle(style);
+  QObject::connect(&etest::app::ThemeManager::instance(),
+                   &etest::app::ThemeManager::themeChanged, tabBar,
+                   [tabBar, style](bool isDark) {
+                     style->setDarkTheme(isDark);
+                     tabBar->update();
+                   });
+}
+
+void TabBarStyle::setDarkTheme(bool dark) {
+  dark_ = dark;
+}
 
 // ── 主题色（dark_ 派生） ──
 
-QColor TabBarStyle::selectedColor() const {
-  // 选中：dark 主题下用更亮的灰，与 tab bar 背景有清晰对比
-  return dark_ ? QColor(0x4A, 0x4A, 0x4D) : QColor(0xFF, 0xFF, 0xFF);
+QBrush TabBarStyle::selectedBrush(const QRect& tabRect) const {
+  if (!dark_)
+    return QBrush(QColor(0xFF, 0xFF, 0xFF));
+  QLinearGradient grad(0, 0, 0, tabRect.height());
+  grad.setColorAt(0.0, QColor(0x5E, 0x5E, 0x60));
+  grad.setColorAt(0.5, QColor(0x46, 0x46, 0x48));
+  grad.setColorAt(1.0, QColor(0x2D, 0x2D, 0x2D));
+  return QBrush(grad);
 }
 QColor TabBarStyle::hoveredColor() const {
   // 悬停：比 tab bar 背景稍深即可，light 下比默认背景（~#F0F0F0）略深
-  return dark_ ? QColor(0x3A, 0x3A, 0x3D) : QColor(0xE8, 0xE8, 0xE8);
+  return dark_ ? QColor(0x4C, 0x4C, 0x4E) : QColor(0xE8, 0xE8, 0xE8);
 }
 QColor TabBarStyle::dividerColor() const {
   return dark_ ? QColor(0x3C, 0x3C, 0x3C) : QColor(0xD8, 0xD8, 0xD8);
 }
 QColor TabBarStyle::textColor(bool selected) const {
-  if (selected) return dark_ ? QColor(0xFF, 0xFF, 0xFF) : QColor(0x33, 0x33, 0x33);
+  if (selected)
+    return dark_ ? QColor(0xFF, 0xFF, 0xFF) : QColor(0x33, 0x33, 0x33);
   return dark_ ? QColor(0xCC, 0xCC, 0xCC) : QColor(0x88, 0x88, 0x88);
 }
 QColor TabBarStyle::borderColor() const {
@@ -36,7 +59,7 @@ QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
   if (type == CT_TabBarTab) {
     QSize ret(size);
     ret.rheight() = 28;
-    ret.rwidth() = 100;  // 固定 tab 宽度；超出部分由 tab bar elide 处理
+    ret.rwidth() = 110;  // 固定 tab 宽度；超出部分由 tab bar elide 处理
     return ret;
   }
   return QProxyStyle::sizeFromContents(type, option, size, widget);
@@ -69,7 +92,7 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(QPen(borderColor(), 1));
-    painter->setBrush(selectedColor());
+    painter->setBrush(selectedBrush(option->rect));
     QPolygonF polygon = path.toFillPolygon();
     painter->drawPolygon(polygon);
     painter->restore();
@@ -88,8 +111,8 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
   } else {
     auto line = getDividingLine(option);
     painter->save();
-    painter->setPen(QPen(dividerColor(), 1, Qt::SolidLine, Qt::FlatCap,
-                         Qt::MiterJoin));
+    painter->setPen(
+        QPen(dividerColor(), 1, Qt::SolidLine, Qt::FlatCap, Qt::MiterJoin));
     painter->drawLine(line);
     painter->restore();
   }
@@ -101,7 +124,8 @@ void TabBarStyle::drawTabBarTabLabel(const QStyleOption* option,
                                      QPainter* painter,
                                      const QWidget* widget) const {
   auto tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
-  if (!tabOption) return;
+  if (!tabOption)
+    return;
 
   const bool selected = tabOption->state.testFlag(QStyle::State_Selected);
 

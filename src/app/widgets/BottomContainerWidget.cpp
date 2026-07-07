@@ -35,10 +35,7 @@ void BottomContainerWidget::initUi() {
   tab_widget_->tabBar()->setElideMode(Qt::ElideRight);
   tab_widget_->tabBar()->setUsesScrollButtons(true);
   tab_widget_->setAutoFillBackground(true);
-  // Chrome 风格 tab 形状（参考 draw_tab_shape demo）
-  auto* tabStyle = new TabBarStyle();
-  tabStyle->setDarkTheme(ThemeManager::instance().isDarkTheme());
-  tab_widget_->tabBar()->setStyle(tabStyle);
+  TabBarStyle::install(tab_widget_->tabBar());
 
   // 关闭按钮
   close_button_ = new QToolButton(this);
@@ -68,14 +65,9 @@ void BottomContainerWidget::initUi() {
             close_button_->setIcon(AppIconProvider::instance().icon("close"));
           });
 
-  // Theme change: update tab bar colors and tab icons
+  // Theme change: refresh tab icons
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
-          [this](bool isDark) {
-            if (auto* ts =
-                    static_cast<TabBarStyle*>(tab_widget_->tabBar()->style())) {
-              ts->setDarkTheme(isDark);
-              tab_widget_->tabBar()->update();
-            }
+          [this]() {
             for (int i = 0; i < tab_icon_names_.size(); ++i) {
               if (!tab_icon_names_.at(i).isEmpty()) {
                 tab_widget_->setTabIcon(

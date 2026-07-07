@@ -213,9 +213,7 @@ void TestProgramEditorWidget::initUi() {
   tab_widget_->tabBar()->setElideMode(Qt::ElideRight);
   tab_widget_->tabBar()->setUsesScrollButtons(true);
   // Chrome 风格 tab 形状（参考 draw_tab_shape demo）
-  auto* tabStyle = new TabBarStyle();
-  tabStyle->setDarkTheme(etest::app::ThemeManager::instance().isDarkTheme());
-  tab_widget_->tabBar()->setStyle(tabStyle);
+  TabBarStyle::install(tab_widget_->tabBar());
   tab_widget_->tabBar()->setMovable(false);
   tab_widget_->setIconSize(QSize(16, 16));
 
@@ -392,16 +390,6 @@ void TestProgramEditorWidget::initSignals() {
   connect(&etest::app::ThemeManager::instance(),
           &etest::app::ThemeManager::themeChanged, this,
           &TestProgramEditorWidget::reloadToolbarIcons);
-
-  // 主题切换 → 更新 tab 颜色
-  connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this, [this](bool isDark) {
-            if (auto* ts =
-                    static_cast<TabBarStyle*>(tab_widget_->tabBar()->style())) {
-              ts->setDarkTheme(isDark);
-              tab_widget_->tabBar()->update();
-            }
-          });
 
   // 主题切换 → 刷新表格行高（按新字体动态算，避免 editor 字体被截断）
   connect(&etest::app::ThemeManager::instance(),
