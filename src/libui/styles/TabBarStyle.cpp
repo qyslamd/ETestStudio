@@ -20,12 +20,15 @@ void TabBarStyle::install(QTabBar* tabBar) {
                    });
 }
 
-void TabBarStyle::setDarkTheme(bool dark) { dark_ = dark; }
+void TabBarStyle::setDarkTheme(bool dark) {
+  dark_ = dark;
+}
 
 // ── 主题色（dark_ 派生） ──
 
 QBrush TabBarStyle::selectedBrush(const QRect& tabRect) const {
-  if (!dark_) return QBrush(QColor(0xFF, 0xFF, 0xFF));
+  if (!dark_)
+    return QBrush(QColor(0xFF, 0xFF, 0xFF));
   QLinearGradient grad(0, 0, 0, tabRect.height());
   grad.setColorAt(0.0, QColor(0x5E, 0x5E, 0x60));
   grad.setColorAt(0.5, QColor(0x46, 0x46, 0x48));
@@ -39,7 +42,8 @@ QColor TabBarStyle::dividerColor() const {
   return dark_ ? QColor(0x3C, 0x3C, 0x3C) : QColor(0xD8, 0xD8, 0xD8);
 }
 QColor TabBarStyle::textColor(bool selected) const {
-  if (selected) return dark_ ? QColor(0xFF, 0xFF, 0xFF) : QColor(0x33, 0x33, 0x33);
+  if (selected)
+    return dark_ ? QColor(0xFF, 0xFF, 0xFF) : QColor(0x33, 0x33, 0x33);
   return dark_ ? QColor(0xCC, 0xCC, 0xCC) : QColor(0x88, 0x88, 0x88);
 }
 QColor TabBarStyle::borderColor() const {
@@ -91,6 +95,22 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
     painter->drawPolygon(polygon);
     painter->restore();
 
+    // dark 下选中 tab 追加红色外框
+    if (dark_) {
+      painter->save();
+      painter->setRenderHint(QPainter::Antialiasing);
+      QLinearGradient grad(option->rect.left(), 0, option->rect.right(), 0);
+      grad.setColorAt(0.0,  QColor(0x0A, 0x3A, 0x5C));
+      grad.setColorAt(0.15, QColor(0x40, 0xB0, 0xEE));
+      grad.setColorAt(0.5,  QColor(0x90, 0xDD, 0xFF));
+      grad.setColorAt(0.85, QColor(0x40, 0xB0, 0xEE));
+      grad.setColorAt(1.0,  QColor(0x0A, 0x3A, 0x5C));
+      painter->setPen(QPen(QBrush(grad), 1));
+      painter->setBrush(Qt::NoBrush);
+      painter->drawPath(path);
+      painter->restore();
+    }
+
   } else if (state.testFlag(QStyle::State_MouseOver)) {
     auto path = getHoveredShape(option);
 
@@ -105,8 +125,8 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
   } else {
     auto line = getDividingLine(option);
     painter->save();
-    painter->setPen(QPen(dividerColor(), 1, Qt::SolidLine, Qt::FlatCap,
-                         Qt::MiterJoin));
+    painter->setPen(
+        QPen(dividerColor(), 1, Qt::SolidLine, Qt::FlatCap, Qt::MiterJoin));
     painter->drawLine(line);
     painter->restore();
   }
@@ -116,7 +136,8 @@ void TabBarStyle::drawTabBarTabLabel(const QStyleOption* option,
                                      QPainter* painter,
                                      const QWidget* widget) const {
   auto tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
-  if (!tabOption) return;
+  if (!tabOption)
+    return;
 
   const bool selected = tabOption->state.testFlag(QStyle::State_Selected);
 
