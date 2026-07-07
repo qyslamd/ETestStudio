@@ -20,15 +20,12 @@ void TabBarStyle::install(QTabBar* tabBar) {
                    });
 }
 
-void TabBarStyle::setDarkTheme(bool dark) {
-  dark_ = dark;
-}
+void TabBarStyle::setDarkTheme(bool dark) { dark_ = dark; }
 
 // ── 主题色（dark_ 派生） ──
 
 QBrush TabBarStyle::selectedBrush(const QRect& tabRect) const {
-  if (!dark_)
-    return QBrush(QColor(0xFF, 0xFF, 0xFF));
+  if (!dark_) return QBrush(QColor(0xFF, 0xFF, 0xFF));
   QLinearGradient grad(0, 0, 0, tabRect.height());
   grad.setColorAt(0.0, QColor(0x5E, 0x5E, 0x60));
   grad.setColorAt(0.5, QColor(0x46, 0x46, 0x48));
@@ -36,19 +33,16 @@ QBrush TabBarStyle::selectedBrush(const QRect& tabRect) const {
   return QBrush(grad);
 }
 QColor TabBarStyle::hoveredColor() const {
-  // 悬停：比 tab bar 背景稍深即可，light 下比默认背景（~#F0F0F0）略深
   return dark_ ? QColor(0x4C, 0x4C, 0x4E) : QColor(0xE8, 0xE8, 0xE8);
 }
 QColor TabBarStyle::dividerColor() const {
   return dark_ ? QColor(0x3C, 0x3C, 0x3C) : QColor(0xD8, 0xD8, 0xD8);
 }
 QColor TabBarStyle::textColor(bool selected) const {
-  if (selected)
-    return dark_ ? QColor(0xFF, 0xFF, 0xFF) : QColor(0x33, 0x33, 0x33);
+  if (selected) return dark_ ? QColor(0xFF, 0xFF, 0xFF) : QColor(0x33, 0x33, 0x33);
   return dark_ ? QColor(0xCC, 0xCC, 0xCC) : QColor(0x88, 0x88, 0x88);
 }
 QColor TabBarStyle::borderColor() const {
-  // 选中 tab 的外轮廓：light 下浅灰描边分隔白色 tab 与浅色背景
   return dark_ ? QColor(0x00, 0x00, 0x00, 0x00) : QColor(0xD0, 0xD0, 0xD0);
 }
 
@@ -59,7 +53,7 @@ QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
   if (type == CT_TabBarTab) {
     QSize ret(size);
     ret.rheight() = 28;
-    ret.rwidth() = 110;  // 固定 tab 宽度；超出部分由 tab bar elide 处理
+    ret.rwidth() = 110;
     return ret;
   }
   return QProxyStyle::sizeFromContents(type, option, size, widget);
@@ -111,32 +105,27 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
   } else {
     auto line = getDividingLine(option);
     painter->save();
-    painter->setPen(
-        QPen(dividerColor(), 1, Qt::SolidLine, Qt::FlatCap, Qt::MiterJoin));
+    painter->setPen(QPen(dividerColor(), 1, Qt::SolidLine, Qt::FlatCap,
+                         Qt::MiterJoin));
     painter->drawLine(line);
     painter->restore();
   }
 }
 
-// ── tab 文字（主题色绘制） ──
-
 void TabBarStyle::drawTabBarTabLabel(const QStyleOption* option,
                                      QPainter* painter,
                                      const QWidget* widget) const {
   auto tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
-  if (!tabOption)
-    return;
+  if (!tabOption) return;
 
   const bool selected = tabOption->state.testFlag(QStyle::State_Selected);
 
-  // 文字区域：tab 矩形去掉左右各 8px 边距
   QRect r = tabOption->rect;
   QRect textRect = r.adjusted(8, 0, -8, 0);
 
   painter->save();
   painter->setPen(textColor(selected));
 
-  // 绘制图标（如有）：左侧 8px 边距、垂直居中；文字区域右移到图标之后
   if (!tabOption->icon.isNull()) {
     int iconSize = pixelMetric(QStyle::PM_TabBarIconSize, option, widget);
     if (iconSize <= 0) {
@@ -148,13 +137,11 @@ void TabBarStyle::drawTabBarTabLabel(const QStyleOption* option,
     textRect.setLeft(iconRect.right() + 4);
   }
 
-  // 有图标时文字左对齐紧随图标，无图标时居中
   Qt::Alignment align = tabOption->icon.isNull()
                             ? (Qt::AlignCenter | Qt::AlignVCenter)
                             : (Qt::AlignLeft | Qt::AlignVCenter);
   QTextOption opt(align);
   opt.setWrapMode(QTextOption::NoWrap);
-  // tab 宽度固定，文字过长手动右省略
   QString text = painter->fontMetrics().elidedText(
       tabOption->text, Qt::ElideRight, textRect.width());
   painter->drawText(textRect, text, opt);
@@ -167,22 +154,10 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
 
   qreal per = r.height() * HRatio;
 
-  /*
-   *  _______________________________
-   * |       p4------------p5       |
-   * |   p3                   p6    |
-   * |   |                    |     |
-   * |   |                    |     |
-   * |   |                    |     |
-   * |   p2                   p7    |
-   * |p1                         p8 |
-   * --------------------------------
-   *
-   * */
   QPointF p1, p2, p3, p4, p5, p6, p7, p8;
   QPainterPath path;
   switch (tabOption->position) {
-    case QStyleOptionTab::Beginning:  // 左下用自己，右下借用
+    case QStyleOptionTab::Beginning:
       path.moveTo(r.bottomLeft());
 
       p1 = QPointF(r.bottomLeft());
@@ -195,7 +170,7 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
       p8 = QPointF(r.right() + per, p1.y());
 
       break;
-    case QStyleOptionTab::Middle:  // 左下借用，右下借用
+    case QStyleOptionTab::Middle:
       path.moveTo(r.bottomLeft() - QPointF(per, 0));
 
       p1 = QPointF(r.left() - per, r.bottom());
@@ -208,7 +183,7 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
       p8 = QPointF(r.right() + per, p1.y());
 
       break;
-    case QStyleOptionTab::End:  // 左下借用，右下用自己
+    case QStyleOptionTab::End:
       path.moveTo(r.bottomLeft() - QPointF(per, 0));
 
       p1 = QPointF(r.left() - per, r.bottom());
@@ -220,7 +195,7 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
       p7 = QPointF(r.right() - per, p2.y());
       p8 = QPointF(r.right(), p1.y());
       break;
-    case QStyleOptionTab::OnlyOneTab:  // 左右都用自己
+    case QStyleOptionTab::OnlyOneTab:
       path.moveTo(r.bottomLeft());
 
       p1 = QPointF(r.bottomLeft());
@@ -256,9 +231,7 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
   QPainterPath path;
   switch (tabOption->selectedPosition) {
     case QStyleOptionTab::NotAdjacent:
-      // 旁边没有选中的，是第一个
       if (tabOption->position == QStyleOptionTab::Beginning) {
-        // 左边用自己的区域，右边借用
         path.moveTo(r.bottomLeft());
 
         p1 = QPointF(r.bottomLeft());
@@ -270,9 +243,7 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
         p7 = QPointF(r.right(), p2.y());
         p8 = QPointF(r.right() + per, p1.y());
 
-      }  // 旁边没有选中，是最后一个
-      else if (tabOption->position == QStyleOptionTab::End) {
-        // 左下借用，右下用自己
+      } else if (tabOption->position == QStyleOptionTab::End) {
         path.moveTo(r.bottomLeft() - QPointF(per, 0));
 
         p1 = QPointF(r.left() - per, r.bottom());
@@ -283,9 +254,7 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
         p6 = QPointF(r.right() - per, p3.y());
         p7 = QPointF(r.right() - per, p2.y());
         p8 = QPointF(r.right(), p1.y());
-      }  // // 旁边没有选中，在中间任何一个位置
-      else {
-        // 左右都借用
+      } else {
         path.moveTo(r.bottomLeft() - QPointF(per, 0));
 
         p1 = QPointF(r.left() - per, r.bottom());
@@ -308,9 +277,7 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
 
       break;
     case QStyleOptionTab::NextIsSelected:
-      // hover的是开始，下一个被选中了
       if (tabOption->position == QStyleOptionTab::Beginning) {
-        // 左边用自己的区域，右边收回
         path.moveTo(r.bottomLeft());
 
         p1 = QPointF(r.bottomLeft());
@@ -321,9 +288,7 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
         p8 = QPointF(r.right() - per, p1.y());
-      }  // 这种情况下只有Middle了
-      else {
-        // 左边借用，右边回收
+      } else {
         path.moveTo(r.bottomLeft() - QPointF(per, 0));
 
         p1 = QPointF(r.left() - per, r.bottom());
@@ -348,8 +313,6 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
       path.moveTo(r.bottomLeft() + QPointF(per, 0));
 
       if (tabOption->position == QStyleOptionTab::End) {
-        // 左边收，右边用自己的
-
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x(), r.bottom() - per);
         p3 = QPointF(p2.x(), r.top() + topMargin + per);
@@ -359,8 +322,6 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
         p7 = QPointF(r.right() - per, p2.y());
         p8 = QPointF(r.right(), p1.y());
       } else {
-        // 左边收，右边借用
-
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x(), r.bottom() - per);
         p3 = QPointF(p2.x(), r.top() + topMargin + per);

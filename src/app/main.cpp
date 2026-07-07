@@ -10,8 +10,8 @@
 #include "crashhandler/CrashHandler.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
+#include "libui/styles/NoFocusRectStyle.h"
 #include "logger/Logger.h"
-
 
 // Debug 构建启用控制台，方便查看 spdlog 输出
 #ifdef _DEBUG
@@ -27,6 +27,7 @@ using namespace etest::app;
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   app.setFont(QFont("Microsoft YaHei", 10));
+  app.setStyle(new NoFocusRectStyle);
 
   // 注册编辑器类型
   EditorManager::registerEditorTypes();

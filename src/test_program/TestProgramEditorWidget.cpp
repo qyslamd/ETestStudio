@@ -35,7 +35,7 @@
 #include "common/ThemeManager.h"
 #include "config/ConfigDefs.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
-#include "libui/tab_bar/TabBarStyle.h"
+#include "libui/styles/TabBarStyle.h"
 
 
 namespace etest::app {

@@ -7,7 +7,7 @@
 
 #include "AppIconProvider.h"
 #include "ThemeManager.h"
-#include "libui/tab_bar/TabBarStyle.h"
+#include "libui/styles/TabBarStyle.h"
 
 namespace etest::app {
 

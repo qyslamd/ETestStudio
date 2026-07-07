@@ -3,8 +3,10 @@ set(TARGET_NAME etest_ui)
 add_library(${TARGET_NAME} STATIC
     dock_title_bar/DockTitleBar.h
     dock_title_bar/DockTitleBar.cpp
-    tab_bar/TabBarStyle.h
-    tab_bar/TabBarStyle.cpp
+    styles/TabBarStyle.h
+    styles/TabBarStyle.cpp
+    styles/NoFocusRectStyle.h
+    styles/NoFocusRectStyle.cpp
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC

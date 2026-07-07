@@ -16,7 +16,6 @@
 #include <QVBoxLayout>
 
 #include <tl/expected.hpp>
-
 #include <algorithm>
 #include <filesystem>
 #include <functional>
