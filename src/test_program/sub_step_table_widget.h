@@ -34,6 +34,7 @@ class SubStepTableWidget : public QWidget {
   void onRemove();
   void onMoveUp();
   void onMoveDown();
+  void onDoubleClicked(const QModelIndex& index);
 
  private:
   void initUi();
@@ -41,6 +42,8 @@ class SubStepTableWidget : public QWidget {
   void updateButtonStates();
   // 逐 cell 交换两行文本（不交换 item 指针，避免 delegate/选中状态错乱）
   void swapRows(int rowA, int rowB);
+  // 刷新指定行容差列的显示文本
+  void refreshToleranceCell(int row);
 
   QTableWidget* table_;
   QPushButton* add_btn_;
@@ -48,6 +51,8 @@ class SubStepTableWidget : public QWidget {
   QPushButton* up_btn_;
   QPushButton* down_btn_;
   bool read_only_ = false;
+  // 每行的容差配置（按行索引，与 table_ 行同步增删移动）
+  QVector<ToleranceSpec> tolerances_;
 };
 
 }  // namespace etest::app

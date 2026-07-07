@@ -789,9 +789,42 @@ void TestProgramEditorWidget::saveSnapshot() {
 }
 
 void TestProgramEditorWidget::restoreState(const TestProgramData& state) {
+  // 记录选区，undo/redo 后恢复；否则 loadProgramToUi 清选区会导致面板
+  // （含子步骤表）不刷新，看起来像撤销没生效
+  int prevTab = tab_widget_->currentIndex();
+  int prevRow = -1;
+  QString prevCaseName;
+  if (auto* t = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget())) {
+    prevRow = t->currentRow();
+  }
+  if (prevTab >= 2) {
+    prevCaseName = tab_widget_->tabText(prevTab);
+  }
+
   loading_ = true;
   loadProgramToUi(state);
   loading_ = false;
+
+  // 恢复选区：case tab 按 name 找（loadProgramToUi 重建 case tab，index 可能变）
+  int restoreTab = prevTab;
+  if (prevTab >= 2 && !prevCaseName.isEmpty()) {
+    restoreTab = -1;
+    for (int t = 2; t < tab_widget_->count(); ++t) {
+      if (tab_widget_->tabText(t) == prevCaseName) {
+        restoreTab = t;
+        break;
+      }
+    }
+  }
+  if (restoreTab >= 0 && restoreTab < tab_widget_->count()) {
+    tab_widget_->setCurrentIndex(restoreTab);
+    if (auto* t =
+            qobject_cast<StepTableWidget*>(tab_widget_->widget(restoreTab))) {
+      if (prevRow >= 0 && prevRow < t->rowCount()) {
+        t->selectRow(prevRow);  // 触发 onStepSelectionChanged → 面板刷新
+      }
+    }
+  }
 
   if (snapshot_index_ == clean_snapshot_index_) {
     modified_ = false;

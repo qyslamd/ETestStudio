@@ -1,11 +1,19 @@
 #include "sub_step_table_widget.h"
 
+#include <QCheckBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QModelIndex>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+
+#include <utility>
 
 #include "CommandTypeDelegate.h"
 
@@ -17,7 +25,52 @@ constexpr int kColCmd = 1;
 constexpr int kColTarget = 2;
 constexpr int kColValue = 3;
 constexpr int kColDelay = 4;
-constexpr int kColCount = 5;
+constexpr int kColTolerance = 5;
+constexpr int kColCount = 6;
+
+// 弹对话框编辑容差，返回新值；取消则返回原值
+ToleranceSpec editTolerance(const ToleranceSpec& tol, QWidget* parent) {
+  QDialog dlg(parent);
+  dlg.setWindowTitle(QStringLiteral("编辑容差"));
+  auto* layout = new QFormLayout(&dlg);
+
+  auto* enable = new QCheckBox(QStringLiteral("启用容差"), &dlg);
+  enable->setChecked(tol.enabled);
+
+  auto* minSpin = new QDoubleSpinBox(&dlg);
+  minSpin->setRange(-999999.0, 999999.0);
+  minSpin->setDecimals(4);
+  minSpin->setValue(tol.min);
+  minSpin->setEnabled(tol.enabled);
+
+  auto* maxSpin = new QDoubleSpinBox(&dlg);
+  maxSpin->setRange(-999999.0, 999999.0);
+  maxSpin->setDecimals(4);
+  maxSpin->setValue(tol.max);
+  maxSpin->setEnabled(tol.enabled);
+
+  QObject::connect(enable, &QCheckBox::toggled, minSpin, &QWidget::setEnabled);
+  QObject::connect(enable, &QCheckBox::toggled, maxSpin, &QWidget::setEnabled);
+
+  layout->addRow(enable);
+  layout->addRow(QStringLiteral("容差下限:"), minSpin);
+  layout->addRow(QStringLiteral("容差上限:"), maxSpin);
+
+  auto* btns = new QDialogButtonBox(
+      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+  layout->addWidget(btns);
+  QObject::connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+  QObject::connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+
+  if (dlg.exec() == QDialog::Accepted) {
+    ToleranceSpec r;
+    r.enabled = enable->isChecked();
+    r.min = minSpin->value();
+    r.max = maxSpin->value();
+    return r;
+  }
+  return tol;
+}
 }  // namespace
 
 SubStepTableWidget::SubStepTableWidget(QWidget* parent) : QWidget(parent) {
@@ -53,7 +106,7 @@ void SubStepTableWidget::initUi() {
   table_->setHorizontalHeaderLabels(
       {QStringLiteral("步骤说明"), QStringLiteral("命令"),
        QStringLiteral("目标"), QStringLiteral("值"),
-       QStringLiteral("延迟(ms)")});
+       QStringLiteral("延迟(ms)"), QStringLiteral("容差")});
   table_->horizontalHeader()->setStretchLastSection(true);
   table_->horizontalHeader()->setSectionResizeMode(kColDesc,
                                                     QHeaderView::Stretch);
@@ -82,6 +135,9 @@ void SubStepTableWidget::initSignals() {
           [this](QTableWidgetItem*) { emit subStepsChanged(); });
   connect(table_, &QTableWidget::itemSelectionChanged, this,
           &SubStepTableWidget::updateButtonStates);
+  // 双击容差列 → 弹编辑对话框
+  connect(table_, &QTableWidget::doubleClicked, this,
+          &SubStepTableWidget::onDoubleClicked);
 }
 
 void SubStepTableWidget::setSubSteps(const QVector<TestStepData>& steps) {
@@ -89,14 +145,21 @@ void SubStepTableWidget::setSubSteps(const QVector<TestStepData>& steps) {
   // 误触发 dataChanged → setModified）
   QSignalBlocker blocker(table_);
   table_->setRowCount(steps.size());
+  tolerances_.resize(steps.size());
   for (int i = 0; i < steps.size(); ++i) {
     const auto& s = steps[i];
+    tolerances_[i] = s.tolerance;
     table_->setItem(i, kColDesc, new QTableWidgetItem(s.description));
     table_->setItem(i, kColCmd, new QTableWidgetItem(s.cmd));
     table_->setItem(i, kColTarget, new QTableWidgetItem(s.target));
     table_->setItem(i, kColValue, new QTableWidgetItem(s.value.toString()));
     table_->setItem(i, kColDelay,
                     new QTableWidgetItem(QString::number(s.delayMs)));
+    // 容差列：不可编辑，显示摘要；双击弹对话框
+    auto* tolItem = new QTableWidgetItem;
+    tolItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+    table_->setItem(i, kColTolerance, tolItem);
+    refreshToleranceCell(i);
   }
   updateButtonStates();
 }
@@ -115,6 +178,7 @@ QVector<TestStepData> SubStepTableWidget::subSteps() const {
     s.value = valueItem ? QVariant(valueItem->text()) : QVariant();
     auto* delayItem = table_->item(i, kColDelay);
     s.delayMs = delayItem ? delayItem->text().toInt() : 0;
+    s.tolerance = i < tolerances_.size() ? tolerances_[i] : ToleranceSpec{};
     steps.append(s);
   }
   return steps;
@@ -138,6 +202,11 @@ void SubStepTableWidget::onAdd() {
   table_->setItem(row, kColTarget, new QTableWidgetItem(QString()));
   table_->setItem(row, kColValue, new QTableWidgetItem(QString()));
   table_->setItem(row, kColDelay, new QTableWidgetItem(QStringLiteral("0")));
+  auto* tolItem = new QTableWidgetItem;
+  tolItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+  table_->setItem(row, kColTolerance, tolItem);
+  tolerances_.append(ToleranceSpec{});
+  refreshToleranceCell(row);
   table_->selectRow(row);
   emit subStepsChanged();
 }
@@ -149,6 +218,9 @@ void SubStepTableWidget::onRemove() {
   }
   QSignalBlocker blocker(table_);
   table_->removeRow(row);
+  if (row < tolerances_.size()) {
+    tolerances_.removeAt(row);
+  }
   emit subStepsChanged();
 }
 
@@ -174,7 +246,8 @@ void SubStepTableWidget::onMoveDown() {
 
 void SubStepTableWidget::swapRows(int rowA, int rowB) {
   QSignalBlocker blocker(table_);
-  for (int c = 0; c < kColCount; ++c) {
+  // 只交换前 5 列文本，容差列由 tolerances_ 驱动刷新
+  for (int c = 0; c < kColTolerance; ++c) {
     QString a =
         table_->item(rowA, c) ? table_->item(rowA, c)->text() : QString();
     QString b =
@@ -190,6 +263,12 @@ void SubStepTableWidget::swapRows(int rowA, int rowB) {
       table_->setItem(rowB, c, new QTableWidgetItem(a));
     }
   }
+  if (rowA >= 0 && rowA < tolerances_.size() && rowB >= 0 &&
+      rowB < tolerances_.size()) {
+    std::swap(tolerances_[rowA], tolerances_[rowB]);
+  }
+  refreshToleranceCell(rowA);
+  refreshToleranceCell(rowB);
 }
 
 void SubStepTableWidget::updateButtonStates() {
@@ -200,6 +279,42 @@ void SubStepTableWidget::updateButtonStates() {
   remove_btn_->setEnabled(hasSelection);
   up_btn_->setEnabled(hasSelection && row > 0);
   down_btn_->setEnabled(hasSelection && row < count - 1);
+}
+
+void SubStepTableWidget::onDoubleClicked(const QModelIndex& index) {
+  if (read_only_ || !index.isValid() || index.column() != kColTolerance) {
+    return;
+  }
+  int row = index.row();
+  if (row < 0 || row >= tolerances_.size()) {
+    return;
+  }
+  ToleranceSpec newTol = editTolerance(tolerances_[row], this);
+  if (newTol.enabled == tolerances_[row].enabled &&
+      newTol.min == tolerances_[row].min &&
+      newTol.max == tolerances_[row].max) {
+    return;  // 未改动
+  }
+  tolerances_[row] = newTol;
+  refreshToleranceCell(row);
+  emit subStepsChanged();
+}
+
+void SubStepTableWidget::refreshToleranceCell(int row) {
+  if (row < 0 || row >= table_->rowCount()) {
+    return;
+  }
+  auto* item = table_->item(row, kColTolerance);
+  if (!item) {
+    return;
+  }
+  if (row < tolerances_.size() && tolerances_[row].enabled) {
+    item->setText(QStringLiteral("%1~%2")
+                      .arg(tolerances_[row].min)
+                      .arg(tolerances_[row].max));
+  } else {
+    item->setText(QStringLiteral("—"));
+  }
 }
 
 }  // namespace etest::app
