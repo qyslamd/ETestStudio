@@ -47,7 +47,7 @@ bool confirmSave(etest::app::TestProgramEditorWidget* editor) {
 }
 
 void updateTitle(etest::app::TestProgramEditorWidget* editor) {
-  QString title = QStringLiteral("测试程序编辑器 Demo");
+  QString title = QStringLiteral("测试程序编辑器");
   if (!editor->filePath().isEmpty()) {
     title += QStringLiteral(" - %1").arg(editor->filePath());
   } else {
@@ -63,10 +63,10 @@ void updateTitle(etest::app::TestProgramEditorWidget* editor) {
 
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
-  app.setApplicationName(QStringLiteral("testprogram-demo"));
+  app.setApplicationName(QStringLiteral("test-program-editor"));
 
   QCommandLineParser parser;
-  parser.setApplicationDescription(QStringLiteral("测试程序编辑器演示程序"));
+  parser.setApplicationDescription(QStringLiteral("测试程序编辑器"));
   parser.addHelpOption();
   parser.addOption({{QStringLiteral("f"), QStringLiteral("file")},
                     QStringLiteral("打开指定的测试程序文件 (*.tcase)"),

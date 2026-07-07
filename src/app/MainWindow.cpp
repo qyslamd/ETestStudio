@@ -1921,10 +1921,10 @@ void MainWindow::setupRibbon() {
     panel_tools->addSeparator();
 
     auto addDemoAction = [&](QAction*& act, const QString& name,
-                             const QString& exeName) {
+                             const QString& exeName,
+                             const QString& iconName) {
       act = new QAction(name, this);
-      act->setIcon(
-          AppIconProvider::instance().icon(QStringLiteral("ribbon_about")));
+      act->setIcon(AppIconProvider::instance().icon(iconName));
       QObject::connect(act, &QAction::triggered, this, [exeName]() {
         QString path = QApplication::applicationDirPath() + QStringLiteral("/") +
                        exeName;
@@ -1936,13 +1936,16 @@ void MainWindow::setupRibbon() {
       });
       panel_tools->addLargeAction(act);
     };
-    addDemoAction(demo_topology_action_, QStringLiteral("拓扑编辑器 Demo"),
-                  QStringLiteral("topology-demo.exe"));
-    addDemoAction(demo_protocol_action_, QStringLiteral("帧协议编辑器 Demo"),
-                  QStringLiteral("protocol-demo.exe"));
+    addDemoAction(demo_topology_action_, QStringLiteral("拓扑编辑器"),
+                  QStringLiteral("topology-editor.exe"),
+                  QStringLiteral("ribbon_topology"));
+    addDemoAction(demo_protocol_action_, QStringLiteral("帧协议编辑器"),
+                  QStringLiteral("protocol-editor.exe"),
+                  QStringLiteral("ribbon_protocol"));
     addDemoAction(demo_testprogram_action_,
-                  QStringLiteral("测试程序编辑器 Demo"),
-                  QStringLiteral("testprogram-demo.exe"));
+                  QStringLiteral("测试程序编辑器"),
+                  QStringLiteral("test-program-editor.exe"),
+                  QStringLiteral("ribbon_testprogram"));
   }
 
   // ============================================================

@@ -167,6 +167,12 @@
         <file>resources/icons/svg/ribbon_settings_dark.svg</file>
         <file>resources/icons/svg/ribbon_about_light.svg</file>
         <file>resources/icons/svg/ribbon_about_dark.svg</file>
+        <file>resources/icons/svg/ribbon_topology_light.svg</file>
+        <file>resources/icons/svg/ribbon_topology_dark.svg</file>
+        <file>resources/icons/svg/ribbon_protocol_light.svg</file>
+        <file>resources/icons/svg/ribbon_protocol_dark.svg</file>
+        <file>resources/icons/svg/ribbon_testprogram_light.svg</file>
+        <file>resources/icons/svg/ribbon_testprogram_dark.svg</file>
         <file>resources/icons/svg/testprog_add_case_dark.svg</file>
         <file>resources/icons/svg/testprog_add_case_light.svg</file>
         <file>resources/icons/svg/testprog_remove_case_dark.svg</file>

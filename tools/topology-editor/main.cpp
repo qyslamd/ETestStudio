@@ -14,11 +14,11 @@
 
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
-  app.setApplicationName(QStringLiteral("topology-demo"));
+  app.setApplicationName(QStringLiteral("topology-editor"));
 
   // ── 命令行参数 ──
   QCommandLineParser parser;
-  parser.setApplicationDescription(QStringLiteral("拓扑编辑器演示程序"));
+  parser.setApplicationDescription(QStringLiteral("拓扑编辑器"));
   parser.addHelpOption();
   parser.addOption(
       {{QStringLiteral("f"), QStringLiteral("file")},
@@ -28,13 +28,11 @@ int main(int argc, char* argv[]) {
 
   QString loadFile = parser.value(QStringLiteral("file"));
 
-  // 使用 light 主题（demo 不依赖持久化配置）
   etest::app::ThemeManager::instance().setTheme(QStringLiteral("default"));
 
   etest::topology::TopologyEditorWidget editor;
   editor.resize(1200, 800);
 
-  // 命令行指定文件则直接加载
   if (!loadFile.isEmpty()) {
     if (!QFileInfo::exists(loadFile)) {
       QMessageBox::warning(nullptr, QStringLiteral("错误"),
@@ -46,7 +44,6 @@ int main(int argc, char* argv[]) {
     editor.openFile(QString());
   }
 
-  // standalone 模式：添加文件/编辑菜单
   auto* fileMenu = editor.menuBar()->addMenu(QStringLiteral("文件"));
 
   auto* newAction = fileMenu->addAction(QStringLiteral("新建"));
@@ -138,9 +135,8 @@ int main(int argc, char* argv[]) {
   redoAction->setShortcut(QKeySequence::Redo);
   QObject::connect(redoAction, &QAction::triggered, &editor, [&]() { editor.redo(); });
 
-  // 窗口标题
   auto updateTitle = [&editor]() {
-    QString title = QStringLiteral("拓扑编辑器 Demo");
+    QString title = QStringLiteral("拓扑编辑器");
     if (!editor.filePath().isEmpty())
       title += QStringLiteral(" - %1").arg(editor.filePath());
     if (editor.isModified())

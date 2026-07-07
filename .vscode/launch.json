@@ -98,10 +98,10 @@
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         },
         {
-            "name": "topology-demo x64",
+            "name": "topology-editor x64",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ninja-debug-x64/bin/topology-demo.exe",
+            "program": "${workspaceFolder}/build/ninja-debug-x64/bin/topology-editor.exe",
             "args": [
                 "-f",
                 "${workspaceFolder}/temp/projects/Demo_Project3/topology/啥啊.etopo"
@@ -123,10 +123,10 @@
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         },
         {
-            "name": "topology-demo x86",
+            "name": "topology-editor x86",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ninja-debug-x86/bin/topology-demo.exe",
+            "program": "${workspaceFolder}/build/ninja-debug-x86/bin/topology-editor.exe",
             "args": [
                 "-f",
                 "${workspaceFolder}/temp/projects/Demo_Project3/topology/啥啊.etopo"
@@ -148,10 +148,10 @@
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         },
         {
-            "name": "protocol-demo x64",
+            "name": "protocol-editor x64",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ninja-debug-x64/bin/protocol-demo.exe",
+            "program": "${workspaceFolder}/build/ninja-debug-x64/bin/protocol-editor.exe",
             "args": [
                 "-f",
                 "${workspaceFolder}\\temp\\projects\\Demo_Project3\\protocol\\aaaaa.eproto"
@@ -173,14 +173,58 @@
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         },
         {
-            "name": "protocol-demo x86",
+            "name": "protocol-editor x86",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ninja-debug-x86/bin/protocol-demo.exe",
+            "program": "${workspaceFolder}/build/ninja-debug-x86/bin/protocol-editor.exe",
             "args": [
                 "-f",
                 "${workspaceFolder}\\temp\\projects\\Demo_Project3\\protocol\\aaaaa.eproto"
             ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/ninja-debug-x86/bin",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "${env:ETest_Qt5_Path}\\msvc2019\\bin;${env:PATH}"
+                },
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "${env:ETest_Qt5_Path}\\msvc2019\\plugins"
+                }
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
+        },
+        {
+            "name": "test-program-editor x64",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ninja-debug-x64/bin/test-program-editor.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/ninja-debug-x64/bin",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "${env:ETest_Qt5_Path}\\msvc2019_64\\bin;${env:PATH}"
+                },
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "${env:ETest_Qt5_Path}\\msvc2019_64\\plugins"
+                }
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
+        },
+        {
+            "name": "test-program-editor x86",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ninja-debug-x86/bin/test-program-editor.exe",
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/ninja-debug-x86/bin",
             "environment": [

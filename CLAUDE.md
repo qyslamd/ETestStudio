@@ -46,7 +46,7 @@ scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 ### 共享 UI 层（Shared UI Layer）
 | 模块         | 目录         | 说明                                                                                           |
 | ------------ | ------------ | ---------------------------------------------------------------------------------------------- |
-| **etest_ui** | `src/libui/` | 跨模块共享的 UI 组件库（如 DockTitleBar 自定义标题栏），被 topology、protocol 及独立 demo 共用 |
+| **etest_ui** | `src/libui/` | 跨模块共享的 UI 组件库（如 DockTitleBar 自定义标题栏），被 topology、protocol 及独立产品共用 |
 
 ### 工具库层（Utility Layer）
 | 模块               | 目录               | 说明                                       |
@@ -71,14 +71,14 @@ etest (主程序)
 
 ## 独立产品约束
 
-`topology-demo`、`protocol-demo`、`testprogram-demo` 是三个独立产品，
-各自输出独自可用的文件格式（`.etopo` / `.eproto` / `.etprog`），
-发布给不同用户群体独立使用。
+`tools/topology-editor`、`tools/protocol-editor`、`tools/test-program-editor` 是三个独立产品，
+各自输出独自可用的文件格式（`.etopo` / `.eproto` / `.tcase`），
+发布给不同用户群体独立使用。通过 `BUILD_ETEST_TOOLS` CMake 选项控制编译。
 
-**核心约束**：功能变更不得导致一个 demo 引入另一 demo 所属模块的链接依赖：
-- `topology-demo` 不得链接 `etest_protocol`、`etest_test_program` 或 `icd_utility`
-- `protocol-demo` 不得链接 `etest_topology` 或 `etest_test_program`
-- `testprogram-demo` 不得链接 `etest_topology` 或 `etest_protocol` 或 `icd_utility`
+**核心约束**：功能变更不得导致一个产品引入另一产品所属模块的链接依赖：
+- `topology-editor` 不得链接 `etest_protocol`、`etest_program` 或 `icd_utility`
+- `protocol-editor` 不得链接 `etest_topology` 或 `etest_program`
+- `test-program-editor` 不得链接 `etest_topology` 或 `etest_protocol` 或 `icd_utility`
 
 增强功能（如跨模块的 ICD 信号选择、同步编排）只能实现在 `etest_app`（主程序），
 下层模块只提供接口和纯数据模型。

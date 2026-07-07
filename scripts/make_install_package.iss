@@ -85,6 +85,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 ; ETestStudio 主程序与 Qt 运行时
 Source: "{#WhereAreFiles}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\topology-editor.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\protocol-editor.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\test-program-editor.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#WhereAreFiles}\Qt5*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#WhereAreFiles}\{#MyVcRedist}"; DestDir: "{app}"; Flags: ignoreversion
 

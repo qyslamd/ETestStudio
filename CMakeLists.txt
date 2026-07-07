@@ -264,10 +264,16 @@ if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/eye-tracking-demo)
     add_subdirectory(examples/guidance-demo)
     add_subdirectory(examples/lua-debugger-demo)
-    add_subdirectory(examples/topology-demo)
-    add_subdirectory(examples/protocol-demo)
-    add_subdirectory(examples/testprogram-demo)
     add_subdirectory(examples/wisdom_demo)
+endif()
+
+# =======================================
+# 包含独立产品工具
+option(BUILD_ETEST_TOOLS "Build standalone product tools" ON)
+if (BUILD_ETEST_TOOLS)
+    add_subdirectory(tools/topology-editor)
+    add_subdirectory(tools/protocol-editor)
+    add_subdirectory(tools/test-program-editor)
 endif()
 
 

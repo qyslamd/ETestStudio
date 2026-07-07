@@ -1,27 +1,34 @@
-set(TARGET_NAME "protocol-demo")
+set(TARGET_NAME "test-program-editor")
 
+if(NOT TARGET etest_core)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/core ${CMAKE_BINARY_DIR}/core_build)
+endif()
 if(NOT TARGET etest_ui)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/libui ${CMAKE_BINARY_DIR}/libui_build)
 endif()
-if(NOT TARGET etest_protocol)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/protocol ${CMAKE_BINARY_DIR}/protocol_build)
+if(NOT TARGET etest_program)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/test_program ${CMAKE_BINARY_DIR}/test_program_build)
 endif()
 
 add_executable(${TARGET_NAME}
     main.cpp
-    ${CMAKE_SOURCE_DIR}/src/app/resource.qrc
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
-    etest_protocol
-    etest_ui
     Qt5::Widgets
     Qt5::Core
     Qt5::Gui
+    etest_core
+    etest_program
+    etest_ui
+    spdlog::spdlog
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src  # for api/IEditor.h
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/libui
+    ${CMAKE_SOURCE_DIR}/3rdparty/spdlog-1.17.0/include
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES

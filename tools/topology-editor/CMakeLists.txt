@@ -1,6 +1,5 @@
-set(TARGET_NAME "topology-demo")
+set(TARGET_NAME "topology-editor")
 
-# 如果主程序未构建 etest_topology，则独立构建
 if(NOT TARGET etest_ui)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/libui ${CMAKE_BINARY_DIR}/libui_build)
 endif()
@@ -22,7 +21,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src  # for api/IEditor.h
+    ${CMAKE_SOURCE_DIR}/src
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES

@@ -10,11 +10,11 @@
 
 int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
-  app.setApplicationName(QStringLiteral("protocol-demo"));
+  app.setApplicationName(QStringLiteral("protocol-editor"));
 
   // ── 命令行参数 ──
   QCommandLineParser parser;
-  parser.setApplicationDescription(QStringLiteral("帧协议编辑器演示程序"));
+  parser.setApplicationDescription(QStringLiteral("帧协议编辑器"));
   parser.addHelpOption();
   parser.addOption({{QStringLiteral("f"), QStringLiteral("file")},
                     QStringLiteral("打开指定的协议文件 (*.eproto)"),
@@ -23,13 +23,11 @@ int main(int argc, char* argv[]) {
 
   QString loadFile = parser.value(QStringLiteral("file"));
 
-  // 使用 light 主题（demo 不依赖持久化配置）
   etest::app::ThemeManager::instance().setTheme(QStringLiteral("default"));
 
   etest::protocol::ProtocolEditorWidget editor;
   editor.resize(1200, 800);
 
-  // 命令行指定文件则直接加载
   if (!loadFile.isEmpty()) {
     if (!QFileInfo::exists(loadFile)) {
       QMessageBox::warning(nullptr, QStringLiteral("错误"),
@@ -39,7 +37,6 @@ int main(int argc, char* argv[]) {
     editor.openFile(loadFile);
   }
 
-  // standalone 模式：添加文件/编辑菜单
   auto* fileMenu = editor.menuBar()->addMenu(QStringLiteral("文件"));
 
   auto* openAction = fileMenu->addAction(QStringLiteral("打开"));
@@ -102,9 +99,8 @@ int main(int argc, char* argv[]) {
   QObject::connect(redoAction, &QAction::triggered, &editor,
                    [&]() { editor.redo(); });
 
-  // 窗口标题
   auto updateTitle = [&editor]() {
-    QString title = QStringLiteral("帧协议编辑器 Demo");
+    QString title = QStringLiteral("帧协议编辑器");
     if (!editor.filePath().isEmpty())
       title += QStringLiteral(" - %1").arg(editor.filePath());
     if (editor.isModified())
