@@ -450,8 +450,8 @@ void StepDetailPanel::fillPageFromCache() {
 
 void StepDetailPanel::setStepData(const TestStepData& step, bool readOnly) {
   read_only_ = readOnly;
-  // 在切页前先抓回当前页所有未保存的改动，防止切页时丢失
-  writePageToCache();
+  // 旧页控件值由 dataChanged 信号链实时回写 ext data，无需在此抓回 cache_
+  // （cache_ 紧接着被新 step 覆盖，writePageToCache 写入会被丢弃）
   current_cmd_ = step.cmd.trimmed().toUpper();
   cache_ = step;  // 先把新数据整体写入 cache
   cache_.cmd = current_cmd_;

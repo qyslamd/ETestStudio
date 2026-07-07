@@ -15,17 +15,28 @@ QStringList validateStep(const TestStepData& step) {
   }
 
   // 通用：所有命令共用
-  static const QStringList validCommands = {
-      QStringLiteral("SET"),         QStringLiteral("VERIFY"),
-      QStringLiteral("WAIT"),        QStringLiteral("DELAY"),
-      QStringLiteral("ACTION"),      QStringLiteral("LOG"),
-      QStringLiteral("LOOP"),        QStringLiteral("WHILE"),
-      QStringLiteral("IF"),          QStringLiteral("INJECT_FAULT"),
-      QStringLiteral("CLEAR_FAULT"), QStringLiteral("PHOTO"),
-      QStringLiteral("RECORD")};
+  static const QStringList validCommands = [] {
+    QStringList list = {
+        QStringLiteral("SET"),         QStringLiteral("VERIFY"),
+        QStringLiteral("WAIT"),        QStringLiteral("DELAY"),
+        QStringLiteral("ACTION"),      QStringLiteral("LOG"),
+        QStringLiteral("INJECT_FAULT"), QStringLiteral("CLEAR_FAULT"),
+        QStringLiteral("PHOTO"),       QStringLiteral("RECORD")};
+    if (kControlFlowEnabled) {
+      list << QStringLiteral("LOOP") << QStringLiteral("WHILE")
+           << QStringLiteral("IF");
+    }
+    return list;
+  }();
 
   if (!validCommands.contains(cmd)) {
-    issues << QStringLiteral("未知命令类型: %1").arg(cmd);
+    if (!kControlFlowEnabled && (cmd == QStringLiteral("LOOP") ||
+                                 cmd == QStringLiteral("WHILE") ||
+                                 cmd == QStringLiteral("IF"))) {
+      issues << QStringLiteral("控制流功能已禁用: %1").arg(cmd);
+    } else {
+      issues << QStringLiteral("未知命令类型: %1").arg(cmd);
+    }
     return issues;
   }
 

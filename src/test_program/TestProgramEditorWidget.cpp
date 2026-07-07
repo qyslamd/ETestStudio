@@ -23,6 +23,7 @@
 #include <QTabWidget>
 #include <QTextEdit>
 #include <QToolBar>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -338,6 +339,9 @@ void TestProgramEditorWidget::initSignals() {
     }
     updateActions();
     validateCurrentTable();
+    // 切 tab 后刷新面板：面板不会因 tab 切换自动反映新 tab 的选区，
+    // 不刷新会导致编辑面板数据写错到新 tab 的选中行
+    onStepSelectionChanged();
   });
   connect(add_case_action_, &QAction::triggered, this,
           &TestProgramEditorWidget::onAddCase);
@@ -376,8 +380,11 @@ void TestProgramEditorWidget::initSignals() {
       existing.subSteps = panelStep.subSteps;
       existing.elseSubSteps = panelStep.elseSubSteps;
       table->setStepExtData(row, existing);
-      // 同步动态列显示（容差/条件/故障/间隔），阻塞信号避免重复入快照
+      // 同步动态列显示（容差/条件/故障/间隔）及 description（ActionLog 页编辑内容），
+      // 阻塞信号避免重复入快照
       table->model()->blockSignals(true);
+      table->setCellText(row, StepTableWidget::kColDesc,
+                         panelStep.description);
       table->setCellText(row, StepTableWidget::kColExtra,
                          extraCellText(existing));
       table->setCellText(row, StepTableWidget::kColExtra2,
@@ -493,12 +500,26 @@ void TestProgramEditorWidget::connectTable(StepTableWidget* table) {
             if (col == StepTableWidget::kColCmd) {
               TestStepData step = weakTable->stepExtData(row);
               step.cmd = weakTable->cellText(row, col).trimmed().toUpper();
+              // 保留 kColExtra 单元格的 delayMs（SET/DELAY），
+              // stepExtData 不存 delayMs 返回 0，会覆盖原值
+              if (step.cmd == QStringLiteral("SET") ||
+                  step.cmd == QStringLiteral("DELAY")) {
+                step.delayMs =
+                    weakTable->cellText(row, StepTableWidget::kColExtra)
+                        .toInt(nullptr, 10);
+              }
               weakTable->model()->blockSignals(true);
               weakTable->setCellText(row, StepTableWidget::kColExtra,
                                      extraCellText(step));
               weakTable->setCellText(row, StepTableWidget::kColExtra2,
                                      extra2CellText(step));
               weakTable->model()->blockSignals(false);
+              // 改的是当前选中行 → 刷新面板页面（如 SET→LOOP 切到 Loop 页），
+              // 否则面板仍显示旧命令页，编辑会写无关字段进 ext data
+              if (row == weakTable->currentRow()) {
+                step_detail_panel_->setStepData(
+                    readStepData(weakTable.data(), row), false);
+              }
             }
           });
 }
@@ -542,13 +563,29 @@ void TestProgramEditorWidget::onAddCase() {
     return;
   }
 
-  int index = tab_widget_->count();
   auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
   connectTable(table);
-  tab_widget_->addTab(table,
-                      etest::app::AppIconProvider::instance().icon(
-                          QStringLiteral("testprog_tab_case")),
-                      QStringLiteral("测试用例 %1").arg(index - 1));
+  // 命名去重：找最小不重复编号，避免 undo/redo 按名恢复落到错误 tab
+  int n = 1;
+  while (true) {
+    QString name = QStringLiteral("测试用例 %1").arg(n);
+    bool dup = false;
+    for (int t = 2; t < tab_widget_->count(); ++t) {
+      if (tab_widget_->tabText(t) == name) {
+        dup = true;
+        break;
+      }
+    }
+    if (!dup) {
+      tab_widget_->addTab(
+          table,
+          etest::app::AppIconProvider::instance().icon(
+              QStringLiteral("testprog_tab_case")),
+          name);
+      break;
+    }
+    ++n;
+  }
   tab_widget_->setCurrentWidget(table);
 
   rebuildVerticalTabs();

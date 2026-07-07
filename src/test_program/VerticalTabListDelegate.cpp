@@ -100,17 +100,22 @@ bool VerticalTabListDelegate::editorEvent(QEvent* event,
                                           QAbstractItemModel* model,
                                           const QStyleOptionViewItem& option,
                                           const QModelIndex& index) {
-  auto* me = dynamic_cast<QMouseEvent*>(event);
-  if (!me) {
+  if (event->type() != QEvent::MouseButtonPress &&
+      event->type() != QEvent::MouseButtonRelease &&
+      event->type() != QEvent::MouseMove) {
     return QStyledItemDelegate::editorEvent(event, model, option, index);
   }
+  auto* me = static_cast<QMouseEvent*>(event);
 
   bool closable = index.data(ClosableRole).toBool();
   switch (me->type()) {
     case QEvent::MouseMove: {
       if (closable) {
         bool overClose = closeButtonRect(option).contains(me->pos());
-        model->setData(index, overClose, CloseBtnHoverRole);
+        // 仅 hover 状态变化时才 setData，避免高频鼠标移动触发无效重绘
+        if (overClose != index.data(CloseBtnHoverRole).toBool()) {
+          model->setData(index, overClose, CloseBtnHoverRole);
+        }
       }
       break;
     }

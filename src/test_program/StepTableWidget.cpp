@@ -187,16 +187,16 @@ QVariant StepTableWidget::cellData(int row, int col, int role) const {
 void StepTableWidget::setStepExtData(int row, const TestStepData& step) {
   QVariantMap ext;
 
-  if (!step.condition.target.isEmpty()) {
+  if (!step.condition.target.isEmpty() || !step.condition.op.isEmpty() ||
+      step.condition.value.isValid()) {
     ext["conditionTarget"] = step.condition.target;
     ext["conditionOp"] = step.condition.op;
     ext["conditionValue"] = step.condition.value;
   }
-  if (step.tolerance.enabled) {
-    ext["tolMin"] = step.tolerance.min;
-    ext["tolMax"] = step.tolerance.max;
-    ext["tolEnabled"] = step.tolerance.enabled;
-  }
+  // 容差 min/max 无条件存（enabled=false 时也保留，避免取消勾选后值丢失）
+  ext["tolMin"] = step.tolerance.min;
+  ext["tolMax"] = step.tolerance.max;
+  ext["tolEnabled"] = step.tolerance.enabled;
   if (!step.fault.type.isEmpty()) {
     ext["faultType"] = step.fault.type;
     ext["faultValue"] = step.fault.value;

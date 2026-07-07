@@ -12,7 +12,7 @@ class QPushButton;
 namespace etest::app {
 
 // 子步骤表控件：带工具栏（添加/删除/上移/下移）的 QTableWidget 封装，
-// 用于 LOOP/WHILE/IF 的循环体/分支步骤编辑。5 列固定（步骤说明/命令/目标/值/延迟），
+// 用于 LOOP/WHILE/IF 的循环体/分支步骤编辑。6 列固定（步骤说明/命令/目标/值/延迟/容差），
 // 命令列用 FlatOnly 委托，子步骤不含控制流，保证不嵌套。
 class SubStepTableWidget : public QWidget {
   Q_OBJECT

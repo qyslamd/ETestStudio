@@ -7,6 +7,7 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QMessageBox>
 #include <QModelIndex>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -30,46 +31,57 @@ constexpr int kColCount = 6;
 
 // 弹对话框编辑容差，返回新值；取消则返回原值
 ToleranceSpec editTolerance(const ToleranceSpec& tol, QWidget* parent) {
-  QDialog dlg(parent);
-  dlg.setWindowTitle(QStringLiteral("编辑容差"));
-  auto* layout = new QFormLayout(&dlg);
+  ToleranceSpec initial = tol;
+  while (true) {
+    QDialog dlg(parent);
+    dlg.setWindowTitle(QStringLiteral("编辑容差"));
+    auto* layout = new QFormLayout(&dlg);
 
-  auto* enable = new QCheckBox(QStringLiteral("启用容差"), &dlg);
-  enable->setChecked(tol.enabled);
+    auto* enable = new QCheckBox(QStringLiteral("启用容差"), &dlg);
+    enable->setChecked(initial.enabled);
 
-  auto* minSpin = new QDoubleSpinBox(&dlg);
-  minSpin->setRange(-999999.0, 999999.0);
-  minSpin->setDecimals(4);
-  minSpin->setValue(tol.min);
-  minSpin->setEnabled(tol.enabled);
+    auto* minSpin = new QDoubleSpinBox(&dlg);
+    minSpin->setRange(-999999.0, 999999.0);
+    minSpin->setDecimals(4);
+    minSpin->setValue(initial.min);
+    minSpin->setEnabled(initial.enabled);
 
-  auto* maxSpin = new QDoubleSpinBox(&dlg);
-  maxSpin->setRange(-999999.0, 999999.0);
-  maxSpin->setDecimals(4);
-  maxSpin->setValue(tol.max);
-  maxSpin->setEnabled(tol.enabled);
+    auto* maxSpin = new QDoubleSpinBox(&dlg);
+    maxSpin->setRange(-999999.0, 999999.0);
+    maxSpin->setDecimals(4);
+    maxSpin->setValue(initial.max);
+    maxSpin->setEnabled(initial.enabled);
 
-  QObject::connect(enable, &QCheckBox::toggled, minSpin, &QWidget::setEnabled);
-  QObject::connect(enable, &QCheckBox::toggled, maxSpin, &QWidget::setEnabled);
+    QObject::connect(enable, &QCheckBox::toggled, minSpin,
+                     &QWidget::setEnabled);
+    QObject::connect(enable, &QCheckBox::toggled, maxSpin,
+                     &QWidget::setEnabled);
 
-  layout->addRow(enable);
-  layout->addRow(QStringLiteral("容差下限:"), minSpin);
-  layout->addRow(QStringLiteral("容差上限:"), maxSpin);
+    layout->addRow(enable);
+    layout->addRow(QStringLiteral("容差下限:"), minSpin);
+    layout->addRow(QStringLiteral("容差上限:"), maxSpin);
 
-  auto* btns = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
-  layout->addWidget(btns);
-  QObject::connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-  QObject::connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    auto* btns = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    layout->addWidget(btns);
+    QObject::connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    QObject::connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
-  if (dlg.exec() == QDialog::Accepted) {
+    if (dlg.exec() != QDialog::Accepted) {
+      return initial;
+    }
     ToleranceSpec r;
     r.enabled = enable->isChecked();
     r.min = minSpin->value();
     r.max = maxSpin->value();
+    if (r.enabled && r.min > r.max) {
+      QMessageBox::warning(parent, QStringLiteral("容差"),
+                           QStringLiteral("容差下限不能大于上限"));
+      initial = r;
+      continue;
+    }
     return r;
   }
-  return tol;
 }
 }  // namespace
 
@@ -208,6 +220,7 @@ void SubStepTableWidget::onAdd() {
   tolerances_.append(ToleranceSpec{});
   refreshToleranceCell(row);
   table_->selectRow(row);
+  updateButtonStates();
   emit subStepsChanged();
 }
 
@@ -221,6 +234,7 @@ void SubStepTableWidget::onRemove() {
   if (row < tolerances_.size()) {
     tolerances_.removeAt(row);
   }
+  updateButtonStates();
   emit subStepsChanged();
 }
 
@@ -296,7 +310,10 @@ void SubStepTableWidget::onDoubleClicked(const QModelIndex& index) {
     return;  // 未改动
   }
   tolerances_[row] = newTol;
-  refreshToleranceCell(row);
+  {
+    QSignalBlocker blocker(table_);  // 屏蔽 refreshToleranceCell 的 itemChanged
+    refreshToleranceCell(row);
+  }
   emit subStepsChanged();
 }
 

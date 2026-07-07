@@ -113,8 +113,9 @@ QJsonObject testStepToJson(const TestStepData& step) {
   obj["description"] = step.description;
 
   // 新字段（仅序列化非默认值）
-  if (!step.condition.target.isEmpty()) {
-    obj["condition"] = conditionExprToJson(step.condition);
+  QJsonObject condJson = conditionExprToJson(step.condition);
+  if (!condJson.isEmpty()) {
+    obj["condition"] = condJson;
   }
   if (step.tolerance.enabled) {
     obj["tolerance"] = toleranceToJson(step.tolerance);
@@ -122,7 +123,7 @@ QJsonObject testStepToJson(const TestStepData& step) {
   if (!step.fault.type.isEmpty()) {
     obj["fault"] = faultConfigToJson(step.fault);
   }
-  if (step.loopCount > 1 || step.loopIntervalMs > 0) {
+  if (step.loopCount != 1 || step.loopIntervalMs > 0) {
     obj["loopCount"] = step.loopCount;
     obj["loopIntervalMs"] = step.loopIntervalMs;
   }
@@ -280,13 +281,26 @@ bool saveTestProgram(const QString& filePath, const TestProgramData& suite) {
     return false;
   }
 
-  // 写入成功，原子替换原文件
-  if (QFile::exists(filePath)) {
-    QFile::remove(filePath);
+  // 替换原文件：先备份到 .bak，再 rename tmp 到 target，成功后删 .bak。
+  // 避免 remove 后 rename 失败导致原文件丢失（Windows rename 不能覆盖已存在文件）
+  QString bakPath = filePath + QStringLiteral(".bak");
+  bool hadOriginal = QFile::exists(filePath);
+  if (hadOriginal) {
+    QFile::remove(bakPath);
+    if (!QFile::rename(filePath, bakPath)) {
+      QFile::remove(tmpPath);
+      return false;
+    }
   }
   if (!QFile::rename(tmpPath, filePath)) {
+    if (hadOriginal) {
+      QFile::rename(bakPath, filePath);  // 回滚
+    }
     QFile::remove(tmpPath);
     return false;
+  }
+  if (hadOriginal) {
+    QFile::remove(bakPath);
   }
   return true;
 }

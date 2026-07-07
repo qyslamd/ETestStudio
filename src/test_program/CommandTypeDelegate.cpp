@@ -47,7 +47,7 @@ void CommandTypeDelegate::setEditorData(QWidget* editor,
     return;
   }
 
-  QString currentText = index.data(Qt::DisplayRole).toString();
+  QString currentText = index.data(Qt::EditRole).toString();
   int idx = comboBox->findText(currentText);
   if (idx >= 0) {
     comboBox->setCurrentIndex(idx);
@@ -64,17 +64,13 @@ void CommandTypeDelegate::setModelData(QWidget* editor,
     return;
   }
 
-  QString oldValue = index.data(Qt::DisplayRole).toString();
+  QString oldValue = index.data(Qt::EditRole).toString();
   QString newValue = comboBox->currentText();
   if (newValue == oldValue) {
     return;
   }
 
   model->setData(index, newValue, Qt::EditRole);
-
-  // 通过 const_cast 发出信号（Qt 模式：delegate 发出 signal 让 table 响应）
-  auto* self = const_cast<CommandTypeDelegate*>(this);
-  emit self->commandChanged(oldValue, newValue, index);
 }
 
 void CommandTypeDelegate::updateEditorGeometry(

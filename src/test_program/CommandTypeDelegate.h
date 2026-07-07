@@ -4,7 +4,7 @@
 #include <QStyledItemDelegate>
 
 // 测试步骤命令列 ComboBox 委托
-// Full 模式：全部 14 种命令
+// Full 模式：全部 13 种命令
 // FlatOnly 模式：排除 LOOP / WHILE / IF（用于嵌套子步骤）
 class CommandTypeDelegate : public QStyledItemDelegate {
   Q_OBJECT
@@ -21,11 +21,6 @@ class CommandTypeDelegate : public QStyledItemDelegate {
                     const QModelIndex& index) const override;
   void updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option,
                             const QModelIndex& index) const override;
-
- signals:
-  // 命令变更时发出，便于表格更新列头
-  void commandChanged(const QString& oldCmd, const QString& newCmd,
-                      const QModelIndex& index);
 
  private:
   QStringList items_;
