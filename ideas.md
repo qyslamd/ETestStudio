@@ -80,3 +80,21 @@
 - **建议**:
   - 若希望 x86/x64 真正独立共存，`SingleInstance` 的 key 应带架构标识，例如 `"ETestStudio-x64"` / `"ETestStudio-x86"`。可在编译期通过宏（如 `CMAKE_SIZEOF_VOID_P` → `-DAPP_ARCH_SUFFIX`）注入，或运行期检测 `sizeof(void*)`。
   - 若不希望共存运行（只允许装一个），则当前行为符合预期，可忽略本条；但需与安装包的"共存"策略对齐——目前 .iss 已改为共存（不同 AppId），与单实例 key 共用存在语义冲突，需明确取舍。
+
+---
+
+## 测试执行引擎 Phase 1 裁剪的调试功能（后续可加）
+
+- **发现日期**: 2026-07-08
+- **来源**: 硬件接入与测试执行引擎设计头脑风暴
+- **现状**:
+  - 执行引擎 Phase 1（C++ 顺序执行器）只做核心功能：运行/暂停/停止、运行选中步骤、PASS/FAIL 标记
+  - 以下 lua-debugger-demo 中已有的调试特性被裁剪到 Phase 2（Lua 执行器）再评估：
+    1. **信号值监视**（对标 lua-debugger-demo 的 Variable Watch）—— 执行过程中实时显示指定信号的当前工程值
+    2. **步骤级端点**（对标 Breakpoints）—— 执行到标记的步骤时自动暂停，便于观察当前硬件状态
+    3. **Step Into/Over/Out** —— 不适用测试执行场景，不需要
+  - lua-debugger-demo 中 `std::thread` + `QWaitCondition` 的暂停/继续机制设计成熟，Phase 1 的 StepRunner 线程控制应参考其实现
+- **风险**: 若用户后续有调试测试程序的需求，缺乏这些功能可能影响调试效率
+- **建议**:
+  - Phase 1 完成后，根据实际使用反馈再决定是否追加
+  - 如果走 Lua 执行器路线，lua-debugger-demo 的 LuaDebugger 类几乎可直接复用（含 breakpoints + 变量 inspect + 调用栈）
