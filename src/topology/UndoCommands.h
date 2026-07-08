@@ -12,6 +12,23 @@
 
 namespace etest::topology {
 
+// ── SetDevicePortFramesCommand (M3) ──
+class SetDevicePortFramesCommand : public QUndoCommand {
+ public:
+  SetDevicePortFramesCommand(TopologyDocument* doc, int deviceIndex,
+                             int portIndex, const QStringList& newFrames,
+                             QUndoCommand* parent = nullptr);
+  void undo() override;
+  void redo() override;
+
+ private:
+  TopologyDocument* doc_;
+  int device_index_;
+  int port_index_;
+  QStringList old_frames_;
+  QStringList new_frames_;
+};
+
 // ── AddProductCommand ──
 class AddProductCommand : public QUndoCommand {
  public:

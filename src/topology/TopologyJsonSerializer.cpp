@@ -3,6 +3,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QUndoCommand>
 
 namespace etest::topology {
 
@@ -63,6 +64,7 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
   for (int i = 0; i < doc.deviceCount(); ++i) {
     const auto* d = doc.device(i);
     QJsonObject dObj;
+    dObj["id"] = d->id;  // ── M2 新增
     dObj["name"] = d->name;
     dObj["deviceType"] = d->deviceType;
     dObj["pluginId"] = d->pluginId;
@@ -88,6 +90,11 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
       dpObj["functionType"] = functionTypeToString(dp.functionType);
       dpObj["positionHint"] = dp.positionHint;
       dpObj["portStyle"] = dp.portStyle;
+      // ── M2 新增 ──
+      QJsonArray framesArr;
+      for (const auto& f : dp.boundFrameNames)
+        framesArr.append(f);
+      dpObj["boundFrames"] = framesArr;
       portsArr.append(dpObj);
     }
     dObj["ports"] = portsArr;
@@ -214,9 +221,16 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
 
   // Devices
   QJsonArray devicesArr = json["devices"].toArray();
+  bool migratedId = false;
   for (const auto& dVal : devicesArr) {
     QJsonObject dObj = dVal.toObject();
     TopologyDevice device;
+    // M2: id 读取，缺省时生成（老文件迁移）
+    device.id = dObj["id"].toString();
+    if (device.id.isEmpty()) {
+      device.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+      migratedId = true;
+    }
     device.name = dObj["name"].toString();
     device.deviceType = dObj["deviceType"].toString();
     device.pluginId = dObj["pluginId"].toString();
@@ -246,10 +260,18 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
           stringToFunctionType(portObj["functionType"].toString());
       dp.positionHint = portObj["positionHint"].toInt(-1);
       dp.portStyle = portObj["portStyle"].toInt(0);
+      // ── M2 新增 ──
+      QJsonArray framesArr = portObj["boundFrames"].toArray();
+      for (const auto& f : framesArr)
+        dp.boundFrameNames.append(f.toString());
       device.ports.append(dp);
     }
 
     doc->addDevice(device);
+  }
+  // M2: 若发生了 ID 迁移，标记文档已修改（确保用户保存）
+  if (migratedId) {
+    doc->undoStack()->push(new QUndoCommand(QStringLiteral("迁移设备 ID")));
   }
 
   // Connections

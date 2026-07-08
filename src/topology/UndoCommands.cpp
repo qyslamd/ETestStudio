@@ -4,6 +4,27 @@
 namespace etest::topology {
 
 // ═══════════════════════════════════════════════════════════════
+//  SetDevicePortFramesCommand (M3)
+// ═══════════════════════════════════════════════════════════════
+
+SetDevicePortFramesCommand::SetDevicePortFramesCommand(
+    TopologyDocument* doc, int deviceIndex, int portIndex,
+    const QStringList& newFrames, QUndoCommand* parent)
+    : QUndoCommand(parent), doc_(doc), device_index_(deviceIndex),
+      port_index_(portIndex), new_frames_(newFrames) {
+  old_frames_ = doc_->devicePortFrames(deviceIndex, portIndex);
+  setText(QStringLiteral("绑定 ICD 帧"));
+}
+
+void SetDevicePortFramesCommand::undo() {
+  doc_->setDevicePortFrames(device_index_, port_index_, old_frames_);
+}
+
+void SetDevicePortFramesCommand::redo() {
+  doc_->setDevicePortFrames(device_index_, port_index_, new_frames_);
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  AddProductCommand
 // ═══════════════════════════════════════════════════════════════
 

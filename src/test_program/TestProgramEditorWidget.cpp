@@ -127,6 +127,28 @@ void TestProgramEditorWidget::newProgram() {
   }
 }
 
+// ── M0: ISignalSelection 注入 ──
+
+void TestProgramEditorWidget::setSignalSelection(ISignalSelection* sel) {
+  signal_selection_ = sel;
+  setup_table_->setSignalSelection(sel);
+  teardown_table_->setSignalSelection(sel);
+  for (int t = 2; t < tab_widget_->count(); ++t) {
+    if (auto* table = qobject_cast<StepTableWidget*>(tab_widget_->widget(t)))
+      table->setSignalSelection(sel);
+  }
+}
+
+void TestProgramEditorWidget::setRegistry(etest::core::SignalRegistry* reg) {
+  registry_ = reg;
+  setup_table_->setRegistry(reg);
+  teardown_table_->setRegistry(reg);
+  for (int t = 2; t < tab_widget_->count(); ++t) {
+    if (auto* table = qobject_cast<StepTableWidget*>(tab_widget_->widget(t)))
+      table->setRegistry(reg);
+  }
+}
+
 void TestProgramEditorWidget::initUi() {
   setAutoFillBackground(true);
 
@@ -565,6 +587,9 @@ void TestProgramEditorWidget::onAddCase() {
 
   auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
   connectTable(table);
+  // M0: 传播信号选择器和 registry
+  if (signal_selection_) table->setSignalSelection(signal_selection_);
+  if (registry_) table->setRegistry(registry_);
   // 命名去重：找最小不重复编号，避免 undo/redo 按名恢复落到错误 tab
   int n = 1;
   while (true) {

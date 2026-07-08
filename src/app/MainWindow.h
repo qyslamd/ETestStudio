@@ -1,12 +1,22 @@
 #ifndef ETEST_APP_MAINWINDOW_H_
 #define ETEST_APP_MAINWINDOW_H_
 
+#include <memory>
+
 #include "SARibbonMainWindow.h"
 #include "DockManager.h"
 
 #include <QElapsedTimer>
 
 #include "widgets/TuxSaverOverlay.h"
+
+namespace etest::core {
+class SignalRegistry;
+}  // namespace etest::core
+
+namespace icd {
+class Repository;
+}  // namespace icd
 
 class QMenu;
 class QAction;
@@ -123,6 +133,10 @@ class MainWindow : public SARibbonMainWindow {
 
   // 侧边栏展开宽度（用于折叠记忆）
   int sidebar_expanded_width_ = 280;
+
+  // M5/M6: ICD 信号注册表 + Repository
+  etest::core::SignalRegistry* signal_registry_ = nullptr;
+  icd::Repository* icd_repository_ = nullptr;
 
   // 设置对话框（非模态，只创建一次）
   SettingsDialog* settings_dialog_ = nullptr;

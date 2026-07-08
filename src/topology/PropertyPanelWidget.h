@@ -24,6 +24,10 @@ class PropertyPanelWidget : public QWidget {
 
   void showPropertiesFor(QGraphicsItem* item);
   void clearPanel();
+  // M3: 设置可用 ICD 帧名列表（由上层注入，standalone 模式保持空）
+  void setAvailableIcdFrames(const QStringList& frames) {
+    available_icd_frames_ = frames;
+  }
 
  signals:
   void documentChanged();
@@ -127,9 +131,14 @@ class PropertyPanelWidget : public QWidget {
   QComboBox* devport_direction_combo_ = nullptr;
   QComboBox* devport_function_combo_ = nullptr;
   QComboBox* devport_style_combo_ = nullptr;
+  QPushButton* devport_bind_frames_btn_ = nullptr;  // ── M3 新增
   int editing_device_port_device_ = -1;
   int editing_device_port_index_ = -1;
   void onDevicePortStyleChanged();
+  void onDevicePortBindFrames();                    // ── M3 新增
+
+  // M3: 可用 ICD 帧名列表（由上层注入）
+  QStringList available_icd_frames_;
 
   // Monitor page widgets
   QLineEdit* monitor_name_edit_ = nullptr;

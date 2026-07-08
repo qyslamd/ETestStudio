@@ -1,5 +1,6 @@
 #include "PropertyPanelWidget.h"
 #include "ComboBoxDelegate.h"
+#include "DevicePortBindingDialog.h"
 #include "TopologyDocument.h"
 #include "UndoCommands.h"
 #include "topology_items.h"
@@ -555,6 +556,23 @@ void PropertyPanelWidget::onDevicePortStyleChanged() {
       doc_, editing_device_port_device_, editing_device_port_index_, style));
 }
 
+// ── M3: 打开 ICD 帧绑定对话框 ──
+
+void PropertyPanelWidget::onDevicePortBindFrames() {
+  if (editing_device_port_device_ < 0 || editing_device_port_index_ < 0)
+    return;
+
+  DevicePortBindingDialog dlg(doc_, editing_device_port_device_,
+                               editing_device_port_index_,
+                               available_icd_frames_, this);
+  if (dlg.exec() != QDialog::Accepted) return;
+
+  QStringList newFrames = dlg.selectedFrames();
+  doc_->undoStack()->push(new SetDevicePortFramesCommand(
+      doc_, editing_device_port_device_, editing_device_port_index_,
+      newFrames));
+}
+
 void PropertyPanelWidget::buildDevicePortPage() {
   auto* w = new QWidget(this);
   w->setObjectName("devicePortPage");
@@ -589,6 +607,12 @@ void PropertyPanelWidget::buildDevicePortPage() {
   connect(devport_style_combo_, &QComboBox::currentTextChanged, this,
           &PropertyPanelWidget::onDevicePortStyleChanged);
   lay->addRow(QStringLiteral("端口样式"), devport_style_combo_);
+
+  // ── M3: ICD 帧绑定按钮 ──
+  devport_bind_frames_btn_ = new QPushButton(QStringLiteral("绑定 ICD 帧..."), w);
+  lay->addRow(QString(), devport_bind_frames_btn_);
+  connect(devport_bind_frames_btn_, &QPushButton::clicked, this,
+          &PropertyPanelWidget::onDevicePortBindFrames);
 
   stack_->addWidget(w);
 }

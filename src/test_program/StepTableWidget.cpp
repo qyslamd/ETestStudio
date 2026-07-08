@@ -7,8 +7,32 @@
 #include <QStandardItemModel>
 
 #include "CommandTypeDelegate.h"
+#include "SignalRegistry.h"
 
 namespace etest::app {
+
+// ── UuidDisplayDelegate ──
+
+UuidDisplayDelegate::UuidDisplayDelegate(
+    etest::core::SignalRegistry* registry, QObject* parent)
+    : QStyledItemDelegate(parent), registry_(registry) {}
+
+QString UuidDisplayDelegate::displayText(const QVariant& value,
+                                          const QLocale& locale) const {
+  QString text = QStyledItemDelegate::displayText(value, locale);
+  if (!registry_ || text.isEmpty() || text.length() != 32) {
+    return text;
+  }
+  // 尝试 resolve UUID → 显示可读名称
+  auto resolved = registry_->resolve(text);
+  if (resolved.has_value()) {
+    // 显示 nodePath 末段（如 "燃油阀门1"）
+    QStringList parts = resolved->nodePath.split('/');
+    if (!parts.isEmpty()) return parts.last();
+  }
+  // resolve 失败 → 显示前 8 位 + ...
+  return text.left(8) + QStringLiteral("...");
+}
 
 // ── subSteps 序列化辅助（QVector<TestStepData> ↔ JSON） ──
 
@@ -107,6 +131,9 @@ void StepTableWidget::setupView() {
   setSelectionMode(QAbstractItemView::SingleSelection);
   refreshRowHeight();
   setAlternatingRowColors(true);
+  // M5: target 列固定宽度 + 溢出省略
+  setColumnWidth(kColTarget, 180);
+  setTextElideMode(Qt::ElideRight);
 
   // 拖拽排序
   setDragDropMode(QAbstractItemView::InternalMove);
@@ -276,6 +303,35 @@ void StepTableWidget::refreshRowHeight() {
   // 行高 = 字体高度 + 余量；余量容纳 cell editor 的 QLineEdit 边框及 QSS
   // padding， 避免主题字体较大时编辑器字体被截断
   verticalHeader()->setDefaultSectionSize(fontMetrics().height() + 12);
+}
+
+// ── M5: setRegistry ──
+
+void StepTableWidget::setRegistry(etest::core::SignalRegistry* reg) {
+  registry_ = reg;
+  if (registry_) {
+    setItemDelegateForColumn(kColTarget,
+                             new UuidDisplayDelegate(registry_, this));
+  } else {
+    setItemDelegateForColumn(kColTarget, nullptr);
+  }
+}
+
+// ── M0: 编辑拦截 ──
+
+bool StepTableWidget::edit(const QModelIndex& index, EditTrigger trigger,
+                           QEvent* event) {
+  // 只有 target 列且 signal_selection_ 非空时拦截
+  if (index.column() == kColTarget && signal_selection_) {
+    QString uuid = signal_selection_->selectSignal(this);
+    if (!uuid.isEmpty()) {
+      model_->setData(index, uuid);
+      // setData 触发的 itemChanged → cellDataChanged → onDataChanged
+      // 保存快照 + 标记 modified，不需要额外操作
+    }
+    return false;  // 不启动默认编辑
+  }
+  return QTableView::edit(index, trigger, event);
 }
 
 }  // namespace etest::app

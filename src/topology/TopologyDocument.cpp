@@ -157,7 +157,12 @@ bool TopologyDocument::renameProduct(int index, const QString& newName) {
 
 int TopologyDocument::addDevice(const TopologyDevice& device) {
   int index = devices_.size();
-  devices_.append(device);
+  TopologyDevice dev = device;
+  // M2: id 为空时自动生成 UUID v4
+  if (dev.id.isEmpty()) {
+    dev.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  }
+  devices_.append(dev);
   emit deviceAdded(index);
   return index;
 }
@@ -165,7 +170,11 @@ int TopologyDocument::addDevice(const TopologyDevice& device) {
 int TopologyDocument::insertDevice(int index, const TopologyDevice& device) {
   if (index < 0 || index > devices_.size())
     return -1;
-  devices_.insert(index, device);
+  TopologyDevice dev = device;
+  if (dev.id.isEmpty()) {
+    dev.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  }
+  devices_.insert(index, dev);
   emit deviceAdded(index);
   return index;
 }
@@ -201,6 +210,31 @@ int TopologyDocument::findDeviceIndex(const QString& name) const {
   return -1;
 }
 
+int TopologyDocument::findDeviceIndexById(const QString& id) const {
+  for (int i = 0; i < devices_.size(); ++i) {
+    if (devices_[i].id == id)
+      return i;
+  }
+  return -1;
+}
+
+void TopologyDocument::setDevicePortFrames(int deviceIndex, int portIndex,
+                                           const QStringList& frames) {
+  auto* dev = device(deviceIndex);
+  if (!dev) return;
+  if (portIndex < 0 || portIndex >= dev->ports.size()) return;
+  dev->ports[portIndex].boundFrameNames = frames;
+  emit devicePortFramesChanged(deviceIndex, portIndex);
+}
+
+QStringList TopologyDocument::devicePortFrames(int deviceIndex,
+                                               int portIndex) const {
+  const auto* dev = device(deviceIndex);
+  if (!dev) return {};
+  if (portIndex < 0 || portIndex >= dev->ports.size()) return {};
+  return dev->ports[portIndex].boundFrameNames;
+}
+
 bool TopologyDocument::renameDevice(int index, const QString& newName) {
   auto* dev = device(index);
   if (!dev)
@@ -225,8 +259,9 @@ void TopologyDocument::addDevicePort(int deviceIndex,
                                      const TopologyDevicePort& port) {
   if (deviceIndex < 0 || deviceIndex >= devices_.size())
     return;
+  int portIndex = devices_[deviceIndex].ports.size();
   devices_[deviceIndex].ports.append(port);
-  emit deviceChanged(deviceIndex);
+  emit devicePortAdded(deviceIndex, portIndex);
 }
 
 int TopologyDocument::insertDevicePort(int deviceIndex, int portIndex,
@@ -237,7 +272,7 @@ int TopologyDocument::insertDevicePort(int deviceIndex, int portIndex,
   if (portIndex < 0 || portIndex > dev.ports.size())
     return -1;
   dev.ports.insert(portIndex, port);
-  emit deviceChanged(deviceIndex);
+  emit devicePortAdded(deviceIndex, portIndex);
   return portIndex;
 }
 
@@ -312,7 +347,7 @@ void TopologyDocument::removeDevicePort(int deviceIndex, int portIndex) {
   if (portIndex < 0 || portIndex >= dev.ports.size())
     return;
   dev.ports.removeAt(portIndex);
-  emit deviceChanged(deviceIndex);
+  emit devicePortRemoved(deviceIndex, portIndex);
 }
 
 int TopologyDocument::findDevicePortIndex(int deviceIndex,

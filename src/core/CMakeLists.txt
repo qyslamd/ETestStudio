@@ -28,6 +28,7 @@ set(SOURCES
     project/ProjectManager.cpp
     terminal/PtyProcess.cpp
     terminal/VtParser.cpp
+    SignalRegistry.cpp
 )
 
 set(HEADERS
@@ -68,6 +69,7 @@ set(HEADERS
     project/ProjectManager.h
     terminal/PtyProcess.h
     terminal/VtParser.h
+    SignalRegistry.h
 )
 
 if(WIN32)

@@ -21,7 +21,13 @@ class QStandardItemModel;
 class QTabWidget;
 class QTextEdit;
 
+namespace etest::core {
+class SignalRegistry;
+}  // namespace etest::core
+
 namespace etest::app {
+
+class ISignalSelection;
 
 class VerticalTabListDelegate;
 
@@ -52,6 +58,11 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void openFile(const QString& filePath) override;
   void setEmbeddedMode(bool embedded);
   void newProgram();
+
+  // ── M0: ISignalSelection 注入（传播到所有 StepTableWidget） ──
+  void setSignalSelection(ISignalSelection* sel);
+  // M5: SignalRegistry 绑定
+  void setRegistry(etest::core::SignalRegistry* reg);
 
  signals:
   void modificationChanged(bool modified);
@@ -94,6 +105,11 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   // 校验
   void validateCurrentTable();
   void updateValidationLabel();
+
+  // ── M0: 信号选择器（传播到所有 table） ──
+  ISignalSelection* signal_selection_ = nullptr;
+  // M5: UUID → 名称 resolve
+  etest::core::SignalRegistry* registry_ = nullptr;
 
   // 把 StepTableWidget 信号接到 TestProgramEditorWidget 的槽
   void connectTable(StepTableWidget* table);

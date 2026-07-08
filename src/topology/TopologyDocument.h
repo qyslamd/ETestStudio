@@ -7,6 +7,7 @@
 #include <QString>
 #include <QStringList>
 #include <QUndoStack>
+#include <QUuid>
 #include <QVector>
 
 #include "TopologyPathRouter.h"
@@ -47,6 +48,9 @@ struct TopologyDevicePort {
   FunctionType functionType = FunctionType::CUSTOM;
   int positionHint = -1;
   int portStyle = 0;  // PortStyle enum: 0=Circle, 1=Triangle
+
+  // ── M2: 该端口绑定的 ICD 帧名 ──
+  QStringList boundFrameNames;
 };
 
 struct TopologyProduct {
@@ -57,6 +61,7 @@ struct TopologyProduct {
 };
 
 struct TopologyDevice {
+  QString id;             // ── M2: 设备实例持久 id（UUID v4），创建时生成，永不变
   QString name;
   QString deviceType;
   QString pluginId;       // 设备插件唯一标识，必填
@@ -113,6 +118,13 @@ class TopologyDocument : public QObject {
   const TopologyDevice* device(int index) const;
   int deviceCount() const;
   int findDeviceIndex(const QString& name) const;
+  int findDeviceIndexById(const QString& id) const;  // ── M2 新增
+
+  // ── M2/M3: 端口绑帧访问器（供 DevicePortBindingDialog 使用） ──
+  void setDevicePortFrames(int deviceIndex, int portIndex,
+                           const QStringList& frames);
+  QStringList devicePortFrames(int deviceIndex, int portIndex) const;
+
   bool renameDevice(int index, const QString& newName);
 
   // Product (UUT) port management
@@ -173,6 +185,10 @@ class TopologyDocument : public QObject {
   void deviceAdded(int index);
   void deviceRemoved(int index);
   void deviceChanged(int index);
+  // ── M2/M3 新增 ──
+  void devicePortAdded(int deviceIndex, int portIndex);
+  void devicePortRemoved(int deviceIndex, int portIndex);
+  void devicePortFramesChanged(int deviceIndex, int portIndex);
   void connectionAdded(int index);
   void connectionRemoved(int index);
   void monitorAdded(int index);

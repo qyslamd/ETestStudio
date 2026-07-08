@@ -87,3 +87,21 @@ add_etest(
     QT_MODULES Core Test Widgets
     LABELS TOPOLOGY
 )
+
+# M2: 设备 id + 端口绑定 + 信号测试
+add_etest(
+    NAME test_topology_m2
+    SOURCES topology_m2_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test
+    LABELS TOPOLOGY
+)
+
+# M3: 端口绑帧访问器 + 撤销重做测试
+add_etest(
+    NAME test_topology_m3
+    SOURCES topology_m3_test.cpp
+    LIBS etest_topology
+    QT_MODULES Core Test
+    LABELS TOPOLOGY
+)

@@ -54,6 +54,7 @@
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
+#include "SignalRegistry.h"
 #include "dialogs/NewProjectDialog.h"
 #include "dialogs/SettingsDialog.h"
 #include "editors/EditorFactory.h"
@@ -89,7 +90,9 @@ MainWindow::MainWindow(QWidget* parent)
       editor_manager_(nullptr),
       output_panel_(nullptr),
       problems_panel_(nullptr),
-      terminal_panel_(nullptr) {
+      terminal_panel_(nullptr),
+      signal_registry_(nullptr),
+      icd_repository_(nullptr) {
   QElapsedTimer timer;
   timer.start();
   initUi();
@@ -1364,6 +1367,20 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   status_message_label_->setText(
       QStringLiteral("项目已打开：%1").arg(projectPath));
 
+  // M6: 初始化 SignalRegistry 并注入到编辑器管理器
+  if (!signal_registry_) {
+    signal_registry_ = new etest::core::SignalRegistry(this);
+  } else {
+    signal_registry_->clear();
+  }
+  // 从侧边栏获取 ICD Repository（若已加载）
+  auto* protocolMgr = sidebar_->protocolManager();
+  if (protocolMgr) {
+    // 暂不获取 repo — ProtocolManagerWidget 的 Repository 加载是异步 ICD 流程
+  }
+  editor_manager_->setSignalRegistry(signal_registry_);
+  editor_manager_->setIcdRepository(icd_repository_);
+
   // 切换到侧边栏项目管理页面
   sidebar_->switchPage(PageId::kProjectOverview);
   if (!sidebar_->isContentVisible()) {
@@ -1383,6 +1400,14 @@ void MainWindow::onProjectClosed() {
   status_project_label_->setText(QStringLiteral("无打开项目"));
   updateWindowTitle();
   status_message_label_->setText(QStringLiteral("项目已关闭"));
+
+  // M6: 清理 ICD 上下文
+  if (signal_registry_) {
+    signal_registry_->clear();
+  }
+  editor_manager_->setSignalRegistry(nullptr);
+  editor_manager_->setIcdRepository(nullptr);
+  icd_repository_ = nullptr;
 }
 
 void MainWindow::updateWindowTitle() {

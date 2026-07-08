@@ -1,14 +1,33 @@
 #ifndef ETEST_PROGRAM_STEP_TABLE_WIDGET_H_
 #define ETEST_PROGRAM_STEP_TABLE_WIDGET_H_
 
+#include <QStyledItemDelegate>
 #include <QTableView>
 
 #include "CommandTypeDelegate.h"
+#include "SignalSelectionInterface.h"
 #include "TestProgramData.h"
 
 class QStandardItemModel;
 
+namespace etest::core {
+class SignalRegistry;
+}  // namespace etest::core
+
 namespace etest::app {
+
+// M5: UUID 显示委托 — 将 UUID hex 解析为可读名称
+class UuidDisplayDelegate : public QStyledItemDelegate {
+  Q_OBJECT
+ public:
+  explicit UuidDisplayDelegate(etest::core::SignalRegistry* registry,
+                               QObject* parent = nullptr);
+  QString displayText(const QVariant& value,
+                      const QLocale& locale) const override;
+
+ private:
+  etest::core::SignalRegistry* registry_;
+};
 
 // 步骤表格控件 — 替代 QTableWidget，使用 QTableView + QStandardItemModel，
 // 封装步骤编辑所需的扩展数据存取、拖拽排序等功能。列头固定，不随命令类型变化。
@@ -55,6 +74,12 @@ class StepTableWidget : public QTableView {
   // ── 按当前字体刷新行高（主题切换/构造后调用，避免 cell editor 字体被截断） ──
   void refreshRowHeight();
 
+  // ── M0: ISignalSelection 注入 ──
+  // nullptr 降级为 QTableView 默认文本编辑
+  void setSignalSelection(ISignalSelection* sel) { signal_selection_ = sel; }
+  // M5: SignalRegistry 绑定（用于 UUID → 可读名称 resolve）
+  void setRegistry(etest::core::SignalRegistry* reg);
+
  signals:
   void cellDataChanged(int row, int column);
   void stepSelectionChanged();
@@ -66,10 +91,19 @@ class StepTableWidget : public QTableView {
   // 扩展数据角色
   static constexpr int kStepDataRole = Qt::UserRole + 1;
 
+  // M0: 拦截 target 列编辑，走 ISignalSelection
+  bool edit(const QModelIndex& index, EditTrigger trigger,
+            QEvent* event) override;
+
   QStandardItemModel* model_;
   CommandTypeDelegate::Mode delegateMode_;
   // setRowCount 批量插入时抑制 renumberSteps，最后统一调一次
   bool batch_renumber_ = false;
+
+  // M0: 信号选择器（nullptr = 降级默认文本编辑）
+  ISignalSelection* signal_selection_ = nullptr;
+  // M5: UUID → 名称 resolve
+  etest::core::SignalRegistry* registry_ = nullptr;
 };
 
 }  // namespace etest::app

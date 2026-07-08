@@ -8,6 +8,14 @@
 #include "DockManager.h"
 #include "api/IEditor.h"
 
+namespace etest::core {
+class SignalRegistry;
+}  // namespace etest::core
+
+namespace icd {
+class Repository;
+}  // namespace icd
+
 namespace etest::app {
 
 class EditorManager : public QObject {
@@ -50,6 +58,12 @@ class EditorManager : public QObject {
   void bindDockTabContextMenu(ads::CDockWidget* dock);
   void showDockContextMenu(ads::CDockWidget* dock, const QPoint& globalPos);
 
+  // M5: 注入 ICD 信号注册表和 Repository（供 test_program 编辑器使用）
+  void setSignalRegistry(etest::core::SignalRegistry* registry) { registry_ = registry; }
+  void setIcdRepository(icd::Repository* repo) { repository_ = repo; }
+  etest::core::SignalRegistry* signalRegistry() const { return registry_; }
+  icd::Repository* icdRepository() const { return repository_; }
+
  signals:
   void fileOpened(const QString& filePath);
   void fileClosed(const QString& filePath);
@@ -66,6 +80,10 @@ class EditorManager : public QObject {
   QMap<QString, ads::CDockWidget*> dock_widgets_;
   QMap<QString, IEditor*> editors_;
   QString current_file_path_;
+
+  // M5: ICD 上下文（供编辑器注入）
+  etest::core::SignalRegistry* registry_ = nullptr;
+  icd::Repository* repository_ = nullptr;
 };
 
 }  // namespace etest::app

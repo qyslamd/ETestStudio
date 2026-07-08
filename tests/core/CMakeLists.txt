@@ -106,3 +106,23 @@ add_etest(
     QT_MODULES Core Test
     LABELS CORE
 )
+
+# 信号注册表测试
+add_etest(
+    NAME test_core_signal_registry
+    SOURCES signal_registry_test.cpp
+    LIBS etest_core
+    QT_MODULES Core Test
+    LABELS CORE
+)
+
+# 信号同步辅助测试
+add_etest(
+    NAME test_core_signal_sync_helper
+    SOURCES signal_sync_helper_test.cpp
+            ${CMAKE_SOURCE_DIR}/src/app/utils/SignalSyncHelper.cpp
+    LIBS etest_core icd_utility
+    INCLUDES ${CMAKE_SOURCE_DIR}/src/app ${CMAKE_SOURCE_DIR}/src
+    QT_MODULES Core Test
+    LABELS CORE
+)

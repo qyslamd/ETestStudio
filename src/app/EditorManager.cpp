@@ -19,6 +19,7 @@
 #include "editors/ImageViewerWidget.h"
 #include "editors/TextEditorWidget.h"
 #include "TestProgramEditorWidget.h"
+#include "dialogs/IcdSignalSelection.h"
 #include "logger/Logger.h"
 #include "protocol/ProtocolEditorWidget.h"
 #include "topology/TopologyDocument.h"
@@ -179,6 +180,13 @@ void EditorManager::registerEditorTypes() {
         auto* te = qobject_cast<TestProgramEditorWidget*>(editor->widget());
         if (!te)
           return;
+        // M5: 注入 ICD 信号选择器和 registry（非 null 时才注入）
+        if (mgr->signalRegistry() && mgr->icdRepository()) {
+          auto* sel = new IcdSignalSelection(mgr->signalRegistry(),
+                                             mgr->icdRepository());
+          te->setSignalSelection(sel);
+          te->setRegistry(mgr->signalRegistry());
+        }
         QObject::connect(
             te, &TestProgramEditorWidget::modificationChanged, mgr,
             [editor, dock, mgr](bool modified) {

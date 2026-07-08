@@ -109,6 +109,10 @@ add_executable(${TARGET_NAME} WIN32
     utils/window_mover.cpp
     utils/eph_qt_switch_button.h
     utils/eph_qt_switch_button.cpp
+    utils/SignalSyncHelper.h
+    utils/SignalSyncHelper.cpp
+    dialogs/SignalSelectionDialog.h
+    dialogs/SignalSelectionDialog.cpp
     resource.qrc
 )
 
