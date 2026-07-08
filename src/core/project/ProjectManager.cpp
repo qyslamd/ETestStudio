@@ -3,6 +3,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
@@ -53,6 +56,7 @@ class ProjectManager::Impl {
       return false;
     if (!utils::FileUtil::createDirectory(QDir(projectDir).filePath("cases")))
       return false;
+    createEtProgJson(projectDir);
     return true;
   }
 
@@ -64,6 +68,42 @@ class ProjectManager::Impl {
   void saveRecentProjects(const QStringList& projects) {
     auto& cfg = ConfigManager::instance();
     cfg.set(CONFIG_RECENT_PROJECT_LIST, projects);
+  }
+
+  QStringList scanEtProgFiles(const QString& projectDir) const {
+    QDir casesDir(QDir(projectDir).filePath("cases"));
+    if (!casesDir.exists()) return {};
+    QStringList filters;
+    filters << "*.etprog";
+    return casesDir.entryList(filters, QDir::Files, QDir::Name);
+  }
+
+  void createEtProgJson(const QString& projectDir) {
+    QString etprogJsonPath =
+        QDir(projectDir).filePath("cases/ETProg.json");
+    if (QFile::exists(etprogJsonPath)) return;
+
+    QStringList etprogFiles = scanEtProgFiles(projectDir);
+
+    QJsonArray filesArray;
+    for (const QString& file : etprogFiles) {
+      QJsonObject fileObj;
+      fileObj["name"] = QFileInfo(file).completeBaseName();
+      fileObj["path"] = file;
+      fileObj["enabled"] = true;
+      filesArray.append(fileObj);
+    }
+
+    QJsonObject root;
+    root["version"] = "1.0";
+    root["files"] = filesArray;
+
+    QJsonDocument doc(root);
+    QFile file(etprogJsonPath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      file.write(doc.toJson(QJsonDocument::Indented));
+      file.close();
+    }
   }
 };
 
@@ -242,6 +282,12 @@ void ProjectManager::removeFromRecentProjects(const QString& projectPath) {
 void ProjectManager::clearRecentProjects() {
   m_impl->saveRecentProjects(QStringList());
   emit recentProjectsChanged();
+}
+
+void ProjectManager::createEtProgJson() {
+  if (!isProjectOpen()) return;
+  QString projectDir = m_impl->current_project->rootPath();
+  m_impl->createEtProgJson(projectDir);
 }
 
 void ProjectManager::setDirtyCheckCallback(DirtyCheckCallback callback) {

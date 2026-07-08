@@ -38,6 +38,9 @@ class ProjectManager : public QObject {
   void removeFromRecentProjects(const QString& projectPath);
   void clearRecentProjects();
 
+  // ETProg.json index management
+  void createEtProgJson();
+
   // 脏文件检查接口
   using DirtyCheckCallback = std::function<bool()>;
   void setDirtyCheckCallback(DirtyCheckCallback callback);
