@@ -1,11 +1,10 @@
 #include "SignalCodec.h"
-#include "SignalResolver.h"
-
-#include <QDebug>
 
 #include <cmath>
 
 #include <spdlog/spdlog.h>
+
+#include "SignalResolver.h"
 
 namespace etest::engine {
 
@@ -73,7 +72,8 @@ double SignalCodec::decodeFromFrame(const QByteArray& frameData,
 //   BigEndian 时反转信号所在字节区域
 QByteArray SignalCodec::packBits(double value,
                                  const ResolvedSignal& info) const {
-    int totalBits = info.bitOffset + info.bitWidth;
+    int absoluteBitOffset = info.byteOffset * 8 + info.bitOffset;
+    int totalBits = absoluteBitOffset + info.bitWidth;
     int totalBytes = std::max(1, (totalBits + 7) / 8);
     QByteArray data(totalBytes, '\0');
 
@@ -81,7 +81,7 @@ QByteArray SignalCodec::packBits(double value,
 
     // 以 LSB0 方式逐 bit 填入
     for (int bit = 0; bit < info.bitWidth; ++bit) {
-        int dstPos = info.bitOffset + bit;
+        int dstPos = absoluteBitOffset + bit;
         int byteIdx = dstPos / 8;
         int bitIdx = dstPos % 8;  // 0=LSB, 7=MSB
         if (raw & (1ULL << bit)) {
@@ -93,8 +93,8 @@ QByteArray SignalCodec::packBits(double value,
 
     // BigEndian：反转信号所在字节区域
     if (info.byteOrder == ByteOrder::BigEndian) {
-        int startByte = info.bitOffset / 8;
-        int endByte = (info.bitOffset + info.bitWidth - 1) / 8;
+        int startByte = absoluteBitOffset / 8;
+        int endByte = (absoluteBitOffset + info.bitWidth - 1) / 8;
         int len = endByte - startByte + 1;
         for (int i = 0; i < len / 2; ++i) {
             char tmp = data[startByte + i];
@@ -111,7 +111,8 @@ QByteArray SignalCodec::packBits(double value,
 //   BigEndian 时先反转字节再提取
 double SignalCodec::unpackBits(const QByteArray& data,
                                const ResolvedSignal& info) const {
-    int requiredBits = info.bitOffset + info.bitWidth;
+    int absoluteBitOffset = info.byteOffset * 8 + info.bitOffset;
+    int requiredBits = absoluteBitOffset + info.bitWidth;
     int requiredBytes = (requiredBits + 7) / 8;
 
     if (data.size() < requiredBytes) {
@@ -123,8 +124,8 @@ double SignalCodec::unpackBits(const QByteArray& data,
     // 若 BigEndian，在提取前先复制并反转信号所在字节
     QByteArray workingData = data;
     if (info.byteOrder == ByteOrder::BigEndian) {
-        int startByte = info.bitOffset / 8;
-        int endByte = (info.bitOffset + info.bitWidth - 1) / 8;
+        int startByte = absoluteBitOffset / 8;
+        int endByte = (absoluteBitOffset + info.bitWidth - 1) / 8;
         int len = endByte - startByte + 1;
         for (int i = 0; i < len / 2; ++i) {
             char tmp = workingData[startByte + i];
@@ -136,7 +137,7 @@ double SignalCodec::unpackBits(const QByteArray& data,
     // 以 LSB0 方式逐 bit 读取
     uint64_t result = 0;
     for (int bit = 0; bit < info.bitWidth; ++bit) {
-        int srcPos = info.bitOffset + bit;
+        int srcPos = absoluteBitOffset + bit;
         int byteIdx = srcPos / 8;
         int bitIdx = srcPos % 8;
         if (workingData[byteIdx] & (1 << bitIdx)) {

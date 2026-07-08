@@ -332,3 +332,43 @@ TEST(SignalCodecTest, DecodeHandlesInvalidVariant) {
     double val = codec.decode(invalid, info);
     EXPECT_DOUBLE_EQ(val, 0.0);
 }
+
+// Test 12: non-zero byteOffset round-trip
+TEST(SignalCodecTest, NonZeroByteOffsetRoundTrip) {
+    SignalCodec codec;
+
+    ResolvedSignal info;
+    info.coeff = 1.0;
+    info.offset = 0.0;
+    info.byteOffset = 2;
+    info.bitOffset = 4;
+    info.bitWidth = 12;
+    info.byteOrder = ByteOrder::LittleEndian;
+    info.valid = true;
+
+    double val = 0xABC;
+    QByteArray frame = codec.encodeToFrame(val, info);
+    EXPECT_GE(frame.size(), 4);
+    double result = codec.decodeFromFrame(frame, info);
+    EXPECT_DOUBLE_EQ(val, result);
+}
+
+// Test 13: BigEndian with non-zero byteOffset
+TEST(SignalCodecTest, BigEndianWithOffset) {
+    SignalCodec codec;
+
+    ResolvedSignal info;
+    info.coeff = 1.0;
+    info.offset = 0.0;
+    info.byteOffset = 1;
+    info.bitOffset = 0;
+    info.bitWidth = 16;
+    info.byteOrder = ByteOrder::BigEndian;
+    info.valid = true;
+
+    double val = 0x1234;
+    QByteArray frame = codec.encodeToFrame(val, info);
+    EXPECT_GE(frame.size(), 3);
+    double result = codec.decodeFromFrame(frame, info);
+    EXPECT_DOUBLE_EQ(val, result);
+}
