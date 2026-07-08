@@ -112,11 +112,15 @@ void SignalResolver::fillFromIcd(ResolvedSignal& signal,
 // static
 const icd::Node* SignalResolver::findNodeByPath(const icd::Frame* frame,
                                                   const QString& nodePath) {
-    if (!frame || nodePath.isEmpty()) return nullptr;
+    if (!frame || nodePath.isEmpty()) {
+        return nullptr;
+    }
 
     // 按 "/" 分割路径
     QStringList segments = nodePath.split(QLatin1Char('/'), Qt::SkipEmptyParts);
-    if (segments.isEmpty()) return nullptr;
+    if (segments.isEmpty()) {
+        return nullptr;
+    }
 
     // 第一段匹配根节点
     const icd::Node* current = nullptr;
@@ -126,12 +130,16 @@ const icd::Node* SignalResolver::findNodeByPath(const icd::Frame* frame,
             break;
         }
     }
-    if (!current) return nullptr;
+    if (!current) {
+        return nullptr;
+    }
 
     // 后续段逐层向下查找
     for (int i = 1; i < segments.size(); ++i) {
         current = current->find(segments[i].toStdString());
-        if (!current) return nullptr;
+        if (!current) {
+            return nullptr;
+        }
     }
 
     return current;
