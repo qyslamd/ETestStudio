@@ -121,6 +121,7 @@ endif()
 
 add_subdirectory(icd_utility)
 add_subdirectory(core)
+add_subdirectory(engine)
 add_subdirectory(topology)
 add_subdirectory(test_program)
 add_subdirectory(protocol)
