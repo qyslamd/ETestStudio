@@ -259,34 +259,43 @@ if(EXISTS ${WINDEPLOYQT_EXECUTABLE})
 endif()
 
 #=======================================
-# make_package target — windeployqt + ISCC 打包
+# 架构变量（供 configure_file 注入到 .iss.in / .bat.in）
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(APP_ARCH "x64")
+    set(ISCC_APP_ID "{{6811a736-4ffd-4dae-a7a7-459a6e3d572f}}")
+    set(ISCC_APP_PF "{autopf64}")
+    set(ISCC_VC_REDIST "vc_redist.x64.exe")
+    set(ISCC_APP_ARCH_SUFFIX "x64")
+    set(ISCC_USE_64BIT "YES")
+else()
+    set(APP_ARCH "x86")
+    set(ISCC_APP_ID "{{46AB6095-36F9-49F4-ABB1-6A36D8BB7E39}}")
+    set(ISCC_APP_PF "{autopf}")
+    set(ISCC_VC_REDIST "vc_redist.x86.exe")
+    set(ISCC_APP_ARCH_SUFFIX "x86")
+    set(ISCC_USE_64BIT "NO")
+endif()
+
+set(PACKAGE_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/dist")
+set(ISCC_WHERE_ARE_FILES "${CMAKE_BINARY_DIR}/bin")
+
+# 生成打包脚本（可独立编译的 .iss + CLI .bat）
+configure_file(
+    "${CMAKE_SOURCE_DIR}/scripts/make_install_package.iss.in"
+    "${CMAKE_BINARY_DIR}/scripts/make_install_package.iss"
+    @ONLY
+)
+configure_file(
+    "${CMAKE_SOURCE_DIR}/scripts/make_installer.bat.in"
+    "${CMAKE_BINARY_DIR}/scripts/make_installer.bat"
+    @ONLY
+)
+
+# make_package target — 调用生成的 .bat 完成 windeployqt + ISCC
 if(EXISTS ${ISCC_EXECUTABLE})
-    set(PACKAGE_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/dist")
-    # 目标架构：交给 .iss 区分 AppId / 安装目录 / vc_redist / 输出文件名
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(APP_ARCH "x64")
-    else()
-        set(APP_ARCH "x86")
-    endif()
     add_custom_target(make_package
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_OUTPUT_DIR}"
-        COMMAND ${WINDEPLOYQT_EXECUTABLE}
-            --verbose 0
-            --no-angle
-            --no-opengl-sw
-            --no-system-d3d-compiler
-            --compiler-runtime
-            "$<TARGET_FILE:${TARGET_NAME}>"
-        COMMAND ${ISCC_EXECUTABLE}
-            "/Qp"
-            "/DWhereAreFiles=$<TARGET_FILE_DIR:${TARGET_NAME}>"
-            "/DWhereToOutput=${PACKAGE_OUTPUT_DIR}"
-            "/DMyAppVersion=${APP_VERSION}"
-            "/DMyAppExeName=${TARGET_NAME}.exe"
-            "/DMySetupIcon=${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/app_icon.ico"
-            "/DMyProductName=${PROJECT_NAME}"
-            "/DMyAppArch=${APP_ARCH}"
-            "${CMAKE_SOURCE_DIR}/scripts/make_install_package.iss"
+        COMMAND "${CMAKE_BINARY_DIR}/scripts/make_installer.bat"
+            "$<TARGET_FILE_DIR:${TARGET_NAME}>"
         WORKING_DIRECTORY "$<TARGET_FILE_DIR:${TARGET_NAME}>"
         COMMENT "Building installer package with Inno Setup (${APP_ARCH})..."
     )
