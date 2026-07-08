@@ -1,0 +1,104 @@
+/* ==================== ExecutionControlBar ==================== */
+#ExecutionControlBar {
+  background-color: #F5F5F5;
+  border-top: 1px solid #D0D0D0;
+  min-height: 32px;
+}
+
+#ExecutionControlBar QPushButton {
+  background-color: #FFFFFF;
+  color: #333333;
+  border: 1px solid #C0C0C0;
+  border-radius: 3px;
+  padding: 3px 10px;
+  font-size: 12px;
+  min-height: 22px;
+}
+
+#ExecutionControlBar QPushButton:hover {
+  background-color: #E8F0FE;
+  border-color: #0078D4;
+}
+
+#ExecutionControlBar QPushButton:pressed {
+  background-color: #D0E0F5;
+  border-color: #005A9E;
+}
+
+#ExecutionControlBar QPushButton:disabled {
+  background-color: #F0F0F0;
+  color: #AAAAAA;
+  border-color: #E0E0E0;
+}
+
+#ExecutionControlBar #execControlRunBtn {
+  color: #1B7A2B;
+  font-weight: bold;
+}
+
+#ExecutionControlBar #execControlRunBtn:hover {
+  background-color: #E6F4EA;
+  border-color: #1B7A2B;
+}
+
+#ExecutionControlBar #execControlRunBtn:pressed {
+  background-color: #C8E6C9;
+  border-color: #0D6B1A;
+}
+
+#ExecutionControlBar #execControlRunBtn:disabled {
+  color: #AAAAAA;
+}
+
+#ExecutionControlBar #execControlPauseBtn {
+  color: #BD6B00;
+  font-weight: bold;
+}
+
+#ExecutionControlBar #execControlPauseBtn:hover {
+  background-color: #FFF3E0;
+  border-color: #BD6B00;
+}
+
+#ExecutionControlBar #execControlPauseBtn:pressed {
+  background-color: #FFE0B2;
+  border-color: #A05A00;
+}
+
+#ExecutionControlBar #execControlPauseBtn:disabled {
+  color: #AAAAAA;
+}
+
+#ExecutionControlBar #execControlStopBtn {
+  color: #C62828;
+  font-weight: bold;
+}
+
+#ExecutionControlBar #execControlStopBtn:hover {
+  background-color: #FFEBEE;
+  border-color: #C62828;
+}
+
+#ExecutionControlBar #execControlStopBtn:pressed {
+  background-color: #FFCDD2;
+  border-color: #B71C1C;
+}
+
+#ExecutionControlBar #execControlStopBtn:disabled {
+  color: #AAAAAA;
+}
+
+#ExecutionControlBar #execControlStats {
+  color: #555555;
+  font-size: 12px;
+  font-family: "Consolas", "Courier New", monospace;
+  padding: 0 8px;
+  background: transparent;
+}
+
+#ExecutionControlBar #execControlStatus {
+  color: #888888;
+  font-size: 12px;
+  padding: 0 8px 0 4px;
+  background: transparent;
+}

@@ -7,6 +7,7 @@
 #include "api/IEditor.h"
 #include "TestProgramData.h"
 
+#include "ExecutionControlBar.h"
 #include "StepDetailPanel.h"
 #include "StepTableWidget.h"
 
@@ -63,6 +64,11 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void setSignalSelection(ISignalSelection* sel);
   // M5: SignalRegistry 绑定
   void setRegistry(etest::core::SignalRegistry* reg);
+
+  // ExecutionControlBar 访问（供 MainWindow 连接引擎信号）
+  ExecutionControlBar* executionControlBar() const {
+    return execution_control_bar_;
+  }
 
  signals:
   void modificationChanged(bool modified);
@@ -124,6 +130,8 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   QDockWidget* detail_dock_ = nullptr;
   StepDetailPanel* step_detail_panel_ = nullptr;
   QLabel* validation_label_ = nullptr;
+
+  ExecutionControlBar* execution_control_bar_ = nullptr;
 
   // 纵向标签栏
   QDockWidget* vertical_tabs_dock_ = nullptr;

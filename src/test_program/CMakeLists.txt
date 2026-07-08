@@ -19,6 +19,8 @@ add_library(${TARGET_NAME} STATIC
     control_flow_config.h
     VerticalTabListDelegate.cpp
     VerticalTabListDelegate.h
+    ExecutionControlBar.cpp
+    ExecutionControlBar.h
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC
