@@ -5,7 +5,6 @@
 #include "UndoCommands.h"
 #include "topology_items.h"
 
-
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -38,6 +37,12 @@ PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc, QWidget* parent)
   buildMonitorPage();
 
   stack_->setCurrentIndex(PageEmpty);
+
+  // Ctrl+Z/Y 同步刷新已绑定帧列表
+  if (auto* cmdStack = doc_->undoStack()) {
+    connect(cmdStack, &QUndoStack::indexChanged, this,
+            &PropertyPanelWidget::refreshDevicePortFrames);
+  }
 }
 
 void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
@@ -104,10 +109,11 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       for (int r = 0; r < prod->ports.size(); ++r) {
         const auto& p = prod->ports[r];
         uut_port_table_->setItem(r, 0, new QTableWidgetItem(p.name));
-        uut_port_table_->setItem(r, 1, new QTableWidgetItem(
-            dirNames[static_cast<int>(p.direction)]));
-        uut_port_table_->setItem(r, 2, new QTableWidgetItem(
-            functionTypeToString(p.functionType)));
+        uut_port_table_->setItem(
+            r, 1,
+            new QTableWidgetItem(dirNames[static_cast<int>(p.direction)]));
+        uut_port_table_->setItem(
+            r, 2, new QTableWidgetItem(functionTypeToString(p.functionType)));
       }
       uut_port_table_->blockSignals(false);
       uut_port_table_->resizeColumnsToContents();
@@ -230,6 +236,7 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
           devport_style_combo_->findData(static_cast<int>(dp.portStyle)));
       devport_style_combo_->blockSignals(false);
     }
+    refreshDevicePortFrames();
     stack_->setCurrentIndex(PageDevicePort);
     return;
   }
@@ -276,10 +283,12 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       for (int r = 0; r < m->taps.size(); ++r) {
         const auto& tap = m->taps[r];
         monitor_taps_table_->setItem(
-            r, 0, new QTableWidgetItem(
+            r, 0,
+            new QTableWidgetItem(
                 QStringLiteral("%1:%2").arg(tap.productName, tap.portName)));
         monitor_taps_table_->setItem(
-            r, 1, new QTableWidgetItem(
+            r, 1,
+            new QTableWidgetItem(
                 QStringLiteral("%1:%2").arg(tap.deviceName, tap.devicePort)));
       }
       monitor_taps_table_->blockSignals(false);
@@ -330,8 +339,9 @@ void PropertyPanelWidget::buildUutPage() {
   auto* portLay = new QVBoxLayout(portGroup);
 
   uut_port_table_ = new QTableWidget(0, 3, w);
-  uut_port_table_->setHorizontalHeaderLabels(
-      {QStringLiteral("名称"), QStringLiteral("方向"), QStringLiteral("功能类型")});
+  uut_port_table_->setHorizontalHeaderLabels({QStringLiteral("名称"),
+                                              QStringLiteral("方向"),
+                                              QStringLiteral("功能类型")});
   uut_port_table_->horizontalHeader()->setStretchLastSection(true);
   uut_port_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
   uut_port_table_->setAlternatingRowColors(true);
@@ -341,8 +351,10 @@ void PropertyPanelWidget::buildUutPage() {
   QStringList funcItems;
   for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft)
     funcItems << functionTypeToString(static_cast<FunctionType>(ft));
-  uut_port_table_->setItemDelegateForColumn(1, new ComboBoxDelegate(dirItems, this));
-  uut_port_table_->setItemDelegateForColumn(2, new ComboBoxDelegate(funcItems, this));
+  uut_port_table_->setItemDelegateForColumn(
+      1, new ComboBoxDelegate(dirItems, this));
+  uut_port_table_->setItemDelegateForColumn(
+      2, new ComboBoxDelegate(funcItems, this));
   connect(uut_port_table_, &QTableWidget::itemChanged, this,
           [this]() { uut_dirty_ = true; });
   portLay->addWidget(uut_port_table_);
@@ -405,8 +417,10 @@ void PropertyPanelWidget::buildPortPage() {
   lay->addRow(QStringLiteral("功能类型"), port_function_combo_);
 
   port_style_combo_ = new QComboBox(w);
-  port_style_combo_->addItem(QStringLiteral("圆形"), static_cast<int>(PortStyle::Circle));
-  port_style_combo_->addItem(QStringLiteral("三角形"), static_cast<int>(PortStyle::Triangle));
+  port_style_combo_->addItem(QStringLiteral("圆形"),
+                             static_cast<int>(PortStyle::Circle));
+  port_style_combo_->addItem(QStringLiteral("三角形"),
+                             static_cast<int>(PortStyle::Triangle));
   connect(port_style_combo_, &QComboBox::currentTextChanged, this,
           &PropertyPanelWidget::onPortStyleChanged);
   lay->addRow(QStringLiteral("端口样式"), port_style_combo_);
@@ -519,9 +533,12 @@ void PropertyPanelWidget::buildConnectionPage() {
   lay->addRow(QStringLiteral("设备端口"), conn_device_port_label_);
 
   conn_style_combo_ = new QComboBox(w);
-  conn_style_combo_->addItem(QStringLiteral("曲线"), static_cast<int>(PathStyle::Bezier));
-  conn_style_combo_->addItem(QStringLiteral("折线"), static_cast<int>(PathStyle::Polyline));
-  conn_style_combo_->addItem(QStringLiteral("直线"), static_cast<int>(PathStyle::Straight));
+  conn_style_combo_->addItem(QStringLiteral("曲线"),
+                             static_cast<int>(PathStyle::Bezier));
+  conn_style_combo_->addItem(QStringLiteral("折线"),
+                             static_cast<int>(PathStyle::Polyline));
+  conn_style_combo_->addItem(QStringLiteral("直线"),
+                             static_cast<int>(PathStyle::Straight));
   connect(conn_style_combo_, &QComboBox::currentTextChanged, this,
           &PropertyPanelWidget::onConnStyleChanged);
   lay->addRow(QStringLiteral("连线样式"), conn_style_combo_);
@@ -532,8 +549,7 @@ void PropertyPanelWidget::buildConnectionPage() {
 void PropertyPanelWidget::onConnStyleChanged() {
   if (editing_conn_index_ < 0)
     return;
-  auto style = static_cast<PathStyle>(
-      conn_style_combo_->currentData().toInt());
+  auto style = static_cast<PathStyle>(conn_style_combo_->currentData().toInt());
   doc_->undoStack()->push(
       new SetConnectionStyleCommand(doc_, editing_conn_index_, style));
 }
@@ -541,8 +557,7 @@ void PropertyPanelWidget::onConnStyleChanged() {
 void PropertyPanelWidget::onPortStyleChanged() {
   if (editing_port_product_ < 0 || editing_port_index_ < 0)
     return;
-  auto style = static_cast<PortStyle>(
-      port_style_combo_->currentData().toInt());
+  auto style = static_cast<PortStyle>(port_style_combo_->currentData().toInt());
   doc_->undoStack()->push(new SetProductPortStyleCommand(
       doc_, editing_port_product_, editing_port_index_, style));
 }
@@ -550,8 +565,8 @@ void PropertyPanelWidget::onPortStyleChanged() {
 void PropertyPanelWidget::onDevicePortStyleChanged() {
   if (editing_device_port_device_ < 0 || editing_device_port_index_ < 0)
     return;
-  auto style = static_cast<PortStyle>(
-      devport_style_combo_->currentData().toInt());
+  auto style =
+      static_cast<PortStyle>(devport_style_combo_->currentData().toInt());
   doc_->undoStack()->push(new SetDevicePortStyleCommand(
       doc_, editing_device_port_device_, editing_device_port_index_, style));
 }
@@ -563,14 +578,37 @@ void PropertyPanelWidget::onDevicePortBindFrames() {
     return;
 
   DevicePortBindingDialog dlg(doc_, editing_device_port_device_,
-                               editing_device_port_index_,
-                               available_icd_frames_, this);
-  if (dlg.exec() != QDialog::Accepted) return;
+                              editing_device_port_index_, available_icd_frames_,
+                              this);
+  if (dlg.exec() != QDialog::Accepted)
+    return;
 
   QStringList newFrames = dlg.selectedFrames();
-  doc_->undoStack()->push(new SetDevicePortFramesCommand(
-      doc_, editing_device_port_device_, editing_device_port_index_,
-      newFrames));
+  doc_->undoStack()->push(
+      new SetDevicePortFramesCommand(doc_, editing_device_port_device_,
+                                     editing_device_port_index_, newFrames));
+}
+
+void PropertyPanelWidget::refreshDevicePortFrames() {
+  if (!devport_frames_list_ || !devport_frames_stack_)
+    return;
+  if (editing_device_port_device_ < 0 || editing_device_port_index_ < 0) {
+    devport_frames_stack_->setCurrentIndex(0);
+    return;
+  }
+  const auto& ports = doc_->device(editing_device_port_device_)->ports;
+  if (editing_device_port_index_ >= ports.size()) {
+    devport_frames_stack_->setCurrentIndex(0);
+    return;
+  }
+  const QStringList& frames = ports[editing_device_port_index_].boundFrameNames;
+  devport_frames_list_->clear();
+  if (frames.isEmpty()) {
+    devport_frames_stack_->setCurrentIndex(0);
+  } else {
+    devport_frames_list_->addItems(frames);
+    devport_frames_stack_->setCurrentIndex(1);
+  }
 }
 
 void PropertyPanelWidget::buildDevicePortPage() {
@@ -602,17 +640,45 @@ void PropertyPanelWidget::buildDevicePortPage() {
   lay->addRow(QStringLiteral("功能类型"), devport_function_combo_);
 
   devport_style_combo_ = new QComboBox(w);
-  devport_style_combo_->addItem(QStringLiteral("圆形"), static_cast<int>(PortStyle::Circle));
-  devport_style_combo_->addItem(QStringLiteral("三角形"), static_cast<int>(PortStyle::Triangle));
+  devport_style_combo_->addItem(QStringLiteral("圆形"),
+                                static_cast<int>(PortStyle::Circle));
+  devport_style_combo_->addItem(QStringLiteral("三角形"),
+                                static_cast<int>(PortStyle::Triangle));
   connect(devport_style_combo_, &QComboBox::currentTextChanged, this,
           &PropertyPanelWidget::onDevicePortStyleChanged);
   lay->addRow(QStringLiteral("端口样式"), devport_style_combo_);
 
   // ── M3: ICD 帧绑定按钮 ──
-  devport_bind_frames_btn_ = new QPushButton(QStringLiteral("绑定 ICD 帧..."), w);
+  devport_bind_frames_btn_ =
+      new QPushButton(QStringLiteral("绑定 ICD 帧..."), w);
   lay->addRow(QString(), devport_bind_frames_btn_);
   connect(devport_bind_frames_btn_, &QPushButton::clicked, this,
           &PropertyPanelWidget::onDevicePortBindFrames);
+
+  // ── 已绑定 ICD 帧列表 ──
+  auto* framesGroup = new QGroupBox(QStringLiteral("已绑定 ICD 帧"), w);
+  auto* framesLay = new QVBoxLayout(framesGroup);
+  framesLay->setContentsMargins(4, 4, 4, 4);
+
+  devport_frames_stack_ = new QStackedWidget(w);
+  auto* emptyLabel = new QLabel(QStringLiteral("暂无绑定"), w);
+  emptyLabel->setObjectName(QStringLiteral("devportEmptyLabel"));
+  emptyLabel->setAlignment(Qt::AlignCenter);
+  QPalette pal = emptyLabel->palette();
+  pal.setColor(QPalette::WindowText, QColor(128, 128, 128));
+  emptyLabel->setPalette(pal);
+  devport_frames_stack_->addWidget(emptyLabel);  // index 0
+
+  devport_frames_list_ = new QListWidget(w);
+  devport_frames_list_->setFrameShape(QFrame::NoFrame);
+  devport_frames_list_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  devport_frames_list_->setAlternatingRowColors(true);
+  devport_frames_list_->setMinimumHeight(60);
+  devport_frames_stack_->addWidget(devport_frames_list_);  // index 1
+
+  devport_frames_stack_->setCurrentIndex(0);
+  framesLay->addWidget(devport_frames_stack_);
+  lay->addRow(framesGroup);
 
   stack_->addWidget(w);
 }
@@ -675,8 +741,7 @@ void PropertyPanelWidget::onTapTableContextMenu(const QPoint& pos) {
     return;
 
   QMenu menu(this);
-  auto* unmountAction =
-      menu.addAction(QStringLiteral("解除挂载"));
+  auto* unmountAction = menu.addAction(QStringLiteral("解除挂载"));
   connect(unmountAction, &QAction::triggered, this, [this, row]() {
     doc_->undoStack()->push(
         new UnTapConnectionCommand(doc_, editing_monitor_index_, row));
@@ -707,7 +772,8 @@ void PropertyPanelWidget::onUutNameChanged() {
 
 void PropertyPanelWidget::onUutAddPort() {
   auto* prod = doc_->product(editing_uut_index_);
-  if (!prod) return;
+  if (!prod)
+    return;
   int n = prod->ports.size() + 1;
   TopologyPort port;
   port.name = QStringLiteral("Port_%1").arg(n, 2, 10, QChar('0'));
@@ -726,10 +792,10 @@ void PropertyPanelWidget::onUutAddPort() {
     int r = prod->ports.size() - 1;
     const auto& p = prod->ports[r];
     uut_port_table_->setItem(r, 0, new QTableWidgetItem(p.name));
-    uut_port_table_->setItem(r, 1, new QTableWidgetItem(
-        dirNames[static_cast<int>(p.direction)]));
-    uut_port_table_->setItem(r, 2, new QTableWidgetItem(
-        functionTypeToString(p.functionType)));
+    uut_port_table_->setItem(
+        r, 1, new QTableWidgetItem(dirNames[static_cast<int>(p.direction)]));
+    uut_port_table_->setItem(
+        r, 2, new QTableWidgetItem(functionTypeToString(p.functionType)));
     uut_port_table_->blockSignals(false);
     uut_port_table_->resizeColumnsToContents();
   }
@@ -737,9 +803,11 @@ void PropertyPanelWidget::onUutAddPort() {
 
 void PropertyPanelWidget::onUutRemovePort() {
   int row = uut_port_table_->currentRow();
-  if (row < 0 || editing_uut_index_ < 0) return;
+  if (row < 0 || editing_uut_index_ < 0)
+    return;
   auto* prod = doc_->product(editing_uut_index_);
-  if (!prod || row >= prod->ports.size()) return;
+  if (!prod || row >= prod->ports.size())
+    return;
   auto* cmd = new RemoveProductPortCommand(doc_, editing_uut_index_, row);
   doc_->undoStack()->push(cmd);
   // 场景刷新后，重新加载表格
@@ -753,10 +821,10 @@ void PropertyPanelWidget::onUutRemovePort() {
     for (int r = 0; r < prod->ports.size(); ++r) {
       const auto& p = prod->ports[r];
       uut_port_table_->setItem(r, 0, new QTableWidgetItem(p.name));
-      uut_port_table_->setItem(r, 1, new QTableWidgetItem(
-          dirNames[static_cast<int>(p.direction)]));
-      uut_port_table_->setItem(r, 2, new QTableWidgetItem(
-          functionTypeToString(p.functionType)));
+      uut_port_table_->setItem(
+          r, 1, new QTableWidgetItem(dirNames[static_cast<int>(p.direction)]));
+      uut_port_table_->setItem(
+          r, 2, new QTableWidgetItem(functionTypeToString(p.functionType)));
     }
     uut_port_table_->blockSignals(false);
     uut_port_table_->resizeColumnsToContents();
@@ -764,30 +832,35 @@ void PropertyPanelWidget::onUutRemovePort() {
 }
 
 void PropertyPanelWidget::applyUutPorts(int productIndex) {
-  if (!uut_dirty_) return;
+  if (!uut_dirty_)
+    return;
   auto* prod = doc_->product(productIndex);
-  if (!prod) return;
+  if (!prod)
+    return;
 
   // Build new ports from table
   QVector<TopologyPort> newPorts;
   for (int r = 0; r < uut_port_table_->rowCount(); ++r) {
     auto* nameItem = uut_port_table_->item(r, 0);
-    if (!nameItem || nameItem->text().isEmpty()) continue;
+    if (!nameItem || nameItem->text().isEmpty())
+      continue;
     auto* dirItem = uut_port_table_->item(r, 1);
     auto* funcItem = uut_port_table_->item(r, 2);
     TopologyPort port;
     if (r < saved_uut_ports_.size())
       port = saved_uut_ports_[r];
     port.name = nameItem->text();
-    port.direction = dirItem && dirItem->text() == QStringLiteral("Output")
-                         ? TopologyPort::Direction::Output
-                     : dirItem && dirItem->text() == QStringLiteral("Bidirectional")
-                         ? TopologyPort::Direction::Bidirectional
-                         : TopologyPort::Direction::Input;
+    port.direction =
+        dirItem && dirItem->text() == QStringLiteral("Output")
+            ? TopologyPort::Direction::Output
+        : dirItem && dirItem->text() == QStringLiteral("Bidirectional")
+            ? TopologyPort::Direction::Bidirectional
+            : TopologyPort::Direction::Input;
     port.functionType = FunctionType::CUSTOM;
     if (funcItem) {
       for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
-        if (functionTypeToString(static_cast<FunctionType>(ft)) == funcItem->text()) {
+        if (functionTypeToString(static_cast<FunctionType>(ft)) ==
+            funcItem->text()) {
           port.functionType = static_cast<FunctionType>(ft);
           break;
         }
@@ -808,7 +881,8 @@ void PropertyPanelWidget::applyUutPorts(int productIndex) {
       }
     }
   }
-  if (equal) return;
+  if (equal)
+    return;
 
   auto oldPorts = saved_uut_ports_;
   int idx = productIndex;
@@ -882,10 +956,9 @@ void PropertyPanelWidget::onPortAllowedTypesChanged() {
                         ? QStringList()
                         : text.split(QStringLiteral(", "), Qt::SkipEmptyParts);
 #else
-    auto newTypes =
-        text.isEmpty()
-            ? QStringList()
-            : text.split(QStringLiteral(", "), QString::SkipEmptyParts);
+    auto newTypes = text.isEmpty() ? QStringList()
+                                   : text.split(QStringLiteral(", "),
+                                                QString::SkipEmptyParts);
 #endif
     int pIdx = editing_port_product_, poIdx = editing_port_index_;
     auto* cmd = new PropertyCommand(
@@ -938,8 +1011,7 @@ void PropertyPanelWidget::onDeviceNameChanged() {
       return;
     int idx = editing_device_index_;
     auto* cmd = new PropertyCommand(
-        doc_,
-        [doc = doc_, idx, oldName]() { doc->renameDevice(idx, oldName); },
+        doc_, [doc = doc_, idx, oldName]() { doc->renameDevice(idx, oldName); },
         [doc = doc_, idx, newName]() { doc->renameDevice(idx, newName); },
         QStringLiteral("修改设备名称"));
     doc_->undoStack()->push(cmd);
@@ -1024,8 +1096,9 @@ void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
     dp.name = name;
     dp.direction = dirText == QStringLiteral("Bidirectional")
                        ? TopologyPort::Direction::Bidirectional
-                   : dirText == QStringLiteral("Output") ? TopologyPort::Direction::Output
-                                                         : TopologyPort::Direction::Input;
+                   : dirText == QStringLiteral("Output")
+                       ? TopologyPort::Direction::Output
+                       : TopologyPort::Direction::Input;
     dp.functionType = FunctionType::CUSTOM;
     for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {
       if (functionTypeToString(static_cast<FunctionType>(ft)) == funcText) {

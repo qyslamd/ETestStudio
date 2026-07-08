@@ -3,6 +3,7 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QTableWidget>
@@ -132,10 +133,13 @@ class PropertyPanelWidget : public QWidget {
   QComboBox* devport_function_combo_ = nullptr;
   QComboBox* devport_style_combo_ = nullptr;
   QPushButton* devport_bind_frames_btn_ = nullptr;  // ── M3 新增
+  QStackedWidget* devport_frames_stack_ = nullptr;  // 0 = 空提示, 1 = 列表
+  QListWidget* devport_frames_list_ = nullptr;
   int editing_device_port_device_ = -1;
   int editing_device_port_index_ = -1;
   void onDevicePortStyleChanged();
   void onDevicePortBindFrames();                    // ── M3 新增
+  void refreshDevicePortFrames();
 
   // M3: 可用 ICD 帧名列表（由上层注入）
   QStringList available_icd_frames_;
