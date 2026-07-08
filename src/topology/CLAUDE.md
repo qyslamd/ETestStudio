@@ -4,6 +4,6 @@
   - 对于 protocal 模块：描述某个信号的协议在哪一条数据通路上传递
   - 对于 其它模块的支撑，将在后续再说。
 - topology 作为项目的一个子模块，采用静态库编译。
-- topology 同样也需要可以完全独立到 `examples\topology-demo\CMakeLists.txt` 中，作为一个独立的示例程序使用。当它作为独立可执行程序的时候：
+- topology 同样也需要可以完全独立到 `tools\topology-editor\CMakeLists.txt` 中，作为一个独立的工具程序使用。当它作为独立可执行程序的时候：
   - 提供完整的可视化界面
   - 独立作为可执行程序后，由于它是QMainWindow的主窗口，需要提供菜单栏以支撑文件的操作。
