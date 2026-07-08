@@ -108,9 +108,11 @@ target_include_directories(${TARGET_NAME} PUBLIC
 target_link_libraries(${TARGET_NAME} PUBLIC
     Qt5::Core
     Qt5::Gui
-    Qt5::Widgets
     Qt5::Network
     spdlog::spdlog
+)
+target_link_libraries(${TARGET_NAME} PRIVATE
+    Qt5::Widgets
 )
 
 if(WIN32)
