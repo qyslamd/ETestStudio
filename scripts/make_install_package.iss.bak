@@ -72,6 +72,7 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile={#MySetupIcon}
+AppMutex={#MyAppMutex}
 Uninstallable=yes
 UninstallDisplayName={#MyAppName}
 
@@ -116,9 +117,8 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
-
-var
-  DeleteUserData: Boolean;
+const
+  CSIDL_LOCAL_APPDATA = $001c;
 
 function InitializeSetup(): Boolean;
 var
@@ -141,116 +141,17 @@ begin
     Result := True;
 end;
 
-function InitializeUninstall(): Boolean;
+procedure DelConfigAndCache();
 var
-  ErrorCode: Integer;
+  LocalAppData: String;
 begin
-  Result := True;
-
-  { 检查主程序是否运行 }
-  if CheckForMutexes('{#MyAppMutex}') then
-  begin
-    if MsgBox('检测到 ETestStudio 正在运行，是否自动关闭后继续卸载？',
-              mbConfirmation, MB_YESNO) = IDYES then
-    begin
-      Exec('taskkill.exe', '/f /t /im ETestStudio.exe', '',
-           SW_HIDE, ewWaitUntilTerminated, ErrorCode);
-    end
-    else
-    begin
-      Result := False;
-      Exit;
-    end;
-  end;
-
-  { 静默关闭三个独立产品 }
-  Exec('taskkill.exe', '/f /im topology-editor.exe', '',
-       SW_HIDE, ewNoWait, ErrorCode);
-  Exec('taskkill.exe', '/f /im protocol-editor.exe', '',
-       SW_HIDE, ewNoWait, ErrorCode);
-  Exec('taskkill.exe', '/f /im test-program-editor.exe', '',
-       SW_HIDE, ewNoWait, ErrorCode);
-end;
-
-procedure InitializeUninstallProgressForm();
-var
-  Form: TSetupForm;
-  CheckBox: TNewCheckBox;
-  OKButton, CancelButton: TNewButton;
-  StaticText: TNewStaticText;
-begin
-  if UninstallSilent then
-  begin
-    DeleteUserData := False;
-    Exit;
-  end;
-
-  Form := CreateCustomForm();
-  try
-    Form.ClientWidth := ScaleX(420);
-    Form.ClientHeight := ScaleY(200);
-    Form.Caption := ExpandConstant('{cm:Uninstall} - {#SetupSetting("AppName")}');
-    Form.Position := poOwnerFormCenter;
-    Form.Parent := UninstallProgressForm;
-
-    StaticText := TNewStaticText.Create(Form);
-    StaticText.Parent := Form;
-    StaticText.Left := ScaleX(20);
-    StaticText.Top := ScaleY(20);
-    StaticText.Width := Form.ClientWidth - ScaleX(40);
-    StaticText.AutoSize := False;
-    StaticText.WordWrap := True;
-    StaticText.Caption := '选择卸载时要清理的额外数据：';
-
-    CheckBox := TNewCheckBox.Create(Form);
-    CheckBox.Parent := Form;
-    CheckBox.Left := ScaleX(20);
-    CheckBox.Top := ScaleY(60);
-    CheckBox.Width := Form.ClientWidth - ScaleX(40);
-    CheckBox.Height := ScaleY(17);
-    CheckBox.Caption := '删除用户配置和缓存数据（%LOCALAPPDATA%\ETestStudio）';
-    CheckBox.Checked := False;
-
-    OKButton := TNewButton.Create(Form);
-    OKButton.Parent := Form;
-    OKButton.Width := ScaleX(90);
-    OKButton.Height := ScaleY(23);
-    OKButton.Left := Form.ClientWidth - ScaleX(90 + 10 + 90 + 10);
-    OKButton.Top := Form.ClientHeight - ScaleY(23 + 10);
-    OKButton.Caption := SetupMessage(msgButtonOK);
-    OKButton.ModalResult := mrOk;
-    OKButton.Default := True;
-
-    CancelButton := TNewButton.Create(Form);
-    CancelButton.Parent := Form;
-    CancelButton.Width := ScaleX(90);
-    CancelButton.Height := ScaleY(23);
-    CancelButton.Left := Form.ClientWidth - ScaleX(90 + 10);
-    CancelButton.Top := Form.ClientHeight - ScaleY(23 + 10);
-    CancelButton.Caption := SetupMessage(msgButtonCancel);
-    CancelButton.ModalResult := mrCancel;
-    CancelButton.Cancel := True;
-
-    Form.ActiveControl := CheckBox;
-
-    if Form.ShowModal = mrOk then
-      DeleteUserData := CheckBox.Checked
-    else
-      Abort;
-  finally
-    Form.Free();
-  end;
+  LocalAppData := GetShellFolderByCSIDL(CSIDL_LOCAL_APPDATA, True);
+  if LocalAppData <> '' then
+    DelTree(LocalAppData + '\ETestStudio', True, True, True);
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usPostUninstall then
-  begin
-    if DeleteUserData then
-    begin
-      Log('Deleting user data...');
-      DelTree(ExpandConstant('{localappdata}\ETestStudio'), True, True, True);
-      Log('User data deleted.');
-    end;
-  end;
+    DelConfigAndCache();
 end;
