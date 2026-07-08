@@ -174,10 +174,14 @@ end;
 
 procedure InitializeUninstallProgressForm();
 var
-  Form: TSetupForm;
+  UninstallPage: TNewNotebookPage;
+  UninstallButton: TNewButton;
   CheckBox: TNewCheckBox;
-  OKButton, CancelButton: TNewButton;
-  StaticText: TNewStaticText;
+  OriginalPageNameLabel: String;
+  OriginalPageDescriptionLabel: String;
+  OriginalCancelButtonEnabled: Boolean;
+  OriginalCancelButtonModalResult: Integer;
+  ctrl: TWinControl;
 begin
   if UninstallSilent then
   begin
@@ -185,61 +189,66 @@ begin
     Exit;
   end;
 
-  Form := CreateCustomForm();
-  try
-    Form.ClientWidth := ScaleX(420);
-    Form.ClientHeight := ScaleY(200);
-    Form.Caption := ExpandConstant('{cm:Uninstall} - {#SetupSetting("AppName")}');
-    Form.Position := poOwnerFormCenter;
-    Form.Parent := UninstallProgressForm;
+  ctrl := UninstallProgressForm.CancelButton;
 
-    StaticText := TNewStaticText.Create(Form);
-    StaticText.Parent := Form;
-    StaticText.Left := ScaleX(20);
-    StaticText.Top := ScaleY(20);
-    StaticText.Width := Form.ClientWidth - ScaleX(40);
-    StaticText.AutoSize := False;
-    StaticText.WordWrap := True;
-    StaticText.Caption := '选择卸载时要清理的额外数据：';
+  { "Uninstall" button to proceed }
+  UninstallButton := TNewButton.Create(UninstallProgressForm);
+  UninstallButton.Parent := UninstallProgressForm;
+  UninstallButton.Left := ctrl.Left - ctrl.Width - ScaleX(10);
+  UninstallButton.Top := ctrl.Top;
+  UninstallButton.Width := ctrl.Width;
+  UninstallButton.Height := ctrl.Height;
+  UninstallButton.TabOrder := ctrl.TabOrder;
+  UninstallButton.Caption := '卸载';
+  UninstallButton.ModalResult := mrOk;
+  UninstallButton.Default := True;
+  UninstallProgressForm.CancelButton.TabOrder := UninstallButton.TabOrder + 1;
 
-    CheckBox := TNewCheckBox.Create(Form);
-    CheckBox.Parent := Form;
-    CheckBox.Left := ScaleX(20);
-    CheckBox.Top := ScaleY(60);
-    CheckBox.Width := Form.ClientWidth - ScaleX(40);
-    CheckBox.Height := ScaleY(17);
-    CheckBox.Caption := '删除用户配置和缓存数据（%LOCALAPPDATA%\ETestStudio）';
-    CheckBox.Checked := False;
+  { Insert custom page into wizard notebook }
+  UninstallPage := TNewNotebookPage.Create(UninstallProgressForm);
+  UninstallPage.Notebook := UninstallProgressForm.InnerNotebook;
+  UninstallPage.Parent := UninstallProgressForm.InnerNotebook;
+  UninstallPage.Align := alClient;
+  UninstallProgressForm.InnerNotebook.ActivePage := UninstallPage;
 
-    OKButton := TNewButton.Create(Form);
-    OKButton.Parent := Form;
-    OKButton.Width := ScaleX(90);
-    OKButton.Height := ScaleY(23);
-    OKButton.Left := Form.ClientWidth - ScaleX(90 + 10 + 90 + 10);
-    OKButton.Top := Form.ClientHeight - ScaleY(23 + 10);
-    OKButton.Caption := SetupMessage(msgButtonOK);
-    OKButton.ModalResult := mrOk;
-    OKButton.Default := True;
+  { Checkbox }
+  CheckBox := TNewCheckBox.Create(UninstallProgressForm);
+  CheckBox.Parent := UninstallPage;
+  CheckBox.Left := ScaleX(20);
+  CheckBox.Top := ScaleY(40);
+  CheckBox.Width := ScaleX(350);
+  CheckBox.Height := ScaleY(17);
+  CheckBox.Caption := '删除用户配置和缓存数据（%LOCALAPPDATA%\ETestStudio）';
+  CheckBox.Checked := False;
 
-    CancelButton := TNewButton.Create(Form);
-    CancelButton.Parent := Form;
-    CancelButton.Width := ScaleX(90);
-    CancelButton.Height := ScaleY(23);
-    CancelButton.Left := Form.ClientWidth - ScaleX(90 + 10);
-    CancelButton.Top := Form.ClientHeight - ScaleY(23 + 10);
-    CancelButton.Caption := SetupMessage(msgButtonCancel);
-    CancelButton.ModalResult := mrCancel;
-    CancelButton.Cancel := True;
+  { Save original states }
+  OriginalPageNameLabel := UninstallProgressForm.PageNameLabel.Caption;
+  OriginalPageDescriptionLabel := UninstallProgressForm.PageDescriptionLabel.Caption;
+  OriginalCancelButtonEnabled := UninstallProgressForm.CancelButton.Enabled;
+  OriginalCancelButtonModalResult := UninstallProgressForm.CancelButton.ModalResult;
 
-    Form.ActiveControl := CheckBox;
+  { Reconfigure for our custom page }
+  UninstallProgressForm.PageNameLabel.Caption := '卸载选项';
+  UninstallProgressForm.PageDescriptionLabel.Caption := '选择要移除的内容。';
+  UninstallProgressForm.CancelButton.Enabled := True;
+  UninstallProgressForm.CancelButton.ModalResult := mrCancel;
 
-    if Form.ShowModal = mrOk then
-      DeleteUserData := CheckBox.Checked
-    else
-      Abort;
-  finally
-    Form.Free();
-  end;
+  { Show wizard with our custom page }
+  if UninstallProgressForm.ShowModal = mrCancel then
+    Abort;
+
+  { Restore standard layout }
+  UninstallButton.Visible := False;
+  UninstallProgressForm.PageNameLabel.Caption := OriginalPageNameLabel;
+  UninstallProgressForm.PageDescriptionLabel.Caption := OriginalPageDescriptionLabel;
+  UninstallProgressForm.CancelButton.Enabled := OriginalCancelButtonEnabled;
+  UninstallProgressForm.CancelButton.ModalResult := OriginalCancelButtonModalResult;
+
+  { Return to standard installing page }
+  UninstallProgressForm.InnerNotebook.ActivePage := UninstallProgressForm.InstallingPage;
+
+  { Save checkbox state for CurUninstallStepChanged }
+  DeleteUserData := CheckBox.Checked;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
