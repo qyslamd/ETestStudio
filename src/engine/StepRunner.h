@@ -91,7 +91,7 @@ class StepRunner : public QObject {
     StepRunner(HardwareManager* hw, SignalCodec* codec,
                SignalResolver* resolver, QObject* parent = nullptr);
 
-    void executeProgram(const ProgramData& program);
+    Q_INVOKABLE void executeProgram(const ProgramData& program);
     void cancel();
     void resetCancel();
     bool isCancelling() const;
@@ -133,5 +133,8 @@ class StepRunner : public QObject {
 };
 
 }  // namespace etest::engine
+
+Q_DECLARE_METATYPE(etest::engine::StepResult)
+Q_DECLARE_METATYPE(etest::engine::ProgramData)
 
 #endif  // ETEST_ENGINE_STEP_RUNNER_H_
