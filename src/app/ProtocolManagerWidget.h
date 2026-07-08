@@ -36,6 +36,9 @@ class ProtocolManagerWidget : public QWidget {
   // 重新加载当前项目的 ICDConfig 并刷新视图
   void refreshList();
 
+  // 暴露 Repository 给上层（MainWindow 用于同步到 SignalRegistry）
+  icd::Repository* repository() const { return repo_.get(); }
+
  signals:
   // 双击帧条目 / 打开配置 时发出，请求主窗口的 EditorManager 打开 ICDConfig
   void openFileRequested(const QString& filePath);

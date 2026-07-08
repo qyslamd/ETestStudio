@@ -59,12 +59,14 @@
 #include "dialogs/SettingsDialog.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
+#include "icd/repository.hpp"
 #include "logger/Logger.h"
 #include "logger/QtConsoleSink.h"
 #include "plugin/PluginManager.h"
 #include "project/ProjectManager.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
+#include "utils/SignalSyncHelper.h"
 #include "widgets/BottomContainerWidget.h"
 #include "widgets/HintBarWidget.h"
 #include "widgets/LoadingOverlay.h"
@@ -1373,13 +1375,41 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   } else {
     signal_registry_->clear();
   }
-  // 从侧边栏获取 ICD Repository（若已加载）
-  auto* protocolMgr = sidebar_->protocolManager();
-  if (protocolMgr) {
-    // 暂不获取 repo — ProtocolManagerWidget 的 Repository 加载是异步 ICD 流程
-  }
   editor_manager_->setSignalRegistry(signal_registry_);
-  editor_manager_->setIcdRepository(icd_repository_);
+
+  // ICD Repository 的接合：ProtocolManagerWidget::refreshList 在
+  // initSignalsLate 中由 projectOpened 信号触发（在 onProjectOpened 之后执行），
+  // 因此用 QTimer::singleShot(0) 把注入延迟到该槽执行完毕之后。
+  QTimer::singleShot(0, this, [this]() {
+    auto* pm = sidebar_->protocolManager();
+    if (pm) {
+      icd_repository_ = pm->repository();
+    }
+    editor_manager_->setIcdRepository(icd_repository_);
+
+    if (signal_registry_ && icd_repository_) {
+      // 同步 registry：遍历端口绑定 + ICD 帧 → 建立信号索引
+      etest::app::synchronizeRegistry(*signal_registry_, icd_repository_);
+    }
+
+    // 将可用帧名传播给已打开的拓扑编辑器
+    if (icd_repository_) {
+      QStringList allFrames;
+      for (const auto& frame : icd_repository_->frames()) {
+        auto name = frame->name();
+        allFrames.append(QString::fromUtf8(name.data(),
+                                            static_cast<int>(name.size())));
+      }
+      for (const QString& path : editor_manager_->openFiles()) {
+        auto* ie = editor_manager_->editorById(path);
+        if (!ie) continue;
+        if (auto* topo = qobject_cast<etest::topology::TopologyEditorWidget*>(
+                ie->widget())) {
+          topo->setAvailableIcdFrames(allFrames);
+        }
+      }
+    }
+  });
 
   // 切换到侧边栏项目管理页面
   sidebar_->switchPage(PageId::kProjectOverview);

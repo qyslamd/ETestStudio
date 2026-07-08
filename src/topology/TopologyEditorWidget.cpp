@@ -91,6 +91,12 @@ void TopologyEditorWidget::setEmbeddedMode(bool embedded) {
   }
 }
 
+void TopologyEditorWidget::setAvailableIcdFrames(const QStringList& frames) {
+  if (property_panel_) {
+    property_panel_->setAvailableIcdFrames(frames);
+  }
+}
+
 void TopologyEditorWidget::showStatusMessage(const QString& msg) {
   if (embedded_) {
     auto* w = window();

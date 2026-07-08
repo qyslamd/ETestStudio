@@ -20,6 +20,7 @@
 #include "editors/TextEditorWidget.h"
 #include "TestProgramEditorWidget.h"
 #include "dialogs/IcdSignalSelection.h"
+#include "icd/repository.hpp"
 #include "logger/Logger.h"
 #include "protocol/ProtocolEditorWidget.h"
 #include "topology/TopologyDocument.h"
@@ -135,6 +136,16 @@ void EditorManager::registerEditorTypes() {
             [editor, mgr](const QString&, const QString& newId) {
               mgr->updateEditorId(editor, newId);
             });
+        // M3+: 注入可用 ICD 帧名到拓扑属性面板
+        if (mgr->icdRepository()) {
+          QStringList frames;
+          for (const auto& frame : mgr->icdRepository()->frames()) {
+            auto name = frame->name();
+            frames.append(QString::fromUtf8(name.data(),
+                                             static_cast<int>(name.size())));
+          }
+          te->setAvailableIcdFrames(frames);
+        }
       });
 
   EditorFactoryRegistry::registerFactory(

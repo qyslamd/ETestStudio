@@ -54,6 +54,9 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   // 嵌入模式（IDE 中隐藏 menuBar）
   void setEmbeddedMode(bool embedded);
 
+  // M3+: 设置可用 ICD 帧名列表（由上层注入，在绑定对话框中显示）
+  void setAvailableIcdFrames(const QStringList& frames);
+
  signals:
   void editorTitleChanged(const QString& title);
   void modificationChanged(bool modified);
