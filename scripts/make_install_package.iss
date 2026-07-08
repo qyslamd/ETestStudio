@@ -80,6 +80,7 @@ Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.i
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkablealone
+Name: "installvcruntime"; Description: "安装 VC++ 运行库"; GroupDescription: "系统组件："; Flags: checkablealone
 
 [Files]
 ; ETestStudio 主程序与 Qt 运行时
@@ -249,6 +250,26 @@ begin
 
   { Save checkbox state for CurUninstallStepChanged }
   DeleteUserData := CheckBox.Checked;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ErrorCode: Integer;
+  VcRedistPath: String;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    if IsTaskSelected('installvcruntime') then
+    begin
+      VcRedistPath := ExpandConstant('{app}\{#MyVcRedist}');
+      if FileExists(VcRedistPath) then
+      begin
+        ShellExec('runas', VcRedistPath,
+                  '/install /quiet /norestart',
+                  '', SW_SHOW, ewNoWait, ErrorCode);
+      end;
+    end;
+  end;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
