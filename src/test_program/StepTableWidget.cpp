@@ -322,16 +322,19 @@ void StepTableWidget::setRegistry(etest::core::SignalRegistry* reg) {
 
 bool StepTableWidget::edit(const QModelIndex& index, EditTrigger trigger,
                            QEvent* event) {
-  // 只有 target 列且 signal_selection_ 非空时拦截
-  if (index.column() == kColTarget) {
-    if (signal_selection_) {
-      LOG_DEBUG("UUID", "StepTableWidget::edit target column -> selectSignal()");
-      QString uuid = signal_selection_->selectSignal(this);
-      if (!uuid.isEmpty()) {
-        model_->setData(index, uuid);
-      }
-      return false;
+  // 只有 target 列 + signal_selection_ 非空 + 鼠标触发的编辑才拦截
+  // 不拦截 programmatic（如 CurrentChanged → _q_editItem → edit(index)）
+  if (index.column() == kColTarget && signal_selection_ &&
+      (trigger == QAbstractItemView::DoubleClicked ||
+       trigger == QAbstractItemView::SelectedClicked)) {
+    LOG_DEBUG("UUID", "StepTableWidget::edit target column -> selectSignal()");
+    QString uuid = signal_selection_->selectSignal(this);
+    if (!uuid.isEmpty()) {
+      model_->setData(index, uuid);
     }
+    return false;
+  }
+  if (index.column() == kColTarget) {
     LOG_DEBUG("UUID", "StepTableWidget::edit target column -> signal_selection_ is NULL, fallback to default edit");
   }
   return QTableView::edit(index, trigger, event);
