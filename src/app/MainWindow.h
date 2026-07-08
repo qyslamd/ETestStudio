@@ -76,6 +76,7 @@ class MainWindow : public SARibbonMainWindow {
   void onProjectClosed();
   void updateWindowTitle();
   void updateRecentProjectsMenu();
+  void updateRecentFilesMenu();
 
   // 编辑器相关
   void onSaveFile();
@@ -143,6 +144,7 @@ class MainWindow : public SARibbonMainWindow {
 
   // 菜单和状态
   QMenu* recent_projects_menu_ = nullptr;
+  QMenu* recent_files_menu_ = nullptr;
   QAction* view_output_action_ = nullptr;
   QAction* view_problems_action_ = nullptr;
   QAction* view_terminal_action_ = nullptr;

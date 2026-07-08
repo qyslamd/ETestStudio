@@ -426,7 +426,7 @@ void MainWindow::initSignalsLate() {
             &ProjectStructureWidget::onFileClosed);
     // 记录最近文件
     connect(editor_manager_, &EditorManager::fileOpened, this,
-            [](const QString& path) {
+            [this](const QString& path) {
               auto& cfg = ConfigManager::instance();
               QStringList files = cfg.get<QStringList>(
                   QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
@@ -441,7 +441,11 @@ void MainWindow::initSignalsLate() {
               timestamps.insert(path, QDateTime::currentDateTime());
               cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_TIMESTAMPS),
                       timestamps);
+
+              updateRecentFilesMenu();
             });
+    connect(editor_manager_, &EditorManager::fileClosed, this,
+            [this]() { updateRecentFilesMenu(); });
     connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
             psWidget, [this, psWidget]() {
               psWidget->setOpenFiles(editor_manager_->openFiles());
@@ -1531,6 +1535,36 @@ void MainWindow::updateRecentProjectsMenu() {
   }
 }
 
+void MainWindow::updateRecentFilesMenu() {
+  recent_files_menu_->clear();
+
+  auto& cfg = ConfigManager::instance();
+  QStringList files = cfg.get<QStringList>(
+      QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
+
+  if (files.isEmpty()) {
+    auto* emptyAction =
+        recent_files_menu_->addAction(QStringLiteral("（无）"));
+    emptyAction->setEnabled(false);
+  } else {
+    for (const QString& path : files) {
+      recent_files_menu_->addAction(path, this, [this, path]() {
+        editor_manager_->openFile(path);
+      });
+    }
+    recent_files_menu_->addSeparator();
+    recent_files_menu_->addAction(
+        QStringLiteral("清除最近文件"), this, [this]() {
+          auto& cfg = ConfigManager::instance();
+          cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST),
+                  QStringList());
+          cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_TIMESTAMPS),
+                  QVariantMap());
+          updateRecentFilesMenu();
+        });
+  }
+}
+
 void MainWindow::onSaveFile() {
   auto* editor = editor_manager_->currentEditor();
   if (!editor)
@@ -1905,6 +1939,9 @@ void MainWindow::setupRibbon() {
 
   recent_projects_menu_ = app_menu->addMenu(QStringLiteral("最近项目"));
   updateRecentProjectsMenu();
+
+  recent_files_menu_ = app_menu->addMenu(QStringLiteral("最近文件"));
+  updateRecentFilesMenu();
 
   app_menu->addSeparator();
   app_menu->addAction(QStringLiteral("退出"), this, &QWidget::close);
