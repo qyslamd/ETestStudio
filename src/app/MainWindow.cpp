@@ -23,6 +23,7 @@
 #include <QTimer>
 #include <QToolButton>
 #include "dialogs/AboutDialog.h"
+#include "dialogs/IcdSignalSelection.h"
 #include "dialogs/LoginDialog.h"
 #include "dialogs/UserManagerDialog.h"
 
@@ -46,6 +47,7 @@
 #include "SidebarWidget.h"
 #include "TerminalPanel.h"
 #include "TestProgramManagerWidget.h"
+#include "TestProgramEditorWidget.h"
 #include "ThemeManager.h"
 #include "TopologyManagerWidget.h"
 #include "WelcomeWidget.h"
@@ -815,9 +817,7 @@ void MainWindow::initSignalsLate() {
   connect(protocolMgr, &ProtocolManagerWidget::openFileRequested, protocolMgr,
           [this](const QString& path) { editor_manager_->openFile(path); });
 
-  // 协议管理器：项目打开/关闭时刷新
-  connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
-          protocolMgr, &ProtocolManagerWidget::refreshList);
+  // 协议管理器：项目关闭时刷新（打开时在 onProjectOpened 中同步刷新）
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
           protocolMgr, &ProtocolManagerWidget::refreshList);
 
@@ -1369,7 +1369,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   status_message_label_->setText(
       QStringLiteral("项目已打开：%1").arg(projectPath));
 
-  // M6: 初始化 SignalRegistry 并注入到编辑器管理器
+  // M6: 初始化 SignalRegistry + ICD Repository（同步接合）
   if (!signal_registry_) {
     signal_registry_ = new etest::core::SignalRegistry(this);
   } else {
@@ -1377,39 +1377,51 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   }
   editor_manager_->setSignalRegistry(signal_registry_);
 
-  // ICD Repository 的接合：ProtocolManagerWidget::refreshList 在
-  // initSignalsLate 中由 projectOpened 信号触发（在 onProjectOpened 之后执行），
-  // 因此用 QTimer::singleShot(0) 把注入延迟到该槽执行完毕之后。
-  QTimer::singleShot(0, this, [this]() {
-    auto* pm = sidebar_->protocolManager();
-    if (pm) {
-      icd_repository_ = pm->repository();
-    }
-    editor_manager_->setIcdRepository(icd_repository_);
+  // 同步触发协议管理器刷新（确保 ICD 数据已加载），
+  // ProtocolManagerWidget::refreshList 在同一信号链中稍后执行，
+  // 这里手动触发一次以保证 onProjectOpened 返回时 ICD 数据就绪
+  if (auto* pm = sidebar_->protocolManager()) {
+    pm->refreshList();
+    icd_repository_ = pm->repository();
+  }
+  editor_manager_->setIcdRepository(icd_repository_.get());
 
-    if (signal_registry_ && icd_repository_) {
-      // 同步 registry：遍历端口绑定 + ICD 帧 → 建立信号索引
-      etest::app::synchronizeRegistry(*signal_registry_, icd_repository_);
+  if (signal_registry_ && icd_repository_) {
+    LOG_DEBUG("UUID", "ICD Repository loaded, frames={}",
+             icd_repository_->frames().size());
+    // 同步 registry：遍历端口绑定 + ICD 帧 → 建立信号索引
+    etest::app::synchronizeRegistry(*signal_registry_, icd_repository_.get());
+    LOG_DEBUG("UUID", "after synchronizeRegistry: devices={}",
+             signal_registry_->registeredDeviceIds().size());
+
+    // 为已打开的测试程序编辑器注入 IcdSignalSelection
+    for (const QString& path : editor_manager_->openFiles()) {
+      auto* ie = editor_manager_->editorById(path);
+      if (!ie) continue;
+      if (auto* te = qobject_cast<TestProgramEditorWidget*>(ie->widget())) {
+        te->setSignalSelection(
+            new IcdSignalSelection(signal_registry_, icd_repository_.get()));
+        te->setRegistry(signal_registry_);
+      }
     }
 
     // 将可用帧名传播给已打开的拓扑编辑器
-    if (icd_repository_) {
-      QStringList allFrames;
-      for (const auto& frame : icd_repository_->frames()) {
-        auto name = frame->name();
-        allFrames.append(QString::fromUtf8(name.data(),
-                                            static_cast<int>(name.size())));
-      }
-      for (const QString& path : editor_manager_->openFiles()) {
-        auto* ie = editor_manager_->editorById(path);
-        if (!ie) continue;
-        if (auto* topo = qobject_cast<etest::topology::TopologyEditorWidget*>(
-                ie->widget())) {
-          topo->setAvailableIcdFrames(allFrames);
-        }
+    QStringList allFrames;
+    for (const auto& frame : icd_repository_->frames()) {
+      if (!frame) continue;
+      auto name = frame->name();
+      allFrames.append(QString::fromUtf8(name.data(),
+                                          static_cast<int>(name.size())));
+    }
+    for (const QString& path : editor_manager_->openFiles()) {
+      auto* ie = editor_manager_->editorById(path);
+      if (!ie) continue;
+      if (auto* topo = qobject_cast<etest::topology::TopologyEditorWidget*>(
+              ie->widget())) {
+        topo->setAvailableIcdFrames(allFrames);
       }
     }
-  });
+  }
 
   // 切换到侧边栏项目管理页面
   sidebar_->switchPage(PageId::kProjectOverview);

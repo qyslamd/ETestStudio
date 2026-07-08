@@ -17,6 +17,7 @@
 #include "icd/frame.hpp"
 #include "icd/node.hpp"
 #include "icd/repository.hpp"
+#include "logger/Logger.h"
 #include "utils/SignalSyncHelper.h"
 
 namespace etest::app {
@@ -95,6 +96,8 @@ void SignalSelectionDialog::populateDevices() {
   uuid_label_->clear();
 
   QStringList ids = registry_->registeredDeviceIds();
+  LOG_DEBUG("UUID", "SignalSelectionDialog::populateDevices: found {} device ids",
+           ids.size());
   for (const QString& id : ids) {
     QString name = registry_->deviceName(id);
     // 显示 "设备名 (id)"，userData 存 id

@@ -1072,6 +1072,9 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
   for (const auto& tc : suite.cases) {
     auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
     connectTable(table);
+    // M0/M5: 传播 signal_selection_ 和 registry_ 给新表格
+    if (signal_selection_) table->setSignalSelection(signal_selection_);
+    if (registry_) table->setRegistry(registry_);
     fillTable(table, tc.steps);
     tab_widget_->addTab(table,
                         etest::app::AppIconProvider::instance().icon(

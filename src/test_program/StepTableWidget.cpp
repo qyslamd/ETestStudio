@@ -8,6 +8,7 @@
 
 #include "CommandTypeDelegate.h"
 #include "SignalRegistry.h"
+#include "logger/Logger.h"
 
 namespace etest::app {
 
@@ -322,14 +323,16 @@ void StepTableWidget::setRegistry(etest::core::SignalRegistry* reg) {
 bool StepTableWidget::edit(const QModelIndex& index, EditTrigger trigger,
                            QEvent* event) {
   // 只有 target 列且 signal_selection_ 非空时拦截
-  if (index.column() == kColTarget && signal_selection_) {
-    QString uuid = signal_selection_->selectSignal(this);
-    if (!uuid.isEmpty()) {
-      model_->setData(index, uuid);
-      // setData 触发的 itemChanged → cellDataChanged → onDataChanged
-      // 保存快照 + 标记 modified，不需要额外操作
+  if (index.column() == kColTarget) {
+    if (signal_selection_) {
+      LOG_DEBUG("UUID", "StepTableWidget::edit target column -> selectSignal()");
+      QString uuid = signal_selection_->selectSignal(this);
+      if (!uuid.isEmpty()) {
+        model_->setData(index, uuid);
+      }
+      return false;
     }
-    return false;  // 不启动默认编辑
+    LOG_DEBUG("UUID", "StepTableWidget::edit target column -> signal_selection_ is NULL, fallback to default edit");
   }
   return QTableView::edit(index, trigger, event);
 }

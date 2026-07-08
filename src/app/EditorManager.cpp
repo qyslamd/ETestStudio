@@ -19,9 +19,11 @@
 #include "editors/ImageViewerWidget.h"
 #include "editors/TextEditorWidget.h"
 #include "TestProgramEditorWidget.h"
+#include "SignalRegistry.h"
 #include "dialogs/IcdSignalSelection.h"
 #include "icd/repository.hpp"
 #include "logger/Logger.h"
+#include "utils/SignalSyncHelper.h"
 #include "protocol/ProtocolEditorWidget.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
@@ -140,11 +142,95 @@ void EditorManager::registerEditorTypes() {
         if (mgr->icdRepository()) {
           QStringList frames;
           for (const auto& frame : mgr->icdRepository()->frames()) {
+            if (!frame) continue;
             auto name = frame->name();
             frames.append(QString::fromUtf8(name.data(),
                                              static_cast<int>(name.size())));
           }
           te->setAvailableIcdFrames(frames);
+        }
+
+        // M2+: 将拓扑设备及其端口绑定注册到 SignalRegistry
+        auto* sigReg = mgr->signalRegistry();
+        auto* icdRepo = mgr->icdRepository();
+        if (sigReg) {
+          auto* doc = te->document();
+          if (doc) {
+            // 注册已有设备
+            for (int i = 0; i < doc->deviceCount(); ++i) {
+              const auto* dev = doc->device(i);
+              LOG_DEBUG("UUID", "topology binder: registerDevice id={} name={}",
+                       dev->id.toStdString(), dev->name.toStdString());
+              sigReg->registerDevice(dev->id, dev->name);
+              for (int pi = 0; pi < dev->ports.size(); ++pi) {
+                sigReg->bindPortToFrames(dev->id, dev->ports[pi].name,
+                                          dev->ports[pi].boundFrameNames);
+              }
+            }
+            LOG_DEBUG("UUID", "topology binder: registered {} devices from doc (icdRepo={})",
+                     doc->deviceCount(), icdRepo ? "yes" : "no");
+            // 若有 ICD 数据，重建信号索引
+            if (icdRepo) {
+              etest::app::synchronizeRegistry(*sigReg, icdRepo);
+              LOG_DEBUG("UUID", "topology binder: synchronizeRegistry done, total devices={}",
+                       sigReg->registeredDeviceIds().size());
+            }
+          }
+          // 监听设备/端口变更 → 动态更新 registry
+          QObject::connect(doc, &etest::topology::TopologyDocument::deviceAdded,
+                           mgr, [sigReg, icdRepo, doc](int index) {
+            const auto* dev = doc->device(index);
+            if (dev) {
+              LOG_DEBUG("UUID", "deviceAdded signal: id={} name={}",
+                       dev->id.toStdString(), dev->name.toStdString());
+              sigReg->registerDevice(dev->id, dev->name);
+              for (int pi = 0; pi < dev->ports.size(); ++pi) {
+                sigReg->bindPortToFrames(dev->id, dev->ports[pi].name,
+                                          dev->ports[pi].boundFrameNames);
+              }
+              if (icdRepo) {
+                etest::app::synchronizeRegistry(*sigReg, icdRepo);
+              }
+            }
+          });
+          QObject::connect(doc,
+                           &etest::topology::TopologyDocument::deviceRemoved,
+                           mgr, [sigReg, icdRepo, doc]() {
+            // 设备已从 doc 中删除，全量重建 registry
+            sigReg->clear();
+            for (int i = 0; i < doc->deviceCount(); ++i) {
+              const auto* dev = doc->device(i);
+              sigReg->registerDevice(dev->id, dev->name);
+              for (int pi = 0; pi < dev->ports.size(); ++pi) {
+                sigReg->bindPortToFrames(dev->id, dev->ports[pi].name,
+                                          dev->ports[pi].boundFrameNames);
+              }
+            }
+            if (icdRepo) {
+              etest::app::synchronizeRegistry(*sigReg, icdRepo);
+            }
+          });
+          QObject::connect(
+              doc, &etest::topology::TopologyDocument::deviceChanged, mgr,
+              [sigReg, icdRepo, doc](int index) {
+            const auto* dev = doc->device(index);
+            if (dev) {
+              sigReg->registerDevice(dev->id, dev->name);
+              if (icdRepo) {
+                etest::app::synchronizeRegistry(*sigReg, icdRepo);
+              }
+            }
+          });
+          QObject::connect(
+              doc, &etest::topology::TopologyDocument::devicePortFramesChanged,
+              mgr, [sigReg, icdRepo]() {
+                if (icdRepo) {
+                  etest::app::synchronizeRegistry(*sigReg, icdRepo);
+                }
+              });
+          QObject::connect(doc,
+                           &etest::topology::TopologyDocument::documentCleared,
+                           mgr, [sigReg]() { sigReg->clear(); });
         }
       });
 
@@ -192,11 +278,15 @@ void EditorManager::registerEditorTypes() {
         if (!te)
           return;
         // M5: 注入 ICD 信号选择器和 registry（非 null 时才注入）
+        LOG_DEBUG("UUID", "testprogram binder: sigReg={} icdRepo={}",
+                 (mgr->signalRegistry() ? "ok" : "null"),
+                 (mgr->icdRepository() ? "ok" : "null"));
         if (mgr->signalRegistry() && mgr->icdRepository()) {
           auto* sel = new IcdSignalSelection(mgr->signalRegistry(),
                                              mgr->icdRepository());
           te->setSignalSelection(sel);
           te->setRegistry(mgr->signalRegistry());
+          LOG_DEBUG("UUID", "testprogram binder: IcdSignalSelection injected");
         }
         QObject::connect(
             te, &TestProgramEditorWidget::modificationChanged, mgr,

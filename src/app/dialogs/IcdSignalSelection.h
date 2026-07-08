@@ -6,6 +6,7 @@
 
 #include "SignalSelectionInterface.h"
 #include "dialogs/SignalSelectionDialog.h"
+#include "logger/Logger.h"
 
 namespace etest::core {
 class SignalRegistry;
@@ -28,11 +29,13 @@ class IcdSignalSelection : public ISignalSelection {
 
   QString selectSignal(QWidget* parent) override {
     if (registry_ && repository_) {
+      LOG_DEBUG("UUID", "IcdSignalSelection: registry+repository ok -> SignalSelectionDialog");
       SignalSelectionDialog dlg(registry_, repository_, parent);
       if (dlg.exec() == QDialog::Accepted)
         return dlg.selectedUuid();
       return {};
     }
+    LOG_DEBUG("UUID", "IcdSignalSelection: registry or repository is NULL, fallback to DefaultSignalSelection");
     // 降级为文本输入
     DefaultSignalSelection fallback;
     return fallback.selectSignal(parent);
