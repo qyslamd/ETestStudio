@@ -97,6 +97,7 @@ Source: "{#WhereAreFiles}\iconengines\*.dll"; DestDir: "{app}\iconengines"; Flag
 Source: "{#WhereAreFiles}\imageformats\*.dll"; DestDir: "{app}\imageformats"; Flags: ignoreversion
 Source: "{#WhereAreFiles}\platforms\*.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion
 Source: "{#WhereAreFiles}\styles\*.dll"; DestDir: "{app}\styles"; Flags: ignoreversion
+Source: "{#WhereAreFiles}\sqldrivers\*.dll"; DestDir: "{app}\sqldrivers"; Flags: ignoreversion
 Source: "{#WhereAreFiles}\translations\*.qm"; DestDir: "{app}\translations"; Flags: ignoreversion
 
 #ifexist "{#WhereAreFiles}\plugins"
