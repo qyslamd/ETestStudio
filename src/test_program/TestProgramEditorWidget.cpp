@@ -494,7 +494,7 @@ void TestProgramEditorWidget::initSignals() {
             menu.setObjectName(QStringLiteral("testProgramVerticalTabsMenu"));
             if (idx >= 2) {
               auto* renameAction = menu.addAction(QStringLiteral("重命名"));
-              auto* closeAction = menu.addAction(QStringLiteral("关闭用例"));
+              auto* closeAction = menu.addAction(QStringLiteral("删除用例"));
               QAction* chosen =
                   menu.exec(vertical_tabs_view_->viewport()->mapToGlobal(pos));
               if (chosen == renameAction) {
@@ -505,9 +505,6 @@ void TestProgramEditorWidget::initSignals() {
             }
           });
 
-  // delegate 关闭按钮
-  connect(vertical_tabs_delegate_, &VerticalTabListDelegate::closeRequested,
-          this, [this](int idx) { removeCaseAt(idx, false); });
 }
 
 void TestProgramEditorWidget::connectTable(StepTableWidget* table) {
@@ -1216,7 +1213,6 @@ void TestProgramEditorWidget::rebuildVerticalTabs() {
     item->setText(tab_widget_->tabText(i));
     item->setEditable(false);
     item->setData(i, VerticalTabRole::TabIndexRole);
-    item->setData(i >= 2, VerticalTabRole::ClosableRole);
     vertical_tabs_model_->appendRow(item);
   }
   int cur = tab_widget_->currentIndex();
