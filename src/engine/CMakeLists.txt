@@ -4,6 +4,7 @@ add_library(${TARGET_NAME} STATIC
     TestExecutionEngine.cpp
     SignalResolver.cpp
     SignalCodec.cpp
+    HardwareManager.cpp
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC
