@@ -98,6 +98,8 @@ TestProgramEditorWidget::TestProgramEditorWidget(const QString& filePath,
   }
 }
 
+
+
 void TestProgramEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded_) {
@@ -438,11 +440,17 @@ void TestProgramEditorWidget::initSignals() {
           });
 
   // ── 纵向标签栏 ──
-  // 切换方向
+  // 切换方向（显式用户操作保存配置）
   connect(toggle_orientation_action_, &QAction::toggled, this,
-          [this](bool vertical) { applyTabOrientation(vertical); });
-  // dock 关闭按钮 → 切回水平（程序内 setVisible 触发的由 applying_orientation_
-  // 拦截）
+          [this](bool vertical) {
+            applyTabOrientation(vertical);
+            etest::core::config::ConfigManager::instance().set(
+                etest::core::config::CONFIG_TEST_PROGRAM_TAB_ORIENTATION,
+                vertical ? QStringLiteral("vertical")
+                         : QStringLiteral("horizontal"));
+          });
+  // dock 关闭按钮 → 切回水平（仅 UI，不写配置——析构时的触发由
+  // applying_orientation_ 拦截）
   connect(vertical_tabs_dock_, &QDockWidget::visibilityChanged, this,
           [this](bool visible) {
             if (!applying_orientation_) {
@@ -1245,10 +1253,6 @@ void TestProgramEditorWidget::applyTabOrientation(bool vertical) {
             vertical ? QStringLiteral("testprog_tab_horizontal")
                      : QStringLiteral("testprog_tab_vertical")));
   }
-
-  etest::core::config::ConfigManager::instance().set(
-      etest::core::config::CONFIG_TEST_PROGRAM_TAB_ORIENTATION,
-      vertical ? QStringLiteral("vertical") : QStringLiteral("horizontal"));
 
   applying_orientation_ = false;
 }
