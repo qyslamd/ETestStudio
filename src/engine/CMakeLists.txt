@@ -5,6 +5,7 @@ add_library(${TARGET_NAME} STATIC
     SignalResolver.cpp
     SignalCodec.cpp
     HardwareManager.cpp
+    StepRunner.cpp
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC
