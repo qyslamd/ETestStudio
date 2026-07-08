@@ -6,12 +6,17 @@
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
@@ -1389,9 +1394,43 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   if (signal_registry_ && icd_repository_) {
     LOG_DEBUG("UUID", "ICD Repository loaded, frames={}",
              icd_repository_->frames().size());
-    // 同步 registry：遍历端口绑定 + ICD 帧 → 建立信号索引
+
+    // 预注册项目中的已有拓扑设备：扫描 topology/ 目录下所有 .etopo 文件
+    const QString topoDir = projectPath + QStringLiteral("/topology");
+    QDir topoDirObj(topoDir);
+    if (topoDirObj.exists()) {
+      for (const QFileInfo& fi :
+           topoDirObj.entryInfoList({QStringLiteral("*.etopo")},
+                                    QDir::Files, QDir::Name)) {
+        QFile f(fi.absoluteFilePath());
+        if (!f.open(QIODevice::ReadOnly)) continue;
+        QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+        f.close();
+        if (!doc.isObject()) continue;
+        QJsonArray devices = doc.object()[QStringLiteral("devices")].toArray();
+        for (const QJsonValue& dv : devices) {
+          QJsonObject dobj = dv.toObject();
+          QString id = dobj[QStringLiteral("id")].toString();
+          QString name = dobj[QStringLiteral("name")].toString();
+          if (id.isEmpty()) {
+            id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+          }
+          signal_registry_->registerDevice(id, name);
+          QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
+          for (const QJsonValue& pv : ports) {
+            QJsonObject pobj = pv.toObject();
+            QStringList frames;
+            for (const QJsonValue& fv : pobj[QStringLiteral("boundFrames")].toArray()) {
+              frames.append(fv.toString());
+            }
+            signal_registry_->bindPortToFrames(id, pobj[QStringLiteral("name")].toString(), frames);
+          }
+        }
+      }
+    }
+    // 重建信号索引（含预注册的设备和绑定）
     etest::app::synchronizeRegistry(*signal_registry_, icd_repository_.get());
-    LOG_DEBUG("UUID", "after synchronizeRegistry: devices={}",
+    LOG_DEBUG("UUID", "after pre-register + synchronizeRegistry: devices={}",
              signal_registry_->registeredDeviceIds().size());
 
     // 为已打开的测试程序编辑器注入 IcdSignalSelection
