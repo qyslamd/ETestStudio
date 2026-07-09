@@ -185,6 +185,7 @@ set(PNG_LIBRARY png_static CACHE FILEPATH "PNG library" FORCE)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static library for libharu" FORCE)
 add_subdirectory(3rdparty/libharu-2.4.6)
+include(cmake/libharu/patch_utf8.cmake)
 
 # QScintilla 高级文本编辑器，补丁模式集成，不修改原源码
 set(QSCINTILLA_CMAKE_DIR ${CMAKE_SOURCE_DIR}/cmake/qscintilla)

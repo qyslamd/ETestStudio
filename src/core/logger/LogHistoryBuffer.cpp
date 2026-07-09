@@ -11,7 +11,7 @@ LogHistoryBuffer::~LogHistoryBuffer() = default;
 
 void LogHistoryBuffer::push(int level, const QString& text) {
   QMutexLocker locker(&mutex_);
-  if (buffer_.size() >= capacity_) {
+  if (buffer_.size() >= static_cast<size_t>(capacity_)) {
     buffer_.pop_front();
   }
   buffer_.push_back(LogEntry{level, text});
