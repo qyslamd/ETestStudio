@@ -1,4 +1,10 @@
 /* ==================== ExecutionControlBar ==================== */
+
+#ExecutionControlBar #execControlSeparator {
+    background-color: #D0D0D0;
+    margin: 4px 2px;
+}
+
 #ExecutionControlBar {
   background-color: #F5F5F5;
   border-top: 1px solid #D0D0D0;

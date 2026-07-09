@@ -250,7 +250,9 @@ bool HardwareManager::write(const ResolvedSignal& signal, double engValue) {
   switch (signal.signalType) {
     case SignalType::DA: {
       IDADevicePlugin* da = dynamic_cast<IDADevicePlugin*>(dev);
-      if (!da) return false;
+      if (!da) {
+        return false;
+      }
       return da->writeChannel(signal.channel, engValue);
     }
     case SignalType::CAN:
@@ -285,17 +287,23 @@ bool HardwareManager::writeFrame(const ResolvedSignal& signal,
   switch (signal.signalType) {
     case SignalType::CAN: {
       ICANPlugin* can = dynamic_cast<ICANPlugin*>(dev);
-      if (!can) return false;
+      if (!can) {
+        return false;
+      }
       return can->sendMessage(signal.frameId, frameData);
     }
     case SignalType::SERIAL: {
       ISerialDevicePlugin* serial = dynamic_cast<ISerialDevicePlugin*>(dev);
-      if (!serial) return false;
+      if (!serial) {
+        return false;
+      }
       return serial->writeData(frameData) >= 0;
     }
     case SignalType::A429: {
       IArinc429Plugin* a429 = dynamic_cast<IArinc429Plugin*>(dev);
-      if (!a429) return false;
+      if (!a429) {
+        return false;
+      }
       return a429->sendLabel(static_cast<int>(signal.frameId), frameData);
     }
     case SignalType::AD:

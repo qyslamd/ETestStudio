@@ -53,8 +53,6 @@ void ExecutionControlBar::initUi() {
   auto* sep = new QWidget(this);
   sep->setFixedWidth(1);
   sep->setObjectName(QStringLiteral("execControlSeparator"));
-  sep->setStyleSheet(QStringLiteral(
-      "background-color: #D0D0D0; margin: 4px 2px;"));
   layout->addWidget(sep);
 
   // ── Spacer ──

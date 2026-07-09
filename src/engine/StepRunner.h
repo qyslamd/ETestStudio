@@ -93,8 +93,11 @@ class StepRunner : public QObject {
 
     Q_INVOKABLE void executeProgram(const ProgramData& program);
     void cancel();
+    void pause();
+    void resume();
     void resetCancel();
     bool isCancelling() const;
+    bool isPaused() const;
 
     static constexpr int kDefaultTimeoutMs = 30000;
 

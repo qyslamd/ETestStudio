@@ -139,6 +139,13 @@ void ResultCollector::onStepFinished(int caseIndex, const QString& stepPath,
 
     step_count_++;
 
+    // Track error count for the report summary
+    if (result.status == ERROR) {
+        QJsonObject summary = current_report_["summary"].toObject();
+        summary["errorCount"] = summary["errorCount"].toInt() + 1;
+        current_report_["summary"] = summary;
+    }
+
     // Only top-level steps (no '/' in stepPath) are added to the steps array.
     // Sub-steps from control-flow nesting (LOOP/WHILE/IF) are embedded in the
     // parent StepResult via iterations (LOOP/WHILE) or branches (IF) and are

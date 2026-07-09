@@ -196,6 +196,9 @@ void TestExecutionEngine::pause() {
     if (!state_.compare_exchange_strong(expected, EngineState::Paused)) {
         return;
     }
+    if (runner_) {
+        runner_->pause();
+    }
     emit engineStateChanged(EngineState::Paused);
 }
 
@@ -203,6 +206,9 @@ void TestExecutionEngine::resume() {
     EngineState expected = EngineState::Paused;
     if (!state_.compare_exchange_strong(expected, EngineState::Running)) {
         return;
+    }
+    if (runner_) {
+        runner_->resume();
     }
     emit engineStateChanged(EngineState::Running);
 }

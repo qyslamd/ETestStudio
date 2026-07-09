@@ -66,13 +66,13 @@ void ExecutionMonitorPanel::initUi() {
   label_timeout_->setObjectName(QStringLiteral("statTimeout"));
 
   auto* sep1 = new QLabel(QStringLiteral("│"), this);
-  sep1->setStyleSheet(QStringLiteral("color: #C0C0C0;"));
+  sep1->setObjectName(QStringLiteral("monitorSep"));
 
   label_device_ = new QLabel(QStringLiteral("设备: --"), this);
   label_device_->setObjectName(QStringLiteral("deviceLabel"));
 
   auto* sep2 = new QLabel(QStringLiteral("│"), this);
-  sep2->setStyleSheet(QStringLiteral("color: #C0C0C0;"));
+  sep2->setObjectName(QStringLiteral("monitorSep"));
 
   label_status_ = new QLabel(QStringLiteral("空闲"), this);
   label_status_->setObjectName(QStringLiteral("statusLabel"));

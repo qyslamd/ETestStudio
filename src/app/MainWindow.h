@@ -244,6 +244,7 @@ class MainWindow : public SARibbonMainWindow {
   // ── 引擎 ──
   etest::engine::TestExecutionEngine* engine_ = nullptr;
   ExecutionControlBar* current_control_bar_ = nullptr;
+  QString current_program_name_;
 };
 
 }  // namespace etest::app

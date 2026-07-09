@@ -718,7 +718,9 @@ void MainWindow::initSignalsLate() {
   connect(editor_manager_, &EditorManager::fileOpened, this,
       [this](const QString& path) {
         auto* ie = editor_manager_->editorById(path);
-        if (!ie) return;
+        if (!ie) {
+            return;
+        }
         if (auto* te = qobject_cast<TestProgramEditorWidget*>(ie->widget())) {
           connect(te, &TestProgramEditorWidget::programSaved,
                   this, &MainWindow::onProgramSaved, Qt::UniqueConnection);
@@ -1427,10 +1429,14 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
            topoDirObj.entryInfoList({QStringLiteral("*.etopo")},
                                     QDir::Files, QDir::Name)) {
         QFile f(fi.absoluteFilePath());
-        if (!f.open(QIODevice::ReadOnly)) continue;
+        if (!f.open(QIODevice::ReadOnly)) {
+            continue;
+        }
         QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
         f.close();
-        if (!doc.isObject()) continue;
+        if (!doc.isObject()) {
+            continue;
+        }
         QJsonArray devices = doc.object()[QStringLiteral("devices")].toArray();
         for (const QJsonValue& dv : devices) {
           QJsonObject dobj = dv.toObject();
@@ -1460,7 +1466,9 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     // 为已打开的测试程序编辑器注入 IcdSignalSelection + 连接保存信号
     for (const QString& path : editor_manager_->openFiles()) {
       auto* ie = editor_manager_->editorById(path);
-      if (!ie) continue;
+      if (!ie) {
+        continue;
+      }
       if (auto* te = qobject_cast<TestProgramEditorWidget*>(ie->widget())) {
         te->setSignalSelection(
             new IcdSignalSelection(signal_registry_, icd_repository_.get()));
@@ -1473,14 +1481,18 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     // 将可用帧名传播给已打开的拓扑编辑器
     QStringList allFrames;
     for (const auto& frame : icd_repository_->frames()) {
-      if (!frame) continue;
+      if (!frame) {
+        continue;
+      }
       auto name = frame->name();
       allFrames.append(QString::fromUtf8(name.data(),
                                           static_cast<int>(name.size())));
     }
     for (const QString& path : editor_manager_->openFiles()) {
       auto* ie = editor_manager_->editorById(path);
-      if (!ie) continue;
+      if (!ie) {
+        continue;
+      }
       if (auto* topo = qobject_cast<etest::topology::TopologyEditorWidget*>(
               ie->widget())) {
         topo->setAvailableIcdFrames(allFrames);
@@ -1862,6 +1874,19 @@ void MainWindow::createEngine() {
 
   // 绑定到监视面板（bindEngine 内部连接所有需要的信号）
   execution_monitor_panel_->bindEngine(engine_);
+
+  // 引擎执行完成后保存 .etlog 报告
+  connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this, [this]() {
+    if (current_program_name_.isEmpty()) {
+      return;
+    }
+    auto& projMgr = etest::core::project::ProjectManager::instance();
+    QString reportDir = projMgr.currentProjectRoot() + QStringLiteral("/reports");
+    QDir().mkpath(reportDir);
+    QString etlogPath = reportDir + QStringLiteral("/") + current_program_name_ +
+                        QStringLiteral(".etlog");
+    engine_->saveReport(etlogPath);
+  });
 }
 
 void MainWindow::destroyEngine() {
@@ -1942,6 +1967,7 @@ void MainWindow::onRunClicked() {
   createEngine();
 
   // 5. 设置程序数据
+  current_program_name_ = data.name;
   engine_->setProgram(convertProgram(data));
 
   // 6. 记录当前控制栏

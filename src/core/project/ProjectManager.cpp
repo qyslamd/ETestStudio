@@ -72,7 +72,9 @@ class ProjectManager::Impl {
 
   QStringList scanEtProgFiles(const QString& projectDir) const {
     QDir casesDir(QDir(projectDir).filePath("cases"));
-    if (!casesDir.exists()) return {};
+    if (!casesDir.exists()) {
+      return {};
+    }
     QStringList filters;
     filters << "*.etprog";
     return casesDir.entryList(filters, QDir::Files, QDir::Name);
@@ -81,7 +83,9 @@ class ProjectManager::Impl {
   void createEtProgJson(const QString& projectDir) {
     QString etprogJsonPath =
         QDir(projectDir).filePath("cases/ETProg.json");
-    if (QFile::exists(etprogJsonPath)) return;
+    if (QFile::exists(etprogJsonPath)) {
+      return;
+    }
 
     QStringList etprogFiles = scanEtProgFiles(projectDir);
 
@@ -219,8 +223,9 @@ bool ProjectManager::openProject(const QString& filePath) {
 }
 
 bool ProjectManager::closeProject() {
-  if (!isProjectOpen())
+  if (!isProjectOpen()) {
     return true;
+  }
 
   QString projectPath = m_impl->current_project->rootPath();
 
@@ -231,8 +236,9 @@ bool ProjectManager::closeProject() {
 }
 
 bool ProjectManager::saveProject() {
-  if (!isProjectOpen())
+  if (!isProjectOpen()) {
     return false;
+  }
   return m_impl->current_project->saveToFile();
 }
 
@@ -285,7 +291,9 @@ void ProjectManager::clearRecentProjects() {
 }
 
 void ProjectManager::createEtProgJson() {
-  if (!isProjectOpen()) return;
+  if (!isProjectOpen()) {
+    return;
+  }
   QString projectDir = m_impl->current_project->rootPath();
   m_impl->createEtProgJson(projectDir);
 }
@@ -302,8 +310,9 @@ bool ProjectManager::hasUnsavedChanges() const {
 }
 
 bool ProjectManager::doCloseProject() {
-  if (!isProjectOpen())
+  if (!isProjectOpen()) {
     return true;
+  }
 
   // 保存recent_files等信息
   m_impl->current_project->saveToFile();

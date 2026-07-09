@@ -50,8 +50,7 @@ void StepRunner::executeProgram(const ProgramData& program) {
                 break;
             }
 
-            QString stepPath =
-                QStringLiteral("%1.%2").arg(i + 1).arg(j + 1);
+            QString stepPath = QString::number(j + 1);
             StepResult result =
                 executeSingleStep(tc.steps[j], i, stepPath);
 
@@ -80,12 +79,24 @@ void StepRunner::cancel() {
     cancel_flag_.store(2, std::memory_order_release);
 }
 
+void StepRunner::pause() {
+    cancel_flag_.store(1, std::memory_order_release);
+}
+
+void StepRunner::resume() {
+    cancel_flag_.store(0, std::memory_order_release);
+}
+
 void StepRunner::resetCancel() {
     cancel_flag_.store(0, std::memory_order_release);
 }
 
 bool StepRunner::isCancelling() const {
     return cancel_flag_.load(std::memory_order_acquire) == 2;
+}
+
+bool StepRunner::isPaused() const {
+    return cancel_flag_.load(std::memory_order_acquire) == 1;
 }
 
 // ==========================================================================
@@ -105,6 +116,21 @@ StepResult StepRunner::executeSingleStep(const TestStepData& step,
         emit stepStarted(caseIndex, stepPath, step.command, step.target);
         emit stepFinished(caseIndex, stepPath, result);
         return result;
+    }
+
+    // ── Pause check — busy-wait until resumed or cancelled ──
+    while (cancel_flag_.load(std::memory_order_acquire) == 1) {
+        QThread::msleep(50);
+        if (cancel_flag_.load(std::memory_order_acquire) == 2) {
+            StepResult result;
+            result.stepPath = stepPath;
+            result.command = step.command;
+            result.target = step.target;
+            result.setStatus(SKIPPED).setMessage(QStringLiteral("Cancelled while paused"));
+            emit stepStarted(caseIndex, stepPath, step.command, step.target);
+            emit stepFinished(caseIndex, stepPath, result);
+            return result;
+        }
     }
 
     emit stepStarted(caseIndex, stepPath, step.command, step.target);
@@ -427,7 +453,18 @@ StepResult StepRunner::execDelay(const TestStepData& step) {
         delayMs = (step.value > 0) ? static_cast<int>(step.value) : 1000;
     }
 
-    QThread::msleep(static_cast<unsigned long>(delayMs));
+    // Chunked sleep so cancel/pause is responsive
+    int remaining = delayMs;
+    while (remaining > 0) {
+        if (cancel_flag_.load(std::memory_order_acquire) == 2) {
+            result.setStatus(SKIPPED)
+                .setMessage(QStringLiteral("Cancelled during DELAY"));
+            return result;
+        }
+        int chunk = qMin(remaining, 100);
+        QThread::msleep(static_cast<unsigned long>(chunk));
+        remaining -= chunk;
+    }
 
     result.setStatus(PASS)
         .setMessage(QStringLiteral("Delayed %1 ms").arg(delayMs));
@@ -457,7 +494,7 @@ StepResult StepRunner::execLoop(const TestStepData& step, int caseIndex,
         iterResult.iteration = i;
 
         for (int j = 0; j < step.subSteps.size(); ++j) {
-            QString subPath = QStringLiteral("%1.L%2.%3")
+            QString subPath = QStringLiteral("%1/L%2/%3")
                                   .arg(stepPath)
                                   .arg(i + 1)
                                   .arg(j + 1);
@@ -521,7 +558,7 @@ StepResult StepRunner::execWhile(const TestStepData& step, int caseIndex,
         iterResult.iteration = iterationCount;
 
         for (int j = 0; j < step.subSteps.size(); ++j) {
-            QString subPath = QStringLiteral("%1.W%2.%3")
+            QString subPath = QStringLiteral("%1/W%2/%3")
                                   .arg(stepPath)
                                   .arg(iterationCount + 1)
                                   .arg(j + 1);
@@ -569,7 +606,7 @@ StepResult StepRunner::execIf(const TestStepData& step, int caseIndex,
     if (conditionMet) {
         for (int i = 0; i < step.thenSteps.size(); ++i) {
             QString subPath =
-                QStringLiteral("%1.THEN.%2").arg(stepPath).arg(i + 1);
+                QStringLiteral("%1/THEN/%2").arg(stepPath).arg(i + 1);
             StepResult subResult =
                 executeSingleStep(step.thenSteps[i], caseIndex, subPath);
             result.branches.thenSteps.append(subResult);
@@ -579,7 +616,7 @@ StepResult StepRunner::execIf(const TestStepData& step, int caseIndex,
     } else {
         for (int i = 0; i < step.elseSteps.size(); ++i) {
             QString subPath =
-                QStringLiteral("%1.ELSE.%2").arg(stepPath).arg(i + 1);
+                QStringLiteral("%1/ELSE/%2").arg(stepPath).arg(i + 1);
             StepResult subResult =
                 executeSingleStep(step.elseSteps[i], caseIndex, subPath);
             result.branches.elseSteps.append(subResult);

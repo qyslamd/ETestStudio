@@ -47,3 +47,8 @@
   color: #888888;
   font-size: 12px;
 }
+
+#ExecutionMonitorPanel #monitorSep {
+  color: #C0C0C0;
+  font-size: 12px;
+}
