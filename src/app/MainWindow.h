@@ -38,6 +38,14 @@ class HintBarWidget;
 class WelcomeWidget;
 class LoadingOverlay;
 class ExecutionMonitorPanel;
+class ExecutionControlBar;
+}  // namespace etest::app
+
+namespace etest::engine {
+class TestExecutionEngine;
+}  // namespace etest::engine
+
+namespace etest::app {
 
 class MainWindow : public SARibbonMainWindow {
   Q_OBJECT
@@ -196,6 +204,21 @@ class MainWindow : public SARibbonMainWindow {
   QAction* login_user_info_action_ = nullptr;
   QAction* login_manage_users_action_ = nullptr;
 
+  // ── 执行引擎 ──
+ private slots:
+  void onRunClicked();
+  void onPauseClicked();
+  void onStopClicked();
+  void onVerifyClicked();
+  void onRunAllClicked();
+  void onRunCaseClicked();
+  void onProgramSaved(const QString& path);
+
+ private:
+  void createEngine();
+  void destroyEngine();
+  void syncControlStates();
+
   // Demo 启动
   QAction* demo_topology_action_ = nullptr;
   QAction* demo_protocol_action_ = nullptr;
@@ -207,6 +230,20 @@ class MainWindow : public SARibbonMainWindow {
   QMetaObject::Connection current_editor_state_connection_;
 
   bool first_show_ = true;
+
+  // ── 运行 Ribbon 动作 ──
+  QAction* act_run_ = nullptr;
+  QAction* act_pause_ = nullptr;
+  QAction* act_stop_ = nullptr;
+  QAction* act_verify_ = nullptr;
+  QAction* act_run_all_ = nullptr;
+  QAction* act_run_case_ = nullptr;
+  QLabel*  label_ribbon_stats_ = nullptr;
+  QAction* demo_testexecutor_action_ = nullptr;
+
+  // ── 引擎 ──
+  etest::engine::TestExecutionEngine* engine_ = nullptr;
+  ExecutionControlBar* current_control_bar_ = nullptr;
 };
 
 }  // namespace etest::app

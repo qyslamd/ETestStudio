@@ -13,6 +13,11 @@ class ProblemsPanel : public QWidget {
  public:
   explicit ProblemsPanel(QWidget* parent = nullptr);
 
+  void clearProblems();
+  void addProblem(const QString& source, const QString& type,
+                  const QString& message);
+  void showSummary(int errors, int warnings);
+
  private:
   void initUi();
 

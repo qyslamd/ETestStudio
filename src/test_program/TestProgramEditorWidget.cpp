@@ -1041,6 +1041,7 @@ bool TestProgramEditorWidget::saveFile(const QString& path) {
 
   modified_ = false;
   emit modificationChanged(false);
+  emit programSaved(path);
   updateActions();
   return true;
 }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100" height="100">
+  <defs>
+    <linearGradient id="stopBg" x1="0" y1="0" x2="24" y2="24">
+      <stop offset="0%" stop-color="#EF5350"/>
+      <stop offset="100%" stop-color="#C62828"/>
+    </linearGradient>
+    <filter id="stopShadow">
+      <feDropShadow dx="0.2" dy="0.4" stdDeviation="0.6" flood-color="#B71C1C" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="url(#stopBg)"/>
+  <rect x="6.5" y="6.5" width="11" height="11" rx="1.5" fill="#ffffff" filter="url(#stopShadow)"/>
+</svg>

@@ -65,8 +65,11 @@
 #include "dialogs/NewProjectDialog.h"
 #include "dialogs/SettingsDialog.h"
 #include "ExecutionMonitorPanel.h"
+#include "ExecutionControlBar.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
+#include "engine/StepRunner.h"
+#include "engine/TestExecutionEngine.h"
 #include "icd/repository.hpp"
 #include "logger/Logger.h"
 #include "logger/QtConsoleSink.h"
@@ -710,6 +713,17 @@ void MainWindow::initSignalsLate() {
   connect(
       editor_manager_, &EditorManager::fileOpened, this,
       [this](const QString&) { close_all_files_action_->setEnabled(true); });
+
+  // 新打开测试程序编辑器时连接保存信号
+  connect(editor_manager_, &EditorManager::fileOpened, this,
+      [this](const QString& path) {
+        auto* ie = editor_manager_->editorById(path);
+        if (!ie) return;
+        if (auto* te = qobject_cast<TestProgramEditorWidget*>(ie->widget())) {
+          connect(te, &TestProgramEditorWidget::programSaved,
+                  this, &MainWindow::onProgramSaved, Qt::UniqueConnection);
+        }
+      });
   connect(editor_manager_, &EditorManager::fileClosed, this,
           [this](const QString&) {
             close_all_files_action_->setEnabled(
@@ -1381,6 +1395,9 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   status_message_label_->setText(
       QStringLiteral("项目已打开：%1").arg(projectPath));
 
+  // 确保引擎就绪
+  createEngine();
+
   // M6: 初始化 SignalRegistry + ICD Repository（同步接合）
   if (!signal_registry_) {
     signal_registry_ = new etest::core::SignalRegistry(this);
@@ -1440,7 +1457,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     LOG_DEBUG("UUID", "after pre-register + synchronizeRegistry: devices={}",
              signal_registry_->registeredDeviceIds().size());
 
-    // 为已打开的测试程序编辑器注入 IcdSignalSelection
+    // 为已打开的测试程序编辑器注入 IcdSignalSelection + 连接保存信号
     for (const QString& path : editor_manager_->openFiles()) {
       auto* ie = editor_manager_->editorById(path);
       if (!ie) continue;
@@ -1448,6 +1465,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
         te->setSignalSelection(
             new IcdSignalSelection(signal_registry_, icd_repository_.get()));
         te->setRegistry(signal_registry_);
+        connect(te, &TestProgramEditorWidget::programSaved,
+                this, &MainWindow::onProgramSaved);
       }
     }
 
@@ -1490,6 +1509,8 @@ void MainWindow::onProjectClosed() {
   status_message_label_->setText(QStringLiteral("项目已关闭"));
 
   // M6: 清理 ICD 上下文
+  destroyEngine();
+
   if (signal_registry_) {
     signal_registry_->clear();
   }
@@ -1750,6 +1771,275 @@ void MainWindow::onGoToLine() {
     textEditor->editor()->setCursorPosition(lineNumber - 1, 0);
     textEditor->editor()->ensureLineVisible(lineNumber - 1);
   }
+}
+
+// ── 转换工具：etest::app::TestProgramData → etest::engine::ProgramData ──
+namespace {
+
+etest::engine::TestStepData convertStep(const etest::app::TestStepData& src) {
+  etest::engine::TestStepData dst;
+  dst.command = src.cmd;
+  dst.target = src.target;
+  dst.value = src.value.toDouble();
+  dst.tolerance = src.tolerance.enabled ? src.tolerance.max : 0.0;
+  dst.extra = src.description;
+  dst.timeoutMs = src.timeoutMs;
+  dst.loopCount = src.loopCount;
+  // 转换条件表达式到字符串形式
+  if (src.condition.target.isEmpty()) {
+    dst.condition.clear();
+  } else {
+    dst.condition = src.condition.target + QStringLiteral(" ") +
+                    src.condition.op + QStringLiteral(" ") +
+                    src.condition.value.toString();
+  }
+  // 递归转换子步骤
+  for (const auto& ss : src.subSteps) {
+    dst.subSteps.append(convertStep(ss));
+  }
+  for (const auto& es : src.elseSubSteps) {
+    dst.elseSteps.append(convertStep(es));
+  }
+  return dst;
+}
+
+etest::engine::TestCaseData convertCase(const etest::app::TestCaseData& src) {
+  etest::engine::TestCaseData dst;
+  dst.caseName = src.name;
+  for (const auto& step : src.steps) {
+    dst.steps.append(convertStep(step));
+  }
+  return dst;
+}
+
+etest::engine::ProgramData convertProgram(const etest::app::TestProgramData& src) {
+  etest::engine::ProgramData dst;
+  dst.suiteName = src.name;
+  for (const auto& tc : src.cases) {
+    dst.cases.append(convertCase(tc));
+  }
+  return dst;
+}
+
+}  // anonymous namespace
+
+// ── 引擎生命周期 ──
+
+void MainWindow::createEngine() {
+  if (engine_) {
+    return;
+  }
+  engine_ = new etest::engine::TestExecutionEngine(signal_registry_,
+                                                    icd_repository_.get(),
+                                                    this);
+  // 连接发动机状态变更信号 → 三向同步（Ribbon + 控制栏）
+  connect(engine_, &etest::engine::TestExecutionEngine::engineStateChanged,
+          this, [this](etest::engine::EngineState state) {
+            syncControlStates();
+            if (current_control_bar_) {
+              // 映射 EngineState → ExecutionControlBar::State
+              switch (state) {
+                case etest::engine::EngineState::Idle:
+                  current_control_bar_->setState(
+                      etest::app::ExecutionControlBar::State::Idle);
+                  break;
+                case etest::engine::EngineState::Running:
+                  current_control_bar_->setState(
+                      etest::app::ExecutionControlBar::State::Running);
+                  break;
+                case etest::engine::EngineState::Paused:
+                  current_control_bar_->setState(
+                      etest::app::ExecutionControlBar::State::Paused);
+                  break;
+                case etest::engine::EngineState::Finished:
+                case etest::engine::EngineState::Error:
+                  current_control_bar_->setState(
+                      etest::app::ExecutionControlBar::State::Finished);
+                  break;
+              }
+            }
+          });
+
+  // 绑定到监视面板（bindEngine 内部连接所有需要的信号）
+  execution_monitor_panel_->bindEngine(engine_);
+}
+
+void MainWindow::destroyEngine() {
+  if (!engine_) {
+    return;
+  }
+  engine_->stop();
+  engine_->deleteLater();
+  engine_ = nullptr;
+  current_control_bar_ = nullptr;
+}
+
+void MainWindow::syncControlStates() {
+  if (!engine_) {
+    act_run_->setEnabled(true);
+    act_pause_->setEnabled(false);
+    act_stop_->setEnabled(false);
+    act_verify_->setEnabled(true);
+    return;
+  }
+  auto state = engine_->state();
+  switch (state) {
+    case etest::engine::EngineState::Idle:
+    case etest::engine::EngineState::Finished:
+      act_run_->setEnabled(true);
+      act_pause_->setEnabled(false);
+      act_stop_->setEnabled(false);
+      act_verify_->setEnabled(true);
+      break;
+    case etest::engine::EngineState::Running:
+      act_run_->setEnabled(false);
+      act_pause_->setEnabled(true);
+      act_stop_->setEnabled(true);
+      act_verify_->setEnabled(false);
+      break;
+    case etest::engine::EngineState::Paused:
+      act_run_->setEnabled(false);
+      act_pause_->setEnabled(true);
+      act_stop_->setEnabled(true);
+      act_verify_->setEnabled(false);
+      break;
+    case etest::engine::EngineState::Error:
+      act_run_->setEnabled(true);
+      act_pause_->setEnabled(false);
+      act_stop_->setEnabled(false);
+      act_verify_->setEnabled(true);
+      break;
+  }
+}
+
+// ── Ribbon 运行按钮 ──
+
+void MainWindow::onRunClicked() {
+  // 1. 查找当前测试程序编辑器
+  auto* editor = editor_manager_->currentEditor();
+  auto* progEditor = qobject_cast<TestProgramEditorWidget*>(
+      editor ? editor->widget() : nullptr);
+  if (!progEditor) {
+    QMessageBox::information(this, QStringLiteral("运行"),
+        QStringLiteral("请先打开一个测试程序文件（.etprog）"));
+    return;
+  }
+
+  // 2. 自动保存
+  if (editor->isModified()) {
+    editor->save();
+  }
+
+  // 3. 验证程序非空
+  etest::app::TestProgramData data = progEditor->programData();
+  if (data.cases.isEmpty()) {
+    QMessageBox::warning(this, QStringLiteral("运行"),
+        QStringLiteral("测试程序中没有测试用例，无法运行"));
+    return;
+  }
+
+  // 4. 创建引擎（若需要）
+  createEngine();
+
+  // 5. 设置程序数据
+  engine_->setProgram(convertProgram(data));
+
+  // 6. 记录当前控制栏
+  current_control_bar_ = progEditor->executionControlBar();
+
+  // 7. 启动
+  engine_->start();
+
+  // 8. 侧边栏切换到运行页面
+  sidebar_->switchPage(PageId::kRun);
+  if (!sidebar_->isContentVisible()) {
+    sidebar_->showContent();
+    auto sizes = h_splitter_->sizes();
+    if (!sizes.isEmpty()) {
+      sizes[0] = sidebar_expanded_width_;
+      h_splitter_->setSizes(sizes);
+    }
+  }
+  activity_bar_->setActivePageId(PageId::kRun);
+}
+
+void MainWindow::onPauseClicked() {
+  if (!engine_) {
+    return;
+  }
+  if (engine_->state() == etest::engine::EngineState::Running) {
+    engine_->pause();
+  } else if (engine_->state() == etest::engine::EngineState::Paused) {
+    engine_->resume();
+  }
+}
+
+void MainWindow::onStopClicked() {
+  if (engine_) {
+    engine_->stop();
+  }
+}
+
+void MainWindow::onVerifyClicked() {
+  if (!problems_panel_) {
+    return;
+  }
+  auto* problems = problems_panel_;
+  problems->clearProblems();
+  int errors = 0;
+  int warnings = 0;
+
+  if (!icd_repository_ || icd_repository_->frames().empty()) {
+    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+                         QStringLiteral("ICD 协议未加载"));
+    errors++;
+  }
+
+  if (!signal_registry_ ||
+      signal_registry_->registeredDeviceIds().isEmpty()) {
+    problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
+                         QStringLiteral("未注册任何拓扑设备"));
+    warnings++;
+  }
+
+  auto* editor = editor_manager_->currentEditor();
+  if (!editor) {
+    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+                         QStringLiteral("未打开任何编辑器"));
+    errors++;
+  } else {
+    TestProgramEditorWidget* progEditor =
+        qobject_cast<TestProgramEditorWidget*>(editor->widget());
+    if (!progEditor) {
+      problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+          QStringLiteral("当前编辑器不是测试程序文件"));
+      errors++;
+    } else {
+      etest::app::TestProgramData data = progEditor->programData();
+      if (data.cases.isEmpty()) {
+        problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
+            QStringLiteral("测试程序中没有测试用例"));
+        warnings++;
+      }
+    }
+  }
+
+  problems->showSummary(errors, warnings);
+}
+
+void MainWindow::onRunAllClicked() {
+  // 运行全部：委托给 onRunClicked
+  onRunClicked();
+}
+
+void MainWindow::onRunCaseClicked() {
+  // 运行当前用例（简化实现：先支持运行全部）
+  onRunClicked();
+}
+
+void MainWindow::onProgramSaved(const QString& path) {
+  // 程序保存后的回调：可在此更新引擎数据或状态
+  Q_UNUSED(path);
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event) {
@@ -2041,6 +2331,59 @@ void MainWindow::setupRibbon() {
   }
 
   // ============================================================
+  //  运行
+  // ============================================================
+  {
+    auto* cat = ribbon->addCategoryPage(QStringLiteral("运行"));
+
+    // 执行控制 Panel
+    auto* panel_control = cat->addPanel(QStringLiteral("执行控制"));
+    act_run_ = new QAction(AppIconProvider::instance().icon(QStringLiteral("run")),
+                           QStringLiteral("运行"), this);
+    act_pause_ = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("pause")),
+        QStringLiteral("暂停"), this);
+    act_stop_ = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("stop")),
+        QStringLiteral("停止"), this);
+    act_verify_ = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("verify")),
+        QStringLiteral("验证"), this);
+    panel_control->addLargeAction(act_verify_);
+    panel_control->addLargeAction(act_run_);
+    panel_control->addSmallAction(act_pause_);
+    panel_control->addSmallAction(act_stop_);
+
+    // 连接 Ribbon 运行按钮
+    connect(act_run_, &QAction::triggered, this, &MainWindow::onRunClicked);
+    connect(act_pause_, &QAction::triggered, this, &MainWindow::onPauseClicked);
+    connect(act_stop_, &QAction::triggered, this, &MainWindow::onStopClicked);
+    connect(act_verify_, &QAction::triggered, this, &MainWindow::onVerifyClicked);
+
+    // 运行方式 Panel
+    auto* panel_mode = cat->addPanel(QStringLiteral("运行方式"));
+    act_run_all_ = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("run_all")),
+        QStringLiteral("运行全部"), this);
+    act_run_case_ = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("run_case")),
+        QStringLiteral("运行用例"), this);
+    panel_mode->addLargeAction(act_run_all_);
+    panel_mode->addLargeAction(act_run_case_);
+
+    // 连接运行方式按钮
+    connect(act_run_all_, &QAction::triggered, this,
+            &MainWindow::onRunAllClicked);
+    connect(act_run_case_, &QAction::triggered, this,
+            &MainWindow::onRunCaseClicked);
+
+    // 统计 Panel
+    auto* panel_stats = cat->addPanel(QStringLiteral("统计"));
+    label_ribbon_stats_ = new QLabel(QStringLiteral("✅ 0  ❌ 0  ⏱ 0"), this);
+    panel_stats->addSmallWidget(label_ribbon_stats_);
+  }
+
+  // ============================================================
   //  工具
   // ============================================================
   {
@@ -2092,6 +2435,10 @@ void MainWindow::setupRibbon() {
                   QStringLiteral("测试程序编辑器"),
                   QStringLiteral("test-program-editor.exe"),
                   QStringLiteral("ribbon_testprogram"));
+    addDemoAction(demo_testexecutor_action_,
+                  QStringLiteral("测试执行器"),
+                  QStringLiteral("test-executor.exe"),
+                  QStringLiteral("ribbon_testexecutor"));
   }
 
   // ============================================================
@@ -2125,6 +2472,9 @@ void MainWindow::setupRibbon() {
   bool isDark = ThemeManager::instance().isDarkTheme();
   setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
                         : SARibbonTheme::RibbonThemeOffice2021Blue);
+
+  // 设置 Ribbon 运行按钮的初始状态
+  syncControlStates();
 }
 
 void MainWindow::saveWindowState() {

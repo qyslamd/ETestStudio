@@ -70,9 +70,13 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
     return execution_control_bar_;
   }
 
+  // 获取当前程序数据（供 MainWindow 运行引擎使用）
+  TestProgramData programData() const { return const_cast<TestProgramEditorWidget*>(this)->uiToProgram(); }
+
  signals:
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);
+  void programSaved(const QString& path);
 
  protected:
   bool eventFilter(QObject* obj, QEvent* event) override;
@@ -94,8 +98,8 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   bool loadFile(const QString& path);
   bool saveFile(const QString& path);
   void loadProgramToUi(const TestProgramData& suite);
-  TestProgramData uiToProgram();
   void setModified(bool modified);
+  TestProgramData uiToProgram();
   void saveSnapshot();
   void restoreState(const TestProgramData& state);
   void resetSnapshots(bool clean);

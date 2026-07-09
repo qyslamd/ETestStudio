@@ -175,6 +175,20 @@
         <file>resources/icons/svg/ribbon_protocol_dark.svg</file>
         <file>resources/icons/svg/ribbon_testprogram_light.svg</file>
         <file>resources/icons/svg/ribbon_testprogram_dark.svg</file>
+        <file>resources/icons/svg/ribbon_testexecutor_light.svg</file>
+        <file>resources/icons/svg/ribbon_testexecutor_dark.svg</file>
+        <file>resources/icons/svg/run_light.svg</file>
+        <file>resources/icons/svg/run_dark.svg</file>
+        <file>resources/icons/svg/pause_light.svg</file>
+        <file>resources/icons/svg/pause_dark.svg</file>
+        <file>resources/icons/svg/stop_light.svg</file>
+        <file>resources/icons/svg/stop_dark.svg</file>
+        <file>resources/icons/svg/verify_light.svg</file>
+        <file>resources/icons/svg/verify_dark.svg</file>
+        <file>resources/icons/svg/run_all_light.svg</file>
+        <file>resources/icons/svg/run_all_dark.svg</file>
+        <file>resources/icons/svg/run_case_light.svg</file>
+        <file>resources/icons/svg/run_case_dark.svg</file>
         <file>resources/icons/svg/testprog_add_case_dark.svg</file>
         <file>resources/icons/svg/testprog_add_case_light.svg</file>
         <file>resources/icons/svg/testprog_remove_case_dark.svg</file>
