@@ -80,8 +80,8 @@ ProtocolEditorWidget::ProtocolEditorWidget(QWidget* parent)
   });
 
   // Theme switch → reload toolbar icons
-  connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this,
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this,
           &ProtocolEditorWidget::reloadToolbarIcons);
 }
 
@@ -624,7 +624,7 @@ void ProtocolEditorWidget::initUi() {
 
   // ── Icon loader (theme-aware) ──
   auto protoIcon = [](const QString& name) {
-    return etest::app::AppIconProvider::instance().icon(name);
+    return etest::core_ui::AppIconProvider::instance().icon(name);
   };
 
   // ── QToolBar (帧操作 + 帧属性) ──
@@ -1483,7 +1483,7 @@ void ProtocolEditorWidget::setModified(bool modified) {
 // ── Reload toolbar icons (theme switch) ──────────────────────
 void ProtocolEditorWidget::reloadToolbarIcons() {
   auto icon = [](const QString& name) {
-    return etest::app::AppIconProvider::instance().icon(name);
+    return etest::core_ui::AppIconProvider::instance().icon(name);
   };
   new_frame_action_->setIcon(icon(QStringLiteral("protocol_new_frame")));
   delete_frame_action_->setIcon(icon(QStringLiteral("protocol_delete_frame")));

@@ -14,6 +14,7 @@ add_executable(${TARGET_NAME}
 
 target_link_libraries(${TARGET_NAME} PRIVATE
     etest_protocol
+    etest_core_ui
     etest_ui
     Qt5::Widgets
     Qt5::Core

@@ -19,6 +19,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     Qt5::Core
     Qt5::Gui
     etest_core
+    etest_core_ui
     etest_program
     etest_ui
     spdlog::spdlog

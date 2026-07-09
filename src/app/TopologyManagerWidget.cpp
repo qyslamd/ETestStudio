@@ -21,6 +21,7 @@
 
 namespace etest::app {
 
+using etest::core_ui::AppIconProvider;
 using namespace etest::core::project;
 
 // ── 工具：方向枚举 → 简短显示文本 ──

@@ -1,12 +1,10 @@
-#include "PixmapUtil.h"
+#include "PixmapOpacity.h"
 
 #include <QPainter>
 
-namespace etest {
-namespace core {
-namespace utils {
+namespace etest::core_ui {
 
-QPixmap PixmapUtil::grayOpacityImg(const QPixmap& pixmap) {
+QPixmap PixmapOpacity::grayOpacityImg(const QPixmap& pixmap) {
   QPixmap tempPixmap = pixmap;
   QPainter painter;
   painter.begin(&tempPixmap);
@@ -15,6 +13,4 @@ QPixmap PixmapUtil::grayOpacityImg(const QPixmap& pixmap) {
   return tempPixmap;
 }
 
-}  // namespace utils
-}  // namespace core
-}  // namespace etest
+}  // namespace etest::core_ui

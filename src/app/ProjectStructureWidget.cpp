@@ -39,6 +39,8 @@
 
 namespace etest::app {
 
+using etest::core_ui::AppIconProvider;
+
 // ── 新建文件默认基名（自动递增） ──
 static QString newFileBaseName(const QString& base, const QString& dir);
 

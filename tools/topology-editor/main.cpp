@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
   QString loadFile = parser.value(QStringLiteral("file"));
 
-  etest::app::ThemeManager::instance().setTheme(QStringLiteral("default"));
+  etest::core_ui::ThemeManager::instance().setTheme(QStringLiteral("default"));
 
   etest::topology::TopologyEditorWidget editor;
   editor.resize(1200, 800);

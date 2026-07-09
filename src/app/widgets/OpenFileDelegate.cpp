@@ -10,6 +10,8 @@
 
 namespace etest::app {
 
+using etest::core_ui::AppIconProvider;
+
 OpenFileDelegate::OpenFileDelegate(QObject* parent)
     : QStyledItemDelegate(parent) {}
 

@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
   MainWindow main_window;
   main_window.show();
 
-  singleInstance.setActivationWindow(&main_window);
+  singleInstance.setActivationWindow(reinterpret_cast<void*>(main_window.winId()));
 
   int ret = app.exec();
 

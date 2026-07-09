@@ -41,6 +41,8 @@
 namespace etest::app {
 
 using etest::core::project::ProjectManager;
+using etest::core_ui::AppIconProvider;
+using etest::core_ui::ThemeManager;
 
 namespace {
 

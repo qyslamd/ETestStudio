@@ -93,6 +93,9 @@ using namespace etest::core::auth;
 
 namespace etest::app {
 
+using etest::core_ui::AppIconProvider;
+using etest::core_ui::ThemeManager;
+
 MainWindow::MainWindow(QWidget* parent)
     : SARibbonMainWindow(parent),
       dock_manager_(nullptr),

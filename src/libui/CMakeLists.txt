@@ -15,7 +15,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
 )
 
 target_link_libraries(${TARGET_NAME} PUBLIC
-    Qt5::Widgets Qt5::Core Qt5::Gui etest_core
+    Qt5::Widgets Qt5::Core Qt5::Gui etest_core etest_core_ui
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES AUTOMOC ON)

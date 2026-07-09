@@ -4,7 +4,7 @@
 #include <QString>
 #include <QStringList>
 
-namespace etest::app {
+namespace etest::core_ui {
 
 class ThemeManager : public QObject {
   Q_OBJECT
@@ -37,4 +37,4 @@ class ThemeManager : public QObject {
   bool is_dark_ = true;
 };
 
-}  // namespace etest::app
+}  // namespace etest::core_ui

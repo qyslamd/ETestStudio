@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QString>
 
-namespace etest::app {
+namespace etest::core_ui {
 
 class AppIconProvider : public QObject {
   Q_OBJECT
@@ -27,4 +27,4 @@ class AppIconProvider : public QObject {
   mutable QCache<QString, QIcon> cache_;
 };
 
-}  // namespace etest::app
+}  // namespace etest::core_ui

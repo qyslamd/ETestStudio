@@ -6,7 +6,6 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
-#include <QMessageBox>
 #include <QDebug>
 
 #pragma comment(lib, "dbghelp.lib")
@@ -141,10 +140,12 @@ void WindowsCrashHandler::doCrashHandler(PEXCEPTION_POINTERS pExceptionInfo) {
     if (QCoreApplication::instance()) {
         auto* app = QCoreApplication::instance();
         if (app->inherits("QApplication")) {
-            QMessageBox::critical(nullptr, "程序崩溃",
-                QString("程序发生异常，已生成崩溃日志：\n%1\n已生成转储文件：\n%2\n\n请联系开发者解决问题。")
-                    .arg(fullPath, dumpFullPath),
-                QMessageBox::Ok);
+            MessageBoxA(nullptr,
+                        ("程序发生异常，已生成崩溃日志：\n" + fullPath.toStdString() +
+                         "\n已生成转储文件：\n" + dumpFullPath.toStdString() +
+                         "\n\n请联系开发者解决问题。")
+                            .c_str(),
+                        "程序崩溃", MB_OK | MB_ICONERROR);
         }
     }
 }

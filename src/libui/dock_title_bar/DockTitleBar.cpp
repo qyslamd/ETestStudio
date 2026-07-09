@@ -4,7 +4,7 @@
 #include <QHBoxLayout>
 #include <QIcon>
 
-#include "core/common/ThemeManager.h"
+#include "ThemeManager.h"
 
 namespace etest::ui {
 
@@ -48,8 +48,8 @@ DockTitleBar::DockTitleBar(const QString& title,
   updateIcons();
 
   // React to theme changes
-  connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this,
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this,
           [this](bool) { updateIcons(); });
 }
 
@@ -58,7 +58,7 @@ void DockTitleBar::setTitle(const QString& title) {
 }
 
 void DockTitleBar::updateIcons() {
-  bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
   QString suffix = dark ? QStringLiteral("_dark") : QStringLiteral("_light");
 
   float_btn_->setIcon(

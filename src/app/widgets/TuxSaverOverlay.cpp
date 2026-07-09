@@ -11,7 +11,7 @@
 #include "config/ConfigManager.h"
 
 using namespace etest::core::config;
-using namespace etest::app;
+using etest::core_ui::AppIconProvider;
 
 TuxSaverOverlay::TuxSaverOverlay(QWidget* parent) : QWidget(parent) {
   setVisible(false);

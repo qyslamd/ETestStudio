@@ -12,8 +12,6 @@ set(SOURCES
     common/ByteException.cpp
     common/GlobalExceptionHandler.cpp
     common/SingleInstance.cpp
-    common/ThemeManager.cpp
-    common/AppIconProvider.cpp
     backup/BackupManager.cpp
     auth/PasswordHasher.cpp
     auth/UserManager.cpp
@@ -22,7 +20,6 @@ set(SOURCES
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
     utils/ByteUtil.cpp
-    utils/PixmapUtil.cpp
     plugin/PluginManager.cpp
     project/ProjectInfo.cpp
     project/ProjectManager.cpp
@@ -44,8 +41,6 @@ set(HEADERS
     common/ByteException.h
     common/GlobalExceptionHandler.h
     common/SingleInstance.h
-    common/ThemeManager.h
-    common/AppIconProvider.h
     backup/BackupManager.h
     auth/AuthTypes.h
     auth/PasswordHasher.h
@@ -55,7 +50,6 @@ set(HEADERS
     utils/TimeUtil.h
     utils/StringUtil.h
     utils/ByteUtil.h
-    utils/PixmapUtil.h
     plugin/IPlugin.h
     plugin/IDevicePlugin.h
     plugin/IADevicePlugin.h
@@ -107,12 +101,8 @@ target_include_directories(${TARGET_NAME} PUBLIC
 
 target_link_libraries(${TARGET_NAME} PUBLIC
     Qt5::Core
-    Qt5::Gui
     Qt5::Network
     spdlog::spdlog
-)
-target_link_libraries(${TARGET_NAME} PRIVATE
-    Qt5::Widgets
 )
 
 if(WIN32)

@@ -7,6 +7,9 @@
 
 namespace etest::app {
 
+using etest::core_ui::AppIconProvider;
+using etest::core_ui::ThemeManager;
+
 ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
   initUi();
 

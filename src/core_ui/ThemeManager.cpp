@@ -1,7 +1,6 @@
 #include "ThemeManager.h"
 
 #include <QApplication>
-#include <QColor>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -11,7 +10,7 @@
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 
-namespace etest::app {
+namespace etest::core_ui {
 
 using namespace etest::core::config;
 
@@ -104,14 +103,18 @@ bool ThemeManager::detectDarkFromQss(const QString& qss) const {
   static const QRegularExpression rx(
       QStringLiteral("background-color\\s*:\\s*(#[0-9a-fA-F]{3,8})"));
   auto match = rx.match(qss);
-  if (!match.hasMatch())
-    return false;
+  if (!match.hasMatch()) return false;
 
-  QColor bg(match.captured(1).trimmed());
-  if (!bg.isValid())
-    return false;
-
-  double luma = 0.2126 * bg.redF() + 0.7152 * bg.greenF() + 0.0722 * bg.blueF();
+  QString hex = match.captured(1).trimmed();
+  // Parse hex color manually (no QColor dependency)
+  if (hex.startsWith('#')) hex = hex.mid(1);
+  if (hex.length() < 6) return false;
+  bool ok1, ok2, ok3;
+  int r = hex.mid(0, 2).toInt(&ok1, 16);
+  int g = hex.mid(2, 2).toInt(&ok2, 16);
+  int b = hex.mid(4, 2).toInt(&ok3, 16);
+  if (!ok1 || !ok2 || !ok3) return false;
+  double luma = 0.2126 * r / 255.0 + 0.7152 * g / 255.0 + 0.0722 * b / 255.0;
   return luma < 0.4;
 }
 
@@ -199,6 +202,20 @@ void ThemeManager::applyEditorTheme() {
             QStringLiteral("#FFFFFF"));
     cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_FOLD_MARGIN),
             QStringLiteral("#888888"));
+    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_LINE_NUMBER),
+            QStringLiteral("#888888"));
+    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_INDENT_GUIDE),
+            QStringLiteral("#D3D3D3"));
+    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_LIGHT_BG),
+            QStringLiteral("#ADD6FF"));
+    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_LIGHT_FG),
+            QStringLiteral("#000000"));
+    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_BAD_BG),
+            QStringLiteral("#E57373"));
+    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_BAD_FG),
+            QStringLiteral("#FFFFFF"));
+    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_FOLD_MARGIN),
+            QStringLiteral("#888888"));
     cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_KEYWORD),
             QStringLiteral("#0000FF"));
     cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_COMMENT),
@@ -233,4 +250,4 @@ void ThemeManager::onConfigChanged(const QString& key) {
   }
 }
 
-}  // namespace etest::app
+}  // namespace etest::core_ui

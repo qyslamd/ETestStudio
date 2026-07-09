@@ -64,7 +64,7 @@ const TopologyColors& topologyColors() {
     initialized = true;
   }
 
-  return etest::app::ThemeManager::instance().isDarkTheme() ? dark : light;
+  return etest::core_ui::ThemeManager::instance().isDarkTheme() ? dark : light;
 }
 
 }  // namespace etest::topology

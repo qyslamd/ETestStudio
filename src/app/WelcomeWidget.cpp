@@ -18,10 +18,10 @@
 #include <QShowEvent>
 #include <QVBoxLayout>
 
-#include "common/ThemeManager.h"
+#include "PixmapOpacity.h"
+#include "ThemeManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "core/utils/PixmapUtil.h"
 #include "grid/grid_global_def.hpp"
 #include "grid/grid_layout.h"
 #include "grid/grid_tile.h"
@@ -34,6 +34,7 @@
 
 namespace etest::app {
 
+using etest::core_ui::ThemeManager;
 using namespace core::config;
 using namespace core::project;
 
@@ -482,7 +483,7 @@ void WelcomeWidget::mouseMoveEvent(QMouseEvent* event) {
 
   QByteArray itemData;
   QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-  dataStream << etest::core::utils::PixmapUtil::grayOpacityImg(pixmap);
+  dataStream << etest::core_ui::PixmapOpacity::grayOpacityImg(pixmap);
 
   auto* mimeData = new QMimeData;
   mimeData->setData(grid::MimeType, itemData);

@@ -39,8 +39,8 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
 
   renderLegendCache();
 
-  connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this, [this](bool) {
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this, [this](bool) {
             setBackgroundBrush(topologyColors().sceneBackground);
             renderLegendCache();
             viewport()->update();

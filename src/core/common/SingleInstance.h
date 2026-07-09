@@ -8,8 +8,6 @@
 #include <QSharedMemory>
 #include <QStringList>
 
-class QWidget;
-
 namespace etest::core::common {
 
 class SingleInstance : public QObject {
@@ -24,8 +22,8 @@ class SingleInstance : public QObject {
   bool connectToExistingInstance(const QStringList& arguments = {});
   bool startListening();
 
-  void setActivationWindow(QWidget* window);
-  QWidget* activationWindow() const;
+  void setActivationWindow(void* window);
+  void* activationWindow() const;
 
   void activateWindow();
 
@@ -43,7 +41,7 @@ class SingleInstance : public QObject {
   QStringList parseMessage(const QByteArray& message);
 
   QString app_key_;
-  QWidget* activate_window_ = nullptr;
+  void* activate_window_ = nullptr;
   QLocalServer* local_server_ = nullptr;
   QSharedMemory shared_memory_;
   QString server_name_;

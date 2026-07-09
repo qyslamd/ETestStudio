@@ -326,7 +326,7 @@ void FieldSectionItem::setHoveredNode(const icd::Node* node, bool on) {
 
 void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
                              QWidget*) {
-  bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
 
   int cols = std::min(bit_width_, bits_per_row_);
   int rows = (bit_width_ + bits_per_row_ - 1) / bits_per_row_;
@@ -593,7 +593,7 @@ void ChildFieldItem::setHovered(bool on) {
 
 void ChildFieldItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
                            QWidget*) {
-  bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
   int rh = kRowHeight;
 
   // Selection/hover background
@@ -802,7 +802,7 @@ void ContainerFieldItem::setHoveredNode(const icd::Node* node, bool on) {
 
 void ContainerFieldItem::paint(QPainter* painter,
                                const QStyleOptionGraphicsItem*, QWidget*) {
-  bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
   int sec_w = sectionWidth();
   int sec_h = totalHeight();
 
@@ -932,7 +932,7 @@ void ContainerFieldItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
 }
 
 IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent) : QGraphicsScene(parent) {
-  setBackgroundBrush(etest::app::ThemeManager::instance().isDarkTheme()
+  setBackgroundBrush(etest::core_ui::ThemeManager::instance().isDarkTheme()
                          ? QColor(24, 24, 26)
                          : QColor(252, 252, 253));
 }
@@ -1053,7 +1053,7 @@ void IcdBitLayoutView::initUi() {
   view_->setRenderHint(QPainter::Antialiasing);
   view_->setDragMode(QGraphicsView::ScrollHandDrag);
   view_->setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
-  view_->setBackgroundBrush(etest::app::ThemeManager::instance().isDarkTheme()
+  view_->setBackgroundBrush(etest::core_ui::ThemeManager::instance().isDarkTheme()
                                 ? QColor(24, 24, 26)
                                 : QColor(252, 252, 253));
   view_->setFrameShape(QFrame::NoFrame);
@@ -1070,9 +1070,9 @@ void IcdBitLayoutView::initUi() {
   connect(scene_, &IcdBitLayoutScene::nodeHovered, this,
           &IcdBitLayoutView::nodeHovered);
 
-  connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this, [this](bool) {
-            bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this, [this](bool) {
+            bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
             scene_->setBackgroundBrush(dark ? QColor(24, 24, 26)
                                             : QColor(252, 252, 253));
             view_->setBackgroundBrush(dark ? QColor(24, 24, 26)
@@ -1108,7 +1108,7 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
     return a->bit_width() > b->bit_width();
   });
 
-  bool dark = etest::app::ThemeManager::instance().isDarkTheme();
+  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
   int cycle_idx = 0;
 
   for (auto* node : roots) {

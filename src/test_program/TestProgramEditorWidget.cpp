@@ -33,8 +33,8 @@
 #include "StepTableWidget.h"
 #include "StepValidation.h"
 #include "VerticalTabListDelegate.h"
-#include "common/AppIconProvider.h"
-#include "common/ThemeManager.h"
+#include "AppIconProvider.h"
+#include "ThemeManager.h"
 #include "config/ConfigDefs.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "libui/styles/TabBarStyle.h"
@@ -156,7 +156,7 @@ void TestProgramEditorWidget::initUi() {
 
   // ── Icon loader (theme-aware) ──
   auto tpIcon = [](const QString& name) {
-    return etest::app::AppIconProvider::instance().icon(name);
+    return etest::core_ui::AppIconProvider::instance().icon(name);
   };
 
   // ── QToolBar ──
@@ -425,13 +425,13 @@ void TestProgramEditorWidget::initSignals() {
   });
 
   // 主题切换 → 重新加载 toolbar 图标
-  connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this,
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this,
           &TestProgramEditorWidget::reloadToolbarIcons);
 
   // 主题切换 → 刷新表格行高（按新字体动态算，避免 editor 字体被截断）
-  connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this, [this]() {
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this, [this]() {
             setup_table_->refreshRowHeight();
             teardown_table_->refreshRowHeight();
             for (int t = 2; t < tab_widget_->count(); ++t) {
@@ -613,7 +613,7 @@ void TestProgramEditorWidget::onAddCase() {
     if (!dup) {
       tab_widget_->addTab(
           table,
-          etest::app::AppIconProvider::instance().icon(
+          etest::core_ui::AppIconProvider::instance().icon(
               QStringLiteral("testprog_tab_case")),
           name);
       break;
@@ -1087,7 +1087,7 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
     if (registry_) table->setRegistry(registry_);
     fillTable(table, tc.steps);
     tab_widget_->addTab(table,
-                        etest::app::AppIconProvider::instance().icon(
+                        etest::core_ui::AppIconProvider::instance().icon(
                             QStringLiteral("testprog_tab_case")),
                         tc.name);
   }
@@ -1186,7 +1186,7 @@ void TestProgramEditorWidget::updateActions() {
 
 void TestProgramEditorWidget::reloadToolbarIcons() {
   auto icon = [](const QString& name) {
-    return etest::app::AppIconProvider::instance().icon(name);
+    return etest::core_ui::AppIconProvider::instance().icon(name);
   };
   add_case_action_->setIcon(icon(QStringLiteral("testprog_add_case")));
   remove_case_action_->setIcon(icon(QStringLiteral("testprog_remove_case")));
@@ -1250,7 +1250,7 @@ void TestProgramEditorWidget::applyTabOrientation(bool vertical) {
     QSignalBlocker blocker(toggle_orientation_action_);
     toggle_orientation_action_->setChecked(vertical);
     toggle_orientation_action_->setIcon(
-        etest::app::AppIconProvider::instance().icon(
+        etest::core_ui::AppIconProvider::instance().icon(
             vertical ? QStringLiteral("testprog_tab_horizontal")
                      : QStringLiteral("testprog_tab_vertical")));
   }
@@ -1303,7 +1303,7 @@ void TestProgramEditorWidget::reloadTabIcons() {
     return;
   }
   auto icon = [](const QString& name) {
-    return etest::app::AppIconProvider::instance().icon(name);
+    return etest::core_ui::AppIconProvider::instance().icon(name);
   };
   if (tab_widget_->count() > 0) {
     tab_widget_->setTabIcon(0, icon(QStringLiteral("testprog_tab_init")));

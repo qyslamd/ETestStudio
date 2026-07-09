@@ -6,7 +6,6 @@
 
 #include <QByteArray>
 #include <QCoreApplication>
-#include <QWidget>
 
 #include "logger/Logger.h"
 
@@ -108,11 +107,11 @@ bool SingleInstance::startListening() {
   return true;
 }
 
-void SingleInstance::setActivationWindow(QWidget* window) {
+void SingleInstance::setActivationWindow(void* window) {
   activate_window_ = window;
 }
 
-QWidget* SingleInstance::activationWindow() const {
+void* SingleInstance::activationWindow() const {
   return activate_window_;
 }
 
@@ -184,7 +183,7 @@ void SingleInstance::activateWindow() {
   }
   LOG_INFO("SingleInstance", "激活现有窗口");
 #ifdef _WIN32
-  HWND hwnd = (HWND)activate_window_->winId();
+  HWND hwnd = reinterpret_cast<HWND>(activate_window_);
   if (IsIconic(hwnd)) {
     LOG_INFO("SingleInstance", "窗口已最小化，执行恢复");
     ShowWindow(hwnd, SW_RESTORE);
@@ -193,9 +192,7 @@ void SingleInstance::activateWindow() {
   BringWindowToTop(hwnd);
   SetActiveWindow(hwnd);
 #else
-  activate_window_->raise();
-  activate_window_->activateWindow();
-  activate_window_->showNormal();
+  emit showApplication();
 #endif
 
   emit showApplication();

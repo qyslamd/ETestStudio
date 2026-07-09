@@ -158,6 +158,7 @@ target_link_libraries(${TARGET_NAME}
     Qt5::Widgets
     Qt5::Sql
     etest_core
+    etest_core_ui
     etest_api
     etest_topology
     etest_protocol

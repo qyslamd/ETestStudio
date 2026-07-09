@@ -24,6 +24,9 @@ using namespace etest::core::logger;
 
 namespace etest::app {
 
+using etest::core_ui::AppIconProvider;
+using etest::core_ui::ThemeManager;
+
 SearchWidget::SearchWidget(QWidget* parent) : QWidget(parent) {
   initUi();
   initSignals();

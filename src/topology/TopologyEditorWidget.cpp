@@ -293,7 +293,7 @@ void TopologyEditorWidget::resizeEvent(QResizeEvent* event) {
 
 void TopologyEditorWidget::initUi() {
   auto topoIcon = [](const QString& name) {
-    return etest::app::AppIconProvider::instance().icon(name);
+    return etest::core_ui::AppIconProvider::instance().icon(name);
   };
 
   // ── QToolBar ──
@@ -682,14 +682,14 @@ void TopologyEditorWidget::initSignals() {
   updateAlignDistributeActions();
 
   // Theme switch: refresh toolbar icons
-  connect(&etest::app::ThemeManager::instance(),
-          &etest::app::ThemeManager::themeChanged, this,
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this,
           &TopologyEditorWidget::reloadToolbarIcons);
 }
 
 void TopologyEditorWidget::reloadToolbarIcons() {
   auto icon = [](const QString& name) {
-    return etest::app::AppIconProvider::instance().icon(name);
+    return etest::core_ui::AppIconProvider::instance().icon(name);
   };
   align_left_action_->setIcon(icon(QStringLiteral("topo_align_left")));
   align_hcenter_action_->setIcon(icon(QStringLiteral("topo_align_center")));

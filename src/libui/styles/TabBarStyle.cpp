@@ -4,16 +4,16 @@
 #include <QStyleOption>
 #include <QTabBar>
 
-#include "core/common/ThemeManager.h"
+#include "ThemeManager.h"
 
 TabBarStyle::TabBarStyle() : QProxyStyle() {}
 
 void TabBarStyle::install(QTabBar* tabBar) {
   auto* style = new TabBarStyle();
-  style->dark_ = etest::app::ThemeManager::instance().isDarkTheme();
+  style->dark_ = etest::core_ui::ThemeManager::instance().isDarkTheme();
   tabBar->setStyle(style);
-  QObject::connect(&etest::app::ThemeManager::instance(),
-                   &etest::app::ThemeManager::themeChanged, tabBar,
+  QObject::connect(&etest::core_ui::ThemeManager::instance(),
+                   &etest::core_ui::ThemeManager::themeChanged, tabBar,
                    [tabBar, style](bool isDark) {
                      style->setDarkTheme(isDark);
                      tabBar->update();

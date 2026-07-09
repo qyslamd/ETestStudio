@@ -7,6 +7,8 @@
 
 namespace etest::app {
 
+using etest::core_ui::ThemeManager;
+
 LoadingOverlay::LoadingOverlay(QWidget* parent)
     : QWidget(parent) {
     setAttribute(Qt::WA_TranslucentBackground);

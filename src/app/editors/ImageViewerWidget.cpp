@@ -12,6 +12,8 @@
 
 namespace etest::app {
 
+using etest::core_ui::ThemeManager;
+
 // ── Constructor ──────────────────────────────────────────────────
 
 ImageViewerWidget::ImageViewerWidget(const QString& filePath, QWidget* parent)

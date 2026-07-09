@@ -5,7 +5,7 @@
 
 #include "ThemeManager.h"
 
-namespace etest::app {
+namespace etest::core_ui {
 
 AppIconProvider& AppIconProvider::instance() {
   static AppIconProvider inst;
@@ -13,7 +13,7 @@ AppIconProvider& AppIconProvider::instance() {
 }
 
 AppIconProvider::AppIconProvider(QObject* parent) : QObject(parent), cache_(200) {
-  connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
+  connect(&etest::core_ui::ThemeManager::instance(), &ThemeManager::themeChanged,
           this, [this](bool) { clearCache(); });
 }
 
@@ -47,4 +47,4 @@ QString AppIconProvider::resolvePath(const QString& baseName) const {
   return QStringLiteral(":/resources/icons/svg/%1.svg").arg(baseName);
 }
 
-}  // namespace etest::app
+}  // namespace etest::core_ui
