@@ -678,20 +678,6 @@ TestProgramManagerWidget QTreeWidget::item:hover {
     background-color: #252526;
     border-bottom: 1px solid #1E1E1E;
 }
-#testProgramNewBtn {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #454545;
-    border-radius: 3px;
-    padding: 2px 12px;
-    font-size: 12px;
-}
-#testProgramNewBtn:hover {
-    background-color: #505050;
-}
-#testProgramNewBtn:pressed {
-    background-color: #2D2D2D;
-}
 
 /* ==================== TestProgramEditorWidget ==================== */
 TestProgramEditorWidget {

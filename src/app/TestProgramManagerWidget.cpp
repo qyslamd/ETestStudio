@@ -38,7 +38,6 @@ void TestProgramManagerWidget::initUi() {
   toolbar_layout->setSpacing(4);
 
   new_btn_ = new QPushButton(QStringLiteral("+ 新建"), this);
-  new_btn_->setObjectName(QStringLiteral("testProgramNewBtn"));
 
   toolbar_layout->addWidget(new_btn_);
   toolbar_layout->addStretch();
