@@ -137,10 +137,10 @@ bool ProtocolEditorWidget::saveAs(const QString& path) {
     format_ = ProtocolFormat::Json;
   } else if (path.endsWith(QStringLiteral(".eprotox"))) {
     format_ = ProtocolFormat::Xml;
-  } else if (path.endsWith(QStringLiteral("ICDConfig.xml"))) {
+  } else if (path.endsWith(QStringLiteral("ICDConfig.xml"), Qt::CaseInsensitive)) {
     format_ = ProtocolFormat::ConfigDriven;
     config_format_ = icd::Format::xml;
-  } else if (path.endsWith(QStringLiteral("ICDConfig.json"))) {
+  } else if (path.endsWith(QStringLiteral("ICDConfig.json"), Qt::CaseInsensitive)) {
     format_ = ProtocolFormat::ConfigDriven;
     config_format_ = icd::Format::json;
   }
@@ -307,8 +307,20 @@ void ProtocolEditorWidget::openFile(const QString& filePath) {
             repo_ = std::move(*result.repo);
             populateFrames();
 
-            if (!repo_.frames().empty())
-              setCurrentFrame(repo_.frames()[0].get());
+            if (!repo_.frames().empty()) {
+              if (initial_frame_id_ >= 0) {
+                // 导航到指定帧（来自 openFrameRequested）
+                auto* target = repo_.find(initial_frame_id_);
+                if (target) {
+                  setCurrentFrame(const_cast<icd::Frame*>(target));
+                } else {
+                  setCurrentFrame(repo_.frames()[0].get());
+                }
+                initial_frame_id_ = -1;
+              } else {
+                setCurrentFrame(repo_.frames()[0].get());
+              }
+            }
 
             saveSnapshot();
             hideLoadingOverlay();
@@ -1291,6 +1303,22 @@ void ProtocolEditorWidget::setCurrentFrame(icd::Frame* frame) {
   updateToolbar();
 }
 
+void ProtocolEditorWidget::navigateToFrame(int frameId) {
+  if (config_path_.empty() || format_ != ProtocolFormat::ConfigDriven) {
+    return;
+  }
+  // 如果加载尚未完成，记下来等加载完成后跳转
+  if (load_watcher_) {
+    initial_frame_id_ = frameId;
+    return;
+  }
+  // 加载已完成，直接查找并跳转
+  auto* frame = repo_.find(frameId);
+  if (frame) {
+    setCurrentFrame(const_cast<icd::Frame*>(frame));
+  }
+}
+
 // ── Refresh tree + select frame ──────────────────────────────
 void ProtocolEditorWidget::refreshAndSelectFrame(icd::Frame* frame) {
   populateFrames();
@@ -1333,7 +1361,9 @@ void ProtocolEditorWidget::saveSnapshot() {
     });
   }
   snapshot["file_entries"] = entries;
-  snapshot["config_path"] = config_path_.string();
+  // ⚠️ 必须用 u8string() 而非 string()：后者在中文路径下会输出 ANSI/GBK 编码，
+  // 导致 nlohmann::json::dump() 序列化时抛出 type_error(316) "invalid UTF-8 byte"
+  snapshot["config_path"] = config_path_.u8string();
 
   QString jsonStr = QString::fromStdString(snapshot.dump());
   QByteArray bytes = jsonStr.toUtf8();

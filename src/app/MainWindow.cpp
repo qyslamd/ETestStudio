@@ -13,11 +13,11 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
-#include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProcess>
@@ -44,15 +44,18 @@
 #include "ActivityBarWidget.h"
 #include "AppIconProvider.h"
 #include "EditorManager.h"
+#include "ExecutionControlBar.h"
+#include "ExecutionMonitorPanel.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "ProjectStructureWidget.h"
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
 #include "SidebarWidget.h"
+#include "SignalRegistry.h"
 #include "TerminalPanel.h"
-#include "TestProgramManagerWidget.h"
 #include "TestProgramEditorWidget.h"
+#include "TestProgramManagerWidget.h"
 #include "ThemeManager.h"
 #include "TopologyManagerWidget.h"
 #include "WelcomeWidget.h"
@@ -61,11 +64,8 @@
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "SignalRegistry.h"
 #include "dialogs/NewProjectDialog.h"
 #include "dialogs/SettingsDialog.h"
-#include "ExecutionMonitorPanel.h"
-#include "ExecutionControlBar.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
 #include "engine/StepRunner.h"
@@ -75,6 +75,7 @@
 #include "logger/QtConsoleSink.h"
 #include "plugin/PluginManager.h"
 #include "project/ProjectManager.h"
+#include "protocol/ProtocolEditorWidget.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
 #include "utils/SignalSyncHelper.h"
@@ -84,7 +85,6 @@
 #include "widgets/OutputPanel.h"
 #include "widgets/ProblemsPanel.h"
 #include "widgets/TuxSaverOverlay.h"
-
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -398,8 +398,25 @@ void MainWindow::initSignalsLate() {
             psWidget, &ProjectStructureWidget::clearProjectPath);
 
     // 项目结构树：双击文件打开编辑器
-    connect(psWidget, &ProjectStructureWidget::fileOpenRequested, psWidget,
-            [this](const QString& path) { editor_manager_->openFile(path); });
+    connect(
+        psWidget, &ProjectStructureWidget::fileOpenRequested, psWidget,
+        [this](const QString& path) {
+          // ICDConfig 是配置容器，切到 sidebar 协议页，不打开编辑器
+          if (path.contains(QStringLiteral("ICDConfig"), Qt::CaseInsensitive)) {
+            if (!sidebar_->isContentVisible()) {
+              sidebar_->showContent();
+              auto sizes = h_splitter_->sizes();
+              if (!sizes.isEmpty()) {
+                sizes[0] = sidebar_expanded_width_;
+                h_splitter_->setSizes(sizes);
+              }
+            }
+            sidebar_->switchPage(PageId::kProtocol);
+            activity_bar_->setActivePageId(PageId::kProtocol);
+            return;
+          }
+          editor_manager_->openFile(path);
+        });
     // 项目结构树：右键→用文本编辑器打开
     connect(psWidget, &ProjectStructureWidget::fileOpenAsTextRequested,
             psWidget, [this](const QString& path) {
@@ -715,15 +732,16 @@ void MainWindow::initSignalsLate() {
       [this](const QString&) { close_all_files_action_->setEnabled(true); });
 
   // 新打开测试程序编辑器时连接保存信号
-  connect(editor_manager_, &EditorManager::fileOpened, this,
+  connect(
+      editor_manager_, &EditorManager::fileOpened, this,
       [this](const QString& path) {
         auto* ie = editor_manager_->editorById(path);
         if (!ie) {
-            return;
+          return;
         }
         if (auto* te = qobject_cast<TestProgramEditorWidget*>(ie->widget())) {
-          connect(te, &TestProgramEditorWidget::programSaved,
-                  this, &MainWindow::onProgramSaved, Qt::UniqueConnection);
+          connect(te, &TestProgramEditorWidget::programSaved, this,
+                  &MainWindow::onProgramSaved, Qt::UniqueConnection);
         }
       });
   connect(editor_manager_, &EditorManager::fileClosed, this,
@@ -840,8 +858,38 @@ void MainWindow::initSignalsLate() {
 
   // 协议管理器：双击文件打开编辑器
   auto* protocolMgr = sidebar_->protocolManager();
-  connect(protocolMgr, &ProtocolManagerWidget::openFileRequested, protocolMgr,
-          [this](const QString& path) { editor_manager_->openFile(path); });
+  connect(
+      protocolMgr, &ProtocolManagerWidget::openFileRequested, protocolMgr,
+      [this, protocolMgr](const QString& path) {
+        // ICDConfig 是配置容器，不打开编辑器，切到 sidebar 协议页
+        if (path.contains(QStringLiteral("ICDConfig"), Qt::CaseInsensitive)) {
+          if (!sidebar_->isContentVisible()) {
+            sidebar_->showContent();
+            auto sizes = h_splitter_->sizes();
+            if (!sizes.isEmpty()) {
+              sizes[0] = sidebar_expanded_width_;
+              h_splitter_->setSizes(sizes);
+            }
+          }
+          sidebar_->switchPage(PageId::kProtocol);
+          activity_bar_->setActivePageId(PageId::kProtocol);
+          return;
+        }
+        editor_manager_->openFile(path);
+      });
+
+  // 协议管理器：双击帧条目 → 打开协议编辑器并定位到该帧
+  connect(
+      protocolMgr, &ProtocolManagerWidget::openFrameRequested, this,
+      [this](const QString& configPath, int frameId) {
+        editor_manager_->openFile(configPath, QStringLiteral("protocol"));
+        if (auto* ie = editor_manager_->editorById(configPath)) {
+          if (auto* pe = qobject_cast<etest::protocol::ProtocolEditorWidget*>(
+                  ie->widget())) {
+            pe->navigateToFrame(frameId);
+          }
+        }
+      });
 
   // 协议管理器：项目关闭时刷新（打开时在 onProjectOpened 中同步刷新）
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
@@ -966,8 +1014,7 @@ void MainWindow::lazyInit() {
                       new TestProgramManagerWidget(sidebar_),
                       QStringLiteral("测试程序"));
     auto* runPanel = new ExecutionMonitorPanel(sidebar_);
-    sidebar_->addPage(PageId::kRun, runPanel,
-                      QStringLiteral("运行"));
+    sidebar_->addPage(PageId::kRun, runPanel, QStringLiteral("运行"));
     execution_monitor_panel_ = runPanel;
     sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
                       QStringLiteral("报告"));
@@ -1066,9 +1113,12 @@ void MainWindow::lazyInit() {
     int outIdx = bottom_container_->indexOf(output_panel_);
     int probIdx = bottom_container_->indexOf(problems_panel_);
     int termIdx = bottom_container_->indexOf(terminal_panel_);
-    if (outIdx >= 0) bottom_container_->setPanelVisible(outIdx, outVis);
-    if (probIdx >= 0) bottom_container_->setPanelVisible(probIdx, probVis);
-    if (termIdx >= 0) bottom_container_->setPanelVisible(termIdx, termVis);
+    if (outIdx >= 0)
+      bottom_container_->setPanelVisible(outIdx, outVis);
+    if (probIdx >= 0)
+      bottom_container_->setPanelVisible(probIdx, probVis);
+    if (termIdx >= 0)
+      bottom_container_->setPanelVisible(termIdx, termVis);
 
     view_output_action_->setChecked(outVis);
     view_problems_action_->setChecked(probVis);
@@ -1419,23 +1469,22 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
 
   if (signal_registry_ && icd_repository_) {
     LOG_DEBUG("UUID", "ICD Repository loaded, frames={}",
-             icd_repository_->frames().size());
+              icd_repository_->frames().size());
 
     // 预注册项目中的已有拓扑设备：扫描 topology/ 目录下所有 .etopo 文件
     const QString topoDir = projectPath + QStringLiteral("/topology");
     QDir topoDirObj(topoDir);
     if (topoDirObj.exists()) {
-      for (const QFileInfo& fi :
-           topoDirObj.entryInfoList({QStringLiteral("*.etopo")},
-                                    QDir::Files, QDir::Name)) {
+      for (const QFileInfo& fi : topoDirObj.entryInfoList(
+               {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name)) {
         QFile f(fi.absoluteFilePath());
         if (!f.open(QIODevice::ReadOnly)) {
-            continue;
+          continue;
         }
         QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
         f.close();
         if (!doc.isObject()) {
-            continue;
+          continue;
         }
         QJsonArray devices = doc.object()[QStringLiteral("devices")].toArray();
         for (const QJsonValue& dv : devices) {
@@ -1450,10 +1499,12 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
           for (const QJsonValue& pv : ports) {
             QJsonObject pobj = pv.toObject();
             QStringList frames;
-            for (const QJsonValue& fv : pobj[QStringLiteral("boundFrames")].toArray()) {
+            for (const QJsonValue& fv :
+                 pobj[QStringLiteral("boundFrames")].toArray()) {
               frames.append(fv.toString());
             }
-            signal_registry_->bindPortToFrames(id, pobj[QStringLiteral("name")].toString(), frames);
+            signal_registry_->bindPortToFrames(
+                id, pobj[QStringLiteral("name")].toString(), frames);
           }
         }
       }
@@ -1461,7 +1512,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     // 重建信号索引（含预注册的设备和绑定）
     etest::app::synchronizeRegistry(*signal_registry_, icd_repository_.get());
     LOG_DEBUG("UUID", "after pre-register + synchronizeRegistry: devices={}",
-             signal_registry_->registeredDeviceIds().size());
+              signal_registry_->registeredDeviceIds().size());
 
     // 为已打开的测试程序编辑器注入 IcdSignalSelection + 连接保存信号
     for (const QString& path : editor_manager_->openFiles()) {
@@ -1473,8 +1524,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
         te->setSignalSelection(
             new IcdSignalSelection(signal_registry_, icd_repository_.get()));
         te->setRegistry(signal_registry_);
-        connect(te, &TestProgramEditorWidget::programSaved,
-                this, &MainWindow::onProgramSaved);
+        connect(te, &TestProgramEditorWidget::programSaved, this,
+                &MainWindow::onProgramSaved);
       }
     }
 
@@ -1485,8 +1536,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
         continue;
       }
       auto name = frame->name();
-      allFrames.append(QString::fromUtf8(name.data(),
-                                          static_cast<int>(name.size())));
+      allFrames.append(
+          QString::fromUtf8(name.data(), static_cast<int>(name.size())));
     }
     for (const QString& path : editor_manager_->openFiles()) {
       auto* ie = editor_manager_->editorById(path);
@@ -1575,25 +1626,22 @@ void MainWindow::updateRecentFilesMenu() {
   recent_files_menu_->clear();
 
   auto& cfg = ConfigManager::instance();
-  QStringList files = cfg.get<QStringList>(
-      QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
+  QStringList files =
+      cfg.get<QStringList>(QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
 
   if (files.isEmpty()) {
-    auto* emptyAction =
-        recent_files_menu_->addAction(QStringLiteral("（无）"));
+    auto* emptyAction = recent_files_menu_->addAction(QStringLiteral("（无）"));
     emptyAction->setEnabled(false);
   } else {
     for (const QString& path : files) {
-      recent_files_menu_->addAction(path, this, [this, path]() {
-        editor_manager_->openFile(path);
-      });
+      recent_files_menu_->addAction(
+          path, this, [this, path]() { editor_manager_->openFile(path); });
     }
     recent_files_menu_->addSeparator();
     recent_files_menu_->addAction(
         QStringLiteral("清除最近文件"), this, [this]() {
           auto& cfg = ConfigManager::instance();
-          cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST),
-                  QStringList());
+          cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST), QStringList());
           cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_TIMESTAMPS),
                   QVariantMap());
           updateRecentFilesMenu();
@@ -1824,7 +1872,8 @@ etest::engine::TestCaseData convertCase(const etest::app::TestCaseData& src) {
   return dst;
 }
 
-etest::engine::ProgramData convertProgram(const etest::app::TestProgramData& src) {
+etest::engine::ProgramData convertProgram(
+    const etest::app::TestProgramData& src) {
   etest::engine::ProgramData dst;
   dst.suiteName = src.name;
   for (const auto& tc : src.cases) {
@@ -1842,8 +1891,7 @@ void MainWindow::createEngine() {
     return;
   }
   engine_ = new etest::engine::TestExecutionEngine(signal_registry_,
-                                                    icd_repository_.get(),
-                                                    this);
+                                                   icd_repository_.get(), this);
   // 连接发动机状态变更信号 → 三向同步（Ribbon + 控制栏）
   connect(engine_, &etest::engine::TestExecutionEngine::engineStateChanged,
           this, [this](etest::engine::EngineState state) {
@@ -1876,17 +1924,20 @@ void MainWindow::createEngine() {
   execution_monitor_panel_->bindEngine(engine_);
 
   // 引擎执行完成后保存 .etlog 报告
-  connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this, [this]() {
-    if (current_program_name_.isEmpty()) {
-      return;
-    }
-    auto& projMgr = etest::core::project::ProjectManager::instance();
-    QString reportDir = projMgr.currentProjectRoot() + QStringLiteral("/reports");
-    QDir().mkpath(reportDir);
-    QString etlogPath = reportDir + QStringLiteral("/") + current_program_name_ +
-                        QStringLiteral(".etlog");
-    engine_->saveReport(etlogPath);
-  });
+  connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
+          [this]() {
+            if (current_program_name_.isEmpty()) {
+              return;
+            }
+            auto& projMgr = etest::core::project::ProjectManager::instance();
+            QString reportDir =
+                projMgr.currentProjectRoot() + QStringLiteral("/reports");
+            QDir().mkpath(reportDir);
+            QString etlogPath = reportDir + QStringLiteral("/") +
+                                current_program_name_ +
+                                QStringLiteral(".etlog");
+            engine_->saveReport(etlogPath);
+          });
 }
 
 void MainWindow::destroyEngine() {
@@ -1945,7 +1996,8 @@ void MainWindow::onRunClicked() {
   auto* progEditor = qobject_cast<TestProgramEditorWidget*>(
       editor ? editor->widget() : nullptr);
   if (!progEditor) {
-    QMessageBox::information(this, QStringLiteral("运行"),
+    QMessageBox::information(
+        this, QStringLiteral("运行"),
         QStringLiteral("请先打开一个测试程序文件（.etprog）"));
     return;
   }
@@ -1959,7 +2011,7 @@ void MainWindow::onRunClicked() {
   etest::app::TestProgramData data = progEditor->programData();
   if (data.cases.isEmpty()) {
     QMessageBox::warning(this, QStringLiteral("运行"),
-        QStringLiteral("测试程序中没有测试用例，无法运行"));
+                         QStringLiteral("测试程序中没有测试用例，无法运行"));
     return;
   }
 
@@ -2021,8 +2073,7 @@ void MainWindow::onVerifyClicked() {
     errors++;
   }
 
-  if (!signal_registry_ ||
-      signal_registry_->registeredDeviceIds().isEmpty()) {
+  if (!signal_registry_ || signal_registry_->registeredDeviceIds().isEmpty()) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
                          QStringLiteral("未注册任何拓扑设备"));
     warnings++;
@@ -2038,13 +2089,13 @@ void MainWindow::onVerifyClicked() {
         qobject_cast<TestProgramEditorWidget*>(editor->widget());
     if (!progEditor) {
       problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
-          QStringLiteral("当前编辑器不是测试程序文件"));
+                           QStringLiteral("当前编辑器不是测试程序文件"));
       errors++;
     } else {
       etest::app::TestProgramData data = progEditor->programData();
       if (data.cases.isEmpty()) {
         problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
-            QStringLiteral("测试程序中没有测试用例"));
+                             QStringLiteral("测试程序中没有测试用例"));
         warnings++;
       }
     }
@@ -2364,17 +2415,18 @@ void MainWindow::setupRibbon() {
 
     // 执行控制 Panel
     auto* panel_control = cat->addPanel(QStringLiteral("执行控制"));
-    act_run_ = new QAction(AppIconProvider::instance().icon(QStringLiteral("run")),
-                           QStringLiteral("运行"), this);
-    act_pause_ = new QAction(
-        AppIconProvider::instance().icon(QStringLiteral("pause")),
-        QStringLiteral("暂停"), this);
-    act_stop_ = new QAction(
-        AppIconProvider::instance().icon(QStringLiteral("stop")),
-        QStringLiteral("停止"), this);
-    act_verify_ = new QAction(
-        AppIconProvider::instance().icon(QStringLiteral("verify")),
-        QStringLiteral("验证"), this);
+    act_run_ =
+        new QAction(AppIconProvider::instance().icon(QStringLiteral("run")),
+                    QStringLiteral("运行"), this);
+    act_pause_ =
+        new QAction(AppIconProvider::instance().icon(QStringLiteral("pause")),
+                    QStringLiteral("暂停"), this);
+    act_stop_ =
+        new QAction(AppIconProvider::instance().icon(QStringLiteral("stop")),
+                    QStringLiteral("停止"), this);
+    act_verify_ =
+        new QAction(AppIconProvider::instance().icon(QStringLiteral("verify")),
+                    QStringLiteral("验证"), this);
     panel_control->addLargeAction(act_verify_);
     panel_control->addLargeAction(act_run_);
     panel_control->addSmallAction(act_pause_);
@@ -2384,13 +2436,14 @@ void MainWindow::setupRibbon() {
     connect(act_run_, &QAction::triggered, this, &MainWindow::onRunClicked);
     connect(act_pause_, &QAction::triggered, this, &MainWindow::onPauseClicked);
     connect(act_stop_, &QAction::triggered, this, &MainWindow::onStopClicked);
-    connect(act_verify_, &QAction::triggered, this, &MainWindow::onVerifyClicked);
+    connect(act_verify_, &QAction::triggered, this,
+            &MainWindow::onVerifyClicked);
 
     // 运行方式 Panel
     auto* panel_mode = cat->addPanel(QStringLiteral("运行方式"));
-    act_run_all_ = new QAction(
-        AppIconProvider::instance().icon(QStringLiteral("run_all")),
-        QStringLiteral("运行全部"), this);
+    act_run_all_ =
+        new QAction(AppIconProvider::instance().icon(QStringLiteral("run_all")),
+                    QStringLiteral("运行全部"), this);
     act_run_case_ = new QAction(
         AppIconProvider::instance().icon(QStringLiteral("run_case")),
         QStringLiteral("运行用例"), this);
@@ -2436,17 +2489,16 @@ void MainWindow::setupRibbon() {
     panel_tools->addSeparator();
 
     auto addDemoAction = [&](QAction*& act, const QString& name,
-                             const QString& exeName,
-                             const QString& iconName) {
+                             const QString& exeName, const QString& iconName) {
       act = new QAction(name, this);
       act->setIcon(AppIconProvider::instance().icon(iconName));
       QObject::connect(act, &QAction::triggered, this, [exeName]() {
-        QString path = QApplication::applicationDirPath() + QStringLiteral("/") +
-                       exeName;
+        QString path =
+            QApplication::applicationDirPath() + QStringLiteral("/") + exeName;
         if (!QProcess::startDetached(path)) {
-          QMessageBox::warning(nullptr, QStringLiteral("启动失败"),
-                               QStringLiteral("无法启动 %1\n路径: %2")
-                                   .arg(exeName, path));
+          QMessageBox::warning(
+              nullptr, QStringLiteral("启动失败"),
+              QStringLiteral("无法启动 %1\n路径: %2").arg(exeName, path));
         }
       });
       panel_tools->addLargeAction(act);
@@ -2457,12 +2509,10 @@ void MainWindow::setupRibbon() {
     addDemoAction(demo_protocol_action_, QStringLiteral("帧协议编辑器"),
                   QStringLiteral("protocol-editor.exe"),
                   QStringLiteral("ribbon_protocol"));
-    addDemoAction(demo_testprogram_action_,
-                  QStringLiteral("测试程序编辑器"),
+    addDemoAction(demo_testprogram_action_, QStringLiteral("测试程序编辑器"),
                   QStringLiteral("test-program-editor.exe"),
                   QStringLiteral("ribbon_testprogram"));
-    addDemoAction(demo_testexecutor_action_,
-                  QStringLiteral("测试执行器"),
+    addDemoAction(demo_testexecutor_action_, QStringLiteral("测试执行器"),
                   QStringLiteral("test-executor.exe"),
                   QStringLiteral("ribbon_testexecutor"));
   }

@@ -54,6 +54,9 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   void undo() override;
   void redo() override;
 
+  // 通过帧 ID 导航（用于 ConfigDriven 模式从外部跳转到指定帧）
+  void navigateToFrame(int frameId);
+
   // Async load result carrying optional ConfigDriven metadata
   struct AsyncLoadResult {
     std::shared_ptr<icd::Repository> repo;
@@ -153,6 +156,9 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   const icd::Node* current_selected_node_ = nullptr;
 
   int load_generation_ = 0;
+
+  // ConfigDriven: 首次加载后导航到指定帧（-1 表示不导航）
+  int initial_frame_id_ = -1;
 
   QString current_file_;
 

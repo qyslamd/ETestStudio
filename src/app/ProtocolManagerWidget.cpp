@@ -103,16 +103,13 @@ QString ProtocolManagerWidget::findIcdConfigPath(const QString& projectRoot) {
   if (!protocol_dir.exists()) {
     return {};
   }
-  // 优先 XML，回退 JSON
-  const QString xml_path =
-      protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.xml"));
-  if (QFile::exists(xml_path)) {
-    return xml_path;
-  }
-  const QString json_path =
-      protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.json"));
-  if (QFile::exists(json_path)) {
-    return json_path;
+  // 遍历 protocol/ 目录，找任意大小写的 icdconfig.xml/.json
+  for (const auto& fi : protocol_dir.entryInfoList(
+           QDir::Files | QDir::Readable, QDir::Name)) {
+    QString base = fi.baseName().toLower();
+    if (base == QStringLiteral("icdconfig")) {
+      return fi.absoluteFilePath();
+    }
   }
   return {};
 }
@@ -411,8 +408,9 @@ bool ProtocolManagerWidget::loadIcdConfig() {
   config_result = icd::format::parse_xml_config(config_path_);
   if (!config_result) {
     load_error_ =
-        QStringLiteral("解析 ICDConfig.xml 失败：%1")
-            .arg(QString::fromStdString(config_result.error().message));
+        QStringLiteral("解析 %1 失败：%2")
+            .arg(QString::fromStdString(config_path_.filename().string()),
+                 QString::fromStdString(config_result.error().message));
     return false;
   }
   config_format_ = icd::Format::xml;
@@ -658,6 +656,18 @@ void ProtocolManagerWidget::onNewIcdConfig() {
   if (root.isEmpty()) {
     return;
   }
+
+  // 先查是否已有 ICDConfig（任意大小写）
+  QString existing = findIcdConfigPath(root);
+  if (!existing.isEmpty()) {
+    QMessageBox::information(
+        this, QStringLiteral("已存在"),
+        QStringLiteral("ICDConfig 已存在：%1").arg(existing));
+    refreshList();
+    emit openFileRequested(existing);
+    return;
+  }
+
   // protocol 目录可能还不存在
   QDir protocol_dir(QDir(root).absoluteFilePath(QStringLiteral("protocol")));
   if (!protocol_dir.exists() &&
@@ -668,13 +678,6 @@ void ProtocolManagerWidget::onNewIcdConfig() {
   }
   const QString target =
       protocol_dir.absoluteFilePath(QStringLiteral("ICDConfig.xml"));
-  if (QFile::exists(target)) {
-    QMessageBox::information(
-        this, QStringLiteral("已存在"),
-        QStringLiteral("ICDConfig.xml 已存在：%1").arg(target));
-    refreshList();
-    return;
-  }
   if (!createEmptyIcdConfig(target)) {
     QMessageBox::warning(this, QStringLiteral("创建失败"),
                          QStringLiteral("无法写入 %1").arg(target));
@@ -979,9 +982,9 @@ void ProtocolManagerWidget::onOpenFrame(QTreeWidgetItem* item) {
   if (!item || config_path_.empty()) {
     return;
   }
-  // 根节点：直接打开 ICDConfig
+  // 根节点：ICDConfig 是配置容器，由 ProtocolManagerWidget 自身管理，
+  // 不打开编辑器
   if (item == config_root_item_) {
-    emit openFileRequested(QString::fromStdString(config_path_.string()));
     return;
   }
   // 帧节点：发出 openFrameRequested 让主窗口能定位到具体帧
