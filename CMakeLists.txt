@@ -274,6 +274,7 @@ if (BUILD_ETEST_TOOLS)
     add_subdirectory(tools/topology-editor)
     add_subdirectory(tools/protocol-editor)
     add_subdirectory(tools/test-program-editor)
+    add_subdirectory(tools/test-executor)
 endif()
 
 
