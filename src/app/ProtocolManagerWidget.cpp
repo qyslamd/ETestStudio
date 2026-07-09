@@ -427,7 +427,7 @@ bool ProtocolManagerWidget::loadIcdConfig() {
   if (!config_result) {
     load_error_ =
         QStringLiteral("解析 %1 失败：%2")
-            .arg(QString::fromStdString(config_path_.filename().string()),
+            .arg(QString::fromStdWString(config_path_.filename().wstring()),
                  QString::fromStdString(config_result.error().message));
     return false;
   }
@@ -555,7 +555,7 @@ void ProtocolManagerWidget::populateTree() {
   config_root_item_ = new QTreeWidgetItem(tree_);
   config_root_item_->setText(0, QStringLiteral("ICDConfig"));
   config_root_item_->setData(0, Qt::UserRole,
-                             QString::fromStdString(config_path_.string()));
+                             QString::fromStdWString(config_path_.wstring()));
   config_root_item_->setExpanded(true);
   QFont f = config_root_item_->font(0);
   f.setBold(true);
@@ -878,7 +878,7 @@ void ProtocolManagerWidget::onImportXml() {
     }
     // 用 frame 名作为 rel 路径
     const QFileInfo fi(xml_path);
-    const QString rel_qstr = fi.fileName();
+    const QString rel_qstr = fi.completeBaseName() + QStringLiteral(".eprotox");
     // 转 wstring 避免 MSVC path::operator/ 的 ANSI 编码问题
     const std::filesystem::path abs_path =
         config_path_.parent_path() / rel_qstr.toStdWString();
@@ -889,10 +889,11 @@ void ProtocolManagerWidget::onImportXml() {
       std::filesystem::remove(abs_path, ec);
     }
     // 复制源文件到 protocol 目录（保持原始 XML 内容）
-    if (!QFile::copy(xml_path, QString::fromStdString(abs_path.string()))) {
+    // ⚠️ 必须用 .wstring() 而非 .string()：后者在中文路径下输出 GBK 编码
+    if (!QFile::copy(xml_path, QString::fromStdWString(abs_path.wstring()))) {
       QMessageBox::warning(this, QStringLiteral("导入失败"),
                            QStringLiteral("复制失败：%1")
-                               .arg(QString::fromStdString(abs_path.string())));
+                               .arg(QString::fromStdWString(abs_path.wstring())));
       return;
     }
 
@@ -929,8 +930,9 @@ void ProtocolManagerWidget::onImportXml() {
 
   // ICDConfig 导入：复制到当前 ICDConfig 路径并刷新
   QFileInfo fi(xml_path);
+  // ⚠️ 必须用 .wstring() 而非 .string()：后者在中文路径下输出 GBK 编码
   const QString target =
-      QDir(QString::fromStdString(config_path_.parent_path().string()))
+      QDir(QString::fromStdWString(config_path_.parent_path().wstring()))
           .absoluteFilePath(fi.fileName());
   if (QFile::exists(target)) {
     int ret = QMessageBox::question(
@@ -1005,12 +1007,21 @@ void ProtocolManagerWidget::onOpenFrame(QTreeWidgetItem* item) {
   if (item == config_root_item_) {
     return;
   }
-  // 帧节点：发出 openFrameRequested 让主窗口能定位到具体帧
-  const QString config_str = QString::fromStdString(config_path_.string());
+  // 帧节点：发出 openFrameRequested，让主窗口打开帧文件并定位到该帧
+  const int idx = item->data(0, kRoleEntryIndex).toInt();
+  if (idx < 0 || idx >= static_cast<int>(file_entries_.size())) {
+    return;
+  }
+  const auto& entry = file_entries_[idx];
+  // 帧文件路径 = config 目录 + entry.path（相对路径）
+  // ⚠️ 用 QDir 拼路径而非 std::filesystem::path：后者在 MSVC 上用 ANSI 编码，
+  // 含中文时路径会变成乱码
+  const QDir config_dir(
+      QString::fromStdWString(config_path_.parent_path().wstring()));
+  const QString frame_path =
+      config_dir.absoluteFilePath(QString::fromStdString(entry.path));
   const int fid = item->data(0, kRoleFrameId).toInt();
-  emit openFrameRequested(config_str, fid);
-  // 同时也打开文件（向后兼容）
-  emit openFileRequested(config_str);
+  emit openFrameRequested(frame_path, fid);
 }
 
 void ProtocolManagerWidget::onRenameFrame(QTreeWidgetItem* item) {

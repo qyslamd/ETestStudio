@@ -881,12 +881,12 @@ void MainWindow::initSignalsLate() {
         editor_manager_->openFile(path);
       });
 
-  // 协议管理器：双击帧条目 → 打开协议编辑器并定位到该帧
+  // 协议管理器：双击帧条目 → 打开帧文件并定位到该帧
   connect(
       protocolMgr, &ProtocolManagerWidget::openFrameRequested, this,
-      [this](const QString& configPath, int frameId) {
-        editor_manager_->openFile(configPath, QStringLiteral("protocol"));
-        if (auto* ie = editor_manager_->editorById(configPath)) {
+      [this](const QString& framePath, int frameId) {
+        editor_manager_->openFile(framePath, QStringLiteral("protocol"));
+        if (auto* ie = editor_manager_->editorById(framePath)) {
           if (auto* pe = qobject_cast<etest::protocol::ProtocolEditorWidget*>(
                   ie->widget())) {
             pe->navigateToFrame(frameId);
