@@ -64,6 +64,7 @@
 #include "SignalRegistry.h"
 #include "dialogs/NewProjectDialog.h"
 #include "dialogs/SettingsDialog.h"
+#include "ExecutionMonitorPanel.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
 #include "icd/repository.hpp"
@@ -948,8 +949,10 @@ void MainWindow::lazyInit() {
     sidebar_->addPage(PageId::kTestProgram,
                       new TestProgramManagerWidget(sidebar_),
                       QStringLiteral("测试程序"));
-    sidebar_->addPage(PageId::kRun, new QWidget(sidebar_),
+    auto* runPanel = new ExecutionMonitorPanel(sidebar_);
+    sidebar_->addPage(PageId::kRun, runPanel,
                       QStringLiteral("运行"));
+    execution_monitor_panel_ = runPanel;
     sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
                       QStringLiteral("报告"));
     sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),

@@ -37,6 +37,7 @@ class EditorManager;
 class HintBarWidget;
 class WelcomeWidget;
 class LoadingOverlay;
+class ExecutionMonitorPanel;
 
 class MainWindow : public SARibbonMainWindow {
   Q_OBJECT
@@ -106,6 +107,7 @@ class MainWindow : public SARibbonMainWindow {
   // 活动栏 + 侧边栏
   ActivityBarWidget* activity_bar_;
   SidebarWidget* sidebar_;
+  ExecutionMonitorPanel* execution_monitor_panel_ = nullptr;
 
   // 水平/垂直分割器
   QSplitter* h_splitter_;  // 水平：Sidebar / 垂直区域 / AuxSidebar

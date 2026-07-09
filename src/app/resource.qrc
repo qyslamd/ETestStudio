@@ -8,6 +8,7 @@
         <file>resources/styles/vscode.qss</file>
         <file>resources/styles/ads_dark.qss</file>
         <file>resources/styles/execution_control_bar.qss</file>
+        <file>resources/styles/execution_monitor_panel.qss</file>
         <file>resources/icons/svg/close_light.svg</file>
         <file>resources/icons/svg/close_dark.svg</file>
         <file>resources/icons/svg/dock_close_light.svg</file>

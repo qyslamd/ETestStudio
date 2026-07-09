@@ -35,6 +35,8 @@ add_executable(${TARGET_NAME} WIN32
     TopologyManagerWidget.cpp
     TestProgramManagerWidget.h
     TestProgramManagerWidget.cpp
+    ExecutionMonitorPanel.h
+    ExecutionMonitorPanel.cpp
     editors/TextEditorWidget.h
     editors/TextEditorWidget.cpp
     editors/ImageViewerWidget.h
@@ -162,6 +164,7 @@ target_link_libraries(${TARGET_NAME}
     etest_program
     etest_ui
     icd_utility
+    etest_engine
     # 已配置第三方依赖
     spdlog::spdlog
     hpdf
