@@ -121,6 +121,18 @@ ProtocolManagerWidget::ProtocolManagerWidget(QWidget* parent)
     : QWidget(parent) {
   initUi();
   initSignals();
+
+  auto& pm = ProjectManager::instance();
+  if (!pm.isProjectOpen()) {
+    new_frame_btn_->setEnabled(false);
+    import_btn_->setEnabled(false);
+    create_config_btn_->setEnabled(false);
+    config_label_->setText(QStringLiteral("ICDConfig（请先打开项目）"));
+    file_entries_.clear();
+    repo_.reset();
+    config_path_.clear();
+    updateStatusLabel();
+  }
 }
 
 ProtocolManagerWidget::~ProtocolManagerWidget() = default;
@@ -211,17 +223,17 @@ void ProtocolManagerWidget::initUi() {
   empty_text->setAlignment(Qt::AlignCenter);
   empty_layout->addWidget(empty_text);
 
-  auto* create_btn =
+  create_config_btn_ =
       new QPushButton(QStringLiteral("创建 ICDConfig"), empty_state_);
-  create_btn->setObjectName(QStringLiteral("protocolManagerCreateBtn"));
-  create_btn->setFixedHeight(24);
-  empty_layout->addWidget(create_btn, 0, Qt::AlignHCenter);
+  create_config_btn_->setObjectName(QStringLiteral("protocolManagerCreateBtn"));
+  create_config_btn_->setFixedHeight(24);
+  empty_layout->addWidget(create_config_btn_, 0, Qt::AlignHCenter);
 
   empty_state_->hide();
   root_layout->addWidget(empty_state_);
 
-  // 连接 create_btn 的 clicked 到 onNewIcdConfig
-  connect(create_btn, &QPushButton::clicked, this,
+  // 连接 create_config_btn_ 的 clicked 到 onNewIcdConfig
+  connect(create_config_btn_, &QPushButton::clicked, this,
           &ProtocolManagerWidget::onNewIcdConfig);
 
   // ── 底部状态栏 ──
@@ -303,15 +315,11 @@ void ProtocolManagerWidget::refreshList() {
 void ProtocolManagerWidget::refreshListImpl() {
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) {
-    // 没有打开项目：显示空状态
+    // 没有打开项目：只禁用按钮，保留 tree 可见（空状态）
     config_label_->setText(QStringLiteral("ICDConfig（请先打开项目）"));
-    tree_->hide();
-    empty_state_->show();
-    auto* text = empty_state_->findChild<QLabel*>(
-        QStringLiteral("protocolManagerEmptyText"));
-    if (text) {
-      text->setText(QStringLiteral("请先打开一个项目。"));
-    }
+    new_frame_btn_->setEnabled(false);
+    import_btn_->setEnabled(false);
+    create_config_btn_->setEnabled(false);
     file_entries_.clear();
     repo_.reset();
     config_path_.clear();
@@ -332,6 +340,9 @@ void ProtocolManagerWidget::refreshListImpl() {
       text->setText(QStringLiteral(
           "此项目尚无 ICDConfig.xml/json。\n点击下方按钮创建一个空白配置。"));
     }
+    new_frame_btn_->setEnabled(false);
+    import_btn_->setEnabled(false);
+    create_config_btn_->setEnabled(true);
     file_entries_.clear();
     repo_.reset();
     config_path_.clear();
@@ -354,6 +365,9 @@ void ProtocolManagerWidget::refreshListImpl() {
       text->setText(
           QStringLiteral("无法加载 ICDConfig。\n%1\n%2").arg(detail, path));
     }
+    new_frame_btn_->setEnabled(true);
+    import_btn_->setEnabled(true);
+    create_config_btn_->setEnabled(false);
     file_entries_.clear();
     repo_.reset();
     updateStatusLabel();
@@ -363,6 +377,8 @@ void ProtocolManagerWidget::refreshListImpl() {
   // 加载成功（部分帧可能缺失）：渲染
   tree_->show();
   empty_state_->hide();
+  new_frame_btn_->setEnabled(true);
+  import_btn_->setEnabled(true);
   // 标题后追加警告标记
   QString title_suffix;
   if (!load_error_.isEmpty()) {
