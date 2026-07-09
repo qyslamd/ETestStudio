@@ -121,7 +121,7 @@ endif()
 
 # 编译选项
 if(MSVC)
-    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX-)
+    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX- /EHsc)
 else()
     target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -pedantic)
 endif()
