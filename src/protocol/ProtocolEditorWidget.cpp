@@ -143,6 +143,9 @@ bool ProtocolEditorWidget::saveAs(const QString& path) {
   } else if (path.endsWith(QStringLiteral("ICDConfig.json"), Qt::CaseInsensitive)) {
     format_ = ProtocolFormat::ConfigDriven;
     config_format_ = icd::Format::json;
+  } else {
+    // 未识别的扩展名（或无扩展名）默认走 .eprotox（XML）
+    format_ = ProtocolFormat::Xml;
   }
 
   if (format_ == ProtocolFormat::ConfigDriven) {

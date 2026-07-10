@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
   parser.setApplicationDescription(QStringLiteral("帧协议编辑器"));
   parser.addHelpOption();
   parser.addOption({{QStringLiteral("f"), QStringLiteral("file")},
-                    QStringLiteral("打开指定的协议文件 (*.eproto)"),
+                    QStringLiteral("打开指定的协议文件 (*.eprotox)"),
                     QStringLiteral("file")});
   parser.process(app);
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
   QObject::connect(openAction, &QAction::triggered, &editor, [&]() {
     QString path = QFileDialog::getOpenFileName(
         &editor, QStringLiteral("打开协议文件"), QString(),
-        QStringLiteral("协议文件 (*.eproto *.epro);;所有文件 (*)"));
+        QStringLiteral("协议文件 (*.eprotox *.eproto);;所有文件 (*)"));
     if (path.isEmpty())
       return;
     editor.openFile(path);
@@ -58,11 +58,12 @@ int main(int argc, char* argv[]) {
     if (editor.filePath().isEmpty()) {
       QString path = QFileDialog::getSaveFileName(
           &editor, QStringLiteral("保存协议文件"), QString(),
-          QStringLiteral("协议文件 (*.eproto);;所有文件 (*)"));
+          QStringLiteral("协议文件 (*.eprotox);;所有文件 (*)"));
       if (path.isEmpty())
         return;
-      if (!path.endsWith(QStringLiteral(".eproto"), Qt::CaseInsensitive))
-        path += QStringLiteral(".eproto");
+      if (!path.endsWith(QStringLiteral(".eprotox"), Qt::CaseInsensitive) &&
+          !path.endsWith(QStringLiteral(".eproto"), Qt::CaseInsensitive))
+        path += QStringLiteral(".eprotox");
       editor.saveAs(path);
     } else {
       editor.save();
@@ -74,11 +75,12 @@ int main(int argc, char* argv[]) {
   QObject::connect(saveAsAction, &QAction::triggered, &editor, [&]() {
     QString path = QFileDialog::getSaveFileName(
         &editor, QStringLiteral("保存协议文件"), QString(),
-        QStringLiteral("协议文件 (*.eproto);;所有文件 (*)"));
+        QStringLiteral("协议文件 (*.eprotox);;所有文件 (*)"));
     if (path.isEmpty())
       return;
-    if (!path.endsWith(QStringLiteral(".eproto"), Qt::CaseInsensitive))
-      path += QStringLiteral(".eproto");
+    if (!path.endsWith(QStringLiteral(".eprotox"), Qt::CaseInsensitive) &&
+        !path.endsWith(QStringLiteral(".eproto"), Qt::CaseInsensitive))
+      path += QStringLiteral(".eprotox");
     editor.saveAs(path);
   });
 

@@ -163,7 +163,7 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   QString current_file_;
 
   // Format routing
-  ProtocolFormat format_ = ProtocolFormat::Json;
+  ProtocolFormat format_ = ProtocolFormat::Xml;
   icd::Format config_format_ = icd::Format::xml;
   std::filesystem::path config_path_;
   std::vector<icd::FrameFileInfo> file_entries_;
