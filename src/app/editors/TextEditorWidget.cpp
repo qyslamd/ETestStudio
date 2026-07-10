@@ -24,7 +24,9 @@
 namespace etest::app {
 
 TextEditorWidget::TextEditorWidget(const QString& filePath, QWidget* parent)
-    : QWidget(parent), file_path_(filePath), theme_(EditorTheme::loadFromConfig()) {
+    : QWidget(parent),
+      file_path_(filePath),
+      theme_(EditorTheme::loadFromConfig()) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
@@ -182,7 +184,8 @@ void TextEditorWidget::setupEditor() {
   editor_->setAutoIndent(autoIndent);
   editor_->setIndentationGuides(true);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-                         QsciScintilla::STYLE_INDENTGUIDE, theme_.chrome.indentGuide);
+                         QsciScintilla::STYLE_INDENTGUIDE,
+                         theme_.chrome.indentGuide);
 
   int tabWidth =
       config.get<int>(CONFIG_EDITOR_TAB_WIDTH, CONFIG_EDITOR_DEFAULT_TAB_WIDTH);
@@ -205,7 +208,8 @@ void TextEditorWidget::setupEditor() {
 
   editor_->setMarginBackgroundColor(0, theme_.chrome.marginBg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                         QsciScintilla::STYLE_LINENUMBER, theme_.chrome.marginBg);
+                         QsciScintilla::STYLE_LINENUMBER,
+                         theme_.chrome.marginBg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
                          QsciScintilla::STYLE_LINENUMBER,
                          theme_.chrome.lineNumber);
@@ -214,18 +218,22 @@ void TextEditorWidget::setupEditor() {
   editor_->setMarginBackgroundColor(1, theme_.chrome.marginBg);
   editor_->setMarginBackgroundColor(2, theme_.chrome.marginBg);
   editor_->setMarginsForegroundColor(theme_.chrome.lineNumber);
-  editor_->setFoldMarginColors(theme_.chrome.foldMargin, theme_.chrome.marginBg);
+  editor_->setFoldMarginColors(theme_.chrome.foldMargin,
+                               theme_.chrome.marginBg);
 
   editor_->setBraceMatching(QsciScintilla::SloppyBraceMatch);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                         QsciScintilla::STYLE_BRACELIGHT, theme_.chrome.braceLightBg);
+                         QsciScintilla::STYLE_BRACELIGHT,
+                         theme_.chrome.braceLightBg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
                          QsciScintilla::STYLE_BRACELIGHT,
                          theme_.chrome.braceLightFg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                         QsciScintilla::STYLE_BRACEBAD, theme_.chrome.braceBadBg);
+                         QsciScintilla::STYLE_BRACEBAD,
+                         theme_.chrome.braceBadBg);
   editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-                         QsciScintilla::STYLE_BRACEBAD, theme_.chrome.braceBadFg);
+                         QsciScintilla::STYLE_BRACEBAD,
+                         theme_.chrome.braceBadFg);
 
   editor_->setUtf8(true);
 
@@ -260,7 +268,7 @@ void TextEditorWidget::applyLexer(const QString& suffix) {
              suffix == "eproto" || suffix == "etprog") {
     lexer = new QsciLexerJSON(this);
   } else if (suffix == "xml" || suffix == "html" || suffix == "htm" ||
-             suffix == "svg") {
+             suffix == "svg" || suffix == "eprotox") {
     lexer = new QsciLexerXML(this);
   } else if (suffix == "py" || suffix == "pyw") {
     lexer = new QsciLexerPython(this);
@@ -299,7 +307,7 @@ void TextEditorWidget::applyColorScheme(QsciLexer* lexer) {
 
   if (lexer) {
     lexer->setDefaultPaper(theme_.chrome.paper);
-    lexer->setDefaultColor(theme_.chrome.text);
+    lexer->setColor(theme_.chrome.text, 0);
     for (int i = 0; i <= 127; ++i) {
       lexer->setPaper(theme_.chrome.paper, i);
     }
@@ -340,6 +348,7 @@ void TextEditorWidget::applyColorScheme(QsciLexer* lexer) {
     xml->setColor(s.string, QsciLexerXML::HTMLDoubleQuotedString);
     xml->setColor(s.string, QsciLexerXML::HTMLSingleQuotedString);
     xml->setColor(s.number, QsciLexerXML::HTMLNumber);
+    xml->setColor(theme_.chrome.text, QsciLexerHTML::Default);
   } else if (auto* py = qobject_cast<QsciLexerPython*>(lexer)) {
     py->setColor(s.keyword, QsciLexerPython::Keyword);
     py->setColor(s.comment, QsciLexerPython::Comment);
@@ -417,23 +426,31 @@ void TextEditorWidget::onConfigChanged(const QString& key) {
     editor_->setSelectionForegroundColor(theme_.chrome.selectionFg);
     editor_->setMarginBackgroundColor(0, theme_.chrome.marginBg);
     editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                           QsciScintilla::STYLE_LINENUMBER, theme_.chrome.marginBg);
+                           QsciScintilla::STYLE_LINENUMBER,
+                           theme_.chrome.marginBg);
     editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-                           QsciScintilla::STYLE_LINENUMBER, theme_.chrome.lineNumber);
+                           QsciScintilla::STYLE_LINENUMBER,
+                           theme_.chrome.lineNumber);
     editor_->setMarginBackgroundColor(1, theme_.chrome.marginBg);
     editor_->setMarginBackgroundColor(2, theme_.chrome.marginBg);
     editor_->setMarginsForegroundColor(theme_.chrome.lineNumber);
-    editor_->setFoldMarginColors(theme_.chrome.foldMargin, theme_.chrome.marginBg);
+    editor_->setFoldMarginColors(theme_.chrome.foldMargin,
+                                 theme_.chrome.marginBg);
     editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-                           QsciScintilla::STYLE_INDENTGUIDE, theme_.chrome.indentGuide);
+                           QsciScintilla::STYLE_INDENTGUIDE,
+                           theme_.chrome.indentGuide);
     editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                           QsciScintilla::STYLE_BRACELIGHT, theme_.chrome.braceLightBg);
+                           QsciScintilla::STYLE_BRACELIGHT,
+                           theme_.chrome.braceLightBg);
     editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-                           QsciScintilla::STYLE_BRACELIGHT, theme_.chrome.braceLightFg);
+                           QsciScintilla::STYLE_BRACELIGHT,
+                           theme_.chrome.braceLightFg);
     editor_->SendScintilla(QsciScintilla::SCI_STYLESETBACK,
-                           QsciScintilla::STYLE_BRACEBAD, theme_.chrome.braceBadBg);
+                           QsciScintilla::STYLE_BRACEBAD,
+                           theme_.chrome.braceBadBg);
     editor_->SendScintilla(QsciScintilla::SCI_STYLESETFORE,
-                           QsciScintilla::STYLE_BRACEBAD, theme_.chrome.braceBadFg);
+                           QsciScintilla::STYLE_BRACEBAD,
+                           theme_.chrome.braceBadFg);
     // Re-apply syntax colors if a lexer is active
     if (editor_->lexer()) {
       applyColorScheme(editor_->lexer());
