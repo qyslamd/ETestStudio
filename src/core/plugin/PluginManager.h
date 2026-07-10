@@ -39,6 +39,9 @@ class PluginManager : public QObject {
   // 按设备类型查询已加载的设备插件
   QList<PluginMetaData> devicesByType(const QString& deviceType) const;
 
+  // 按设备类型 + mock 标志查询（mock=true 查 Mock 插件，false 查真实插件）
+  QList<PluginMetaData> devicesByMockType(const QString& deviceType, bool mock) const;
+
   // 插件搜索路径
   void addSearchPath(const QString& path);
   QStringList searchPaths() const;

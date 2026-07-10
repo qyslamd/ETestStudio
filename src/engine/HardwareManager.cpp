@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+#include "MockUUTBuilder.h"
 #include "SignalResolver.h"
 
 #include "plugin/IADevicePlugin.h"
@@ -33,27 +34,10 @@ HardwareManager::~HardwareManager() { shutdown(); }
 // loadFromTopology — parse .etopo JSON and instantiate devices
 // ---------------------------------------------------------------------------
 
-bool HardwareManager::loadFromTopology(const QString& etopoPath) {
-  QFile file(etopoPath);
-  if (!file.open(QIODevice::ReadOnly)) {
-    LOG_ERROR("HARDWARE", "无法打开拓扑文件: {}", etopoPath.toStdString());
-    return false;
-  }
-
-  QJsonParseError parseError;
-  QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-  file.close();
-
-  if (parseError.error != QJsonParseError::NoError) {
-    LOG_ERROR("HARDWARE", "拓扑文件 JSON 解析失败: {}",
-              parseError.errorString().toStdString());
-    return false;
-  }
-
-  QJsonObject root = doc.object();
+bool HardwareManager::loadFromTopology(const QJsonObject& root) {
   QJsonArray devicesArr = root["devices"].toArray();
   if (devicesArr.isEmpty()) {
-    LOG_WARN("HARDWARE", "拓扑文件中没有设备定义");
+    LOG_WARN("HARDWARE", "拓扑中没有设备定义");
     return false;
   }
 
@@ -77,7 +61,11 @@ bool HardwareManager::loadFromTopology(const QString& etopoPath) {
                         propObj["value"].toString());
     }
 
-    if (instantiateDevice(deviceId, pluginId, properties)) {
+    // 注入 type 字段（device 级别），供 instantiateDevice 的 mock 分支使用
+    properties.insert(QStringLiteral("type"), dObj["type"].toString());
+
+    bool mock = dObj["mock"].toBool(false);
+    if (instantiateDevice(deviceId, pluginId, properties, mock)) {
       ++loaded;
     } else {
       emit deviceError(deviceId,
@@ -85,37 +73,53 @@ bool HardwareManager::loadFromTopology(const QString& etopoPath) {
     }
   }
 
-  LOG_INFO("HARDWARE", "从拓扑文件加载了 {}/{} 个设备", loaded,
-           devicesArr.size());
+  LOG_INFO("HARDWARE", "从拓扑加载了 {}/{} 个设备", loaded, devicesArr.size());
   return loaded > 0;
 }
 
 // ---------------------------------------------------------------------------
-// instantiateDevice — look up plugin, open device, store in pool
+// instantiateDevice — look up plugin (real or mock), open, store in pool
 // ---------------------------------------------------------------------------
 
 bool HardwareManager::instantiateDevice(const QString& deviceId,
                                         const QString& pluginId,
-                                        const QVariantMap& properties) {
-  Q_UNUSED(properties);  // Phase 1: store properties for later use
-
+                                        const QVariantMap& properties,
+                                        bool mock) {
   PluginManager& pm = PluginManager::instance();
+  IPlugin* plugin = nullptr;
+  QString type = properties.value(QStringLiteral("type")).toString();
 
-  // Try direct plugin-ID lookup first
-  IPlugin* plugin = pm.plugin(pluginId);
-  if (!plugin) {
-    // Fallback: search by device_type metadata
-    QList<PluginMetaData> matches = pm.devicesByType(pluginId);
-    if (matches.isEmpty()) {
-      LOG_ERROR("HARDWARE", "未找到匹配的插件: {}", pluginId.toStdString());
+  if (mock) {
+    // ── 只在 Mock 插件池中搜索 ──
+    plugin = pm.plugin(pluginId);
+    if (!plugin) {
+      QList<PluginMetaData> matches = pm.devicesByMockType(type, true);
+      if (!matches.isEmpty()) {
+        plugin = pm.plugin(matches.first().id);
+      }
+    }
+    if (!plugin) {
+      LOG_ERROR("HARDWARE", "Mock 插件未找到: type={}, pluginId={}",
+                type.toStdString(), pluginId.toStdString());
+      emit deviceError(deviceId, QStringLiteral("Mock 插件未找到，请检查 plugins/ 目录"));
       return false;
     }
-    plugin = pm.plugin(matches.first().id);
-  }
-
-  if (!plugin) {
-    LOG_ERROR("HARDWARE", "插件 {} 未能加载", pluginId.toStdString());
-    return false;
+  } else {
+    // ── 只在真实插件池中搜索 ──
+    plugin = pm.plugin(pluginId);
+    if (!plugin) {
+      QList<PluginMetaData> matches = pm.devicesByMockType(type, false);
+      if (!matches.isEmpty()) {
+        plugin = pm.plugin(matches.first().id);
+      }
+    }
+    if (!plugin) {
+      LOG_ERROR("HARDWARE", "真实设备插件未找到: type={}, pluginId={}",
+                type.toStdString(), pluginId.toStdString());
+      emit deviceError(deviceId,
+                       QStringLiteral("真实设备插件未找到，请检查硬件驱动是否已安装"));
+      return false;
+    }
   }
 
   IDevicePlugin* devPlugin = dynamic_cast<IDevicePlugin*>(plugin);
@@ -124,10 +128,10 @@ bool HardwareManager::instantiateDevice(const QString& deviceId,
     return false;
   }
 
-  // Open the hardware device
+  // Open the hardware device (for mock plugins this is a no-op)
   if (!devPlugin->openDevice()) {
-    LOG_ERROR("HARDWARE", "设备 {} 打开失败 (plugin={})",
-              deviceId.toStdString(), pluginId.toStdString());
+    LOG_ERROR("HARDWARE", "设备 {} 打开失败 (plugin={})", deviceId.toStdString(),
+              pluginId.toStdString());
     emit deviceError(deviceId, QStringLiteral("打开设备失败"));
     return false;
   }
@@ -138,13 +142,39 @@ bool HardwareManager::instantiateDevice(const QString& deviceId,
                           etest::core::plugin::DeviceStatus::Online
                       ? DeviceStatus::Online
                       : DeviceStatus::Offline);
+  entry.is_mock = mock;
 
   device_pool_.insert(deviceId, entry);
   emit deviceStatusChanged(deviceId, entry.status);
 
-  LOG_INFO("HARDWARE", "设备 {} 已实例化 (plugin={})", deviceId.toStdString(),
-           pluginId.toStdString());
+  LOG_INFO("HARDWARE", "设备 {} {} 已实例化 (plugin={})", deviceId.toStdString(),
+           mock ? "(Mock)" : "(Real)", pluginId.toStdString());
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// setMockUUT — take ownership of MockUUT instances from Builder
+// ---------------------------------------------------------------------------
+
+void HardwareManager::setMockUUT(std::vector<std::unique_ptr<MockUUT>> uuts) {
+  mock_uut_holders_ = std::move(uuts);
+  mock_uuts_.clear();
+  for (const auto& uut : mock_uut_holders_) {
+    mock_uuts_.append(uut.get());
+  }
+}
+
+// ---------------------------------------------------------------------------
+// closeAllDevices — close all devices without clearing MockUUT
+// ---------------------------------------------------------------------------
+
+void HardwareManager::closeAllDevices() {
+  for (auto it = device_pool_.begin(); it != device_pool_.end(); ++it) {
+    if (it->plugin) {
+      it->plugin->closeDevice();
+    }
+  }
+  device_pool_.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -158,10 +188,37 @@ IDevicePlugin* HardwareManager::pluginForDevice(
 }
 
 // ---------------------------------------------------------------------------
+// findMockUUTForFrame — locate MockUUT by deviceId + frameId
+// ---------------------------------------------------------------------------
+
+MockUUT* HardwareManager::findMockUUTForFrame(const QString& deviceId,
+                                                int frameId) const {
+  for (auto* uut : mock_uuts_) {
+    if (uut->findFrameSimulator(deviceId, frameId)) {
+      return uut;
+    }
+  }
+  return nullptr;
+}
+
+// ---------------------------------------------------------------------------
 // read — route to appropriate plugin interface based on signal type
 // ---------------------------------------------------------------------------
 
 QVariant HardwareManager::read(const ResolvedSignal& signal) {
+  // ── Mock AD/DA: direct channel read from MockUUT ──
+  if (!mock_uuts_.isEmpty() &&
+      (signal.signalType == SignalType::AD ||
+       signal.signalType == SignalType::DA)) {
+    for (auto* uut : mock_uuts_) {
+      auto* sim = uut->findChannelSimulator(signal.frameId);
+      if (sim) {
+        double val = sim->readChannelValue(signal.channel);
+        return QVariant(val);
+      }
+    }
+  }
+
   IDevicePlugin* dev = pluginForDevice(signal.deviceId);
   if (!dev) {
     throw DeviceException(
@@ -181,7 +238,6 @@ QVariant HardwareManager::read(const ResolvedSignal& signal) {
         throw DeviceException(
             "设备不支持 AD 读取: " + signal.deviceId.toStdString());
       }
-      // Read channel voltage as engineering value
       return QVariant(ad->readChannel(signal.channel));
     }
     case SignalType::DA: {
@@ -222,13 +278,12 @@ QVariant HardwareManager::read(const ResolvedSignal& signal) {
 }
 
 // ---------------------------------------------------------------------------
-// readAndWait — Phase 1 mock: delegate directly to read()
+// readAndWait — delegate directly to read()
 // ---------------------------------------------------------------------------
 
 QVariant HardwareManager::readAndWait(const ResolvedSignal& signal,
                                        int timeoutMs) {
   Q_UNUSED(timeoutMs);
-  // Phase 1: simply call read(); Phase 2 will introduce QEventLoop + timer.
   return read(signal);
 }
 
@@ -258,18 +313,15 @@ bool HardwareManager::write(const ResolvedSignal& signal, double engValue) {
     case SignalType::CAN:
     case SignalType::SERIAL:
     case SignalType::A429:
-      // Frame-type write requires encoded raw data — use writeFrame() instead
-      // Phase 2: implement engineering-value-to-raw encoding
       return false;
     case SignalType::AD:
-      // AD devices are input-only
       return false;
   }
   return false;
 }
 
 // ---------------------------------------------------------------------------
-// writeFrame — write raw frame data to frame-type devices
+// writeFrame — write raw frame data + handle MockUUT response
 // ---------------------------------------------------------------------------
 
 bool HardwareManager::writeFrame(const ResolvedSignal& signal,
@@ -284,34 +336,63 @@ bool HardwareManager::writeFrame(const ResolvedSignal& signal,
     return false;
   }
 
+  // ── ① 先写设备（环回保障基本读写） ──
   switch (signal.signalType) {
     case SignalType::CAN: {
       ICANPlugin* can = dynamic_cast<ICANPlugin*>(dev);
-      if (!can) {
-        return false;
-      }
-      return can->sendMessage(signal.frameId, frameData);
+      if (!can) return false;
+      if (!can->sendMessage(signal.frameId, frameData)) return false;
+      break;
     }
     case SignalType::SERIAL: {
       ISerialDevicePlugin* serial = dynamic_cast<ISerialDevicePlugin*>(dev);
-      if (!serial) {
-        return false;
-      }
-      return serial->writeData(frameData) >= 0;
+      if (!serial) return false;
+      if (serial->writeData(frameData) < 0) return false;
+      break;
     }
     case SignalType::A429: {
       IArinc429Plugin* a429 = dynamic_cast<IArinc429Plugin*>(dev);
-      if (!a429) {
+      if (!a429) return false;
+      if (!a429->sendLabel(static_cast<int>(signal.frameId), frameData))
         return false;
-      }
-      return a429->sendLabel(static_cast<int>(signal.frameId), frameData);
+      break;
     }
-    case SignalType::AD:
-    case SignalType::DA:
-      // Channel-type devices use write() instead
+    default:
       return false;
   }
-  return false;
+
+  // ── ② Mock 模式：查 MockUUT 获取模拟回复 ──
+  if (auto* mockUUT = findMockUUTForFrame(signal.deviceId,
+                                            signal.frameId)) {
+    auto resp = mockUUT->onFrameWritten(signal.deviceId, signal.frameId,
+                                         frameData);
+    if (resp) {
+      // ③ 把回复帧写入设备插件（Mock 插件退化为内存操作）
+      switch (signal.signalType) {
+        case SignalType::SERIAL: {
+          auto* serial = dynamic_cast<ISerialDevicePlugin*>(dev);
+          if (serial) serial->writeData(resp->data);
+          break;
+        }
+        case SignalType::CAN: {
+          auto* can = dynamic_cast<ICANPlugin*>(dev);
+          if (can)
+            can->sendMessage(static_cast<quint32>(resp->targetFrameId),
+                             resp->data);
+          break;
+        }
+        case SignalType::A429: {
+          auto* a429 = dynamic_cast<IArinc429Plugin*>(dev);
+          if (a429) a429->sendLabel(resp->targetFrameId, resp->data);
+          break;
+        }
+        default:
+          break;
+      }
+    }
+  }
+
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -337,7 +418,7 @@ QList<QString> HardwareManager::onlineDevices() const {
 }
 
 // ---------------------------------------------------------------------------
-// shutdown — close all devices and clear the pool
+// shutdown — close all devices and clear pools
 // ---------------------------------------------------------------------------
 
 void HardwareManager::shutdown() {
@@ -348,6 +429,8 @@ void HardwareManager::shutdown() {
     emit deviceStatusChanged(it.key(), DeviceStatus::Offline);
   }
   device_pool_.clear();
+  mock_uuts_.clear();
+  mock_uut_holders_.clear();
 }
 
 }  // namespace etest::engine

@@ -1,11 +1,15 @@
-#ifndef ETEST_ENGINE_HARDWARE_MANAGER_H_
+﻿#ifndef ETEST_ENGINE_HARDWARE_MANAGER_H_
 #define ETEST_ENGINE_HARDWARE_MANAGER_H_
 
+#include <QJsonObject>
 #include <QMap>
 #include <QObject>
 #include <QString>
 #include <QVariant>
+#include <QVector>
+#include <memory>
 #include <stdexcept>
+#include <vector>
 
 namespace etest::core::plugin {
 class IDevicePlugin;
@@ -13,6 +17,7 @@ class IDevicePlugin;
 
 namespace etest::engine {
 
+class MockUUT;
 struct ResolvedSignal;
 
 enum class DeviceStatus { Online, Offline, Error };
@@ -35,8 +40,14 @@ class HardwareManager : public QObject {
   explicit HardwareManager(QObject* parent = nullptr);
   ~HardwareManager() override;
 
-  // Load devices from topology JSON file
-  bool loadFromTopology(const QString& etopoPath);
+  // Load devices from parsed topology JSON object
+  bool loadFromTopology(const QJsonObject& root);
+
+  // Set MockUUT instances from Builder (takes ownership)
+  void setMockUUT(std::vector<std::unique_ptr<MockUUT>> uuts);
+
+  // Close all devices and clear the pool (used for rollback on error)
+  void closeAllDevices();
 
   // Unified read/write interface
   QVariant read(const ResolvedSignal& signal);  // throws DeviceException
@@ -60,15 +71,20 @@ class HardwareManager : public QObject {
 
  private:
   bool instantiateDevice(const QString& deviceId, const QString& pluginId,
-                         const QVariantMap& properties);
+                         const QVariantMap& properties, bool mock);
   etest::core::plugin::IDevicePlugin* pluginForDevice(
       const QString& deviceId) const;
+
+  MockUUT* findMockUUTForFrame(const QString& deviceId, int frameId) const;
 
   struct DeviceEntry {
     etest::core::plugin::IDevicePlugin* plugin = nullptr;
     DeviceStatus status = DeviceStatus::Offline;
+    bool is_mock = false;
   };
   QMap<QString, DeviceEntry> device_pool_;
+  QVector<MockUUT*> mock_uuts_;  // raw pointers into mock_uut_holders_
+  std::vector<std::unique_ptr<MockUUT>> mock_uut_holders_;
 
   // Allow test helper to inject devices for unit testing
   friend class HardwareManagerTestHelper;

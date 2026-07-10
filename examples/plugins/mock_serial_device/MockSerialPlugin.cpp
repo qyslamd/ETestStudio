@@ -17,6 +17,7 @@ MockSerialPlugin::MockSerialPlugin() {
   meta_.category = "device";
   meta_.device_type = "serial";
   meta_.device_channels = 1;
+  meta_.is_mock = true;
 }
 
 MockSerialPlugin::~MockSerialPlugin() = default;

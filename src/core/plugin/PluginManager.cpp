@@ -241,6 +241,7 @@ PluginMetaData PluginManager::parseMetaDataFromLib(
   meta.device_function = metaDataObj.value("device_function").toString();
   meta.device_direction = metaDataObj.value("device_direction").toString(
       QStringLiteral("Bidirectional"));
+  meta.is_mock = metaDataObj.value("is_mock").toBool(false);
 
   QJsonArray deps = metaDataObj.value("dependencies").toArray();
   for (const QJsonValue& v : deps) {
@@ -255,6 +256,18 @@ QList<PluginMetaData> PluginManager::devicesByType(const QString& deviceType) co
   for (IPlugin* p : m_impl->loaded_plugins_.values()) {
     PluginMetaData meta = p->metaData();
     if (meta.device_type == deviceType) {
+      result.append(meta);
+    }
+  }
+  return result;
+}
+
+QList<PluginMetaData> PluginManager::devicesByMockType(
+    const QString& deviceType, bool mock) const {
+  QList<PluginMetaData> result;
+  for (IPlugin* p : m_impl->loaded_plugins_.values()) {
+    PluginMetaData meta = p->metaData();
+    if (meta.device_type == deviceType && meta.is_mock == mock) {
       result.append(meta);
     }
   }

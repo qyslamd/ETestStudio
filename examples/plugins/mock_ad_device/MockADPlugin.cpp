@@ -21,6 +21,7 @@ MockADPlugin::MockADPlugin() {
   meta_.device_type = "ad";
   meta_.device_channels = kChannelCount;
   meta_.device_function = "AD";
+  meta_.is_mock = true;
 
   acquisition_timer_ = new QTimer(this);
   connect(acquisition_timer_, &QTimer::timeout, this,

@@ -17,6 +17,7 @@ MockA429Plugin::MockA429Plugin() {
   meta_.category = "device";
   meta_.device_type = "a429";
   meta_.device_channels = 2;
+  meta_.is_mock = true;
 }
 
 MockA429Plugin::~MockA429Plugin() = default;

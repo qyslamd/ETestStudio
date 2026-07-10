@@ -5,6 +5,7 @@ add_library(${TARGET_NAME} STATIC
     SignalResolver.cpp
     SignalCodec.cpp
     HardwareManager.cpp
+    MockUUTBuilder.cpp
     StepRunner.cpp
     ResultCollector.cpp
 )

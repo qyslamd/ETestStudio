@@ -18,6 +18,7 @@ MockDAPlugin::MockDAPlugin()
   meta_.category = "device";
   meta_.device_type = "da";
   meta_.device_channels = kChannelCount;
+  meta_.is_mock = true;
 }
 
 MockDAPlugin::~MockDAPlugin() = default;

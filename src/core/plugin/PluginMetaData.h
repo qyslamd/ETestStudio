@@ -22,6 +22,7 @@ struct PluginMetaData {
   int device_channels = 0;   // 设备通道数
   QString device_function;   // 设备功能类型，如 "A429"、"AD"、"DISCRETE"
   QString device_direction;  // 设备方向，默认 "Bidirectional"
+  bool is_mock = false;      // 标记此插件是否为 Mock 实现
 
   bool isValid() const { return !id.isEmpty() && !name.isEmpty(); }
 };

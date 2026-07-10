@@ -1,6 +1,7 @@
 #include "TestExecutionEngine.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMetaObject>
@@ -9,12 +10,38 @@
 #include <spdlog/spdlog.h>
 
 #include "HardwareManager.h"
+#include "MockUUTBuilder.h"
 #include "ResultCollector.h"
 #include "SignalCodec.h"
 #include "SignalResolver.h"
 #include "StepRunner.h"
 
 namespace etest::engine {
+
+// ==========================================================================
+// 静态辅助：Mock 一致性校验
+// ==========================================================================
+
+static bool hasMockDevices(const QJsonObject& root) {
+    QJsonArray devices = root["devices"].toArray();
+    for (const auto& d : devices) {
+        if (d.toObject()["mock"].toBool())
+            return true;
+    }
+    return false;
+}
+
+static bool checkMockConsistency(const QJsonObject& root) {
+    QJsonArray devices = root["devices"].toArray();
+    if (devices.isEmpty()) return true;
+
+    bool firstMock = devices[0].toObject()["mock"].toBool();
+    for (const auto& d : devices) {
+        if (d.toObject()["mock"].toBool() != firstMock)
+            return false;
+    }
+    return true;
+}
 
 // ==========================================================================
 // 构造 / 析构
@@ -27,8 +54,6 @@ TestExecutionEngine::TestExecutionEngine(etest::core::SignalRegistry* registry,
     , signal_registry_(registry)
     , icd_repository_(icdRepo) {
     // 注册元类型（必须在使用 QMetaObject::invokeMethod / 跨线程信号前完成）
-    // Qt moc 生成的信号参数类型名是 namespace 内的短名称 "StepResult"
-    // 因此必须同时注册短名称和完整名称以匹配 Qt 的内部查找
     qRegisterMetaType<EngineState>("etest::engine::EngineState");
     qRegisterMetaType<StepResult>("StepResult");
     qRegisterMetaType<StepResult>("etest::engine::StepResult");
@@ -84,13 +109,47 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
     }
 
     topology_doc_ = doc.object();
+    const QJsonObject& root = topology_doc_;
 
-    // 如果有 HardwareManager，加载拓扑
-    if (hw_manager_) {
-        return hw_manager_->loadFromTopology(etopoPath);
+    // ── 校验 mock 一致性 ──
+    if (!checkMockConsistency(root)) {
+        spdlog::error("[TestExecutionEngine] 拓扑中所有设备的 mock 值必须一致，"
+                      "不能混合 mock 和真实设备");
+        emit engineError(QStringLiteral("拓扑中所有设备的 mock 值必须一致，"
+                                        "不能混合 mock 和真实设备"));
+        return false;
     }
 
-    return true;
+    // ── 加载所有设备（传入 QJsonObject 单次解析） ──
+    if (!hw_manager_) {
+        spdlog::error("[TestExecutionEngine] HardwareManager 未初始化");
+        return false;
+    }
+    bool ok = hw_manager_->loadFromTopology(root);
+
+    // ── 有 Mock 设备 → 创建 MockUUT ──
+    if (ok && hasMockDevices(root)) {
+        MockUUTBuilder builder(icd_repository_, root);
+        QFileInfo fi(etopoPath);
+
+        builder.loadResponseConfigFile(
+            fi.absolutePath() + QStringLiteral("/mock/MockResponses.json"));
+
+        std::vector<std::unique_ptr<MockUUT>> mockUUTs;
+        if (!builder.buildAll(mockUUTs)) {
+            spdlog::error("[TestExecutionEngine] MockUUT 构建失败: {}",
+                          builder.lastError().toStdString());
+            emit engineError(
+                QStringLiteral("MockUUT 构建失败: %1").arg(builder.lastError()));
+            hw_manager_->closeAllDevices();  // 回滚已打开的设备
+            return false;
+        }
+
+        hw_manager_->setMockUUT(std::move(mockUUTs));
+        spdlog::info("[TestExecutionEngine] MockUUT 构建成功，已注入 HardwareManager");
+    }
+
+    return ok;
 }
 
 // ==========================================================================
@@ -238,14 +297,11 @@ int TestExecutionEngine::completedSteps() const {
 // ==========================================================================
 
 void TestExecutionEngine::onWorkerFinished() {
-    // 只有当状态仍为 Running 时才执行完成逻辑。
-    // 如果 stop() 已先将状态置为 Idle，则跳过以防止重复 emit。
     EngineState expected = EngineState::Running;
     if (!state_.compare_exchange_strong(expected, EngineState::Idle)) {
         return;
     }
 
-    // 请求工作线程退出（如果尚未退出）
     worker_thread_.quit();
 
     emit engineFinished();
@@ -270,17 +326,13 @@ void TestExecutionEngine::initEngine() {
 void TestExecutionEngine::startExecution() {
     collector_ = std::make_unique<ResultCollector>();
 
-    // StepRunner 不能在创建时指定父对象为工作线程，
-    // 因为稍后要通过 moveToThread 移动它。
     runner_ = std::make_unique<StepRunner>(
         hw_manager_.get(), codec_.get(), resolver_.get(), nullptr);
 
-    // 将 collector 连接到 runner 的信号（同一线程内直连）
     collector_->attach(runner_.get());
 }
 
 void TestExecutionEngine::cleanupRunner() {
-    // 清理前确保工作线程已停止
     if (worker_thread_.isRunning()) {
         worker_thread_.quit();
         if (!worker_thread_.wait(5000)) {
@@ -290,7 +342,6 @@ void TestExecutionEngine::cleanupRunner() {
     }
 
     if (runner_) {
-        // 工作线程已停止，可以直接销毁 runner（无需 moveToThread）
         runner_.reset();
     }
     collector_.reset();
