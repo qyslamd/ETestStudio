@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QPushButton>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 #include <string>
@@ -33,7 +33,8 @@ void IcdFramePreviewPanel::initUi() {
       QStringLiteral("输入十六进制字节，例如 01 02 0A 0B"));
   input_row->addWidget(hex_input_, 1);
 
-  decode_btn_ = new QPushButton(QStringLiteral("解析"), this);
+  decode_btn_ = new QToolButton(this);
+  decode_btn_->setText(QStringLiteral("解析"));
   decode_btn_->setObjectName(QStringLiteral("icdFramePreviewDecodeBtn"));
   input_row->addWidget(decode_btn_);
   outer->addLayout(input_row);
@@ -49,7 +50,7 @@ void IcdFramePreviewPanel::initUi() {
   result_list_->setObjectName(QStringLiteral("icdFramePreviewResult"));
   outer->addWidget(result_list_, 1);
 
-  connect(decode_btn_, &QPushButton::clicked, this,
+  connect(decode_btn_, &QToolButton::clicked, this,
           &IcdFramePreviewPanel::runPreview);
   connect(hex_input_, &QLineEdit::returnPressed, this,
           &IcdFramePreviewPanel::runPreview);

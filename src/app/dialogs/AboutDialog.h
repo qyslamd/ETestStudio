@@ -4,7 +4,7 @@
 #include "AnimationDialog.h"
 
 class QLabel;
-class QPushButton;
+class QToolButton;
 
 namespace etest::app {
 
@@ -25,7 +25,7 @@ class AboutDialog : public AnimationDialog {
   QWidget* tech_chips_container_;
   QLabel* build_info_label_;
   QLabel* license_label_;
-  QPushButton* ok_button_;
+  QToolButton* ok_button_;
 };
 
 }  // namespace etest::app

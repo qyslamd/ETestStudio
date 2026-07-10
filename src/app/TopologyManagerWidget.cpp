@@ -11,7 +11,7 @@
 #include <QJsonObject>
 #include <QMenu>
 #include <QMessageBox>
-#include <QPushButton>
+#include <QToolButton>
 #include <QTimer>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
@@ -71,7 +71,8 @@ void TopologyManagerWidget::initUi() {
   toolbar_layout->setContentsMargins(8, 4, 8, 4);
   toolbar_layout->setSpacing(4);
 
-  new_btn_ = new QPushButton(QStringLiteral("+ 新建"), this);
+  new_btn_ = new QToolButton(this);
+  new_btn_->setText(QStringLiteral("+ 新建"));
   new_btn_->setObjectName(QStringLiteral("topologyNewBtn"));
 
   toolbar_layout->addWidget(new_btn_);
@@ -98,7 +99,7 @@ void TopologyManagerWidget::initSignals() {
   connect(tree_, &QTreeWidget::customContextMenuRequested, this,
           &TopologyManagerWidget::onCustomContextMenu);
 
-  connect(new_btn_, &QPushButton::clicked, this,
+  connect(new_btn_, &QToolButton::clicked, this,
           &TopologyManagerWidget::onNewTopology);
 
   // 搜索防抖

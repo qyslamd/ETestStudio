@@ -27,6 +27,10 @@ scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 - 所有生成的代码需要遵循clang-format的Google C++风格规范
 - for语句，如果只有一行，也请加上`{}`
 - if语句，如果只有一行，也请加上`{}`
+- Qt 界面样式禁止在 C++ 代码中通过 `setStyleSheet` 硬编码
+  - 所有样式统一写入 `src/app/resources/styles/` 下的 QSS 文件中；优先通过 `setObjectName` 使用 `#objectName` 选择器定位控件
+  - 对于QPushButton或者QToolButon而言，如果明确不需要对外观定制，用QPushButton,否则用QToolButton
+  - 如果 QSS 必须使用 Type Selector、Descendant Selector 或 Child Selector 定位带命名空间的 Qt/C++ 类，必须写 Qt 元对象系统使用的完整命名空间选择器：将 C++ 命名空间中的 `::` 替换为 `--`
 
 ## 代码架构
 项目采用分层、模块化架构设计，`src/` 下每个子目录对应一个独立的 CMake 构建目标：
@@ -44,8 +48,8 @@ scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 | **etest_protocol** | `src/protocol/` | ICD协议编辑器，实现节点树/位图视图/属性面板                       |
 
 ### 共享 UI 层（Shared UI Layer）
-| 模块         | 目录         | 说明                                                                                           |
-| ------------ | ------------ | ---------------------------------------------------------------------------------------------- |
+| 模块         | 目录         | 说明                                                                                         |
+| ------------ | ------------ | -------------------------------------------------------------------------------------------- |
 | **etest_ui** | `src/libui/` | 跨模块共享的 UI 组件库（如 DockTitleBar 自定义标题栏），被 topology、protocol 及独立产品共用 |
 
 ### 工具库层（Utility Layer）
@@ -134,10 +138,8 @@ etest (主程序)
 3. `body`（可选）：解释为什么，每行≤72字符
 4. `footer`（可选）：`Closes #123` 或 `BREAKING CHANGE: 说明`
 ```
-10.  Qt 界面样式禁止在 C++ 代码中通过 `setStyleSheet` 硬编码，所有样式统一写入 `src/app/resources/styles/` 下的 QSS 文件中；优先通过 `setObjectName` 使用 `#objectName` 选择器定位控件
-11.  如果 QSS 必须使用 Type Selector、Descendant Selector 或 Child Selector 定位带命名空间的 Qt/C++ 类，必须写 Qt 元对象系统使用的完整命名空间选择器：将 C++ 命名空间中的 `::` 替换为 `--`，例如 `etest::app::TerminalPanel` 写作 `etest--app--TerminalPanel`，`etest::app::BottomContainerWidget QTabBar` 写作 `etest--app--BottomContainerWidget QTabBar`；不要省略命名空间直接写 `TerminalPanel`、`BottomContainerWidget`
-12.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
-13.  每次会话开始时先读取 `ideas.md`，了解待办想法的最新进度
+10.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
+11.  每次会话开始时先读取 `ideas.md`，了解待办想法的最新进度
 
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：

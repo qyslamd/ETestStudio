@@ -4,7 +4,7 @@
 #include <QLayout>
 #include <QPainter>
 #include <QPixmap>
-#include <QPushButton>
+#include <QToolButton>
 #include <QStyle>
 #include <QVBoxLayout>
 
@@ -147,12 +147,13 @@ void AboutDialog::initUi() {
   body_layout->addWidget(build_info_label_);
 
   // OK button
-  ok_button_ = new QPushButton(QStringLiteral("确  定"), body);
+  ok_button_ = new QToolButton(body);
+  ok_button_->setText(QStringLiteral("确  定"));
   ok_button_->setObjectName(QStringLiteral("aboutOkButton"));
   ok_button_->setCursor(Qt::PointingHandCursor);
   ok_button_->setFixedWidth(160);
   ok_button_->setFixedHeight(36);
-  connect(ok_button_, &QPushButton::clicked, this,
+  connect(ok_button_, &QToolButton::clicked, this,
           [this] { actHideAnimation(); });
   auto* btn_row = new QHBoxLayout;
   btn_row->setAlignment(Qt::AlignCenter);

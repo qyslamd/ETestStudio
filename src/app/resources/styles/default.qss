@@ -87,6 +87,28 @@ QSplitter::handle:hover {
     background-color: #0078D4;
 }
 
+/* ==================== TopologyManagerWidget ==================== */
+QToolButton#topologyNewBtn {
+    background-color: #FFFFFF;
+    color: #333333;
+    border: 1px solid #D0D0D0;
+    border-radius: 3px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+QToolButton#topologyNewBtn:hover {
+    background-color: #F0F0F0;
+    border-color: #0078D4;
+}
+QToolButton#topologyNewBtn:pressed {
+    background-color: #E0E0E0;
+}
+QToolButton#topologyNewBtn:disabled {
+    background-color: #F5F5F5;
+    color: #AAAAAA;
+    border-color: #E0E0E0;
+}
+
 /* ==================== TopologyEditorWidget ==================== */
 QToolBar#topologyToolbar {
     background-color: #F0F0F0;
@@ -120,6 +142,27 @@ QLabel#PhLoadingOverlayLabel {
     font-size: 13px;
     color: #888888;
     background: transparent;
+}
+
+/* ==================== IcdFramePreviewPanel ==================== */
+QToolButton#icdFramePreviewDecodeBtn {
+    background-color: #0078D4;
+    color: #FFFFFF;
+    border: 1px solid #0078D4;
+    border-radius: 2px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+QToolButton#icdFramePreviewDecodeBtn:hover {
+    background-color: #1A86E0;
+}
+QToolButton#icdFramePreviewDecodeBtn:pressed {
+    background-color: #006ABF;
+}
+QToolButton#icdFramePreviewDecodeBtn:disabled {
+    background-color: #E0E0E0;
+    color: #AAAAAA;
+    border-color: #D0D0D0;
 }
 
 /* ==================== AboutDialog ==================== */
@@ -184,7 +227,7 @@ QLabel#PhLoadingOverlayLabel {
     font-size: 11px;
     background: transparent;
 }
-#aboutOkButton {
+QToolButton#aboutOkButton {
     background-color: #1565C0;
     color: #FFFFFF;
     border: none;
@@ -192,10 +235,10 @@ QLabel#PhLoadingOverlayLabel {
     font-size: 14px;
     font-weight: bold;
 }
-#aboutOkButton:hover {
+QToolButton#aboutOkButton:hover {
     background-color: #1976D2;
 }
-#aboutOkButton:pressed {
+QToolButton#aboutOkButton:pressed {
     background-color: #0D47A1;
 }
 #aboutCopyright {
@@ -250,7 +293,7 @@ QLabel#PhLoadingOverlayLabel {
   border-color: #1d8fe1;
   background: white;
 }
-#loginButton {
+QToolButton#loginButton {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
     stop:0 #4080ff, stop:1 #80c0ff);
   color: white;
@@ -260,11 +303,11 @@ QLabel#PhLoadingOverlayLabel {
   font-size: 14px;
   font-weight: 500;
 }
-#loginButton:hover {
+QToolButton#loginButton:hover {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
     stop:0 #3070ee, stop:1 #70b0ff);
 }
-#loginButton:pressed {
+QToolButton#loginButton:pressed {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
     stop:0 #2060dd, stop:1 #60a0ee);
 }
@@ -272,14 +315,14 @@ QLabel#PhLoadingOverlayLabel {
   color: #e53935;
   font-size: 12px;
 }
-#loginCloseBtn {
+QToolButton#loginCloseBtn {
   background: transparent;
   border: none;
   color: #999;
   font-size: 18px;
   font-weight: normal;
 }
-#loginCloseBtn:hover {
+QToolButton#loginCloseBtn:hover {
   color: #333;
 }
 #loginRemember {
@@ -302,7 +345,7 @@ QLabel#PhLoadingOverlayLabel {
   color: #888;
   margin-left: 8px;
 }
-#userMgrAddBtn {
+QToolButton#userMgrAddBtn {
   background: #1d8fe1;
   color: white;
   border: none;
@@ -310,7 +353,7 @@ QLabel#PhLoadingOverlayLabel {
   padding: 6px 16px;
   font-size: 13px;
 }
-#userMgrAddBtn:hover {
+QToolButton#userMgrAddBtn:hover {
   background: #1a7dcc;
 }
 #userMgrTable {
@@ -321,13 +364,13 @@ QLabel#PhLoadingOverlayLabel {
 #userMgrTable::item {
   padding: 6px 12px;
 }
-#userMgrEditBtn {
+QToolButton#userMgrEditBtn {
   background: transparent;
   color: #1d8fe1;
   border: none;
   font-size: 12px;
 }
-#userMgrDeleteBtn {
+QToolButton#userMgrDeleteBtn {
   background: transparent;
   color: #e53935;
   border: none;
@@ -337,14 +380,18 @@ QLabel#PhLoadingOverlayLabel {
   font-size: 12px;
   color: #999;
 }
-#userMgrCloseBtn {
+#userMgrErrorHint {
+  font-size: 12px;
+  color: #e53935;
+}
+QToolButton#userMgrCloseBtn {
   background: transparent;
   border: none;
   color: #999;
   font-size: 18px;
   font-weight: normal;
 }
-#userMgrCloseBtn:hover {
+QToolButton#userMgrCloseBtn:hover {
   color: #333;
 }
 

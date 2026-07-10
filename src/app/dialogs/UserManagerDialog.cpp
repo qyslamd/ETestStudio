@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QToolButton>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -39,15 +40,17 @@ void UserManagerDialog::initUi() {
   title->setObjectName(QStringLiteral("userMgrTitle"));
   countLabel_ = new QLabel(content);
   countLabel_->setObjectName(QStringLiteral("userMgrCount"));
-  auto* addBtn = new QPushButton(QStringLiteral("+ 添加用户"), content);
+  auto* addBtn = new QToolButton(content);
+  addBtn->setText(QStringLiteral("+ 添加用户"));
   addBtn->setObjectName(QStringLiteral("userMgrAddBtn"));
   addBtn->setCursor(Qt::PointingHandCursor);
-  connect(addBtn, &QPushButton::clicked, this, &UserManagerDialog::onAddUser);
-  auto* closeBtn = new QPushButton(QStringLiteral("×"), content);
+  connect(addBtn, &QToolButton::clicked, this, &UserManagerDialog::onAddUser);
+  auto* closeBtn = new QToolButton(content);
+  closeBtn->setText(QStringLiteral("×"));
   closeBtn->setObjectName(QStringLiteral("userMgrCloseBtn"));
   closeBtn->setFixedSize(28, 28);
   closeBtn->setCursor(Qt::PointingHandCursor);
-  connect(closeBtn, &QPushButton::clicked, this, [this]() {
+  connect(closeBtn, &QToolButton::clicked, this, [this]() {
     actHideAnimation();
   });
   headerRow->addWidget(title);
@@ -115,20 +118,21 @@ void UserManagerDialog::refreshUserList() {
     actionsLayout->setContentsMargins(4, 2, 4, 2);
     actionsLayout->setSpacing(8);
 
-    auto* editBtn = new QPushButton(QStringLiteral("编辑"), actionsWidget);
+    auto* editBtn = new QToolButton(actionsWidget);
+    editBtn->setText(QStringLiteral("编辑"));
     editBtn->setObjectName(QStringLiteral("userMgrEditBtn"));
     editBtn->setCursor(Qt::PointingHandCursor);
-    connect(editBtn, &QPushButton::clicked, this, [this, i]() {
+    connect(editBtn, &QToolButton::clicked, this, [this, i]() {
       onEditUser(i);
     });
     actionsLayout->addWidget(editBtn);
 
     if (u.userName != "admin") {
-      auto* deleteBtn = new QPushButton(
-          QStringLiteral("删除"), actionsWidget);
+      auto* deleteBtn = new QToolButton(actionsWidget);
+      deleteBtn->setText(QStringLiteral("删除"));
       deleteBtn->setObjectName(QStringLiteral("userMgrDeleteBtn"));
       deleteBtn->setCursor(Qt::PointingHandCursor);
-      connect(deleteBtn, &QPushButton::clicked, this, [this, i]() {
+      connect(deleteBtn, &QToolButton::clicked, this, [this, i]() {
         onDeleteUser(i);
       });
       actionsLayout->addWidget(deleteBtn);
@@ -172,7 +176,7 @@ bool UserManagerDialog::showUserForm(
   roleCombo->setCurrentIndex(static_cast<int>(role));
 
   auto* hintLabel = new QLabel(&dlg);
-  hintLabel->setStyleSheet(QStringLiteral("color: red;"));
+  hintLabel->setObjectName(QStringLiteral("userMgrErrorHint"));
   hintLabel->hide();
 
   auto* btnRow = new QHBoxLayout;

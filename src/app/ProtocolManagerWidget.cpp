@@ -223,8 +223,8 @@ void ProtocolManagerWidget::initUi() {
   empty_text->setAlignment(Qt::AlignCenter);
   empty_layout->addWidget(empty_text);
 
-  create_config_btn_ =
-      new QPushButton(QStringLiteral("创建 ICDConfig"), empty_state_);
+  create_config_btn_ = new QToolButton(empty_state_);
+  create_config_btn_->setText(QStringLiteral("创建 ICDConfig"));
   create_config_btn_->setObjectName(QStringLiteral("protocolManagerCreateBtn"));
   create_config_btn_->setFixedHeight(24);
   empty_layout->addWidget(create_config_btn_, 0, Qt::AlignHCenter);
@@ -233,7 +233,7 @@ void ProtocolManagerWidget::initUi() {
   root_layout->addWidget(empty_state_);
 
   // 连接 create_config_btn_ 的 clicked 到 onNewIcdConfig
-  connect(create_config_btn_, &QPushButton::clicked, this,
+  connect(create_config_btn_, &QToolButton::clicked, this,
           &ProtocolManagerWidget::onNewIcdConfig);
 
   // ── 底部状态栏 ──

@@ -7,7 +7,7 @@
 class QLabel;
 class QLineEdit;
 class QListWidget;
-class QPushButton;
+class QToolButton;
 
 namespace etest::protocol {
 
@@ -31,7 +31,7 @@ class IcdFramePreviewPanel : public QWidget {
   void clearResult();
 
   QLineEdit* hex_input_ = nullptr;
-  QPushButton* decode_btn_ = nullptr;
+  QToolButton* decode_btn_ = nullptr;
   QLabel* status_label_ = nullptr;
   QListWidget* result_list_ = nullptr;
 

@@ -5,7 +5,7 @@
 #include <QWidget>
 
 class QLineEdit;
-class QPushButton;
+class QToolButton;
 class QTimer;
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -45,7 +45,7 @@ class TopologyManagerWidget : public QWidget {
 
   QLineEdit* search_edit_ = nullptr;
   QTimer* search_timer_ = nullptr;
-  QPushButton* new_btn_ = nullptr;
+  QToolButton* new_btn_ = nullptr;
   QTreeWidget* tree_ = nullptr;
 };
 

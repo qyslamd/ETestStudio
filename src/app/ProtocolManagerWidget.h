@@ -101,7 +101,7 @@ class ProtocolManagerWidget : public QWidget {
   QPushButton* import_btn_ = nullptr;
   QToolButton* refresh_btn_ = nullptr;
   // 空状态"创建 ICDConfig"按钮
-  QPushButton* create_config_btn_ = nullptr;
+  QToolButton* create_config_btn_ = nullptr;
   // 顶部标题（显示当前 ICDConfig 文件名）
   QLabel* config_label_ = nullptr;
   // 底部状态栏（显示帧总数、启用数）

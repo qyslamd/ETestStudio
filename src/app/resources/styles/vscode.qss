@@ -629,7 +629,7 @@ ProtocolManagerWidget QToolButton#protocolManagerRefreshBtn:pressed {
     font-size: 12px;
     line-height: 1.5;
 }
-#protocolManagerCreateBtn {
+QToolButton#protocolManagerCreateBtn {
     background-color: #0E639C;
     color: #FFFFFF;
     border: 1px solid #1177BB;
@@ -637,10 +637,10 @@ ProtocolManagerWidget QToolButton#protocolManagerRefreshBtn:pressed {
     padding: 2px 16px;
     font-size: 12px;
 }
-#protocolManagerCreateBtn:hover {
+QToolButton#protocolManagerCreateBtn:hover {
     background-color: #1177BB;
 }
-#protocolManagerCreateBtn:pressed {
+QToolButton#protocolManagerCreateBtn:pressed {
     background-color: #0A4A75;
 }
 
@@ -1087,6 +1087,43 @@ etest--app--TerminalPanel QPlainTextEdit {
     font-size: 12px;
 }
 
+/* ==================== TopologyManagerWidget ==================== */
+QToolButton#topologyNewBtn {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #454545;
+    border-radius: 3px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+QToolButton#topologyNewBtn:hover {
+    background-color: #505050;
+}
+QToolButton#topologyNewBtn:pressed {
+    background-color: #2D2D2D;
+}
+
+/* ==================== IcdFramePreviewPanel ==================== */
+QToolButton#icdFramePreviewDecodeBtn {
+    background-color: #0E639C;
+    color: #FFFFFF;
+    border: 1px solid #0E639C;
+    border-radius: 2px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+QToolButton#icdFramePreviewDecodeBtn:hover {
+    background-color: #1177BB;
+}
+QToolButton#icdFramePreviewDecodeBtn:pressed {
+    background-color: #0D5A8F;
+}
+QToolButton#icdFramePreviewDecodeBtn:disabled {
+    background-color: #3C3C3C;
+    color: #5A5A5A;
+    border-color: #3C3C3C;
+}
+
 /* ==================== TopologyEditorWidget ==================== */
 etest--topology--TopologyEditorWidget {
     background-color: #1E1E1E;
@@ -1482,7 +1519,7 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
     font-size: 11px;
     background: transparent;
 }
-#aboutOkButton {
+QToolButton#aboutOkButton {
     background-color: #0E639C;
     color: #FFFFFF;
     border: none;
@@ -1490,10 +1527,10 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
     font-size: 14px;
     font-weight: bold;
 }
-#aboutOkButton:hover {
+QToolButton#aboutOkButton:hover {
     background-color: #1177BB;
 }
-#aboutOkButton:pressed {
+QToolButton#aboutOkButton:pressed {
     background-color: #0D5A8F;
 }
 #aboutCopyright {
@@ -1548,7 +1585,7 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
   border-color: #4FC3F7;
   background: #3c3c3c;
 }
-#loginButton {
+QToolButton#loginButton {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
     stop:0 #1565C0, stop:1 #42A5F5);
   color: white;
@@ -1558,11 +1595,11 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
   font-size: 14px;
   font-weight: 500;
 }
-#loginButton:hover {
+QToolButton#loginButton:hover {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
     stop:0 #0D47A1, stop:1 #1E88E5);
 }
-#loginButton:pressed {
+QToolButton#loginButton:pressed {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
     stop:0 #0D47A1, stop:1 #1565C0);
 }
@@ -1570,14 +1607,14 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
   color: #ef5350;
   font-size: 12px;
 }
-#loginCloseBtn {
+QToolButton#loginCloseBtn {
   background: transparent;
   border: none;
   color: #888;
   font-size: 18px;
   font-weight: normal;
 }
-#loginCloseBtn:hover {
+QToolButton#loginCloseBtn:hover {
   color: #eee;
 }
 #loginRemember {
@@ -1600,7 +1637,7 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
   color: #888;
   margin-left: 8px;
 }
-#userMgrAddBtn {
+QToolButton#userMgrAddBtn {
   background: #0D47A1;
   color: white;
   border: none;
@@ -1608,7 +1645,7 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
   padding: 6px 16px;
   font-size: 13px;
 }
-#userMgrAddBtn:hover {
+QToolButton#userMgrAddBtn:hover {
   background: #1565C0;
 }
 #userMgrTable {
@@ -1621,13 +1658,13 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
 #userMgrTable::item {
   padding: 6px 12px;
 }
-#userMgrEditBtn {
+QToolButton#userMgrEditBtn {
   background: transparent;
   color: #4FC3F7;
   border: none;
   font-size: 12px;
 }
-#userMgrDeleteBtn {
+QToolButton#userMgrDeleteBtn {
   background: transparent;
   color: #ef5350;
   border: none;
@@ -1637,14 +1674,18 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
   font-size: 12px;
   color: #666;
 }
-#userMgrCloseBtn {
+#userMgrErrorHint {
+  font-size: 12px;
+  color: #ef5350;
+}
+QToolButton#userMgrCloseBtn {
   background: transparent;
   border: none;
   color: #888;
   font-size: 18px;
   font-weight: normal;
 }
-#userMgrCloseBtn:hover {
+QToolButton#userMgrCloseBtn:hover {
   color: #eee;
 }
 
