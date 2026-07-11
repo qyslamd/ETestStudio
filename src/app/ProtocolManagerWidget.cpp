@@ -459,11 +459,9 @@ bool ProtocolManagerWidget::loadIcdConfig() {
   int failed = 0;
   QStringList missing_paths;
   for (const auto& entry : file_entries_) {
-    // 注意：entry.path 是 std::string (UTF-8)。MSVC 上 path::operator/ 重载
-    // 用 ANSI 码页，中文路径会失效并 throw system_error。
-    // 必须先转 std::wstring。
+    // UTF-8 → UTF-16 正确转换，解决中文文件名加载问题
     const std::filesystem::path entry_wpath(
-        std::wstring(entry.path.begin(), entry.path.end()));
+        QString::fromStdString(entry.path).toStdWString());
     const std::filesystem::path abs_path =
         config_path_.parent_path() / entry_wpath;
     if (!std::filesystem::exists(abs_path)) {
@@ -512,6 +510,16 @@ bool ProtocolManagerWidget::loadIcdConfig() {
   auto repo_result = icd::schema::build_repository(merged);
   if (repo_result) {
     repo_ = std::make_shared<icd::Repository>(std::move(*repo_result));
+    // 诊断：输出每帧的节点数，确认中文帧是否加载成功
+    for (const auto& f : repo_->frames()) {
+      if (f) {
+        LOG_DEBUG("UUID", "ICD帧加载: name='{}' id={} nodes={}",
+                  QString::fromUtf8(f->name().data(),
+                                    static_cast<int>(f->name().size()))
+                      .toStdString(),
+                  f->id(), f->nodes().size());
+      }
+    }
   } else {
     // Repository 构建失败也容忍：repo_ 留空，长度列显示 "?"
     repo_.reset();

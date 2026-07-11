@@ -28,8 +28,17 @@ ResolvedSignal SignalResolver::resolve(const QString& uuid) const {
     // ① 查 SignalRegistry 获取设备/端口/帧/节点路径
     auto resolved = registry_->resolve(uuid);
     if (!resolved.has_value()) {
-        spdlog::warn("[SignalResolver] UUID {} not found in SignalRegistry",
-                     uuid.toStdString());
+        spdlog::warn("[SignalResolver] UUID {} not found in SignalRegistry"
+                     " (devices={} frames={})",
+                     uuid.toStdString(),
+                     registry_->registeredDeviceIds().size(),
+                     icd_repo_->frames().size());
+        if (registry_->registeredDeviceIds().size() > 0) {
+            // 列举注册的设备 ID
+            QStringList ids = registry_->registeredDeviceIds();
+            spdlog::warn("[SignalResolver] Registered devices: [{}]",
+                         ids.join(", ").toStdString());
+        }
         result.valid = false;
         return result;
     }
