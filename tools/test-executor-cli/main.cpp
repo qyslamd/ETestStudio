@@ -4,6 +4,7 @@
 
 #include <QCommandLineParser>
 #include <QCoreApplication>
+#include <QDir>
 #include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
@@ -21,6 +22,15 @@
 #include "engine/StepRunner.h"
 #include "engine/TestExecutionEngine.h"
 #include "core/SignalRegistry.h"
+#include "core/plugin/PluginManager.h"
+
+#include <icd/frame.hpp>
+#include <icd/node.hpp>
+#include <icd/repository.hpp>
+
+#include "icd_utility/src/format/xml_parser.hpp"
+#include "icd_utility/src/schema/builder.hpp"
+#include "icd_utility/src/schema/schema.hpp"
 
 // =============================================================================
 // Anonymous namespace: helpers
@@ -202,6 +212,85 @@ const char* statusIcon(int status) {
     }
 }
 
+/// Build a "/"-separated node path from ICD node tree (walk up to root).
+QString buildNodePath(const icd::Node* node) {
+    QStringList segments;
+    const icd::Node* cur = node;
+    while (cur) {
+        segments.prepend(QString::fromUtf8(cur->name().data(),
+                                           static_cast<int>(cur->name().size())));
+        cur = cur->parent();
+    }
+    return segments.join('/');
+}
+
+/// Populate SignalRegistry from ICD frame nodes for all port bindings.
+void synchronizeRegistry(etest::core::SignalRegistry& registry,
+                         const icd::Repository* repo) {
+    if (!repo) return;
+    registry.clearSignals();
+    QVector<etest::core::SignalEntry> entries;
+    registry.forEachPortBinding(
+        [&](const QString& deviceId, const QString& portName,
+            const QStringList& frameNames) {
+            for (const QString& frameName : frameNames) {
+                const auto* frame = repo->find(frameName.toStdString());
+                if (!frame) {
+                    spdlog::warn("[executor] Frame '{}' not found in ICD repo",
+                                 frameName.toStdString());
+                    continue;
+                }
+                for (const auto* node : frame->nodes()) {
+                    entries.push_back({deviceId, portName, frameName,
+                                       buildNodePath(node)});
+                }
+            }
+        });
+    registry.registerSignals(entries);
+    spdlog::info("[executor] SignalRegistry: {} signals registered from {} frames",
+                 entries.size(), repo->frames().size());
+}
+
+/// Register topology devices and port frame bindings into SignalRegistry.
+void registerTopologyDevices(etest::core::SignalRegistry& registry,
+                              const QString& topologyPath) {
+    QFile f(topologyPath);
+    if (!f.open(QIODevice::ReadOnly)) {
+        spdlog::error("[executor] Cannot open topology: {}",
+                      topologyPath.toStdString());
+        return;
+    }
+    QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+    f.close();
+    if (!doc.isObject()) return;
+
+    QJsonArray devices = doc.object()[QStringLiteral("devices")].toArray();
+    int devCount = 0;
+    int portCount = 0;
+    for (const QJsonValue& dv : devices) {
+        QJsonObject dobj = dv.toObject();
+        QString id = dobj[QStringLiteral("id")].toString();
+        QString name = dobj[QStringLiteral("name")].toString();
+        if (id.isEmpty()) continue;
+        registry.registerDevice(id, name);
+        ++devCount;
+        QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
+        for (const QJsonValue& pv : ports) {
+            QJsonObject pobj = pv.toObject();
+            QStringList frames;
+            for (const QJsonValue& fv :
+                 pobj[QStringLiteral("boundFrames")].toArray()) {
+                frames.append(fv.toString());
+            }
+            registry.bindPortToFrames(
+                id, pobj[QStringLiteral("name")].toString(), frames);
+            ++portCount;
+        }
+    }
+    spdlog::info("[executor] Topology: {} devices, {} port bindings registered",
+                 devCount, portCount);
+}
+
 }  // anonymous namespace
 
 // =============================================================================
@@ -298,14 +387,108 @@ int main(int argc, char* argv[]) {
 
     // -- Create core dependencies --
     auto* registry = new etest::core::SignalRegistry(&app);
-    // CLI mode: no ICD repository (pass nullptr)
-    icd::Repository* icdRepo = nullptr;
-    Q_UNUSED(icdPath);
+
+    // -- Load ICD Repository from --icd directory (protocol/) --
+    std::shared_ptr<icd::Repository> icdRepo;
+    if (!icdPath.isEmpty()) {
+        QDir icdDir(icdPath);
+        QString configPath;
+        for (const QString& name :
+             {QStringLiteral("ICDConfig.xml"),
+              QStringLiteral("ICDConfig.json")}) {
+            QString full = icdDir.absoluteFilePath(name);
+            if (QFileInfo::exists(full)) {
+                configPath = full;
+                break;
+            }
+        }
+        if (!configPath.isEmpty()) {
+            // Parse ICDConfig to get frame file entries
+            auto configResult = icd::format::parse_xml_config(
+                std::filesystem::path(configPath.toStdWString()));
+            if (configResult) {
+                icd::schema::SchemaConfig merged;
+                merged.files = configResult->files;
+                std::filesystem::path baseDir =
+                    std::filesystem::path(configPath.toStdWString()).parent_path();
+                int loaded = 0, failed = 0;
+                for (const auto& fileEntry : configResult->files) {
+                    // Proper UTF-8 → UTF-16 path conversion for Chinese filenames
+                    std::filesystem::path framePath = baseDir /
+                        std::filesystem::path(
+                            QString::fromStdString(fileEntry.path).toStdWString());
+                    auto frameResult = icd::format::parse_xml_frame(framePath);
+                    if (frameResult) {
+                        if (fileEntry.id.has_value())
+                            frameResult->id = *fileEntry.id;
+                        if (!fileEntry.logical_name.empty())
+                            frameResult->name = fileEntry.logical_name;
+                        if (fileEntry.type.has_value())
+                            frameResult->type = *fileEntry.type;
+                        if (fileEntry.order.has_value())
+                            frameResult->order = *fileEntry.order;
+                        merged.frames.push_back(std::move(*frameResult));
+                        ++loaded;
+                    } else {
+                        spdlog::warn("[executor] Failed to load ICD frame '{}': {}",
+                                     fileEntry.path,
+                                     frameResult.error().message);
+                        ++failed;
+                    }
+                }
+                auto repoResult = icd::schema::build_repository(merged);
+                if (repoResult) {
+                    icdRepo = std::make_shared<icd::Repository>(
+                        std::move(*repoResult));
+                    spdlog::info("[executor] ICD loaded: {} frames ({} ok, {} failed)",
+                                 icdRepo->frames().size(), loaded, failed);
+                    // Log each frame's node count
+                    for (const auto& f : icdRepo->frames()) {
+                        if (f) {
+                            spdlog::info("[executor]   frame '{}' id={} nodes={}",
+                                         f->name(), f->id(), f->nodes().size());
+                        }
+                    }
+                } else {
+                    spdlog::warn("[executor] Failed to build ICD repository: {}",
+                                 repoResult.error().message);
+                }
+            } else {
+                spdlog::warn("[executor] Failed to parse ICDConfig: {}",
+                             configResult.error().message);
+            }
+        } else {
+            spdlog::warn("[executor] ICDConfig.xml/json not found in: {}",
+                         icdPath.toStdString());
+        }
+    }
+
+    // -- Populate SignalRegistry from topology --
+    if (!topologyPath.isEmpty()) {
+        registerTopologyDevices(*registry, topologyPath);
+        if (icdRepo) {
+            synchronizeRegistry(*registry, icdRepo.get());
+        }
+    }
+
+
+    // -- Load mock plugins for topology hardware instantiation --
+    {
+        auto& pluginMgr = etest::core::plugin::PluginManager::instance();
+        pluginMgr.addSearchPath(
+            QCoreApplication::applicationDirPath() + QStringLiteral("/plugins"));
+        pluginMgr.loadAll();
+        auto loaded = pluginMgr.loadedPlugins();
+        spdlog::info("[executor] Plugins loaded: {}", loaded.size());
+    }
 
     // -- Create engine --
-    auto* engine = new etest::engine::TestExecutionEngine(registry, icdRepo, &app);
+    auto* engine = new etest::engine::TestExecutionEngine(registry, icdRepo.get(), &app);
 
-    // -- Load topology (optional) --
+    // -- Set registry (ensures resolver uses populated SignalRegistry) --
+    engine->setRegistry(registry, icdRepo.get());
+
+    // -- Load topology into engine (hardware devices) --
     if (!topologyPath.isEmpty()) {
         bool topologyLoaded = engine->loadTopology(topologyPath);
         if (!topologyLoaded) {

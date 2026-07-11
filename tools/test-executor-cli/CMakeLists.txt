@@ -12,6 +12,7 @@ add_executable(${TARGET_NAME} main.cpp)
 target_link_libraries(${TARGET_NAME} PRIVATE
     etest_engine
     etest_core
+    icd_utility
     Qt5::Core
     spdlog::spdlog
 )
