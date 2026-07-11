@@ -9,6 +9,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include "logger/Logger.h"
+
 #include "HardwareManager.h"
 #include "MockUUTBuilder.h"
 #include "ResultCollector.h"
@@ -71,6 +73,7 @@ TestExecutionEngine::~TestExecutionEngine() {
 // ==========================================================================
 
 void TestExecutionEngine::setProgram(const ProgramData& program) {
+    LOG_INFO("ENGINE", "设置测试程序 [cases={}]", program.cases.size());
     current_program_ = program;
 
     // 计算总步骤数
@@ -118,6 +121,7 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
     }
 
     topology_doc_ = doc.object();
+    LOG_INFO("ENGINE", "加载拓扑 [path={}]", etopoPath.toStdString());
     const QJsonObject& root = topology_doc_;
 
     // ── 校验 mock 一致性 ──
@@ -154,8 +158,9 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
             return false;
         }
 
+        size_t mockCount = mockUUTs.size();
         hw_manager_->setMockUUT(std::move(mockUUTs));
-        spdlog::info("[TestExecutionEngine] MockUUT 构建成功，已注入 HardwareManager");
+        LOG_INFO("ENGINE", "MockUUT 构建成功 [count={}]", mockCount);
     }
 
     return ok;
@@ -166,6 +171,7 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
 // ==========================================================================
 
 bool TestExecutionEngine::start() {
+    LOG_INFO("ENGINE", "启动引擎");
     EngineState expected = EngineState::Idle;
     if (!state_.compare_exchange_strong(expected, EngineState::Running)) {
         spdlog::warn("[TestExecutionEngine] start() ignored: state is not Idle");
@@ -233,6 +239,7 @@ bool TestExecutionEngine::start() {
 }
 
 void TestExecutionEngine::stop() {
+    LOG_INFO("ENGINE", "停止引擎");
     EngineState prev = state_.exchange(EngineState::Idle);
     if (prev == EngineState::Idle) {
         return;
@@ -260,6 +267,7 @@ void TestExecutionEngine::stop() {
 }
 
 void TestExecutionEngine::pause() {
+    LOG_INFO("ENGINE", "暂停引擎");
     EngineState expected = EngineState::Running;
     if (!state_.compare_exchange_strong(expected, EngineState::Paused)) {
         return;
@@ -271,6 +279,7 @@ void TestExecutionEngine::pause() {
 }
 
 void TestExecutionEngine::resume() {
+    LOG_INFO("ENGINE", "继续引擎");
     EngineState expected = EngineState::Paused;
     if (!state_.compare_exchange_strong(expected, EngineState::Running)) {
         return;

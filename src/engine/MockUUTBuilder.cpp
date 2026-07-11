@@ -6,6 +6,8 @@
 
 #include <icd/repository.hpp>
 
+#include "logger/Logger.h"
+
 namespace etest::engine {
 
 // ============================================================================
@@ -208,9 +210,11 @@ void MockUUTBuilder::loadResponseConfigFile(const QString& filePath) {
 
   QJsonObject root = doc.object();
   frame_responses_ = root["portBehaviors"].toArray();
+  LOG_INFO("ENGINE", "加载 Mock 响应配置 [path={}]", filePath.toStdString());
 }
 
 bool MockUUTBuilder::buildAll(std::vector<std::unique_ptr<MockUUT>>& out) {
+  LOG_INFO("ENGINE", "MockUUTBuilder 开始构建");
   out.clear();
 
   if (!icd_repo_) {
@@ -233,6 +237,7 @@ bool MockUUTBuilder::buildAll(std::vector<std::unique_ptr<MockUUT>>& out) {
     }
   }
 
+  LOG_INFO("ENGINE", "MockUUTBuilder 构建完成 [uuts={}]", out.size());
   return true;
 }
 

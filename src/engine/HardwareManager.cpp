@@ -41,6 +41,7 @@ bool HardwareManager::loadFromTopology(const QJsonObject& root) {
     return false;
   }
 
+  LOG_INFO("ENGINE", "加载设备拓扑 [devices={}]", devicesArr.size());
   int loaded = 0;
   for (const auto& dVal : devicesArr) {
     QJsonObject dObj = dVal.toObject();
@@ -74,6 +75,7 @@ bool HardwareManager::loadFromTopology(const QJsonObject& root) {
   }
 
   LOG_INFO("HARDWARE", "从拓扑加载了 {}/{} 个设备", loaded, devicesArr.size());
+  LOG_INFO("ENGINE", "设备加载完成 [loaded={}]", loaded);
   return loaded > 0;
 }
 
@@ -85,6 +87,7 @@ bool HardwareManager::instantiateDevice(const QString& deviceId,
                                         const QString& pluginId,
                                         const QVariantMap& properties,
                                         bool mock) {
+  LOG_INFO("ENGINE", "实例化设备 [id={} plugin={} mock={}]", deviceId.toStdString(), pluginId.toStdString(), mock);
   PluginManager& pm = PluginManager::instance();
   IPlugin* plugin = nullptr;
   QString type = properties.value(QStringLiteral("type")).toString();
@@ -157,6 +160,7 @@ bool HardwareManager::instantiateDevice(const QString& deviceId,
 // ---------------------------------------------------------------------------
 
 void HardwareManager::setMockUUT(std::vector<std::unique_ptr<MockUUT>> uuts) {
+  LOG_INFO("ENGINE", "注入 MockUUT [count={}]", uuts.size());
   mock_uut_holders_ = std::move(uuts);
   mock_uuts_.clear();
   for (const auto& uut : mock_uut_holders_) {
@@ -169,6 +173,7 @@ void HardwareManager::setMockUUT(std::vector<std::unique_ptr<MockUUT>> uuts) {
 // ---------------------------------------------------------------------------
 
 void HardwareManager::closeAllDevices() {
+  LOG_INFO("ENGINE", "关闭所有设备");
   for (auto it = device_pool_.begin(); it != device_pool_.end(); ++it) {
     if (it->plugin) {
       it->plugin->closeDevice();
@@ -206,6 +211,7 @@ MockUUT* HardwareManager::findMockUUTForFrame(const QString& deviceId,
 // ---------------------------------------------------------------------------
 
 QVariant HardwareManager::read(const ResolvedSignal& signal) {
+  LOG_INFO("ENGINE", "读取 [device={}]", signal.deviceId.toStdString());
   // ── Mock AD/DA: direct channel read from MockUUT ──
   if (!mock_uuts_.isEmpty() &&
       (signal.signalType == SignalType::AD ||
@@ -292,6 +298,7 @@ QVariant HardwareManager::readAndWait(const ResolvedSignal& signal,
 // ---------------------------------------------------------------------------
 
 bool HardwareManager::write(const ResolvedSignal& signal, double engValue) {
+  LOG_INFO("ENGINE", "写入 [device={} value={}]", signal.deviceId.toStdString(), engValue);
   IDevicePlugin* dev = pluginForDevice(signal.deviceId);
   if (!dev) {
     return false;
@@ -326,6 +333,7 @@ bool HardwareManager::write(const ResolvedSignal& signal, double engValue) {
 
 bool HardwareManager::writeFrame(const ResolvedSignal& signal,
                                   const QByteArray& frameData) {
+  LOG_INFO("ENGINE", "写入帧 [device={} frameId={}]", signal.deviceId.toStdString(), signal.frameId);
   IDevicePlugin* dev = pluginForDevice(signal.deviceId);
   if (!dev) {
     return false;

@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <spdlog/spdlog.h>
+#include "logger/Logger.h"
 
 #include "SignalResolver.h"
 
@@ -43,6 +44,7 @@ QVariant SignalCodec::encode(double engValue, const ResolvedSignal& info) {
 // ── 写路径：工程值 → 帧字节（CAN/Serial/A429） ──
 QByteArray SignalCodec::encodeToFrame(double engValue,
                                       const ResolvedSignal& info) {
+    LOG_INFO("ENGINE", "编码帧 [value={} frameId={}]", engValue, info.frameId);
     double raw = inverseLinearMap(engValue, info);
     return packBits(raw, info);
 }
@@ -64,7 +66,9 @@ double SignalCodec::decode(const QVariant& rawValue,
 double SignalCodec::decodeFromFrame(const QByteArray& frameData,
                                     const ResolvedSignal& info) {
     double raw = unpackBits(frameData, info);
-    return linearMap(raw, info);
+    double result = linearMap(raw, info);
+    LOG_INFO("ENGINE", "解码帧 [frameId={} value={}]", info.frameId, result);
+    return result;
 }
 
 // ── 打包：将 raw value 的 bitWidth 个 bit 写入 byte array ──

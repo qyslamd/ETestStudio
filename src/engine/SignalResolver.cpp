@@ -7,6 +7,7 @@
 #include <icd/repository.hpp>
 
 #include <spdlog/spdlog.h>
+#include "logger/Logger.h"
 
 namespace etest::engine {
 
@@ -40,6 +41,8 @@ ResolvedSignal SignalResolver::resolve(const QString& uuid) const {
     fillFromIcd(result, resolved->frameName, resolved->nodePath);
 
     result.valid = true;
+    LOG_INFO("ENGINE", "信号解析成功 [uuid={} device={} frameId={}]",
+                 uuid.toStdString(), result.deviceId.toStdString(), result.frameId);
     return result;
 }
 

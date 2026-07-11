@@ -4,6 +4,9 @@
 #include <QThread>
 #include <QtGlobal>
 
+#include <spdlog/spdlog.h>
+#include "logger/Logger.h"
+
 #include "HardwareManager.h"
 #include "SignalCodec.h"
 #include "SignalResolver.h"
@@ -25,6 +28,7 @@ StepRunner::StepRunner(HardwareManager* hw, SignalCodec* codec,
 // ==========================================================================
 
 void StepRunner::executeProgram(const ProgramData& program) {
+    LOG_INFO("ENGINE", "开始执行测试套件 [name={}]", program.suiteName.toStdString());
     cancel_flag_.store(0, std::memory_order_release);
 
     emit suiteStarted(program.suiteName);
@@ -68,6 +72,7 @@ void StepRunner::executeProgram(const ProgramData& program) {
         emit caseFinished(i, tc.caseName, 0);
     }
 
+    LOG_INFO("ENGINE", "测试套件执行完毕 [pass={} fail={}]", passCount, failCount);
     emit suiteFinished(program.suiteName, passCount, failCount);
 }
 
@@ -193,6 +198,8 @@ StepResult StepRunner::executeSingleStep(const TestStepData& step,
         return result;
     }
 
+    LOG_INFO("ENGINE", "执行步骤 [cmd={} target={}]", step.command.toStdString(), step.target.toStdString());
+
     // ── Dispatch by command type ──
     CommandType ct = commandType(step.command);
     switch (ct) {
@@ -239,6 +246,7 @@ StepResult StepRunner::executeSingleStep(const TestStepData& step,
 
 StepResult StepRunner::execSet(const TestStepData& step,
                                 const ResolvedSignal& signal) {
+    LOG_INFO("ENGINE", "SET [target={} value={}]", signal.deviceId.toStdString(), step.value);
     StepResult result;
     result.expectedValue = step.value;
 
@@ -257,6 +265,7 @@ StepResult StepRunner::execSet(const TestStepData& step,
     }
 
     if (success) {
+        LOG_INFO("ENGINE", "  -> PASS [value={}]", step.value);
         result.setStatus(PASS).setMessage(QStringLiteral("OK"));
     } else {
         result.setStatus(ERROR)
@@ -271,6 +280,7 @@ StepResult StepRunner::execSet(const TestStepData& step,
 
 StepResult StepRunner::execCheck(const TestStepData& step,
                                   const ResolvedSignal& signal) {
+    LOG_INFO("ENGINE", "CHECK [target={}]", signal.deviceId.toStdString());
     StepResult result;
     result.expectedValue = step.value;
 
@@ -295,6 +305,7 @@ StepResult StepRunner::execCheck(const TestStepData& step,
 
         double diff = std::fabs(actual - step.value);
         if (diff <= step.tolerance) {
+            LOG_INFO("ENGINE", "  -> PASS [value={}]", actual);
             result.setStatus(PASS)
                 .setMessage(QStringLiteral("OK (actual=%1, tolerance=%2)")
                                 .arg(actual)
@@ -327,6 +338,7 @@ StepResult StepRunner::execCheck(const TestStepData& step,
 
 StepResult StepRunner::execVerify(const TestStepData& step,
                                    const ResolvedSignal& signal) {
+    LOG_INFO("ENGINE", "VERIFY [target={}]", signal.deviceId.toStdString());
     StepResult result;
     result.expectedValue = step.value;
 
@@ -351,11 +363,13 @@ StepResult StepRunner::execVerify(const TestStepData& step,
 
         double diff = std::fabs(actual - step.value);
         if (diff <= step.tolerance) {
+            LOG_INFO("ENGINE", "  -> PASS [actual={}]", actual);
             result.setStatus(PASS)
                 .setMessage(QStringLiteral("OK (actual=%1, tolerance=%2)")
                                 .arg(actual)
                                 .arg(step.tolerance));
         } else {
+            LOG_INFO("ENGINE", "  -> FAIL [actual={}]", actual);
             result.setStatus(FAIL)
                 .setMessage(QStringLiteral("Mismatch: expected=%1, actual=%2")
                                 .arg(step.value)
