@@ -80,6 +80,15 @@ void TestExecutionEngine::setProgram(const ProgramData& program) {
     }
 }
 
+void TestExecutionEngine::setRegistry(etest::core::SignalRegistry* registry,
+                                       icd::Repository* icdRepo) {
+    signal_registry_ = registry;
+    icd_repository_ = icdRepo;
+    // 重新创建 Resolver 使新指针生效
+    resolver_ = std::make_unique<SignalResolver>(signal_registry_,
+                                                  icd_repository_);
+}
+
 void TestExecutionEngine::setTopologyDoc(const QJsonObject& topologyDoc) {
     topology_doc_ = topologyDoc;
 }

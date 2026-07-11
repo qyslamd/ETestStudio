@@ -46,6 +46,10 @@ public:
     void setTopologyDoc(const QJsonObject& topologyDoc);
     bool loadTopology(const QString& etopoPath);
 
+    // 设置信号注册表与 ICD 仓库（必须在 start() 前调用）
+    void setRegistry(etest::core::SignalRegistry* registry,
+                     icd::Repository* icdRepo);
+
     // -- 生命周期 --
     bool start();       // 启动工作线程开始执行
     void stop();        // 请求停止

@@ -1450,9 +1450,6 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   status_message_label_->setText(
       QStringLiteral("项目已打开：%1").arg(projectPath));
 
-  // 确保引擎就绪
-  createEngine();
-
   // M6: 初始化 SignalRegistry + ICD Repository（同步接合）
   if (!signal_registry_) {
     signal_registry_ = new etest::core::SignalRegistry(this);
@@ -1469,6 +1466,9 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     icd_repository_ = pm->repository();
   }
   editor_manager_->setIcdRepository(icd_repository_.get());
+
+  // 确保引擎就绪（此时 signal_registry_ 和 icd_repository_ 已可用）
+  createEngine();
 
   if (signal_registry_ && icd_repository_) {
     LOG_DEBUG("UUID", "ICD Repository loaded, frames={}",
@@ -2020,6 +2020,9 @@ void MainWindow::onRunClicked() {
 
   // 4. 创建引擎（若需要）
   createEngine();
+
+  // 4b. 同步 registry 到引擎（引擎可能在 registry 就绪前创建）
+  engine_->setRegistry(signal_registry_, icd_repository_.get());
 
   // 5. 设置程序数据
   current_program_name_ = data.name;

@@ -350,22 +350,14 @@ class MockA429Device : public IArinc429Plugin {
 // Helper: create a temporary .etopo JSON file with the given devices array
 // ============================================================================
 
-static QString createTestEtopo(const QJsonArray& devices) {
-  QTemporaryFile tmpFile;
-  tmpFile.setAutoRemove(false);
-  tmpFile.open();
-
+static QJsonObject createTestTopology(const QJsonArray& devices) {
   QJsonObject root;
   root["version"] = 1;
   root["products"] = QJsonArray();
   root["devices"] = devices;
   root["connections"] = QJsonArray();
   root["monitors"] = QJsonArray();
-
-  tmpFile.write(QJsonDocument(root).toJson());
-  QString path = tmpFile.fileName();
-  tmpFile.close();
-  return path;
+  return root;
 }
 
 // ============================================================================
@@ -422,31 +414,26 @@ TEST_F(HardwareManagerTest, LoadFromTopologyWithValidJsonButNoPlugins) {
   dev["ports"] = QJsonArray();
   devices.append(dev);
 
-  QString path = createTestEtopo(devices);
-  bool result = hm_.loadFromTopology(path);
+  QJsonObject root = createTestTopology(devices);
+  bool result = hm_.loadFromTopology(root);
   // PluginManager has no plugins loaded, so instantiateDevice fails
   EXPECT_FALSE(result);
-  QFile::remove(path);
 }
 
-// --- Test 2: loadFromTopology with missing file ---
-TEST_F(HardwareManagerTest, LoadFromTopologyMissingFile) {
-  bool result = hm_.loadFromTopology("/nonexistent/path/file.etopo");
+// --- Test 2: loadFromTopology with empty JSON object ---
+TEST_F(HardwareManagerTest, LoadFromTopologyEmptyObject) {
+  QJsonObject emptyRoot;
+  bool result = hm_.loadFromTopology(emptyRoot);
   EXPECT_FALSE(result);
 }
 
-// --- Test 3: loadFromTopology with corrupted JSON ---
-TEST_F(HardwareManagerTest, LoadFromTopologyCorruptedJson) {
-  QTemporaryFile tmpFile;
-  tmpFile.setAutoRemove(false);
-  tmpFile.open();
-  tmpFile.write("this is not json at all{{{}}}");
-  QString path = tmpFile.fileName();
-  tmpFile.close();
-
-  bool result = hm_.loadFromTopology(path);
+// --- Test 3: loadFromTopology with empty devices array ---
+TEST_F(HardwareManagerTest, LoadFromTopologyEmptyDevicesArray) {
+  QJsonObject root;
+  root["devices"] = QJsonArray();
+  root["version"] = 1;
+  bool result = hm_.loadFromTopology(root);
   EXPECT_FALSE(result);
-  QFile::remove(path);
 }
 
 // --- Test 4: deviceStatus returns Offline for unknown device ---
@@ -703,10 +690,9 @@ TEST_F(HardwareManagerTest, ReadTypeMismatchThrows) {
 // --- Test 23: loadFromTopology with empty devices array ---
 TEST_F(HardwareManagerTest, LoadFromTopologyEmptyDevices) {
   QJsonArray devices;  // empty
-  QString path = createTestEtopo(devices);
+  QJsonObject root = createTestTopology(devices);
 
-  EXPECT_FALSE(hm_.loadFromTopology(path));
-  QFile::remove(path);
+  EXPECT_FALSE(hm_.loadFromTopology(root));
 }
 
 // --- Test 24: deviceStatusChanged signal emitted on shutdown ---
