@@ -27,6 +27,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "logger/Logger.h"
+
 #include "ConfigManager.h"
 #include "control_flow_config.h"
 #include "StepDetailPanel.h"
@@ -480,6 +482,7 @@ void TestProgramEditorWidget::initSignals() {
   // 双击重命名（仅用例）
   connect(vertical_tabs_view_, &QListView::doubleClicked, this,
           [this](const QModelIndex& cur) {
+            LOG_INFO("TESTPROG_UI", "重命名用例");
             int idx = cur.data(VerticalTabRole::TabIndexRole).toInt();
             if (idx >= 2) {
               renameCase(idx);
@@ -489,6 +492,7 @@ void TestProgramEditorWidget::initSignals() {
   // 右键菜单
   connect(vertical_tabs_view_, &QListView::customContextMenuRequested, this,
           [this](const QPoint& pos) {
+            LOG_INFO("TESTPROG_UI", "用例右键菜单");
             QModelIndex cur = vertical_tabs_view_->indexAt(pos);
             if (!cur.isValid()) {
               return;
@@ -590,6 +594,7 @@ void TestProgramEditorWidget::onDataChanged() {
 }
 
 void TestProgramEditorWidget::onAddCase() {
+  LOG_INFO("TESTPROG_UI", "添加用例");
   if (loading_) {
     return;
   }
@@ -629,10 +634,12 @@ void TestProgramEditorWidget::onAddCase() {
 }
 
 void TestProgramEditorWidget::onRemoveCase() {
+  LOG_INFO("TESTPROG_UI", "删除用例");
   removeCaseAt(tab_widget_->currentIndex(), true);
 }
 
 void TestProgramEditorWidget::onAddStep() {
+  LOG_INFO("TESTPROG_UI", "添加步骤");
   if (loading_) {
     return;
   }
@@ -664,6 +671,7 @@ void TestProgramEditorWidget::onAddStep() {
 }
 
 void TestProgramEditorWidget::onRemoveStep() {
+  LOG_INFO("TESTPROG_UI", "删除步骤");
   auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     return;
@@ -681,6 +689,7 @@ void TestProgramEditorWidget::onRemoveStep() {
 }
 
 void TestProgramEditorWidget::onMoveUp() {
+  LOG_INFO("TESTPROG_UI", "上移步骤");
   auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     return;
@@ -708,6 +717,7 @@ void TestProgramEditorWidget::onMoveUp() {
 }
 
 void TestProgramEditorWidget::onMoveDown() {
+  LOG_INFO("TESTPROG_UI", "下移步骤");
   auto* table = qobject_cast<StepTableWidget*>(tab_widget_->currentWidget());
   if (!table) {
     return;
@@ -919,6 +929,7 @@ bool TestProgramEditorWidget::canRedo() const {
 }
 
 void TestProgramEditorWidget::undo() {
+  LOG_INFO("TESTPROG_UI", "撤销");
   if (!canUndo()) {
     return;
   }
@@ -931,6 +942,7 @@ void TestProgramEditorWidget::undo() {
 }
 
 void TestProgramEditorWidget::redo() {
+  LOG_INFO("TESTPROG_UI", "重做");
   if (!canRedo()) {
     return;
   }

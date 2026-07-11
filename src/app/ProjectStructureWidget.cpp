@@ -1,6 +1,7 @@
 #include "ProjectStructureWidget.h"
 
 #include <QApplication>
+#include "logger/Logger.h"
 #include <QClipboard>
 #include <QContextMenuEvent>
 #include <QDateTime>
@@ -281,6 +282,8 @@ void ProjectStructureWidget::initSignals() {
     QString baseName = btn->property("baseName").toString();
     connect(btn, &QAbstractButton::clicked, this,
             [this, catId, ext, baseName]() {
+              LOG_INFO("PROJECT_UI", "快速新建文件 [cat={} ext={}]",
+                       catId.toStdString(), ext.toStdString());
               if (project_path_.isEmpty()) {
                 createStandaloneFile(ext, baseName);
               } else {
@@ -291,9 +294,15 @@ void ProjectStructureWidget::initSignals() {
 
   // 项目管理按钮
   connect(new_proj_btn_, &QAbstractButton::clicked, this,
-          &ProjectStructureWidget::newProjectRequested);
+          [this]() {
+            LOG_INFO("PROJECT_UI", "点击「新建项目」");
+            emit newProjectRequested();
+          });
   connect(open_proj_btn_, &QAbstractButton::clicked, this,
-          &ProjectStructureWidget::openProjectRequested);
+          [this]() {
+            LOG_INFO("PROJECT_UI", "点击「打开项目」");
+            emit openProjectRequested();
+          });
 
   // 文件监视器
   connect(file_watcher_, &QFileSystemWatcher::directoryChanged, this,
@@ -325,6 +334,7 @@ void ProjectStructureWidget::initSignals() {
   connect(open_files_view_, &QListView::clicked, this,
           [this](const QModelIndex& index) {
             QString path = index.data(FilePathRole).toString();
+            LOG_INFO("PROJECT_UI", "点击已打开文件 [path={}]", path.toStdString());
             if (!path.isEmpty())
               emit openFileActivateRequested(path);
           });
@@ -353,6 +363,8 @@ void ProjectStructureWidget::initSignals() {
     connect(recent_projects_view_, &QListView::clicked, this,
             [this](const QModelIndex& index) {
               QString path = index.data(FilePathRole).toString();
+              LOG_INFO("PROJECT_UI", "点击最近项目 [path={}]",
+                       QFileInfo(path).fileName().toStdString());
               if (!path.isEmpty())
                 emit projectOpenRequested(path);
             });
@@ -387,6 +399,8 @@ void ProjectStructureWidget::initSignals() {
     connect(recent_files_view_, &QListView::clicked, this,
             [this](const QModelIndex& index) {
               QString path = index.data(FilePathRole).toString();
+              LOG_INFO("PROJECT_UI", "点击最近文件 [path={}]",
+                       QFileInfo(path).fileName().toStdString());
               if (!path.isEmpty())
                 emit recentFileOpenRequested(path);
             });
@@ -691,6 +705,7 @@ void ProjectStructureWidget::onDirectoryChanged(const QString& path) {
 // ── 槽函数 ──
 
 void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
+  LOG_INFO("PROJECT_UI", "文件树右键菜单");
   QModelIndex index = tree_view_->indexAt(pos);
   QMenu menu(this);
 
@@ -828,6 +843,7 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
 }
 
 void ProjectStructureWidget::onItemDoubleClicked(const QModelIndex& index) {
+  LOG_INFO("PROJECT_UI", "文件树双击打开");
   QStandardItem* item = model_->itemFromIndex(index);
   if (!item)
     return;

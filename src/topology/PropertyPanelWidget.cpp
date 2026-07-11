@@ -15,6 +15,8 @@
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
+#include "logger/Logger.h"
+
 namespace etest::topology {
 
 PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc, QWidget* parent)
@@ -574,6 +576,7 @@ void PropertyPanelWidget::onDevicePortStyleChanged() {
 // ── M3: 打开 ICD 帧绑定对话框 ──
 
 void PropertyPanelWidget::onDevicePortBindFrames() {
+  LOG_INFO("TOPOLOGY_UI", "绑定 ICD 帧");
   if (editing_device_port_device_ < 0 || editing_device_port_index_ < 0)
     return;
 
@@ -743,6 +746,7 @@ void PropertyPanelWidget::onTapTableContextMenu(const QPoint& pos) {
   QMenu menu(this);
   auto* unmountAction = menu.addAction(QStringLiteral("解除挂载"));
   connect(unmountAction, &QAction::triggered, this, [this, row]() {
+    LOG_INFO("TOPOLOGY_UI", "解除挂载");
     doc_->undoStack()->push(
         new UnTapConnectionCommand(doc_, editing_monitor_index_, row));
   });
@@ -771,6 +775,7 @@ void PropertyPanelWidget::onUutNameChanged() {
 // ── UUT port table operations ──
 
 void PropertyPanelWidget::onUutAddPort() {
+  LOG_INFO("TOPOLOGY_UI", "添加 UUT 端口");
   auto* prod = doc_->product(editing_uut_index_);
   if (!prod)
     return;
@@ -802,6 +807,7 @@ void PropertyPanelWidget::onUutAddPort() {
 }
 
 void PropertyPanelWidget::onUutRemovePort() {
+  LOG_INFO("TOPOLOGY_UI", "移除 UUT 端口");
   int row = uut_port_table_->currentRow();
   if (row < 0 || editing_uut_index_ < 0)
     return;
@@ -1026,6 +1032,7 @@ void PropertyPanelWidget::onDeviceTypeChanged() {
 }
 
 void PropertyPanelWidget::onAddPropertyRow() {
+  LOG_INFO("TOPOLOGY_UI", "添加属性");
   int row = device_props_table_->rowCount();
   device_props_table_->insertRow(row);
   device_props_table_->setItem(row, 0, new QTableWidgetItem(QString()));
@@ -1034,6 +1041,7 @@ void PropertyPanelWidget::onAddPropertyRow() {
 }
 
 void PropertyPanelWidget::onRemovePropertyRow() {
+  LOG_INFO("TOPOLOGY_UI", "移除属性");
   int row = device_props_table_->currentRow();
   if (row >= 0) {
     device_props_table_->removeRow(row);
@@ -1144,6 +1152,7 @@ void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
 // ── Device port slots ─────────────────────────────────────────
 
 void PropertyPanelWidget::onAddDevicePortRow() {
+  LOG_INFO("TOPOLOGY_UI", "添加设备端口");
   int row = device_port_model_->rowCount();
   device_port_model_->insertRow(row);
   device_port_model_->setData(device_port_model_->index(row, 0), QString());
@@ -1155,6 +1164,7 @@ void PropertyPanelWidget::onAddDevicePortRow() {
 }
 
 void PropertyPanelWidget::onRemoveDevicePortRow() {
+  LOG_INFO("TOPOLOGY_UI", "移除设备端口");
   int row = device_port_view_->currentIndex().row();
   if (row >= 0) {
     device_port_model_->removeRow(row);

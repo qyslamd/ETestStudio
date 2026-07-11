@@ -33,6 +33,8 @@
 
 #include <QtConcurrent/QtConcurrentRun>
 
+#include "logger/Logger.h"
+
 #include "AppIconProvider.h"
 #include "ConnectionCleanup.h"
 #include "DevicePaletteWidget.h"
@@ -481,10 +483,12 @@ void TopologyEditorWidget::initUi() {
 }
 
 void TopologyEditorWidget::initSignals() {
-  connect(zoom_in_action_, &QAction::triggered, view_, &TopologyView::zoomIn);
-  connect(zoom_out_action_, &QAction::triggered, view_, &TopologyView::zoomOut);
-  connect(zoom_reset_action_, &QAction::triggered, view_,
-          &TopologyView::zoomReset);
+  connect(zoom_in_action_, &QAction::triggered, this,
+          [this]() { LOG_INFO("TOPOLOGY_UI", "放大"); view_->zoomIn(); });
+  connect(zoom_out_action_, &QAction::triggered, this,
+          [this]() { LOG_INFO("TOPOLOGY_UI", "缩小"); view_->zoomOut(); });
+  connect(zoom_reset_action_, &QAction::triggered, this,
+          [this]() { LOG_INFO("TOPOLOGY_UI", "重置缩放"); view_->zoomReset(); });
 
   connect(export_image_action_, &QAction::triggered, this,
           &TopologyEditorWidget::onExportImage);
@@ -503,21 +507,21 @@ void TopologyEditorWidget::initSignals() {
 
   // ── Align / Distribute ──
   connect(align_left_action_, &QAction::triggered, this,
-          [this]() { doAlign(Align::Left); });
+          [this]() { LOG_INFO("TOPOLOGY_UI", "左对齐"); doAlign(Align::Left); });
   connect(align_hcenter_action_, &QAction::triggered, this,
-          [this]() { doAlign(Align::HCenter); });
+          [this]() { LOG_INFO("TOPOLOGY_UI", "水平居中"); doAlign(Align::HCenter); });
   connect(align_right_action_, &QAction::triggered, this,
-          [this]() { doAlign(Align::Right); });
+          [this]() { LOG_INFO("TOPOLOGY_UI", "右对齐"); doAlign(Align::Right); });
   connect(align_top_action_, &QAction::triggered, this,
-          [this]() { doAlign(Align::Top); });
+          [this]() { LOG_INFO("TOPOLOGY_UI", "上对齐"); doAlign(Align::Top); });
   connect(align_vcenter_action_, &QAction::triggered, this,
-          [this]() { doAlign(Align::VCenter); });
+          [this]() { LOG_INFO("TOPOLOGY_UI", "垂直居中"); doAlign(Align::VCenter); });
   connect(align_bottom_action_, &QAction::triggered, this,
-          [this]() { doAlign(Align::Bottom); });
+          [this]() { LOG_INFO("TOPOLOGY_UI", "下对齐"); doAlign(Align::Bottom); });
   connect(distribute_horizontal_action_, &QAction::triggered, this,
-          [this]() { doDistribute(Distribute::Horizontal); });
+          [this]() { LOG_INFO("TOPOLOGY_UI", "水平分布"); doDistribute(Distribute::Horizontal); });
   connect(distribute_vertical_action_, &QAction::triggered, this,
-          [this]() { doDistribute(Distribute::Vertical); });
+          [this]() { LOG_INFO("TOPOLOGY_UI", "垂直分布"); doDistribute(Distribute::Vertical); });
   connect(scene_, &QGraphicsScene::selectionChanged, this,
           &TopologyEditorWidget::updateAlignDistributeActions);
 
@@ -789,6 +793,7 @@ void TopologyEditorWidget::buildDefaultDocument() {
 // ── Slots ──────────────────────────────────────────────────────
 
 void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
+  LOG_INFO("TOPOLOGY_UI", "添加 UUT");
   int n = doc_->productCount() + 1;
   TopologyProduct prod;
   prod.name = QStringLiteral("UUT-%1").arg(n, 2, 10, QChar('0'));
@@ -816,6 +821,7 @@ void TopologyEditorWidget::onAddUut(const QPointF& scenePos) {
 }
 
 void TopologyEditorWidget::onAddUutPort(int productIndex) {
+  LOG_INFO("TOPOLOGY_UI", "添加 UUT 端口");
   auto* prod = doc_->product(productIndex);
   if (!prod)
     return;
@@ -830,6 +836,7 @@ void TopologyEditorWidget::onAddUutPort(int productIndex) {
 }
 
 void TopologyEditorWidget::onAddDevice(const QPointF& scenePos) {
+  LOG_INFO("TOPOLOGY_UI", "添加设备");
   // Query PluginManager for the first available device plugin
   auto& pm = etest::core::plugin::PluginManager::instance();
   etest::core::plugin::PluginMetaData firstDevice;
@@ -870,6 +877,7 @@ void TopologyEditorWidget::onDropDevice(const QString& deviceType,
                                         int functionType,
                                         const QString& pluginId,
                                         const QPointF& scenePos) {
+  LOG_INFO("TOPOLOGY_UI", "拖入设备");
   int n = doc_->deviceCount() + 1;
   TopologyDevice dev;
   dev.deviceType = deviceType;
@@ -919,6 +927,7 @@ void TopologyEditorWidget::onDropMonitor(const QString& deviceType,
 }
 
 void TopologyEditorWidget::onDeleteItem(QGraphicsItem* item) {
+  LOG_INFO("TOPOLOGY_UI", "删除图形项");
   if (!item)
     return;
 
@@ -1099,10 +1108,12 @@ void TopologyEditorWidget::onDocumentChanged() {
 }
 
 void TopologyEditorWidget::onUndo() {
+  LOG_INFO("TOPOLOGY_UI", "撤销");
   doc_->undoStack()->undo();
 }
 
 void TopologyEditorWidget::onRedo() {
+  LOG_INFO("TOPOLOGY_UI", "重做");
   doc_->undoStack()->redo();
 }
 
@@ -1129,6 +1140,7 @@ void TopologyEditorWidget::redo() {
 static const char kClipboardMime[] = "application/x-ietopology-items";
 
 void TopologyEditorWidget::onCopy() {
+  LOG_INFO("TOPOLOGY_UI", "复制");
   QJsonObject root;
   QJsonArray prodsArr, devsArr, monsArr;
   auto selected = scene_->selectedItems();
@@ -1229,6 +1241,7 @@ void TopologyEditorWidget::onCopy() {
 }
 
 void TopologyEditorWidget::onPaste() {
+  LOG_INFO("TOPOLOGY_UI", "粘贴");
   auto* clip = QApplication::clipboard();
   auto* mimeData = clip->mimeData();
   if (!mimeData || !mimeData->hasFormat(QLatin1String(kClipboardMime)))
@@ -1416,6 +1429,7 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
 // ── Export Image ──────────────────────────────────────────────
 
 void TopologyEditorWidget::onExportImage() {
+  LOG_INFO("TOPOLOGY_UI", "导出图片");
   QString path;
   if (TopologyExportController::exportScene(this, scene_, &path)) {
     showStatusMessage(QStringLiteral("拓扑图已导出: %1").arg(path));
@@ -1428,6 +1442,7 @@ void TopologyEditorWidget::onExportImage() {
 // ── Cleanup Invalid Connections ───────────────────────────────
 
 void TopologyEditorWidget::onCleanupInvalidConnections() {
+  LOG_INFO("TOPOLOGY_UI", "清理无效连线");
   QVector<InvalidEntry> invalid = ConnectionCleanup::findInvalid(doc_);
 
   if (invalid.isEmpty()) {
@@ -1478,6 +1493,7 @@ void TopologyEditorWidget::onCleanupInvalidConnections() {
 // ── Add Device From Template ──────────────────────────────────
 
 void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
+  LOG_INFO("TOPOLOGY_UI", "从模板添加设备");
   QString path = QFileDialog::getOpenFileName(
       this, QStringLiteral("从模板添加设备"), QString(),
       QStringLiteral("设备模板 (*.dvt);;所有文件 (*)"));

@@ -1,5 +1,7 @@
 #include "ExecutionControlBar.h"
 
+#include "logger/Logger.h"
+
 #include <QFile>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -70,12 +72,18 @@ void ExecutionControlBar::initUi() {
 }
 
 void ExecutionControlBar::initSignals() {
-  connect(btn_run_, &QPushButton::clicked, this,
-          &ExecutionControlBar::runClicked);
-  connect(btn_pause_, &QPushButton::clicked, this,
-          &ExecutionControlBar::pauseClicked);
-  connect(btn_stop_, &QPushButton::clicked, this,
-          &ExecutionControlBar::stopClicked);
+  connect(btn_run_, &QPushButton::clicked, this, [this]() {
+    LOG_INFO("TESTPROG_UI", "点击「运行」按钮");
+    emit runClicked();
+  });
+  connect(btn_pause_, &QPushButton::clicked, this, [this]() {
+    LOG_INFO("TESTPROG_UI", "点击「暂停」按钮");
+    emit pauseClicked();
+  });
+  connect(btn_stop_, &QPushButton::clicked, this, [this]() {
+    LOG_INFO("TESTPROG_UI", "点击「停止」按钮");
+    emit stopClicked();
+  });
 }
 
 void ExecutionControlBar::setState(State state) {

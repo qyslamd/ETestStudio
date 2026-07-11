@@ -1,5 +1,7 @@
 #include "StepDetailPanel.h"
 
+#include "logger/Logger.h"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -84,6 +86,9 @@ QWidget* StepDetailPanel::createSetVerifyPage() {
 
   QObject::connect(tol_enable_check_, &QCheckBox::toggled, this,
                    [this](bool checked) {
+                     LOG_INFO("TESTPROG_UI",
+                              checked ? "切换容差 [enabled=true]"
+                                      : "切换容差 [enabled=false]");
                      tol_min_spin_->setEnabled(checked);
                      tol_max_spin_->setEnabled(checked);
                      if (!internal_update_) {

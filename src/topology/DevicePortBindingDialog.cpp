@@ -10,6 +10,8 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 
+#include "logger/Logger.h"
+
 namespace etest::topology {
 
 DevicePortBindingDialog::DevicePortBindingDialog(
@@ -118,6 +120,7 @@ void DevicePortBindingDialog::populateBoundFrames() {
 }
 
 void DevicePortBindingDialog::onAddFrames() {
+  LOG_INFO("TOPOLOGY_UI", "添加帧绑定");
   QList<QListWidgetItem*> selected = available_list_->selectedItems();
   for (auto* item : selected) {
     // 已绑定的不加
@@ -135,6 +138,7 @@ void DevicePortBindingDialog::onAddFrames() {
 }
 
 void DevicePortBindingDialog::onRemoveFrames() {
+  LOG_INFO("TOPOLOGY_UI", "移除帧绑定");
   QList<QListWidgetItem*> selected = bound_list_->selectedItems();
   for (auto* item : selected) {
     delete bound_list_->takeItem(bound_list_->row(item));

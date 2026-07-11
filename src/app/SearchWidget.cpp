@@ -168,6 +168,7 @@ void SearchWidget::initSignals() {
             if (item->parent() == nullptr)
               return;
 
+            LOG_INFO("PROJECT_UI", "搜索结果点击");
             QString filePath = item->data(0, Qt::UserRole).toString();
             int line = item->data(0, Qt::UserRole + 1).toInt();
             if (!filePath.isEmpty() && line > 0) {
@@ -177,6 +178,7 @@ void SearchWidget::initSignals() {
 
   connect(file_list_, &QListWidget::itemClicked, this,
           [this](QListWidgetItem* item) {
+            LOG_INFO("PROJECT_UI", "搜索文件列表点击");
             QString filePath = item->data(Qt::UserRole).toString();
             if (!filePath.isEmpty()) {
               emit fileOpenRequested(filePath, 0);

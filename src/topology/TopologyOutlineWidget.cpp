@@ -7,6 +7,8 @@
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
+#include "logger/Logger.h"
+
 namespace etest::topology {
 
 TopologyOutlineWidget::TopologyOutlineWidget(QWidget* parent)
@@ -243,6 +245,7 @@ bool TopologyOutlineWidget::applyFilter(QTreeWidgetItem* item,
 
 void TopologyOutlineWidget::onTreeItemClicked(QTreeWidgetItem* item,
                                                int /*column*/) {
+  LOG_INFO("TOPOLOGY_UI", "大纲树点击导航");
   if (updating_selection_)
     return;
 
@@ -319,6 +322,7 @@ void TopologyOutlineWidget::onTreeContextMenu(const QPoint& pos) {
   QMenu menu(this);
   auto* unmountAction = menu.addAction(QStringLiteral("解除挂载"));
   connect(unmountAction, &QAction::triggered, this, [this, monIdx, tapIdx]() {
+    LOG_INFO("TOPOLOGY_UI", "解除挂载");
     emit unmountRequested(monIdx, tapIdx);
   });
   menu.exec(tree_->viewport()->mapToGlobal(pos));

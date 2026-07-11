@@ -14,6 +14,7 @@
 
 #include "TestProgramData.h"
 #include "project/ProjectManager.h"
+#include "logger/Logger.h"
 
 namespace etest::app {
 
@@ -101,6 +102,7 @@ void TestProgramManagerWidget::refreshList() {
 
 void TestProgramManagerWidget::onItemDoubleClicked(QTreeWidgetItem* item,
                                                    int column) {
+  LOG_INFO("PROJECT_UI", "测试程序文件双击打开");
   Q_UNUSED(column);
   if (!item)
     return;
@@ -113,6 +115,7 @@ void TestProgramManagerWidget::onItemDoubleClicked(QTreeWidgetItem* item,
 }
 
 void TestProgramManagerWidget::onCustomContextMenu(const QPoint& pos) {
+  LOG_INFO("PROJECT_UI", "测试程序右键菜单");
   QTreeWidgetItem* item = tree_->itemAt(pos);
   if (!item)
     return;
@@ -129,23 +132,33 @@ void TestProgramManagerWidget::onCustomContextMenu(const QPoint& pos) {
 
   auto* openAction = menu->addAction(QStringLiteral("打开"));
   connect(openAction, &QAction::triggered, this,
-          [this, filePath]() { emit openFileRequested(filePath); });
+          [this, filePath]() {
+            LOG_INFO("PROJECT_UI", "打开测试程序 [path={}]", QFileInfo(filePath).fileName().toStdString());
+            emit openFileRequested(filePath);
+          });
 
   menu->addSeparator();
 
   auto* renameAction = menu->addAction(QStringLiteral("重命名"));
   connect(renameAction, &QAction::triggered, this,
-          [this, filePath]() { renameTestProgramFile(filePath); });
+          [this, filePath]() {
+            LOG_INFO("PROJECT_UI", "重命名测试程序 [path={}]", QFileInfo(filePath).fileName().toStdString());
+            renameTestProgramFile(filePath);
+          });
 
   auto* removeAction = menu->addAction(QStringLiteral("删除"));
   connect(removeAction, &QAction::triggered, this,
-          [this, filePath]() { removeTestProgramFile(filePath); });
+          [this, filePath]() {
+            LOG_INFO("PROJECT_UI", "删除测试程序 [path={}]", QFileInfo(filePath).fileName().toStdString());
+            removeTestProgramFile(filePath);
+          });
 
   menu->exec(tree_->mapToGlobal(pos));
   menu->deleteLater();
 }
 
 void TestProgramManagerWidget::onNewTestProgram() {
+  LOG_INFO("PROJECT_UI", "新建测试程序");
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) {
     QMessageBox::information(this, QStringLiteral("提示"),

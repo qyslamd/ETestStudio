@@ -18,6 +18,7 @@
 #include "AppIconProvider.h"
 
 #include "project/ProjectManager.h"
+#include "logger/Logger.h"
 
 namespace etest::app {
 
@@ -290,6 +291,7 @@ void TopologyManagerWidget::applySearchFilter(const QString& keyword) {
 
 void TopologyManagerWidget::onItemDoubleClicked(QTreeWidgetItem* item,
                                                 int column) {
+  LOG_INFO("PROJECT_UI", "拓扑文件双击打开");
   Q_UNUSED(column);
   if (!item)
     return;
@@ -305,6 +307,7 @@ void TopologyManagerWidget::onItemDoubleClicked(QTreeWidgetItem* item,
 }
 
 void TopologyManagerWidget::onCustomContextMenu(const QPoint& pos) {
+  LOG_INFO("PROJECT_UI", "拓扑文件右键菜单");
   QTreeWidgetItem* item = tree_->itemAt(pos);
   if (!item)
     return;
@@ -321,23 +324,33 @@ void TopologyManagerWidget::onCustomContextMenu(const QPoint& pos) {
 
   auto* openAction = menu->addAction(QStringLiteral("打开"));
   connect(openAction, &QAction::triggered, this,
-          [this, filePath]() { emit openFileRequested(filePath); });
+          [this, filePath]() {
+            LOG_INFO("PROJECT_UI", "打开拓扑 [path={}]", QFileInfo(filePath).fileName().toStdString());
+            emit openFileRequested(filePath);
+          });
 
   menu->addSeparator();
 
   auto* renameAction = menu->addAction(QStringLiteral("重命名"));
   connect(renameAction, &QAction::triggered, this,
-          [this, filePath]() { renameTopologyFile(filePath); });
+          [this, filePath]() {
+            LOG_INFO("PROJECT_UI", "重命名拓扑 [path={}]", QFileInfo(filePath).fileName().toStdString());
+            renameTopologyFile(filePath);
+          });
 
   auto* removeAction = menu->addAction(QStringLiteral("删除"));
   connect(removeAction, &QAction::triggered, this,
-          [this, filePath]() { removeTopologyFile(filePath); });
+          [this, filePath]() {
+            LOG_INFO("PROJECT_UI", "删除拓扑 [path={}]", QFileInfo(filePath).fileName().toStdString());
+            removeTopologyFile(filePath);
+          });
 
   menu->exec(tree_->mapToGlobal(pos));
   menu->deleteLater();
 }
 
 void TopologyManagerWidget::onNewTopology() {
+  LOG_INFO("PROJECT_UI", "新建拓扑");
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) {
     QMessageBox::information(this, QStringLiteral("提示"),

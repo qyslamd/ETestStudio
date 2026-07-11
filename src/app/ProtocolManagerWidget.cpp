@@ -37,6 +37,7 @@
 #include "ThemeManager.h"
 
 #include "project/ProjectManager.h"
+#include "logger/Logger.h"
 
 namespace etest::app {
 
@@ -664,6 +665,7 @@ void ProtocolManagerWidget::updateStatusLabel() {
 
 // ── 创建空白 ICDConfig ───────────────────────────────────────
 void ProtocolManagerWidget::onNewIcdConfig() {
+  LOG_INFO("PROJECT_UI", "新建 ICD 配置");
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) {
     QMessageBox::information(this, QStringLiteral("提示"),
@@ -724,6 +726,7 @@ bool ProtocolManagerWidget::createEmptyIcdConfig(const QString& path) {
 
 // ── 工具栏槽：新建帧 / 导入XML / 刷新 ──────────────────────
 void ProtocolManagerWidget::onNewFrame() {
+  LOG_INFO("PROJECT_UI", "新建帧");
   if (config_path_.empty() || !repo_) {
     QMessageBox::information(this, QStringLiteral("提示"),
                              QStringLiteral("请先创建并加载 ICDConfig。"));
@@ -822,6 +825,7 @@ void ProtocolManagerWidget::onNewFrame() {
 }
 
 void ProtocolManagerWidget::onImportXml() {
+  LOG_INFO("PROJECT_UI", "导入 ICD XML");
   auto& pm = ProjectManager::instance();
   if (!pm.isProjectOpen()) {
     QMessageBox::information(this, QStringLiteral("提示"),
@@ -956,6 +960,7 @@ void ProtocolManagerWidget::onImportXml() {
 }
 
 void ProtocolManagerWidget::onRefresh() {
+  LOG_INFO("PROJECT_UI", "刷新帧列表");
   if (!config_path_.empty()) {
     loadIcdConfig();
   }
@@ -965,6 +970,7 @@ void ProtocolManagerWidget::onRefresh() {
 
 // ── 右键菜单 ────────────────────────────────────────────────
 void ProtocolManagerWidget::onContextMenu(const QPoint& pos) {
+  LOG_INFO("PROJECT_UI", "帧协议右键菜单");
   QTreeWidgetItem* item = tree_->itemAt(pos);
   if (!item) {
     return;
@@ -999,6 +1005,7 @@ void ProtocolManagerWidget::onContextMenu(const QPoint& pos) {
 }
 
 void ProtocolManagerWidget::onOpenFrame(QTreeWidgetItem* item) {
+  LOG_INFO("PROJECT_UI", "帧双击打开");
   if (!item || config_path_.empty()) {
     return;
   }

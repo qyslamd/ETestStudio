@@ -30,6 +30,7 @@
 #include "widgets/EyeWidget.h"
 #include "widgets/PaintedClockWidget.h"
 #include "widgets/RecentProjectCard.h"
+#include "logger/Logger.h"
 
 
 namespace etest::app {
@@ -158,7 +159,10 @@ void WelcomeWidget::initUi() {
   newProjectTile->setContentWidget(newProjectContent);
   newProjectTile->setNameText("");
   connect(newProjectTile, &grid::GridTile::clicked, this,
-          &WelcomeWidget::newProjectRequested);
+          [this]() {
+            LOG_INFO("PROJECT_UI", "点击新建项目");
+            emit newProjectRequested();
+          });
   grid_layout_->addWidget(newProjectTile);
 
   // === Tile 2: 打开项目 (1x1) ===
@@ -181,7 +185,10 @@ void WelcomeWidget::initUi() {
   openProjectTile->setContentWidget(openProjectContent);
   openProjectTile->setNameText("");
   connect(openProjectTile, &grid::GridTile::clicked, this,
-          &WelcomeWidget::openProjectRequested);
+          [this]() {
+            LOG_INFO("PROJECT_UI", "点击打开项目");
+            emit openProjectRequested();
+          });
   grid_layout_->addWidget(openProjectTile);
 
   // === Tile 3: 每日提示 (1x2) ===
@@ -402,6 +409,7 @@ void WelcomeWidget::loadBackground() {
 }
 
 void WelcomeWidget::showRandomTip() {
+  LOG_INFO("PROJECT_UI", "点击每日提示");
   if (tips_.isEmpty())
     return;
   int idx = QRandomGenerator::global()->bounded(tips_.size());

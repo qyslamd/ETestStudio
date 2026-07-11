@@ -862,10 +862,14 @@ void EditorManager::showDockContextMenu(ads::CDockWidget* dock,
 
   QAction* closeAction = menu.addAction(QStringLiteral("关闭"));
   connect(closeAction, &QAction::triggered, this,
-          [this, editorId]() { closeFile(editorId); });
+          [this, editorId]() {
+            LOG_INFO("PROJECT_UI", "编辑器标签关闭 [action=关闭] [path={}]", QFileInfo(editorId).fileName().toStdString());
+            closeFile(editorId);
+          });
 
   QAction* closeOthersAction = menu.addAction(QStringLiteral("关闭其他"));
   connect(closeOthersAction, &QAction::triggered, this, [this, editorId]() {
+    LOG_INFO("PROJECT_UI", "编辑器标签关闭 [action=关闭其他]");
     QStringList allIds = dock_widgets_.keys();
     for (const QString& id : allIds) {
       if (id != editorId) {
@@ -877,6 +881,7 @@ void EditorManager::showDockContextMenu(ads::CDockWidget* dock,
   QAction* closeRightAction = menu.addAction(QStringLiteral("关闭右侧所有"));
   connect(closeRightAction, &QAction::triggered, this,
           [this, dock, editorId]() {
+            LOG_INFO("PROJECT_UI", "编辑器标签关闭 [action=关闭右侧所有]");
             auto* area = dock->dockAreaWidget();
             if (!area)
               return;
@@ -905,10 +910,14 @@ void EditorManager::showDockContextMenu(ads::CDockWidget* dock,
 
   QAction* copyPathAction = menu.addAction(QStringLiteral("复制文件路径"));
   connect(copyPathAction, &QAction::triggered, this,
-          [editorId]() { QApplication::clipboard()->setText(editorId); });
+          [editorId]() {
+            LOG_INFO("PROJECT_UI", "复制文件路径 [path={}]", QFileInfo(editorId).fileName().toStdString());
+            QApplication::clipboard()->setText(editorId);
+          });
 
   QAction* openFolderAction = menu.addAction(QStringLiteral("打开所在文件夹"));
   connect(openFolderAction, &QAction::triggered, this, [editorId]() {
+    LOG_INFO("PROJECT_UI", "打开所在文件夹 [path={}]", QFileInfo(editorId).fileName().toStdString());
     QFileInfo fi(editorId);
     QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absolutePath()));
   });

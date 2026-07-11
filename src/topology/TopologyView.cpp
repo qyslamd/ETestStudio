@@ -16,6 +16,8 @@
 #include <QScrollBar>
 #include <QWheelEvent>
 
+#include "logger/Logger.h"
+
 namespace etest::topology {
 
 TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
@@ -238,40 +240,40 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
   if (devPort) {
     auto* delAct = menu.addAction(QStringLiteral("删除端口"));
     connect(delAct, &QAction::triggered, this,
-            [this, devPort]() { emit deleteItemRequested(devPort); });
+            [this, devPort]() { LOG_INFO("TOPOLOGY_UI", "右键删除设备端口"); emit deleteItemRequested(devPort); });
   } else if (uutPort) {
     auto* delUutPortAct = menu.addAction(QStringLiteral("删除端口"));
     connect(delUutPortAct, &QAction::triggered, this,
-            [this, uutPort]() { emit deleteItemRequested(uutPort); });
+            [this, uutPort]() { LOG_INFO("TOPOLOGY_UI", "右键删除 UUT 端口"); emit deleteItemRequested(uutPort); });
   } else if (uut) {
     auto* addPortAct = menu.addAction(QStringLiteral("添加端口"));
     connect(addPortAct, &QAction::triggered, this,
-            [this, uut]() { emit addUutPortRequested(uut->productIndex()); });
+            [this, uut]() { LOG_INFO("TOPOLOGY_UI", "右键添加端口"); emit addUutPortRequested(uut->productIndex()); });
     menu.addSeparator();
     auto* act = menu.addAction(QStringLiteral("删除 UUT"));
     connect(act, &QAction::triggered, this,
-            [this, uut]() { emit deleteItemRequested(uut); });
+            [this, uut]() { LOG_INFO("TOPOLOGY_UI", "右键删除 UUT"); emit deleteItemRequested(uut); });
   } else if (dev) {
     auto* delAct = menu.addAction(QStringLiteral("删除设备"));
     connect(delAct, &QAction::triggered, this,
-            [this, dev]() { emit deleteItemRequested(dev); });
+            [this, dev]() { LOG_INFO("TOPOLOGY_UI", "右键删除设备"); emit deleteItemRequested(dev); });
     auto* saveAct = menu.addAction(QStringLiteral("另存为模板..."));
     connect(saveAct, &QAction::triggered, this,
-            [this, dev]() { emit saveTemplateRequested(dev); });
+            [this, dev]() { LOG_INFO("TOPOLOGY_UI", "右键保存模板"); emit saveTemplateRequested(dev); });
   } else if (conn) {
     auto* delAct = menu.addAction(QStringLiteral("删除连线"));
     connect(delAct, &QAction::triggered, this,
-            [this, conn]() { emit deleteItemRequested(conn); });
+            [this, conn]() { LOG_INFO("TOPOLOGY_UI", "右键删除连线"); emit deleteItemRequested(conn); });
   } else {
     auto* addUutAct = menu.addAction(QStringLiteral("添加 UUT"));
     connect(addUutAct, &QAction::triggered, this,
-            [this, scenePos]() { emit addUutRequested(scenePos); });
+            [this, scenePos]() { LOG_INFO("TOPOLOGY_UI", "右键添加 UUT"); emit addUutRequested(scenePos); });
     auto* addDevAct = menu.addAction(QStringLiteral("添加设备"));
     connect(addDevAct, &QAction::triggered, this,
-            [this, scenePos]() { emit addDeviceRequested(scenePos); });
+            [this, scenePos]() { LOG_INFO("TOPOLOGY_UI", "右键添加设备"); emit addDeviceRequested(scenePos); });
     auto* addTmplAct = menu.addAction(QStringLiteral("从模板添加设备..."));
     connect(addTmplAct, &QAction::triggered, this,
-            [this, scenePos]() { emit addDeviceFromTemplateRequested(scenePos); });
+            [this, scenePos]() { LOG_INFO("TOPOLOGY_UI", "右键从模板添加设备"); emit addDeviceFromTemplateRequested(scenePos); });
   }
 
   menu.exec(event->globalPos());

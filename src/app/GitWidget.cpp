@@ -41,6 +41,7 @@ QString GitWidget::projectRoot() const {
 }
 
 void GitWidget::refresh() {
+  LOG_INFO("PROJECT_UI", "Git 刷新");
   if (project_root_.isEmpty()) {
     showEmpty();
     return;

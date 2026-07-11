@@ -4,6 +4,7 @@
 
 #include "AppIconProvider.h"
 #include "ThemeManager.h"
+#include "logger/Logger.h"
 
 namespace etest::app {
 
@@ -42,14 +43,20 @@ void ActivityBarWidget::initUi() {
   login_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   bottom_layout->addWidget(login_btn_);
   connect(login_btn_, &QAbstractButton::clicked, this,
-          &ActivityBarWidget::loginTriggered);
+          [this]() {
+            LOG_INFO("PROJECT_UI", "点击登录");
+            emit loginTriggered();
+          });
   settings_btn_ = createButton(QStringLiteral("设置"));
   settings_btn_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("settings")));
   settings_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   bottom_layout->addWidget(settings_btn_);
   connect(settings_btn_, &QAbstractButton::clicked, this,
-          &ActivityBarWidget::settingsTriggered);
+          [this]() {
+            LOG_INFO("PROJECT_UI", "点击设置");
+            emit settingsTriggered();
+          });
   layout->addLayout(bottom_layout);
 }
 
@@ -71,7 +78,10 @@ void ActivityBarWidget::addPage(const QString& id,
   top_layout_->addWidget(btn);
 
   connect(btn, &QAbstractButton::clicked, this,
-          [this, id]() { emit pageClicked(id); });
+          [this, id]() {
+            LOG_INFO("PROJECT_UI", "侧边栏导航 [page={}]", id.toStdString());
+            emit pageClicked(id);
+          });
 
   // 默认选中第一个添加的页面
   if (buttons_.size() == 1) {

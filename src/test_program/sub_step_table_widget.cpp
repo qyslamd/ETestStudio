@@ -1,5 +1,7 @@
 #include "sub_step_table_widget.h"
 
+#include "logger/Logger.h"
+
 #include <QCheckBox>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -206,6 +208,7 @@ void SubStepTableWidget::setReadOnly(bool ro) {
 }
 
 void SubStepTableWidget::onAdd() {
+  LOG_INFO("TESTPROG_UI", "添加子步骤");
   QSignalBlocker blocker(table_);
   int row = table_->rowCount();
   table_->insertRow(row);
@@ -225,6 +228,7 @@ void SubStepTableWidget::onAdd() {
 }
 
 void SubStepTableWidget::onRemove() {
+  LOG_INFO("TESTPROG_UI", "删除子步骤");
   int row = table_->currentRow();
   if (row < 0) {
     return;
@@ -239,6 +243,7 @@ void SubStepTableWidget::onRemove() {
 }
 
 void SubStepTableWidget::onMoveUp() {
+  LOG_INFO("TESTPROG_UI", "上移子步骤");
   int row = table_->currentRow();
   if (row <= 0) {
     return;
@@ -249,6 +254,7 @@ void SubStepTableWidget::onMoveUp() {
 }
 
 void SubStepTableWidget::onMoveDown() {
+  LOG_INFO("TESTPROG_UI", "下移子步骤");
   int row = table_->currentRow();
   if (row < 0 || row >= table_->rowCount() - 1) {
     return;
@@ -296,6 +302,7 @@ void SubStepTableWidget::updateButtonStates() {
 }
 
 void SubStepTableWidget::onDoubleClicked(const QModelIndex& index) {
+  LOG_INFO("TESTPROG_UI", "子步骤表格双击 [col=tolerance]");
   if (read_only_ || !index.isValid() || index.column() != kColTolerance) {
     return;
   }

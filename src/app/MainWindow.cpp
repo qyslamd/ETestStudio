@@ -334,6 +334,7 @@ void MainWindow::initSignalsLate() {
   // 视图菜单：逐面板显隐
   connect(view_output_action_, &QAction::triggered, this,
           [this, updateContainerVisibility](bool checked) {
+            LOG_INFO("MAIN_UI", "切换「输出」面板 [visible={}]", checked);
             int idx = bottom_container_->indexOf(output_panel_);
             if (idx >= 0)
               bottom_container_->setPanelVisible(idx, checked);
@@ -341,6 +342,7 @@ void MainWindow::initSignalsLate() {
           });
   connect(view_problems_action_, &QAction::triggered, this,
           [this, updateContainerVisibility](bool checked) {
+            LOG_INFO("MAIN_UI", "切换「问题」面板 [visible={}]", checked);
             int idx = bottom_container_->indexOf(problems_panel_);
             if (idx >= 0)
               bottom_container_->setPanelVisible(idx, checked);
@@ -348,6 +350,7 @@ void MainWindow::initSignalsLate() {
           });
   connect(view_terminal_action_, &QAction::triggered, this,
           [this, updateContainerVisibility](bool checked) {
+            LOG_INFO("MAIN_UI", "切换「终端」面板 [visible={}]", checked);
             int idx = bottom_container_->indexOf(terminal_panel_);
             if (idx >= 0)
               bottom_container_->setPanelVisible(idx, checked);
@@ -357,6 +360,7 @@ void MainWindow::initSignalsLate() {
   // 视图菜单：辅助侧边栏显隐
   connect(view_aux_sidebar_action_, &QAction::triggered, this,
           [this](bool checked) {
+            LOG_INFO("MAIN_UI", "切换「辅助侧边栏」 [visible={}]", checked);
             if (checked) {
               aux_sidebar_widget_->show();
               auto sizes = h_splitter_->sizes();
@@ -788,6 +792,7 @@ void MainWindow::initSignalsLate() {
   // Ctrl+B 切换侧边栏
   auto* toggleSidebar = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_B), this);
   connect(toggleSidebar, &QShortcut::activated, this, [this]() {
+    LOG_INFO("MAIN_UI", "快捷键 Ctrl+B 切换侧边栏");
     if (sidebar_->isContentVisible()) {
       auto sizes = h_splitter_->sizes();
       if (!sizes.isEmpty()) {
@@ -811,6 +816,7 @@ void MainWindow::initSignalsLate() {
   auto* globalSearchShortcut =
       new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F), this);
   connect(globalSearchShortcut, &QShortcut::activated, this, [this]() {
+    LOG_INFO("MAIN_UI", "快捷键 Ctrl+Shift+F 全局搜索");
     if (!sidebar_->isContentVisible()) {
       sidebar_->showContent();
       auto sizes = h_splitter_->sizes();
@@ -1256,6 +1262,7 @@ void MainWindow::createStatusBar() {
 }
 
 void MainWindow::onNewProject() {
+  LOG_INFO("MAIN_UI", "点击「新建项目」");
   // 先尝试关闭当前项目
   if (!tryCloseCurrentProject()) {
     return;  // 用户取消，不继续创建
@@ -1272,6 +1279,7 @@ void MainWindow::onNewProject() {
 }
 
 void MainWindow::onOpenProject() {
+  LOG_INFO("MAIN_UI", "点击「打开项目」");
   // 先尝试关闭当前项目
   if (!tryCloseCurrentProject()) {
     return;  // 用户取消，不继续打开
@@ -1309,6 +1317,7 @@ void MainWindow::onOpenProject() {
 }
 
 void MainWindow::onOpenFile() {
+  LOG_INFO("MAIN_UI", "点击「打开文件」");
   QStringList exts = EditorFactoryRegistry::registeredExtensions();
   exts.sort();
   QStringList patterns;
@@ -1348,6 +1357,7 @@ QString MainWindow::findProjectFile(const QString& dirPath) {
 }
 
 void MainWindow::openRecentProject(const QString& path) {
+  LOG_INFO("MAIN_UI", "打开最近项目 [path={}]", path.toStdString());
   if (!tryCloseCurrentProject()) {
     return;
   }
@@ -1427,10 +1437,12 @@ bool MainWindow::tryCloseCurrentProject() {
 }
 
 void MainWindow::onCloseProject() {
+  LOG_INFO("MAIN_UI", "点击「关闭项目」");
   tryCloseCurrentProject();
 }
 
 void MainWindow::onProjectOpened(const QString& projectPath) {
+  LOG_INFO("MAIN_UI", "项目已打开 [path={}]", projectPath.toStdString());
   close_project_action_->setEnabled(true);
   open_file_action_->setEnabled(false);
 
@@ -1568,6 +1580,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
 }
 
 void MainWindow::onProjectClosed() {
+  LOG_INFO("MAIN_UI", "项目已关闭");
   close_project_action_->setEnabled(false);
   open_file_action_->setEnabled(true);
   status_project_label_->setText(QStringLiteral("无打开项目"));
@@ -1653,6 +1666,7 @@ void MainWindow::updateRecentFilesMenu() {
 }
 
 void MainWindow::onSaveFile() {
+  LOG_INFO("MAIN_UI", "点击「保存」");
   auto* editor = editor_manager_->currentEditor();
   if (!editor)
     return;
@@ -1664,6 +1678,7 @@ void MainWindow::onSaveFile() {
 }
 
 void MainWindow::onSaveFileAs() {
+  LOG_INFO("MAIN_UI", "点击「另存为」");
   auto* editor = editor_manager_->currentEditor();
   if (!editor)
     return;
@@ -1682,10 +1697,12 @@ void MainWindow::onSaveFileAs() {
 }
 
 void MainWindow::onSaveAllFiles() {
+  LOG_INFO("MAIN_UI", "点击「保存所有」");
   editor_manager_->saveAllFiles();
 }
 
 void MainWindow::onCloseCurrentFile() {
+  LOG_INFO("MAIN_UI", "点击「关闭文件」");
   auto* editor = editor_manager_->currentEditor();
   if (!editor)
     return;
@@ -1693,22 +1710,26 @@ void MainWindow::onCloseCurrentFile() {
 }
 
 void MainWindow::onCloseAllFiles() {
+  LOG_INFO("MAIN_UI", "点击「关闭所有文件」");
   editor_manager_->closeAllFiles();
 }
 
 void MainWindow::onUndo() {
+  LOG_INFO("MAIN_UI", "点击「撤销」");
   if (auto* editor = editor_manager_->currentEditor()) {
     editor->undo();
   }
 }
 
 void MainWindow::onRedo() {
+  LOG_INFO("MAIN_UI", "点击「重做」");
   if (auto* editor = editor_manager_->currentEditor()) {
     editor->redo();
   }
 }
 
 void MainWindow::onCut() {
+  LOG_INFO("MAIN_UI", "点击「剪切」");
   if (auto* editor = editor_manager_->currentEditor()) {
     if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
       textEditor->editor()->cut();
@@ -1717,6 +1738,7 @@ void MainWindow::onCut() {
 }
 
 void MainWindow::onCopy() {
+  LOG_INFO("MAIN_UI", "点击「复制」");
   if (auto* editor = editor_manager_->currentEditor()) {
     if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
       textEditor->editor()->copy();
@@ -1725,6 +1747,7 @@ void MainWindow::onCopy() {
 }
 
 void MainWindow::onPaste() {
+  LOG_INFO("MAIN_UI", "点击「粘贴」");
   if (auto* editor = editor_manager_->currentEditor()) {
     if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
       textEditor->editor()->paste();
@@ -1733,6 +1756,7 @@ void MainWindow::onPaste() {
 }
 
 void MainWindow::onFind() {
+  LOG_INFO("MAIN_UI", "点击「查找」");
   auto* editor = editor_manager_->currentEditor();
   auto* textEditor = dynamic_cast<TextEditorWidget*>(editor);
   if (!textEditor)
@@ -1815,6 +1839,7 @@ void MainWindow::onReplace() {
 }
 
 void MainWindow::onGoToLine() {
+  LOG_INFO("MAIN_UI", "点击「转到行」");
   auto* editor = editor_manager_->currentEditor();
   auto* textEditor = dynamic_cast<TextEditorWidget*>(editor);
   if (!textEditor)
@@ -1994,6 +2019,8 @@ void MainWindow::syncControlStates() {
 // ── Ribbon 运行按钮 ──
 
 void MainWindow::onRunClicked() {
+  LOG_INFO("MAIN_UI", "点击「运行」 [program={}]",
+           current_program_name_.toStdString());
   // 1. 查找当前测试程序编辑器
   auto* editor = editor_manager_->currentEditor();
   auto* progEditor = qobject_cast<TestProgramEditorWidget*>(
@@ -2052,19 +2079,23 @@ void MainWindow::onPauseClicked() {
     return;
   }
   if (engine_->state() == etest::engine::EngineState::Running) {
+    LOG_INFO("MAIN_UI", "点击「暂停」");
     engine_->pause();
   } else if (engine_->state() == etest::engine::EngineState::Paused) {
+    LOG_INFO("MAIN_UI", "点击「继续」");
     engine_->resume();
   }
 }
 
 void MainWindow::onStopClicked() {
+  LOG_INFO("MAIN_UI", "点击「停止」");
   if (engine_) {
     engine_->stop();
   }
 }
 
 void MainWindow::onVerifyClicked() {
+  LOG_INFO("MAIN_UI", "点击「校验」");
   if (!problems_panel_) {
     return;
   }
@@ -2111,11 +2142,13 @@ void MainWindow::onVerifyClicked() {
 }
 
 void MainWindow::onRunAllClicked() {
+  LOG_INFO("MAIN_UI", "点击「运行全部」");
   // 运行全部：委托给 onRunClicked
   onRunClicked();
 }
 
 void MainWindow::onRunCaseClicked() {
+  LOG_INFO("MAIN_UI", "点击「运行当前用例」");
   // 运行当前用例（简化实现：先支持运行全部）
   onRunClicked();
 }
@@ -2289,13 +2322,17 @@ void MainWindow::setupRibbon() {
   login_manage_users_action_ =
       login_menu_->addAction(QStringLiteral("用户管理"));
   connect(login_manage_users_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("MAIN_UI", "点击「用户管理」");
     UserManagerDialog dlg(this);
     dlg.exec();
   });
   login_menu_->addSeparator();
   auto* logoutAction = login_menu_->addAction(QStringLiteral("退出登录"));
   connect(logoutAction, &QAction::triggered, this,
-          [this]() { AuthService::instance().logout(); });
+          [this]() {
+            LOG_INFO("MAIN_UI", "点击「退出登录」");
+            AuthService::instance().logout();
+          });
 
   // ---- Application Button ----
   ribbon->applicationButton()->setIcon(
@@ -2374,6 +2411,7 @@ void MainWindow::setupRibbon() {
     act_welcome->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("welcome")));
     connect(act_welcome, &QAction::triggered, this, [this]() {
+      LOG_INFO("MAIN_UI", "点击 Ribbon「欢迎页」");
       auto* centralDock = dock_manager_->findDockWidget("CentralDock");
       if (!centralDock)
         return;
@@ -2479,6 +2517,7 @@ void MainWindow::setupRibbon() {
         AppIconProvider::instance().icon(QStringLiteral("ribbon_settings")),
         QStringLiteral("设置"), this);
     connect(act_settings, &QAction::triggered, this, [this]() {
+      LOG_INFO("MAIN_UI", "点击 Ribbon「设置」");
       if (!settings_dialog_) {
         settings_dialog_ = new SettingsDialog(this);
         settings_dialog_->setStyleSheet(qApp->styleSheet());
@@ -2498,7 +2537,9 @@ void MainWindow::setupRibbon() {
                              const QString& exeName, const QString& iconName) {
       act = new QAction(name, this);
       act->setIcon(AppIconProvider::instance().icon(iconName));
-      QObject::connect(act, &QAction::triggered, this, [exeName]() {
+      QObject::connect(act, &QAction::triggered, this, [exeName, name]() {
+        LOG_INFO("MAIN_UI", "启动独立工具「{}」 [exe={}]", name.toStdString(),
+                 exeName.toStdString());
         QString path =
             QApplication::applicationDirPath() + QStringLiteral("/") + exeName;
         if (!QProcess::startDetached(path)) {
@@ -2534,6 +2575,7 @@ void MainWindow::setupRibbon() {
         AppIconProvider::instance().icon(QStringLiteral("ribbon_about")),
         QStringLiteral("关于 ETest Demo"), this);
     connect(act_about, &QAction::triggered, this, [this]() {
+      LOG_INFO("MAIN_UI", "点击 Ribbon「关于」");
       AboutDialog dlg(this);
       dlg.exec();
     });

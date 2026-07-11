@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include "IDevicePlugin.h"
 #include "PluginManager.h"
+#include "logger/Logger.h"
 
 namespace etest::app {
 
@@ -148,6 +149,7 @@ void HardwareTreeWidget::highlightDeviceType(const QString& deviceType,
 
 void HardwareTreeWidget::onItemDoubleClicked(QTreeWidgetItem* item,
                                              int column) {
+  LOG_INFO("PROJECT_UI", "硬件树双击");
   Q_UNUSED(column);
 
   if (item->data(0, Qt::UserRole).toString() != "device")
@@ -170,6 +172,7 @@ void HardwareTreeWidget::onItemDoubleClicked(QTreeWidgetItem* item,
 }
 
 void HardwareTreeWidget::onCustomContextMenu(const QPoint& pos) {
+  LOG_INFO("PROJECT_UI", "硬件树右键菜单");
   QTreeWidgetItem* item = tree_->itemAt(pos);
   if (!item || item->data(0, Qt::UserRole).toString() != "device")
     return;
@@ -185,6 +188,7 @@ void HardwareTreeWidget::onCustomContextMenu(const QPoint& pos) {
   if (device->deviceStatus() == DeviceStatus::Offline) {
     auto* openAction = menu->addAction(QStringLiteral("打开设备"));
     connect(openAction, &QAction::triggered, this, [this, device, item]() {
+      LOG_INFO("PROJECT_UI", "打开设备 [name={}]", device->metaData().name.toStdString());
       device->openDevice();
       item->setText(0, device->metaData().name + QStringLiteral(" ") +
                            statusText(device->deviceStatus()));
@@ -192,6 +196,7 @@ void HardwareTreeWidget::onCustomContextMenu(const QPoint& pos) {
   } else {
     auto* closeAction = menu->addAction(QStringLiteral("关闭设备"));
     connect(closeAction, &QAction::triggered, this, [this, device, item]() {
+      LOG_INFO("PROJECT_UI", "关闭设备 [name={}]", device->metaData().name.toStdString());
       device->closeDevice();
       item->setText(0, device->metaData().name + QStringLiteral(" ") +
                            statusText(device->deviceStatus()));
@@ -200,8 +205,10 @@ void HardwareTreeWidget::onCustomContextMenu(const QPoint& pos) {
 
   menu->addSeparator();
   auto* refreshAction = menu->addAction(QStringLiteral("刷新"));
-  connect(refreshAction, &QAction::triggered, this,
-          &HardwareTreeWidget::refreshTree);
+  connect(refreshAction, &QAction::triggered, this, [this]() {
+    LOG_INFO("PROJECT_UI", "刷新硬件树");
+    refreshTree();
+  });
 
   menu->exec(tree_->mapToGlobal(pos));
   menu->deleteLater();
