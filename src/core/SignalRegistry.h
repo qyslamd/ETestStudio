@@ -18,6 +18,7 @@ struct ResolvedSignal {
   QString uuid;        // 32 字符 SHA-1 hex
   QString deviceId;    // 拓扑设备持久 id
   QString deviceName;  // 设备显示名（通过 registerDevice 注册）
+  QString deviceType;  // 设备类型（serial/can/a429/ad/da，来自拓扑）
   QString portName;    // 设备端口名
   QString frameName;   // ICD 帧名
   QString nodePath;    // 信号节点路径（frame 内的 / 分隔路径）
@@ -37,9 +38,11 @@ class SignalRegistry : public QObject {
   explicit SignalRegistry(QObject* parent = nullptr);
 
   // ── 设备注册 ──
-  void registerDevice(const QString& deviceId, const QString& deviceName);
+  void registerDevice(const QString& deviceId, const QString& deviceName,
+                      const QString& deviceType = QString());
   QStringList registeredDeviceIds() const;
   QString deviceName(const QString& deviceId) const;
+  QString deviceType(const QString& deviceId) const;
 
   // ── 端口绑定 ──
   void bindPortToFrames(const QString& deviceId, const QString& portName,
@@ -85,6 +88,8 @@ class SignalRegistry : public QObject {
   QHash<QPair<QString, QString>, QStringList> port_to_frames_;
   // deviceId → 设备显示名
   QHash<QString, QString> device_names_;
+  // deviceId → 设备类型（serial/can/a429/ad/da）
+  QHash<QString, QString> device_types_;
   // (frameName, nodePath) → 该路径下的所有 UUID（跨设备）
   QHash<QPair<QString, QString>, QStringList> node_to_uuids_;
 };

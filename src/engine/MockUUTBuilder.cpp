@@ -77,8 +77,9 @@ std::optional<MockResponse> CANPortSimulator::onFrameReceived(
   if (it == response_config_.end()) {
     return std::nullopt;
   }
-  // CAN 回复使用 targetFrameId 作为 CAN ID
-  return MockResponse{frameId, it.value()};
+  // CAN 回复使用 send_frame_id 作为 CAN ID（VERIFY 按此 ID 读取）
+  int targetId = send_frame_ids_.isEmpty() ? frameId : send_frame_ids_.first();
+  return MockResponse{targetId, it.value()};
 }
 
 void CANPortSimulator::setResponseConfig(int frameId,
@@ -107,8 +108,9 @@ std::optional<MockResponse> A429PortSimulator::onFrameReceived(
   if (it == response_config_.end()) {
     return std::nullopt;
   }
-  // A429 回复使用 targetFrameId 作为 Label
-  return MockResponse{frameId, it.value()};
+  // A429 回复使用 send_frame_id 作为 Label（VERIFY 按此 Label 读取）
+  int targetId = send_frame_ids_.isEmpty() ? frameId : send_frame_ids_.first();
+  return MockResponse{targetId, it.value()};
 }
 
 void A429PortSimulator::setResponseConfig(int frameId,

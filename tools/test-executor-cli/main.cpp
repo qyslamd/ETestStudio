@@ -272,7 +272,9 @@ void registerTopologyDevices(etest::core::SignalRegistry& registry,
         QString id = dobj[QStringLiteral("id")].toString();
         QString name = dobj[QStringLiteral("name")].toString();
         if (id.isEmpty()) continue;
-        registry.registerDevice(id, name);
+        registry.registerDevice(
+            id, name,
+            dobj[QStringLiteral("type")].toString());
         ++devCount;
         QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
         for (const QJsonValue& pv : ports) {

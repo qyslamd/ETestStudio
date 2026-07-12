@@ -1509,7 +1509,9 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
           if (id.isEmpty()) {
             id = QUuid::createUuid().toString(QUuid::WithoutBraces);
           }
-          signal_registry_->registerDevice(id, name);
+          signal_registry_->registerDevice(
+              id, name,
+              dobj[QStringLiteral("type")].toString());
           QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
           for (const QJsonValue& pv : ports) {
             QJsonObject pobj = pv.toObject();
@@ -2050,6 +2052,22 @@ void MainWindow::onRunClicked() {
 
   // 4b. 同步 registry 到引擎（引擎可能在 registry 就绪前创建）
   engine_->setRegistry(signal_registry_, icd_repository_.get());
+
+  // 4c. 加载拓扑设备到硬件管理器（使 writeFrame/read 能找到设备插件）
+  {
+    auto& projMgr = ProjectManager::instance();
+    if (projMgr.isProjectOpen()) {
+      QString topoDir = projMgr.currentProjectRoot() + QStringLiteral("/topology");
+      QDir topoDirObj(topoDir);
+      if (topoDirObj.exists()) {
+        const auto topoFiles = topoDirObj.entryInfoList(
+            {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
+        for (const QFileInfo& fi : topoFiles) {
+          engine_->loadTopology(fi.absoluteFilePath());
+        }
+      }
+    }
+  }
 
   // 5. 设置程序数据
   current_program_name_ = data.name;

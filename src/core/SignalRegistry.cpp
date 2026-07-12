@@ -30,8 +30,12 @@ QString SignalRegistry::computeUuid(const QString& deviceId,
 // ══════════════════════════════════════════════════════════════════════════════
 
 void SignalRegistry::registerDevice(const QString& deviceId,
-                                    const QString& deviceName) {
+                                    const QString& deviceName,
+                                    const QString& deviceType) {
   device_names_[deviceId] = deviceName;
+  if (!deviceType.isEmpty()) {
+    device_types_[deviceId] = deviceType;
+  }
 }
 
 QStringList SignalRegistry::registeredDeviceIds() const {
@@ -40,6 +44,10 @@ QStringList SignalRegistry::registeredDeviceIds() const {
 
 QString SignalRegistry::deviceName(const QString& deviceId) const {
   return device_names_.value(deviceId);
+}
+
+QString SignalRegistry::deviceType(const QString& deviceId) const {
+  return device_types_.value(deviceId);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -97,6 +105,7 @@ void SignalRegistry::registerSignals(const QVector<SignalEntry>& entries) {
     sig.uuid = uuid;
     sig.deviceId = entry.deviceId;
     sig.deviceName = device_names_.value(entry.deviceId);
+    sig.deviceType = device_types_.value(entry.deviceId);
     sig.portName = entry.portName;
     sig.frameName = entry.frameName;
     sig.nodePath = entry.nodePath;
@@ -169,6 +178,7 @@ void SignalRegistry::clear() {
   uuid_index_.clear();
   port_to_frames_.clear();
   device_names_.clear();
+  device_types_.clear();
   node_to_uuids_.clear();
   emit bindingsChanged();
 }

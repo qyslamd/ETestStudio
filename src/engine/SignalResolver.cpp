@@ -44,6 +44,7 @@ ResolvedSignal SignalResolver::resolve(const QString& uuid) const {
     }
 
     result.deviceId = resolved->deviceId;
+    result.deviceType = resolved->deviceType;
     result.portName = resolved->portName;
 
     // ② 查 ICD Repository 补充编码属性
@@ -72,15 +73,30 @@ void SignalResolver::fillFromIcd(ResolvedSignal& signal,
                            ? ByteOrder::LittleEndian
                            : ByteOrder::BigEndian;
 
-    // 根据帧类型推断信号类型
-    switch (frame->type()) {
-        case icd::FrameType::data:
-        case icd::FrameType::data_cmd:
-            signal.signalType = SignalType::CAN;
-            break;
-        case icd::FrameType::cmd:
+    // 根据设备类型推断信号类型（拓扑 deviceType 优先）
+    if (!signal.deviceType.isEmpty()) {
+        if (signal.deviceType == QStringLiteral("serial"))
             signal.signalType = SignalType::SERIAL;
-            break;
+        else if (signal.deviceType == QStringLiteral("can"))
+            signal.signalType = SignalType::CAN;
+        else if (signal.deviceType == QStringLiteral("a429"))
+            signal.signalType = SignalType::A429;
+        else if (signal.deviceType == QStringLiteral("ad"))
+            signal.signalType = SignalType::AD;
+        else if (signal.deviceType == QStringLiteral("da"))
+            signal.signalType = SignalType::DA;
+    }
+    // 无设备类型时回退到 ICD 帧类型推断（兼容旧数据）
+    if (signal.deviceType.isEmpty()) {
+        switch (frame->type()) {
+            case icd::FrameType::data:
+            case icd::FrameType::data_cmd:
+                signal.signalType = SignalType::CAN;
+                break;
+            case icd::FrameType::cmd:
+                signal.signalType = SignalType::SERIAL;
+                break;
+        }
     }
 
     // 在帧中按路径查找节点

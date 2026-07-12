@@ -35,6 +35,7 @@ enum class ByteOrder {
 struct ResolvedSignal {
     // ── 设备身份 ──
     QString deviceId;
+    QString deviceType;
     QString portName;
 
     // ── 信号类型 ──

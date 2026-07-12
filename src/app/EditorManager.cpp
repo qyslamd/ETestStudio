@@ -161,7 +161,8 @@ void EditorManager::registerEditorTypes() {
               const auto* dev = doc->device(i);
               LOG_DEBUG("UUID", "topology binder: registerDevice id={} name={}",
                        dev->id.toStdString(), dev->name.toStdString());
-              sigReg->registerDevice(dev->id, dev->name);
+              sigReg->registerDevice(dev->id, dev->name,
+                                        dev->deviceType);
               for (int pi = 0; pi < dev->ports.size(); ++pi) {
                 sigReg->bindPortToFrames(dev->id, dev->ports[pi].name,
                                           dev->ports[pi].boundFrameNames);
@@ -183,7 +184,8 @@ void EditorManager::registerEditorTypes() {
             if (dev) {
               LOG_DEBUG("UUID", "deviceAdded signal: id={} name={}",
                        dev->id.toStdString(), dev->name.toStdString());
-              sigReg->registerDevice(dev->id, dev->name);
+              sigReg->registerDevice(dev->id, dev->name,
+                                        dev->deviceType);
               for (int pi = 0; pi < dev->ports.size(); ++pi) {
                 sigReg->bindPortToFrames(dev->id, dev->ports[pi].name,
                                           dev->ports[pi].boundFrameNames);
@@ -200,7 +202,8 @@ void EditorManager::registerEditorTypes() {
             sigReg->clear();
             for (int i = 0; i < doc->deviceCount(); ++i) {
               const auto* dev = doc->device(i);
-              sigReg->registerDevice(dev->id, dev->name);
+              sigReg->registerDevice(dev->id, dev->name,
+                                        dev->deviceType);
               for (int pi = 0; pi < dev->ports.size(); ++pi) {
                 sigReg->bindPortToFrames(dev->id, dev->ports[pi].name,
                                           dev->ports[pi].boundFrameNames);
@@ -215,7 +218,8 @@ void EditorManager::registerEditorTypes() {
               [sigReg, icdRepo, doc](int index) {
             const auto* dev = doc->device(index);
             if (dev) {
-              sigReg->registerDevice(dev->id, dev->name);
+              sigReg->registerDevice(dev->id, dev->name,
+                                        dev->deviceType);
               if (icdRepo) {
                 etest::app::synchronizeRegistry(*sigReg, icdRepo);
               }
