@@ -332,6 +332,7 @@ void TestProgramEditorWidget::initUi() {
   }
   vertical_tabs_dock_->setTitleBarWidget(vt_title_bar);
   addDockWidget(Qt::LeftDockWidgetArea, vertical_tabs_dock_);
+  vertical_tabs_dock_->installEventFilter(this);
 
   rebuildVerticalTabs();
 
@@ -451,14 +452,7 @@ void TestProgramEditorWidget::initSignals() {
                 vertical ? QStringLiteral("vertical")
                          : QStringLiteral("horizontal"));
           });
-  // dock 关闭按钮 → 切回水平（仅 UI，不写配置——析构时的触发由
-  // applying_orientation_ 拦截）
-  connect(vertical_tabs_dock_, &QDockWidget::visibilityChanged, this,
-          [this](bool visible) {
-            if (!applying_orientation_) {
-              applyTabOrientation(visible);
-            }
-          });
+  // dock 关闭按钮 → 切回水平（由 eventFilter 拦截 QEvent::Close 处理）
 
   // list → tab 同步
   connect(vertical_tabs_view_->selectionModel(),
@@ -837,6 +831,13 @@ void TestProgramEditorWidget::updateValidationLabel() {
 
 // ── 事件过滤（Tab 双击重命名） ──
 
+void TestProgramEditorWidget::showEvent(QShowEvent* event) {
+  QMainWindow::showEvent(event);
+  if (toggle_orientation_action_) {
+    applyTabOrientation(toggle_orientation_action_->isChecked());
+  }
+}
+
 bool TestProgramEditorWidget::eventFilter(QObject* obj, QEvent* event) {
   if (obj == tab_widget_->tabBar() &&
       event->type() == QEvent::MouseButtonDblClick) {
@@ -849,6 +850,21 @@ bool TestProgramEditorWidget::eventFilter(QObject* obj, QEvent* event) {
     // 不管是不是 case tab、是否成功重命名，都吃掉事件，避免冒泡触发菜单快捷键等
     return true;
   }
+  if (obj == vertical_tabs_dock_ && event->type() == QEvent::Close) {
+    {
+      QSignalBlocker blocker(toggle_orientation_action_);
+      toggle_orientation_action_->setChecked(false);
+      toggle_orientation_action_->setIcon(
+          etest::core_ui::AppIconProvider::instance().icon(
+              QStringLiteral("testprog_tab_vertical")));
+    }
+
+    auto* bar = tab_widget_->tabBar();
+    bar->setMaximumHeight(QWIDGETSIZE_MAX);
+    bar->setMinimumHeight(0);
+    bar->setVisible(true);
+  }
+
   return QMainWindow::eventFilter(obj, event);
 }
 

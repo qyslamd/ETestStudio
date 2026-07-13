@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QEvent>
 #include <QHideEvent>
 #include <QLabel>
 #include <QMenuBar>
@@ -39,6 +40,12 @@
 
 namespace etest::protocol {
 namespace {
+
+void syncDockCloseAction(QAction* action) {
+  action->blockSignals(true);
+  action->setChecked(false);
+  action->blockSignals(false);
+}
 
 void updateMaxBits(const icd::Node& node, int& max_bits) {
   int end = (node.offset() * 8) + node.bit_offset() + node.bit_width();
@@ -400,6 +407,18 @@ void ProtocolEditorWidget::resizeEvent(QResizeEvent* event) {
 
 void ProtocolEditorWidget::hideEvent(QHideEvent* event) {
   QMainWindow::hideEvent(event);
+}
+
+bool ProtocolEditorWidget::eventFilter(QObject* obj, QEvent* event) {
+  if (event->type() == QEvent::Close) {
+    if (obj == node_tree_dock_)
+      syncDockCloseAction(node_tree_toggle_action_);
+    else if (obj == property_dock_)
+      syncDockCloseAction(property_toggle_action_);
+    else if (obj == preview_dock_)
+      syncDockCloseAction(preview_toggle_action_);
+  }
+  return QMainWindow::eventFilter(obj, event);
 }
 
 // ── Save format routing ────────────────────────────────────────
@@ -788,6 +807,10 @@ void ProtocolEditorWidget::initUi() {
   preview_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
       QStringLiteral("报文预览"), preview_dock_));
 
+  node_tree_dock_->installEventFilter(this);
+  property_dock_->installEventFilter(this);
+  preview_dock_->installEventFilter(this);
+
   // Dock features: 允许关闭/浮动/拖拽/标签页组合
   for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
     dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
@@ -1091,33 +1114,13 @@ void ProtocolEditorWidget::initSignals() {
     setModified(true);
   });
 
-  // ── Dock toggle actions ──
+  // ── Dock toggle actions（eventFilter 拦截 QEvent::Close） ──
   connect(node_tree_toggle_action_, &QAction::toggled, this,
           [this](bool checked) { node_tree_dock_->setVisible(checked); });
-  connect(node_tree_dock_, &QDockWidget::visibilityChanged, this,
-          [this](bool visible) {
-            node_tree_toggle_action_->blockSignals(true);
-            node_tree_toggle_action_->setChecked(visible);
-            node_tree_toggle_action_->blockSignals(false);
-          });
-
   connect(property_toggle_action_, &QAction::toggled, this,
           [this](bool checked) { property_dock_->setVisible(checked); });
-  connect(property_dock_, &QDockWidget::visibilityChanged, this,
-          [this](bool visible) {
-            property_toggle_action_->blockSignals(true);
-            property_toggle_action_->setChecked(visible);
-            property_toggle_action_->blockSignals(false);
-          });
-
   connect(preview_toggle_action_, &QAction::toggled, this,
           [this](bool checked) { preview_dock_->setVisible(checked); });
-  connect(preview_dock_, &QDockWidget::visibilityChanged, this,
-          [this](bool visible) {
-            preview_toggle_action_->blockSignals(true);
-            preview_toggle_action_->setChecked(visible);
-            preview_toggle_action_->blockSignals(false);
-          });
 
   // ── Context-menu from tree widget ──────────────────────────
   connect(node_tree_, &IcdNodeTreeWidget::addFrameRequested, this, [this]() {

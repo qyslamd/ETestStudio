@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QEvent>
 #include <QHideEvent>
 #include <QIcon>
 #include <QJsonArray>
@@ -58,6 +59,16 @@
 
 
 using namespace etest::core::config;
+
+namespace {
+
+void syncDockCloseAction(QAction* action) {
+  action->blockSignals(true);
+  action->setChecked(false);
+  action->blockSignals(false);
+}
+
+}  // namespace
 
 namespace etest::topology {
 
@@ -289,6 +300,18 @@ void TopologyEditorWidget::resizeEvent(QResizeEvent* event) {
   QMainWindow::resizeEvent(event);
   if (loading_overlay_ && loading_overlay_->isVisible())
     loading_overlay_->setGeometry(centralWidget()->rect());
+}
+
+bool TopologyEditorWidget::eventFilter(QObject* obj, QEvent* event) {
+  if (event->type() == QEvent::Close) {
+    if (obj == device_palette_dock_)
+      syncDockCloseAction(device_palette_toggle_action_);
+    else if (obj == outline_dock_)
+      syncDockCloseAction(outline_toggle_action_);
+    else if (obj == property_dock_)
+      syncDockCloseAction(property_toggle_action_);
+  }
+  return QMainWindow::eventFilter(obj, event);
 }
 
 // ── Constructor helpers ────────────────────────────────────────
@@ -583,19 +606,17 @@ void TopologyEditorWidget::initSignals() {
   // ── Outline navigation ──
   connect(outline_widget_, &TopologyOutlineWidget::navigateRequested, this,
           &TopologyEditorWidget::onOutlineNavigate);
-  // ── Dock 可见性同步 ──
-  auto syncDockVisibility = [this](QAction* action, QDockWidget* dock) {
-    connect(action, &QAction::toggled, dock, &QWidget::setVisible);
-    connect(dock, &QDockWidget::visibilityChanged, this,
-            [action](bool visible) {
-              action->blockSignals(true);
-              action->setChecked(visible);
-              action->blockSignals(false);
-            });
-  };
-  syncDockVisibility(device_palette_toggle_action_, device_palette_dock_);
-  syncDockVisibility(outline_toggle_action_, outline_dock_);
-  syncDockVisibility(property_toggle_action_, property_dock_);
+  // ── Dock 可见性同步（eventFilter 拦截 QEvent::Close） ──
+  connect(device_palette_toggle_action_, &QAction::toggled,
+          device_palette_dock_, &QWidget::setVisible);
+  connect(outline_toggle_action_, &QAction::toggled,
+          outline_dock_, &QWidget::setVisible);
+  connect(property_toggle_action_, &QAction::toggled,
+          property_dock_, &QWidget::setVisible);
+
+  device_palette_dock_->installEventFilter(this);
+  outline_dock_->installEventFilter(this);
+  property_dock_->installEventFilter(this);
   connect(outline_widget_, &TopologyOutlineWidget::unmountRequested, this,
           [this](int monIdx, int tapIdx) {
             doc_->undoStack()->push(

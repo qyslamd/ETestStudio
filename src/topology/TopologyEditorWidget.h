@@ -101,6 +101,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   void showLoadingOverlay();
   void hideLoadingOverlay();
   void resizeEvent(QResizeEvent* event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
   bool embedded_ = false;
   QWidget* loading_overlay_ = nullptr;

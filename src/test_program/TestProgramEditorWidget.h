@@ -14,6 +14,7 @@
 
 class QAction;
 class QDockWidget;
+class QShowEvent;
 class QLabel;
 class QLineEdit;
 class QListView;
@@ -74,6 +75,7 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
 
  protected:
   bool eventFilter(QObject* obj, QEvent* event) override;
+  void showEvent(QShowEvent* event) override;
 
  private slots:
   void onDataChanged();

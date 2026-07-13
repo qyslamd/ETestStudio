@@ -88,6 +88,7 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   void hideLoadingOverlay();
   void resizeEvent(QResizeEvent* event) override;
   void hideEvent(QHideEvent* event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
   void showStatusMessage(const QString& msg);
 
   QWidget* loading_overlay_ = nullptr;
