@@ -41,6 +41,8 @@ add_executable(${TARGET_NAME} WIN32
     editors/TextEditorWidget.cpp
     editors/ImageViewerWidget.h
     editors/ImageViewerWidget.cpp
+    editors/EtlogViewerWidget.h
+    editors/EtlogViewerWidget.cpp
     EditorManager.h
     EditorManager.cpp
     editors/EditorFactory.h

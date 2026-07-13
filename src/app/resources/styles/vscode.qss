@@ -1040,6 +1040,44 @@ QLabel#errorLabel {
     color: red;
 }
 
+/* ==================== EtlogViewerWidget ==================== */
+etest--app--EtlogViewerWidget {
+    background-color: #1E1E1E;
+}
+#etlogSummaryBar {
+    background-color: #2D2D2D;
+    border-bottom: 1px solid #3C3C3C;
+}
+#etlogTitleLabel {
+    font-weight: bold;
+    font-size: 14px;
+}
+#etlogFooterBar {
+    background-color: #2D2D2D;
+    border-top: 1px solid #3C3C3C;
+}
+#etlogFooterLabel {
+    color: #888;
+    font-size: 11px;
+}
+#etlogEmptyLabel {
+    color: #858585;
+    font-size: 16px;
+}
+#etlogDetailScroll {
+    background-color: #1E1E1E;
+}
+#etlogDetailViewport {
+    background-color: #1E1E1E;
+}
+#etlogDetailInner {
+    background-color: #1E1E1E;
+}
+#etlogDetailStatus {
+    font-size: 16px;
+    font-weight: bold;
+}
+
 /* ==================== etest--app--TerminalPanel ==================== */
 etest--app--TerminalPanel {
     background-color: #1E1E1E;

@@ -954,6 +954,44 @@ QPushButton:disabled {
     border-color: #D0D0D0;
 }
 
+/* ==================== EtlogViewerWidget ==================== */
+etest--app--EtlogViewerWidget {
+    background-color: #FFFFFF;
+}
+#etlogSummaryBar {
+    background-color: #F5F5F5;
+    border-bottom: 1px solid #E0E0E0;
+}
+#etlogTitleLabel {
+    font-weight: bold;
+    font-size: 14px;
+}
+#etlogFooterBar {
+    background-color: #F5F5F5;
+    border-top: 1px solid #E0E0E0;
+}
+#etlogFooterLabel {
+    color: #999;
+    font-size: 11px;
+}
+#etlogEmptyLabel {
+    color: #999999;
+    font-size: 16px;
+}
+#etlogDetailScroll {
+    background-color: #FFFFFF;
+}
+#etlogDetailViewport {
+    background-color: #FFFFFF;
+}
+#etlogDetailInner {
+    background-color: #FFFFFF;
+}
+#etlogDetailStatus {
+    font-size: 16px;
+    font-weight: bold;
+}
+
 /* ==================== Tab Close Button (Light) ==================== */
 #bottomTabWidget QTabBar::close-button {
     image: url(:/resources/icons/svg/close_dark.svg);

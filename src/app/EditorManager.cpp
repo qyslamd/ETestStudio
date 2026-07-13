@@ -17,6 +17,7 @@
 
 #include "editors/EditorFactory.h"
 #include "editors/ImageViewerWidget.h"
+#include "editors/EtlogViewerWidget.h"
 #include "editors/TextEditorWidget.h"
 #include "TestProgramEditorWidget.h"
 #include "SignalRegistry.h"
@@ -93,6 +94,12 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerExtension("gif", "image");
   EditorFactoryRegistry::registerExtension("webp", "image");
   EditorFactoryRegistry::registerExtension("ico", "image");
+
+  EditorFactoryRegistry::registerExtension("etlog", "etlog");
+  EditorFactoryRegistry::registerFactory(
+      "etlog", [](const QString& id, QWidget* parent) {
+        return new EtlogViewerWidget(id, parent);
+      });
 
   EditorFactoryRegistry::registerFactory(
       "text",
