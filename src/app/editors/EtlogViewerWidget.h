@@ -56,12 +56,15 @@ class EtlogViewerWidget : public QWidget, public IEditor {
   void clearDetail();
   void applyThemeColors();
   static QColor colorForStatus(const QString& status);
+  static QString iconNameForStatus(const QString& status);
+  void refreshIcons();
 
   QString file_path_;
   QJsonDocument doc_;
   bool has_error_ = false;
 
   QLabel* title_label_ = nullptr;
+  QLabel* icon_title_ = nullptr;
   QLabel* summary_label_ = nullptr;
   QLabel* footer_label_ = nullptr;
   QLabel* empty_label_ = nullptr;

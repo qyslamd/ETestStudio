@@ -1,5 +1,7 @@
 #include "EtlogViewerWidget.h"
 
+#include <functional>
+
 #include <QFile>
 #include <QFileInfo>
 #include <QFormLayout>
@@ -18,11 +20,13 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 
+#include "AppIconProvider.h"
 #include "ThemeManager.h"
 
 namespace etest::app {
 
 using etest::core_ui::ThemeManager;
+using etest::core_ui::AppIconProvider;
 
 enum {
   kColStep = 0,
@@ -36,6 +40,19 @@ enum StepRoles {
   StepDataRole = Qt::UserRole + 1,
   StepPathRole = Qt::UserRole + 2,
 };
+
+enum {
+  kCaseStatusRole = Qt::UserRole + 3,
+};
+
+namespace {
+QString themeIconPath(const QString& iconName) {
+  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
+  return dark
+      ? QStringLiteral(":/resources/icons/svg/%1_light.svg").arg(iconName)
+      : QStringLiteral(":/resources/icons/svg/%1_dark.svg").arg(iconName);
+}
+}  // namespace
 
 EtlogViewerWidget::EtlogViewerWidget(const QString& filePath, QWidget* parent)
     : QWidget(parent), file_path_(filePath) {
@@ -88,7 +105,9 @@ void EtlogViewerWidget::openFile(const QString& filePath) {
     return;
   }
 
-  empty_label_->parentWidget()->setVisible(false);
+  if (auto* parent = empty_label_->parentWidget()) {
+    parent->setVisible(false);
+  }
   content_widget_->setVisible(true);
 
   populateSummary(root);
@@ -113,6 +132,10 @@ void EtlogViewerWidget::initUi() {
   title_label_ = new QLabel(this);
   title_label_->setObjectName(QStringLiteral("etlogTitleLabel"));
   summary_layout->addWidget(title_label_, 1);
+
+  icon_title_ = new QLabel(this);
+  icon_title_->setFixedSize(16, 16);
+  summary_layout->insertWidget(0, icon_title_);
 
   summary_label_ = new QLabel(this);
   summary_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -169,11 +192,8 @@ void EtlogViewerWidget::initUi() {
 
   auto* form_widget = new QWidget();
   auto* detail_form = new QFormLayout(form_widget);
-  detail_form->setContentsMargins(12, 24, 12, 12);
+  detail_form->setContentsMargins(12, 24, 12, 4);
   detail_form->setSpacing(8);
-  outer_layout->addStretch(1);
-  outer_layout->addWidget(form_widget);
-  outer_layout->addStretch(1);
 
   detail_status_ = new QLabel(QStringLiteral("-"));
   detail_status_->setObjectName(QStringLiteral("etlogDetailStatus"));
@@ -199,12 +219,20 @@ void EtlogViewerWidget::initUi() {
   detail_timestamp_ = new QLabel(QStringLiteral("-"));
   detail_form->addRow(QStringLiteral("时间戳:"), detail_timestamp_);
 
+  outer_layout->addWidget(form_widget);
+
+  // 消息框独立于 QFormLayout 之外
+  auto* msg_label = new QLabel(QStringLiteral("消息:"), detail_inner);
+  msg_label->setContentsMargins(12, 4, 12, 0);
+  outer_layout->addWidget(msg_label);
   detail_message_ = new QTextEdit(this);
   detail_message_->setReadOnly(true);
-  detail_message_->setMaximumHeight(120);
+  detail_message_->setMaximumHeight(100);
   detail_message_->setFrameShape(QFrame::NoFrame);
   detail_message_->setPlaceholderText(QStringLiteral("-"));
-  detail_form->addRow(QStringLiteral("消息:"), detail_message_);
+  detail_message_->setContentsMargins(12, 0, 12, 12);
+  outer_layout->addWidget(detail_message_);
+  outer_layout->addStretch(1);
 
   splitter->addWidget(case_list_);
   splitter->addWidget(step_tree_);
@@ -272,7 +300,10 @@ void EtlogViewerWidget::populateSummary(const QJsonObject& root) {
   int dur = summary["durationMs"].toInt();
   Q_UNUSED(total);
 
-  title_label_->setText(QStringLiteral("\xF0\x9F\x93\x8A %1").arg(suiteName));
+  icon_title_->setPixmap(
+      AppIconProvider::instance().icon(QStringLiteral("etlog_chart"))
+          .pixmap(16, 16));
+  title_label_->setText(suiteName);
 
   QStringList parts;
   parts << QStringLiteral("<span style='color:%1'>PASS: %2</span>")
@@ -288,7 +319,9 @@ void EtlogViewerWidget::populateSummary(const QJsonObject& root) {
                  .arg(colorForStatus("ERROR").name())
                  .arg(err);
   }
-  parts << QStringLiteral("\xE2\x8F\xB1 %1ms").arg(dur);
+  parts << QStringLiteral("<img src='%1' width='14' height='14' style='vertical-align:middle'>&nbsp;%2ms")
+               .arg(themeIconPath(QStringLiteral("etlog_timer")))
+               .arg(dur);
 
   summary_label_->setText(parts.join(QStringLiteral("  ")));
   summary_label_->setTextFormat(Qt::RichText);
@@ -313,11 +346,12 @@ void EtlogViewerWidget::populateCaseList(const QJsonObject& root) {
     QString status = caseObj["status"].toString();
     int dur = caseObj["durationMs"].toInt();
 
-    QString icon = (status == "PASS") ? QStringLiteral("\xE2\x9C\x85")
-                                      : QStringLiteral("\xE2\x9D\x8C");
-    QString text = QStringLiteral("%1 %2 (%3ms)").arg(icon).arg(name).arg(dur);
+    QString iconName = iconNameForStatus(status);
+    QString text = QStringLiteral("%1 (%2ms)").arg(name).arg(dur);
     auto* item = new QListWidgetItem(text, case_list_);
-    Q_UNUSED(item);
+    item->setIcon(QIcon(themeIconPath(iconName)));
+    item->setData(Qt::UserRole, caseObj["caseIndex"].toInt());
+    item->setData(kCaseStatusRole, status);
   }
 }
 
@@ -485,18 +519,9 @@ QList<QStandardItem*> EtlogViewerWidget::createStepRow(const QJsonObject& step,
   QString target = step["target"].toString();
   int elapsed = step["elapsedMs"].toInt();
 
-  auto statusIcon = [&]() -> QString {
-    if (status == "PASS") return QStringLiteral("\xE2\x9C\x85");
-    if (status == "FAIL") return QStringLiteral("\xE2\x9D\x8C");
-    if (status == "ERROR") return QStringLiteral("\xE2\x9D\x97");
-    if (status == "TIMEOUT") return QStringLiteral("\xE2\x8F\xB1");
-    if (status == "SKIPPED") return QStringLiteral("\xE2\x8F\xAD");
-    return QStringLiteral("\xE2\x8F\xB3");
-  };
-
-  auto* item0 = new QStandardItem(
-      QStringLiteral("%1 %2").arg(statusIcon()).arg(cmd));
+  auto* item0 = new QStandardItem(cmd);
   item0->setEditable(false);
+  item0->setIcon(QIcon(themeIconPath(iconNameForStatus(status))));
   item0->setData(QVariant::fromValue(step.toVariantMap()), StepDataRole);
   item0->setData(path, StepPathRole);
 
@@ -516,7 +541,9 @@ QList<QStandardItem*> EtlogViewerWidget::createStepRow(const QJsonObject& step,
 void EtlogViewerWidget::showEmptyState(const QString& message) {
   has_error_ = true;
   empty_label_->setText(message);
-  empty_label_->parentWidget()->setVisible(true);
+  if (auto* parent = empty_label_->parentWidget()) {
+    parent->setVisible(true);
+  }
   content_widget_->setVisible(false);
 }
 
@@ -533,6 +560,43 @@ void EtlogViewerWidget::clearDetail() {
 }
 
 void EtlogViewerWidget::applyThemeColors() {
+  // 刷新步骤树中所有 item 的状态颜色
+  if (step_model_) {
+    std::function<void(QStandardItem*)> recolor;
+    recolor = [&](QStandardItem* parent) {
+      for (int i = 0; i < parent->rowCount(); ++i) {
+        auto* statusItem = parent->child(i, kColStatus);
+        if (statusItem) {
+          statusItem->setForeground(
+              QBrush(colorForStatus(statusItem->text())));
+        }
+        auto* stepItem = parent->child(i, kColStep);
+        if (stepItem && stepItem->hasChildren()) {
+          recolor(stepItem);
+        }
+      }
+    };
+    recolor(step_model_->invisibleRootItem());
+  }
+
+  // 刷新当前详情面板的状态颜色
+  QString currentStatus = detail_status_->text();
+  if (currentStatus != QStringLiteral("-")) {
+    detail_status_->setStyleSheet(
+        QStringLiteral("color: %1;").arg(
+            colorForStatus(currentStatus).name()));
+  }
+
+  refreshIcons();
+}
+
+QString EtlogViewerWidget::iconNameForStatus(const QString& status) {
+  if (status == "PASS") return QStringLiteral("etlog_pass");
+  if (status == "FAIL") return QStringLiteral("etlog_fail");
+  if (status == "ERROR") return QStringLiteral("etlog_error");
+  if (status == "TIMEOUT") return QStringLiteral("etlog_timer");
+  if (status == "SKIPPED") return QStringLiteral("etlog_skip");
+  return QStringLiteral("etlog_pending");
 }
 
 QColor EtlogViewerWidget::colorForStatus(const QString& status) {
@@ -543,6 +607,43 @@ QColor EtlogViewerWidget::colorForStatus(const QString& status) {
   if (status == "TIMEOUT") return dark ? QColor(255, 183, 77) : QColor(255, 152, 0);
   if (status == "SKIPPED") return dark ? QColor(189, 189, 189) : QColor(158, 158, 158);
   return dark ? QColor(97, 97, 97) : QColor(189, 189, 189);
+}
+
+void EtlogViewerWidget::refreshIcons() {
+  // 1. 刷新标题栏图标
+  icon_title_->setPixmap(
+      AppIconProvider::instance().icon(QStringLiteral("etlog_chart"))
+          .pixmap(16, 16));
+
+  // 2. 刷新用例列表图标
+  for (int i = 0; i < case_list_->count(); ++i) {
+    auto* item = case_list_->item(i);
+    QString status = item->data(kCaseStatusRole).toString();
+    if (!status.isEmpty()) {
+      item->setIcon(QIcon(themeIconPath(iconNameForStatus(status))));
+    }
+  }
+
+  // 3. 刷新步骤树图标
+  std::function<void(QStandardItem*)> refreshStepIcons;
+  refreshStepIcons = [this, &refreshStepIcons](QStandardItem* parent) {
+    for (int i = 0; i < parent->rowCount(); ++i) {
+      auto* stepItem = parent->child(i, kColStep);
+      if (stepItem) {
+        QVariantMap data = stepItem->data(StepDataRole).toMap();
+        if (!data.isEmpty()) {
+          QString status = data.value(QStringLiteral("status")).toString();
+          if (!status.isEmpty()) {
+            stepItem->setIcon(QIcon(themeIconPath(iconNameForStatus(status))));
+          }
+        }
+        if (stepItem->hasChildren()) {
+          refreshStepIcons(stepItem);
+        }
+      }
+    }
+  };
+  refreshStepIcons(step_model_->invisibleRootItem());
 }
 
 }  // namespace etest::app
