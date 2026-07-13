@@ -3,7 +3,8 @@
 #include "logger/Logger.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 using namespace core::plugin;
 using namespace core::logger;
@@ -89,5 +90,6 @@ bool MockA429Plugin::setSpeed(Arinc429Speed speed) {
 
 Arinc429Speed MockA429Plugin::speed() const { return speed_; }
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest

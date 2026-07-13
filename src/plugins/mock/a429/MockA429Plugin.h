@@ -1,12 +1,13 @@
-#ifndef ETEST_EXAMPLES_MOCK_A429_PLUGIN_H_
-#define ETEST_EXAMPLES_MOCK_A429_PLUGIN_H_
+#ifndef ETEST_PLUGINS_MOCK_A429_PLUGIN_H_
+#define ETEST_PLUGINS_MOCK_A429_PLUGIN_H_
 
 #include <QObject>
 #include <QMap>
 #include "IArinc429Plugin.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 class MockA429Plugin : public QObject, public core::plugin::IArinc429Plugin {
   Q_OBJECT
@@ -45,7 +46,8 @@ class MockA429Plugin : public QObject, public core::plugin::IArinc429Plugin {
   core::plugin::Arinc429Speed speed_ = core::plugin::Arinc429Speed::Low;
 };
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest
 
-#endif  // ETEST_EXAMPLES_MOCK_A429_PLUGIN_H_
+#endif  // ETEST_PLUGINS_MOCK_A429_PLUGIN_H_

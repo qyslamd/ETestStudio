@@ -3,7 +3,8 @@
 #include "logger/Logger.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 using namespace core::plugin;
 using namespace core::logger;
@@ -106,5 +107,6 @@ bool MockSerialPlugin::setPortName(const QString& name) {
 
 QString MockSerialPlugin::portName() const { return port_name_; }
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest

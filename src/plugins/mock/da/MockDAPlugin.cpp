@@ -3,7 +3,8 @@
 #include "logger/Logger.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 using namespace core::plugin;
 using namespace core::logger;
@@ -83,5 +84,6 @@ double MockDAPlugin::readbackChannel(int channel) const {
   return channel_values_[channel];
 }
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest

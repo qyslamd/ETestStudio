@@ -6,7 +6,8 @@
 #include "logger/Logger.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 using namespace core::plugin;
 using namespace core::logger;
@@ -384,5 +385,6 @@ QVector<qint16> MockADPlugin::readAllChannelsRaw(int count) {
   return data;
 }
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest

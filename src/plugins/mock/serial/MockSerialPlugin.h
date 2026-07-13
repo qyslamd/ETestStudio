@@ -1,12 +1,13 @@
-#ifndef ETEST_EXAMPLES_MOCK_SERIAL_PLUGIN_H_
-#define ETEST_EXAMPLES_MOCK_SERIAL_PLUGIN_H_
+#ifndef ETEST_PLUGINS_MOCK_SERIAL_PLUGIN_H_
+#define ETEST_PLUGINS_MOCK_SERIAL_PLUGIN_H_
 
 #include <QObject>
 #include <QByteArray>
 #include "ISerialDevicePlugin.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 class MockSerialPlugin : public QObject, public core::plugin::ISerialDevicePlugin {
   Q_OBJECT
@@ -48,7 +49,8 @@ class MockSerialPlugin : public QObject, public core::plugin::ISerialDevicePlugi
   QString port_name_ = QStringLiteral("COM1");
 };
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest
 
-#endif  // ETEST_EXAMPLES_MOCK_SERIAL_PLUGIN_H_
+#endif  // ETEST_PLUGINS_MOCK_SERIAL_PLUGIN_H_

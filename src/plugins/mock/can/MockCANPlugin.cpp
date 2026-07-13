@@ -3,7 +3,8 @@
 #include "logger/Logger.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 using namespace core::plugin;
 using namespace core::logger;
@@ -91,5 +92,6 @@ bool MockCANPlugin::setBitrate(int bitrate) {
 
 int MockCANPlugin::bitrate() const { return bitrate_; }
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest

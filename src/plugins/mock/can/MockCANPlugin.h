@@ -1,12 +1,13 @@
-#ifndef ETEST_EXAMPLES_MOCK_CAN_PLUGIN_H_
-#define ETEST_EXAMPLES_MOCK_CAN_PLUGIN_H_
+#ifndef ETEST_PLUGINS_MOCK_CAN_PLUGIN_H_
+#define ETEST_PLUGINS_MOCK_CAN_PLUGIN_H_
 
 #include <QObject>
 #include <QMap>
 #include "ICANPlugin.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 class MockCANPlugin : public QObject, public core::plugin::ICANPlugin {
   Q_OBJECT
@@ -45,7 +46,8 @@ class MockCANPlugin : public QObject, public core::plugin::ICANPlugin {
   int bitrate_ = 500000;
 };
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest
 
-#endif  // ETEST_EXAMPLES_MOCK_CAN_PLUGIN_H_
+#endif  // ETEST_PLUGINS_MOCK_CAN_PLUGIN_H_

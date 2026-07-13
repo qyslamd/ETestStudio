@@ -7,5 +7,6 @@
     "category": "device",
     "device_type": "a429",
     "device_channels": 2,
+    "is_mock": true,
     "dependencies": []
 }

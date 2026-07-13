@@ -1,12 +1,13 @@
-#ifndef ETEST_EXAMPLES_MOCK_AD_PLUGIN_H_
-#define ETEST_EXAMPLES_MOCK_AD_PLUGIN_H_
+#ifndef ETEST_PLUGINS_MOCK_AD_PLUGIN_H_
+#define ETEST_PLUGINS_MOCK_AD_PLUGIN_H_
 
 #include <QObject>
 #include <QTimer>
 #include "IADevicePlugin.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 class MockADPlugin : public QObject, public core::plugin::IADevicePlugin {
   Q_OBJECT
@@ -107,7 +108,8 @@ class MockADPlugin : public QObject, public core::plugin::IADevicePlugin {
   static constexpr double kDefaultFrequency = 1.0;  // 默认正弦波频率 1Hz
 };
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest
 
-#endif  // ETEST_EXAMPLES_MOCK_AD_PLUGIN_H_
+#endif  // ETEST_PLUGINS_MOCK_AD_PLUGIN_H_

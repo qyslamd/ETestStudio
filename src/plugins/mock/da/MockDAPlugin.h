@@ -1,12 +1,13 @@
-#ifndef ETEST_EXAMPLES_MOCK_DA_PLUGIN_H_
-#define ETEST_EXAMPLES_MOCK_DA_PLUGIN_H_
+#ifndef ETEST_PLUGINS_MOCK_DA_PLUGIN_H_
+#define ETEST_PLUGINS_MOCK_DA_PLUGIN_H_
 
 #include <QObject>
 #include <QVector>
 #include "IDADevicePlugin.h"
 
 namespace etest {
-namespace examples {
+namespace plugins {
+namespace mock {
 
 class MockDAPlugin : public QObject, public core::plugin::IDADevicePlugin {
   Q_OBJECT
@@ -44,7 +45,8 @@ class MockDAPlugin : public QObject, public core::plugin::IDADevicePlugin {
   static constexpr int kResolution = 16;
 };
 
-}  // namespace examples
+}  // namespace mock
+}  // namespace plugins
 }  // namespace etest
 
-#endif  // ETEST_EXAMPLES_MOCK_DA_PLUGIN_H_
+#endif  // ETEST_PLUGINS_MOCK_DA_PLUGIN_H_

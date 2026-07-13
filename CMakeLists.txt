@@ -253,15 +253,19 @@ if (BUILD_TESTING)
 endif()
 
 # =======================================
+# 兼容性提示：BUILD_ETEST_EXAMPLES 不再控制 mock 插件
+# mock 插件已迁移到 src/plugins/mock/，由 BUILD_MOCK_PLUGINS 控制
+if(DEFINED BUILD_ETEST_EXAMPLES AND NOT DEFINED BUILD_MOCK_PLUGINS)
+    message(DEPRECATION
+        "BUILD_ETEST_EXAMPLES no longer controls mock plugins. "
+        "Use BUILD_MOCK_PLUGINS instead (default ON).")
+endif()
+
+# =======================================
 # 包含示例插件
 option(BUILD_ETEST_EXAMPLES "Build etest example plugins" ON)
 if (BUILD_ETEST_EXAMPLES)
     add_subdirectory(examples/plugins/hello_plugin)
-    add_subdirectory(examples/plugins/mock_ad_device)
-    add_subdirectory(examples/plugins/mock_da_device)
-    add_subdirectory(examples/plugins/mock_serial_device)
-    add_subdirectory(examples/plugins/mock_a429_device)
-    add_subdirectory(examples/plugins/mock_can_device)
     add_subdirectory(examples/eye-tracking-demo)
     add_subdirectory(examples/guidance-demo)
     add_subdirectory(examples/lua-debugger-demo)

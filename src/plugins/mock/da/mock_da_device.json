@@ -7,5 +7,6 @@
     "category": "device",
     "device_type": "da",
     "device_channels": 4,
+    "is_mock": true,
     "dependencies": []
 }
