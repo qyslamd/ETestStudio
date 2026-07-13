@@ -36,6 +36,37 @@
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
         },
         {
+            "name": "ETestStudio x64 Release",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ninja-release-x64/bin/ETestStudio.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/ninja-release-x64/bin",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "${env:ETest_Qt5_Path}\\msvc2019_64\\bin;${env:PATH}"
+                },
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "${env:ETest_Qt5_Path}\\msvc2019_64\\plugins"
+                },
+                // 强制调试进程用UTF-8
+                {
+                    "name": "LC_ALL",
+                    "value": "zh_CN.UTF-8"
+                },
+                {
+                    "name": "CHCP",
+                    "value": "65001"
+                }
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
+        },
+        {
             "name": "ETestStudio x86",
             "type": "cppvsdbg",
             "request": "launch",

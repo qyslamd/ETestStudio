@@ -16,6 +16,14 @@ class TestExecutionEngine;
 enum class EngineState;
 }  // namespace etest::engine
 
+namespace etest::core {
+class SignalRegistry;
+}  // namespace etest::core
+
+namespace icd {
+class Repository;
+}  // namespace icd
+
 namespace etest::app {
 
 class ExecutionDebugWidget : public QWidget {
@@ -24,6 +32,8 @@ class ExecutionDebugWidget : public QWidget {
  public:
   explicit ExecutionDebugWidget(QWidget* parent = nullptr);
   void bindEngine(etest::engine::TestExecutionEngine* engine);
+  void setDependencies(etest::core::SignalRegistry* signalRegistry,
+                       icd::Repository* icdRepo);
   void clear();
 
   /// 触发前提检查并刷新概览区
@@ -71,6 +81,10 @@ class ExecutionDebugWidget : public QWidget {
   };
   QVector<PreconditionState> precondition_states_;
   bool preconditions_checked_ = false;
+
+  // ── 外部依赖 ──
+  etest::core::SignalRegistry* signal_registry_ = nullptr;
+  icd::Repository* icd_repo_ = nullptr;
 
   // ── 执行数据 ──
   int count_pass_ = 0;

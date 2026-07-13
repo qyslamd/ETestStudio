@@ -2207,45 +2207,78 @@ void MainWindow::onVerifyClicked() {
   int errors = 0;
   int warnings = 0;
 
-  if (!icd_repository_ || icd_repository_->frames().empty()) {
+  // 1. 项目已打开
+  auto& projMgr = ProjectManager::instance();
+  bool projectOpen = projMgr.isProjectOpen();
+  if (!projectOpen) {
+    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+                         QStringLiteral("未打开项目"));
+    errors++;
+  }
+
+  // 2. ICD 协议已定义
+  bool icdLoaded = icd_repository_ && !icd_repository_->frames().empty();
+  if (!icdLoaded) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
                          QStringLiteral("ICD 协议未加载"));
     errors++;
   }
 
-  if (!signal_registry_ || signal_registry_->registeredDeviceIds().isEmpty()) {
+  // 3. 拓扑已配置
+  bool topoExists = false;
+  if (projectOpen) {
+    QString topoDir = projMgr.currentProjectRoot() + QStringLiteral("/topology");
+    QDir topoDirObj(topoDir);
+    topoExists = topoDirObj.exists()
+                 && !topoDirObj.entryList({QStringLiteral("*.etopo")},
+                                           QDir::Files).isEmpty();
+  }
+  if (!topoExists) {
+    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+                         QStringLiteral("未找到拓扑文件"));
+    errors++;
+  }
+
+  // 4. 拓扑已绑定信号
+  bool signalBound = signal_registry_
+                     && !signal_registry_->registeredDeviceIds().isEmpty();
+  if (!signalBound) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
-                         QStringLiteral("未注册任何拓扑设备"));
+                         QStringLiteral("拓扑未绑定信号"));
     warnings++;
   }
 
+  // 5. 测试程序可用：优先编辑器，退回到选中项
+  bool hasProgram = false;
   auto* editor = editor_manager_->currentEditor();
-  if (!editor) {
+  auto* progEditor = editor
+      ? qobject_cast<TestProgramEditorWidget*>(editor->widget()) : nullptr;
+  if (progEditor) {
+    hasProgram = !progEditor->programData().cases.isEmpty();
+  } else if (test_program_mgr_) {
+    auto data = test_program_mgr_->loadSelectedProgramData();
+    hasProgram = !data.cases.isEmpty();
+  }
+  if (!hasProgram) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
-                         QStringLiteral("未打开任何编辑器"));
+                         QStringLiteral("未选择有效的测试程序"));
     errors++;
-  } else {
-    TestProgramEditorWidget* progEditor =
-        qobject_cast<TestProgramEditorWidget*>(editor->widget());
-    if (!progEditor) {
-      problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
-                           QStringLiteral("当前编辑器不是测试程序文件"));
-      errors++;
-    } else {
-      etest::app::TestProgramData data = progEditor->programData();
-      if (data.cases.isEmpty()) {
-        problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
-                             QStringLiteral("测试程序中没有测试用例"));
-        warnings++;
-      }
-    }
+  }
+
+  // 6. 硬件/Mock 状态
+  // TODO: 接入硬件管理器设备状态查询
+  if (!topoExists && !signalBound) {
+    problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
+                         QStringLiteral("硬件/Mock 未配置"));
+    warnings++;
   }
 
   problems->showSummary(errors, warnings);
 
-  // 刷新 ExecutionDebugWidget 概览区的前提状态
+  // 同步 ExecutionDebugWidget 依赖并刷新概览区
   if (execution_debug_widget_) {
-    execution_debug_widget_->refreshPreconditions();
+    execution_debug_widget_->setDependencies(signal_registry_,
+                                              icd_repository_.get());
   }
 }
 

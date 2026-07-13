@@ -1,6 +1,7 @@
 #include "ExecutionDebugWidget.h"
 
 #include <QDateTime>
+#include <QDir>
 #include <QFile>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -8,7 +9,10 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
+#include "core/SignalRegistry.h"
 #include "engine/TestExecutionEngine.h"
+#include "icd/repository.hpp"
+#include "project/ProjectManager.h"
 
 namespace etest::app {
 
@@ -87,6 +91,15 @@ void ExecutionDebugWidget::bindEngine(
   refreshPreconditions();
 }
 
+void ExecutionDebugWidget::setDependencies(
+    etest::core::SignalRegistry* signalRegistry,
+    icd::Repository* icdRepo) {
+  signal_registry_ = signalRegistry;
+  icd_repo_ = icdRepo;
+  // 设置依赖后立即触发一次前提检查
+  refreshPreconditions();
+}
+
 void ExecutionDebugWidget::clear() {
   tree_progress_->clear();
   count_pass_ = 0;
@@ -114,25 +127,85 @@ bool ExecutionDebugWidget::canRun() const {
 }
 
 void ExecutionDebugWidget::checkPreconditions() {
-  // TODO: 实现 6 项前提检查
-  // 1. 项目已打开
-  // 2. ICD 协议已定义
-  // 3. 拓扑已定义
-  // 4. 拓扑已绑定信号
-  // 5. 测试程序可用
-  // 6. 硬件/Mock 已配置
-  //
-  // 当前为骨架实现，后续补全具体检查逻辑
-  preconditions_checked_ = true;
+  using etest::core::project::ProjectManager;
   precondition_states_.resize(6);
-  // Placeholder: 全部标记为未检查
-  for (auto& ps : precondition_states_) {
-    ps.met = false;
-    ps.isError = false;
-    ps.label = QStringLiteral("待检查");
+
+  // 1. 项目已打开
+  bool projectOpen = ProjectManager::instance().isProjectOpen();
+  precondition_states_[0] = {projectOpen, !projectOpen,
+      projectOpen ? QStringLiteral("项目已打开")
+                   : QStringLiteral("项目未打开")};
+
+  // 2. ICD 协议已定义
+  bool icdLoaded = (icd_repo_ != nullptr) && !icd_repo_->frames().empty();
+  precondition_states_[1] = {icdLoaded, !icdLoaded,
+      icdLoaded ? QStringLiteral("ICD 已加载")
+                : QStringLiteral("ICD 未加载")};
+
+  // 3. 拓扑已定义
+  bool topoExists = false;
+  if (projectOpen) {
+    QString topoDir = ProjectManager::instance().currentProjectRoot()
+                      + QStringLiteral("/topology");
+    QDir topoDirObj(topoDir);
+    topoExists = topoDirObj.exists()
+                 && !topoDirObj.entryList({QStringLiteral("*.etopo")},
+                                           QDir::Files).isEmpty();
   }
-  label_overview_summary_->setText(
-      QStringLiteral("运行前提: 待验证"));
+  precondition_states_[2] = {topoExists, !topoExists,
+      topoExists ? QStringLiteral("拓扑已配置")
+                 : QStringLiteral("缺少拓扑文件")};
+
+  // 4. 拓扑已绑定信号
+  bool signalBound = (signal_registry_ != nullptr)
+                     && !signal_registry_->registeredDeviceIds().isEmpty();
+  precondition_states_[3] = {signalBound, !signalBound,
+      signalBound ? QStringLiteral("信号已绑定")
+                  : QStringLiteral("拓扑未绑定信号")};
+
+  // 5. 测试程序可用（通过 TestProgramManagerWidget 选中或编辑器打开）
+  // 运行时由 onRunClicked 做实际检查，这里仅确认项目 cases 目录非空
+  bool hasCases = false;
+  if (projectOpen) {
+    QString casesDir = ProjectManager::instance().currentProjectRoot()
+                       + QStringLiteral("/cases");
+    QDir casesDirObj(casesDir);
+    hasCases = casesDirObj.exists()
+               && !casesDirObj.entryList({QStringLiteral("*.etprog")},
+                                          QDir::Files).isEmpty();
+  }
+  precondition_states_[4] = {hasCases, !hasCases,
+      hasCases ? QStringLiteral("测试程序可用")
+               : QStringLiteral("未找到测试程序")};
+
+  // 6. 硬件/Mock 已配置
+  // 当前简化：只要有拓扑文件且信号已注册，认为配置就绪
+  // TODO: 后续接入硬件管理器读取设备在线状态
+  bool hwReady = topoExists && signalBound;
+  precondition_states_[5] = {hwReady, false,  // 警告但不阻断
+      hwReady ? QStringLiteral("硬件/Mock 已配置")
+              : QStringLiteral("硬件/Mock 未配置")};
+
+  preconditions_checked_ = true;
+
+  // 更新概览区摘要
+  int metCount = 0;
+  int errorCount = 0;
+  for (const auto& ps : precondition_states_) {
+    if (ps.met) ++metCount;
+    if (!ps.met && ps.isError) ++errorCount;
+  }
+  if (errorCount > 0) {
+    label_overview_summary_->setText(
+        QStringLiteral("🔴 运行前提: %1/6 满足 (%2 错误)")
+            .arg(metCount).arg(errorCount));
+  } else if (metCount < 6) {
+    label_overview_summary_->setText(
+        QStringLiteral("🟡 运行前提: %1/6 满足").arg(metCount));
+  } else {
+    label_overview_summary_->setText(
+        QStringLiteral("🟢 运行前提: 全部满足"));
+  }
 }
 
 // ── Slots ──
