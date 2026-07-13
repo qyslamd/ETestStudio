@@ -46,9 +46,14 @@ void VerticalTabListDelegate::paint(QPainter* painter,
     icon.paint(painter, iconRect, Qt::AlignCenter, QIcon::Normal);
   }
 
-  // 文字（elide）
+  // badge（步骤数）
+  int stepCount = index.data(StepCountRole).toInt();
+  QString badgeText = QStringLiteral("(%1)").arg(stepCount);
+  int badgeWidth = option.fontMetrics.horizontalAdvance(badgeText);
+
+  // 文字（elide，左缩留出 badge 空间）
   int textLeft = iconRect.right() + 6;
-  int textRight = itemRect.right() - 4;
+  int textRight = itemRect.right() - 4 - badgeWidth - 4;
   int textWidth = textRight - textLeft;
   if (textWidth > 0) {
     QString text = index.data(Qt::DisplayRole).toString();
@@ -57,6 +62,13 @@ void VerticalTabListDelegate::paint(QPainter* painter,
     QRect textRect(textLeft, itemRect.top(), textWidth, itemRect.height());
     painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, text);
   }
+
+  // 绘制 badge
+  int badgeLeft = itemRect.right() - 4 - badgeWidth;
+  QRect badgeRect(badgeLeft, itemRect.top(), badgeWidth, itemRect.height());
+  painter->setPen(
+      option.palette.color(QPalette::Disabled, QPalette::WindowText));
+  painter->drawText(badgeRect, Qt::AlignRight | Qt::AlignVCenter, badgeText);
 
   painter->restore();
 }

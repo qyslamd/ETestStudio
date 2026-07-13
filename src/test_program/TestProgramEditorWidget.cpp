@@ -664,6 +664,8 @@ void TestProgramEditorWidget::onAddStep() {
   saveSnapshot();
   setModified(true);
   updateActions();
+  // 刷新 vertical tab 步骤数
+  refreshCurrentTabStepCount();
 }
 
 void TestProgramEditorWidget::onRemoveStep() {
@@ -682,6 +684,8 @@ void TestProgramEditorWidget::onRemoveStep() {
   saveSnapshot();
   setModified(true);
   updateActions();
+  // 刷新 vertical tab 步骤数
+  refreshCurrentTabStepCount();
 }
 
 void TestProgramEditorWidget::onMoveUp() {
@@ -1226,6 +1230,9 @@ void TestProgramEditorWidget::rebuildVerticalTabs() {
     item->setText(tab_widget_->tabText(i));
     item->setEditable(false);
     item->setData(i, VerticalTabRole::TabIndexRole);
+    auto* table = qobject_cast<StepTableWidget*>(tab_widget_->widget(i));
+    item->setData(table ? table->rowCount() : 0,
+                  VerticalTabListDelegate::StepCountRole);
     vertical_tabs_model_->appendRow(item);
   }
   int cur = tab_widget_->currentIndex();
@@ -1233,6 +1240,18 @@ void TestProgramEditorWidget::rebuildVerticalTabs() {
     syncing_vertical_tabs_ = true;
     vertical_tabs_view_->setCurrentIndex(vertical_tabs_model_->index(cur, 0));
     syncing_vertical_tabs_ = false;
+  }
+}
+
+void TestProgramEditorWidget::refreshCurrentTabStepCount() {
+  if (!vertical_tabs_model_ || syncing_vertical_tabs_) {
+    return;
+  }
+  int idx = tab_widget_->currentIndex();
+  if (auto* item = vertical_tabs_model_->item(idx)) {
+    auto* table = qobject_cast<StepTableWidget*>(tab_widget_->widget(idx));
+    item->setData(table ? table->rowCount() : 0,
+                  VerticalTabListDelegate::StepCountRole);
   }
 }
 

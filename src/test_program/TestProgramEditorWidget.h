@@ -101,6 +101,7 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
 
   // 纵向标签栏（Edge 风格垂直标签）
   void rebuildVerticalTabs();
+  void refreshCurrentTabStepCount();
   void applyTabOrientation(bool vertical);
   void removeCaseAt(int index, bool confirm);
   void renameCase(int index);

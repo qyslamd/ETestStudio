@@ -10,7 +10,7 @@ enum VerticalTabRole {
   TabIndexRole = Qt::UserRole + 1,  // int: 对应 tab_widget_ 的索引
 };
 
-// 纵向标签列表 delegate：左 icon + 文字(elide)。
+// 纵向标签列表 delegate：左 icon + 文字(elide) + 右侧步骤数 badge。
 // 选中/悬停背景交由 style 绘制（主题一致）。
 class VerticalTabListDelegate : public QStyledItemDelegate {
   Q_OBJECT
@@ -22,6 +22,9 @@ class VerticalTabListDelegate : public QStyledItemDelegate {
              const QModelIndex& index) const override;
   QSize sizeHint(const QStyleOptionViewItem& option,
                  const QModelIndex& index) const override;
+
+  // int: 步骤数量，paint() 中绘制为 "(N)" badge
+  static constexpr int StepCountRole = Qt::UserRole + 2;
 };
 
 }  // namespace etest::app
