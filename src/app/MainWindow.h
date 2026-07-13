@@ -38,7 +38,6 @@ class HintBarWidget;
 class WelcomeWidget;
 class LoadingOverlay;
 class ExecutionMonitorPanel;
-class ExecutionControlBar;
 }  // namespace etest::app
 
 namespace etest::engine {
@@ -243,7 +242,9 @@ class MainWindow : public SARibbonMainWindow {
 
   // ── 引擎 ──
   etest::engine::TestExecutionEngine* engine_ = nullptr;
-  ExecutionControlBar* current_control_bar_ = nullptr;
+  QLabel* label_exec_stats_ = nullptr;
+  int pass_count_ = 0;
+  int fail_count_ = 0;
   QString current_program_name_;
 };
 

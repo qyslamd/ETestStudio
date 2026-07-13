@@ -44,7 +44,6 @@
 #include "ActivityBarWidget.h"
 #include "AppIconProvider.h"
 #include "EditorManager.h"
-#include "ExecutionControlBar.h"
 #include "ExecutionMonitorPanel.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
@@ -1258,6 +1257,9 @@ void MainWindow::createStatusBar() {
   status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
   statusBar()->addPermanentWidget(status_cursor_label_);
 
+  label_exec_stats_ = new QLabel(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"), this);
+  statusBar()->addPermanentWidget(label_exec_stats_);
+
   statusBar()->clearMessage();
 }
 
@@ -1922,36 +1924,46 @@ void MainWindow::createEngine() {
   }
   engine_ = new etest::engine::TestExecutionEngine(signal_registry_,
                                                    icd_repository_.get(), this);
-  // 连接发动机状态变更信号 → 三向同步（Ribbon + 控制栏）
+  // 连接发动机状态变更信号 → Ribbon 同步 + StatusBar
   connect(engine_, &etest::engine::TestExecutionEngine::engineStateChanged,
           this, [this](etest::engine::EngineState state) {
             syncControlStates();
-            if (current_control_bar_) {
-              // 映射 EngineState → ExecutionControlBar::State
-              switch (state) {
-                case etest::engine::EngineState::Idle:
-                  current_control_bar_->setState(
-                      etest::app::ExecutionControlBar::State::Idle);
-                  break;
-                case etest::engine::EngineState::Running:
-                  current_control_bar_->setState(
-                      etest::app::ExecutionControlBar::State::Running);
-                  break;
-                case etest::engine::EngineState::Paused:
-                  current_control_bar_->setState(
-                      etest::app::ExecutionControlBar::State::Paused);
-                  break;
-                case etest::engine::EngineState::Finished:
-                case etest::engine::EngineState::Error:
-                  current_control_bar_->setState(
-                      etest::app::ExecutionControlBar::State::Finished);
-                  break;
-              }
+            switch (state) {
+              case etest::engine::EngineState::Idle:
+                statusBar()->showMessage(QStringLiteral("就绪"));
+                break;
+              case etest::engine::EngineState::Running:
+                statusBar()->showMessage(QStringLiteral("运行中..."));
+                break;
+              case etest::engine::EngineState::Paused:
+                statusBar()->showMessage(QStringLiteral("已暂停"));
+                break;
+              case etest::engine::EngineState::Finished:
+                statusBar()->showMessage(
+                    QStringLiteral("执行完成 (✅%1 ❌%2)")
+                        .arg(pass_count_).arg(fail_count_));
+                break;
+              case etest::engine::EngineState::Error:
+                statusBar()->showMessage(QStringLiteral("执行出错"));
+                break;
             }
           });
 
   // 绑定到监视面板（bindEngine 内部连接所有需要的信号）
   execution_monitor_panel_->bindEngine(engine_);
+
+  // suiteFinished → 累计统计 + 更新 StatusBar
+  connect(engine_, &etest::engine::TestExecutionEngine::suiteFinished,
+          this, [this](const QString& /*name*/, int pass, int fail) {
+    pass_count_ += pass;
+    fail_count_ += fail;
+    if (label_exec_stats_) {
+      label_exec_stats_->setText(
+          QStringLiteral("✅ %1  ❌ %2  ⏱ %3s")
+              .arg(pass_count_).arg(fail_count_)
+              .arg(0));
+    }
+  });
 
   // 引擎执行完成后保存 .etlog 报告
   connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
@@ -1977,7 +1989,6 @@ void MainWindow::destroyEngine() {
   engine_->stop();
   engine_->deleteLater();
   engine_ = nullptr;
-  current_control_bar_ = nullptr;
 }
 
 void MainWindow::syncControlStates() {
@@ -2073,10 +2084,14 @@ void MainWindow::onRunClicked() {
   current_program_name_ = data.name;
   engine_->setProgram(convertProgram(data));
 
-  // 6. 记录当前控制栏
-  current_control_bar_ = progEditor->executionControlBar();
+  // 重置统计计数
+  pass_count_ = 0;
+  fail_count_ = 0;
+  if (label_exec_stats_) {
+    label_exec_stats_->setText(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"));
+  }
 
-  // 7. 启动
+  // 6. 启动
   engine_->start();
 
   // 8. 侧边栏切换到运行页面

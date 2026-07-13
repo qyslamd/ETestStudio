@@ -265,10 +265,6 @@ void TestProgramEditorWidget::initUi() {
   validation_label_->setVisible(false);
   main_layout->addWidget(validation_label_);
 
-  // ── 执行控制栏 ──
-  execution_control_bar_ = new ExecutionControlBar(content);
-  main_layout->addWidget(execution_control_bar_);
-
   setCentralWidget(content);
 
   // ── Info Dock：套件名称 + 描述 ──
