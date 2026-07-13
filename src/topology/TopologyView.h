@@ -18,6 +18,7 @@ class TopologyView : public QGraphicsView {
   void zoomIn();
   void zoomOut();
   void zoomReset();
+  void zoomFit();
 
  signals:
   void addUutRequested(QPointF scenePos);

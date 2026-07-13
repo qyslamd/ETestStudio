@@ -168,6 +168,15 @@ void TopologyView::zoomReset() {
   emit zoomChanged(current_zoom_);
 }
 
+void TopologyView::zoomFit() {
+  auto rect = scene()->itemsBoundingRect();
+  if (rect.isEmpty()) return;
+  rect.adjust(-40, -40, 40, 40);
+  fitInView(rect, Qt::KeepAspectRatio);
+  current_zoom_ = transform().m11();
+  emit zoomChanged(current_zoom_);
+}
+
 void TopologyView::wheelEvent(QWheelEvent* event) {
   if (!(event->modifiers() & Qt::ControlModifier)) {
     QGraphicsView::wheelEvent(event);

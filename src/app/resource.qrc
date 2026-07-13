@@ -78,6 +78,8 @@
         <file>resources/icons/svg/topo_zoom_out_light.svg</file>
         <file>resources/icons/svg/topo_zoom_reset_dark.svg</file>
         <file>resources/icons/svg/topo_zoom_reset_light.svg</file>
+        <file>resources/icons/svg/topo_zoom_fit_dark.svg</file>
+        <file>resources/icons/svg/topo_zoom_fit_light.svg</file>
         <file>resources/icons/svg/topo_export_dark.svg</file>
         <file>resources/icons/svg/topo_export_light.svg</file>
         <file>resources/icons/svg/topo_tap_dark.svg</file>

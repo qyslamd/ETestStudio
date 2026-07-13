@@ -393,6 +393,10 @@ void TopologyEditorWidget::initUi() {
   zoom_reset_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_reset")),
                                    QStringLiteral("重置"), this);
   toolbar->addAction(zoom_reset_action_);
+  zoom_fit_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_fit")),
+                                  QStringLiteral("适应窗口"), this);
+  zoom_fit_action_->setToolTip(QStringLiteral("缩放至所有拓扑元素可见"));
+  toolbar->addAction(zoom_fit_action_);
 
   // 缩放比例标签
   zoom_label_ = new QLabel(QStringLiteral("100%"), this);
@@ -489,6 +493,8 @@ void TopologyEditorWidget::initSignals() {
           [this]() { LOG_INFO("TOPOLOGY_UI", "缩小"); view_->zoomOut(); });
   connect(zoom_reset_action_, &QAction::triggered, this,
           [this]() { LOG_INFO("TOPOLOGY_UI", "重置缩放"); view_->zoomReset(); });
+  connect(zoom_fit_action_, &QAction::triggered, this,
+          [this]() { LOG_INFO("TOPOLOGY_UI", "适应窗口"); view_->zoomFit(); });
 
   connect(export_image_action_, &QAction::triggered, this,
           &TopologyEditorWidget::onExportImage);
@@ -709,6 +715,7 @@ void TopologyEditorWidget::reloadToolbarIcons() {
   zoom_in_action_->setIcon(icon(QStringLiteral("topo_zoom_in")));
   zoom_out_action_->setIcon(icon(QStringLiteral("topo_zoom_out")));
   zoom_reset_action_->setIcon(icon(QStringLiteral("topo_zoom_reset")));
+  zoom_fit_action_->setIcon(icon(QStringLiteral("topo_zoom_fit")));
 
   copy_action_->setIcon(icon(QStringLiteral("topo_copy")));
   paste_action_->setIcon(icon(QStringLiteral("topo_paste")));
