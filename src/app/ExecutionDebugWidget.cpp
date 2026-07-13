@@ -50,7 +50,6 @@ void ExecutionDebugWidget::initUi() {
   tree_progress_->setIndentation(16);
   tree_progress_->setRootIsDecorated(true);
   tree_progress_->setAnimated(true);
-  tree_progress_->setAlternatingRowColors(true);
   tree_progress_->setFrameShape(QFrame::NoFrame);
   tree_progress_->header()->setStretchLastSection(true);
 

@@ -2275,6 +2275,15 @@ void MainWindow::onVerifyClicked() {
 
   problems->showSummary(errors, warnings);
 
+  // 有问题时自动切换到问题面板
+  if (errors > 0 || warnings > 0) {
+    int idx = bottom_container_->indexOf(problems_panel_);
+    if (idx >= 0) {
+      bottom_container_->setCurrentPanel(idx);
+      bottom_container_->show();
+    }
+  }
+
   // 同步 ExecutionDebugWidget 依赖并刷新概览区
   if (execution_debug_widget_) {
     execution_debug_widget_->setDependencies(signal_registry_,
