@@ -1,5 +1,5 @@
-#ifndef ETEST_APP_OUTPUT_PANEL_H_
-#define ETEST_APP_OUTPUT_PANEL_H_
+#ifndef ETEST_APP_LOG_OUTPUT_PANEL_H_
+#define ETEST_APP_LOG_OUTPUT_PANEL_H_
 
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -9,11 +9,11 @@
 
 namespace etest::app {
 
-class OutputPanel : public QWidget {
+class LogOutputPanel : public QWidget {
   Q_OBJECT
 
  public:
-  explicit OutputPanel(QWidget* parent = nullptr);
+  explicit LogOutputPanel(QWidget* parent = nullptr);
 
   void appendLog(int level, const QString& text);
   void clearLog();
@@ -32,4 +32,4 @@ class OutputPanel : public QWidget {
 
 }  // namespace etest::app
 
-#endif  // ETEST_APP_OUTPUT_PANEL_H_
+#endif  // ETEST_APP_LOG_OUTPUT_PANEL_H_

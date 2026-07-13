@@ -1,4 +1,4 @@
-#include "OutputPanel.h"
+#include "LogOutputPanel.h"
 
 #include <spdlog/spdlog.h>
 #include <QScrollBar>
@@ -7,7 +7,7 @@
 
 namespace etest::app {
 
-OutputPanel::OutputPanel(QWidget* parent) : QWidget(parent) {
+LogOutputPanel::LogOutputPanel(QWidget* parent) : QWidget(parent) {
   initUi();
 
   // 拉取 Logger::init() 之后到本构造之间的历史日志。
@@ -16,19 +16,19 @@ OutputPanel::OutputPanel(QWidget* parent) : QWidget(parent) {
   // 在本构造之后进行，所以历史天然先于实时。
   if (auto* hist = etest::core::logger::Logger::qtHistoryBuffer()) {
     connect(hist, &etest::core::logger::LogHistoryBuffer::drained, this,
-            &OutputPanel::onHistoricalLogs);
+            &LogOutputPanel::onHistoricalLogs);
     hist->drain(this);
   }
 }
 
-void OutputPanel::onHistoricalLogs(
+void LogOutputPanel::onHistoricalLogs(
     const QList<etest::core::logger::LogEntry>& entries) {
   for (const auto& entry : entries) {
     appendLog(entry.level, entry.text);
   }
 }
 
-void OutputPanel::initUi() {
+void LogOutputPanel::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
 
@@ -39,7 +39,7 @@ void OutputPanel::initUi() {
   layout->addWidget(text_edit_);
 }
 
-void OutputPanel::appendLog(int level, const QString& text) {
+void LogOutputPanel::appendLog(int level, const QString& text) {
   QString color = levelColor(level);
   QString escaped = text.toHtmlEscaped();
   QString html =
@@ -61,11 +61,11 @@ void OutputPanel::appendLog(int level, const QString& text) {
   bar->setValue(bar->maximum());
 }
 
-void OutputPanel::clearLog() {
+void LogOutputPanel::clearLog() {
   text_edit_->clear();
 }
 
-QString OutputPanel::levelColor(int level) const {
+QString LogOutputPanel::levelColor(int level) const {
   switch (level) {
     case spdlog::level::debug:
       return QStringLiteral("#858585");
@@ -82,7 +82,7 @@ QString OutputPanel::levelColor(int level) const {
   }
 }
 
-QString OutputPanel::levelName(int level) const {
+QString LogOutputPanel::levelName(int level) const {
   switch (level) {
     case spdlog::level::debug:
       return QStringLiteral("DEBUG");

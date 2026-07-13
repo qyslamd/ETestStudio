@@ -81,7 +81,8 @@
 #include "widgets/BottomContainerWidget.h"
 #include "widgets/HintBarWidget.h"
 #include "widgets/LoadingOverlay.h"
-#include "widgets/OutputPanel.h"
+#include "widgets/ExecutionOutputPanel.h"
+#include "widgets/LogOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
 #include "widgets/TuxSaverOverlay.h"
 
@@ -103,7 +104,8 @@ MainWindow::MainWindow(QWidget* parent)
       h_splitter_(nullptr),
       v_splitter_(nullptr),
       editor_manager_(nullptr),
-      output_panel_(nullptr),
+      log_panel_(nullptr),
+      execution_output_panel_(nullptr),
       problems_panel_(nullptr),
       terminal_panel_(nullptr),
       signal_registry_(nullptr),
@@ -333,8 +335,16 @@ void MainWindow::initSignalsLate() {
   // 视图菜单：逐面板显隐
   connect(view_output_action_, &QAction::triggered, this,
           [this, updateContainerVisibility](bool checked) {
-            LOG_INFO("MAIN_UI", "切换「输出」面板 [visible={}]", checked);
-            int idx = bottom_container_->indexOf(output_panel_);
+            LOG_INFO("MAIN_UI", "切换「日志」面板 [visible={}]", checked);
+            int idx = bottom_container_->indexOf(log_panel_);
+            if (idx >= 0)
+              bottom_container_->setPanelVisible(idx, checked);
+            updateContainerVisibility();
+          });
+  connect(view_execution_output_action_, &QAction::triggered, this,
+          [this, updateContainerVisibility](bool checked) {
+            LOG_INFO("MAIN_UI", "切换「执行输出」面板 [visible={}]", checked);
+            int idx = bottom_container_->indexOf(execution_output_panel_);
             if (idx >= 0)
               bottom_container_->setPanelVisible(idx, checked);
             updateContainerVisibility();
@@ -925,19 +935,23 @@ void MainWindow::initSignalsLate() {
   // 日志输出到界面
   auto* qtSink = etest::core::logger::Logger::qtConsoleSink();
   if (qtSink) {
-    connect(qtSink, &QtConsoleSink::logMessage, output_panel_,
-            &OutputPanel::appendLog);
+    connect(qtSink, &QtConsoleSink::logMessage, log_panel_,
+            &LogOutputPanel::appendLog);
   }
 
   // Tab 关闭 → 同步 action 状态 + 更新容器显隐
   connect(bottom_container_, &BottomContainerWidget::panelVisibilityChanged,
           this, [this, updateContainerVisibility]() {
-            int outIdx = bottom_container_->indexOf(output_panel_);
+            int outIdx = bottom_container_->indexOf(log_panel_);
+            int execIdx = bottom_container_->indexOf(execution_output_panel_);
             int probIdx = bottom_container_->indexOf(problems_panel_);
             int termIdx = bottom_container_->indexOf(terminal_panel_);
             if (outIdx >= 0)
               view_output_action_->setChecked(
                   bottom_container_->isPanelVisible(outIdx));
+            if (execIdx >= 0)
+              view_execution_output_action_->setChecked(
+                  bottom_container_->isPanelVisible(execIdx));
             if (probIdx >= 0)
               view_problems_action_->setChecked(
                   bottom_container_->isPanelVisible(probIdx));
@@ -1046,10 +1060,13 @@ void MainWindow::lazyInit() {
 
   // 3. 创建底部面板（显隐/尺寸在 lazyInit 末尾由 restoreLazyState 恢复）
   step_timer.restart();
-  output_panel_ = new OutputPanel(this);
+  log_panel_ = new LogOutputPanel(this);
+  execution_output_panel_ = new ExecutionOutputPanel(this);
   problems_panel_ = new ProblemsPanel(this);
   terminal_panel_ = new TerminalPanel(this);
-  bottom_container_->addPanel(QStringLiteral("输出"), output_panel_,
+  bottom_container_->addPanel(QStringLiteral("日志"), log_panel_,
+                              QStringLiteral("tab_output"));
+  bottom_container_->addPanel(QStringLiteral("输出"), execution_output_panel_,
                               QStringLiteral("tab_output"));
   bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_,
                               QStringLiteral("tab_problems"));
@@ -1114,25 +1131,30 @@ void MainWindow::lazyInit() {
   {
     auto& cfg = ConfigManager::instance();
     bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
-    bool outVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_OUTPUT_VISIBLE, true);
+    bool outVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_LOG_VISIBLE, true);
     bool probVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_PROBLEMS_VISIBLE, true);
     bool termVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE, true);
 
-    int outIdx = bottom_container_->indexOf(output_panel_);
+    int outIdx = bottom_container_->indexOf(log_panel_);
+    int execIdx = bottom_container_->indexOf(execution_output_panel_);
     int probIdx = bottom_container_->indexOf(problems_panel_);
     int termIdx = bottom_container_->indexOf(terminal_panel_);
     if (outIdx >= 0)
       bottom_container_->setPanelVisible(outIdx, outVis);
+    if (execIdx >= 0)
+      bottom_container_->setPanelVisible(execIdx, true);
     if (probIdx >= 0)
       bottom_container_->setPanelVisible(probIdx, probVis);
     if (termIdx >= 0)
       bottom_container_->setPanelVisible(termIdx, termVis);
 
     view_output_action_->setChecked(outVis);
+    view_execution_output_action_->setChecked(true);
     view_problems_action_->setChecked(probVis);
     view_terminal_action_->setChecked(termVis);
 
-    bool anyVisible = outVis || probVis || termVis;
+    bool execVis = execIdx >= 0 && bottom_container_->isPanelVisible(execIdx);
+    bool anyVisible = outVis || probVis || termVis || execVis;
     if (anyVisible) {
       bottom_container_->show();
       auto vSizes = v_splitter_->sizes();
@@ -1965,6 +1987,20 @@ void MainWindow::createEngine() {
     }
   });
 
+  // 步骤结果 → 执行输出面板
+  connect(engine_, &etest::engine::TestExecutionEngine::stepFinished, this,
+          [this](int /*caseIndex*/, const QString& /*stepPath*/,
+                 const etest::engine::StepResult& result) {
+            execution_output_panel_->appendResult(result);
+          });
+
+  // 引擎级错误 → 执行输出面板
+  connect(engine_, &etest::engine::TestExecutionEngine::engineError, this,
+          [this](const QString& msg) {
+            execution_output_panel_->appendText(
+                QStringLiteral("[ERROR] %1").arg(msg));
+          });
+
   // 引擎执行完成后保存 .etlog 报告
   connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
           [this]() {
@@ -2455,12 +2491,19 @@ void MainWindow::setupRibbon() {
     });
     panel_panels->addLargeAction(act_welcome);
 
-    view_output_action_ = new QAction(QStringLiteral("输出"), this);
+    view_output_action_ = new QAction(QStringLiteral("日志"), this);
     view_output_action_->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("tab_output")));
     view_output_action_->setCheckable(true);
     view_output_action_->setChecked(true);
     panel_panels->addLargeAction(view_output_action_);
+
+    view_execution_output_action_ = new QAction(QStringLiteral("输出"), this);
+    view_execution_output_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("tab_output")));
+    view_execution_output_action_->setCheckable(true);
+    view_execution_output_action_->setChecked(true);
+    panel_panels->addLargeAction(view_execution_output_action_);
 
     view_problems_action_ = new QAction(QStringLiteral("问题"), this);
     view_problems_action_->setIcon(
@@ -2656,11 +2699,11 @@ void MainWindow::saveWindowState() {
   cfg.set(CONFIG_SIDEBAR_EXPANDED_WIDTH, sidebar_expanded_width_);
 
   // 底部面板状态（逐面板可见性 + 容器高度）
-  int outIdx = bottom_container_->indexOf(output_panel_);
+  int outIdx = bottom_container_->indexOf(log_panel_);
   int probIdx = bottom_container_->indexOf(problems_panel_);
   int termIdx = bottom_container_->indexOf(terminal_panel_);
   if (outIdx >= 0)
-    cfg.set(CONFIG_BOTTOM_PANEL_OUTPUT_VISIBLE,
+    cfg.set(CONFIG_BOTTOM_PANEL_LOG_VISIBLE,
             bottom_container_->isPanelVisible(outIdx));
   if (probIdx >= 0)
     cfg.set(CONFIG_BOTTOM_PANEL_PROBLEMS_VISIBLE,

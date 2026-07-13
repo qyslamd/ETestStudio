@@ -28,7 +28,8 @@ namespace etest::app {
 
 class ActivityBarWidget;
 class SidebarWidget;
-class OutputPanel;
+class ExecutionOutputPanel;
+class LogOutputPanel;
 class ProblemsPanel;
 class SettingsDialog;
 class TerminalPanel;
@@ -131,7 +132,8 @@ class MainWindow : public SARibbonMainWindow {
   ads::CDockWidget* central_dock_ = nullptr;
 
   // 底部面板
-  OutputPanel* output_panel_;
+  LogOutputPanel* log_panel_;
+  ExecutionOutputPanel* execution_output_panel_;
   ProblemsPanel* problems_panel_;
   TerminalPanel* terminal_panel_;
   BottomContainerWidget* bottom_container_ = nullptr;
@@ -155,6 +157,7 @@ class MainWindow : public SARibbonMainWindow {
   QMenu* recent_projects_menu_ = nullptr;
   QMenu* recent_files_menu_ = nullptr;
   QAction* view_output_action_ = nullptr;
+  QAction* view_execution_output_action_ = nullptr;
   QAction* view_problems_action_ = nullptr;
   QAction* view_terminal_action_ = nullptr;
   QAction* view_aux_sidebar_action_ = nullptr;

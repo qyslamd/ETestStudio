@@ -71,7 +71,7 @@ void Logger::init() {
   fileSink->set_level(spdlog::level::debug);
   fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [%t] [%n] [%s:%#] %v");
 
-  // 创建启动期历史日志缓冲（环形 5000 条）。OutputPanel 出现后回放。
+  // 创建启动期历史日志缓冲（环形 5000 条）。LogOutputPanel 出现后回放。
   // 必须先于 QtConsoleSink 创建，让 sink 在首条日志时就能 push 到 history。
   s_historyBuffer = new LogHistoryBuffer(5000);
 
