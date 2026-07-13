@@ -5,6 +5,8 @@
 #include <QTreeWidget>
 #include <QWidget>
 
+#include "test_program/TestProgramData.h"
+
 namespace etest::app {
 
 class TestProgramManagerWidget : public QWidget {
@@ -13,11 +15,18 @@ class TestProgramManagerWidget : public QWidget {
  public:
   explicit TestProgramManagerWidget(QWidget* parent = nullptr);
 
+  /// 返回当前选中项的完整路径，无选中返回空
+  QString selectedProgramPath() const;
+  /// 加载并返回当前选中程序的数据，无选中返回空数据
+  TestProgramData loadSelectedProgramData() const;
+
  public slots:
   void refreshList();
 
  signals:
   void openFileRequested(const QString& filePath);
+  /// 选中项变化时发出，filePath 为空表示取消选中
+  void programSelectionChanged(const QString& filePath);
 
  private:
   void initUi();

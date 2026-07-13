@@ -17,6 +17,7 @@ class ExecutionOutputPanel : public QWidget {
 
   void appendResult(const etest::engine::StepResult& result);
   void appendText(const QString& text);
+  void appendError(const QString& msg);
   void clearOutput();
 
  private:
@@ -24,6 +25,7 @@ class ExecutionOutputPanel : public QWidget {
   void trimToMaxLines();
   void scrollToBottom();
   QString statusIcon(etest::engine::StepStatus status) const;
+  QString statusColor(etest::engine::StepStatus status) const;
 
   QTextEdit* text_edit_;
   static constexpr int kMaxLines = 10000;

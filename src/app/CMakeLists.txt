@@ -35,8 +35,8 @@ add_executable(${TARGET_NAME} WIN32
     TopologyManagerWidget.cpp
     TestProgramManagerWidget.h
     TestProgramManagerWidget.cpp
-    ExecutionMonitorPanel.h
-    ExecutionMonitorPanel.cpp
+    ExecutionDebugWidget.h
+    ExecutionDebugWidget.cpp
     editors/TextEditorWidget.h
     editors/TextEditorWidget.cpp
     editors/ImageViewerWidget.h

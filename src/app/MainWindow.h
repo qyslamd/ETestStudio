@@ -38,7 +38,8 @@ class EditorManager;
 class HintBarWidget;
 class WelcomeWidget;
 class LoadingOverlay;
-class ExecutionMonitorPanel;
+class ExecutionDebugWidget;
+class TestProgramManagerWidget;
 }  // namespace etest::app
 
 namespace etest::engine {
@@ -115,7 +116,8 @@ class MainWindow : public SARibbonMainWindow {
   // 活动栏 + 侧边栏
   ActivityBarWidget* activity_bar_;
   SidebarWidget* sidebar_;
-  ExecutionMonitorPanel* execution_monitor_panel_ = nullptr;
+  TestProgramManagerWidget* test_program_mgr_ = nullptr;
+  ExecutionDebugWidget* execution_debug_widget_ = nullptr;
 
   // 水平/垂直分割器
   QSplitter* h_splitter_;  // 水平：Sidebar / 垂直区域 / AuxSidebar
@@ -213,7 +215,6 @@ class MainWindow : public SARibbonMainWindow {
   void onStopClicked();
   void onVerifyClicked();
   void onRunAllClicked();
-  void onRunCaseClicked();
   void onProgramSaved(const QString& path);
 
  private:
@@ -239,12 +240,12 @@ class MainWindow : public SARibbonMainWindow {
   QAction* act_stop_ = nullptr;
   QAction* act_verify_ = nullptr;
   QAction* act_run_all_ = nullptr;
-  QAction* act_run_case_ = nullptr;
   QLabel*  label_ribbon_stats_ = nullptr;
   QAction* demo_testexecutor_action_ = nullptr;
 
   // ── 引擎 ──
   etest::engine::TestExecutionEngine* engine_ = nullptr;
+  QLabel* label_engine_state_ = nullptr;
   QLabel* label_exec_stats_ = nullptr;
   int pass_count_ = 0;
   int fail_count_ = 0;

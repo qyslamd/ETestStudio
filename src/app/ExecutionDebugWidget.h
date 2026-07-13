@@ -1,31 +1,38 @@
-#ifndef ETEST_APP_EXECUTION_MONITOR_PANEL_H_
-#define ETEST_APP_EXECUTION_MONITOR_PANEL_H_
+#ifndef ETEST_APP_EXECUTION_DEBUG_WIDGET_H_
+#define ETEST_APP_EXECUTION_DEBUG_WIDGET_H_
 
 #include <QLabel>
-#include <QPlainTextEdit>
-#include <QTreeWidget>
 #include <QWidget>
 
 #include <QMap>
-#include <QSet>
 
 #include "engine/StepRunner.h"
+
+class QTreeWidget;
+class QTreeWidgetItem;
 
 namespace etest::engine {
 class TestExecutionEngine;
 enum class EngineState;
-enum class DeviceStatus;
 }  // namespace etest::engine
 
 namespace etest::app {
 
-class ExecutionMonitorPanel : public QWidget {
+class ExecutionDebugWidget : public QWidget {
   Q_OBJECT
 
  public:
-  explicit ExecutionMonitorPanel(QWidget* parent = nullptr);
+  explicit ExecutionDebugWidget(QWidget* parent = nullptr);
   void bindEngine(etest::engine::TestExecutionEngine* engine);
   void clear();
+
+  /// 触发前提检查并刷新概览区
+  void refreshPreconditions();
+  /// 返回是否有阻断性错误（false = 存在阻断性错误）
+  bool canRun() const;
+
+ signals:
+  void programSelected(const QString& filePath);
 
  private slots:
   void onSuiteStarted(const QString& name);
@@ -37,26 +44,35 @@ class ExecutionMonitorPanel : public QWidget {
                       const etest::engine::StepResult& result);
   void onProgressUpdated(int current, int total);
   void onEngineStateChanged(etest::engine::EngineState state);
-  void onDeviceStatusChanged(const QString& deviceId,
-                             etest::engine::DeviceStatus status);
 
  private:
   void initUi();
+  void initSignals();
   void updateStats();
+  void checkPreconditions();
   QString statusIcon(etest::engine::StepStatus status) const;
-  QString statusText(etest::engine::StepStatus status) const;
   QString statusHtmlColor(etest::engine::StepStatus status) const;
   QTreeWidgetItem* findOrCreateStepItem(int caseIndex,
                                         const QString& stepPath);
 
-  QTreeWidget* tree_progress_ = nullptr;
-  QPlainTextEdit* text_log_ = nullptr;
-  QLabel* label_pass_ = nullptr;
-  QLabel* label_fail_ = nullptr;
-  QLabel* label_timeout_ = nullptr;
-  QLabel* label_status_ = nullptr;
-  QLabel* label_device_ = nullptr;
+  // ── 概览区 ──
+  QWidget* overview_container_ = nullptr;
+  QLabel* label_overview_summary_ = nullptr;   ///< "🟢 运行前提: 5/6 满足"
+  QWidget* overview_detail_widget_ = nullptr;   ///< 展开后的详细列表容器
 
+  // ── 进度树 ──
+  QTreeWidget* tree_progress_ = nullptr;
+
+  // ── 前提状态缓存 ──
+  struct PreconditionState {
+    bool met = false;
+    bool isError = false;  // true = 阻断性错误, false = 警告
+    QString label;
+  };
+  QVector<PreconditionState> precondition_states_;
+  bool preconditions_checked_ = false;
+
+  // ── 执行数据 ──
   int count_pass_ = 0;
   int count_fail_ = 0;
   int count_timeout_ = 0;
@@ -67,10 +83,8 @@ class ExecutionMonitorPanel : public QWidget {
   QMap<int, QString> case_names_;
   // Flat lookup: "caseIndex/stepPath" -> leaf tree item
   QMap<QString, QTreeWidgetItem*> step_items_;
-  // Online device IDs
-  QSet<QString> online_devices_;
 };
 
 }  // namespace etest::app
 
-#endif  // ETEST_APP_EXECUTION_MONITOR_PANEL_H_
+#endif  // ETEST_APP_EXECUTION_DEBUG_WIDGET_H_

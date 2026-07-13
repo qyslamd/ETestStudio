@@ -63,9 +63,33 @@ void TestProgramManagerWidget::initSignals() {
           &TestProgramManagerWidget::onItemDoubleClicked);
   connect(tree_, &QTreeWidget::customContextMenuRequested, this,
           &TestProgramManagerWidget::onCustomContextMenu);
+  connect(tree_, &QTreeWidget::currentItemChanged, this,
+          [this](QTreeWidgetItem* current, QTreeWidgetItem* /*previous*/) {
+            QString path;
+            if (current) {
+              path = current->data(0, Qt::UserRole).toString();
+            }
+            emit programSelectionChanged(path);
+          });
 
   connect(new_btn_, &QPushButton::clicked, this,
           &TestProgramManagerWidget::onNewTestProgram);
+}
+
+QString TestProgramManagerWidget::selectedProgramPath() const {
+  QTreeWidgetItem* item = tree_->currentItem();
+  if (!item) {
+    return {};
+  }
+  return item->data(0, Qt::UserRole).toString();
+}
+
+TestProgramData TestProgramManagerWidget::loadSelectedProgramData() const {
+  QString path = selectedProgramPath();
+  if (path.isEmpty()) {
+    return {};
+  }
+  return loadTestProgram(path);
 }
 
 void TestProgramManagerWidget::refreshList() {

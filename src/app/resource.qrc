@@ -7,7 +7,6 @@
         <file>resources/styles/default.qss</file>
         <file>resources/styles/vscode.qss</file>
         <file>resources/styles/ads_dark.qss</file>
-        <file>resources/styles/execution_monitor_panel.qss</file>
         <file>resources/icons/svg/close_light.svg</file>
         <file>resources/icons/svg/close_dark.svg</file>
         <file>resources/icons/svg/dock_close_light.svg</file>
@@ -182,6 +181,8 @@
         <file>resources/icons/svg/run_dark.svg</file>
         <file>resources/icons/svg/pause_light.svg</file>
         <file>resources/icons/svg/pause_dark.svg</file>
+        <file>resources/icons/svg/resume_light.svg</file>
+        <file>resources/icons/svg/resume_dark.svg</file>
         <file>resources/icons/svg/stop_light.svg</file>
         <file>resources/icons/svg/stop_dark.svg</file>
         <file>resources/icons/svg/verify_light.svg</file>

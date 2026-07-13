@@ -44,7 +44,7 @@
 #include "ActivityBarWidget.h"
 #include "AppIconProvider.h"
 #include "EditorManager.h"
-#include "ExecutionMonitorPanel.h"
+#include "ExecutionDebugWidget.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "ProjectStructureWidget.h"
@@ -55,6 +55,7 @@
 #include "TerminalPanel.h"
 #include "TestProgramEditorWidget.h"
 #include "TestProgramManagerWidget.h"
+#include "TestProgramData.h"
 #include "ThemeManager.h"
 #include "TopologyManagerWidget.h"
 #include "WelcomeWidget.h"
@@ -1032,12 +1033,12 @@ void MainWindow::lazyInit() {
                       QStringLiteral("硬件"));
     sidebar_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_),
                       QStringLiteral("协议"));
-    sidebar_->addPage(PageId::kTestProgram,
-                      new TestProgramManagerWidget(sidebar_),
+    test_program_mgr_ = new TestProgramManagerWidget(sidebar_);
+    sidebar_->addPage(PageId::kTestProgram, test_program_mgr_,
                       QStringLiteral("测试程序"));
-    auto* runPanel = new ExecutionMonitorPanel(sidebar_);
-    sidebar_->addPage(PageId::kRun, runPanel, QStringLiteral("运行"));
-    execution_monitor_panel_ = runPanel;
+    auto* runPanel = new ExecutionDebugWidget(sidebar_);
+    sidebar_->addPage(PageId::kRun, runPanel, QStringLiteral("执行调试"));
+    execution_debug_widget_ = runPanel;
     sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
                       QStringLiteral("报告"));
     sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
@@ -1278,6 +1279,9 @@ void MainWindow::createStatusBar() {
   status_cursor_label_ = new QLabel(this);
   status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
   statusBar()->addPermanentWidget(status_cursor_label_);
+
+  label_engine_state_ = new QLabel(QStringLiteral("空闲"), this);
+  statusBar()->addPermanentWidget(label_engine_state_);
 
   label_exec_stats_ = new QLabel(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"), this);
   statusBar()->addPermanentWidget(label_exec_stats_);
@@ -1950,29 +1954,38 @@ void MainWindow::createEngine() {
   connect(engine_, &etest::engine::TestExecutionEngine::engineStateChanged,
           this, [this](etest::engine::EngineState state) {
             syncControlStates();
+            QString stateText;
             switch (state) {
               case etest::engine::EngineState::Idle:
-                statusBar()->showMessage(QStringLiteral("就绪"));
+                stateText = QStringLiteral("就绪");
+                statusBar()->showMessage(stateText);
                 break;
               case etest::engine::EngineState::Running:
+                stateText = QStringLiteral("运行中");
                 statusBar()->showMessage(QStringLiteral("运行中..."));
                 break;
               case etest::engine::EngineState::Paused:
-                statusBar()->showMessage(QStringLiteral("已暂停"));
+                stateText = QStringLiteral("已暂停");
+                statusBar()->showMessage(stateText);
                 break;
               case etest::engine::EngineState::Finished:
+                stateText = QStringLiteral("已完成");
                 statusBar()->showMessage(
                     QStringLiteral("执行完成 (✅%1 ❌%2)")
                         .arg(pass_count_).arg(fail_count_));
                 break;
               case etest::engine::EngineState::Error:
+                stateText = QStringLiteral("错误");
                 statusBar()->showMessage(QStringLiteral("执行出错"));
                 break;
+            }
+            if (label_engine_state_) {
+              label_engine_state_->setText(stateText);
             }
           });
 
   // 绑定到监视面板（bindEngine 内部连接所有需要的信号）
-  execution_monitor_panel_->bindEngine(engine_);
+  execution_debug_widget_->bindEngine(engine_);
 
   // suiteFinished → 累计统计 + 更新 StatusBar
   connect(engine_, &etest::engine::TestExecutionEngine::suiteFinished,
@@ -1997,8 +2010,7 @@ void MainWindow::createEngine() {
   // 引擎级错误 → 执行输出面板
   connect(engine_, &etest::engine::TestExecutionEngine::engineError, this,
           [this](const QString& msg) {
-            execution_output_panel_->appendText(
-                QStringLiteral("[ERROR] %1").arg(msg));
+            execution_output_panel_->appendError(msg);
           });
 
   // 引擎执行完成后保存 .etlog 报告
@@ -2030,6 +2042,7 @@ void MainWindow::destroyEngine() {
 void MainWindow::syncControlStates() {
   if (!engine_) {
     act_run_->setEnabled(true);
+    act_run_all_->setEnabled(true);
     act_pause_->setEnabled(false);
     act_stop_->setEnabled(false);
     act_verify_->setEnabled(true);
@@ -2040,24 +2053,34 @@ void MainWindow::syncControlStates() {
     case etest::engine::EngineState::Idle:
     case etest::engine::EngineState::Finished:
       act_run_->setEnabled(true);
+      act_run_all_->setEnabled(true);
       act_pause_->setEnabled(false);
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(true);
       break;
     case etest::engine::EngineState::Running:
       act_run_->setEnabled(false);
+      act_run_all_->setEnabled(false);
       act_pause_->setEnabled(true);
+      act_pause_->setText(QStringLiteral("暂停"));
+      act_pause_->setIcon(
+          AppIconProvider::instance().icon(QStringLiteral("pause")));
       act_stop_->setEnabled(true);
       act_verify_->setEnabled(false);
       break;
     case etest::engine::EngineState::Paused:
       act_run_->setEnabled(false);
+      act_run_all_->setEnabled(false);
       act_pause_->setEnabled(true);
+      act_pause_->setText(QStringLiteral("继续"));
+      act_pause_->setIcon(
+          AppIconProvider::instance().icon(QStringLiteral("resume")));
       act_stop_->setEnabled(true);
       act_verify_->setEnabled(false);
       break;
     case etest::engine::EngineState::Error:
       act_run_->setEnabled(true);
+      act_run_all_->setEnabled(true);
       act_pause_->setEnabled(false);
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(true);
@@ -2068,39 +2091,62 @@ void MainWindow::syncControlStates() {
 // ── Ribbon 运行按钮 ──
 
 void MainWindow::onRunClicked() {
-  LOG_INFO("MAIN_UI", "点击「运行」 [program={}]",
-           current_program_name_.toStdString());
-  // 1. 查找当前测试程序编辑器
-  auto* editor = editor_manager_->currentEditor();
-  auto* progEditor = qobject_cast<TestProgramEditorWidget*>(
-      editor ? editor->widget() : nullptr);
-  if (!progEditor) {
-    QMessageBox::information(
-        this, QStringLiteral("运行"),
-        QStringLiteral("请先打开一个测试程序文件（.etprog）"));
+  LOG_INFO("MAIN_UI", "点击「运行」");
+
+  // 0. 前提检查
+  if (execution_debug_widget_ && !execution_debug_widget_->canRun()) {
+    QMessageBox::warning(this, QStringLiteral("运行"),
+                         QStringLiteral("运行前提不满足，请先执行验证"));
     return;
   }
 
-  // 2. 自动保存
-  if (editor->isModified()) {
-    editor->save();
+  // 1. 先切侧边栏到执行调试页面（视觉反馈优先）
+  sidebar_->switchPage(PageId::kRun);
+  if (!sidebar_->isContentVisible()) {
+    sidebar_->showContent();
+    auto sizes = h_splitter_->sizes();
+    if (!sizes.isEmpty()) {
+      sizes[0] = sidebar_expanded_width_;
+      h_splitter_->setSizes(sizes);
+    }
+  }
+  activity_bar_->setActivePageId(PageId::kRun);
+
+  // 2. 获取测试程序数据：优先从编辑器取，其次从 TestProgramManagerWidget 取
+  etest::app::TestProgramData data;
+  auto* editor = editor_manager_->currentEditor();
+  auto* progEditor = qobject_cast<TestProgramEditorWidget*>(
+      editor ? editor->widget() : nullptr);
+  if (progEditor) {
+    // 2a. 从编辑器取
+    if (editor->isModified()) {
+      editor->save();
+    }
+    data = progEditor->programData();
+  } else {
+    // 2b. 从 TestProgramManagerWidget 取选中项
+    data = test_program_mgr_->loadSelectedProgramData();
+    if (data.name.isEmpty()) {
+      QMessageBox::information(
+          this, QStringLiteral("运行"),
+          QStringLiteral("请先打开一个测试程序或从测试程序列表中选中一个"));
+      return;
+    }
   }
 
-  // 3. 验证程序非空
-  etest::app::TestProgramData data = progEditor->programData();
   if (data.cases.isEmpty()) {
     QMessageBox::warning(this, QStringLiteral("运行"),
                          QStringLiteral("测试程序中没有测试用例，无法运行"));
     return;
   }
 
-  // 4. 创建引擎（若需要）
+  // 3. 创建引擎（若需要）
   createEngine();
 
-  // 4b. 同步 registry 到引擎（引擎可能在 registry 就绪前创建）
+  // 3b. 同步 registry
   engine_->setRegistry(signal_registry_, icd_repository_.get());
 
-  // 4c. 加载拓扑设备到硬件管理器（使 writeFrame/read 能找到设备插件）
+  // 3c. 加载拓扑设备
   {
     auto& projMgr = ProjectManager::instance();
     if (projMgr.isProjectOpen()) {
@@ -2116,7 +2162,7 @@ void MainWindow::onRunClicked() {
     }
   }
 
-  // 5. 设置程序数据
+  // 4. 设置程序数据
   current_program_name_ = data.name;
   engine_->setProgram(convertProgram(data));
 
@@ -2127,20 +2173,8 @@ void MainWindow::onRunClicked() {
     label_exec_stats_->setText(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"));
   }
 
-  // 6. 启动
+  // 5. 启动
   engine_->start();
-
-  // 8. 侧边栏切换到运行页面
-  sidebar_->switchPage(PageId::kRun);
-  if (!sidebar_->isContentVisible()) {
-    sidebar_->showContent();
-    auto sizes = h_splitter_->sizes();
-    if (!sizes.isEmpty()) {
-      sizes[0] = sidebar_expanded_width_;
-      h_splitter_->setSizes(sizes);
-    }
-  }
-  activity_bar_->setActivePageId(PageId::kRun);
 }
 
 void MainWindow::onPauseClicked() {
@@ -2208,17 +2242,16 @@ void MainWindow::onVerifyClicked() {
   }
 
   problems->showSummary(errors, warnings);
+
+  // 刷新 ExecutionDebugWidget 概览区的前提状态
+  if (execution_debug_widget_) {
+    execution_debug_widget_->refreshPreconditions();
+  }
 }
 
 void MainWindow::onRunAllClicked() {
   LOG_INFO("MAIN_UI", "点击「运行全部」");
   // 运行全部：委托给 onRunClicked
-  onRunClicked();
-}
-
-void MainWindow::onRunCaseClicked() {
-  LOG_INFO("MAIN_UI", "点击「运行当前用例」");
-  // 运行当前用例（简化实现：先支持运行全部）
   onRunClicked();
 }
 
@@ -2564,17 +2597,11 @@ void MainWindow::setupRibbon() {
     act_run_all_ =
         new QAction(AppIconProvider::instance().icon(QStringLiteral("run_all")),
                     QStringLiteral("运行全部"), this);
-    act_run_case_ = new QAction(
-        AppIconProvider::instance().icon(QStringLiteral("run_case")),
-        QStringLiteral("运行用例"), this);
     panel_mode->addLargeAction(act_run_all_);
-    panel_mode->addLargeAction(act_run_case_);
 
     // 连接运行方式按钮
     connect(act_run_all_, &QAction::triggered, this,
             &MainWindow::onRunAllClicked);
-    connect(act_run_case_, &QAction::triggered, this,
-            &MainWindow::onRunCaseClicked);
 
     // 统计 Panel
     auto* panel_stats = cat->addPanel(QStringLiteral("统计"));
