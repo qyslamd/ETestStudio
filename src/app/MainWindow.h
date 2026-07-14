@@ -6,9 +6,7 @@
 #include "SARibbonMainWindow.h"
 #include "DockManager.h"
 
-#include <QElapsedTimer>
 
-#include "widgets/TuxSaverOverlay.h"
 
 namespace etest::core {
 class SignalRegistry;
@@ -41,6 +39,8 @@ class LoadingOverlay;
 class ExecutionDebugWidget;
 class TestProgramManagerWidget;
 class AppStatusBarController;
+class TuxSaverController;
+class EditorPanelController;
 }  // namespace etest::app
 
 namespace etest::engine {
@@ -190,10 +190,8 @@ class MainWindow : public SARibbonMainWindow {
   // 剪贴板
   QClipboard* clipboard_ = nullptr;
 
-  // Tux 屏保
-  TuxSaverOverlay* tux_overlay_ = nullptr;
-  QElapsedTimer tux_idle_timer_;
-  QTimer* tux_idle_check_timer_ = nullptr;
+  // Tux 屏保（委托给 TuxSaverController）
+  TuxSaverController* tux_controller_ = nullptr;
 
   // 懒加载覆盖层
   LoadingOverlay* loading_overlay_ = nullptr;

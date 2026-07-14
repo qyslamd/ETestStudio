@@ -23,6 +23,10 @@ add_executable(${TARGET_NAME} WIN32
     ActivityBarWidget.cpp
     AppStatusBarController.h
     AppStatusBarController.cpp
+    TuxSaverController.h
+    TuxSaverController.cpp
+    EditorPanelController.h
+    EditorPanelController.cpp
     SidebarWidget.h
     SidebarWidget.cpp
     ProjectStructureWidget.h

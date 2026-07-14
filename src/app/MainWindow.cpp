@@ -43,6 +43,8 @@
 #include <DockWidgetTab.h>
 #include "ActivityBarWidget.h"
 #include "AppStatusBarController.h"
+#include "EditorPanelController.h"
+#include "TuxSaverController.h"
 #include "AppIconProvider.h"
 #include "EditorManager.h"
 #include "ExecutionDebugWidget.h"
@@ -86,7 +88,6 @@
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/LogOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
-#include "widgets/TuxSaverOverlay.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -127,7 +128,9 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
     case QEvent::MouseButtonPress:
     case QEvent::KeyPress:
     case QEvent::Wheel:
-      tux_idle_timer_.restart();
+      if (tux_controller_) {
+        tux_controller_->onUserActivity();
+      }
       break;
     default:
       break;
@@ -1181,35 +1184,22 @@ void MainWindow::lazyInit() {
 
   LOG_INFO("LAZY", "[总计] 懒加载核心步骤: {} ms", total_timer.elapsed());
 
-  // 12. Tux 屏保（独立创建，不影响主流程）
+  // 12. Tux 屏保（委托给 TuxSaverController）
   step_timer.restart();
-  tux_overlay_ = new TuxSaverOverlay(this);
-  connect(tux_overlay_, &TuxSaverOverlay::closed, this,
-          [this]() { tux_idle_timer_.restart(); });
-  tux_idle_timer_.start();
-  tux_idle_check_timer_ = new QTimer(this);
-  connect(tux_idle_check_timer_, &QTimer::timeout, this, [this]() {
-    if (!tux_overlay_->isVisible() &&
-        ConfigManager::instance().get<bool>(CONFIG_TUXSAVER_ENABLED,
-                                            CONFIG_TUXSAVER_DEFAULT_ENABLED)) {
-      int timeoutMs =
-          ConfigManager::instance().get<int>(CONFIG_TUXSAVER_IDLE_TIMEOUT,
-                                             CONFIG_TUXSAVER_DEFAULT_TIMEOUT) *
-          1000;
-      if (tux_idle_timer_.elapsed() > timeoutMs)
-        tux_overlay_->activate();
-    }
-  });
-  tux_idle_check_timer_->start(1000);
-  qApp->installEventFilter(this);
+  tux_controller_ = new TuxSaverController(this, this);
+  tux_controller_->start();
+  LOG_INFO("LAZY", "  [12/12] Tux 屏保: {} ms", step_timer.elapsed());
+
+  LOG_INFO("LAZY", "[总计] 懒加载核心步骤: {} ms", total_timer.elapsed());
 
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
           [this](const QString& key) {
             if (key == QString::fromLatin1(CONFIG_TUXSAVER_ENABLED) &&
                 !ConfigManager::instance().get<bool>(
-                    CONFIG_TUXSAVER_ENABLED, CONFIG_TUXSAVER_DEFAULT_ENABLED) &&
-                tux_overlay_->isVisible()) {
-              tux_overlay_->deactivate();
+                    CONFIG_TUXSAVER_ENABLED, CONFIG_TUXSAVER_DEFAULT_ENABLED)) {
+              if (tux_controller_) {
+                tux_controller_->onUserActivity();
+              }
             }
           });
   LOG_INFO("LAZY", "  [12/12] Tux屏保: {} ms", step_timer.elapsed());
@@ -2279,8 +2269,8 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   }
 
   // 关闭屏保
-  if (tux_overlay_ && tux_overlay_->isVisible()) {
-    tux_overlay_->deactivate();
+  if (tux_controller_) {
+    tux_controller_->stop();
   }
 
   // 关闭项目
