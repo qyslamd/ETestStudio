@@ -24,9 +24,12 @@ class ProjectController : public QObject {
   void closeProject();
   void openRecent(const QString& path);
 
-  void updateWindowTitle(QWidget* window);
+  void updateWindowTitle();
   void updateRecentProjectsMenu(QMenu* menu);
   void updateRecentFilesMenu(QMenu* menu);
+
+  // 工具方法 — 向上遍历最多 8 级目录查找 .etproj 文件
+  static QString findProjectFile(const QString& dir_path);
 
  signals:
   void projectOpened(const QString& project_path);
@@ -34,12 +37,10 @@ class ProjectController : public QObject {
   void fileRequested(const QString& file_path);
 
  private:
-  static QString findProjectFile(const QString& dir_path);
   bool tryCloseCurrentProject();
 
   QWidget* parent_widget_;
   EditorManager* editor_mgr_;
-  QString current_project_path_;
 };
 
 }  // namespace etest::app

@@ -70,7 +70,6 @@ class ExecutionPanelController : public QObject {
 
   // 状态
   void syncControlStates();
-  bool canRun() const { return true; }
 
   // Ribbon 动作（供 MainWindow setupRibbon 获取）
   QAction* runAction() const { return act_run_; }

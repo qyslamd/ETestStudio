@@ -178,6 +178,8 @@ class MainWindow : public SARibbonMainWindow {
 
   // 子系统 Controller（委托）
   AppStatusBarController* status_bar_ctrl_ = nullptr;
+  EditorPanelController* editor_controller_ = nullptr;
+  ProjectController* project_controller_ = nullptr;
   ExecutionPanelController* execution_controller_ = nullptr;
 
   // 编辑菜单动作

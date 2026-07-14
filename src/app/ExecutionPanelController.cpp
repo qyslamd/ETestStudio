@@ -294,7 +294,7 @@ void ExecutionPanelController::run() {
   // 1. 切换侧边栏
   if (sidebar_) {
     sidebar_->switchPage(PageId::kRun);
-    if (!sidebar_->isContentVisible()) {
+    if (!sidebar_->isContentVisible() && h_splitter_) {
       sidebar_->showContent();
       auto sizes = h_splitter_->sizes();
       if (!sizes.isEmpty() && sidebar_width_ref_) {
@@ -335,12 +335,11 @@ void ExecutionPanelController::run() {
     return;
   }
 
-  // 3. 创建引擎 + 设置
+  // 3. 创建引擎（registry 和 repository 已在构造时传入）
   createEngine();
   if (!engine_) {
     return;
   }
-  engine_->setRegistry(signal_registry_, icd_repository_.get());
 
   // 加载拓扑设备
   {

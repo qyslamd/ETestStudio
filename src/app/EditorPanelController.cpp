@@ -1,6 +1,5 @@
 #include "EditorPanelController.h"
 
-#include <QClipboard>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
@@ -15,12 +14,10 @@
 namespace etest::app {
 
 EditorPanelController::EditorPanelController(EditorManager* editor_mgr,
-                                             QClipboard* clipboard,
                                              AppStatusBarController* status_bar_ctrl,
                                              QObject* parent)
     : QObject(parent),
       editor_mgr_(editor_mgr),
-      clipboard_(clipboard),
       status_bar_ctrl_(status_bar_ctrl) {}
 
 void EditorPanelController::saveCurrent() {

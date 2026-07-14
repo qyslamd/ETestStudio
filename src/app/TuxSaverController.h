@@ -26,14 +26,10 @@ class TuxSaverController : public QObject {
   void saverDeactivated();
 
  private:
-  void showSaver();
-  void hideSaver();
-
   QWidget* parent_widget_;
   TuxSaverOverlay* overlay_ = nullptr;
   QElapsedTimer idle_timer_;
   QTimer* check_timer_ = nullptr;
-  int idle_timeout_ms_ = 60000;
 };
 
 }  // namespace etest::app

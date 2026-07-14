@@ -1,5 +1,8 @@
 #include "AppStatusBarController.h"
 
+#include <QLabel>
+#include <QStatusBar>
+
 namespace etest::app {
 
 AppStatusBarController::AppStatusBarController(QObject* parent)
@@ -11,6 +14,7 @@ void AppStatusBarController::setup(QStatusBar* status_bar) {
     return;
   }
 
+  // 左侧区域（addWidget 从左到右排列）
   label_message_ = new QLabel;
   label_message_->setText(QStringLiteral("就绪"));
   status_bar_->addWidget(label_message_);
@@ -23,7 +27,7 @@ void AppStatusBarController::setup(QStatusBar* status_bar) {
   label_errors_->setText(QStringLiteral("0 错误, 0 警告"));
   status_bar_->addWidget(label_errors_);
 
-  // 右侧区域
+  // 右侧区域（addPermanentWidget 添加到右侧，顺序从左到右）
   label_language_ = new QLabel;
   label_language_->setText(QStringLiteral("纯文本"));
   status_bar_->addPermanentWidget(label_language_);

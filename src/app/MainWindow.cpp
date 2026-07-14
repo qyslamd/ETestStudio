@@ -1084,6 +1084,22 @@ void MainWindow::lazyInit() {
   // 4. 创建 EditorManager
   step_timer.restart();
   editor_manager_ = new EditorManager(dock_manager_, this);
+
+  // 创建 ProjectController 和 EditorPanelController（依赖 editor_manager_）
+  project_controller_ = new ProjectController(this, editor_manager_, this);
+  editor_controller_ = new EditorPanelController(
+      editor_manager_, status_bar_ctrl_, this);
+
+  // 连接 project_controller_ 信号 → MainWindow 槽
+  connect(project_controller_, &ProjectController::fileRequested, this,
+          [this](const QString& path) {
+    // 与 MainWindow::onOpenFile 处理逻辑一致
+    auto& cfg = ConfigManager::instance();
+    cfg.set(CONFIG_RECENT_LAST_OPEN_PATH,
+            QFileInfo(path).absolutePath());
+    editor_manager_->openFile(path);
+  });
+
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
@@ -1191,9 +1207,8 @@ void MainWindow::lazyInit() {
   step_timer.restart();
   tux_controller_ = new TuxSaverController(this, this);
   tux_controller_->start();
+  qApp->installEventFilter(this);  // 全局事件捕获，用于重置屏保空闲计时器
   LOG_INFO("LAZY", "  [12/12] Tux 屏保: {} ms", step_timer.elapsed());
-
-  LOG_INFO("LAZY", "[总计] 懒加载核心步骤: {} ms", total_timer.elapsed());
 
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
           [this](const QString& key) {
@@ -1205,7 +1220,6 @@ void MainWindow::lazyInit() {
               }
             }
           });
-  LOG_INFO("LAZY", "  [12/12] Tux屏保: {} ms", step_timer.elapsed());
 
   LOG_INFO("LAZY", "[最终] 懒加载全部完成, 总计: {} ms", total_timer.elapsed());
 }
@@ -1244,98 +1258,19 @@ void MainWindow::createStatusBar() {
 }
 
 void MainWindow::onNewProject() {
-  LOG_INFO("MAIN_UI", "点击「新建项目」");
-  // 先尝试关闭当前项目
-  if (!tryCloseCurrentProject()) {
-    return;  // 用户取消，不继续创建
-  }
-
-  etest::app::NewProjectDialog dlg(this);
-  if (dlg.exec() == QDialog::Accepted) {
-    auto& projectMgr = etest::core::project::ProjectManager::instance();
-    if (!projectMgr.createProject(dlg.projectName(), dlg.projectLocation())) {
-      QMessageBox::warning(this, QStringLiteral("新建项目失败"),
-                           QStringLiteral("无法创建项目，请检查名称和路径。"));
-    }
-  }
+  project_controller_->newProject();
 }
 
 void MainWindow::onOpenProject() {
-  LOG_INFO("MAIN_UI", "点击「打开项目」");
-  // 先尝试关闭当前项目
-  if (!tryCloseCurrentProject()) {
-    return;  // 用户取消，不继续打开
-  }
-
-  auto& cfg = ConfigManager::instance();
-  QString lastPath = cfg.get<QString>(CONFIG_RECENT_LAST_OPEN_PATH);
-  if (lastPath.isEmpty()) {
-    lastPath = QDir::homePath();
-  }
-
-  QString filePath =
-      QFileDialog::getOpenFileName(this, QStringLiteral("打开项目"), lastPath,
-                                   QStringLiteral("ETest项目文件 (*.etproj)"));
-
-  if (!filePath.isEmpty()) {
-    auto& projectMgr = etest::core::project::ProjectManager::instance();
-    if (!projectMgr.openProject(filePath)) {
-      QMessageBox::warning(
-          this, QStringLiteral("打开项目失败"),
-          QStringLiteral("无法打开项目文件：%1").arg(filePath));
-    } else {
-      sidebar_->switchPage(PageId::kProjectOverview);
-      if (!sidebar_->isContentVisible()) {
-        sidebar_->showContent();
-        auto sizes = h_splitter_->sizes();
-        if (!sizes.isEmpty()) {
-          sizes[0] = sidebar_expanded_width_;
-          h_splitter_->setSizes(sizes);
-        }
-      }
-      activity_bar_->setActivePageId(PageId::kProjectOverview);
-    }
-  }
+  project_controller_->openProject();
 }
 
 void MainWindow::onOpenFile() {
-  LOG_INFO("MAIN_UI", "点击「打开文件」");
-  QStringList exts = EditorFactoryRegistry::registeredExtensions();
-  exts.sort();
-  QStringList patterns;
-  for (const auto& e : exts) {
-    patterns << (QStringLiteral("*.") + e);
-  }
-  QString filter =
-      QStringLiteral("所有支持的文件 (%1)").arg(patterns.join(QChar::Space));
-
-  auto& cfg = ConfigManager::instance();
-  QString lastPath = cfg.get<QString>(CONFIG_RECENT_LAST_OPEN_PATH);
-  if (lastPath.isEmpty()) {
-    lastPath = QDir::homePath();
-  }
-
-  QString filePath = QFileDialog::getOpenFileName(
-      this, QStringLiteral("打开文件"), lastPath, filter);
-  if (filePath.isEmpty())
-    return;
-
-  cfg.set(CONFIG_RECENT_LAST_OPEN_PATH, QFileInfo(filePath).absolutePath());
-  editor_manager_->openFile(filePath);
+  project_controller_->openFile();
 }
 
 QString MainWindow::findProjectFile(const QString& dirPath) {
-  QDir dir(dirPath);
-  for (int i = 0; i < 8 && !dir.isRoot(); ++i) {
-    QStringList entries = dir.entryList(QStringList{QStringLiteral("*.etproj")},
-                                        QDir::Files | QDir::NoDotAndDotDot);
-    if (!entries.isEmpty()) {
-      return dir.absoluteFilePath(entries.first());
-    }
-    if (!dir.cdUp())
-      break;
-  }
-  return {};
+  return ProjectController::findProjectFile(dirPath);
 }
 
 void MainWindow::openRecentProject(const QString& path) {
@@ -1419,8 +1354,7 @@ bool MainWindow::tryCloseCurrentProject() {
 }
 
 void MainWindow::onCloseProject() {
-  LOG_INFO("MAIN_UI", "点击「关闭项目」");
-  tryCloseCurrentProject();
+  project_controller_->closeProject();
 }
 
 void MainWindow::onProjectOpened(const QString& projectPath) {
@@ -1650,199 +1584,55 @@ void MainWindow::updateRecentFilesMenu() {
 }
 
 void MainWindow::onSaveFile() {
-  LOG_INFO("MAIN_UI", "点击「保存」");
-  auto* editor = editor_manager_->currentEditor();
-  if (!editor)
-    return;
-  if (!editor->save()) {
-    QMessageBox::warning(
-        this, QStringLiteral("保存失败"),
-        QStringLiteral("无法保存文件：%1").arg(editor->filePath()));
-  }
+  editor_controller_->saveCurrent();
 }
 
 void MainWindow::onSaveFileAs() {
-  LOG_INFO("MAIN_UI", "点击「另存为」");
-  auto* editor = editor_manager_->currentEditor();
-  if (!editor)
-    return;
-
-  QString newPath = QFileDialog::getSaveFileName(
-      this, QStringLiteral("另存为"), editor->filePath(),
-      QStringLiteral("所有文件 (*)"));
-  if (!newPath.isEmpty()) {
-    if (!editor->saveAs(newPath)) {
-      QMessageBox::warning(this, QStringLiteral("保存失败"),
-                           QStringLiteral("无法保存文件：%1").arg(newPath));
-    } else {
-      editor_manager_->updateEditorId(editor, newPath);
-    }
-  }
+  editor_controller_->saveCurrentAs();
 }
 
 void MainWindow::onSaveAllFiles() {
-  LOG_INFO("MAIN_UI", "点击「保存所有」");
-  editor_manager_->saveAllFiles();
+  editor_controller_->saveAll();
 }
 
 void MainWindow::onCloseCurrentFile() {
-  LOG_INFO("MAIN_UI", "点击「关闭文件」");
-  auto* editor = editor_manager_->currentEditor();
-  if (!editor)
-    return;
-  editor_manager_->closeFile(editor->editorId());
+  editor_controller_->closeCurrent();
 }
 
 void MainWindow::onCloseAllFiles() {
-  LOG_INFO("MAIN_UI", "点击「关闭所有文件」");
-  editor_manager_->closeAllFiles();
+  editor_controller_->closeAll();
 }
 
 void MainWindow::onUndo() {
-  LOG_INFO("MAIN_UI", "点击「撤销」");
-  if (auto* editor = editor_manager_->currentEditor()) {
-    editor->undo();
-  }
+  editor_controller_->undo();
 }
 
 void MainWindow::onRedo() {
-  LOG_INFO("MAIN_UI", "点击「重做」");
-  if (auto* editor = editor_manager_->currentEditor()) {
-    editor->redo();
-  }
+  editor_controller_->redo();
 }
 
 void MainWindow::onCut() {
-  LOG_INFO("MAIN_UI", "点击「剪切」");
-  if (auto* editor = editor_manager_->currentEditor()) {
-    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-      textEditor->editor()->cut();
-    }
-  }
+  editor_controller_->cut();
 }
 
 void MainWindow::onCopy() {
-  LOG_INFO("MAIN_UI", "点击「复制」");
-  if (auto* editor = editor_manager_->currentEditor()) {
-    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-      textEditor->editor()->copy();
-    }
-  }
+  editor_controller_->copy();
 }
 
 void MainWindow::onPaste() {
-  LOG_INFO("MAIN_UI", "点击「粘贴」");
-  if (auto* editor = editor_manager_->currentEditor()) {
-    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-      textEditor->editor()->paste();
-    }
-  }
+  editor_controller_->paste();
 }
 
 void MainWindow::onFind() {
-  LOG_INFO("MAIN_UI", "点击「查找」");
-  auto* editor = editor_manager_->currentEditor();
-  auto* textEditor = dynamic_cast<TextEditorWidget*>(editor);
-  if (!textEditor)
-    return;
-
-  bool ok;
-  QString searchText = QInputDialog::getText(this, QStringLiteral("查找"),
-                                             QStringLiteral("查找内容:"),
-                                             QLineEdit::Normal, QString(), &ok);
-  if (ok && !searchText.isEmpty()) {
-    int line, column;
-    textEditor->editor()->getCursorPosition(&line, &column);
-
-    bool found = textEditor->editor()->findFirst(
-        searchText, false, false, false, true, true, line, column, true);
-    if (!found) {
-      QMessageBox::information(this, QStringLiteral("查找"),
-                               QStringLiteral("找不到指定内容"));
-    }
-  }
+  editor_controller_->find();
 }
 
 void MainWindow::onReplace() {
-  auto* editor = editor_manager_->currentEditor();
-  auto* textEditor = dynamic_cast<TextEditorWidget*>(editor);
-  if (!textEditor)
-    return;
-
-  bool ok;
-  QString searchText = QInputDialog::getText(this, QStringLiteral("替换"),
-                                             QStringLiteral("查找内容:"),
-                                             QLineEdit::Normal, QString(), &ok);
-  if (!ok || searchText.isEmpty())
-    return;
-
-  QString replaceText = QInputDialog::getText(
-      this, QStringLiteral("替换"), QStringLiteral("替换为:"),
-      QLineEdit::Normal, QString(), &ok);
-  if (!ok)
-    return;
-
-  int line, column;
-  textEditor->editor()->getCursorPosition(&line, &column);
-
-  bool found = textEditor->editor()->findFirst(searchText, false, false, false,
-                                               true, true, line, column, true);
-  if (found) {
-    int ret = QMessageBox::Yes;
-    while (textEditor->editor()->findNext()) {
-      QMessageBox msgBox(this);
-      msgBox.setText(QStringLiteral("替换"));
-      msgBox.setInformativeText(QStringLiteral("替换当前匹配项吗？"));
-      auto* yesAllBtn =
-          msgBox.addButton(QStringLiteral("全部替换"), QMessageBox::YesRole);
-      msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No |
-                                QMessageBox::Cancel);
-      msgBox.setDefaultButton(QMessageBox::Yes);
-
-      ret = msgBox.exec();
-      if (ret == QMessageBox::Cancel) {
-        break;
-      }
-      if (ret == QMessageBox::Yes || msgBox.clickedButton() == yesAllBtn) {
-        textEditor->editor()->replace(replaceText);
-      }
-      if (msgBox.clickedButton() == yesAllBtn) {
-        while (textEditor->editor()->findNext()) {
-          textEditor->editor()->replaceSelectedText(replaceText);
-        }
-        break;
-      }
-    }
-
-    QMessageBox::information(this, QStringLiteral("替换"),
-                             QStringLiteral("替换完成"));
-  } else {
-    QMessageBox::information(this, QStringLiteral("替换"),
-                             QStringLiteral("找不到指定内容"));
-  }
+  editor_controller_->replace();
 }
 
 void MainWindow::onGoToLine() {
-  LOG_INFO("MAIN_UI", "点击「转到行」");
-  auto* editor = editor_manager_->currentEditor();
-  auto* textEditor = dynamic_cast<TextEditorWidget*>(editor);
-  if (!textEditor)
-    return;
-
-  int lineCount = textEditor->editor()->lines();
-  bool ok;
-
-  int currentLine, currentColumn;
-  textEditor->editor()->getCursorPosition(&currentLine, &currentColumn);
-
-  int lineNumber =
-      QInputDialog::getInt(this, QStringLiteral("跳转到行"),
-                           QStringLiteral("行号 (1-%1):").arg(lineCount),
-                           currentLine + 1, 1, lineCount, 1, &ok);
-  if (ok) {
-    textEditor->editor()->setCursorPosition(lineNumber - 1, 0);
-    textEditor->editor()->ensureLineVisible(lineNumber - 1);
-  }
+  editor_controller_->goToLine();
 }
 
 // ── 转换工具：etest::app::TestProgramData → etest::engine::ProgramData ──

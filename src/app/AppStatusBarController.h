@@ -1,9 +1,10 @@
 #ifndef ETEST_APP_APPSTATUSBARCONTROLLER_H_
 #define ETEST_APP_APPSTATUSBARCONTROLLER_H_
 
-#include <QLabel>
 #include <QObject>
-#include <QStatusBar>
+
+class QLabel;
+class QStatusBar;
 
 namespace etest::app {
 

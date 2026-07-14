@@ -41,6 +41,9 @@ void ProjectController::newProject() {
       QMessageBox::warning(
           parent_widget_, QStringLiteral("新建项目失败"),
           QStringLiteral("无法创建项目，请检查名称和路径。"));
+    } else {
+      // createProject 会打开项目，通知监听方更新状态
+      emit projectOpened(project_mgr.currentProjectRoot());
     }
   }
 }
@@ -122,16 +125,16 @@ void ProjectController::openRecent(const QString& path) {
   }
 }
 
-void ProjectController::updateWindowTitle(QWidget* window) {
-  if (!window)
+void ProjectController::updateWindowTitle() {
+  if (!parent_widget_)
     return;
   auto& project_mgr = etest::core::project::ProjectManager::instance();
   auto* project = project_mgr.currentProject();
   if (project) {
-    window->setWindowTitle(
+    parent_widget_->setWindowTitle(
         QStringLiteral("ETest Studio - %1").arg(project->name()));
   } else {
-    window->setWindowTitle(QStringLiteral("ETest Studio"));
+    parent_widget_->setWindowTitle(QStringLiteral("ETest Studio"));
   }
 }
 
@@ -197,11 +200,14 @@ void ProjectController::updateRecentFilesMenu(QMenu* menu) {
 
 QString ProjectController::findProjectFile(const QString& dir_path) {
   QDir dir(dir_path);
-  QStringList filters;
-  filters << QStringLiteral("*.etproj");
-  QStringList files = dir.entryList(filters, QDir::Files);
-  if (!files.isEmpty()) {
-    return dir.absoluteFilePath(files.first());
+  for (int i = 0; i < 8 && !dir.isRoot(); ++i) {
+    QStringList entries = dir.entryList({QStringLiteral("*.etproj")},
+                                        QDir::Files | QDir::NoDotAndDotDot);
+    if (!entries.isEmpty()) {
+      return dir.absoluteFilePath(entries.first());
+    }
+    if (!dir.cdUp())
+      break;
   }
   return {};
 }

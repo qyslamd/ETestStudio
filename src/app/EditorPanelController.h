@@ -4,8 +4,6 @@
 #include <QMetaObject>
 #include <QObject>
 
-class QClipboard;
-
 namespace etest::app {
 
 class AppStatusBarController;
@@ -15,7 +13,6 @@ class EditorPanelController : public QObject {
   Q_OBJECT
  public:
   explicit EditorPanelController(EditorManager* editor_mgr,
-                                 QClipboard* clipboard,
                                  AppStatusBarController* status_bar_ctrl,
                                  QObject* parent = nullptr);
 
@@ -50,10 +47,8 @@ class EditorPanelController : public QObject {
   void updateEditorStatus();
 
   EditorManager* editor_mgr_;
-  QClipboard* clipboard_;
   AppStatusBarController* status_bar_ctrl_;
 
-  QMetaObject::Connection mod_connection_;
   QMetaObject::Connection sel_connection_;
   QMetaObject::Connection state_connection_;
 };
