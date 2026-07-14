@@ -42,6 +42,7 @@
 #include <DockSplitter.h>
 #include <DockWidgetTab.h>
 #include "ActivityBarWidget.h"
+#include "AppStatusBarController.h"
 #include "AppIconProvider.h"
 #include "EditorManager.h"
 #include "ExecutionDebugWidget.h"
@@ -111,8 +112,7 @@ MainWindow::MainWindow(QWidget* parent)
       terminal_panel_(nullptr),
       signal_registry_(nullptr),
       icd_repository_(nullptr) {
-  QElapsedTimer timer;
-  timer.start();
+  status_bar_ctrl_ = new AppStatusBarController(this);
   initUi();
   initSignalsEarly();
   // 安排懒加载（窗口 show() 之后执行）
@@ -659,7 +659,7 @@ void MainWindow::initSignalsLate() {
         QObject::disconnect(current_editor_state_connection_);
 
         if (hasEditor) {
-          status_message_label_->setText(editor->filePath());
+          status_bar_ctrl_->setMessage(editor->filePath());
 
           if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
             QsciScintilla* sci_editor = textEditor->editor();
@@ -667,11 +667,10 @@ void MainWindow::initSignalsLate() {
 
             int line, col;
             sci_editor->getCursorPosition(&line, &col);
-            status_cursor_label_->setText(
-                QStringLiteral("行 %1, 列 %2").arg(line + 1).arg(col + 1));
-            status_language_label_->setText(QStringLiteral("纯文本"));
-            status_eol_label_->setText(QStringLiteral("CRLF"));
-            status_encoding_label_->setText(QStringLiteral("UTF-8"));
+            status_bar_ctrl_->setCursorPos(line + 1, col + 1);
+            status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
+            status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
+            status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
 
             current_editor_selection_connection_ =
                 connect(sci_editor, &QsciScintilla::selectionChanged, this,
@@ -702,19 +701,19 @@ void MainWindow::initSignalsLate() {
             edit_undo_action_->setEnabled(editor->canUndo());
             edit_redo_action_->setEnabled(editor->canRedo());
           } else {
-            status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
-            status_language_label_->setText(QStringLiteral("纯文本"));
-            status_eol_label_->setText(QStringLiteral("CRLF"));
-            status_encoding_label_->setText(QStringLiteral("UTF-8"));
+            status_bar_ctrl_->setCursorPos(1, 1);
+            status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
+            status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
+            status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
             edit_undo_action_->setEnabled(false);
             edit_redo_action_->setEnabled(false);
           }
         } else {
-          status_message_label_->setText(QStringLiteral("就绪"));
-          status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
-          status_language_label_->setText(QStringLiteral("纯文本"));
-          status_eol_label_->setText(QStringLiteral("CRLF"));
-          status_encoding_label_->setText(QStringLiteral("UTF-8"));
+          status_bar_ctrl_->setMessage(QStringLiteral("就绪"));
+          status_bar_ctrl_->setCursorPos(1, 1);
+          status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
+          status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
+          status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
           edit_cut_action_->setEnabled(false);
           edit_copy_action_->setEnabled(false);
           edit_undo_action_->setEnabled(false);
@@ -1248,45 +1247,7 @@ void MainWindow::onThemeChanged(bool isDark) {
 }
 
 void MainWindow::createStatusBar() {
-  // 状态栏样式已由全局QSS覆盖，无需内联设置
-
-  // 左侧区域
-  status_message_label_ = new QLabel(this);
-  status_message_label_->setText(QStringLiteral("就绪"));
-  statusBar()->addWidget(status_message_label_);
-
-  status_project_label_ = new QLabel(this);
-  status_project_label_->setText(QStringLiteral("无打开项目"));
-  statusBar()->addWidget(status_project_label_);
-
-  status_errors_label_ = new QLabel(this);
-  status_errors_label_->setText(QStringLiteral("0 错误, 0 警告"));
-  statusBar()->addWidget(status_errors_label_);
-
-  // 右侧区域（addPermanentWidget添加到右侧，顺序从左到右）
-  status_language_label_ = new QLabel(this);
-  status_language_label_->setText(QStringLiteral("纯文本"));
-  statusBar()->addPermanentWidget(status_language_label_);
-
-  status_eol_label_ = new QLabel(this);
-  status_eol_label_->setText(QStringLiteral("CRLF"));
-  statusBar()->addPermanentWidget(status_eol_label_);
-
-  status_encoding_label_ = new QLabel(this);
-  status_encoding_label_->setText(QStringLiteral("UTF-8"));
-  statusBar()->addPermanentWidget(status_encoding_label_);
-
-  status_cursor_label_ = new QLabel(this);
-  status_cursor_label_->setText(QStringLiteral("行 1, 列 1"));
-  statusBar()->addPermanentWidget(status_cursor_label_);
-
-  label_engine_state_ = new QLabel(QStringLiteral("空闲"), this);
-  statusBar()->addPermanentWidget(label_engine_state_);
-
-  label_exec_stats_ = new QLabel(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"), this);
-  statusBar()->addPermanentWidget(label_exec_stats_);
-
-  statusBar()->clearMessage();
+  status_bar_ctrl_->setup(statusBar());
 }
 
 void MainWindow::onNewProject() {
@@ -1483,11 +1444,11 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   auto& projectMgr = etest::core::project::ProjectManager::instance();
   auto* project = projectMgr.currentProject();
   if (project) {
-    status_project_label_->setText(project->name());
+    status_bar_ctrl_->setProject(project->name());
   }
 
   updateWindowTitle();
-  status_message_label_->setText(
+  status_bar_ctrl_->setMessage(
       QStringLiteral("项目已打开：%1").arg(projectPath));
 
   // M6: 初始化 SignalRegistry + ICD Repository（同步接合）
@@ -1613,9 +1574,9 @@ void MainWindow::onProjectClosed() {
   LOG_INFO("MAIN_UI", "项目已关闭");
   close_project_action_->setEnabled(false);
   open_file_action_->setEnabled(true);
-  status_project_label_->setText(QStringLiteral("无打开项目"));
+  status_bar_ctrl_->setProject(QStringLiteral("无打开项目"));
   updateWindowTitle();
-  status_message_label_->setText(QStringLiteral("项目已关闭"));
+  status_bar_ctrl_->setMessage(QStringLiteral("项目已关闭"));
 
   // M6: 清理 ICD 上下文
   destroyEngine();
@@ -1958,30 +1919,28 @@ void MainWindow::createEngine() {
             switch (state) {
               case etest::engine::EngineState::Idle:
                 stateText = QStringLiteral("就绪");
-                statusBar()->showMessage(stateText);
+                status_bar_ctrl_->setMessage(stateText);
                 break;
               case etest::engine::EngineState::Running:
                 stateText = QStringLiteral("运行中");
-                statusBar()->showMessage(QStringLiteral("运行中..."));
+                status_bar_ctrl_->setMessage(QStringLiteral("运行中..."));
                 break;
               case etest::engine::EngineState::Paused:
                 stateText = QStringLiteral("已暂停");
-                statusBar()->showMessage(stateText);
+                status_bar_ctrl_->setMessage(stateText);
                 break;
               case etest::engine::EngineState::Finished:
                 stateText = QStringLiteral("已完成");
-                statusBar()->showMessage(
+                status_bar_ctrl_->setMessage(
                     QStringLiteral("执行完成 (✅%1 ❌%2)")
                         .arg(pass_count_).arg(fail_count_));
                 break;
               case etest::engine::EngineState::Error:
                 stateText = QStringLiteral("错误");
-                statusBar()->showMessage(QStringLiteral("执行出错"));
+                status_bar_ctrl_->setMessage(QStringLiteral("执行出错"));
                 break;
             }
-            if (label_engine_state_) {
-              label_engine_state_->setText(stateText);
-            }
+            status_bar_ctrl_->setEngineState(stateText);
           });
 
   // 绑定到监视面板（bindEngine 内部连接所有需要的信号）
@@ -1992,12 +1951,7 @@ void MainWindow::createEngine() {
           this, [this](const QString& /*name*/, int pass, int fail) {
     pass_count_ += pass;
     fail_count_ += fail;
-    if (label_exec_stats_) {
-      label_exec_stats_->setText(
-          QStringLiteral("✅ %1  ❌ %2  ⏱ %3s")
-              .arg(pass_count_).arg(fail_count_)
-              .arg(0));
-    }
+    status_bar_ctrl_->setExecStats(pass_count_, fail_count_, 0);
   });
 
   // 步骤结果 → 执行输出面板
@@ -2169,9 +2123,7 @@ void MainWindow::onRunClicked() {
   // 重置统计计数
   pass_count_ = 0;
   fail_count_ = 0;
-  if (label_exec_stats_) {
-    label_exec_stats_->setText(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"));
-  }
+  status_bar_ctrl_->setExecStats(0, 0, 0);
 
   // 5. 启动
   engine_->start();

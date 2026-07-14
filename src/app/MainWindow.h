@@ -40,6 +40,7 @@ class WelcomeWidget;
 class LoadingOverlay;
 class ExecutionDebugWidget;
 class TestProgramManagerWidget;
+class AppStatusBarController;
 }  // namespace etest::app
 
 namespace etest::engine {
@@ -173,14 +174,8 @@ class MainWindow : public SARibbonMainWindow {
   QAction* close_file_action_ = nullptr;
   QAction* close_all_files_action_ = nullptr;
 
-  // 状态栏标签
-  QLabel* status_message_label_ = nullptr;
-  QLabel* status_project_label_ = nullptr;
-  QLabel* status_errors_label_ = nullptr;
-  QLabel* status_cursor_label_ = nullptr;
-  QLabel* status_encoding_label_ = nullptr;
-  QLabel* status_eol_label_ = nullptr;
-  QLabel* status_language_label_ = nullptr;
+  // 状态栏（委托给 AppStatusBarController）
+  AppStatusBarController* status_bar_ctrl_ = nullptr;
 
   // 编辑菜单动作
   QAction* edit_undo_action_ = nullptr;
@@ -245,8 +240,6 @@ class MainWindow : public SARibbonMainWindow {
 
   // ── 引擎 ──
   etest::engine::TestExecutionEngine* engine_ = nullptr;
-  QLabel* label_engine_state_ = nullptr;
-  QLabel* label_exec_stats_ = nullptr;
   int pass_count_ = 0;
   int fail_count_ = 0;
   QString current_program_name_;

@@ -21,6 +21,8 @@ add_executable(${TARGET_NAME} WIN32
     widgets/HintBarWidget.cpp
     ActivityBarWidget.h
     ActivityBarWidget.cpp
+    AppStatusBarController.h
+    AppStatusBarController.cpp
     SidebarWidget.h
     SidebarWidget.cpp
     ProjectStructureWidget.h
