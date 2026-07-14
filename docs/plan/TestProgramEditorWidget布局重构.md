@@ -24,7 +24,7 @@
 问题：
 1. 运行控制栏在底部，步骤表格滚动时不可见
 2. 嵌入 `etest_app` 时，顶层 MainWindow 已有 Ribbon 运行按钮 + QStatusBar，底部控制栏完全冗余
-3. 独立模式 (`tools/test-program-editor`) 是纯编辑器，只负责编辑 `.etprog` 文件，不需要运行控制
+3. 独立模式 (`src/tools/test-program-editor`) 是纯编辑器，只负责编辑 `.etprog` 文件，不需要运行控制
 4. `ExecutionControlBar` 的 `updateStats()` 从未被调用，stats 从未生效
 
 ---
@@ -218,7 +218,7 @@ connect(engine_, &TestExecutionEngine::suiteFinished,
 | Ribbon `act_run_/act_pause_/act_stop_` | 不受影响 |
 | `syncControlStates()` | 不受影响 |
 | `MainWindow::onRunClicked()` 等 | 不受影响（不依赖 `current_control_bar_`） |
-| 独立工具 `tools/test-program-editor` | 不受影响，从未引用 ExecutionControlBar |
+| 独立工具 `src/tools/test-program-editor` | 不受影响，从未引用 ExecutionControlBar |
 
 ---
 

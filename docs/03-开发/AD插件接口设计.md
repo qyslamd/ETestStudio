@@ -355,7 +355,7 @@ class EnphtEP5022Device {
 
 | 文件 | 变更 |
 |------|------|
-| `src/core/plugin/IADevicePlugin.h` | `ADChannelConfig` 移除 `WaveformType` 等字段，改为嵌套的 `ADSimulationConfig`；接口声明微调 |
+| `src/core/plugin_sdk/IADevicePlugin.h` | `ADChannelConfig` 移除 `WaveformType` 等字段，改为嵌套的 `ADSimulationConfig`；接口声明微调 |
 
 ### 5.2 新增的文件
 

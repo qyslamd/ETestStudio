@@ -1,24 +1,17 @@
-set(TARGET_NAME "protocol-editor")
+set(TARGET_NAME "test-executor")
 
-if(NOT TARGET etest_ui)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/libui ${CMAKE_BINARY_DIR}/libui_build)
-endif()
-if(NOT TARGET etest_protocol)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/protocol ${CMAKE_BINARY_DIR}/protocol_build)
-endif()
 
-add_executable(${TARGET_NAME}
-    main.cpp
-    ${CMAKE_SOURCE_DIR}/src/app/resource.qrc
-)
+add_executable(${TARGET_NAME} main.cpp)
 
 target_link_libraries(${TARGET_NAME} PRIVATE
-    etest_protocol
+    etest_engine
+    etest_core
     etest_core_ui
     etest_ui
     Qt5::Widgets
     Qt5::Core
     Qt5::Gui
+    spdlog::spdlog
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
@@ -27,7 +20,6 @@ target_include_directories(${TARGET_NAME} PRIVATE
 
 set_target_properties(${TARGET_NAME} PROPERTIES
     AUTOMOC ON
-    AUTORCC ON
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )

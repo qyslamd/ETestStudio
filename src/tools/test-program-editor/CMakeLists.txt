@@ -1,28 +1,26 @@
-set(TARGET_NAME "topology-editor")
+set(TARGET_NAME "test-program-editor")
 
-if(NOT TARGET etest_ui)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/libui ${CMAKE_BINARY_DIR}/libui_build)
-endif()
-if(NOT TARGET etest_topology)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/topology ${CMAKE_BINARY_DIR}/topology_build)
-endif()
 
 add_executable(${TARGET_NAME}
     main.cpp
-    ${CMAKE_SOURCE_DIR}/src/app/resource.qrc
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
-    etest_topology
-    etest_core_ui
-    etest_ui
     Qt5::Widgets
     Qt5::Core
     Qt5::Gui
+    etest_core
+    etest_core_ui
+    etest_program
+    etest_ui
+    spdlog::spdlog
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/libui
+    ${CMAKE_SOURCE_DIR}/3rdparty/spdlog-1.17.0/include
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES

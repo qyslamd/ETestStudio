@@ -157,10 +157,10 @@ etest_app (主程序)        → 最高频引用
 etest_topology            → 中频
 etest_protocol            → 中频
 etest_engine              → 高频（SignalRegistry、HardwareManager）
-tools/test-executor-cli   → 低频
-tools/topology-editor     → 低频
-tools/protocol-editor     → 低频
-tools/test-program-editor → 低频
+src/tools/test-executor-cli   → 低频
+src/tools/topology-editor     → 低频
+src/tools/protocol-editor     → 低频
+src/tools/test-program-editor → 低频
 ```
 
 ### 关键风险点

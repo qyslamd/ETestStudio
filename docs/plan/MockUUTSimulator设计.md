@@ -1098,8 +1098,8 @@ CHECK 1.5A:
 | `src/engine/TestExecutionEngine.h` | 修改 | 无改动 |
 | `src/engine/TestExecutionEngine.cpp` | 修改 | loadTopology 一次解析 + Builder + mock 一致性校验 |
 | `src/engine/CMakeLists.txt` | 修改 | 加新文件 |
-| `src/core/plugin/PluginMetaData.h` | 修改 | 加 is_mock 字段 |
-| `src/core/plugin/PluginManager.h/.cpp` | 修改 | 加 devicesByMockType(type, mock) |
+| `src/core/plugin_sdk/PluginMetaData.h` | 修改 | 加 is_mock 字段 |
+| `src/core/plugin_sdk/PluginManager.h/.cpp` | 修改 | 加 devicesByMockType(type, mock) |
 | `examples/plugins/mock_*/` | 修改 | 各 Mock 插件加 is_mock = true |
 | `mock/MockResponses.json` | **新建** | 示例配置文件（含 productName + deviceId） |
 

@@ -73,11 +73,11 @@ etest (主程序)
 └── Qt5 / 第三方库 (QScintilla, SARibbon, QXlsx, libharu, QADS...)
 ```
 
-## 独立产品约束
+## 附属工具约束
 
-`tools/topology-editor`、`tools/protocol-editor`、`tools/test-program-editor` 是三个独立产品，
+`src/tools/topology-editor`、`src/tools/protocol-editor`、`src/tools/test-program-editor` 是三个附属工具，
 各自输出独自可用的文件格式（`.etopo` / `.eproto` / `.tcase`），
-发布给不同用户群体独立使用。通过 `BUILD_ETEST_TOOLS` CMake 选项控制编译。
+集成在主程序 ribbon 中随主程序发布。通过 `BUILD_ETEST_TOOLS` CMake 选项控制编译。
 
 **核心约束**：功能变更不得导致一个产品引入另一产品所属模块的链接依赖：
 - `topology-editor` 不得链接 `etest_protocol`、`etest_program` 或 `icd_utility`
@@ -140,7 +140,7 @@ etest (主程序)
 4. `footer`（可选）：`Closes #123` 或 `BREAKING CHANGE: 说明`
 ```
 10.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
-11.  每次会话开始时先读取 `ideas.md`，了解待办想法的最新进度
+11.  `powershell`命令在windows上很恼火，除了必要的脚本使用bat或者ps1编写外，能用Python脚本的一律用python
 
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：

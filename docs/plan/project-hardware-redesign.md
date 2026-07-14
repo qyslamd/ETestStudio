@@ -77,7 +77,7 @@ TopologyJsonSerializer 序列化 → .etopo JSON 包含 "pluginId" 字段
 
 ### 一、PluginMetaData — 增加字段
 
-**文件：** `src/core/plugin/PluginMetaData.h`
+**文件：** `src/core/plugin_sdk/PluginMetaData.h`
 
 ```cpp
 struct PluginMetaData {
@@ -153,7 +153,7 @@ dev.pluginId = obj["pluginId"].toString();
 
 **保留并提取：** `kMonitorTypes[]` 和 `MonitorEntry` 结构体保留，但提取到独立的 `addMonitorEntry()` 方法中（监视器是拓扑概念，不从插件加载）。注意覆盖所有 `Qt::UserRole + N` 数据角色，使 `startDrag()` 可以统一通过 item data 读取。
 
-**新增头文件：** `DevicePaletteWidget.cpp` 需要 `#include "plugin/PluginManager.h"`。
+**新增头文件：** `DevicePaletteWidget.cpp` 需要 `#include "plugin_sdk/PluginManager.h"`。
 
 **新增：** `populateDeviceTypes()` 直接访问 PluginManager：
 
@@ -386,8 +386,8 @@ dev.pluginId = obj["pluginId"].toString(); // NEW
 
 **新增头文件包含：**
 ```cpp
-#include "plugin/PluginManager.h"
-#include "plugin/IDevicePlugin.h"
+#include "plugin_sdk/PluginManager.h"
+#include "plugin_sdk/IDevicePlugin.h"
 ```
 
 **defaultCategories() 修改：** 删除 `"hardware"` 分类条目（第 441-443 行）。硬件不再映射到 `hardware/` 目录，改为由 `buildTree()` 在所有 filesystem 节点之后追加一个计算节点。
@@ -505,8 +505,8 @@ void MainWindow::initHardwareNavigation() {
 
 | 文件 | 改动 |
 |---|---|
-| `src/core/plugin/PluginMetaData.h` | 新增 `device_function`、`device_direction` 字段 |
-| `src/core/plugin/PluginManager.cpp` | `parseMetaDataFromLib()` 中解析新增字段 |
+| `src/core/plugin_sdk/PluginMetaData.h` | 新增 `device_function`、`device_direction` 字段 |
+| `src/core/plugin_sdk/PluginManager.cpp` | `parseMetaDataFromLib()` 中解析新增字段 |
 | `src/topology/TopologyDocument.h` | `TopologyDevice` 加 `pluginId` |
 | `src/topology/TopologyJsonSerializer.cpp` | 序列化/反序列化 `pluginId` |
 | `src/topology/DevicePaletteWidget.h` | 删除 `DeviceEntry` 结构体；新增 `addMonitorEntry()` 声明 |

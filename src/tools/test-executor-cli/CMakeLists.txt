@@ -1,11 +1,5 @@
 set(TARGET_NAME "test-executor-cli")
 
-if(NOT TARGET etest_engine)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/engine ${CMAKE_BINARY_DIR}/engine_build)
-endif()
-if(NOT TARGET etest_core)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/core ${CMAKE_BINARY_DIR}/core_build)
-endif()
 
 add_executable(${TARGET_NAME} main.cpp)
 

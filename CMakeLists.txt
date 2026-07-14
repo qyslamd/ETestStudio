@@ -273,14 +273,10 @@ if (BUILD_ETEST_EXAMPLES)
 endif()
 
 # =======================================
-# 包含独立产品工具
+# 包含附属工具
 option(BUILD_ETEST_TOOLS "Build standalone product tools" ON)
 if (BUILD_ETEST_TOOLS)
-    add_subdirectory(tools/topology-editor)
-    add_subdirectory(tools/protocol-editor)
-    add_subdirectory(tools/test-program-editor)
-    add_subdirectory(tools/test-executor)
-    add_subdirectory(tools/test-executor-cli)
+    add_subdirectory(src/tools)
 endif()
 
 
