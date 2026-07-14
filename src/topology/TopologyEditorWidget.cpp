@@ -54,7 +54,7 @@
 #include "UndoCommands.h"
 #include "core/config/ConfigDefs.h"
 #include "core/config/ConfigManager.h"
-#include "plugin/PluginManager.h"
+#include "plugin_sdk/PluginManager.h"
 #include "topology_items.h"
 
 

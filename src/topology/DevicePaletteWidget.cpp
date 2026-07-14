@@ -8,7 +8,7 @@
 #include <QMimeData>
 #include <QVBoxLayout>
 
-#include "plugin/PluginManager.h"
+#include "plugin_sdk/PluginManager.h"
 
 namespace etest::topology {
 

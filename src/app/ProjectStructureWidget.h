@@ -8,8 +8,8 @@
 
 #include <QString>
 #include <QWidget>
-#include "plugin/IDevicePlugin.h"
-#include "plugin/PluginManager.h"
+#include "plugin_sdk/IDevicePlugin.h"
+#include "plugin_sdk/PluginManager.h"
 #include "widgets/OpenFileDelegate.h"
 
 class QFileSystemWatcher;

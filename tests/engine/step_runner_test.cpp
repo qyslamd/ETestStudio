@@ -13,7 +13,7 @@
 #include <icd/node.hpp>
 #include <icd/repository.hpp>
 
-#include "plugin/ICANPlugin.h"
+#include "plugin_sdk/ICANPlugin.h"
 
 using namespace etest::engine;
 using namespace etest::core;

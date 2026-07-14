@@ -1,4 +1,4 @@
-﻿#include "MainWindow.h"
+#include "MainWindow.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -73,7 +73,7 @@
 #include "icd/repository.hpp"
 #include "logger/Logger.h"
 #include "logger/QtConsoleSink.h"
-#include "plugin/PluginManager.h"
+#include "plugin_sdk/PluginManager.h"
 #include "project/ProjectManager.h"
 #include "protocol/ProtocolEditorWidget.h"
 #include "topology/TopologyDocument.h"

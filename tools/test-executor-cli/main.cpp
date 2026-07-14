@@ -22,7 +22,7 @@
 #include "engine/StepRunner.h"
 #include "engine/TestExecutionEngine.h"
 #include "core/SignalRegistry.h"
-#include "core/plugin/PluginManager.h"
+#include "core/plugin_sdk/PluginManager.h"
 
 #include <icd/frame.hpp>
 #include <icd/node.hpp>

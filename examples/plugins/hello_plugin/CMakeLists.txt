@@ -10,7 +10,7 @@ target_include_directories(${PLUGIN_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/core/logger
     ${CMAKE_SOURCE_DIR}/src/core/config
-    ${CMAKE_SOURCE_DIR}/src/core/plugin
+    ${CMAKE_SOURCE_DIR}/src/core/plugin_sdk
 )
 
 target_link_libraries(${PLUGIN_NAME} PRIVATE

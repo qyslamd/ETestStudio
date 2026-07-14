@@ -2,7 +2,7 @@
 #define ETEST_EXAMPLE_HELLO_PLUGIN_H_
 
 #include <QtPlugin>
-#include "plugin/IPlugin.h"
+#include "plugin_sdk/IPlugin.h"
 
 namespace etest::example {
 

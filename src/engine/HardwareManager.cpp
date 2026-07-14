@@ -8,13 +8,13 @@
 #include "MockUUTBuilder.h"
 #include "SignalResolver.h"
 
-#include "plugin/IADevicePlugin.h"
-#include "plugin/IArinc429Plugin.h"
-#include "plugin/ICANPlugin.h"
-#include "plugin/IDADevicePlugin.h"
-#include "plugin/IDevicePlugin.h"
-#include "plugin/ISerialDevicePlugin.h"
-#include "plugin/PluginManager.h"
+#include "plugin_sdk/IADevicePlugin.h"
+#include "plugin_sdk/IArinc429Plugin.h"
+#include "plugin_sdk/ICANPlugin.h"
+#include "plugin_sdk/IDADevicePlugin.h"
+#include "plugin_sdk/IDevicePlugin.h"
+#include "plugin_sdk/ISerialDevicePlugin.h"
+#include "plugin_sdk/PluginManager.h"
 #include "logger/Logger.h"
 
 namespace etest::engine {

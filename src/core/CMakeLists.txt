@@ -20,7 +20,7 @@ set(SOURCES
     utils/TimeUtil.cpp
     utils/StringUtil.cpp
     utils/ByteUtil.cpp
-    plugin/PluginManager.cpp
+    plugin_sdk/PluginManager.cpp
     project/ProjectInfo.cpp
     project/ProjectManager.cpp
     terminal/PtyProcess.cpp
@@ -50,15 +50,15 @@ set(HEADERS
     utils/TimeUtil.h
     utils/StringUtil.h
     utils/ByteUtil.h
-    plugin/IPlugin.h
-    plugin/IDevicePlugin.h
-    plugin/IADevicePlugin.h
-    plugin/IDADevicePlugin.h
-    plugin/ISerialDevicePlugin.h
-    plugin/IArinc429Plugin.h
-    plugin/ICANPlugin.h
-    plugin/PluginMetaData.h
-    plugin/PluginManager.h
+    plugin_sdk/IPlugin.h
+    plugin_sdk/IDevicePlugin.h
+    plugin_sdk/IADevicePlugin.h
+    plugin_sdk/IDADevicePlugin.h
+    plugin_sdk/ISerialDevicePlugin.h
+    plugin_sdk/IArinc429Plugin.h
+    plugin_sdk/ICANPlugin.h
+    plugin_sdk/PluginMetaData.h
+    plugin_sdk/PluginManager.h
     project/ProjectInfo.h
     project/ProjectManager.h
     terminal/PtyProcess.h
@@ -94,7 +94,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/backup
     ${CMAKE_CURRENT_SOURCE_DIR}/auth
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugin
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugin_sdk
     ${CMAKE_CURRENT_SOURCE_DIR}/project
     ${CMAKE_CURRENT_SOURCE_DIR}/terminal
 )

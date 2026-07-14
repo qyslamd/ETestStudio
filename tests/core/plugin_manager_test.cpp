@@ -2,9 +2,9 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QSignalSpy>
-#include "plugin/IPlugin.h"
-#include "plugin/PluginManager.h"
-#include "plugin/PluginMetaData.h"
+#include "plugin_sdk/IPlugin.h"
+#include "plugin_sdk/PluginManager.h"
+#include "plugin_sdk/PluginMetaData.h"
 
 using namespace etest::core::plugin;
 
