@@ -36,7 +36,10 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
-                "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
+                "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true,
+                "BUILD_TESTING": "OFF",
+                "BUILD_TESTS_THIRD_PARTY": "OFF",
+                "BUILD_ETEST_EXAMPLES": "OFF"
             }
         },
         {
@@ -62,7 +65,10 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_C_STANDARD": "11"
+                "CMAKE_C_STANDARD": "11",
+                "BUILD_TESTING": "OFF",
+                "BUILD_TESTS_THIRD_PARTY": "OFF",
+                "BUILD_ETEST_EXAMPLES": "OFF"
             }
         },
         {
@@ -71,7 +77,10 @@
             "description": "使用Ninja构建的RelWithDebInfo版本，带调试信息的优化构建，崩溃dump可配合PDB调试",
             "inherits": "ninja-debug",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "BUILD_TESTING": "OFF",
+                "BUILD_TESTS_THIRD_PARTY": "OFF",
+                "BUILD_ETEST_EXAMPLES": "OFF"
             }
         },
         {
@@ -161,7 +170,7 @@
             "displayName": "Ninja Build Release",
             "description": "使用Ninja构建发布版本",
             "configurePreset": "ninja-release",
-            "targets": "ALL_BUILD"
+            "targets": "all"
         },
         {
             "name": "ninja-relwithdebinfo-build",
@@ -189,14 +198,14 @@
             "displayName": "Ninja Build Release (x64)",
             "description": "使用Ninja构建x64 Release版本",
             "configurePreset": "ninja-release-x64",
-            "targets": "ALL_BUILD"
+            "targets": "all"
         },
         {
             "name": "ninja-release-x86-build",
             "displayName": "Ninja Build Release (x86)",
             "description": "使用Ninja构建x86 Release版本",
             "configurePreset": "ninja-release-x86",
-            "targets": "ALL_BUILD"
+            "targets": "all"
         },
         {
             "name": "ninja-relwithdebinfo-x64-build",
