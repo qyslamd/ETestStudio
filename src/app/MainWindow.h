@@ -114,33 +114,33 @@ class MainWindow : public SARibbonMainWindow {
 
   // QADS
   static void hideDockTitleBarButtons(ads::CDockAreaWidget* area);
-  ads::CDockManager* dock_manager_;
+  ads::CDockManager* dock_manager_ = nullptr;
 
   // 活动栏 + 侧边栏
-  ActivityBarWidget* activity_bar_;
-  SidebarWidget* sidebar_;
+  ActivityBarWidget* activity_bar_ = nullptr;
+  SidebarWidget* sidebar_ = nullptr;
   TestProgramManagerWidget* test_program_mgr_ = nullptr;
   ExecutionDebugWidget* execution_debug_widget_ = nullptr;
 
   // 水平/垂直分割器
-  QSplitter* h_splitter_;  // 水平：Sidebar / 垂直区域 / AuxSidebar
-  QSplitter* v_splitter_;  // 垂直：ContainerWidget / BottomContainer
+  QSplitter* h_splitter_ = nullptr;  // 水平：Sidebar / 垂直区域 / AuxSidebar
+  QSplitter* v_splitter_ = nullptr;  // 垂直：ContainerWidget / BottomContainer
 
   // 提示栏
-  HintBarWidget* hint_bar_;
+  HintBarWidget* hint_bar_ = nullptr;
 
   // 编辑器管理
-  EditorManager* editor_manager_;
+  EditorManager* editor_manager_ = nullptr;
 
   // 欢迎页
   WelcomeWidget* welcome_widget_ = nullptr;
   ads::CDockWidget* central_dock_ = nullptr;
 
   // 底部面板
-  LogOutputPanel* log_panel_;
-  ExecutionOutputPanel* execution_output_panel_;
-  ProblemsPanel* problems_panel_;
-  TerminalPanel* terminal_panel_;
+  LogOutputPanel* log_panel_ = nullptr;
+  ExecutionOutputPanel* execution_output_panel_ = nullptr;
+  ProblemsPanel* problems_panel_ = nullptr;
+  TerminalPanel* terminal_panel_ = nullptr;
   BottomContainerWidget* bottom_container_ = nullptr;
   int bottom_container_height_ = 200;
 

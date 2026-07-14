@@ -42,27 +42,27 @@
 #include <DockSplitter.h>
 #include <DockWidgetTab.h>
 #include "ActivityBarWidget.h"
-#include "AppStatusBarController.h"
-#include "EditorPanelController.h"
-#include "ExecutionPanelController.h"
-#include "ProjectController.h"
-#include "TuxSaverController.h"
 #include "AppIconProvider.h"
+#include "AppStatusBarController.h"
 #include "EditorManager.h"
+#include "EditorPanelController.h"
 #include "ExecutionDebugWidget.h"
+#include "ExecutionPanelController.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
+#include "ProjectController.h"
 #include "ProjectStructureWidget.h"
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
 #include "SidebarWidget.h"
 #include "SignalRegistry.h"
 #include "TerminalPanel.h"
+#include "TestProgramData.h"
 #include "TestProgramEditorWidget.h"
 #include "TestProgramManagerWidget.h"
-#include "TestProgramData.h"
 #include "ThemeManager.h"
 #include "TopologyManagerWidget.h"
+#include "TuxSaverController.h"
 #include "WelcomeWidget.h"
 #include "api/IEditor.h"
 #include "auth/AuthService.h"
@@ -85,9 +85,9 @@
 #include "topology/TopologyEditorWidget.h"
 #include "utils/SignalSyncHelper.h"
 #include "widgets/BottomContainerWidget.h"
+#include "widgets/ExecutionOutputPanel.h"
 #include "widgets/HintBarWidget.h"
 #include "widgets/LoadingOverlay.h"
-#include "widgets/ExecutionOutputPanel.h"
 #include "widgets/LogOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
 
@@ -103,20 +103,8 @@ using etest::core_ui::ThemeManager;
 
 MainWindow::MainWindow(QWidget* parent)
     : SARibbonMainWindow(parent),
-      dock_manager_(nullptr),
-      activity_bar_(nullptr),
-      sidebar_(nullptr),
-      h_splitter_(nullptr),
-      v_splitter_(nullptr),
-      editor_manager_(nullptr),
-      log_panel_(nullptr),
-      execution_output_panel_(nullptr),
-      problems_panel_(nullptr),
-      terminal_panel_(nullptr),
-      signal_registry_(nullptr),
-      icd_repository_(nullptr) {
-  status_bar_ctrl_ = new AppStatusBarController(this);
-  execution_controller_ = new ExecutionPanelController(this, this);
+      status_bar_ctrl_(new AppStatusBarController(this)),
+      execution_controller_(new ExecutionPanelController(this, this)) {
   initUi();
   initSignalsEarly();
   // 安排懒加载（窗口 show() 之后执行）
@@ -169,10 +157,6 @@ void MainWindow::initUi() {
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
-  // ===== 提示栏（全宽，顶部） =====
-  hint_bar_ = new HintBarWidget(centralContainer);
-  main_layout->addWidget(hint_bar_);
-
   // ==================== 水平布局（活动栏 + 水平分割器） ====================
   auto* horizontal_layout = new QHBoxLayout;
   horizontal_layout->setContentsMargins(0, 0, 0, 0);
@@ -191,20 +175,30 @@ void MainWindow::initUi() {
   sidebar_ = new SidebarWidget(h_splitter_);
   h_splitter_->addWidget(sidebar_);
 
-  // ===== 垂直分割器（编辑器 + 底部面板） =====
+  // ===== 垂直分割器（中央区域 + 底部面板） =====
   v_splitter_ = new QSplitter(Qt::Vertical, h_splitter_);
   v_splitter_->setChildrenCollapsible(true);
   h_splitter_->addWidget(v_splitter_);
+
+  // 中央编辑器区域（提示栏 + DockManager）
+  auto* central_area = new QWidget(v_splitter_);
+  auto* central_area_layout = new QVBoxLayout(central_area);
+  central_area_layout->setContentsMargins(0, 0, 0, 0);
+  central_area_layout->setSpacing(0);
+
+  hint_bar_ = new HintBarWidget(central_area);
+  central_area_layout->addWidget(hint_bar_);
 
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   ads::CDockManager::setConfigFlag(
       ads::CDockManager::MiddleMouseButtonClosesTab, true);
   ads::CDockManager::setConfigFlag(ads::CDockManager::AllTabsHaveCloseButton,
                                    true);
-  dock_manager_ = new ads::CDockManager(v_splitter_);
+  dock_manager_ = new ads::CDockManager(central_area);
+  central_area_layout->addWidget(dock_manager_, 1);
 
   // 中央占位（lazyInit 时替换为 WelcomeWidget）
-  auto* placeholder = new QWidget(v_splitter_);
+  auto* placeholder = new QWidget(central_area);
   placeholder->setObjectName("CentralPlaceholder");
   central_dock_ = new ads::CDockWidget(QStringLiteral("欢迎"));
   central_dock_->setObjectName("CentralDock");
@@ -212,9 +206,9 @@ void MainWindow::initUi() {
   central_dock_->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(central_dock_);
   central_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);
-  auto* centralArea = central_dock_->dockAreaWidget();
-  if (centralArea) {
-    hideDockTitleBarButtons(centralArea);
+  auto* centralDockArea = central_dock_->dockAreaWidget();
+  if (centralDockArea) {
+    hideDockTitleBarButtons(centralDockArea);
   }
 
   // 底部容器空壳（lazyInit 时 addPanel）
@@ -1087,27 +1081,25 @@ void MainWindow::lazyInit() {
 
   // 创建 ProjectController 和 EditorPanelController（依赖 editor_manager_）
   project_controller_ = new ProjectController(this, editor_manager_, this);
-  editor_controller_ = new EditorPanelController(
-      editor_manager_, status_bar_ctrl_, this);
+  editor_controller_ =
+      new EditorPanelController(editor_manager_, status_bar_ctrl_, this);
 
   // 连接 project_controller_ 信号 → MainWindow 槽
   connect(project_controller_, &ProjectController::fileRequested, this,
           [this](const QString& path) {
-    // 与 MainWindow::onOpenFile 处理逻辑一致
-    auto& cfg = ConfigManager::instance();
-    cfg.set(CONFIG_RECENT_LAST_OPEN_PATH,
-            QFileInfo(path).absolutePath());
-    editor_manager_->openFile(path);
-  });
+            // 与 MainWindow::onOpenFile 处理逻辑一致
+            auto& cfg = ConfigManager::instance();
+            cfg.set(CONFIG_RECENT_LAST_OPEN_PATH,
+                    QFileInfo(path).absolutePath());
+            editor_manager_->openFile(path);
+          });
 
   // 执行控制器依赖注入（signal_registry_/icd_repository_ 项目打开时才可用）
   execution_controller_->postInit(
-      execution_debug_widget_, execution_output_panel_,
-      nullptr, nullptr,
-      editor_manager_, sidebar_, h_splitter_,
-      activity_bar_, test_program_mgr_,
-      problems_panel_, bottom_container_,
-      &sidebar_expanded_width_, status_bar_ctrl_);
+      execution_debug_widget_, execution_output_panel_, nullptr, nullptr,
+      editor_manager_, sidebar_, h_splitter_, activity_bar_, test_program_mgr_,
+      problems_panel_, bottom_container_, &sidebar_expanded_width_,
+      status_bar_ctrl_);
 
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1143,19 +1135,19 @@ void MainWindow::lazyInit() {
   LOG_INFO("LAZY", "  [8/12] 插件+硬件: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 9. 发布提示消息（当前演示用，不必打开）
-  if (0) {
-    step_timer.restart();
-    hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
-    hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
-    hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
-                        QStringLiteral("更新"), [] { /* 占位 */ });
-    hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
-                        QStringLiteral("查看"), [] { /* 占位 */ });
-    hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
-                        QStringLiteral("重试"), [] { /* 占位 */ });
-    LOG_INFO("LAZY", "  [9/12] 提示消息: {} ms", step_timer.elapsed());
-  }
+  // 9. 发布提示消息（DEBUG模式打开）
+#ifdef _DEBUG
+  step_timer.restart();
+  hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
+  hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
+  hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
+                      QStringLiteral("更新"), [] { /* 占位 */ });
+  hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
+                      QStringLiteral("查看"), [] { /* 占位 */ });
+  hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
+                      QStringLiteral("重试"), [] { /* 占位 */ });
+  LOG_INFO("LAZY", "  [9/12] 提示消息: {} ms", step_timer.elapsed());
+#endif
 
   // 10. 恢复底部面板状态（逐面板可见性 + 容器显隐）
   step_timer.restart();
@@ -1438,8 +1430,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
             id = QUuid::createUuid().toString(QUuid::WithoutBraces);
           }
           signal_registry_->registerDevice(
-              id, name,
-              dobj[QStringLiteral("type")].toString());
+              id, name, dobj[QStringLiteral("type")].toString());
           QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
           for (const QJsonValue& pv : ports) {
             QJsonObject pobj = pv.toObject();
@@ -1469,8 +1460,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
         te->setSignalSelection(
             new IcdSignalSelection(signal_registry_, icd_repository_.get()));
         te->setRegistry(signal_registry_);
-        connect(te, &TestProgramEditorWidget::programSaved,
-                this, [](const QString&) {});
+        connect(te, &TestProgramEditorWidget::programSaved, this,
+                [](const QString&) {});
       }
     }
 
@@ -1700,12 +1691,7 @@ etest::engine::ProgramData convertProgram(
 
 // ── 引擎生命周期 ──
 
-
-
-
 // ── Ribbon 运行按钮 ──
-
-
 
 void MainWindow::resizeEvent(QResizeEvent* event) {
   SARibbonMainWindow::resizeEvent(event);
@@ -1887,11 +1873,10 @@ void MainWindow::setupRibbon() {
   });
   login_menu_->addSeparator();
   auto* logoutAction = login_menu_->addAction(QStringLiteral("退出登录"));
-  connect(logoutAction, &QAction::triggered, this,
-          [this]() {
-            LOG_INFO("MAIN_UI", "点击「退出登录」");
-            AuthService::instance().logout();
-          });
+  connect(logoutAction, &QAction::triggered, this, [this]() {
+    LOG_INFO("MAIN_UI", "点击「退出登录」");
+    AuthService::instance().logout();
+  });
 
   // ---- Application Button ----
   ribbon->applicationButton()->setIcon(
