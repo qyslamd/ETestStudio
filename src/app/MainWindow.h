@@ -41,6 +41,7 @@ class TestProgramManagerWidget;
 class AppStatusBarController;
 class TuxSaverController;
 class EditorPanelController;
+class ProjectController;
 }  // namespace etest::app
 
 namespace etest::engine {

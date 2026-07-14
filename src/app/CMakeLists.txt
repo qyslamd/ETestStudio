@@ -27,6 +27,8 @@ add_executable(${TARGET_NAME} WIN32
     TuxSaverController.cpp
     EditorPanelController.h
     EditorPanelController.cpp
+    ProjectController.h
+    ProjectController.cpp
     SidebarWidget.h
     SidebarWidget.cpp
     ProjectStructureWidget.h

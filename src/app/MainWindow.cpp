@@ -44,6 +44,7 @@
 #include "ActivityBarWidget.h"
 #include "AppStatusBarController.h"
 #include "EditorPanelController.h"
+#include "ProjectController.h"
 #include "TuxSaverController.h"
 #include "AppIconProvider.h"
 #include "EditorManager.h"
