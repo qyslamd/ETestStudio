@@ -42,6 +42,7 @@ class AppStatusBarController;
 class TuxSaverController;
 class EditorPanelController;
 class ProjectController;
+class ExecutionPanelController;
 }  // namespace etest::app
 
 namespace etest::engine {
@@ -175,8 +176,9 @@ class MainWindow : public SARibbonMainWindow {
   QAction* close_file_action_ = nullptr;
   QAction* close_all_files_action_ = nullptr;
 
-  // 状态栏（委托给 AppStatusBarController）
+  // 子系统 Controller（委托）
   AppStatusBarController* status_bar_ctrl_ = nullptr;
+  ExecutionPanelController* execution_controller_ = nullptr;
 
   // 编辑菜单动作
   QAction* edit_undo_action_ = nullptr;
@@ -202,19 +204,7 @@ class MainWindow : public SARibbonMainWindow {
   QAction* login_user_info_action_ = nullptr;
   QAction* login_manage_users_action_ = nullptr;
 
-  // ── 执行引擎 ──
- private slots:
-  void onRunClicked();
-  void onPauseClicked();
-  void onStopClicked();
-  void onVerifyClicked();
-  void onRunAllClicked();
-  void onProgramSaved(const QString& path);
-
- private:
-  void createEngine();
-  void destroyEngine();
-  void syncControlStates();
+  // ── 执行引擎（委托给 ExecutionPanelController） ──
 
   // Demo 启动
   QAction* demo_topology_action_ = nullptr;
@@ -228,20 +218,7 @@ class MainWindow : public SARibbonMainWindow {
 
   bool first_show_ = true;
 
-  // ── 运行 Ribbon 动作 ──
-  QAction* act_run_ = nullptr;
-  QAction* act_pause_ = nullptr;
-  QAction* act_stop_ = nullptr;
-  QAction* act_verify_ = nullptr;
-  QAction* act_run_all_ = nullptr;
-  QLabel*  label_ribbon_stats_ = nullptr;
   QAction* demo_testexecutor_action_ = nullptr;
-
-  // ── 引擎 ──
-  etest::engine::TestExecutionEngine* engine_ = nullptr;
-  int pass_count_ = 0;
-  int fail_count_ = 0;
-  QString current_program_name_;
 };
 
 }  // namespace etest::app

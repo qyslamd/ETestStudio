@@ -1,0 +1,126 @@
+#ifndef ETEST_APP_EXECUTIONPANELCONTROLLER_H_
+#define ETEST_APP_EXECUTIONPANELCONTROLLER_H_
+
+#include <QObject>
+#include <QString>
+
+class QAction;
+class QLabel;
+class QSplitter;
+class QWidget;
+
+namespace etest::app {
+
+class AppStatusBarController;
+class EditorManager;
+class ExecutionDebugWidget;
+class ExecutionOutputPanel;
+class SidebarWidget;
+class ActivityBarWidget;
+class TestProgramManagerWidget;
+class ProblemsPanel;
+class BottomContainerWidget;
+
+}  // namespace etest::app
+
+namespace etest::core {
+class SignalRegistry;
+}  // namespace etest::core
+
+#include "engine/TestExecutionEngine.h"
+
+namespace icd {
+class Repository;
+}  // namespace icd
+
+namespace etest::app {
+
+class ExecutionPanelController : public QObject {
+  Q_OBJECT
+ public:
+  explicit ExecutionPanelController(QWidget* parent_widget,
+                                    QObject* parent = nullptr);
+
+  // 两步初始化：Constructor 只创建 QAction，postInit 补全依赖
+  void postInit(ExecutionDebugWidget* debug_widget,
+                ExecutionOutputPanel* output_panel,
+                etest::core::SignalRegistry* signal_registry,
+                std::shared_ptr<icd::Repository> icd_repository,
+                EditorManager* editor_mgr,
+                SidebarWidget* sidebar,
+                QSplitter* h_splitter,
+                ActivityBarWidget* activity_bar,
+                TestProgramManagerWidget* test_program_mgr,
+                ProblemsPanel* problems_panel,
+                BottomContainerWidget* bottom_container,
+                int* sidebar_width_ref,
+                AppStatusBarController* status_bar_ctrl);
+
+  // 引擎生存期
+  void createEngine();
+  void destroyEngine();
+  etest::engine::TestExecutionEngine* engine() const { return engine_; }
+
+  // 执行控制
+  void run();
+  void pause();
+  void stop();
+  void verify();
+  void runAll();
+
+  // 状态
+  void syncControlStates();
+  bool canRun() const { return true; }
+
+  // Ribbon 动作（供 MainWindow setupRibbon 获取）
+  QAction* runAction() const { return act_run_; }
+  QAction* pauseAction() const { return act_pause_; }
+  QAction* stopAction() const { return act_stop_; }
+  QAction* verifyAction() const { return act_verify_; }
+  QAction* runAllAction() const { return act_run_all_; }
+  QLabel* ribbonStatsLabel() const { return label_ribbon_stats_; }
+
+ signals:
+  void engineStateChanged(etest::engine::EngineState state);
+  void execStatsUpdated(int pass, int fail, int elapsed);
+  void preconditionResult(bool can_run);
+
+ private:
+  void connectEngineSignals();
+
+  // 引擎
+  etest::engine::TestExecutionEngine* engine_ = nullptr;
+
+  // Ribbon QAction（构造时创建，父对象为 MainWindow）
+  QAction* act_run_ = nullptr;
+  QAction* act_pause_ = nullptr;
+  QAction* act_stop_ = nullptr;
+  QAction* act_verify_ = nullptr;
+  QAction* act_run_all_ = nullptr;
+  QLabel* label_ribbon_stats_ = nullptr;
+
+  // 引擎状态
+  int pass_count_ = 0;
+  int fail_count_ = 0;
+  QString current_program_name_;
+
+  // 外部依赖（通过 postInit 注入）
+  QWidget* parent_widget_ = nullptr;
+  ExecutionDebugWidget* debug_widget_ = nullptr;
+  ExecutionOutputPanel* output_panel_ = nullptr;
+  etest::core::SignalRegistry* signal_registry_ = nullptr;
+  std::shared_ptr<icd::Repository> icd_repository_;
+  EditorManager* editor_mgr_ = nullptr;
+  SidebarWidget* sidebar_ = nullptr;
+  QSplitter* h_splitter_ = nullptr;
+  ActivityBarWidget* activity_bar_ = nullptr;
+  TestProgramManagerWidget* test_program_mgr_ = nullptr;
+  ProblemsPanel* problems_panel_ = nullptr;
+  BottomContainerWidget* bottom_container_ = nullptr;
+  int* sidebar_width_ref_ = nullptr;
+  AppStatusBarController* status_bar_ctrl_ = nullptr;
+};
+
+}  // namespace etest::app
+
+#endif  // ETEST_APP_EXECUTIONPANELCONTROLLER_H_

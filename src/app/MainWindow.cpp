@@ -44,6 +44,7 @@
 #include "ActivityBarWidget.h"
 #include "AppStatusBarController.h"
 #include "EditorPanelController.h"
+#include "ExecutionPanelController.h"
 #include "ProjectController.h"
 #include "TuxSaverController.h"
 #include "AppIconProvider.h"
@@ -115,6 +116,7 @@ MainWindow::MainWindow(QWidget* parent)
       signal_registry_(nullptr),
       icd_repository_(nullptr) {
   status_bar_ctrl_ = new AppStatusBarController(this);
+  execution_controller_ = new ExecutionPanelController(this, this);
   initUi();
   initSignalsEarly();
   // 安排懒加载（窗口 show() 之后执行）
@@ -761,7 +763,7 @@ void MainWindow::initSignalsLate() {
         }
         if (auto* te = qobject_cast<TestProgramEditorWidget*>(ie->widget())) {
           connect(te, &TestProgramEditorWidget::programSaved, this,
-                  &MainWindow::onProgramSaved, Qt::UniqueConnection);
+                  [](const QString&) {});
         }
       });
   connect(editor_manager_, &EditorManager::fileClosed, this,
@@ -1460,7 +1462,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   editor_manager_->setIcdRepository(icd_repository_.get());
 
   // 确保引擎就绪（此时 signal_registry_ 和 icd_repository_ 已可用）
-  createEngine();
+  execution_controller_->createEngine();
 
   if (signal_registry_ && icd_repository_) {
     LOG_DEBUG("UUID", "ICD Repository loaded, frames={}",
@@ -1521,8 +1523,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
         te->setSignalSelection(
             new IcdSignalSelection(signal_registry_, icd_repository_.get()));
         te->setRegistry(signal_registry_);
-        connect(te, &TestProgramEditorWidget::programSaved, this,
-                &MainWindow::onProgramSaved);
+        connect(te, &TestProgramEditorWidget::programSaved,
+                this, [](const QString&) {});
       }
     }
 
@@ -1570,7 +1572,7 @@ void MainWindow::onProjectClosed() {
   status_bar_ctrl_->setMessage(QStringLiteral("项目已关闭"));
 
   // M6: 清理 ICD 上下文
-  destroyEngine();
+  execution_controller_->destroyEngine();
 
   if (signal_registry_) {
     signal_registry_->clear();
@@ -1896,354 +1898,12 @@ etest::engine::ProgramData convertProgram(
 
 // ── 引擎生命周期 ──
 
-void MainWindow::createEngine() {
-  if (engine_) {
-    return;
-  }
-  engine_ = new etest::engine::TestExecutionEngine(signal_registry_,
-                                                   icd_repository_.get(), this);
-  // 连接发动机状态变更信号 → Ribbon 同步 + StatusBar
-  connect(engine_, &etest::engine::TestExecutionEngine::engineStateChanged,
-          this, [this](etest::engine::EngineState state) {
-            syncControlStates();
-            QString stateText;
-            switch (state) {
-              case etest::engine::EngineState::Idle:
-                stateText = QStringLiteral("就绪");
-                status_bar_ctrl_->setMessage(stateText);
-                break;
-              case etest::engine::EngineState::Running:
-                stateText = QStringLiteral("运行中");
-                status_bar_ctrl_->setMessage(QStringLiteral("运行中..."));
-                break;
-              case etest::engine::EngineState::Paused:
-                stateText = QStringLiteral("已暂停");
-                status_bar_ctrl_->setMessage(stateText);
-                break;
-              case etest::engine::EngineState::Finished:
-                stateText = QStringLiteral("已完成");
-                status_bar_ctrl_->setMessage(
-                    QStringLiteral("执行完成 (✅%1 ❌%2)")
-                        .arg(pass_count_).arg(fail_count_));
-                break;
-              case etest::engine::EngineState::Error:
-                stateText = QStringLiteral("错误");
-                status_bar_ctrl_->setMessage(QStringLiteral("执行出错"));
-                break;
-            }
-            status_bar_ctrl_->setEngineState(stateText);
-          });
 
-  // 绑定到监视面板（bindEngine 内部连接所有需要的信号）
-  execution_debug_widget_->bindEngine(engine_);
 
-  // suiteFinished → 累计统计 + 更新 StatusBar
-  connect(engine_, &etest::engine::TestExecutionEngine::suiteFinished,
-          this, [this](const QString& /*name*/, int pass, int fail) {
-    pass_count_ += pass;
-    fail_count_ += fail;
-    status_bar_ctrl_->setExecStats(pass_count_, fail_count_, 0);
-  });
-
-  // 步骤结果 → 执行输出面板
-  connect(engine_, &etest::engine::TestExecutionEngine::stepFinished, this,
-          [this](int /*caseIndex*/, const QString& /*stepPath*/,
-                 const etest::engine::StepResult& result) {
-            execution_output_panel_->appendResult(result);
-          });
-
-  // 引擎级错误 → 执行输出面板
-  connect(engine_, &etest::engine::TestExecutionEngine::engineError, this,
-          [this](const QString& msg) {
-            execution_output_panel_->appendError(msg);
-          });
-
-  // 引擎执行完成后保存 .etlog 报告
-  connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
-          [this]() {
-            if (current_program_name_.isEmpty()) {
-              return;
-            }
-            auto& projMgr = etest::core::project::ProjectManager::instance();
-            QString reportDir =
-                projMgr.currentProjectRoot() + QStringLiteral("/reports");
-            QDir().mkpath(reportDir);
-            QString etlogPath = reportDir + QStringLiteral("/") +
-                                current_program_name_ +
-                                QStringLiteral(".etlog");
-            engine_->saveReport(etlogPath);
-          });
-}
-
-void MainWindow::destroyEngine() {
-  if (!engine_) {
-    return;
-  }
-  engine_->stop();
-  engine_->deleteLater();
-  engine_ = nullptr;
-}
-
-void MainWindow::syncControlStates() {
-  if (!engine_) {
-    act_run_->setEnabled(true);
-    act_run_all_->setEnabled(true);
-    act_pause_->setEnabled(false);
-    act_stop_->setEnabled(false);
-    act_verify_->setEnabled(true);
-    return;
-  }
-  auto state = engine_->state();
-  switch (state) {
-    case etest::engine::EngineState::Idle:
-    case etest::engine::EngineState::Finished:
-      act_run_->setEnabled(true);
-      act_run_all_->setEnabled(true);
-      act_pause_->setEnabled(false);
-      act_stop_->setEnabled(false);
-      act_verify_->setEnabled(true);
-      break;
-    case etest::engine::EngineState::Running:
-      act_run_->setEnabled(false);
-      act_run_all_->setEnabled(false);
-      act_pause_->setEnabled(true);
-      act_pause_->setText(QStringLiteral("暂停"));
-      act_pause_->setIcon(
-          AppIconProvider::instance().icon(QStringLiteral("pause")));
-      act_stop_->setEnabled(true);
-      act_verify_->setEnabled(false);
-      break;
-    case etest::engine::EngineState::Paused:
-      act_run_->setEnabled(false);
-      act_run_all_->setEnabled(false);
-      act_pause_->setEnabled(true);
-      act_pause_->setText(QStringLiteral("继续"));
-      act_pause_->setIcon(
-          AppIconProvider::instance().icon(QStringLiteral("resume")));
-      act_stop_->setEnabled(true);
-      act_verify_->setEnabled(false);
-      break;
-    case etest::engine::EngineState::Error:
-      act_run_->setEnabled(true);
-      act_run_all_->setEnabled(true);
-      act_pause_->setEnabled(false);
-      act_stop_->setEnabled(false);
-      act_verify_->setEnabled(true);
-      break;
-  }
-}
 
 // ── Ribbon 运行按钮 ──
 
-void MainWindow::onRunClicked() {
-  LOG_INFO("MAIN_UI", "点击「运行」");
 
-  // 0. 前提检查
-  if (execution_debug_widget_ && !execution_debug_widget_->canRun()) {
-    QMessageBox::warning(this, QStringLiteral("运行"),
-                         QStringLiteral("运行前提不满足，请先执行验证"));
-    return;
-  }
-
-  // 1. 先切侧边栏到执行调试页面（视觉反馈优先）
-  sidebar_->switchPage(PageId::kRun);
-  if (!sidebar_->isContentVisible()) {
-    sidebar_->showContent();
-    auto sizes = h_splitter_->sizes();
-    if (!sizes.isEmpty()) {
-      sizes[0] = sidebar_expanded_width_;
-      h_splitter_->setSizes(sizes);
-    }
-  }
-  activity_bar_->setActivePageId(PageId::kRun);
-
-  // 2. 获取测试程序数据：优先从编辑器取，其次从 TestProgramManagerWidget 取
-  etest::app::TestProgramData data;
-  auto* editor = editor_manager_->currentEditor();
-  auto* progEditor = qobject_cast<TestProgramEditorWidget*>(
-      editor ? editor->widget() : nullptr);
-  if (progEditor) {
-    // 2a. 从编辑器取
-    if (editor->isModified()) {
-      editor->save();
-    }
-    data = progEditor->programData();
-  } else {
-    // 2b. 从 TestProgramManagerWidget 取选中项
-    data = test_program_mgr_->loadSelectedProgramData();
-    if (data.name.isEmpty()) {
-      QMessageBox::information(
-          this, QStringLiteral("运行"),
-          QStringLiteral("请先打开一个测试程序或从测试程序列表中选中一个"));
-      return;
-    }
-  }
-
-  if (data.cases.isEmpty()) {
-    QMessageBox::warning(this, QStringLiteral("运行"),
-                         QStringLiteral("测试程序中没有测试用例，无法运行"));
-    return;
-  }
-
-  // 3. 创建引擎（若需要）
-  createEngine();
-
-  // 3b. 同步 registry
-  engine_->setRegistry(signal_registry_, icd_repository_.get());
-
-  // 3c. 加载拓扑设备
-  {
-    auto& projMgr = ProjectManager::instance();
-    if (projMgr.isProjectOpen()) {
-      QString topoDir = projMgr.currentProjectRoot() + QStringLiteral("/topology");
-      QDir topoDirObj(topoDir);
-      if (topoDirObj.exists()) {
-        const auto topoFiles = topoDirObj.entryInfoList(
-            {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
-        for (const QFileInfo& fi : topoFiles) {
-          engine_->loadTopology(fi.absoluteFilePath());
-        }
-      }
-    }
-  }
-
-  // 4. 设置程序数据
-  current_program_name_ = data.name;
-  engine_->setProgram(convertProgram(data));
-
-  // 重置统计计数
-  pass_count_ = 0;
-  fail_count_ = 0;
-  status_bar_ctrl_->setExecStats(0, 0, 0);
-
-  // 5. 启动
-  engine_->start();
-}
-
-void MainWindow::onPauseClicked() {
-  if (!engine_) {
-    return;
-  }
-  if (engine_->state() == etest::engine::EngineState::Running) {
-    LOG_INFO("MAIN_UI", "点击「暂停」");
-    engine_->pause();
-  } else if (engine_->state() == etest::engine::EngineState::Paused) {
-    LOG_INFO("MAIN_UI", "点击「继续」");
-    engine_->resume();
-  }
-}
-
-void MainWindow::onStopClicked() {
-  LOG_INFO("MAIN_UI", "点击「停止」");
-  if (engine_) {
-    engine_->stop();
-  }
-}
-
-void MainWindow::onVerifyClicked() {
-  LOG_INFO("MAIN_UI", "点击「校验」");
-  if (!problems_panel_) {
-    return;
-  }
-  auto* problems = problems_panel_;
-  problems->clearProblems();
-  int errors = 0;
-  int warnings = 0;
-
-  // 1. 项目已打开
-  auto& projMgr = ProjectManager::instance();
-  bool projectOpen = projMgr.isProjectOpen();
-  if (!projectOpen) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
-                         QStringLiteral("未打开项目"));
-    errors++;
-  }
-
-  // 2. ICD 协议已定义
-  bool icdLoaded = icd_repository_ && !icd_repository_->frames().empty();
-  if (!icdLoaded) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
-                         QStringLiteral("ICD 协议未加载"));
-    errors++;
-  }
-
-  // 3. 拓扑已配置
-  bool topoExists = false;
-  if (projectOpen) {
-    QString topoDir = projMgr.currentProjectRoot() + QStringLiteral("/topology");
-    QDir topoDirObj(topoDir);
-    topoExists = topoDirObj.exists()
-                 && !topoDirObj.entryList({QStringLiteral("*.etopo")},
-                                           QDir::Files).isEmpty();
-  }
-  if (!topoExists) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
-                         QStringLiteral("未找到拓扑文件"));
-    errors++;
-  }
-
-  // 4. 拓扑已绑定信号
-  bool signalBound = signal_registry_
-                     && !signal_registry_->registeredDeviceIds().isEmpty();
-  if (!signalBound) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
-                         QStringLiteral("拓扑未绑定信号"));
-    warnings++;
-  }
-
-  // 5. 测试程序可用：优先编辑器，退回到选中项
-  bool hasProgram = false;
-  auto* editor = editor_manager_->currentEditor();
-  auto* progEditor = editor
-      ? qobject_cast<TestProgramEditorWidget*>(editor->widget()) : nullptr;
-  if (progEditor) {
-    hasProgram = !progEditor->programData().cases.isEmpty();
-  } else if (test_program_mgr_) {
-    auto data = test_program_mgr_->loadSelectedProgramData();
-    hasProgram = !data.cases.isEmpty();
-  }
-  if (!hasProgram) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
-                         QStringLiteral("未选择有效的测试程序"));
-    errors++;
-  }
-
-  // 6. 硬件/Mock 状态
-  // TODO: 接入硬件管理器设备状态查询
-  if (!topoExists && !signalBound) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
-                         QStringLiteral("硬件/Mock 未配置"));
-    warnings++;
-  }
-
-  problems->showSummary(errors, warnings);
-
-  // 有问题时自动切换到问题面板
-  if (errors > 0 || warnings > 0) {
-    int idx = bottom_container_->indexOf(problems_panel_);
-    if (idx >= 0) {
-      bottom_container_->setCurrentPanel(idx);
-      bottom_container_->show();
-    }
-  }
-
-  // 同步 ExecutionDebugWidget 依赖并刷新概览区
-  if (execution_debug_widget_) {
-    execution_debug_widget_->setDependencies(signal_registry_,
-                                              icd_repository_.get());
-  }
-}
-
-void MainWindow::onRunAllClicked() {
-  LOG_INFO("MAIN_UI", "点击「运行全部」");
-  // 运行全部：委托给 onRunClicked
-  onRunClicked();
-}
-
-void MainWindow::onProgramSaved(const QString& path) {
-  // 程序保存后的回调：可在此更新引擎数据或状态
-  Q_UNUSED(path);
-}
 
 void MainWindow::resizeEvent(QResizeEvent* event) {
   SARibbonMainWindow::resizeEvent(event);
@@ -2551,47 +2211,42 @@ void MainWindow::setupRibbon() {
   {
     auto* cat = ribbon->addCategoryPage(QStringLiteral("运行"));
 
-    // 执行控制 Panel
+    // 执行控制 Panel（QAction 由 ExecutionPanelController 管理）
     auto* panel_control = cat->addPanel(QStringLiteral("执行控制"));
-    act_run_ =
-        new QAction(AppIconProvider::instance().icon(QStringLiteral("run")),
-                    QStringLiteral("运行"), this);
-    act_pause_ =
-        new QAction(AppIconProvider::instance().icon(QStringLiteral("pause")),
-                    QStringLiteral("暂停"), this);
-    act_stop_ =
-        new QAction(AppIconProvider::instance().icon(QStringLiteral("stop")),
-                    QStringLiteral("停止"), this);
-    act_verify_ =
-        new QAction(AppIconProvider::instance().icon(QStringLiteral("verify")),
-                    QStringLiteral("验证"), this);
-    panel_control->addLargeAction(act_verify_);
-    panel_control->addLargeAction(act_run_);
-    panel_control->addSmallAction(act_pause_);
-    panel_control->addSmallAction(act_stop_);
+    execution_controller_->runAction()->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("run")));
+    execution_controller_->pauseAction()->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("pause")));
+    execution_controller_->stopAction()->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("stop")));
+    execution_controller_->verifyAction()->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("verify")));
+    panel_control->addLargeAction(execution_controller_->verifyAction());
+    panel_control->addLargeAction(execution_controller_->runAction());
+    panel_control->addSmallAction(execution_controller_->pauseAction());
+    panel_control->addSmallAction(execution_controller_->stopAction());
 
-    // 连接 Ribbon 运行按钮
-    connect(act_run_, &QAction::triggered, this, &MainWindow::onRunClicked);
-    connect(act_pause_, &QAction::triggered, this, &MainWindow::onPauseClicked);
-    connect(act_stop_, &QAction::triggered, this, &MainWindow::onStopClicked);
-    connect(act_verify_, &QAction::triggered, this,
-            &MainWindow::onVerifyClicked);
+    connect(execution_controller_->runAction(), &QAction::triggered, this,
+            [this]() { execution_controller_->run(); });
+    connect(execution_controller_->pauseAction(), &QAction::triggered, this,
+            [this]() { execution_controller_->pause(); });
+    connect(execution_controller_->stopAction(), &QAction::triggered, this,
+            [this]() { execution_controller_->stop(); });
+    connect(execution_controller_->verifyAction(), &QAction::triggered, this,
+            [this]() { execution_controller_->verify(); });
 
     // 运行方式 Panel
     auto* panel_mode = cat->addPanel(QStringLiteral("运行方式"));
-    act_run_all_ =
-        new QAction(AppIconProvider::instance().icon(QStringLiteral("run_all")),
-                    QStringLiteral("运行全部"), this);
-    panel_mode->addLargeAction(act_run_all_);
+    execution_controller_->runAllAction()->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("run_all")));
+    panel_mode->addLargeAction(execution_controller_->runAllAction());
 
-    // 连接运行方式按钮
-    connect(act_run_all_, &QAction::triggered, this,
-            &MainWindow::onRunAllClicked);
+    connect(execution_controller_->runAllAction(), &QAction::triggered, this,
+            [this]() { execution_controller_->runAll(); });
 
     // 统计 Panel
     auto* panel_stats = cat->addPanel(QStringLiteral("统计"));
-    label_ribbon_stats_ = new QLabel(QStringLiteral("✅ 0  ❌ 0  ⏱ 0"), this);
-    panel_stats->addSmallWidget(label_ribbon_stats_);
+    panel_stats->addSmallWidget(execution_controller_->ribbonStatsLabel());
   }
 
   // ============================================================
@@ -2686,7 +2341,7 @@ void MainWindow::setupRibbon() {
                         : SARibbonTheme::RibbonThemeOffice2021Blue);
 
   // 设置 Ribbon 运行按钮的初始状态
-  syncControlStates();
+  execution_controller_->syncControlStates();
 }
 
 void MainWindow::saveWindowState() {
