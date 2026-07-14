@@ -61,6 +61,10 @@ class ExecutionPanelController : public QObject {
   void destroyEngine();
   etest::engine::TestExecutionEngine* engine() const { return engine_; }
 
+  // 运行时更新 ICD 上下文（项目打开时调用，createEngine 依赖它们）
+  void updateIcdContext(etest::core::SignalRegistry* signal_registry,
+                        std::shared_ptr<icd::Repository> icd_repository);
+
   // 执行控制
   void run();
   void pause();

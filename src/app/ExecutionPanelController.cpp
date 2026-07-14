@@ -92,7 +92,8 @@ ExecutionPanelController::ExecutionPanelController(QWidget* parent_widget,
   act_stop_ = new QAction(QIcon(), QStringLiteral("停止"), parent_widget_);
   act_verify_ = new QAction(QIcon(), QStringLiteral("验证"), parent_widget_);
   act_run_all_ = new QAction(QIcon(), QStringLiteral("运行全部"), parent_widget_);
-  label_ribbon_stats_ = new QLabel(QStringLiteral(""), parent_widget_);
+  label_ribbon_stats_ = new QLabel(
+      QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"), parent_widget_);
 }
 
 void ExecutionPanelController::postInit(
@@ -122,6 +123,13 @@ void ExecutionPanelController::postInit(
   bottom_container_ = bottom_container;
   sidebar_width_ref_ = sidebar_width_ref;
   status_bar_ctrl_ = status_bar_ctrl;
+}
+
+void ExecutionPanelController::updateIcdContext(
+    etest::core::SignalRegistry* signal_registry,
+    std::shared_ptr<icd::Repository> icd_repository) {
+  signal_registry_ = signal_registry;
+  icd_repository_ = std::move(icd_repository);
 }
 
 void ExecutionPanelController::createEngine() {

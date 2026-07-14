@@ -1100,6 +1100,15 @@ void MainWindow::lazyInit() {
     editor_manager_->openFile(path);
   });
 
+  // 执行控制器依赖注入（signal_registry_/icd_repository_ 项目打开时才可用）
+  execution_controller_->postInit(
+      execution_debug_widget_, execution_output_panel_,
+      nullptr, nullptr,
+      editor_manager_, sidebar_, h_splitter_,
+      activity_bar_, test_program_mgr_,
+      problems_panel_, bottom_container_,
+      &sidebar_expanded_width_, status_bar_ctrl_);
+
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
@@ -1394,6 +1403,9 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     icd_repository_ = pm->repository();
   }
   editor_manager_->setIcdRepository(icd_repository_.get());
+
+  // 将 ICD 上下文同步到 ExecutionPanelController
+  execution_controller_->updateIcdContext(signal_registry_, icd_repository_);
 
   // 确保引擎就绪（此时 signal_registry_ 和 icd_repository_ 已可用）
   execution_controller_->createEngine();
@@ -1799,36 +1811,46 @@ void MainWindow::setupRibbon() {
                                   QStringLiteral("撤销"), this);
   edit_undo_action_->setShortcut(QKeySequence::Undo);
   edit_undo_action_->setEnabled(false);
+  connect(edit_undo_action_, &QAction::triggered, this, &MainWindow::onUndo);
 
   edit_redo_action_ =
       new QAction(style()->standardIcon(QStyle::SP_ArrowForward),
                   QStringLiteral("重做"), this);
   edit_redo_action_->setShortcut(QKeySequence::Redo);
   edit_redo_action_->setEnabled(false);
+  connect(edit_redo_action_, &QAction::triggered, this, &MainWindow::onRedo);
 
   edit_cut_action_ = new QAction(QStringLiteral("剪切"), this);
   edit_cut_action_->setShortcut(QKeySequence::Cut);
   edit_cut_action_->setEnabled(false);
+  connect(edit_cut_action_, &QAction::triggered, this, &MainWindow::onCut);
 
   edit_copy_action_ = new QAction(QStringLiteral("复制"), this);
   edit_copy_action_->setShortcut(QKeySequence::Copy);
   edit_copy_action_->setEnabled(false);
+  connect(edit_copy_action_, &QAction::triggered, this, &MainWindow::onCopy);
 
   edit_paste_action_ = new QAction(QStringLiteral("粘贴"), this);
   edit_paste_action_->setShortcut(QKeySequence::Paste);
   edit_paste_action_->setEnabled(false);
+  connect(edit_paste_action_, &QAction::triggered, this, &MainWindow::onPaste);
 
   edit_find_action_ = new QAction(QStringLiteral("查找"), this);
   edit_find_action_->setShortcut(QKeySequence::Find);
   edit_find_action_->setEnabled(false);
+  connect(edit_find_action_, &QAction::triggered, this, &MainWindow::onFind);
 
   edit_replace_action_ = new QAction(QStringLiteral("替换"), this);
   edit_replace_action_->setShortcut(QKeySequence::Replace);
   edit_replace_action_->setEnabled(false);
+  connect(edit_replace_action_, &QAction::triggered, this,
+          &MainWindow::onReplace);
 
   edit_go_to_line_action_ = new QAction(QStringLiteral("跳转到行"), this);
   edit_go_to_line_action_->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
   edit_go_to_line_action_->setEnabled(false);
+  connect(edit_go_to_line_action_, &QAction::triggered, this,
+          &MainWindow::onGoToLine);
 
   // ---- QuickAccessBar ----
   auto* qab = ribbon->quickAccessBar();
