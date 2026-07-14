@@ -6,10 +6,18 @@
 
 #include "ThemeManager.h"
 
-TabBarStyle::TabBarStyle() : QProxyStyle() {}
+TabBarStyle::TabBarStyle(int minWidth, int minHeight)
+    : QProxyStyle(), min_width_(minWidth), min_height_(minHeight) {}
 
-void TabBarStyle::install(QTabBar* tabBar) {
-  auto* style = new TabBarStyle();
+void TabBarStyle::install(QTabBar* tabBar, QSize minTabSize) {
+  auto* existing = qobject_cast<TabBarStyle*>(tabBar->style());
+  if (existing) {
+    existing->setDarkTheme(
+        etest::core_ui::ThemeManager::instance().isDarkTheme());
+    tabBar->update();
+    return;
+  }
+  auto* style = new TabBarStyle(minTabSize.width(), minTabSize.height());
   style->dark_ = etest::core_ui::ThemeManager::instance().isDarkTheme();
   tabBar->setStyle(style);
   QObject::connect(&etest::core_ui::ThemeManager::instance(),
@@ -56,8 +64,8 @@ QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
                                     const QWidget* widget) const {
   if (type == CT_TabBarTab) {
     QSize ret(size);
-    ret.rheight() = 28;
-    ret.rwidth() = 110;
+    ret.rheight() = qMax(size.height(), min_height_);
+    ret.rwidth() = qMax(size.width(), min_width_);
     return ret;
   }
   return QProxyStyle::sizeFromContents(type, option, size, widget);

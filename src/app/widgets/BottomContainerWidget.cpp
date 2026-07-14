@@ -32,7 +32,7 @@ void BottomContainerWidget::initUi() {
   tab_widget_->tabBar()->setUsesScrollButtons(true);
   tab_widget_->setAutoFillBackground(true);
   tab_widget_->setObjectName(QStringLiteral("bottomTabWidget"));
-  TabBarStyle::install(tab_widget_->tabBar());
+  TabBarStyle::install(tab_widget_->tabBar(), QSize(110, 28));
 
   main_layout->addWidget(tab_widget_);
 

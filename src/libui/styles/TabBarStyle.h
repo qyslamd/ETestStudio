@@ -2,15 +2,17 @@
 #define ETEST_UI_TAB_BAR_STYLE_H_
 
 #include <QProxyStyle>
+#include <QSize>
 class QTabBar;
 
 // Chrome 风格的圆角 Tab 自绘样式（参考 draw_tab_shape demo）
 class TabBarStyle : public QProxyStyle {
+  Q_OBJECT
  public:
-  TabBarStyle();
+  explicit TabBarStyle(int minWidth = 110, int minHeight = 28);
 
   // 工厂方法：创建样式并安装到 QTabBar，自动监听主题切换
-  static void install(QTabBar* tabBar);
+  static void install(QTabBar* tabBar, QSize minTabSize = QSize(110, 28));
 
   // 主题切换：dark=true 深色主题，false 浅色
   // 安装后无需手动调用，install 已自动处理
@@ -48,6 +50,8 @@ class TabBarStyle : public QProxyStyle {
  private:
   const qreal topMargin = 0.0;
   const qreal HRatio = 1.0 / 5.0;
+  int min_width_ = 110;
+  int min_height_ = 28;
   bool dark_ = true;
 };
 
