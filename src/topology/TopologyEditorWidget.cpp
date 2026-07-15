@@ -198,6 +198,23 @@ QWidget* TopologyEditorWidget::widget() {
   return this;
 }
 
+void TopologyEditorWidget::setReadOnly(bool readOnly) {
+  view_->setInteractive(!readOnly);
+  if (delete_action_) delete_action_->setEnabled(!readOnly);
+  if (undo_action_) undo_action_->setEnabled(!readOnly);
+  if (redo_action_) redo_action_->setEnabled(!readOnly);
+  if (copy_action_) copy_action_->setEnabled(!readOnly);
+  if (paste_action_) paste_action_->setEnabled(!readOnly);
+  if (export_image_action_) export_image_action_->setEnabled(!readOnly);
+  // 禁用拖放添加设备
+  if (device_palette_) {
+    device_palette_->setEnabled(!readOnly);
+  }
+  if (property_panel_) {
+    property_panel_->setEnabled(!readOnly);
+  }
+}
+
 QString TopologyEditorWidget::editorType() const {
   return QStringLiteral("topology");
 }

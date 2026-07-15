@@ -46,6 +46,9 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   void undo() override;
   void redo() override;
 
+  // 只读模式
+  void setReadOnly(bool readOnly) override;
+
   // Topology specific
   TopologyDocument* document() const;
   void reloadScene();

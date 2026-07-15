@@ -54,6 +54,9 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   void undo() override;
   void redo() override;
 
+  // 只读模式
+  void setReadOnly(bool readOnly) override;
+
   // 通过帧 ID 导航（用于 ConfigDriven 模式从外部跳转到指定帧）
   void navigateToFrame(int frameId);
 

@@ -292,6 +292,11 @@ TestStepData StepTableWidget::stepExtData(int row) const {
 
 // ── 重新编号 ──
 
+void StepTableWidget::setReadOnly(bool readOnly) {
+  setEditTriggers(readOnly ? QAbstractItemView::NoEditTriggers
+                           : QAbstractItemView::DoubleClicked);
+}
+
 void StepTableWidget::renumberSteps() {
   for (int i = 0; i < model_->rowCount(); ++i) {
     verticalHeader()->setSectionHidden(i, false);

@@ -617,6 +617,10 @@ bool EditorManager::hasUnsavedChangesInDirectory(const QString& dirPath) const {
   return false;
 }
 
+QList<IEditor*> EditorManager::allEditors() const {
+  return editors_.values();
+}
+
 IEditor* EditorManager::currentEditor() const {
   if (current_file_path_.isEmpty())
     return nullptr;

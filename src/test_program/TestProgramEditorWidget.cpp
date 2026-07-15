@@ -102,6 +102,22 @@ TestProgramEditorWidget::TestProgramEditorWidget(const QString& filePath,
 
 
 
+void TestProgramEditorWidget::setReadOnly(bool readOnly) {
+  if (suite_name_edit_) suite_name_edit_->setReadOnly(readOnly);
+  if (suite_desc_edit_) suite_desc_edit_->setReadOnly(readOnly);
+  if (setup_table_) setup_table_->setReadOnly(readOnly);
+  if (teardown_table_) teardown_table_->setReadOnly(readOnly);
+  // Disable toolbar actions
+  if (add_case_action_) add_case_action_->setEnabled(!readOnly);
+  if (remove_case_action_) remove_case_action_->setEnabled(!readOnly);
+  if (add_step_action_) add_step_action_->setEnabled(!readOnly);
+  if (remove_step_action_) remove_step_action_->setEnabled(!readOnly);
+  if (move_up_action_) move_up_action_->setEnabled(!readOnly);
+  if (move_down_action_) move_down_action_->setEnabled(!readOnly);
+  if (undo_action_) undo_action_->setEnabled(!readOnly);
+  if (redo_action_) redo_action_->setEnabled(!readOnly);
+}
+
 void TestProgramEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded_) {

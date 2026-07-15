@@ -110,6 +110,10 @@ void TextEditorWidget::redo() {
   editor_->redo();
 }
 
+void TextEditorWidget::setReadOnly(bool readOnly) {
+  editor_->setReadOnly(readOnly);
+}
+
 // ── Text editor specific ───────────────────────────────────────
 
 QString TextEditorWidget::fileName() const {

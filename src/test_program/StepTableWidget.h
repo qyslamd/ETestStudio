@@ -74,6 +74,9 @@ class StepTableWidget : public QTableView {
   // ── 按当前字体刷新行高（主题切换/构造后调用，避免 cell editor 字体被截断） ──
   void refreshRowHeight();
 
+  // ── 只读模式（运行态禁用表格编辑） ──
+  void setReadOnly(bool readOnly);
+
   // ── M0: ISignalSelection 注入 ──
   // nullptr 降级为 QTableView 默认文本编辑
   void setSignalSelection(ISignalSelection* sel) { signal_selection_ = sel; }

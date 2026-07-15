@@ -107,6 +107,9 @@ class TextEditorWidget : public QWidget, public IEditor {
   void undo() override;
   void redo() override;
 
+  // 只读模式
+  void setReadOnly(bool readOnly) override;
+
   // Text editor specific
   QString fileName() const;
   void setFilePath(const QString& newPath);

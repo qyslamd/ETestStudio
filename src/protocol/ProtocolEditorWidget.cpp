@@ -244,6 +244,19 @@ void ProtocolEditorWidget::redo() {
   setModified(snapshot_index_ != 0);
 }
 
+void ProtocolEditorWidget::setReadOnly(bool readOnly) {
+  if (node_tree_) node_tree_->setEnabled(!readOnly);
+  if (bit_view_) bit_view_->setEnabled(!readOnly);
+  if (property_panel_) property_panel_->setEnabled(!readOnly);
+  if (new_frame_action_) new_frame_action_->setEnabled(!readOnly);
+  if (delete_frame_action_) delete_frame_action_->setEnabled(!readOnly);
+  if (add_node_action_) add_node_action_->setEnabled(!readOnly);
+  if (delete_selected_action_) delete_selected_action_->setEnabled(!readOnly);
+  if (undo_action_) undo_action_->setEnabled(!readOnly);
+  if (redo_action_) redo_action_->setEnabled(!readOnly);
+  if (frame_type_combo_) frame_type_combo_->setEnabled(!readOnly);
+}
+
 void ProtocolEditorWidget::openFile(const QString& filePath) {
   if (filePath == current_file_)
     return;

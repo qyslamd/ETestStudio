@@ -56,6 +56,9 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void undo() override;
   void redo() override;
 
+  // 只读模式
+  void setReadOnly(bool readOnly) override;
+
   void openFile(const QString& filePath) override;
   void setEmbeddedMode(bool embedded);
   void newProgram();

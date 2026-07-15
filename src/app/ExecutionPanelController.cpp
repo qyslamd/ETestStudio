@@ -150,6 +150,12 @@ void ExecutionPanelController::createEngine() {
 }
 
 void ExecutionPanelController::destroyEngine() {
+  // 所有编辑器恢复编辑状态
+  if (editor_mgr_) {
+    for (auto* ed : editor_mgr_->allEditors()) {
+      ed->setReadOnly(false);
+    }
+  }
   if (central_stack_) {
     central_stack_->setCurrentIndex(0);
   }
@@ -233,6 +239,11 @@ void ExecutionPanelController::connectEngineSignals() {
   // 引擎完成 → 保存 .etlog 报告 + 切回编辑态
   connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
           [this]() {
+            if (editor_mgr_) {
+              for (auto* ed : editor_mgr_->allEditors()) {
+                ed->setReadOnly(false);
+              }
+            }
             if (central_stack_) {
               central_stack_->setCurrentIndex(0);
             }
@@ -390,6 +401,12 @@ void ExecutionPanelController::run() {
 
   // 5. 启动 + 切换到运行态
   engine_->start();
+  // 所有编辑器置为只读
+  if (editor_mgr_) {
+    for (auto* ed : editor_mgr_->allEditors()) {
+      ed->setReadOnly(true);
+    }
+  }
   if (central_stack_) {
     central_stack_->setCurrentIndex(1);
   }
@@ -412,6 +429,12 @@ void ExecutionPanelController::stop() {
   LOG_INFO("MAIN_UI", "点击「停止」");
   if (engine_) {
     engine_->stop();
+  }
+  // 恢复编辑器编辑状态
+  if (editor_mgr_) {
+    for (auto* ed : editor_mgr_->allEditors()) {
+      ed->setReadOnly(false);
+    }
   }
   if (central_stack_) {
     central_stack_->setCurrentIndex(0);

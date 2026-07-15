@@ -47,6 +47,7 @@ class EditorManager : public QObject {
   bool saveModifiedFilesInDirectory(const QString& dirPath);
 
   QStringList openFiles() const;
+  QList<IEditor*> allEditors() const;
   IEditor* currentEditor() const;
   QString currentFilePath() const;
 

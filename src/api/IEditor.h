@@ -27,6 +27,9 @@ class IEditor {
 
   // 打开编辑器文件，默认空实现
   virtual void openFile(const QString& filePath) { Q_UNUSED(filePath); }
+
+  // 只读模式（运行态禁用编辑，编辑器可选是否实现）
+  virtual void setReadOnly(bool readOnly) { Q_UNUSED(readOnly); }
 };
 
 }  // namespace etest::app
