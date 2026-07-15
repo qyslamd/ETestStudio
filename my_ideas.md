@@ -91,3 +91,37 @@
 - [x] **topology-demo 浅色主题 + SVG 图标修复**
   添加 resource.qrc、AUTORCC、setDarkTheme(false)
   (commit 7e15c75)
+
+## SARibbon的固定收起按钮
+```txt
+
+3rdparty\SARibbon-2.5.7\src\SARibbonBar\SARibbonBar.cpp
+
+
+/**
+ * @brief 显示隐藏ribbon的按钮
+ * @param isShow
+ */
+void SARibbonBar::showMinimumModeButton(bool isShow)
+{
+    SA_D(d);
+    if (isShow && !(d->mMinimumCategoryButtonAction)) {
+        activeRightButtonGroup();
+
+        d->mMinimumCategoryButtonAction = new QAction(this);
+        d->mMinimumCategoryButtonAction->setIcon(style()->standardIcon(
+            isMinimumMode() ? QStyle::SP_TitleBarUnshadeButton : QStyle::SP_TitleBarShadeButton, nullptr));
+        connect(d->mMinimumCategoryButtonAction, &QAction::triggered, this, [ this, d ]() {
+            this->setMinimumMode(!isMinimumMode());
+            d->mMinimumCategoryButtonAction->setIcon(style()->standardIcon(
+                isMinimumMode() ? QStyle::SP_TitleBarUnshadeButton : QStyle::SP_TitleBarShadeButton, nullptr));
+        });
+        if (d->mRightButtonGroup) {
+            d->mRightButtonGroup->addAction(d->mMinimumCategoryButtonAction);
+        }
+    }
+
+    d->mMinimumCategoryButtonAction->setVisible(isShow);
+}
+
+```

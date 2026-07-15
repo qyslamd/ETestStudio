@@ -898,7 +898,7 @@ etest--app--SettingsDialog QComboBox::drop-down {
 etest--app--SettingsDialog QComboBox::down-arrow {
     width: 10px;
     height: 10px;
-    image: url(:/resources/icons/svg/drop_down_arrow_light.svg);
+    image: url(:/resources/icons/svg/drop_down_arrow_dark.svg);
 }
 QComboBox QAbstractItemView {
     background-color: #FFFFFF;

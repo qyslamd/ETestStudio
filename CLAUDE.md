@@ -8,14 +8,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用命令
 ### 构建项目
 ```bash
-# 全量构建（默认 debug）
+# 全量构建（默认 debug 64位）
 scripts/build_ninja.bat
+
+# 全量构建 32 位 debug
+scripts/build_ninja.bat -a x86
 
 # 仅构建主程序
 scripts/build_ninja.bat -t debug -m ETestStudio
 
 # 构建 + 部署 + 打包安装程序
 scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
+
 ```
 - 自动配置VS2019 x64编译环境
 - 使用Ninja生成器构建
@@ -87,31 +91,26 @@ etest (主程序)
 增强功能（如跨模块的 ICD 信号选择、同步编排）只能实现在 `etest_app`（主程序），
 下层模块只提供接口和纯数据模型。
 
-## 防止不听话规则
-1. 每次代码改动完成后都需要单独一行说一句 `我超威😁`
-
 
 ## 项目规则
 必须严格遵守以下规则：
-1. 代码修改必须经过用户明确授权，不得擅自改动未确认的内容
-2. C++代码遵循Google C++ Style Guide，Qt界面代码需将UI初始化和信号槽连接分离到`initUi()`和`initSignals()`函数
-3. 代码设计需遵循SOLID原则
-4. 所有会修改git仓库的命令必须经过我的确认，使用查看类git命令（git status、git log等）的没有限制
-5. Markdown文档遵循Google文档风格指南
-6. 文档统一存放在`docs/`目录下，按规划、研究、开发、参考分类组织
-7. 回答问题的语气禁止阿谀奉承，不用故意谄媚，只说问题的解决办法和思路
+1. 每次代码改动完成后都**必须**单独一行说一句 `我超威😁`
+2. 所有生成的C++代码**必须**遵循Google C++ Style Guide，Qt界面代码需将UI初始化和信号槽连接分离到`initUi()`和`initSignals()`函数
+3. 所有的Markdown文档**必须**遵循Google文档风格指南
+4. 代码设计需**必须**遵循`SOLID`原则
+5. 所有会修改git仓库的命令必须经过我的确认，使用查看类git命令（git status、git log等）的没有限制
+6. 文档统一存放在`docs/`目录下，按意图放入到不同的目录中
+7. 回答问题的语气**禁止**阿谀奉承，不用故意谄媚，只说问题的解决办法和思路，切实中肯，言简意赅
 8. 不要每次改动之后都给我说百分百没问题！
-9. 使用spdlog编写日志的时候，尽可能的使用我封装好的Logger类。
-10. git提交规则：
-   - 改动了代码编译成功后，不要直接提交，不然我都看不到改动是什么 
+9. 使用spdlog编写日志的时候，**尽可能**使用我封装好的Logger类及其宏定义
+10. `powershell`命令在windows上很恼火，除了必要的脚本使用bat或者ps1编写外，**能用Python脚本的一律用python**
+11. git提交规则：改动了代码编译成功后，**禁止**直接提交，不然我都看不到改动是什么
    - 能使用中文的描述必须使用中文
    - 当你生成 git commit 信息时：
    - 使用 Co-Authored-By 信息（如果需要）：Co-Authored-By: claude code 助手 <zhouyohu@163.com>
    - 不使用默认的 Claude 署名
    - 提交信息必须通过 Bash heredoc (cat <<'EOF') 传入，禁止使用 PowerShell here-string (@'...'@)，避免 @ 与邮箱等内容的冲突
    - 提交信息的开始和结束不能有 @ 符号
-   - 合并远程更新使用 git rebase，避免产生多余的 merge commit
-   - 执行 git pull 时使用 git pull --rebase
    - Git 提交信息规范
 ```txt
 <type>(<scope>): <subject>
@@ -139,8 +138,6 @@ etest (主程序)
 3. `body`（可选）：解释为什么，每行≤72字符
 4. `footer`（可选）：`Closes #123` 或 `BREAKING CHANGE: 说明`
 ```
-10.  增加了新的代码片段后，必须看看是否需要为新增的代码片段引入必要的头文件
-11.  `powershell`命令在windows上很恼火，除了必要的脚本使用bat或者ps1编写外，能用Python脚本的一律用python
 
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：
@@ -154,7 +151,3 @@ etest (主程序)
 - lua 5.4.4（脚本语言支持）
 - libharu 2.4.6（PDF生成）
 - QScintilla 2.11.3（高级文本编辑器组件）
-
-## 其它注意事项
- - Qt使用的SDK是 5.14.2 msvc2017_64，但是编译器使用的是 MSVC2019，实际测试下来 MSVC2019编译环境完全兼容 MSVC2017 编译的 Qt 库
- - 可以直接在终端中执行 `scripts/build_ninja.bat` 构建项目。libpng 的 MSYS 环境兼容性问题已通过 `cmake/libpng/patch_msys_env.cmake` 补丁解决。

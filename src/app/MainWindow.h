@@ -3,10 +3,8 @@
 
 #include <memory>
 
-#include "SARibbonMainWindow.h"
 #include "DockManager.h"
-
-
+#include "SARibbonMainWindow.h"
 
 namespace etest::core {
 class SignalRegistry;
@@ -113,7 +111,7 @@ class MainWindow : public SARibbonMainWindow {
   void onGoToLine();
 
   // QADS
-  static void hideDockTitleBarButtons(ads::CDockAreaWidget* area);
+  static void setupDockTitleBarButtons(ads::CDockAreaWidget* area);
   ads::CDockManager* dock_manager_ = nullptr;
 
   // 活动栏 + 侧边栏

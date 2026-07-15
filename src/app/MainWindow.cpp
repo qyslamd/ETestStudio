@@ -91,6 +91,7 @@
 #include "widgets/LogOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
 
+
 using namespace etest::core::config;
 using namespace etest::core::project;
 using namespace etest::core::logger;
@@ -206,9 +207,9 @@ void MainWindow::initUi() {
   central_dock_->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(central_dock_);
   central_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);
-  auto* centralDockArea = central_dock_->dockAreaWidget();
-  if (centralDockArea) {
-    hideDockTitleBarButtons(centralDockArea);
+  auto* centralArea = central_dock_->dockAreaWidget();
+  if (centralArea) {
+    setupDockTitleBarButtons(centralArea);
   }
 
   // 底部容器空壳（lazyInit 时 addPanel）
@@ -1251,6 +1252,17 @@ void MainWindow::onThemeChanged(bool isDark) {
       }
     }
     dock_manager_->setStyleSheet(adsQss);
+
+    // 更新下拉菜单按钮图标适配主题
+    auto* centralArea = central_dock_->dockAreaWidget();
+    if (centralArea) {
+      auto* tabMenuBtn =
+          centralArea->titleBar()->findChild<QToolButton*>("tabsMenuButton");
+      if (tabMenuBtn) {
+        tabMenuBtn->setIcon(
+            AppIconProvider::instance().icon("drop_down_arrow"));
+      }
+    }
   }
 }
 
@@ -1431,17 +1443,18 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
           }
           signal_registry_->registerDevice(
               id, name, dobj[QStringLiteral("type")].toString());
-          QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
-          for (const QJsonValue& pv : ports) {
-            QJsonObject pobj = pv.toObject();
-            QStringList frames;
-            for (const QJsonValue& fv :
-                 pobj[QStringLiteral("boundFrames")].toArray()) {
-              frames.append(fv.toString());
-            }
-            signal_registry_->bindPortToFrames(
-                id, pobj[QStringLiteral("name")].toString(), frames);
-          }
+              id, name, dobj[QStringLiteral("type")].toString());
+              QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
+              for (const QJsonValue& pv : ports) {
+                QJsonObject pobj = pv.toObject();
+                QStringList frames;
+                for (const QJsonValue& fv :
+                     pobj[QStringLiteral("boundFrames")].toArray()) {
+                  frames.append(fv.toString());
+                }
+                signal_registry_->bindPortToFrames(
+                    id, pobj[QStringLiteral("name")].toString(), frames);
+              }
         }
       }
     }
@@ -1877,6 +1890,10 @@ void MainWindow::setupRibbon() {
     LOG_INFO("MAIN_UI", "点击「退出登录」");
     AuthService::instance().logout();
   });
+  connect(logoutAction, &QAction::triggered, this, [this]() {
+    LOG_INFO("MAIN_UI", "点击「退出登录」");
+    AuthService::instance().logout();
+  });
 
   // ---- Application Button ----
   ribbon->applicationButton()->setIcon(
@@ -2233,7 +2250,7 @@ void MainWindow::restoreWindowState() {
   }
 }
 
-void MainWindow::hideDockTitleBarButtons(ads::CDockAreaWidget* area) {
+void MainWindow::setupDockTitleBarButtons(ads::CDockAreaWidget* area) {
   if (!area)
     return;
   auto* titleBar = area->titleBar();
@@ -2241,8 +2258,11 @@ void MainWindow::hideDockTitleBarButtons(ads::CDockAreaWidget* area) {
     return;
   for (auto* btn : titleBar->findChildren<QToolButton*>()) {
     auto name = btn->objectName();
-    if (name == "tabsMenuButton" || name == "detachGroupButton" ||
-        name == "dockAreaCloseButton") {
+    // 备注：
+    // 分离:detachGroupButton
+    // 关闭:dockAreaCloseButton
+    // 下拉菜单:tabsMenuButton
+    if (name == "detachGroupButton" || name == "dockAreaCloseButton") {
       btn->hide();
     }
   }
