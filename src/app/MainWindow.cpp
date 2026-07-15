@@ -18,12 +18,14 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProcess>
 #include <QScrollBar>
 #include <QShortcut>
 #include <QSplitter>
+#include <QStackedWidget>
 #include <QStatusBar>
 #include <QTimer>
 #include <QToolButton>
@@ -180,25 +182,28 @@ void MainWindow::initUi() {
   v_splitter_->setChildrenCollapsible(true);
   h_splitter_->addWidget(v_splitter_);
 
-  // 中央编辑器区域（提示栏 + DockManager）
-  auto* central_area = new QWidget(v_splitter_);
-  auto* central_area_layout = new QVBoxLayout(central_area);
-  central_area_layout->setContentsMargins(0, 0, 0, 0);
-  central_area_layout->setSpacing(0);
+  // 中央堆叠容器：编辑态 / 运行态
+  central_stack_ = new QStackedWidget(v_splitter_);
 
-  hint_bar_ = new HintBarWidget(central_area);
-  central_area_layout->addWidget(hint_bar_);
+  // ── 页 0：编辑态（提示栏 + DockManager） ──
+  auto* page_editor = new QWidget(central_stack_);
+  auto* page_editor_layout = new QVBoxLayout(page_editor);
+  page_editor_layout->setContentsMargins(0, 0, 0, 0);
+  page_editor_layout->setSpacing(0);
+
+  hint_bar_ = new HintBarWidget(page_editor);
+  page_editor_layout->addWidget(hint_bar_);
 
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   ads::CDockManager::setConfigFlag(
       ads::CDockManager::MiddleMouseButtonClosesTab, true);
   ads::CDockManager::setConfigFlag(ads::CDockManager::AllTabsHaveCloseButton,
                                    true);
-  dock_manager_ = new ads::CDockManager(central_area);
-  central_area_layout->addWidget(dock_manager_, 1);
+  dock_manager_ = new ads::CDockManager(page_editor);
+  page_editor_layout->addWidget(dock_manager_, 1);
 
   // 中央占位（lazyInit 时替换为 WelcomeWidget）
-  auto* placeholder = new QWidget(central_area);
+  auto* placeholder = new QWidget(page_editor);
   placeholder->setObjectName("CentralPlaceholder");
   central_dock_ = new ads::CDockWidget(QStringLiteral("欢迎"));
   central_dock_->setObjectName("CentralDock");
@@ -206,10 +211,24 @@ void MainWindow::initUi() {
   central_dock_->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(central_dock_);
   central_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);
-  auto* centralArea = central_dock_->dockAreaWidget();
-  if (centralArea) {
-    setupDockTitleBarButtons(centralArea);
+  auto* centralDockArea = central_dock_->dockAreaWidget();
+  if (centralDockArea) {
+    setupDockTitleBarButtons(centralDockArea);
   }
+
+  central_stack_->addWidget(page_editor);  // index 0
+
+  // ── 页 1：运行态（占位，后续替换为执行仪表盘） ──
+  exec_dashboard_page_ = new QWidget(central_stack_);
+  exec_dashboard_page_->setObjectName("ExecDashboardPage");
+  auto* exec_layout = new QVBoxLayout(exec_dashboard_page_);
+  auto* exec_placeholder =
+      new QLabel(QStringLiteral("执行仪表盘（待实现）"), exec_dashboard_page_);
+  exec_placeholder->setAlignment(Qt::AlignCenter);
+  exec_layout->addWidget(exec_placeholder);
+  central_stack_->addWidget(exec_dashboard_page_);  // index 1
+
+  central_stack_->setCurrentIndex(0);  // 默认编辑态
 
   // 底部容器空壳（lazyInit 时 addPanel）
   bottom_container_ = new BottomContainerWidget(v_splitter_);
@@ -1111,6 +1130,7 @@ void MainWindow::lazyInit() {
       editor_manager_, sidebar_, h_splitter_, activity_bar_, test_program_mgr_,
       problems_panel_, bottom_container_, &sidebar_expanded_width_,
       status_bar_ctrl_);
+  execution_controller_->setCentralStack(central_stack_);
 
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);

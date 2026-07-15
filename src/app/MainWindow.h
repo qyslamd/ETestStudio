@@ -18,6 +18,7 @@ class QMenu;
 class QAction;
 class QLabel;
 class QSplitter;
+class QStackedWidget;
 class QTimer;
 
 namespace etest::app {
@@ -129,6 +130,10 @@ class MainWindow : public SARibbonMainWindow {
 
   // 编辑器管理
   EditorManager* editor_manager_ = nullptr;
+
+  // 中央堆叠容器（编辑态/运行态）
+  QStackedWidget* central_stack_ = nullptr;
+  QWidget* exec_dashboard_page_ = nullptr;
 
   // 欢迎页
   WelcomeWidget* welcome_widget_ = nullptr;

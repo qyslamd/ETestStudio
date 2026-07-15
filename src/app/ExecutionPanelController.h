@@ -7,6 +7,7 @@
 class QAction;
 class QLabel;
 class QSplitter;
+class QStackedWidget;
 class QWidget;
 
 namespace etest::app {
@@ -75,6 +76,9 @@ class ExecutionPanelController : public QObject {
   // 状态
   void syncControlStates();
 
+  // 中央堆叠容器注入（运行时切页）
+  void setCentralStack(QStackedWidget* stack);
+
   // Ribbon 动作（供 MainWindow setupRibbon 获取）
   QAction* runAction() const { return act_run_; }
   QAction* pauseAction() const { return act_pause_; }
@@ -122,6 +126,7 @@ class ExecutionPanelController : public QObject {
   BottomContainerWidget* bottom_container_ = nullptr;
   int* sidebar_width_ref_ = nullptr;
   AppStatusBarController* status_bar_ctrl_ = nullptr;
+  QStackedWidget* central_stack_ = nullptr;
 };
 
 }  // namespace etest::app

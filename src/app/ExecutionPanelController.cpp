@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QSplitter>
+#include <QStackedWidget>
 #include <QWidget>
 
 #include "ActivityBarWidget.h"
@@ -132,6 +133,10 @@ void ExecutionPanelController::updateIcdContext(
   icd_repository_ = std::move(icd_repository);
 }
 
+void ExecutionPanelController::setCentralStack(QStackedWidget* stack) {
+  central_stack_ = stack;
+}
+
 void ExecutionPanelController::createEngine() {
   if (engine_) {
     return;
@@ -145,6 +150,9 @@ void ExecutionPanelController::createEngine() {
 }
 
 void ExecutionPanelController::destroyEngine() {
+  if (central_stack_) {
+    central_stack_->setCurrentIndex(0);
+  }
   if (!engine_) {
     return;
   }
@@ -222,9 +230,12 @@ void ExecutionPanelController::connectEngineSignals() {
             }
           });
 
-  // 引擎完成 → 保存 .etlog 报告
+  // 引擎完成 → 保存 .etlog 报告 + 切回编辑态
   connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
           [this]() {
+            if (central_stack_) {
+              central_stack_->setCurrentIndex(0);
+            }
             if (current_program_name_.isEmpty()) {
               return;
             }
@@ -377,8 +388,11 @@ void ExecutionPanelController::run() {
     status_bar_ctrl_->setExecStats(0, 0, 0);
   }
 
-  // 5. 启动
+  // 5. 启动 + 切换到运行态
   engine_->start();
+  if (central_stack_) {
+    central_stack_->setCurrentIndex(1);
+  }
 }
 
 void ExecutionPanelController::pause() {
@@ -398,6 +412,9 @@ void ExecutionPanelController::stop() {
   LOG_INFO("MAIN_UI", "点击「停止」");
   if (engine_) {
     engine_->stop();
+  }
+  if (central_stack_) {
+    central_stack_->setCurrentIndex(0);
   }
 }
 

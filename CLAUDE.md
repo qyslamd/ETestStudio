@@ -104,7 +104,8 @@ etest (主程序)
 8. 不要每次改动之后都给我说百分百没问题！
 9. 使用spdlog编写日志的时候，**尽可能**使用我封装好的Logger类及其宏定义
 10. `powershell`命令在windows上很恼火，除了必要的脚本使用bat或者ps1编写外，**能用Python脚本的一律用python**
-11. git提交规则：改动了代码编译成功后，**禁止**直接提交，不然我都看不到改动是什么
+11. 改动完成代码，编译无误之后，**禁止**直接提交代码！除非是使用git worktree方式。
+12. git提交规则：
    - 能使用中文的描述必须使用中文
    - 当你生成 git commit 信息时：
    - 使用 Co-Authored-By 信息（如果需要）：Co-Authored-By: claude code 助手 <zhouyohu@163.com>
