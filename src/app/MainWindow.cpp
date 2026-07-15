@@ -231,6 +231,14 @@ void MainWindow::initUi() {
   h_splitter_->setSizes({280, 800, 0});  // sidebar / 垂直区域 / aux
   v_splitter_->setSizes({800, 0});       // 底部面板初始大小为 0（后续恢复）
 
+  // 追踪底部面板高度变化（用户拖动 splitter 手柄时实时更新）
+  connect(v_splitter_, &QSplitter::splitterMoved, this, [this](int pos, int idx) {
+    auto s = v_splitter_->sizes();
+    if (s.size() >= 2) {
+      bottom_container_height_ = s[1];
+    }
+  });
+
   main_layout->addLayout(horizontal_layout, 1);
   setCentralWidget(centralContainer);
 
@@ -320,8 +328,11 @@ void MainWindow::initSignalsLate() {
     if (anyVisible) {
       bottom_container_->show();
       auto sizes = v_splitter_->sizes();
-      if (sizes.size() >= 2 && sizes[1] <= 0) {
-        sizes[1] = bottom_container_height_;
+      if (sizes.size() >= 2) {
+        int total = sizes[0] + sizes[1];
+        int targetBottom = qMin(bottom_container_height_, total);
+        sizes[0] = total - targetBottom;
+        sizes[1] = targetBottom;
         v_splitter_->setSizes(sizes);
       }
     } else {
@@ -1153,6 +1164,29 @@ void MainWindow::lazyInit() {
   step_timer.restart();
   {
     auto& cfg = ConfigManager::instance();
+    // 恢复水平 splitter（布局已就绪）
+    QByteArray hState = cfg.get<QByteArray>(CONFIG_WINDOW_H_SPLITTER_STATE);
+    if (!hState.isEmpty()) {
+      h_splitter_->restoreState(hState);
+    }
+    // 辅助侧边栏：从恢复后的 h_splitter 尺寸推断可见性
+    auto hSizes = h_splitter_->sizes();
+    bool auxVisible = hSizes.size() >= 3 && hSizes[2] > 0;
+    if (auxVisible) {
+      aux_sidebar_width_ = hSizes[2];
+      aux_sidebar_widget_->show();
+    } else {
+      aux_sidebar_widget_->hide();
+    }
+    if (view_aux_sidebar_action_) {
+      view_aux_sidebar_action_->setChecked(auxVisible);
+    }
+
+    // 恢复垂直 splitter
+    QByteArray vState = cfg.get<QByteArray>(CONFIG_WINDOW_V_SPLITTER_STATE);
+    if (!vState.isEmpty()) {
+      v_splitter_->restoreState(vState);
+    }
     bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
     bool outVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_LOG_VISIBLE, true);
     bool probVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_PROBLEMS_VISIBLE, true);
@@ -1181,8 +1215,11 @@ void MainWindow::lazyInit() {
     if (anyVisible) {
       bottom_container_->show();
       auto vSizes = v_splitter_->sizes();
-      if (vSizes.size() >= 2 && vSizes[1] <= 0) {
-        vSizes[1] = bottom_container_height_;
+      if (vSizes.size() >= 2) {
+        int total = vSizes[0] + vSizes[1];
+        int targetBottom = qMin(bottom_container_height_, total);
+        vSizes[0] = total - targetBottom;
+        vSizes[1] = targetBottom;
         v_splitter_->setSizes(vSizes);
       }
     } else {
@@ -2238,16 +2275,6 @@ void MainWindow::restoreWindowState() {
     showMaximized();
   }
 
-  // Splitter 状态
-  QByteArray hState = cfg.get<QByteArray>(CONFIG_WINDOW_H_SPLITTER_STATE);
-  if (!hState.isEmpty()) {
-    h_splitter_->restoreState(hState);
-  }
-  QByteArray vState = cfg.get<QByteArray>(CONFIG_WINDOW_V_SPLITTER_STATE);
-  if (!vState.isEmpty()) {
-    v_splitter_->restoreState(vState);
-  }
-
   // 侧边栏显隐 — 使用显式配置（比 splitter 尺寸推断更可靠）
   bool sidebarVisible = cfg.get<bool>(CONFIG_SIDEBAR_VISIBLE, true);
   if (sidebarVisible) {
@@ -2259,19 +2286,7 @@ void MainWindow::restoreWindowState() {
   sidebar_expanded_width_ = cfg.get<int>(CONFIG_SIDEBAR_EXPANDED_WIDTH, 280);
 
   // 注：侧边栏活动页、底部面板状态在 lazyInit 完成后恢复（部件尚不存在）
-
-  // 辅助侧边栏：从 h_splitter_ restoreState 恢复的尺寸判断可见性
-  auto hSizes = h_splitter_->sizes();
-  bool auxVisible = hSizes.size() >= 3 && hSizes[2] > 0;
-  if (auxVisible) {
-    aux_sidebar_width_ = hSizes[2];
-    aux_sidebar_widget_->show();
-  } else {
-    aux_sidebar_widget_->hide();
-  }
-  if (view_aux_sidebar_action_) {
-    view_aux_sidebar_action_->setChecked(auxVisible);
-  }
+  // 水平 splitter 和辅助侧边栏也在 lazyInit 中恢复（布局就绪后）
 }
 
 void MainWindow::setupDockTitleBarButtons(ads::CDockAreaWidget* area) {

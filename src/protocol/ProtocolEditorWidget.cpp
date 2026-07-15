@@ -789,7 +789,7 @@ void ProtocolEditorWidget::initUi() {
   property_dock_->setWidget(property_panel_);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
 
-  // ── Dock: 报文预览 (底部) ──
+  // ── Dock: 报文预览 (节点列表下方) ──
   preview_panel_ = new IcdFramePreviewPanel(this);
   preview_panel_->setMinimumHeight(120);
   preview_panel_->setObjectName(QStringLiteral("protocolPreviewPanel"));
@@ -797,7 +797,8 @@ void ProtocolEditorWidget::initUi() {
   preview_dock_ = new QDockWidget(QStringLiteral("报文预览"), this);
   preview_dock_->setObjectName(QStringLiteral("protocolPreviewDock"));
   preview_dock_->setWidget(preview_panel_);
-  addDockWidget(Qt::BottomDockWidgetArea, preview_dock_);
+  addDockWidget(Qt::LeftDockWidgetArea, preview_dock_);
+  splitDockWidget(node_tree_dock_, preview_dock_, Qt::Vertical);
 
   // Custom title bars for full control over button size and icon
   node_tree_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
