@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100" height="100">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#AECBFA"/>
+      <stop offset="100%" stop-color="#81C995"/>
+    </linearGradient>
+    <filter id="s" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+    <linearGradient id="f" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g transform="rotate(20, 12, 12)" filter="url(#s)">
+    <rect x="7" y="3" width="10" height="4.5" rx="1.5" fill="url(#g)"/>
+    <rect x="10" y="7.5" width="4" height="8" rx="0.6" fill="url(#g)"/>
+    <path d="M11 15.5 L13 15.5 L12 20 Z" fill="url(#g)"/>
+    <rect x="7" y="3" width="10" height="4.5" rx="1.5" fill="url(#f)"/>
+    <rect x="10" y="7.5" width="4" height="8" rx="0.6" fill="url(#f)"/>
+  </g>
+</svg>

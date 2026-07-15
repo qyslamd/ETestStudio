@@ -91,7 +91,6 @@
 #include "widgets/LogOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
 
-
 using namespace etest::core::config;
 using namespace etest::core::project;
 using namespace etest::core::logger;
@@ -1443,18 +1442,17 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
           }
           signal_registry_->registerDevice(
               id, name, dobj[QStringLiteral("type")].toString());
-              id, name, dobj[QStringLiteral("type")].toString());
-              QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
-              for (const QJsonValue& pv : ports) {
-                QJsonObject pobj = pv.toObject();
-                QStringList frames;
-                for (const QJsonValue& fv :
-                     pobj[QStringLiteral("boundFrames")].toArray()) {
-                  frames.append(fv.toString());
-                }
-                signal_registry_->bindPortToFrames(
-                    id, pobj[QStringLiteral("name")].toString(), frames);
-              }
+          QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
+          for (const QJsonValue& pv : ports) {
+            QJsonObject pobj = pv.toObject();
+            QStringList frames;
+            for (const QJsonValue& fv :
+                 pobj[QStringLiteral("boundFrames")].toArray()) {
+              frames.append(fv.toString());
+            }
+            signal_registry_->bindPortToFrames(
+                id, pobj[QStringLiteral("name")].toString(), frames);
+          }
         }
       }
     }
@@ -2142,6 +2140,32 @@ void MainWindow::setupRibbon() {
   // Ribbon style & collapse
   ribbon->setRibbonStyle(SARibbonBar::RibbonStyleLooseThreeRow);
   ribbon->showMinimumModeButton(true);
+
+  // 替换 Ribbon 最小化/还原按钮图标为自定义 SVG
+  if (auto* minAction = ribbon->minimumModeAction()) {
+    auto updateMinIcon = [this, ribbon, minAction]() {
+      minAction->setIcon(AppIconProvider::instance().icon(
+          ribbon->isMinimumMode() ? QStringLiteral("ribbon_expand")
+                                  : QStringLiteral("ribbon_collapse")));
+    };
+
+    // 断开 SARibbonBar 自带的 triggered 图标覆盖逻辑
+    disconnect(minAction, &QAction::triggered, nullptr, nullptr);
+
+    // 自己的 triggered：切换模式 + 换图标（一次搞定）
+    connect(minAction, &QAction::triggered, this,
+            [this, ribbon, updateMinIcon]() {
+              ribbon->setMinimumMode(!ribbon->isMinimumMode());
+              updateMinIcon();
+            });
+
+    // 响应外部触发的模式变化（如双击 tab）
+    connect(ribbon, &SARibbonBar::ribbonModeChanged, this,
+            [updateMinIcon](SARibbonBar::RibbonMode) { updateMinIcon(); });
+
+    updateMinIcon();
+  }
+
   ribbon->setTabDoubleClickToMinimumMode(true);
 
   // 恢复已保存的折叠状态

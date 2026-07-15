@@ -234,6 +234,14 @@
         <file>resources/icons/svg/tab_problems_light.svg</file>
         <file>resources/icons/svg/tab_terminal_dark.svg</file>
         <file>resources/icons/svg/tab_terminal_light.svg</file>
+        <file>resources/icons/svg/pin_light.svg</file>
+        <file>resources/icons/svg/pin_dark.svg</file>
+        <file>resources/icons/svg/unpin_light.svg</file>
+        <file>resources/icons/svg/unpin_dark.svg</file>
+        <file>resources/icons/svg/ribbon_collapse_light.svg</file>
+        <file>resources/icons/svg/ribbon_collapse_dark.svg</file>
+        <file>resources/icons/svg/ribbon_expand_light.svg</file>
+        <file>resources/icons/svg/ribbon_expand_dark.svg</file>
         <file alias="translations/ads_zh_CN.qm">resources/translations/ads_zh_CN.qm</file>
         <file alias="translations/SARibbon_zh_CN.qm">resources/translations/SARibbon_zh_CN.qm</file>
         <file>resources/data/poems.db</file>
