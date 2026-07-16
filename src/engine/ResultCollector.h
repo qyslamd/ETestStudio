@@ -35,6 +35,7 @@ class ResultCollector : public QObject {
     static QJsonObject buildStepJson(const StepResult& step);
     static QJsonObject buildIterationJson(const IterationResult& iteration);
     static QString statusToString(int status);
+    static QString aggregateCaseStatus(const QJsonArray& steps);
 
     QJsonObject current_report_;
     QJsonObject current_case_;

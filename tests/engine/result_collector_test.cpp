@@ -429,3 +429,84 @@ TEST(ResultCollectorTest, SaveToFileCreatesValidJson) {
         << "JSON parse error: " << parseError.errorString().toStdString();
     EXPECT_TRUE(doc.isObject());
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 7: Case status is aggregated from steps, ignoring the result parameter
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(ResultCollectorTest, CaseStatusAggregatedFromSteps) {
+    StepRunner runner(nullptr, nullptr, nullptr);
+    ResultCollector collector;
+    collector.attach(&runner);
+
+    emit runner.suiteStarted("AggregationSuite");
+
+    // Case 1 — steps all PASS => case status PASS
+    emit runner.caseStarted(0, "AllPass");
+    {
+        StepResult step;
+        step.stepPath = "0";
+        step.command = "SET";
+        step.status = PASS;
+        emit runner.stepFinished(0, "0", step);
+    }
+    emit runner.caseFinished(0, "AllPass", 0);  // result=0 should be ignored
+
+    // Case 2 — step FAIL => case status FAIL
+    emit runner.caseStarted(1, "WithFail");
+    {
+        StepResult step;
+        step.stepPath = "0";
+        step.command = "CHECK";
+        step.status = FAIL;
+        emit runner.stepFinished(1, "0", step);
+    }
+    emit runner.caseFinished(1, "WithFail", 0);  // result=0 should be ignored
+
+    // Case 3 — step ERROR => case status ERROR (not FAIL)
+    emit runner.caseStarted(2, "WithError");
+    {
+        StepResult step;
+        step.stepPath = "0";
+        step.command = "SET";
+        step.status = ERROR;
+        emit runner.stepFinished(2, "0", step);
+    }
+    emit runner.caseFinished(2, "WithError", 0);  // result=0 should be ignored
+
+    // Case 4 — step TIMEOUT => case status TIMEOUT
+    emit runner.caseStarted(3, "WithTimeout");
+    {
+        StepResult step;
+        step.stepPath = "0";
+        step.command = "WAIT";
+        step.status = TIMEOUT;
+        emit runner.stepFinished(3, "0", step);
+    }
+    emit runner.caseFinished(3, "WithTimeout", 0);
+
+    // Case 5 — no steps => case status PASS (edge case for empty steps)
+    emit runner.caseStarted(4, "NoSteps");
+    emit runner.caseFinished(4, "NoSteps", 0);
+
+    emit runner.suiteFinished("AggregationSuite", 1, 0);
+
+    QTemporaryDir tempDir;
+    ASSERT_TRUE(tempDir.isValid());
+    QString etlogPath = tempDir.path() + "/aggregation.etlog";
+    collector.saveToFile(etlogPath);
+
+    ASSERT_TRUE(QFile::exists(etlogPath));
+    QFile file(etlogPath);
+    ASSERT_TRUE(file.open(QIODevice::ReadOnly));
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    QJsonObject root = doc.object();
+
+    QJsonArray cases = root["cases"].toArray();
+    ASSERT_EQ(cases.size(), 5);
+
+    EXPECT_EQ(cases[0].toObject()["status"].toString(), "PASS");
+    EXPECT_EQ(cases[1].toObject()["status"].toString(), "FAIL");
+    EXPECT_EQ(cases[2].toObject()["status"].toString(), "ERROR");
+    EXPECT_EQ(cases[3].toObject()["status"].toString(), "TIMEOUT");
+    EXPECT_EQ(cases[4].toObject()["status"].toString(), "PASS");
+}

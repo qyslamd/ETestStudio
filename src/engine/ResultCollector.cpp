@@ -113,10 +113,10 @@ void ResultCollector::onCaseFinished(int caseIndex,
                                      int result) {
   Q_UNUSED(caseIndex);
   Q_UNUSED(caseName);
+  Q_UNUSED(result);
 
-  // Update status
-  current_case_["status"] =
-      (result == 0) ? QStringLiteral("PASS") : QStringLiteral("FAIL");
+  // Aggregate case status from steps instead of trusting the result parameter
+  current_case_["status"] = aggregateCaseStatus(current_steps_);
 
   // Calculate duration
   if (case_start_time_.isValid()) {
@@ -185,6 +185,70 @@ QString ResultCollector::statusToString(int status) {
       return QStringLiteral("SKIPPED");
     default:
       return QStringLiteral("UNKNOWN");
+  }
+}
+
+QString ResultCollector::aggregateCaseStatus(const QJsonArray& steps) {
+  int worst = 0;  // 0=PASS, 1=PENDING, 2=SKIPPED, 3=TIMEOUT, 4=FAIL, 5=ERROR
+  for (const auto& s : steps) {
+    QJsonObject step = s.toObject();
+    QString st = step[QStringLiteral("status")].toString();
+
+    int prio = 0;
+    if (st == QStringLiteral("ERROR"))
+      prio = 5;
+    else if (st == QStringLiteral("FAIL"))
+      prio = 4;
+    else if (st == QStringLiteral("TIMEOUT"))
+      prio = 3;
+    else if (st == QStringLiteral("SKIPPED"))
+      prio = 2;
+    else if (st == QStringLiteral("PENDING"))
+      prio = 1;
+    if (prio > worst) {
+      worst = prio;
+      if (worst == 5) return QStringLiteral("ERROR");
+    }
+
+    // Recurse into LOOP/WHILE iterations
+    for (const auto& iter : step[QStringLiteral("iterations")].toArray()) {
+      QString sub = aggregateCaseStatus(
+          iter.toObject()[QStringLiteral("subSteps")].toArray());
+      if (sub == QStringLiteral("ERROR")) return QStringLiteral("ERROR");
+      if (sub == QStringLiteral("FAIL") && worst < 4) worst = 4;
+      if (sub == QStringLiteral("TIMEOUT") && worst < 3) worst = 3;
+      if (sub == QStringLiteral("SKIPPED") && worst < 2) worst = 2;
+    }
+
+    // Recurse into IF branches
+    QJsonObject branches =
+        step[QStringLiteral("branches")].toObject();
+    if (!branches.isEmpty()) {
+      QString thenSub = aggregateCaseStatus(
+          branches[QStringLiteral("then")].toArray());
+      QString elseSub = aggregateCaseStatus(
+          branches[QStringLiteral("else")].toArray());
+      for (const auto& sub : {thenSub, elseSub}) {
+        if (sub == QStringLiteral("ERROR"))
+          return QStringLiteral("ERROR");
+        if (sub == QStringLiteral("FAIL") && worst < 4) worst = 4;
+        if (sub == QStringLiteral("TIMEOUT") && worst < 3) worst = 3;
+        if (sub == QStringLiteral("SKIPPED") && worst < 2) worst = 2;
+      }
+    }
+  }
+
+  switch (worst) {
+    case 4:
+      return QStringLiteral("FAIL");
+    case 3:
+      return QStringLiteral("TIMEOUT");
+    case 2:
+      return QStringLiteral("SKIPPED");
+    case 1:
+      return QStringLiteral("PENDING");
+    default:
+      return QStringLiteral("PASS");
   }
 }
 

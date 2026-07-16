@@ -344,6 +344,14 @@ void EtlogViewerWidget::populateCaseList(const QJsonObject& root) {
     QJsonObject caseObj = c.toObject();
     QString name = caseObj["caseName"].toString();
     QString status = caseObj["status"].toString();
+    // 兜底：从 steps 重新聚合 case 状态（etlog 中 status 字段可能不准确）
+    QJsonArray steps = caseObj["steps"].toArray();
+    if (!steps.isEmpty()) {
+      QString agg = aggregatedStatus(steps);
+      if (agg != "PASS") {
+        status = agg;
+      }
+    }
     int dur = caseObj["durationMs"].toInt();
 
     QString iconName = iconNameForStatus(status);
@@ -500,16 +508,63 @@ void EtlogViewerWidget::buildStepTreeRecursive(QStandardItem* parent,
 }
 
 QString EtlogViewerWidget::aggregatedStatus(const QJsonArray& steps) {
-  bool hasFail = false;
-  QString firstNonPass;
+  int worst = 0;  // 0=PASS, 1=PENDING, 2=SKIPPED, 3=TIMEOUT, 4=FAIL, 5=ERROR
   for (const auto& s : steps) {
-    QString st = s.toObject()["status"].toString();
-    if (st == "FAIL" || st == "ERROR") hasFail = true;
-    if (st != "PASS" && firstNonPass.isEmpty()) firstNonPass = st;
+    QJsonObject step = s.toObject();
+    QString st = step["status"].toString();
+
+    int prio = 0;
+    if (st == "ERROR")
+      prio = 5;
+    else if (st == "FAIL")
+      prio = 4;
+    else if (st == "TIMEOUT")
+      prio = 3;
+    else if (st == "SKIPPED")
+      prio = 2;
+    else if (st == "PENDING")
+      prio = 1;
+    if (prio > worst) {
+      worst = prio;
+      if (worst == 5) return QStringLiteral("ERROR");
+    }
+
+    // Recurse into LOOP/WHILE iterations
+    for (const auto& iter : step["iterations"].toArray()) {
+      QString sub = aggregatedStatus(
+          iter.toObject()["subSteps"].toArray());
+      if (sub == "ERROR") return QStringLiteral("ERROR");
+      if (sub == "FAIL" && worst < 4) worst = 4;
+      if (sub == "TIMEOUT" && worst < 3) worst = 3;
+      if (sub == "SKIPPED" && worst < 2) worst = 2;
+    }
+
+    // Recurse into IF branches
+    QJsonObject branches = step["branches"].toObject();
+    if (!branches.isEmpty()) {
+      QString thenSub = aggregatedStatus(branches["then"].toArray());
+      QString elseSub = aggregatedStatus(branches["else"].toArray());
+      for (const auto& sub : {thenSub, elseSub}) {
+        if (sub == "ERROR") return QStringLiteral("ERROR");
+        if (sub == "FAIL" && worst < 4) worst = 4;
+        if (sub == "TIMEOUT" && worst < 3) worst = 3;
+        if (sub == "SKIPPED" && worst < 2) worst = 2;
+      }
+    }
   }
-  if (hasFail) return QStringLiteral("FAIL");
-  if (!firstNonPass.isEmpty()) return firstNonPass;
-  return QStringLiteral("PASS");
+
+  switch (worst) {
+    case 4:
+      return QStringLiteral("FAIL");
+    case 3:
+      return QStringLiteral("TIMEOUT");
+    case 2:
+      return QStringLiteral("SKIPPED");
+    case 1:
+      return QStringLiteral("PENDING");
+    default:
+      return QStringLiteral("PASS");
+  }
 }
 
 QList<QStandardItem*> EtlogViewerWidget::createStepRow(const QJsonObject& step,
