@@ -96,6 +96,10 @@ add_executable(${TARGET_NAME} WIN32
     widgets/PaintedClockWidget.cpp
     widgets/EyeWidget.h
     widgets/EyeWidget.cpp
+    visualizers/SignalVisualizer.h
+    visualizers/SignalVisualizer.cpp
+    visualizers/ValueLabelWidget.h
+    visualizers/ValueLabelWidget.cpp
     widgets/TuxSaverOverlay.h
     widgets/TuxSaverOverlay.cpp
     widgets/SaverWidgetBase.h

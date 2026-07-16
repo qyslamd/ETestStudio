@@ -6,6 +6,26 @@ QTreeView {
 }
 
 /* ==================== QDoubleSpinBox ==================== */
+/* ==================== ValueLabelWidget ==================== */
+#ValueLabelTitle {
+    font-weight: bold;
+    font-size: 12px;
+}
+#ValueLabelValue {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+#ValueLabelRaw {
+    font-size: 10px;
+    color: #888;
+}
+#ValueLabelTs {
+    font-size: 9px;
+    color: #aaa;
+}
+
+/* ==================== QDoubleSpinBox ==================== */
 QDoubleSpinBox {
     background-color: #FFFFFF;
     color: #1F1F1F;
