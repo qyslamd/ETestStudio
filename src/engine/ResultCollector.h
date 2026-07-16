@@ -21,6 +21,7 @@ class ResultCollector : public QObject {
 
     void attach(StepRunner* runner);
     void saveToFile(const QString& etlogPath);
+    void setMonitorData(const QJsonArray& monitors);
     void clear();
 
  private slots:
@@ -38,6 +39,7 @@ class ResultCollector : public QObject {
     QJsonObject current_report_;
     QJsonObject current_case_;
     QJsonArray current_steps_;
+    QJsonArray monitor_data_;  // 由 setMonitorData 注入，saveToFile 时写入 monitors[]
     QDateTime case_start_time_;
     int step_count_ = 0;
 };

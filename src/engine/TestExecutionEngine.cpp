@@ -213,6 +213,15 @@ bool TestExecutionEngine::start() {
                 emit progressUpdated(current, total);
             });
 
+    // ── MonitorManager 集成：加载拓扑 + 监听硬件操作信号 ──
+    if (monitor_manager_) {
+        if (!topology_doc_.isEmpty()) {
+            monitor_manager_->loadFromTopology(topology_doc_);
+        }
+        connect(runner_.get(), &StepRunner::hardwareOperationFinished,
+                monitor_manager_.get(), &MonitorManager::onHardwareOpFinished);
+    }
+
     // 线程启动回调
     connect(&worker_thread_, &QThread::started,
             this, &TestExecutionEngine::onThreadStarted);
@@ -296,6 +305,11 @@ void TestExecutionEngine::resume() {
 
 void TestExecutionEngine::saveReport(const QString& etlogPath) {
     if (collector_) {
+        // 1. flush 监听器数据到 ResultCollector
+        if (monitor_manager_) {
+            collector_->setMonitorData(monitor_manager_->flushSamples());
+        }
+        // 2. 保存 .etlog（含 monitors[] 段）
         collector_->saveToFile(etlogPath);
     } else {
         spdlog::warn("[TestExecutionEngine] No collector to save report");
@@ -339,6 +353,7 @@ void TestExecutionEngine::initEngine() {
                                                   icd_repository_);
     codec_ = std::make_unique<SignalCodec>();
     hw_manager_ = std::make_unique<HardwareManager>();
+    monitor_manager_ = std::make_unique<MonitorManager>(this);
 }
 
 void TestExecutionEngine::startExecution() {

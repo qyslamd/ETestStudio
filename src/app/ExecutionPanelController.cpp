@@ -150,14 +150,11 @@ void ExecutionPanelController::createEngine() {
 }
 
 void ExecutionPanelController::destroyEngine() {
-  // 所有编辑器恢复编辑状态
+  // 所有编辑器恢复编辑状态（不自动切回编辑态）
   if (editor_mgr_) {
     for (auto* ed : editor_mgr_->allEditors()) {
       ed->setReadOnly(false);
     }
-  }
-  if (central_stack_) {
-    central_stack_->setCurrentIndex(0);
   }
   if (!engine_) {
     return;
@@ -236,16 +233,13 @@ void ExecutionPanelController::connectEngineSignals() {
             }
           });
 
-  // 引擎完成 → 保存 .etlog 报告 + 切回编辑态
+  // 引擎完成 → 保存 .etlog 报告（不自动切回编辑态）
   connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
           [this]() {
             if (editor_mgr_) {
               for (auto* ed : editor_mgr_->allEditors()) {
                 ed->setReadOnly(false);
               }
-            }
-            if (central_stack_) {
-              central_stack_->setCurrentIndex(0);
             }
             if (current_program_name_.isEmpty()) {
               return;
@@ -430,14 +424,11 @@ void ExecutionPanelController::stop() {
   if (engine_) {
     engine_->stop();
   }
-  // 恢复编辑器编辑状态
+  // 恢复编辑器编辑状态（不自动切回编辑态，由用户通过 QAB 手工操作）
   if (editor_mgr_) {
     for (auto* ed : editor_mgr_->allEditors()) {
       ed->setReadOnly(false);
     }
-  }
-  if (central_stack_) {
-    central_stack_->setCurrentIndex(0);
   }
 }
 

@@ -7,6 +7,7 @@
 #include <memory>
 #include <atomic>
 
+#include "MonitorManager.h"
 #include "StepRunner.h"
 
 namespace etest::core {
@@ -19,6 +20,7 @@ class Repository;
 
 namespace etest::engine {
 
+class MonitorManager;
 class SignalResolver;
 class SignalCodec;
 class HardwareManager;
@@ -94,6 +96,7 @@ private:
     std::unique_ptr<SignalResolver> resolver_;
     std::unique_ptr<SignalCodec> codec_;
     std::unique_ptr<HardwareManager> hw_manager_;
+    std::unique_ptr<MonitorManager> monitor_manager_;
     std::unique_ptr<StepRunner> runner_;
     std::unique_ptr<ResultCollector> collector_;
 

@@ -29,10 +29,15 @@ void ResultCollector::attach(StepRunner* runner) {
           &ResultCollector::onStepFinished);
 }
 
+void ResultCollector::setMonitorData(const QJsonArray& monitors) {
+  monitor_data_ = monitors;
+}
+
 void ResultCollector::clear() {
   current_report_ = QJsonObject();
   current_case_ = QJsonObject();
   current_steps_ = QJsonArray();
+  monitor_data_ = QJsonArray();
   step_count_ = 0;
   case_start_time_ = QDateTime();
 }
@@ -257,6 +262,12 @@ QJsonObject ResultCollector::buildIterationJson(
 // ══════════════════════════════════════════════════════════════════════════════
 
 void ResultCollector::saveToFile(const QString& etlogPath) {
+  QJsonObject report = current_report_;
+
+  if (!monitor_data_.isEmpty()) {
+    report[QStringLiteral("monitors")] = monitor_data_;
+  }
+
   QFile file(etlogPath);
   if (!file.open(QIODevice::WriteOnly)) {
     spdlog::error("[ResultCollector] Cannot write etlog: {}",
@@ -264,7 +275,7 @@ void ResultCollector::saveToFile(const QString& etlogPath) {
     return;
   }
 
-  QJsonDocument doc(current_report_);
+  QJsonDocument doc(report);
   file.write(doc.toJson(QJsonDocument::Indented));
   file.close();
 
