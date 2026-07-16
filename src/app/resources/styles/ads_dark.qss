@@ -62,21 +62,20 @@ ads--CDockWidget {
 }
 
 /* ==================== 标签页 ==================== */
+/* 背景由 DockAreaTabBarStyle::paintAllTabs 统一绘制，QSS 仅控制子控件文字颜色 */
 ads--CDockWidgetTab {
-    background: #2D2D2D;
-    border-color: #3C3C3C;
-    border-style: solid;
-    border-width: 0px 1px 0px 0px;
+    background: transparent;
+    border: none;
     padding: 0px 4px;
 }
 
 ads--CDockWidgetTab[activeTab="true"] {
-    background: #1E1E1E;
-    border-top: 1px solid #007ACC;
+    background: transparent;
+    border: none;
 }
 
 ads--CDockWidgetTab:hover {
-    background: #3C3C3C;
+    background: transparent;
 }
 
 ads--CDockWidgetTab QLabel {

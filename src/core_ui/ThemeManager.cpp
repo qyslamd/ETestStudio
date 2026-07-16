@@ -97,6 +97,7 @@ void ThemeManager::loadQss(const QString& themeId) {
   }
 
   qApp->setStyleSheet(qss);
+  emit themeChanged(is_dark_);
 }
 
 bool ThemeManager::detectDarkFromQss(const QString& qss) const {

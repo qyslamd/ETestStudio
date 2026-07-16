@@ -10,8 +10,10 @@
 #include "crashhandler/CrashHandler.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
+#include "libui/styles/EtestComponentsFactory.h"
 #include "libui/styles/NoFocusRectStyle.h"
 #include "logger/Logger.h"
+#include "core_ui/ThemeManager.h"
 
 // Debug 构建启用控制台，方便查看 spdlog 输出
 #ifdef _DEBUG
@@ -71,6 +73,12 @@ int main(int argc, char* argv[]) {
     crashHandler->init();
     LOG_INFO("MAIN", "崩溃捕获模块初始化完成");
   }
+
+  // 提前初始化主题管理（加载 QSS，确保在 QADS widget 创建前完成）
+  etest::core_ui::ThemeManager::instance();
+
+  // 注册自定义 QADS 组件工厂（必须在任何 CDockWidget 创建之前）
+  ads::CDockComponentsFactory::setFactory(new EtestComponentsFactory());
 
   // 启动主窗口
   MainWindow main_window;
