@@ -152,58 +152,55 @@ void MainWindow::initUi() {
   setupRibbon();
   createStatusBar();
 
-  // ==================== 中央容器 ====================
-  auto* centralContainer = new QWidget(this);
-  centralContainer->setObjectName("centralContainer");
-  auto* main_layout = new QVBoxLayout(centralContainer);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(0);
+  // ==================== 中央堆叠容器（编辑态/运行态） ====================
+  central_stack_ = new QStackedWidget(this);
+  central_stack_->setObjectName("centralStack");
 
-  // ==================== 水平布局（活动栏 + 水平分割器） ====================
-  auto* horizontal_layout = new QHBoxLayout;
-  horizontal_layout->setContentsMargins(0, 0, 0, 0);
-  horizontal_layout->setSpacing(0);
+  // ── 页 0：编辑态（活动栏 + 水平分割器 + 底部面板） ──
+  page_editor_widget_ = new QWidget(central_stack_);
+  page_editor_widget_->setObjectName("PageEditor");
+  auto* page0_layout = new QHBoxLayout(page_editor_widget_);
+  page0_layout->setContentsMargins(0, 0, 0, 0);
+  page0_layout->setSpacing(0);
 
   // ==================== 活动栏 ====================
-  activity_bar_ = new ActivityBarWidget(centralContainer);
-  horizontal_layout->addWidget(activity_bar_);
+  activity_bar_ = new ActivityBarWidget(page_editor_widget_);
+  page0_layout->addWidget(activity_bar_);
 
   // ==================== 水平分割器 ====================
-  h_splitter_ = new QSplitter(Qt::Horizontal, centralContainer);
+  h_splitter_ = new QSplitter(Qt::Horizontal, page_editor_widget_);
   h_splitter_->setChildrenCollapsible(true);
-  horizontal_layout->addWidget(h_splitter_, 1);
+  page0_layout->addWidget(h_splitter_, 1);
 
   // ===== 侧边栏 =====
   sidebar_ = new SidebarWidget(h_splitter_);
   h_splitter_->addWidget(sidebar_);
 
-  // ===== 垂直分割器（中央区域 + 底部面板） =====
+  // ===== 垂直分割器（编辑器区域 + 底部面板） =====
   v_splitter_ = new QSplitter(Qt::Vertical, h_splitter_);
   v_splitter_->setChildrenCollapsible(true);
   h_splitter_->addWidget(v_splitter_);
 
-  // 中央堆叠容器：编辑态 / 运行态
-  central_stack_ = new QStackedWidget(v_splitter_);
+  // 编辑器区域（提示栏 + DockManager）
+  auto* editor_area = new QWidget(v_splitter_);
+  editor_area->setObjectName("EditorArea");
+  auto* editor_area_layout = new QVBoxLayout(editor_area);
+  editor_area_layout->setContentsMargins(0, 0, 0, 0);
+  editor_area_layout->setSpacing(0);
 
-  // ── 页 0：编辑态（提示栏 + DockManager） ──
-  auto* page_editor = new QWidget(central_stack_);
-  auto* page_editor_layout = new QVBoxLayout(page_editor);
-  page_editor_layout->setContentsMargins(0, 0, 0, 0);
-  page_editor_layout->setSpacing(0);
-
-  hint_bar_ = new HintBarWidget(page_editor);
-  page_editor_layout->addWidget(hint_bar_);
+  hint_bar_ = new HintBarWidget(editor_area);
+  editor_area_layout->addWidget(hint_bar_);
 
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   ads::CDockManager::setConfigFlag(
       ads::CDockManager::MiddleMouseButtonClosesTab, true);
   ads::CDockManager::setConfigFlag(ads::CDockManager::AllTabsHaveCloseButton,
                                    true);
-  dock_manager_ = new ads::CDockManager(page_editor);
-  page_editor_layout->addWidget(dock_manager_, 1);
+  dock_manager_ = new ads::CDockManager(editor_area);
+  editor_area_layout->addWidget(dock_manager_, 1);
 
   // 中央占位（lazyInit 时替换为 WelcomeWidget）
-  auto* placeholder = new QWidget(page_editor);
+  auto* placeholder = new QWidget(editor_area);
   placeholder->setObjectName("CentralPlaceholder");
   central_dock_ = new ads::CDockWidget(QStringLiteral("欢迎"));
   central_dock_->setObjectName("CentralDock");
@@ -216,19 +213,7 @@ void MainWindow::initUi() {
     setupDockTitleBarButtons(centralDockArea);
   }
 
-  central_stack_->addWidget(page_editor);  // index 0
-
-  // ── 页 1：运行态（占位，后续替换为执行仪表盘） ──
-  exec_dashboard_page_ = new QWidget(central_stack_);
-  exec_dashboard_page_->setObjectName("ExecDashboardPage");
-  auto* exec_layout = new QVBoxLayout(exec_dashboard_page_);
-  auto* exec_placeholder =
-      new QLabel(QStringLiteral("执行仪表盘（待实现）"), exec_dashboard_page_);
-  exec_placeholder->setAlignment(Qt::AlignCenter);
-  exec_layout->addWidget(exec_placeholder);
-  central_stack_->addWidget(exec_dashboard_page_);  // index 1
-
-  central_stack_->setCurrentIndex(0);  // 默认编辑态
+  v_splitter_->addWidget(editor_area);
 
   // 底部容器空壳（lazyInit 时 addPanel）
   bottom_container_ = new BottomContainerWidget(v_splitter_);
@@ -246,6 +231,22 @@ void MainWindow::initUi() {
   aux_sidebar_widget_->hide();  // 默认隐藏
   h_splitter_->addWidget(aux_sidebar_widget_);
 
+  central_stack_->addWidget(page_editor_widget_);  // index 0
+
+  // ── 页 1：运行态（占位，后续替换为执行仪表盘） ──
+  exec_dashboard_page_ = new QWidget(central_stack_);
+  exec_dashboard_page_->setObjectName("ExecDashboardPage");
+  auto* exec_layout = new QVBoxLayout(exec_dashboard_page_);
+  auto* exec_placeholder =
+      new QLabel(QStringLiteral("执行仪表盘（待实现）"), exec_dashboard_page_);
+  exec_placeholder->setAlignment(Qt::AlignCenter);
+  exec_layout->addWidget(exec_placeholder);
+  central_stack_->addWidget(exec_dashboard_page_);  // index 1
+
+  central_stack_->setCurrentIndex(0);  // 默认编辑态
+
+  setCentralWidget(central_stack_);
+
   // 设置 splitter 初始尺寸
   h_splitter_->setSizes({280, 800, 0});  // sidebar / 垂直区域 / aux
   v_splitter_->setSizes({800, 0});       // 底部面板初始大小为 0（后续恢复）
@@ -257,9 +258,6 @@ void MainWindow::initUi() {
       bottom_container_height_ = s[1];
     }
   });
-
-  main_layout->addLayout(horizontal_layout, 1);
-  setCentralWidget(centralContainer);
 
   // 恢复窗口状态
   restoreWindowState();

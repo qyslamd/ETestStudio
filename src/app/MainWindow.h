@@ -133,6 +133,7 @@ class MainWindow : public SARibbonMainWindow {
 
   // 中央堆叠容器（编辑态/运行态）
   QStackedWidget* central_stack_ = nullptr;
+  QWidget* page_editor_widget_ = nullptr;  // page 0 编辑态容器
   QWidget* exec_dashboard_page_ = nullptr;
 
   // 欢迎页
