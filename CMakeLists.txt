@@ -225,6 +225,9 @@ set(valijson_BUILD_EXAMPLES OFF CACHE BOOL "Do not build valijson examples" FORC
 set(valijson_BUILD_TESTS OFF CACHE BOOL "Do not build valijson tests" FORCE)
 add_subdirectory(3rdparty/valijson)
 
+# QCustomPlot（波形图绘制）
+add_subdirectory(3rdparty/QCustomPlot)
+
 #=======================================
 # 设置编译选项，特别是Windows平台下的Unicode支持
 # 对于MSVC编译器，启用UTF-8编码支持，并定义Unicode相关的宏，以确保应用程序能够正确处理Unicode字符。

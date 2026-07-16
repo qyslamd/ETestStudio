@@ -190,6 +190,7 @@ target_link_libraries(${TARGET_NAME}
     qtadvanceddocking
     QXlsx::QXlsx
     qsci
+    qcustomplot
     SARibbonBar::SARibbonBar
     )
 
