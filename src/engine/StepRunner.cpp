@@ -250,23 +250,28 @@ StepResult StepRunner::execSet(const TestStepData& step,
     StepResult result;
     result.expectedValue = step.value;
 
+    double rawValue = 0.0;
+    QByteArray rawFrame;
     bool success = false;
     if (signal.signalType == SignalType::AD ||
         signal.signalType == SignalType::DA) {
         // Channel-type (AD/DA): encode → write
         QVariant raw = codec_->encode(step.value, signal);
         if (raw.isValid()) {
-            success = hw_->write(signal, raw.toDouble());
+            rawValue = raw.toDouble();
+            success = hw_->write(signal, rawValue);
         }
     } else {
         // Frame-type (CAN/Serial/A429): encodeToFrame → writeFrame
-        QByteArray frame = codec_->encodeToFrame(step.value, signal);
-        success = hw_->writeFrame(signal, frame);
+        rawFrame = codec_->encodeToFrame(step.value, signal);
+        success = hw_->writeFrame(signal, rawFrame);
     }
 
     if (success) {
         LOG_INFO("ENGINE", "  -> PASS [value={}]", step.value);
         result.setStatus(PASS).setMessage(QStringLiteral("OK"));
+        emit hardwareOperationFinished(signal.deviceId, signal.portName,
+                                        rawFrame, rawValue, step.value);
     } else {
         result.setStatus(ERROR)
             .setMessage(QStringLiteral("Hardware write failed"));
@@ -286,22 +291,26 @@ StepResult StepRunner::execCheck(const TestStepData& step,
 
     try {
         double actual = 0.0;
+        double rawValue = 0.0;
+        QByteArray rawFrame;
         if (signal.signalType == SignalType::AD ||
             signal.signalType == SignalType::DA) {
             // Channel-type: read → decode
             QVariant raw = hw_->read(signal);
+            rawValue = raw.toDouble();
             actual = codec_->decode(raw, signal);
         } else {
             // Frame-type: read → decodeFromFrame
             QVariant raw = hw_->read(signal);
-            QByteArray frameData;
             if (raw.canConvert<QByteArray>()) {
-                frameData = raw.toByteArray();
+                rawFrame = raw.toByteArray();
             }
-            actual = codec_->decodeFromFrame(frameData, signal);
+            actual = codec_->decodeFromFrame(rawFrame, signal);
         }
 
         result.actualValue = actual;
+        emit hardwareOperationFinished(signal.deviceId, signal.portName,
+                                        rawFrame, rawValue, actual);
 
         double diff = std::fabs(actual - step.value);
         if (diff <= step.tolerance) {
@@ -346,20 +355,24 @@ StepResult StepRunner::execVerify(const TestStepData& step,
 
     try {
         double actual = 0.0;
+        double rawValue = 0.0;
+        QByteArray rawFrame;
         if (signal.signalType == SignalType::AD ||
             signal.signalType == SignalType::DA) {
             QVariant raw = hw_->readAndWait(signal, timeout);
+            rawValue = raw.toDouble();
             actual = codec_->decode(raw, signal);
         } else {
             QVariant raw = hw_->readAndWait(signal, timeout);
-            QByteArray frameData;
             if (raw.canConvert<QByteArray>()) {
-                frameData = raw.toByteArray();
+                rawFrame = raw.toByteArray();
             }
-            actual = codec_->decodeFromFrame(frameData, signal);
+            actual = codec_->decodeFromFrame(rawFrame, signal);
         }
 
         result.actualValue = actual;
+        emit hardwareOperationFinished(signal.deviceId, signal.portName,
+                                        rawFrame, rawValue, actual);
 
         double diff = std::fabs(actual - step.value);
         if (diff <= step.tolerance) {

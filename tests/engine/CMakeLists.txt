@@ -43,6 +43,15 @@ add_etest(
     LABELS ENGINE
 )
 
+# MonitorManager 单元测试
+add_etest(
+    NAME test_engine_monitor_manager
+    SOURCES monitor_manager_test.cpp
+    LIBS etest_engine etest_core icd_utility
+    QT_MODULES Core Test
+    LABELS ENGINE
+)
+
 # TestExecutionEngine Facade 集成测试
 add_etest(
     NAME test_engine_facade

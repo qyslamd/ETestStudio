@@ -113,6 +113,16 @@ class StepRunner : public QObject {
     void engineError(const QString& msg);
     void progressUpdated(int current, int total);
 
+    // ── 硬件操作完成信号（监听器用） ──
+    // 仅在 execSet/execCheck/execVerify 中硬件读写成功后发射，
+    // 与步骤 PASS/FAIL 无关。异常不发射。
+    // AD/DA：rawFrame 留空，rawValue 填编码值；帧类：rawFrame 填帧字节，rawValue 留 0
+    void hardwareOperationFinished(const QString& deviceId,
+                                    const QString& portName,
+                                    const QByteArray& rawFrame,
+                                    double rawValue,
+                                    double engValue);
+
  private:
     StepResult execSet(const TestStepData& step, const ResolvedSignal& signal);
     StepResult execCheck(const TestStepData& step, const ResolvedSignal& signal);
