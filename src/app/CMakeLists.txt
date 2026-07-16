@@ -100,6 +100,8 @@ add_executable(${TARGET_NAME} WIN32
     visualizers/SignalVisualizer.cpp
     visualizers/ValueLabelWidget.h
     visualizers/ValueLabelWidget.cpp
+    SignalTreePanel.h
+    SignalTreePanel.cpp
     widgets/TuxSaverOverlay.h
     widgets/TuxSaverOverlay.cpp
     widgets/SaverWidgetBase.h
