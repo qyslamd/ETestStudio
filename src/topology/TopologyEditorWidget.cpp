@@ -1410,6 +1410,16 @@ void TopologyEditorWidget::onPaste() {
       tap.portName = tapObj["portName"].toString();
       tap.deviceName = tapObj["deviceName"].toString();
       tap.devicePort = tapObj["devicePort"].toString();
+      // M4: 粘贴时按 deviceName 重新解析 deviceId（防跨文档 UUID 失效）
+      {
+        int devIdx = doc_->findDeviceIndex(tap.deviceName);
+        if (devIdx >= 0) {
+          const auto* dev = doc_->device(devIdx);
+          if (dev) tap.deviceId = dev->id;
+        }
+      }
+      tap.displayMode = tapObj["displayMode"].toString(
+          QStringLiteral("auto"));
       mon.taps.append(tap);
     }
 

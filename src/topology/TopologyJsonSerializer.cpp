@@ -137,6 +137,10 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
       tapObj["portName"] = tap.portName;
       tapObj["deviceName"] = tap.deviceName;
       tapObj["devicePort"] = tap.devicePort;
+      if (!tap.deviceId.isEmpty())
+        tapObj["deviceId"] = tap.deviceId;
+      if (tap.displayMode != QStringLiteral("auto"))
+        tapObj["displayMode"] = tap.displayMode;
       tapsArr.append(tapObj);
     }
     mObj["taps"] = tapsArr;
@@ -311,6 +315,17 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
       tap.portName = tapObj["portName"].toString();
       tap.deviceName = tapObj["deviceName"].toString();
       tap.devicePort = tapObj["devicePort"].toString();
+      // M4: 新字段，旧文件无 deviceId 则用 deviceName 反查补上
+      tap.deviceId = tapObj["deviceId"].toString();
+      if (tap.deviceId.isEmpty()) {
+        int devIdx = doc->findDeviceIndex(tap.deviceName);
+        if (devIdx >= 0) {
+          const auto* dev = doc->device(devIdx);
+          if (dev) tap.deviceId = dev->id;
+        }
+      }
+      tap.displayMode = tapObj["displayMode"].toString(
+          QStringLiteral("auto"));
       mon.taps.append(tap);
     }
     doc->addMonitor(mon);

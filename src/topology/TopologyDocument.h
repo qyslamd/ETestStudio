@@ -85,6 +85,8 @@ struct TopologyMonitorTap {
   QString portName;
   QString deviceName;
   QString devicePort;
+  QString deviceId;                              // M4: 设备 UUID，挂载时由 deviceName 查 devices[].id 填入
+  QString displayMode = QStringLiteral("auto");  // M4: auto/waveform/led/meter/frame
 };
 
 // Listener / monitor device — passively taps existing connections

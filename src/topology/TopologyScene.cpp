@@ -159,6 +159,14 @@ void TopologyScene::finishTap(QPointF scenePos) {
       tap.portName = c->portName;
       tap.deviceName = c->deviceName;
       tap.devicePort = c->devicePort;
+      // M4: 用 deviceName 查 devices[].id 填入 deviceId
+      {
+        int devIdx = doc_->findDeviceIndex(tap.deviceName);
+        if (devIdx >= 0) {
+          const auto* dev = doc_->device(devIdx);
+          if (dev) tap.deviceId = dev->id;
+        }
+      }
 
       // Check it's not already tapped by this monitor
       const auto* mon = doc_->monitor(tap_mode_monitor_);
