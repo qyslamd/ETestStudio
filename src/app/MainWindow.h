@@ -41,6 +41,7 @@ class AppStatusBarController;
 class TuxSaverController;
 class EditorPanelController;
 class ProjectController;
+class ExecutionDashboard;
 class ExecutionPanelController;
 }  // namespace etest::app
 
@@ -111,6 +112,10 @@ class MainWindow : public SARibbonMainWindow {
   // 跳转到行
   void onGoToLine();
 
+  // 运行态/编辑态 Action 管理
+  void disableEditActions();
+  void enableEditActions();
+
   // QADS
   static void setupDockTitleBarButtons(ads::CDockAreaWidget* area);
   ads::CDockManager* dock_manager_ = nullptr;
@@ -134,7 +139,7 @@ class MainWindow : public SARibbonMainWindow {
   // 中央堆叠容器（编辑态/运行态）
   QStackedWidget* central_stack_ = nullptr;
   QWidget* page_editor_widget_ = nullptr;  // page 0 编辑态容器
-  QWidget* exec_dashboard_page_ = nullptr;
+  ExecutionDashboard* exec_dashboard_page_ = nullptr;
 
   // 欢迎页
   WelcomeWidget* welcome_widget_ = nullptr;
@@ -185,6 +190,9 @@ class MainWindow : public SARibbonMainWindow {
   EditorPanelController* editor_controller_ = nullptr;
   ProjectController* project_controller_ = nullptr;
   ExecutionPanelController* execution_controller_ = nullptr;
+
+  // 模式切换
+  QAction* mode_toggle_action_ = nullptr;
 
   // 编辑菜单动作
   QAction* edit_undo_action_ = nullptr;

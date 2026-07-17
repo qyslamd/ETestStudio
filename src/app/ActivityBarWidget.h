@@ -53,8 +53,6 @@ class ActivityBarWidget : public QWidget {
   QVector<ActivityBarPageInfo> pages_;
   QVector<QToolButton*> buttons_;
   QVBoxLayout* top_layout_ = nullptr;
-  QToolButton* settings_btn_ = nullptr;
-  QToolButton* login_btn_ = nullptr;
   QString active_page_id_;
 };
 

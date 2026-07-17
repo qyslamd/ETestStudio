@@ -33,6 +33,9 @@ class SignalTreePanel : public QWidget {
   void updateNodeValue(int monitorIndex, int channelIndex,
                         const QString& valueText);
 
+  // ── 取消勾选某个通道（用于可视化区右键关闭时同步） ──
+  void uncheckChannel(int monitorIndex, int channelIndex);
+
  signals:
   // ── 叶节点 checkbox 状态变化 ──
   void checkStateChanged(int monitorIndex, int channelIndex, bool checked);

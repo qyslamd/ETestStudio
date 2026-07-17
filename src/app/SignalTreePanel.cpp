@@ -127,6 +127,19 @@ void SignalTreePanel::updateNodeValue(int monitorIndex, int channelIndex,
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// uncheckChannel — 取消勾选某个通道（可视化区右键关闭时同步）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void SignalTreePanel::uncheckChannel(int monitorIndex, int channelIndex) {
+  int key = (monitorIndex << 16) | channelIndex;
+  auto it = node_map_.constFind(key);
+  if (it == node_map_.constEnd()) {
+    return;
+  }
+  it.value()->setCheckState(0, Qt::Unchecked);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // onFilterChanged — 搜索框文本变化时过滤树节点
 // ══════════════════════════════════════════════════════════════════════════════
 

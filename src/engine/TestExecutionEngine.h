@@ -66,6 +66,9 @@ public:
     int totalSteps() const;
     int completedSteps() const;
 
+    // -- 监听器 --
+    MonitorManager* monitorManager() const { return monitor_manager_.get(); }
+
 signals:
     void engineStarted();
     void engineFinished();

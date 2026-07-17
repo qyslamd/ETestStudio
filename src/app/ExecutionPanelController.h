@@ -21,6 +21,7 @@ class ActivityBarWidget;
 class TestProgramManagerWidget;
 class ProblemsPanel;
 class BottomContainerWidget;
+class ExecutionDashboard;
 
 }  // namespace etest::app
 
@@ -29,6 +30,10 @@ class SignalRegistry;
 }  // namespace etest::core
 
 #include "engine/TestExecutionEngine.h"
+
+namespace etest::engine {
+class MonitorSample;
+}  // namespace etest::engine
 
 namespace icd {
 class Repository;
@@ -79,6 +84,9 @@ class ExecutionPanelController : public QObject {
   // 中央堆叠容器注入（运行时切页）
   void setCentralStack(QStackedWidget* stack);
 
+  // 执行仪表盘注入（用于连接监听器信号）
+  void setDashboard(ExecutionDashboard* dashboard);
+
   // Ribbon 动作（供 MainWindow setupRibbon 获取）
   QAction* runAction() const { return act_run_; }
   QAction* pauseAction() const { return act_pause_; }
@@ -94,6 +102,7 @@ class ExecutionPanelController : public QObject {
 
  private:
   void connectEngineSignals();
+  void refreshMonitorTree();
 
   // 引擎
   etest::engine::TestExecutionEngine* engine_ = nullptr;
@@ -127,6 +136,7 @@ class ExecutionPanelController : public QObject {
   int* sidebar_width_ref_ = nullptr;
   AppStatusBarController* status_bar_ctrl_ = nullptr;
   QStackedWidget* central_stack_ = nullptr;
+  ExecutionDashboard* dashboard_ = nullptr;
 };
 
 }  // namespace etest::app

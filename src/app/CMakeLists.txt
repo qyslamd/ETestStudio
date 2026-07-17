@@ -29,6 +29,8 @@ add_executable(${TARGET_NAME} WIN32
     EditorPanelController.cpp
     ProjectController.h
     ProjectController.cpp
+    ExecutionDashboard.h
+    ExecutionDashboard.cpp
     ExecutionPanelController.h
     ExecutionPanelController.cpp
     SidebarWidget.h

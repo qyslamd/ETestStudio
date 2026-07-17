@@ -32,32 +32,6 @@ void ActivityBarWidget::initUi() {
 
   layout->addLayout(top_layout_);
   layout->addStretch();
-
-  // 底部按钮（登录 > 设置）
-  auto* bottom_layout = new QVBoxLayout();
-  bottom_layout->setSpacing(0);
-  bottom_layout->setContentsMargins(0, 0, 0, 0);
-  login_btn_ = createButton(QStringLiteral("登录"));
-  login_btn_->setIcon(
-      AppIconProvider::instance().icon(QStringLiteral("account")));
-  login_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
-  bottom_layout->addWidget(login_btn_);
-  connect(login_btn_, &QAbstractButton::clicked, this,
-          [this]() {
-            LOG_INFO("PROJECT_UI", "点击登录");
-            emit loginTriggered();
-          });
-  settings_btn_ = createButton(QStringLiteral("设置"));
-  settings_btn_->setIcon(
-      AppIconProvider::instance().icon(QStringLiteral("settings")));
-  settings_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
-  bottom_layout->addWidget(settings_btn_);
-  connect(settings_btn_, &QAbstractButton::clicked, this,
-          [this]() {
-            LOG_INFO("PROJECT_UI", "点击设置");
-            emit settingsTriggered();
-          });
-  layout->addLayout(bottom_layout);
 }
 
 void ActivityBarWidget::addPage(const QString& id,
@@ -93,38 +67,21 @@ void ActivityBarWidget::reloadIcons() {
   for (int i = 0; i < buttons_.size(); ++i) {
     buttons_[i]->setIcon(AppIconProvider::instance().icon(pages_[i].iconName));
   }
-  if (login_btn_) {
-    login_btn_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("account")));
-  }
-  if (settings_btn_) {
-    settings_btn_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("settings")));
-  }
   updateActiveIconSize();
 }
 
-void ActivityBarWidget::setLoginState(bool loggedIn,
-                                      const QString& userName,
-                                      const QString& role) {
-  if (loggedIn) {
-    login_btn_->setToolTip(
-        QStringLiteral("当前用户：%1 (%2)").arg(userName).arg(role));
-  } else {
-    login_btn_->setToolTip(QStringLiteral("登录"));
-  }
+void ActivityBarWidget::setLoginState(bool /*loggedIn*/,
+                                      const QString& /*userName*/,
+                                      const QString& /*role*/) {
+  // 登录状态展示已迁移到 QAB 登录菜单，此处保留为空操作
 }
 
-void ActivityBarWidget::setLoginActive(bool active) {
-  login_btn_->setChecked(active);
-  login_btn_->setIconSize(active ? QSize(kActiveIconSize, kActiveIconSize)
-                                 : QSize(kNormalIconSize, kNormalIconSize));
+void ActivityBarWidget::setLoginActive(bool /*active*/) {
+  // 已迁移到 QAB
 }
 
-void ActivityBarWidget::setSettingsActive(bool active) {
-  settings_btn_->setChecked(active);
-  settings_btn_->setIconSize(active ? QSize(kActiveIconSize, kActiveIconSize)
-                                    : QSize(kNormalIconSize, kNormalIconSize));
+void ActivityBarWidget::setSettingsActive(bool /*active*/) {
+  // 已迁移到 QAB
 }
 
 void ActivityBarWidget::updateActiveIconSize() {
@@ -161,10 +118,6 @@ void ActivityBarWidget::clearActivePage() {
     btn->setChecked(false);
     btn->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
   }
-  if (login_btn_)
-    login_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
-  if (settings_btn_)
-    settings_btn_->setIconSize(QSize(kNormalIconSize, kNormalIconSize));
 }
 
 QString ActivityBarWidget::activePageId() const {

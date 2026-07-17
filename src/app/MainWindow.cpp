@@ -48,6 +48,7 @@
 #include "AppStatusBarController.h"
 #include "EditorManager.h"
 #include "EditorPanelController.h"
+#include "ExecutionDashboard.h"
 #include "ExecutionDebugWidget.h"
 #include "ExecutionPanelController.h"
 #include "GitWidget.h"
@@ -233,14 +234,9 @@ void MainWindow::initUi() {
 
   central_stack_->addWidget(page_editor_widget_);  // index 0
 
-  // ── 页 1：运行态（占位，后续替换为执行仪表盘） ──
-  exec_dashboard_page_ = new QWidget(central_stack_);
-  exec_dashboard_page_->setObjectName("ExecDashboardPage");
-  auto* exec_layout = new QVBoxLayout(exec_dashboard_page_);
-  auto* exec_placeholder =
-      new QLabel(QStringLiteral("执行仪表盘（待实现）"), exec_dashboard_page_);
-  exec_placeholder->setAlignment(Qt::AlignCenter);
-  exec_layout->addWidget(exec_placeholder);
+  // ── 页 1：执行仪表盘 ──
+  exec_dashboard_page_ = new ExecutionDashboard(central_stack_);
+  exec_dashboard_page_->setObjectName(QStringLiteral("ExecDashboardPage"));
   central_stack_->addWidget(exec_dashboard_page_);  // index 1
 
   central_stack_->setCurrentIndex(0);  // 默认编辑态
@@ -276,20 +272,6 @@ void MainWindow::initSignalsEarly() {
                 mode == SARibbonBar::MinimumRibbonMode);
           });
 
-  // 活动栏：设置对话框
-  connect(activity_bar_, &ActivityBarWidget::settingsTriggered, this, [this]() {
-    if (!settings_dialog_) {
-      settings_dialog_ = new SettingsDialog(this);
-      settings_dialog_->setStyleSheet(qApp->styleSheet());
-      connect(settings_dialog_, &QDialog::finished, this,
-              [this]() { activity_bar_->setSettingsActive(false); });
-    }
-    activity_bar_->setSettingsActive(true);
-    settings_dialog_->show();
-    settings_dialog_->raise();
-    settings_dialog_->activateWindow();
-  });
-
   // 活动栏：页面切换
   connect(activity_bar_, &ActivityBarWidget::pageClicked, this,
           [this](const QString& id) {
@@ -317,19 +299,6 @@ void MainWindow::initSignalsEarly() {
             activity_bar_->setActivePageId(id);
           });
 
-  // 活动栏：登录触发
-  connect(activity_bar_, &ActivityBarWidget::loginTriggered, this, [this]() {
-    if (AuthService::instance().isLoggedIn()) {
-      login_menu_->exec(QCursor::pos());
-    } else {
-      auto* dlg = new LoginDialog(this);
-      connect(dlg, &QDialog::finished, this,
-              [this]() { activity_bar_->setLoginActive(false); });
-      connect(dlg, &QDialog::finished, dlg, &QObject::deleteLater);
-      dlg->show();
-      activity_bar_->setLoginActive(true);
-    }
-  });
 }
 
 void MainWindow::initSignalsLate() {
@@ -1129,6 +1098,23 @@ void MainWindow::lazyInit() {
       problems_panel_, bottom_container_, &sidebar_expanded_width_,
       status_bar_ctrl_);
   execution_controller_->setCentralStack(central_stack_);
+  execution_controller_->setDashboard(exec_dashboard_page_);
+
+  // 堆叠页切换时同步模式切换按钮状态
+  connect(central_stack_, &QStackedWidget::currentChanged, this,
+          [this](int index) {
+            if (index == 1) {
+              mode_toggle_action_->setText(QStringLiteral("切换编辑态"));
+              mode_toggle_action_->setChecked(true);
+              mode_toggle_action_->setIcon(
+                  AppIconProvider::instance().icon(QStringLiteral("edit")));
+            } else {
+              mode_toggle_action_->setText(QStringLiteral("切换运行态"));
+              mode_toggle_action_->setChecked(false);
+              mode_toggle_action_->setIcon(
+                  AppIconProvider::instance().icon(QStringLiteral("run")));
+            }
+          });
 
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1923,7 +1909,72 @@ void MainWindow::setupRibbon() {
   edit_redo_action_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("redo")));
   qab->addAction(edit_redo_action_);
+  qab->addSeparator();
+  // ---- QAB mode toggle / login / settings ----
+  mode_toggle_action_ = new QAction(
+      AppIconProvider::instance().icon(QStringLiteral("run")),
+      QStringLiteral("切换运行态"), this);
+  mode_toggle_action_->setToolTip(QStringLiteral("切换到运行态 / 编辑态"));
+  mode_toggle_action_->setCheckable(true);
+  qab->addAction(mode_toggle_action_);
 
+  connect(mode_toggle_action_, &QAction::triggered, this, [this]() {
+    if (central_stack_->currentIndex() == 0) {
+      central_stack_->setCurrentIndex(1);
+      mode_toggle_action_->setText(QStringLiteral("切换编辑态"));
+      mode_toggle_action_->setChecked(true);
+      mode_toggle_action_->setIcon(
+          AppIconProvider::instance().icon(QStringLiteral("edit")));
+      disableEditActions();
+    } else {
+      central_stack_->setCurrentIndex(0);
+      mode_toggle_action_->setText(QStringLiteral("切换运行态"));
+      mode_toggle_action_->setChecked(false);
+      mode_toggle_action_->setIcon(
+          AppIconProvider::instance().icon(QStringLiteral("run")));
+      enableEditActions();
+    }
+  });
+
+  // ---- QAB login ----
+  {
+    auto* login_action = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("account")),
+        QStringLiteral("登录"), this);
+    login_action->setToolTip(QStringLiteral("登录 / 用户管理"));
+    qab->addAction(login_action);
+    connect(login_action, &QAction::triggered, this, [this]() {
+      if (AuthService::instance().isLoggedIn()) {
+        login_menu_->exec(QCursor::pos());
+      } else {
+        auto* dlg = new LoginDialog(this);
+        connect(dlg, &QDialog::finished, dlg, &QObject::deleteLater);
+        dlg->show();
+      }
+    });
+  }
+
+  // ---- QAB settings ----
+  {
+    auto* settings_action = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("settings")),
+        QStringLiteral("设置"), this);
+    settings_action->setToolTip(QStringLiteral("打开设置"));
+    qab->addAction(settings_action);
+    connect(settings_action, &QAction::triggered, this, [this]() {
+      LOG_INFO("MAIN_UI", "点击 QAB 设置");
+      if (!settings_dialog_) {
+        settings_dialog_ = new SettingsDialog(this);
+        settings_dialog_->setStyleSheet(qApp->styleSheet());
+        connect(settings_dialog_, &QDialog::finished, this,
+                [this]() { activity_bar_->setSettingsActive(false); });
+      }
+      activity_bar_->setSettingsActive(true);
+      settings_dialog_->show();
+      settings_dialog_->raise();
+      settings_dialog_->activateWindow();
+    });
+  }
   // ── 登录菜单 ──
   login_menu_ = new QMenu(this);
   login_user_info_action_ =
@@ -2323,6 +2374,52 @@ void MainWindow::setupDockTitleBarButtons(ads::CDockAreaWidget* area) {
       btn->hide();
     }
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// disableEditActions — 切换到运行态时禁用编辑相关 action
+// ══════════════════════════════════════════════════════════════════════════════
+
+void MainWindow::disableEditActions() {
+  save_action_->setEnabled(false);
+  save_as_action_->setEnabled(false);
+  save_all_action_->setEnabled(false);
+  close_file_action_->setEnabled(false);
+  close_all_files_action_->setEnabled(false);
+  edit_undo_action_->setEnabled(false);
+  edit_redo_action_->setEnabled(false);
+  edit_cut_action_->setEnabled(false);
+  edit_copy_action_->setEnabled(false);
+  edit_paste_action_->setEnabled(false);
+  edit_find_action_->setEnabled(false);
+  edit_replace_action_->setEnabled(false);
+  edit_go_to_line_action_->setEnabled(false);
+  // 视图面板操作在运行态保持可用
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// enableEditActions — 切换到编辑态时恢复编辑相关 action
+// ══════════════════════════════════════════════════════════════════════════════
+
+void MainWindow::enableEditActions() {
+  // 文件操作（有编辑器时 enable）
+  bool hasEditors = editor_manager_ && editor_manager_->currentEditor() != nullptr;
+  save_action_->setEnabled(hasEditors);
+  save_as_action_->setEnabled(hasEditors);
+  save_all_action_->setEnabled(hasEditors && editor_manager_->allEditors().size() > 1);
+  close_file_action_->setEnabled(hasEditors);
+  close_all_files_action_->setEnabled(hasEditors && editor_manager_->allEditors().size() > 1);
+
+  // 编辑操作（有编辑器时 enable，后续由 EditorManager 精细控制）
+  edit_undo_action_->setEnabled(hasEditors);
+  edit_redo_action_->setEnabled(hasEditors);
+  edit_cut_action_->setEnabled(hasEditors);
+  edit_copy_action_->setEnabled(hasEditors);
+  edit_paste_action_->setEnabled(hasEditors);
+  edit_find_action_->setEnabled(hasEditors);
+  edit_replace_action_->setEnabled(hasEditors);
+  edit_go_to_line_action_->setEnabled(hasEditors);
+  // 视图面板操作始终可用，无需在此恢复
 }
 
 }  // namespace etest::app

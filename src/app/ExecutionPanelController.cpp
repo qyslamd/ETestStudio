@@ -1,6 +1,7 @@
 #include "ExecutionPanelController.h"
 
 #include <QAction>
+
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
@@ -9,28 +10,36 @@
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QWidget>
+#include "ExecutionDashboard.h"
+#include "SignalTreePanel.h"
+#include "VisualizationArea.h"
+#include "engine/MonitorManager.h"
+#include "visualizers/SignalVisualizer.h"
+#include "visualizers/VisualizerFactory.h"
+
 
 #include "ActivityBarWidget.h"
 #include "AppIconProvider.h"
 #include "AppStatusBarController.h"
 #include "EditorManager.h"
 #include "ExecutionDebugWidget.h"
-#include "widgets/ExecutionOutputPanel.h"
-#include "widgets/ProblemsPanel.h"
 #include "SidebarWidget.h"
+#include "SignalRegistry.h"
 #include "TestProgramManagerWidget.h"
 #include "api/IEditor.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "engine/TestExecutionEngine.h"
-#include "SignalRegistry.h"
 #include "icd/repository.hpp"
 #include "logger/Logger.h"
 #include "plugin_sdk/PluginManager.h"
 #include "project/ProjectManager.h"
-#include "test_program/TestProgramEditorWidget.h"
 #include "test_program/TestProgramData.h"
+#include "test_program/TestProgramEditorWidget.h"
 #include "widgets/BottomContainerWidget.h"
+#include "widgets/ExecutionOutputPanel.h"
+#include "widgets/ProblemsPanel.h"
+
 
 using namespace etest::core::config;
 using etest::core_ui::AppIconProvider;
@@ -74,7 +83,8 @@ etest::engine::TestCaseData convertCase(const etest::app::TestCaseData& src) {
   return dst;
 }
 
-etest::engine::ProgramData convertProgram(const etest::app::TestProgramData& src) {
+etest::engine::ProgramData convertProgram(
+    const etest::app::TestProgramData& src) {
   etest::engine::ProgramData dst;
   dst.suiteName = src.name;
   for (const auto& tc : src.cases) {
@@ -87,15 +97,15 @@ etest::engine::ProgramData convertProgram(const etest::app::TestProgramData& src
 
 ExecutionPanelController::ExecutionPanelController(QWidget* parent_widget,
                                                    QObject* parent)
-    : QObject(parent),
-      parent_widget_(parent_widget) {
+    : QObject(parent), parent_widget_(parent_widget) {
   act_run_ = new QAction(QIcon(), QStringLiteral("运行"), parent_widget_);
   act_pause_ = new QAction(QIcon(), QStringLiteral("暂停"), parent_widget_);
   act_stop_ = new QAction(QIcon(), QStringLiteral("停止"), parent_widget_);
   act_verify_ = new QAction(QIcon(), QStringLiteral("验证"), parent_widget_);
-  act_run_all_ = new QAction(QIcon(), QStringLiteral("运行全部"), parent_widget_);
-  label_ribbon_stats_ = new QLabel(
-      QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"), parent_widget_);
+  act_run_all_ =
+      new QAction(QIcon(), QStringLiteral("运行全部"), parent_widget_);
+  label_ribbon_stats_ =
+      new QLabel(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"), parent_widget_);
 }
 
 void ExecutionPanelController::postInit(
@@ -145,8 +155,8 @@ void ExecutionPanelController::createEngine() {
   if (!signal_registry_ || !icd_repository_) {
     return;
   }
-  engine_ = new etest::engine::TestExecutionEngine(
-      signal_registry_, icd_repository_.get(), this);
+  engine_ = new etest::engine::TestExecutionEngine(signal_registry_,
+                                                   icd_repository_.get(), this);
   connectEngineSignals();
 }
 
@@ -186,10 +196,9 @@ void ExecutionPanelController::connectEngineSignals() {
                 state_text = QStringLiteral("已暂停");
                 break;
               case etest::engine::EngineState::Finished:
-                state_text =
-                    QStringLiteral("已完成 (✅%1 ❌%2)")
-                        .arg(pass_count_)
-                        .arg(fail_count_);
+                state_text = QStringLiteral("已完成 (✅%1 ❌%2)")
+                                 .arg(pass_count_)
+                                 .arg(fail_count_);
                 break;
               case etest::engine::EngineState::Error:
                 state_text = QStringLiteral("错误");
@@ -201,14 +210,18 @@ void ExecutionPanelController::connectEngineSignals() {
             emit engineStateChanged(state);
           });
 
+  // 引擎启动后刷新监听器树
+  connect(engine_, &etest::engine::TestExecutionEngine::engineStarted, this,
+          &ExecutionPanelController::refreshMonitorTree);
+
   // 绑定调试面板
   if (debug_widget_) {
     debug_widget_->bindEngine(engine_);
   }
 
   // suiteFinished → 累计统计
-  connect(engine_, &etest::engine::TestExecutionEngine::suiteFinished,
-          this, [this](const QString& /*name*/, int pass, int fail) {
+  connect(engine_, &etest::engine::TestExecutionEngine::suiteFinished, this,
+          [this](const QString& /*name*/, int pass, int fail) {
             pass_count_ += pass;
             fail_count_ += fail;
             if (status_bar_ctrl_) {
@@ -252,9 +265,8 @@ void ExecutionPanelController::connectEngineSignals() {
             QString timestamp =
                 QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
             QString etlog_path = report_dir + QStringLiteral("/") +
-                                 current_program_name_ +
-                                 QStringLiteral("_") + timestamp +
-                                 QStringLiteral(".etlog");
+                                 current_program_name_ + QStringLiteral("_") +
+                                 timestamp + QStringLiteral(".etlog");
             engine_->saveReport(etlog_path);
           });
 }
@@ -313,9 +325,8 @@ void ExecutionPanelController::run() {
 
   // 0. 前提检查
   if (debug_widget_ && !debug_widget_->canRun()) {
-    QMessageBox::warning(
-        parent_widget_, QStringLiteral("运行"),
-        QStringLiteral("运行前提不满足，请先执行验证"));
+    QMessageBox::warning(parent_widget_, QStringLiteral("运行"),
+                         QStringLiteral("运行前提不满足，请先执行验证"));
     return;
   }
 
@@ -338,9 +349,9 @@ void ExecutionPanelController::run() {
   // 2. 获取测试程序数据
   etest::app::TestProgramData data;
   auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
-  auto* prog_editor = editor
-      ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
-      : nullptr;
+  auto* prog_editor =
+      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
+             : nullptr;
   if (prog_editor) {
     if (editor->isModified()) {
       editor->save();
@@ -357,9 +368,8 @@ void ExecutionPanelController::run() {
   }
 
   if (data.cases.isEmpty()) {
-    QMessageBox::warning(
-        parent_widget_, QStringLiteral("运行"),
-        QStringLiteral("测试程序中没有测试用例，无法运行"));
+    QMessageBox::warning(parent_widget_, QStringLiteral("运行"),
+                         QStringLiteral("测试程序中没有测试用例，无法运行"));
     return;
   }
 
@@ -456,8 +466,7 @@ void ExecutionPanelController::verify() {
   }
 
   // 2. ICD 协议已定义
-  bool icd_loaded =
-      icd_repository_ && !icd_repository_->frames().empty();
+  bool icd_loaded = icd_repository_ && !icd_repository_->frames().empty();
   if (!icd_loaded) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
                          QStringLiteral("ICD 协议未加载"));
@@ -472,8 +481,8 @@ void ExecutionPanelController::verify() {
     QDir topo_dir_obj(topo_dir);
     topo_exists =
         topo_dir_obj.exists() &&
-        !topo_dir_obj.entryList({QStringLiteral("*.etopo")},
-                                QDir::Files).isEmpty();
+        !topo_dir_obj.entryList({QStringLiteral("*.etopo")}, QDir::Files)
+             .isEmpty();
   }
   if (!topo_exists) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
@@ -482,8 +491,8 @@ void ExecutionPanelController::verify() {
   }
 
   // 4. 拓扑已绑定信号
-  bool signal_bound = signal_registry_ &&
-                      !signal_registry_->registeredDeviceIds().isEmpty();
+  bool signal_bound =
+      signal_registry_ && !signal_registry_->registeredDeviceIds().isEmpty();
   if (!signal_bound) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
                          QStringLiteral("拓扑未绑定信号"));
@@ -492,11 +501,10 @@ void ExecutionPanelController::verify() {
 
   // 5. 测试程序可用
   bool has_program = false;
-  auto* editor =
-      editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
-  auto* prog_editor = editor
-      ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
-      : nullptr;
+  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
+  auto* prog_editor =
+      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
+             : nullptr;
   if (prog_editor) {
     has_program = !prog_editor->programData().cases.isEmpty();
   } else if (test_program_mgr_) {
@@ -529,14 +537,76 @@ void ExecutionPanelController::verify() {
 
   // 刷新执行调试面板
   if (debug_widget_) {
-    debug_widget_->setDependencies(signal_registry_,
-                                   icd_repository_.get());
+    debug_widget_->setDependencies(signal_registry_, icd_repository_.get());
   }
 }
 
 void ExecutionPanelController::runAll() {
   LOG_INFO("MAIN_UI", "点击「运行全部」");
   run();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// setDashboard — 注入执行仪表盘并连接监听器信号
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
+  dashboard_ = dashboard;
+  if (!dashboard_) {
+    return;
+  }
+
+  // ── SignalTreePanel checkbox → 创建/移除可视化组件 + 订阅/取消订阅 ──
+  connect(dashboard_->signalTreePanel(), &SignalTreePanel::checkStateChanged,
+          this, [this](int mi, int ci, bool checked) {
+            auto* monitorMgr = engine_ ? engine_->monitorManager() : nullptr;
+            if (!monitorMgr) {
+              return;
+            }
+
+            if (checked) {
+              // 创建可视化组件（Phase 1：displayMode/signalType 均用默认值）
+              auto* vis = createVisualizerFor(
+                  mi, ci, QStringLiteral("auto"), QString(),
+                  QStringLiteral("Monitor %1 Ch%2").arg(mi).arg(ci), nullptr);
+              if (vis) {
+                // 先订阅再添加到可视化区（确保回调不会在未订阅时触发）
+                monitorMgr->subscribe(
+                    mi, ci, [vis](const etest::engine::MonitorSample& sample) {
+                      vis->onSampleCaptured(sample);
+                    });
+                dashboard_->visualizationArea()->addVisualizer(mi, ci, vis);
+              }
+            } else {
+              // 必须先取消订阅再删除 widget（防 callback 在野指针上触发）
+              monitorMgr->unsubscribe(mi, ci);
+              dashboard_->visualizationArea()->removeVisualizer(mi, ci);
+            }
+          });
+
+  // ── 可视化区右键关闭 → 同步取消勾选信号树 ──
+  // 取消勾选会触发 checkStateChanged(false) → unsubscribe + removeVisualizer
+  connect(dashboard_->visualizationArea(), &VisualizationArea::visualizerClosed,
+          this, [this](int mi, int ci) {
+            auto* tree = dashboard_ ? dashboard_->signalTreePanel() : nullptr;
+            if (tree) {
+              tree->uncheckChannel(mi, ci);
+            }
+          });
+
+  // ── 如果引擎已就绪，立即加载监听器树 ──
+  refreshMonitorTree();
+}
+
+void ExecutionPanelController::refreshMonitorTree() {
+  if (!dashboard_ || !engine_) {
+    return;
+  }
+  auto* mm = engine_->monitorManager();
+  if (!mm) {
+    return;
+  }
+  dashboard_->signalTreePanel()->setMonitorTree(mm->monitorTree());
 }
 
 }  // namespace etest::app
