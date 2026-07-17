@@ -340,12 +340,10 @@ void MainWindow::initSignalsLate() {
             updateContainerVisibility();
           });
   connect(view_execution_output_action_, &QAction::triggered, this,
-          [this, updateContainerVisibility](bool checked) {
+          [this](bool checked) {
             LOG_INFO("MAIN_UI", "切换「执行输出」面板 [visible={}]", checked);
-            int idx = bottom_container_->indexOf(execution_output_panel_);
-            if (idx >= 0)
-              bottom_container_->setPanelVisible(idx, checked);
-            updateContainerVisibility();
+            // output 面板已迁出 bottom_container_，直接控制显隐
+            execution_output_panel_->setVisible(checked);
           });
   connect(view_problems_action_, &QAction::triggered, this,
           [this, updateContainerVisibility](bool checked) {
@@ -940,15 +938,11 @@ void MainWindow::initSignalsLate() {
   connect(bottom_container_, &BottomContainerWidget::panelVisibilityChanged,
           this, [this, updateContainerVisibility]() {
             int outIdx = bottom_container_->indexOf(log_panel_);
-            int execIdx = bottom_container_->indexOf(execution_output_panel_);
             int probIdx = bottom_container_->indexOf(problems_panel_);
             int termIdx = bottom_container_->indexOf(terminal_panel_);
             if (outIdx >= 0)
               view_output_action_->setChecked(
                   bottom_container_->isPanelVisible(outIdx));
-            if (execIdx >= 0)
-              view_execution_output_action_->setChecked(
-                  bottom_container_->isPanelVisible(execIdx));
             if (probIdx >= 0)
               view_problems_action_->setChecked(
                   bottom_container_->isPanelVisible(probIdx));
@@ -1063,8 +1057,7 @@ void MainWindow::lazyInit() {
   terminal_panel_ = new TerminalPanel(this);
   bottom_container_->addPanel(QStringLiteral("日志"), log_panel_,
                               QStringLiteral("tab_output"));
-  bottom_container_->addPanel(QStringLiteral("输出"), execution_output_panel_,
-                              QStringLiteral("tab_output"));
+
   bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_,
                               QStringLiteral("tab_problems"));
   bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_,
@@ -1099,6 +1092,7 @@ void MainWindow::lazyInit() {
       status_bar_ctrl_);
   execution_controller_->setCentralStack(central_stack_);
   execution_controller_->setDashboard(exec_dashboard_page_);
+  exec_dashboard_page_->setOutputPanel(execution_output_panel_);
 
   // 堆叠页切换时同步模式切换按钮状态
   connect(central_stack_, &QStackedWidget::currentChanged, this,
@@ -1197,25 +1191,20 @@ void MainWindow::lazyInit() {
     bool termVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE, true);
 
     int outIdx = bottom_container_->indexOf(log_panel_);
-    int execIdx = bottom_container_->indexOf(execution_output_panel_);
     int probIdx = bottom_container_->indexOf(problems_panel_);
     int termIdx = bottom_container_->indexOf(terminal_panel_);
     if (outIdx >= 0)
       bottom_container_->setPanelVisible(outIdx, outVis);
-    if (execIdx >= 0)
-      bottom_container_->setPanelVisible(execIdx, true);
     if (probIdx >= 0)
       bottom_container_->setPanelVisible(probIdx, probVis);
     if (termIdx >= 0)
       bottom_container_->setPanelVisible(termIdx, termVis);
 
     view_output_action_->setChecked(outVis);
-    view_execution_output_action_->setChecked(true);
     view_problems_action_->setChecked(probVis);
     view_terminal_action_->setChecked(termVis);
 
-    bool execVis = execIdx >= 0 && bottom_container_->isPanelVisible(execIdx);
-    bool anyVisible = outVis || probVis || termVis || execVis;
+    bool anyVisible = outVis || probVis || termVis;
     if (anyVisible) {
       bottom_container_->show();
       auto vSizes = v_splitter_->sizes();

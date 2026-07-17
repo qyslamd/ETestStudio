@@ -29,6 +29,9 @@ class ExecutionDashboard : public QWidget {
   VisualizationArea* visualizationArea() const { return vis_area_; }
   ExecutionOutputPanel* outputPanel() const { return output_panel_; }
 
+  // ── 设置底部输出面板（由 MainWindow 注入，替代自建实例） ──
+  void setOutputPanel(ExecutionOutputPanel* panel);
+
  private:
   void initUi();
 

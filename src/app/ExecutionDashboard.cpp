@@ -44,10 +44,31 @@ void ExecutionDashboard::initUi() {
 
   layout->addWidget(main_splitter_, 1);
 
-  // ── 底部运行输出面板 ──
-  output_panel_ = new ExecutionOutputPanel(this);
-  output_panel_->setObjectName(QStringLiteral("ExecOutputPanel"));
-  layout->addWidget(output_panel_);
+  // ── 底部输出面板占位（Task 11 由 MainWindow 通过 setOutputPanel 注入） ──
+  // output_panel_ 初始为 nullptr，由外部注入
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// setOutputPanel — 由 MainWindow 注入 ExecutionOutputPanel 实例
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionDashboard::setOutputPanel(ExecutionOutputPanel* panel) {
+  if (output_panel_ == panel) {
+    return;
+  }
+
+  // 移除旧的 output panel
+  if (output_panel_) {
+    layout()->removeWidget(output_panel_);
+    // 不 delete — setParent 会转移所有权
+  }
+
+  output_panel_ = panel;
+  if (output_panel_) {
+    output_panel_->setParent(this);
+    layout()->addWidget(output_panel_);
+    output_panel_->show();
+  }
 }
 
 }  // namespace etest::app
