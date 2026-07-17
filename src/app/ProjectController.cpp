@@ -143,19 +143,30 @@ bool ProjectController::tryCloseCurrentProject() {
   if (!project_mgr.isProjectOpen())
     return true;
 
-  // 检查是否有未保存的更改
-  if (editor_mgr_ && editor_mgr_->hasUnsavedChanges()) {
-    int ret = QMessageBox::warning(
-        parent_widget_, QStringLiteral("关闭项目"),
-        QStringLiteral("当前项目有未保存的更改。"),
-        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-    if (ret == QMessageBox::Save) {
-      editor_mgr_->saveAllFiles();
-    } else if (ret == QMessageBox::Cancel) {
+  QString projectRoot = project_mgr.currentProjectRoot();
+  if (editor_mgr_ && editor_mgr_->hasUnsavedChangesInDirectory(projectRoot)) {
+    QString message = QStringLiteral("项目中有未保存的文件更改，是否保存？");
+    int ret = QMessageBox::question(
+        parent_widget_, QStringLiteral("保存更改"), message,
+        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+    if (ret == QMessageBox::Cancel) {
       return false;
+    }
+    if (ret == QMessageBox::Yes) {
+      if (!editor_mgr_->saveModifiedFilesInDirectory(projectRoot)) {
+        QMessageBox::warning(
+            parent_widget_, QStringLiteral("保存失败"),
+            QStringLiteral("部分文件保存失败，无法关闭项目。"));
+        return false;
+      }
     }
   }
 
+  if (editor_mgr_ && !editor_mgr_->closeFilesInDirectory(projectRoot)) {
+    return false;
+  }
+
+  project_mgr.closeProject();
   emit projectClosed();
   return true;
 }

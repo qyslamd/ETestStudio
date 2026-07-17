@@ -5,12 +5,15 @@
 #include <QSet>
 #include <QStackedWidget>
 #include <QStandardItemModel>
+#include <QFileInfo>
+#include <QRegularExpression>
 
 #include <QString>
 #include <QWidget>
 #include "plugin_sdk/IDevicePlugin.h"
 #include "plugin_sdk/PluginManager.h"
 #include "widgets/OpenFileDelegate.h"
+#include "widgets/ProjectTreeDelegate.h"
 
 class QFileSystemWatcher;
 class QLabel;
@@ -33,6 +36,7 @@ enum ProjectNodeRole {
   NodeTypeRole = Qt::UserRole + 1,  // "root" | "category" | "file"
   RelativePathRole,                 // 相对于项目根目录的路径
   CategoryIdRole,                   // category 的标识（如 "protocol"）
+  IsLatestRole,                     // bool: 报告分类中每个程序名的最新文件
 };
 
 struct CategoryInfo {
@@ -116,6 +120,9 @@ class ProjectStructureWidget : public QWidget {
   QStandardItem* createCategoryItem(const CategoryInfo& info, int fileCount);
   QStandardItem* createFileItem(const QString& fileName,
                                 const QString& relativePath);
+  void populateReportCategory(QStandardItem* catItem,
+                              const QFileInfoList& entries,
+                              const QString& dirPath);
   QString absolutePath(const QString& relativePath) const;
   QString categoryDirPath(const QString& categoryId) const;
 
@@ -160,6 +167,7 @@ class ProjectStructureWidget : public QWidget {
   // 新建文件后,短时间内忽略该目录的 watcher 刷新(避免破坏刚打开的 inline
   // editor)
   QSet<QString> suppressed_watch_paths_;
+  ProjectTreeDelegate* tree_delegate_ = nullptr;
 
   // 用于重命名时跟踪旧路径
   QString rename_old_path_;

@@ -1,6 +1,7 @@
 #include "ExecutionPanelController.h"
 
 #include <QAction>
+#include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
 #include <QLabel>
@@ -248,8 +249,11 @@ void ExecutionPanelController::connectEngineSignals() {
             QString report_dir =
                 proj_mgr.currentProjectRoot() + QStringLiteral("/reports");
             QDir().mkpath(report_dir);
+            QString timestamp =
+                QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
             QString etlog_path = report_dir + QStringLiteral("/") +
                                  current_program_name_ +
+                                 QStringLiteral("_") + timestamp +
                                  QStringLiteral(".etlog");
             engine_->saveReport(etlog_path);
           });

@@ -1,5 +1,7 @@
 #include "ProjectStructureWidget.h"
 
+#include "widgets/ProjectTreeDelegate.h"
+
 #include <QApplication>
 #include "logger/Logger.h"
 #include <QClipboard>
@@ -241,6 +243,9 @@ void ProjectStructureWidget::initUi() {
   tree_view_->setSelectionMode(QAbstractItemView::SingleSelection);
   tree_view_->setIndentation(16);
   tree_view_->setIconSize(QSize(16, 16));
+
+  tree_delegate_ = new ProjectTreeDelegate(this);
+  tree_view_->setItemDelegate(tree_delegate_);
 
   model_ = new QStandardItemModel(this);
   tree_view_->setModel(model_);
@@ -543,9 +548,13 @@ void ProjectStructureWidget::buildTree() {
 
       catItem = createCategoryItem(cat, fileCount);
 
-      for (const auto& fi : entries) {
-        QString relPath = cat.dirPath + fi.fileName();
-        catItem->appendRow(createFileItem(fi.fileName(), relPath));
+      if (cat.id == "report") {
+        populateReportCategory(catItem, entries, cat.dirPath);
+      } else {
+        for (const auto& fi : entries) {
+          QString relPath = cat.dirPath + fi.fileName();
+          catItem->appendRow(createFileItem(fi.fileName(), relPath));
+        }
       }
 
       watchedDirs.append(fullPath);
@@ -676,11 +685,19 @@ void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
 
   QFileInfoList entries = dir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
   int fileCount = 0;
-  for (const auto& fi : entries) {
-    QString relPath =
-        QDir(project_path_).relativeFilePath(fi.absoluteFilePath());
-    catItem->appendRow(createFileItem(fi.fileName(), relPath));
-    ++fileCount;
+
+  if (catId == "report") {
+    QString dirPath = QDir(project_path_).relativeFilePath(dir.absolutePath()) +
+                      QStringLiteral("/");
+    populateReportCategory(catItem, entries, dirPath);
+    fileCount = catItem->rowCount();
+  } else {
+    for (const auto& fi : entries) {
+      QString relPath =
+          QDir(project_path_).relativeFilePath(fi.absoluteFilePath());
+      catItem->appendRow(createFileItem(fi.fileName(), relPath));
+      ++fileCount;
+    }
   }
 
   QString baseName = catItem->data(Qt::DisplayRole).toString();
@@ -1141,6 +1158,44 @@ QStandardItem* ProjectStructureWidget::createCategoryItem(
   item->setEditable(false);
   item->setIcon(AppIconProvider::instance().icon(info.iconName));
   return item;
+}
+
+void ProjectStructureWidget::populateReportCategory(
+    QStandardItem* catItem,
+    const QFileInfoList& entries,
+    const QString& dirPath) {
+  QFileInfoList sorted = entries;
+  std::sort(sorted.begin(), sorted.end(),
+            [](const QFileInfo& a, const QFileInfo& b) {
+              return a.lastModified() > b.lastModified();
+            });
+
+  QSet<QString> seenPrograms;
+  QRegularExpression re(
+      QStringLiteral("^(.+)_\\d{8}_\\d{6}\\.etlog$"));
+
+  for (const auto& fi : sorted) {
+    QString relPath = dirPath + fi.fileName();
+    auto* item = createFileItem(fi.fileName(), relPath);
+
+    bool isLatest = false;
+    if (fi.suffix().toLower() == "etlog") {
+      QString programName;
+      QRegularExpressionMatch m = re.match(fi.fileName());
+      if (m.hasMatch()) {
+        programName = m.captured(1);
+      } else {
+        programName = fi.completeBaseName();
+      }
+      if (!seenPrograms.contains(programName)) {
+        seenPrograms.insert(programName);
+        isLatest = true;
+      }
+    }
+
+    item->setData(isLatest, IsLatestRole);
+    catItem->appendRow(item);
+  }
 }
 
 QStandardItem* ProjectStructureWidget::createFileItem(

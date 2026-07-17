@@ -129,6 +129,8 @@ add_executable(${TARGET_NAME} WIN32
     widgets/RecentProjectCard.cpp
     widgets/OpenFileDelegate.h
     widgets/OpenFileDelegate.cpp
+    widgets/ProjectTreeDelegate.h
+    widgets/ProjectTreeDelegate.cpp
     dialogs/AnimationDialog.h
     dialogs/AnimationDialog.cpp
     dialogs/NewProjectDialog.h
