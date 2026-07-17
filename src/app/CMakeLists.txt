@@ -100,6 +100,12 @@ add_executable(${TARGET_NAME} WIN32
     visualizers/SignalVisualizer.cpp
     visualizers/ValueLabelWidget.h
     visualizers/ValueLabelWidget.cpp
+    visualizers/WaveformWidget.h
+    visualizers/WaveformWidget.cpp
+    visualizers/StateLEDWidget.h
+    visualizers/StateLEDWidget.cpp
+    visualizers/DigitalMeterWidget.h
+    visualizers/DigitalMeterWidget.cpp
     SignalTreePanel.h
     SignalTreePanel.cpp
     VisualizationArea.h
