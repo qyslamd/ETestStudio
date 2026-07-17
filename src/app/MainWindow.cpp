@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -724,6 +724,8 @@ void MainWindow::initSignalsLate() {
         edit_find_action_->setEnabled(hasEditor);
         edit_replace_action_->setEnabled(hasEditor);
         edit_go_to_line_action_->setEnabled(hasEditor);
+
+        execution_controller_->syncControlStates();
       });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
@@ -907,8 +909,16 @@ void MainWindow::initSignalsLate() {
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
           protocolMgr, &ProtocolManagerWidget::refreshList);
 
+
   // 用例管理器：双击文件打开编辑器
   auto* tpMgr = sidebar_->testProgramManager();
+
+  // 用例管理器：选中/勾选变化时更新运行按钮状态（不影响验证按钮）
+  connect(tpMgr, &TestProgramManagerWidget::programSelectionChanged, this,
+          [this]() { execution_controller_->updateRunControls(); });
+  connect(tpMgr, &TestProgramManagerWidget::checkedProgramsChanged, this,
+          [this]() { execution_controller_->updateRunControls(); });
+
   connect(tpMgr, &TestProgramManagerWidget::openFileRequested, tpMgr,
           [this](const QString& path) { editor_manager_->openFile(path); });
 
@@ -1538,6 +1548,14 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     }
   }
   activity_bar_->setActivePageId(PageId::kProjectOverview);
+
+  // 确保测试程序树已加载（信号连接的 refreshList 在 onProjectOpened 返回后才执行）
+  if (auto* tpMgr = sidebar_->testProgramManager()) {
+    tpMgr->refreshList();
+  }
+
+  // 同步 ribbon 按钮 enable 状态
+  execution_controller_->syncControlStates();
 }
 
 void MainWindow::onProjectClosed() {
@@ -1557,6 +1575,9 @@ void MainWindow::onProjectClosed() {
   editor_manager_->setSignalRegistry(nullptr);
   editor_manager_->setIcdRepository(nullptr);
   icd_repository_ = nullptr;
+
+  // 同步 ribbon 按钮 enable 状态（预条件不满足，verify/run 应灰掉）
+  execution_controller_->syncControlStates();
 }
 
 void MainWindow::updateWindowTitle() {

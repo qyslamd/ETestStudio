@@ -71,6 +71,8 @@ class ExecutionPanelController : public QObject {
   void verify();
   void runAll();
   void runNextInQueue();
+  /// 仅更新 run/runAll 的 enable 状态（不重算 verify）
+  void updateRunControls();
 
   // 状态
   void syncControlStates();
@@ -97,6 +99,8 @@ class ExecutionPanelController : public QObject {
  private:
   void connectEngineSignals();
   void refreshMonitorTree();
+  bool checkCanVerify() const;
+  bool checkCanRun() const;
 
   // 引擎
   etest::engine::TestExecutionEngine* engine_ = nullptr;

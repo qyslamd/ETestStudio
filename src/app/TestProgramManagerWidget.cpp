@@ -74,6 +74,14 @@ void TestProgramManagerWidget::initSignals() {
 
   connect(new_btn_, &QPushButton::clicked, this,
           &TestProgramManagerWidget::onNewTestProgram);
+
+  // 勾选状态变化 → 通知外部（如 ribbon 状态同步）
+  connect(tree_, &QTreeWidget::itemChanged, this,
+          [this](QTreeWidgetItem*, int column) {
+            if (column == 0) {
+              emit checkedProgramsChanged();
+            }
+          });
 }
 
 QString TestProgramManagerWidget::selectedProgramPath() const {
@@ -106,7 +114,12 @@ QStringList TestProgramManagerWidget::checkedProgramPaths() const {
   return paths;
 }
 
+bool TestProgramManagerWidget::hasAnyProgram() const {
+  return tree_->topLevelItemCount() > 0;
+}
+
 void TestProgramManagerWidget::refreshList() {
+  tree_->blockSignals(true);
   tree_->clear();
 
   auto& pm = ProjectManager::instance();
@@ -137,6 +150,7 @@ void TestProgramManagerWidget::refreshList() {
     }
   }
 
+  tree_->blockSignals(false);
   tree_->expandAll();
 }
 

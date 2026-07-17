@@ -140,6 +140,9 @@ etest (主程序)
 4. `footer`（可选）：`Closes #123` 或 `BREAKING CHANGE: 说明`
 ```
 
+## 调试和定位问题
+1. 该项目是一个Qt的GUI程序。大模型Agent工具无法运行查看运行后的状态，唯一的手段就是通过增加日志。我是用了spdlog封装了 `LOG_INFO`、`LOG_DEBUG`等，必要的时候添加上日志！
+
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：
 - Qt 5.14.2（Core、Gui、Widgets、PrintSupport、Test、Xml、Svg），Qt使用官方编译的二进制发布包，默认是共享库

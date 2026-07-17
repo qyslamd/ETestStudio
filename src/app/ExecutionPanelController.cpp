@@ -260,22 +260,22 @@ void ExecutionPanelController::connectEngineSignals() {
 
 void ExecutionPanelController::syncControlStates() {
   if (!engine_) {
-    act_run_->setEnabled(true);
-    act_run_all_->setEnabled(true);
+    act_run_->setEnabled(checkCanRun());
+    act_run_all_->setEnabled(checkCanRun());
     act_pause_->setEnabled(false);
     act_stop_->setEnabled(false);
-    act_verify_->setEnabled(true);
+    act_verify_->setEnabled(checkCanVerify());
     return;
   }
   auto state = engine_->state();
   switch (state) {
     case etest::engine::EngineState::Idle:
     case etest::engine::EngineState::Finished:
-      act_run_->setEnabled(true);
-      act_run_all_->setEnabled(true);
+      act_run_->setEnabled(checkCanRun());
+      act_run_all_->setEnabled(checkCanRun());
       act_pause_->setEnabled(false);
       act_stop_->setEnabled(false);
-      act_verify_->setEnabled(true);
+      act_verify_->setEnabled(checkCanVerify());
       break;
     case etest::engine::EngineState::Running:
       act_run_->setEnabled(false);
@@ -298,13 +298,92 @@ void ExecutionPanelController::syncControlStates() {
       act_verify_->setEnabled(false);
       break;
     case etest::engine::EngineState::Error:
-      act_run_->setEnabled(true);
-      act_run_all_->setEnabled(true);
+      act_run_->setEnabled(checkCanRun());
+      act_run_all_->setEnabled(checkCanRun());
       act_pause_->setEnabled(false);
       act_stop_->setEnabled(false);
-      act_verify_->setEnabled(true);
+      act_verify_->setEnabled(checkCanVerify());
       break;
   }
+}
+
+bool ExecutionPanelController::checkCanVerify() const {
+  // 1. 项目已打开
+  auto& proj_mgr = etest::core::project::ProjectManager::instance();
+  if (!proj_mgr.isProjectOpen()) {
+    return false;
+  }
+
+  // 2. ICD 已加载
+  if (!icd_repository_ || icd_repository_->frames().empty()) {
+    return false;
+  }
+
+  // 3. 拓扑文件存在
+  QString topo_dir =
+      proj_mgr.currentProjectRoot() + QStringLiteral("/topology");
+  QDir topo_dir_obj(topo_dir);
+  if (!topo_dir_obj.exists()) {
+    return false;
+  }
+  if (topo_dir_obj.entryList({QStringLiteral("*.etopo")}, QDir::Files)
+          .isEmpty()) {
+    return false;
+  }
+
+  // 4. 测试程序可用（只要有来源即可，具体用例级验证由 verify() 完成）
+  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
+  auto* prog_editor =
+      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
+             : nullptr;
+  if (prog_editor) {
+    return true;
+  }
+  if (test_program_mgr_) {
+    // 树中有 .etprog 条目即可，不要求必须选中或勾选
+    if (test_program_mgr_->hasAnyProgram()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ExecutionPanelController::checkCanRun() const {
+  // 1. 基本预条件（项目/ICD/拓扑）
+  if (!checkCanVerify()) {
+    return false;
+  }
+  // 2. 必须通过验证
+  if (!debug_widget_ || !debug_widget_->canRun()) {
+    return false;
+  }
+  // 3. 有明确的运行目标（编辑器打开 / 勾选 / 选中任一）
+  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
+  auto* prog_editor =
+      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
+             : nullptr;
+  if (prog_editor) {
+    return true;
+  }
+  if (test_program_mgr_) {
+    if (!test_program_mgr_->checkedProgramPaths().isEmpty()) {
+      return true;
+    }
+    if (!test_program_mgr_->selectedProgramPath().isEmpty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void ExecutionPanelController::updateRunControls() {
+  if (engine_ && (engine_->state() == etest::engine::EngineState::Running ||
+                  engine_->state() == etest::engine::EngineState::Paused)) {
+    // 引擎运行时 run/runAll 始终禁用，不检查预条件
+    return;
+  }
+  act_run_->setEnabled(checkCanRun());
+  act_run_all_->setEnabled(checkCanRun());
 }
 
 void ExecutionPanelController::run() {
@@ -523,6 +602,9 @@ void ExecutionPanelController::verify() {
   if (debug_widget_) {
     debug_widget_->setDependencies(signal_registry_, icd_repository_.get());
   }
+
+  // verify 可能改变了 canRun 状态，同步 ribbon 按钮 enable
+  syncControlStates();
 }
 
 void ExecutionPanelController::runAll() {
