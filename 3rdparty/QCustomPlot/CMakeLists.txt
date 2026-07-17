@@ -11,3 +11,6 @@ set_target_properties(qcustomplot PROPERTIES
 
 target_include_directories(qcustomplot PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
 target_link_libraries(qcustomplot PUBLIC Qt5::Core Qt5::Widgets Qt5::PrintSupport)
+if(MSVC)
+    target_compile_options(qcustomplot PRIVATE /utf-8)
+endif()
