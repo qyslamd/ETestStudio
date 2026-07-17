@@ -7,13 +7,13 @@
 #include "common/GlobalExceptionHandler.h"
 #include "common/SingleInstance.h"
 #include "config/ConfigManager.h"
+#include "core_ui/ThemeManager.h"
 #include "crashhandler/CrashHandler.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
 #include "libui/styles/EtestComponentsFactory.h"
 #include "libui/styles/NoFocusRectStyle.h"
 #include "logger/Logger.h"
-#include "core_ui/ThemeManager.h"
 
 // Debug 构建启用控制台，方便查看 spdlog 输出
 #ifdef _DEBUG
@@ -84,13 +84,15 @@ int main(int argc, char* argv[]) {
   MainWindow main_window;
   main_window.show();
 
-  singleInstance.setActivationWindow(reinterpret_cast<void*>(main_window.winId()));
+  singleInstance.setActivationWindow(
+      reinterpret_cast<void*>(main_window.winId()));
 
   int ret = app.exec();
 
   // 关闭全局异常处理器
   GlobalExceptionHandler::instance().shutdown();
 
+  LOG_INFO("MAIN", "应用程序即将退出");
   // 关闭日志系统
   Logger::shutdown();
 

@@ -2,6 +2,7 @@
 #define ETEST_APP_TESTPROGRAM_MANAGER_WIDGET_H_
 
 #include <QPushButton>
+#include <QStringList>
 #include <QTreeWidget>
 #include <QWidget>
 
@@ -19,6 +20,8 @@ class TestProgramManagerWidget : public QWidget {
   QString selectedProgramPath() const;
   /// 加载并返回当前选中程序的数据，无选中返回空数据
   TestProgramData loadSelectedProgramData() const;
+  /// 返回所有勾选程序的路径列表
+  QStringList checkedProgramPaths() const;
 
  public slots:
   void refreshList();

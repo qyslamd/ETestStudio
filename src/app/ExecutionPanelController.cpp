@@ -508,8 +508,21 @@ void ExecutionPanelController::verify() {
   if (prog_editor) {
     has_program = !prog_editor->programData().cases.isEmpty();
   } else if (test_program_mgr_) {
-    auto data = test_program_mgr_->loadSelectedProgramData();
-    has_program = !data.cases.isEmpty();
+    auto checked = test_program_mgr_->checkedProgramPaths();
+    if (checked.size() >= 2) {
+      // 串行模式：至少有一个勾选文件有可用用例
+      for (const auto& p : checked) {
+        auto data = loadTestProgram(p);
+        if (!data.cases.isEmpty()) {
+          has_program = true;
+          break;
+        }
+      }
+    } else {
+      // 单次模式：检查当前选中
+      auto data = test_program_mgr_->loadSelectedProgramData();
+      has_program = !data.cases.isEmpty();
+    }
   }
   if (!has_program) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
@@ -543,7 +556,124 @@ void ExecutionPanelController::verify() {
 
 void ExecutionPanelController::runAll() {
   LOG_INFO("MAIN_UI", "点击「运行全部」");
-  run();
+
+  // 如果当前编辑器打开了测试程序，退化为单次运行
+  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
+  auto* prog_editor =
+      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
+             : nullptr;
+  if (prog_editor) {
+    run();
+    return;
+  }
+
+  // 从管理器列表获取勾选的文件
+  QStringList paths;
+  if (test_program_mgr_) {
+    paths = test_program_mgr_->checkedProgramPaths();
+  }
+
+  if (paths.size() < 2) {
+    // 少于 2 个勾选 → 退化为单次运行
+    run();
+    return;
+  }
+
+  // 多个勾选 → 串行队列执行
+  run_queue_ = paths;
+  runNextInQueue();
+}
+
+void ExecutionPanelController::runNextInQueue() {
+  if (run_queue_.isEmpty()) {
+    return;
+  }
+
+  // 加载队列中的下一个程序
+  QString path = run_queue_.first();
+  etest::app::TestProgramData data = loadTestProgram(path);
+  if (data.name.isEmpty() || data.cases.isEmpty()) {
+    run_queue_.removeFirst();
+    runNextInQueue();  // 跳过无效项
+    return;
+  }
+
+  LOG_INFO("MAIN_UI", "队列执行测试程序 [name={}]", data.name.toStdString());
+
+  // 切换侧边栏
+  if (sidebar_) {
+    sidebar_->switchPage(PageId::kRun);
+    if (!sidebar_->isContentVisible() && h_splitter_) {
+      sidebar_->showContent();
+      auto sizes = h_splitter_->sizes();
+      if (!sizes.isEmpty() && sidebar_width_ref_) {
+        sizes[0] = *sidebar_width_ref_;
+        h_splitter_->setSizes(sizes);
+      }
+    }
+  }
+  if (activity_bar_) {
+    activity_bar_->setActivePageId(PageId::kRun);
+  }
+
+  // 重置引擎（每次创建全新的引擎实例）
+  if (engine_) {
+    destroyEngine();
+  }
+  createEngine();
+  if (!engine_) {
+    run_queue_.clear();
+    return;
+  }
+
+  // 加载拓扑设备
+  {
+    auto& proj_mgr = etest::core::project::ProjectManager::instance();
+    if (proj_mgr.isProjectOpen()) {
+      QString topo_dir =
+          proj_mgr.currentProjectRoot() + QStringLiteral("/topology");
+      QDir topo_dir_obj(topo_dir);
+      if (topo_dir_obj.exists()) {
+        const auto topo_files = topo_dir_obj.entryInfoList(
+            {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
+        for (const QFileInfo& fi : topo_files) {
+          engine_->loadTopology(fi.absoluteFilePath());
+        }
+      }
+    }
+  }
+
+  // 设置程序数据
+  current_program_name_ = data.name;
+  engine_->setProgram(convertProgram(data));
+
+  // 重置统计
+  pass_count_ = 0;
+  fail_count_ = 0;
+  if (status_bar_ctrl_) {
+    status_bar_ctrl_->setExecStats(0, 0, 0);
+  }
+
+  // 引擎结束后触发下一个
+  connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
+          [this]() {
+            run_queue_.removeFirst();
+            runNextInQueue();
+          });
+
+  // 启动
+  engine_->start();
+
+  // 所有编辑器置为只读
+  if (editor_mgr_) {
+    for (auto* ed : editor_mgr_->allEditors()) {
+      ed->setReadOnly(true);
+    }
+  }
+
+  if (central_stack_) {
+    central_stack_->setCurrentIndex(1);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

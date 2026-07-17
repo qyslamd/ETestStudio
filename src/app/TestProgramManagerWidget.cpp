@@ -92,6 +92,20 @@ TestProgramData TestProgramManagerWidget::loadSelectedProgramData() const {
   return loadTestProgram(path);
 }
 
+QStringList TestProgramManagerWidget::checkedProgramPaths() const {
+  QStringList paths;
+  for (int i = 0; i < tree_->topLevelItemCount(); ++i) {
+    auto* item = tree_->topLevelItem(i);
+    if (item->checkState(0) == Qt::Checked) {
+      QString path = item->data(0, Qt::UserRole).toString();
+      if (!path.isEmpty()) {
+        paths.append(path);
+      }
+    }
+  }
+  return paths;
+}
+
 void TestProgramManagerWidget::refreshList() {
   tree_->clear();
 
@@ -110,6 +124,8 @@ void TestProgramManagerWidget::refreshList() {
     item->setText(0, QFileInfo(absPath).completeBaseName());
     item->setData(0, Qt::UserRole, absPath);
     item->setToolTip(0, absPath);
+    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+    item->setCheckState(0, Qt::Unchecked);
 
     // 解析该文件中的测试用例作为子节点
     TestProgramData suite = loadTestProgram(absPath);

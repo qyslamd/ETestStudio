@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 
 class QAction;
 class QLabel;
@@ -77,6 +78,7 @@ class ExecutionPanelController : public QObject {
   void stop();
   void verify();
   void runAll();
+  void runNextInQueue();
 
   // 状态
   void syncControlStates();
@@ -119,6 +121,7 @@ class ExecutionPanelController : public QObject {
   int pass_count_ = 0;
   int fail_count_ = 0;
   QString current_program_name_;
+  QStringList run_queue_;
 
   // 外部依赖（通过 postInit 注入）
   QWidget* parent_widget_ = nullptr;
