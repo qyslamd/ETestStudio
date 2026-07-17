@@ -1,8 +1,9 @@
 set(TARGET_NAME "test-program-editor")
 
 
-add_executable(${TARGET_NAME}
+add_executable(${TARGET_NAME} WIN32
     main.cpp
+    ${CMAKE_SOURCE_DIR}/src/app/resource.qrc
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE

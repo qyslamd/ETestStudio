@@ -1,7 +1,7 @@
 set(TARGET_NAME "test-executor")
 
 
-add_executable(${TARGET_NAME} main.cpp)
+add_executable(${TARGET_NAME} WIN32 main.cpp)
 
 target_link_libraries(${TARGET_NAME} PRIVATE
     etest_engine

@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QStatusBar>
 
+#include "ThemeManager.h"
 #include "TestProgramEditorWidget.h"
 
 namespace {
@@ -72,6 +73,8 @@ int main(int argc, char* argv[]) {
                     QStringLiteral("打开指定的测试程序文件 (*.tcase)"),
                     QStringLiteral("file")});
   parser.process(app);
+
+  etest::core_ui::ThemeManager::instance().setTheme(QStringLiteral("default"));
 
   QString loadFile = parser.value(QStringLiteral("file"));
   if (!loadFile.isEmpty() && !QFileInfo::exists(loadFile)) {

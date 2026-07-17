@@ -1,7 +1,7 @@
 set(TARGET_NAME "topology-editor")
 
 
-add_executable(${TARGET_NAME}
+add_executable(${TARGET_NAME} WIN32
     main.cpp
     ${CMAKE_SOURCE_DIR}/src/app/resource.qrc
 )
