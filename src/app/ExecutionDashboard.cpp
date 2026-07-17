@@ -22,10 +22,14 @@ ExecutionDashboard::ExecutionDashboard(QWidget* parent)
 void ExecutionDashboard::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
-  layout->setSpacing(1);
+  layout->setSpacing(0);
+
+  // ── 垂直 splitter：上方三列 + 下方输出面板 ──
+  vert_splitter_ = new QSplitter(Qt::Vertical, this);
+  vert_splitter_->setObjectName(QStringLiteral("ExecVertSplitter"));
 
   // ── 水平三列（主 splitter） ──
-  main_splitter_ = new QSplitter(Qt::Horizontal, this);
+  main_splitter_ = new QSplitter(Qt::Horizontal, vert_splitter_);
   main_splitter_->setObjectName(QStringLiteral("ExecDashboardSplitter"));
 
   run_status_ = new RunStatusPanel(main_splitter_);
@@ -42,10 +46,15 @@ void ExecutionDashboard::initUi() {
   main_splitter_->addWidget(vis_area_);
   main_splitter_->setSizes({200, 250, 600});
 
-  layout->addWidget(main_splitter_, 1);
+  vert_splitter_->addWidget(main_splitter_);
 
-  // ── 底部输出面板占位（Task 11 由 MainWindow 通过 setOutputPanel 注入） ──
-  // output_panel_ 初始为 nullptr，由外部注入
+  // ── 底部输出面板占位（由 MainWindow 通过 setOutputPanel 注入） ──
+  // output_panel_ 初始为 nullptr，注入后会被加到 vert_splitter_
+
+  vert_splitter_->setStretchFactor(0, 1);
+  vert_splitter_->setSizes({700, 200});
+
+  layout->addWidget(vert_splitter_);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -59,14 +68,14 @@ void ExecutionDashboard::setOutputPanel(ExecutionOutputPanel* panel) {
 
   // 移除旧的 output panel
   if (output_panel_) {
-    layout()->removeWidget(output_panel_);
-    // 不 delete — setParent 会转移所有权
+    output_panel_->setParent(nullptr);
+    output_panel_->deleteLater();
   }
 
   output_panel_ = panel;
   if (output_panel_) {
-    output_panel_->setParent(this);
-    layout()->addWidget(output_panel_);
+    vert_splitter_->addWidget(output_panel_);
+    vert_splitter_->setSizes({700, 200});
     output_panel_->show();
   }
 }

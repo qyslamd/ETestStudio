@@ -40,6 +40,7 @@ class ExecutionDashboard : public QWidget {
   VisualizationArea* vis_area_ = nullptr;
   ExecutionOutputPanel* output_panel_ = nullptr;
   QSplitter* main_splitter_ = nullptr;
+  QSplitter* vert_splitter_ = nullptr;  // 主区域 + 底部输出面板垂直 splitter
 };
 
 }  // namespace etest::app

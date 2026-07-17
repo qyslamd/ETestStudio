@@ -1102,12 +1102,18 @@ void MainWindow::lazyInit() {
               mode_toggle_action_->setChecked(true);
               mode_toggle_action_->setIcon(
                   AppIconProvider::instance().icon(QStringLiteral("edit")));
+              // Ribbon 底部指示线
+              ribbonBar()->setObjectName(QStringLiteral("RunningMode"));
             } else {
               mode_toggle_action_->setText(QStringLiteral("切换运行态"));
               mode_toggle_action_->setChecked(false);
               mode_toggle_action_->setIcon(
                   AppIconProvider::instance().icon(QStringLiteral("run")));
+              ribbonBar()->setObjectName(QString());
             }
+            // 强制刷新 QSS
+            ribbonBar()->style()->unpolish(ribbonBar());
+            ribbonBar()->style()->polish(ribbonBar());
           });
 
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());

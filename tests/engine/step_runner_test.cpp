@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <QElapsedTimer>
+#include <QSignalSpy>
 #include <QThread>
 
 #include "HardwareManager.h"
@@ -550,4 +551,61 @@ TEST_F(StepRunnerCanTest, CheckCommandPassWithinTolerance) {
 
   EXPECT_EQ(result.status, PASS);
   EXPECT_DOUBLE_EQ(result.actualValue, 170.0);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// hardwareOperationFinished 信号发射测试
+// ══════════════════════════════════════════════════════════════════════════════
+
+TEST_F(StepRunnerCanTest, SetCommandEmitsHardwareSignal) {
+  QSignalSpy spy(runner_.get(), &StepRunner::hardwareOperationFinished);
+
+  TestStepData step;
+  step.command = "SET";
+  step.target = uuid_;
+  step.value = 100.0;
+
+  StepRunnerTestHelper::executeSingleStep(*runner_, step, 0, "1.1");
+
+  // SET 操作应发射信号
+  ASSERT_EQ(spy.count(), 1);
+  QList<QVariant> args = spy.takeFirst();
+  EXPECT_EQ(args.at(0).toString(), QStringLiteral("dev-can"));  // deviceId
+  EXPECT_EQ(args.at(1).toString(), QStringLiteral("port1"));    // portName
+  // rawFrame 空（AD/DA 写无帧），rawValue=编码结果，engValue=step.value
+  EXPECT_EQ(args.at(2).toByteArray(), QByteArray());            // rawFrame
+  EXPECT_DOUBLE_EQ(args.at(4).toDouble(), 100.0);               // engValue
+}
+
+TEST_F(StepRunnerCanTest, CheckCommandEmitsHardwareSignal) {
+  QSignalSpy spy(runner_.get(), &StepRunner::hardwareOperationFinished);
+
+  TestStepData step;
+  step.command = "CHECK";
+  step.target = uuid_;
+  step.value = 168.0;
+
+  StepRunnerTestHelper::executeSingleStep(*runner_, step, 0, "1.2");
+
+  // CHECK 读操作也应发射信号
+  ASSERT_GE(spy.count(), 1);
+  QList<QVariant> args = spy.takeFirst();
+  EXPECT_EQ(args.at(0).toString(), QStringLiteral("dev-can"));
+  EXPECT_EQ(args.at(1).toString(), QStringLiteral("port1"));
+  // rawFrame 有值（mock CAN 返回 AABBCCDD），rawValue=0.0（帧类），engValue=decode 结果
+  EXPECT_EQ(args.at(2).toByteArray(), QByteArray::fromHex("AABBCCDD"));
+  EXPECT_DOUBLE_EQ(args.at(3).toDouble(), 0.0);                // rawValue
+}
+
+TEST_F(StepRunnerCanTest, DelayCommandDoesNotEmitHardwareSignal) {
+  QSignalSpy spy(runner_.get(), &StepRunner::hardwareOperationFinished);
+
+  TestStepData step;
+  step.command = "DELAY";
+  step.value = 1;  // 1ms delay
+
+  StepRunnerTestHelper::executeSingleStep(*runner_, step, 0, "1.3");
+
+  // DELAY 不应发射 hardwareOperationFinished
+  EXPECT_EQ(spy.count(), 0);
 }

@@ -1028,3 +1028,124 @@ etest--app--EtlogViewerWidget {
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 2px;
 }
+
+/* ==================== Signal Visualizers (Light) ==================== */
+
+/* WaveformWidget */
+#WaveformTitle {
+    font-size: 13px;
+    font-weight: bold;
+    padding: 2px 4px;
+}
+#WaveformPlot {
+    border: 1px solid palette(midlight);
+    border-radius: 2px;
+}
+
+/* StateLEDWidget */
+#LEDTitle {
+    font-size: 12px;
+    font-weight: bold;
+}
+#LEDDot {
+    min-width: 20px; max-width: 20px;
+    min-height: 20px; max-height: 20px;
+    border-radius: 10px;
+}
+#LEDDot[ledState="on"] {
+    background-color: #00cc66;
+}
+#LEDDot[ledState="off"] {
+    background-color: #cc3333;
+}
+#LEDStateText {
+    font-size: 14px;
+    font-weight: bold;
+}
+#LEDPulse {
+    font-size: 11px;
+    color: palette(mid);
+}
+#LEDTs {
+    font-size: 10px;
+    color: palette(mid);
+}
+
+/* DigitalMeterWidget */
+#MeterTitle {
+    font-size: 12px;
+    font-weight: bold;
+}
+#MeterValue {
+    font-size: 28px;
+    font-weight: bold;
+    color: palette(text);
+}
+#MeterTrend {
+    font-size: 18px;
+}
+#MeterRange {
+    font-size: 11px;
+    color: palette(mid);
+}
+#MeterRaw {
+    font-size: 11px;
+    color: palette(mid);
+}
+#MeterTs {
+    font-size: 10px;
+    color: palette(mid);
+}
+
+/* ValueLabelWidget */
+#ValueLabelTitle {
+    font-size: 12px;
+    font-weight: bold;
+}
+#ValueLabelValue {
+    font-size: 22px;
+    font-weight: bold;
+    color: palette(text);
+}
+#ValueLabelRaw {
+    font-size: 11px;
+    color: palette(mid);
+}
+#ValueLabelTs {
+    font-size: 10px;
+    color: palette(mid);
+}
+
+/* SignalTreePanel */
+#SignalTreeSearch {
+    padding: 4px;
+    margin: 2px 4px;
+}
+#SignalTree {
+    background: transparent;
+}
+
+/* VisualizationArea */
+#VisualizationArea {
+    background: palette(window);
+    border: none;
+}
+
+/* RunStatusPanel */
+#RunStatusTree {
+    background: transparent;
+}
+#RunStatusStats {
+    padding: 4px;
+    font-size: 11px;
+}
+
+/* ExecutionDashboard splitter */
+#ExecDashboardSplitter::handle {
+    width: 2px;
+}
+
+/* Ribbon running mode indicator */
+#RunningMode {
+    border-bottom: 3px solid #ff8800;
+}
