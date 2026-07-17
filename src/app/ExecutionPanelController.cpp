@@ -7,7 +7,6 @@
 #include <QFileInfo>
 #include <QLabel>
 #include <QMessageBox>
-#include <QSplitter>
 #include <QStackedWidget>
 #include <QWidget>
 #include "ExecutionDashboard.h"
@@ -18,12 +17,10 @@
 #include "visualizers/VisualizerFactory.h"
 
 
-#include "ActivityBarWidget.h"
 #include "AppIconProvider.h"
 #include "AppStatusBarController.h"
 #include "EditorManager.h"
 #include "ExecutionDebugWidget.h"
-#include "SidebarWidget.h"
 #include "SignalRegistry.h"
 #include "TestProgramManagerWidget.h"
 #include "api/IEditor.h"
@@ -109,31 +106,21 @@ ExecutionPanelController::ExecutionPanelController(QWidget* parent_widget,
 }
 
 void ExecutionPanelController::postInit(
-    ExecutionDebugWidget* debug_widget,
     ExecutionOutputPanel* output_panel,
     etest::core::SignalRegistry* signal_registry,
     std::shared_ptr<icd::Repository> icd_repository,
     EditorManager* editor_mgr,
-    SidebarWidget* sidebar,
-    QSplitter* h_splitter,
-    ActivityBarWidget* activity_bar,
     TestProgramManagerWidget* test_program_mgr,
     ProblemsPanel* problems_panel,
     BottomContainerWidget* bottom_container,
-    int* sidebar_width_ref,
     AppStatusBarController* status_bar_ctrl) {
-  debug_widget_ = debug_widget;
   output_panel_ = output_panel;
   signal_registry_ = signal_registry;
   icd_repository_ = std::move(icd_repository);
   editor_mgr_ = editor_mgr;
-  sidebar_ = sidebar;
-  h_splitter_ = h_splitter;
-  activity_bar_ = activity_bar;
   test_program_mgr_ = test_program_mgr;
   problems_panel_ = problems_panel;
   bottom_container_ = bottom_container;
-  sidebar_width_ref_ = sidebar_width_ref;
   status_bar_ctrl_ = status_bar_ctrl;
 }
 
@@ -330,23 +317,7 @@ void ExecutionPanelController::run() {
     return;
   }
 
-  // 1. 切换侧边栏
-  if (sidebar_) {
-    sidebar_->switchPage(PageId::kRun);
-    if (!sidebar_->isContentVisible() && h_splitter_) {
-      sidebar_->showContent();
-      auto sizes = h_splitter_->sizes();
-      if (!sizes.isEmpty() && sidebar_width_ref_) {
-        sizes[0] = *sidebar_width_ref_;
-        h_splitter_->setSizes(sizes);
-      }
-    }
-  }
-  if (activity_bar_) {
-    activity_bar_->setActivePageId(PageId::kRun);
-  }
-
-  // 2. 获取测试程序数据
+  // 1. 获取测试程序数据
   etest::app::TestProgramData data;
   auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
   auto* prog_editor =
@@ -373,7 +344,7 @@ void ExecutionPanelController::run() {
     return;
   }
 
-  // 3. 创建引擎（registry 和 repository 已在构造时传入）
+  // 2. 创建引擎（registry 和 repository 已在构造时传入）
   createEngine();
   if (!engine_) {
     return;
@@ -396,7 +367,7 @@ void ExecutionPanelController::run() {
     }
   }
 
-  // 4. 设置程序数据
+  // 3. 设置程序数据
   current_program_name_ = data.name;
   engine_->setProgram(convertProgram(data));
 
@@ -407,7 +378,7 @@ void ExecutionPanelController::run() {
     status_bar_ctrl_->setExecStats(0, 0, 0);
   }
 
-  // 5. 启动 + 切换到运行态
+  // 4. 启动 + 切换到运行态
   engine_->start();
   // 所有编辑器置为只读
   if (editor_mgr_) {
@@ -600,22 +571,6 @@ void ExecutionPanelController::runNextInQueue() {
 
   LOG_INFO("MAIN_UI", "队列执行测试程序 [name={}]", data.name.toStdString());
 
-  // 切换侧边栏
-  if (sidebar_) {
-    sidebar_->switchPage(PageId::kRun);
-    if (!sidebar_->isContentVisible() && h_splitter_) {
-      sidebar_->showContent();
-      auto sizes = h_splitter_->sizes();
-      if (!sizes.isEmpty() && sidebar_width_ref_) {
-        sizes[0] = *sidebar_width_ref_;
-        h_splitter_->setSizes(sizes);
-      }
-    }
-  }
-  if (activity_bar_) {
-    activity_bar_->setActivePageId(PageId::kRun);
-  }
-
   // 重置引擎（每次创建全新的引擎实例）
   if (engine_) {
     destroyEngine();
@@ -685,6 +640,7 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
   if (!dashboard_) {
     return;
   }
+  debug_widget_ = dashboard_->debugWidget();
 
   // ── SignalTreePanel checkbox → 创建/移除可视化组件 + 订阅/取消订阅 ──
   connect(dashboard_->signalTreePanel(), &SignalTreePanel::checkStateChanged,

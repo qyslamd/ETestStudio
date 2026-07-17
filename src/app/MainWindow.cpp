@@ -49,7 +49,6 @@
 #include "EditorManager.h"
 #include "EditorPanelController.h"
 #include "ExecutionDashboard.h"
-#include "ExecutionDebugWidget.h"
 #include "ExecutionPanelController.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
@@ -1005,8 +1004,6 @@ void MainWindow::lazyInit() {
                            QStringLiteral("protocol"));
     activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("测试程序"),
                            QStringLiteral("testprogram"));
-    activity_bar_->addPage(PageId::kRun, QStringLiteral("运行"),
-                           QStringLiteral("debug"));
     activity_bar_->addPage(PageId::kReport, QStringLiteral("报告"),
                            QStringLiteral("report"));
     activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
@@ -1026,9 +1023,6 @@ void MainWindow::lazyInit() {
     test_program_mgr_ = new TestProgramManagerWidget(sidebar_);
     sidebar_->addPage(PageId::kTestProgram, test_program_mgr_,
                       QStringLiteral("测试程序"));
-    auto* runPanel = new ExecutionDebugWidget(sidebar_);
-    sidebar_->addPage(PageId::kRun, runPanel, QStringLiteral("执行调试"));
-    execution_debug_widget_ = runPanel;
     sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
                       QStringLiteral("报告"));
     sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
@@ -1086,10 +1080,9 @@ void MainWindow::lazyInit() {
 
   // 执行控制器依赖注入（signal_registry_/icd_repository_ 项目打开时才可用）
   execution_controller_->postInit(
-      execution_debug_widget_, execution_output_panel_, nullptr, nullptr,
-      editor_manager_, sidebar_, h_splitter_, activity_bar_, test_program_mgr_,
-      problems_panel_, bottom_container_, &sidebar_expanded_width_,
-      status_bar_ctrl_);
+      execution_output_panel_, nullptr, nullptr,
+      editor_manager_, test_program_mgr_,
+      problems_panel_, bottom_container_, status_bar_ctrl_);
   execution_controller_->setCentralStack(central_stack_);
   execution_controller_->setDashboard(exec_dashboard_page_);
   exec_dashboard_page_->setOutputPanel(execution_output_panel_);

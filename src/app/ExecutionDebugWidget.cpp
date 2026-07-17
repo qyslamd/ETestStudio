@@ -46,6 +46,7 @@ void ExecutionDebugWidget::initUi() {
 
   // ── 进度树 ──
   tree_progress_ = new QTreeWidget(this);
+  tree_progress_->setObjectName(QStringLiteral("ExecDebugTree"));
   tree_progress_->setHeaderHidden(true);
   tree_progress_->setIndentation(16);
   tree_progress_->setRootIsDecorated(true);

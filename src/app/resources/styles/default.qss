@@ -1131,13 +1131,9 @@ etest--app--EtlogViewerWidget {
     border: none;
 }
 
-/* RunStatusPanel */
-#RunStatusTree {
+/* ExecutionDebugWidget */
+#ExecDebugTree {
     background: transparent;
-}
-#RunStatusStats {
-    padding: 4px;
-    font-size: 11px;
 }
 
 /* ExecutionDashboard splitter */

@@ -2050,14 +2050,9 @@ QToolButton#saverCloseBtn:pressed {
     border: none;
 }
 
-/* RunStatusPanel */
-#RunStatusTree {
+/* ExecutionDebugWidget */
+#ExecDebugTree {
     background: transparent;
-}
-#RunStatusStats {
-    padding: 4px;
-    font-size: 11px;
-    color: #CCCCCC;
 }
 
 /* ExecutionDashboard splitter */

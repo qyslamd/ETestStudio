@@ -7,7 +7,7 @@ class QSplitter;
 
 namespace etest::app {
 
-class RunStatusPanel;
+class ExecutionDebugWidget;
 class SignalTreePanel;
 class VisualizationArea;
 class ExecutionOutputPanel;
@@ -15,7 +15,7 @@ class ExecutionOutputPanel;
 // ══════════════════════════════════════════════════════════════════════════════
 // ExecutionDashboard — page 1 执行仪表盘
 // ══════════════════════════════════════════════════════════════════════════════
-// 三列水平布局（运行状态 | 信号树 | 可视化区）+ 底部运行输出面板。
+// 三列水平布局（执行调试 | 信号树 | 可视化区）+ 底部运行输出面板。
 // 在 run 模式切换时由 MainWindow 构建并设置到 central_stack_ page 1。
 // ══════════════════════════════════════════════════════════════════════════════
 class ExecutionDashboard : public QWidget {
@@ -24,7 +24,7 @@ class ExecutionDashboard : public QWidget {
  public:
   explicit ExecutionDashboard(QWidget* parent = nullptr);
 
-  RunStatusPanel* runStatusPanel() const { return run_status_; }
+  ExecutionDebugWidget* debugWidget() const { return debug_widget_; }
   SignalTreePanel* signalTreePanel() const { return signal_tree_; }
   VisualizationArea* visualizationArea() const { return vis_area_; }
   ExecutionOutputPanel* outputPanel() const { return output_panel_; }
@@ -35,7 +35,7 @@ class ExecutionDashboard : public QWidget {
  private:
   void initUi();
 
-  RunStatusPanel* run_status_ = nullptr;
+  ExecutionDebugWidget* debug_widget_ = nullptr;
   SignalTreePanel* signal_tree_ = nullptr;
   VisualizationArea* vis_area_ = nullptr;
   ExecutionOutputPanel* output_panel_ = nullptr;

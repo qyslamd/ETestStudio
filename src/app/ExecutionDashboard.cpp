@@ -3,7 +3,7 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 
-#include "RunStatusPanel.h"
+#include "ExecutionDebugWidget.h"
 #include "SignalTreePanel.h"
 #include "VisualizationArea.h"
 #include "widgets/ExecutionOutputPanel.h"
@@ -32,8 +32,8 @@ void ExecutionDashboard::initUi() {
   main_splitter_ = new QSplitter(Qt::Horizontal, vert_splitter_);
   main_splitter_->setObjectName(QStringLiteral("ExecDashboardSplitter"));
 
-  run_status_ = new RunStatusPanel(main_splitter_);
-  run_status_->setObjectName(QStringLiteral("ExecRunStatus"));
+  debug_widget_ = new ExecutionDebugWidget(main_splitter_);
+  debug_widget_->setObjectName(QStringLiteral("ExecRunStatus"));
 
   signal_tree_ = new SignalTreePanel(main_splitter_);
   signal_tree_->setObjectName(QStringLiteral("ExecSignalTree"));
@@ -41,7 +41,7 @@ void ExecutionDashboard::initUi() {
   vis_area_ = new VisualizationArea(main_splitter_);
   vis_area_->setObjectName(QStringLiteral("ExecVisArea"));
 
-  main_splitter_->addWidget(run_status_);
+  main_splitter_->addWidget(debug_widget_);
   main_splitter_->addWidget(signal_tree_);
   main_splitter_->addWidget(vis_area_);
   main_splitter_->setSizes({200, 250, 600});

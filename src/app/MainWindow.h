@@ -35,7 +35,6 @@ class EditorManager;
 class HintBarWidget;
 class WelcomeWidget;
 class LoadingOverlay;
-class ExecutionDebugWidget;
 class TestProgramManagerWidget;
 class AppStatusBarController;
 class TuxSaverController;
@@ -124,7 +123,6 @@ class MainWindow : public SARibbonMainWindow {
   ActivityBarWidget* activity_bar_ = nullptr;
   SidebarWidget* sidebar_ = nullptr;
   TestProgramManagerWidget* test_program_mgr_ = nullptr;
-  ExecutionDebugWidget* execution_debug_widget_ = nullptr;
 
   // 水平/垂直分割器
   QSplitter* h_splitter_ = nullptr;  // 水平：Sidebar / 垂直区域 / AuxSidebar

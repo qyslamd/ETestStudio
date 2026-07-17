@@ -7,7 +7,6 @@
 
 class QAction;
 class QLabel;
-class QSplitter;
 class QStackedWidget;
 class QWidget;
 
@@ -17,8 +16,6 @@ class AppStatusBarController;
 class EditorManager;
 class ExecutionDebugWidget;
 class ExecutionOutputPanel;
-class SidebarWidget;
-class ActivityBarWidget;
 class TestProgramManagerWidget;
 class ProblemsPanel;
 class BottomContainerWidget;
@@ -49,18 +46,13 @@ class ExecutionPanelController : public QObject {
                                     QObject* parent = nullptr);
 
   // 两步初始化：Constructor 只创建 QAction，postInit 补全依赖
-  void postInit(ExecutionDebugWidget* debug_widget,
-                ExecutionOutputPanel* output_panel,
+  void postInit(ExecutionOutputPanel* output_panel,
                 etest::core::SignalRegistry* signal_registry,
                 std::shared_ptr<icd::Repository> icd_repository,
                 EditorManager* editor_mgr,
-                SidebarWidget* sidebar,
-                QSplitter* h_splitter,
-                ActivityBarWidget* activity_bar,
                 TestProgramManagerWidget* test_program_mgr,
                 ProblemsPanel* problems_panel,
                 BottomContainerWidget* bottom_container,
-                int* sidebar_width_ref,
                 AppStatusBarController* status_bar_ctrl);
 
   // 引擎生存期
@@ -130,13 +122,9 @@ class ExecutionPanelController : public QObject {
   etest::core::SignalRegistry* signal_registry_ = nullptr;
   std::shared_ptr<icd::Repository> icd_repository_;
   EditorManager* editor_mgr_ = nullptr;
-  SidebarWidget* sidebar_ = nullptr;
-  QSplitter* h_splitter_ = nullptr;
-  ActivityBarWidget* activity_bar_ = nullptr;
   TestProgramManagerWidget* test_program_mgr_ = nullptr;
   ProblemsPanel* problems_panel_ = nullptr;
   BottomContainerWidget* bottom_container_ = nullptr;
-  int* sidebar_width_ref_ = nullptr;
   AppStatusBarController* status_bar_ctrl_ = nullptr;
   QStackedWidget* central_stack_ = nullptr;
   ExecutionDashboard* dashboard_ = nullptr;

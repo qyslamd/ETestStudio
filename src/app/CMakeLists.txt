@@ -114,8 +114,6 @@ add_executable(${TARGET_NAME} WIN32
     SignalTreePanel.cpp
     VisualizationArea.h
     VisualizationArea.cpp
-    RunStatusPanel.h
-    RunStatusPanel.cpp
     widgets/TuxSaverOverlay.h
     widgets/TuxSaverOverlay.cpp
     widgets/SaverWidgetBase.h

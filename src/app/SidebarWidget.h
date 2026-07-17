@@ -24,7 +24,6 @@ constexpr auto kTopology = "topology";
 constexpr auto kHardware = "hardware";
 constexpr auto kProtocol = "protocol";
 constexpr auto kTestProgram = "testprogram";
-constexpr auto kRun = "run";
 constexpr auto kReport = "report";
 constexpr auto kSearch = "search";
 constexpr auto kGit = "git";
