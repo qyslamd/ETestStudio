@@ -106,10 +106,14 @@ add_executable(${TARGET_NAME} WIN32
     visualizers/StateLEDWidget.cpp
     visualizers/DigitalMeterWidget.h
     visualizers/DigitalMeterWidget.cpp
+    visualizers/VisualizerFactory.h
+    visualizers/VisualizerFactory.cpp
     SignalTreePanel.h
     SignalTreePanel.cpp
     VisualizationArea.h
     VisualizationArea.cpp
+    RunStatusPanel.h
+    RunStatusPanel.cpp
     widgets/TuxSaverOverlay.h
     widgets/TuxSaverOverlay.cpp
     widgets/SaverWidgetBase.h
