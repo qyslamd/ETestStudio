@@ -187,7 +187,33 @@ fi
 
 排错原则：仅修阻断编译的最小改动，不做功能重构。
 
-### 阶段四：VSCode 适配
+### 阶段三：构建排错 -- 已完成
+
+全量构建通过（`cmake --build build/ninja-debug-linux`，EXIT_CODE=0），产物齐全：
+- 主程序 ETestStudio（134M debug）
+- 独立工具 5 个（topology-editor / protocol-editor / test-program-editor / test-executor / test-executor-cli）
+- 示例 4 个 + lua 解释器
+- 插件 6 个 .so（hello + 5 mock）
+- 测试 57 个
+
+实际修复的问题（均为 MSVC 宽松 / GCC 严格 或 Qt 版本差异，非功能 bug）：
+
+| # | 文件 | 问题 | 修复 |
+|---|---|---|---|
+| 1 | `src/core/utils/TimeUtil.cpp:15` | `Qt::ISODate`(枚举) 赋给 `QString` | 改为字面量 `"yyyy-MM-ddTHH:mm:ss"` |
+| 2 | `src/core/common/SingleInstance.cpp:128` | `QLocalSocket::errorOccurred` 是 Qt 5.15+ 信号 | `#if QT_VERSION` 降级到 `error` |
+| 3 | `src/protocol/IcdFramePreview.cpp:65`、`src/engine/SignalResolver.cpp:148` | `Qt::SkipEmptyParts` 是 Qt 5.14+ | `#if QT_VERSION` 降级到 `QString::SkipEmptyParts` |
+| 4 | `src/app/widgets/BottomContainerWidget.cpp:73,81` | `QTabBar::setTabVisible/isTabVisible` 是 Qt 5.15+ | `#if QT_VERSION` 降级到 `setTabEnabled/isTabEnabled` |
+| 5 | `src/app/grid/layout_calculator_v1.h`、`layout_calculator_v3.h` | 嵌套 `QVector<QVector<T>>` 作成员，GCC 需完整类型 | 补 `#include <QVector>` |
+| 6 | `src/app/visualizers/StateLEDWidget.cpp` | `QString` 转 `QVariant` 需完整类型 | 补 `#include <QVariant>` |
+| 7 | `src/app/widgets/LoadingOverlay.cpp`、`src/app/VisualizationArea.cpp` | `std::sin/ceil/sqrt` 未声明 | 补 `#include <cmath>` |
+| 8 | `src/tools/test-executor-cli/main.cpp` | `Qt::endl` 是 Qt 5.14+ | 定义 `QT_ENDL` 宏版本兼容 |
+| 9 | `cmake/lua/CMakeLists.txt.in:95` | `GLOB_RECURSE` 误收 `wmain.c`(Windows 专属) 进 liblua | 显式 `list(REMOVE_ITEM ... wmain.c)` |
+| 10 | `src/app/CMakeLists.txt` 等多处 | `qtadvanceddocking` 静态库依赖 xcb，链接行缺失 | 顶层给 `qtadvanceddocking` 注入 `INTERFACE_LINK_LIBRARIES xcb` |
+| 11 | `CMakeLists.txt` | mock 插件(SHARED)链接静态库缺 `-fPIC` | 全局 `set(CMAKE_POSITION_INDEPENDENT_CODE ON)` |
+| 12 | `examples/lua-debugger-demo/CMakeLists.txt` | `liblua` 在 Linux 需 pthread | 加 `Threads::Threads`，顶层 `find_package(Threads REQUIRED)` |
+
+### 阶段四：VSCode 适配 -- 待开始
 
 #### 4.1 修改 `.vscode/settings.json`
 
@@ -235,11 +261,24 @@ fi
 | `local.cmake` | 新建 | 本地 Qt5 路径配置（不入库） |
 | `CMakePresets.json` | 修改 | 新增 3 个 linux configurePreset + 3 个 buildPreset + 3 个 testPreset |
 | `scripts/build_ninja.sh` | 修改 | 实写 Linux 构建脚本 |
-| `CMakeLists.txt` | 修改 | `find_package(Qt5 ...)` 组件名 `network` 改 `Network`（Linux 严格区分大小写） |
+| `CMakeLists.txt` | 修改 | `find_package(Qt5 ...)` 组件名 `network` 改 `Network`；全局开启 `CMAKE_POSITION_INDEPENDENT_CODE`；`find_package(Threads REQUIRED)`；给 `qtadvanceddocking` 注入 xcb INTERFACE 依赖 |
+| `cmake/lua/CMakeLists.txt.in` | 修改 | `GLOB_RECURSE` 排除 `wmain.c`（Windows 专属，避免误入 liblua） |
+| `src/core/utils/TimeUtil.cpp` | 修改 | `Qt::ISODate` 赋 `QString` 改字面量 |
+| `src/core/common/SingleInstance.cpp` | 修改 | `errorOccurred` 信号 Qt 5.15+ 版本兼容 |
+| `src/protocol/IcdFramePreview.cpp` | 修改 | `Qt::SkipEmptyParts` Qt 5.14+ 版本兼容 |
+| `src/engine/SignalResolver.cpp` | 修改 | `Qt::SkipEmptyParts` Qt 5.14+ 版本兼容 |
+| `src/app/widgets/BottomContainerWidget.cpp` | 修改 | `setTabVisible/isTabVisible` Qt 5.15+ 版本兼容 |
+| `src/app/grid/layout_calculator_v1.h` | 修改 | 补 `#include <QVector>` |
+| `src/app/grid/layout_calculator_v3.h` | 修改 | 补 `#include <QVector>` |
+| `src/app/visualizers/StateLEDWidget.cpp` | 修改 | 补 `#include <QVariant>` |
+| `src/app/widgets/LoadingOverlay.cpp` | 修改 | 补 `#include <cmath>` |
+| `src/app/VisualizationArea.cpp` | 修改 | 补 `#include <cmath>` |
+| `src/tools/test-executor-cli/main.cpp` | 修改 | `Qt::endl` Qt 5.14+ 版本兼容宏 |
+| `examples/lua-debugger-demo/CMakeLists.txt` | 修改 | 链接 `Threads::Threads` |
 | `.vscode/settings.json` | 修改 | clang-format 路径 + Linux 终端 profile |
 | `.vscode/tasks.json` | 修改 | preset 换为 `ninja-debug-linux` |
 
-不改任何 `src/` 下源码（阶段三排错时若必须修，单独提变更）。
+所有 `src/` 改动均为 Qt 版本兼容（5.12 vs 5.15）或 GCC 严格性（缺 include）的最小修复，不改业务逻辑，Windows 侧不受影响。
 
 ## 执行进度
 

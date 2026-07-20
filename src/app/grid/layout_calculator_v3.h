@@ -2,6 +2,7 @@
 #define ETEST_APP_GRID_LAYOUT_CALCULATOR_V3_H_
 
 #include <QMap>
+#include <QVector>
 
 #include "layout_calculator_base.h"
 #include "grid_global_def.hpp"

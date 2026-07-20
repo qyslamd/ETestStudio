@@ -70,7 +70,11 @@ void BottomContainerWidget::addPanel(const QString& title,
 void BottomContainerWidget::setPanelVisible(int index, bool visible) {
   if (index < 0 || index >= tab_widget_->count())
     return;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   tab_widget_->tabBar()->setTabVisible(index, visible);
+#else
+  tab_widget_->setTabEnabled(index, visible);
+#endif
   if (visible)
     tab_widget_->setCurrentIndex(index);
 }
@@ -78,7 +82,11 @@ void BottomContainerWidget::setPanelVisible(int index, bool visible) {
 bool BottomContainerWidget::isPanelVisible(int index) const {
   if (index < 0 || index >= tab_widget_->count())
     return false;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   return tab_widget_->tabBar()->isTabVisible(index);
+#else
+  return tab_widget_->isTabEnabled(index);
+#endif
 }
 
 int BottomContainerWidget::indexOf(QWidget* panel) const {

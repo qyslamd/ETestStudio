@@ -12,7 +12,7 @@ using namespace etest::core::common;
 namespace {
 
 const QString kDefaultFormat = "yyyy-MM-dd hh:mm:ss";
-const QString kISO8601Format = Qt::ISODate;
+const QString kISO8601Format = "yyyy-MM-ddTHH:mm:ss";
 
 void throwTimeException(::etest::core::common::TimeException::Code code,
                         const QString& message,

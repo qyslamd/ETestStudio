@@ -1,5 +1,7 @@
 #include "LoadingOverlay.h"
 
+#include <cmath>
+
 #include <QEvent>
 #include <QPainter>
 

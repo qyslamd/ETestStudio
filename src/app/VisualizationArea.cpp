@@ -1,5 +1,7 @@
 #include "VisualizationArea.h"
 
+#include <cmath>
+
 #include <QContextMenuEvent>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>

@@ -17,6 +17,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     QScintilla
     sol2::sol2
     liblua
+    Threads::Threads
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE

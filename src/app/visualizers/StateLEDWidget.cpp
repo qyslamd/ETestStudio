@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QStyle>
 #include <QVBoxLayout>
+#include <QVariant>
 
 #include "engine/MonitorManager.h"
 

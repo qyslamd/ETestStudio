@@ -17,6 +17,12 @@
 
 #include <cstdio>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+#define QT_ENDL endl
+#else
+#define QT_ENDL QT_ENDL
+#endif
+
 #include <spdlog/spdlog.h>
 
 #include "engine/StepRunner.h"
@@ -518,7 +524,7 @@ int main(int argc, char* argv[]) {
         out << "[VERIFY] Suite: " << program.suiteName
             << " | Cases: " << program.cases.size()
             << " | Steps: " << totalSteps
-            << " | PASS" << Qt::endl;
+            << " | PASS" << QT_ENDL;
         return 0;
     }
 
@@ -534,7 +540,7 @@ int main(int argc, char* argv[]) {
         &etest::engine::TestExecutionEngine::suiteStarted,
         [](const QString& name) {
             QTextStream out(stdout);
-            out << "[SUITE] " << name << Qt::endl;
+            out << "[SUITE] " << name << QT_ENDL;
         });
 
     QObject::connect(engine,
@@ -542,7 +548,7 @@ int main(int argc, char* argv[]) {
         [](int idx, const QString& name) {
             QTextStream out(stdout);
             out << "  [CASE " << (idx + 1) << "/" << name << "] " << name
-                << Qt::endl;
+                << QT_ENDL;
         });
 
     QObject::connect(engine,
@@ -556,7 +562,7 @@ int main(int argc, char* argv[]) {
             out << "    [" << stepPath << "] " << result.command
                 << " " << statusIcon(result.status)
                 << " (" << result.elapsedMs << "ms)"
-                << " [" << detail << "]" << Qt::endl;
+                << " [" << detail << "]" << QT_ENDL;
 
             if (result.status == etest::engine::FAIL ||
                 result.status == etest::engine::TIMEOUT) {
@@ -572,7 +578,7 @@ int main(int argc, char* argv[]) {
             QTextStream out(stdout);
             out << "[SUITE FINISHED] " << name
                 << "  PASS: " << pass
-                << "  FAIL: " << fail << Qt::endl;
+                << "  FAIL: " << fail << QT_ENDL;
         });
 
     // -- Event loop for async execution --
@@ -588,7 +594,7 @@ int main(int argc, char* argv[]) {
         &etest::engine::TestExecutionEngine::engineError,
         [&loop, &runState](const QString& message) {
             QTextStream out(stdout);
-            out << "    [ERROR] " << message << Qt::endl;
+            out << "    [ERROR] " << message << QT_ENDL;
             runState.hasError = true;
             loop.quit();
         });
@@ -600,7 +606,7 @@ int main(int argc, char* argv[]) {
         QObject::connect(&globalTimer, &QTimer::timeout,
             [&loop, &runState]() {
                 QTextStream out(stdout);
-                out << "    [ERROR] Global timeout reached." << Qt::endl;
+                out << "    [ERROR] Global timeout reached." << QT_ENDL;
                 runState.hasError = true;
                 runState.hasFailure = true;
                 loop.quit();
@@ -626,7 +632,7 @@ int main(int argc, char* argv[]) {
     if (!outputPath.isEmpty()) {
         engine->saveReport(outputPath);
         QTextStream out(stdout);
-        out << "Report saved to: " << outputPath << Qt::endl;
+        out << "Report saved to: " << outputPath << QT_ENDL;
     }
 
     // -- Determine exit code --

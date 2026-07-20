@@ -45,6 +45,10 @@ set(CMAKE_CXX_STANDARD 17)  # C++ 标准，影响全局
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+# Linux 下 mock 插件为 SHARED 库，链接静态库时要求后者以 -fPIC 编译
+# Windows (MSVC) 忽略此设置，无副作用
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # 生成 clangd 配置，让 LSP 使用当前构建目录下的 compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CLANGD_COMPILE_COMMANDS_DIR "${CMAKE_BINARY_DIR}")
@@ -71,6 +75,9 @@ include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
 find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test Xml Svg Network Concurrent Sql
     CONFIG REQUIRED)
 
+# Threads: spdlog/lua 等依赖，显式在顶层查找使 Threads::Threads 全局可见
+find_package(Threads REQUIRED)
+
 if(Qt5_FOUND)
     get_target_property(_qt_core_location Qt5::Core LOCATION)
     get_filename_component(QT_LIB_DIR "${_qt_core_location}" DIRECTORY)
@@ -90,6 +97,12 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "Do not build examples for Qt-Advanced-Docking
 # 应用Qt-Advanced-Docking-System CMake补丁
 include(cmake/qads/patch_cmake_version.cmake)
 add_subdirectory(3rdparty/Qt-Advanced-Docking-System-3.8.3)
+
+# Linux 下 qtadvanceddocking 静态库依赖 xcb，作为 INTERFACE 依赖注入后自动传递给所有链接方
+if(UNIX AND NOT APPLE)
+    set_property(TARGET qtadvanceddocking APPEND PROPERTY
+        INTERFACE_LINK_LIBRARIES xcb)
+endif()
 
 # QXlsx Excel读写库
 add_subdirectory(3rdparty/QXlsx-1.5.0/QXlsx)

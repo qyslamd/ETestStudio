@@ -3,6 +3,8 @@
 
 #include "layout_calculator_base.h"
 
+#include <QVector>
+
 namespace etest::app::grid {
 
 class LayoutCalculatorV1 : public ILayoutCalculator {

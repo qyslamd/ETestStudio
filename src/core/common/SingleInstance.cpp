@@ -124,8 +124,11 @@ void SingleInstance::handleNewConnection() {
     connect(socket, &QLocalSocket::disconnected, socket,
             &QLocalSocket::deleteLater);
     connect(socket,
-            QOverload<QLocalSocket::LocalSocketError>::of(
-                &QLocalSocket::errorOccurred),
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+            &QLocalSocket::errorOccurred,
+#else
+            QOverload<QLocalSocket::LocalSocketError>::of(&QLocalSocket::error),
+#endif
             this, &SingleInstance::handleSocketError);
   }
 }

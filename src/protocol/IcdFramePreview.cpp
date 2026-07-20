@@ -62,7 +62,11 @@ QString lookupEnumLabel(const std::string& value_text_list,
     return {};
   }
   const QString text = QString::fromStdString(value_text_list);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
   const auto entries = text.split(QLatin1Char(','), Qt::SkipEmptyParts);
+#else
+  const auto entries = text.split(QLatin1Char(','), QString::SkipEmptyParts);
+#endif
   const QString key = QString::number(static_cast<qulonglong>(raw));
   for (const QString& entry : entries) {
     const auto parts = entry.split(QLatin1Char('='));

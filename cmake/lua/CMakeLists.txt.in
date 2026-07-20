@@ -98,6 +98,8 @@ list(REMOVE_ITEM ALL_LUA_SOURCES "${LUA_ROOT}/src/lbitlib.c")
 if (EXISTS "${LUA_ROOT}/src/loadlib_rel.c")
   list(REMOVE_ITEM ALL_LUA_SOURCES "${LUA_ROOT}/src/loadlib_rel.c")
 endif()
+# wmain.c 是 Windows 专属入口（luaw target），不应编入 liblua
+list(REMOVE_ITEM ALL_LUA_SOURCES "${LUA_ROOT}/src/wmain.c")
 set (SRC_CORE ${ALL_LUA_SOURCES})
 # Ensure lua.c is not included in liblua/luac/luaw cores to avoid duplicate mains
 list(REMOVE_ITEM SRC_CORE "${LUA_ROOT}/src/lua.c")

@@ -145,7 +145,11 @@ const icd::Node* SignalResolver::findNodeByPath(const icd::Frame* frame,
     }
 
     // 按 "/" 分割路径
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList segments = nodePath.split(QLatin1Char('/'), Qt::SkipEmptyParts);
+#else
+    QStringList segments = nodePath.split(QLatin1Char('/'), QString::SkipEmptyParts);
+#endif
     if (segments.isEmpty()) {
         return nullptr;
     }
