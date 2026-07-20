@@ -48,6 +48,8 @@ namespace etest::engine {
 class TestExecutionEngine;
 }  // namespace etest::engine
 
+class SARibbonCategory;
+
 namespace etest::app {
 
 class MainWindow : public SARibbonMainWindow {
@@ -169,7 +171,6 @@ class MainWindow : public SARibbonMainWindow {
   QMenu* recent_projects_menu_ = nullptr;
   QMenu* recent_files_menu_ = nullptr;
   QAction* view_output_action_ = nullptr;
-  QAction* view_execution_output_action_ = nullptr;
   QAction* view_problems_action_ = nullptr;
   QAction* view_terminal_action_ = nullptr;
   QAction* view_aux_sidebar_action_ = nullptr;
@@ -189,9 +190,6 @@ class MainWindow : public SARibbonMainWindow {
   ProjectController* project_controller_ = nullptr;
   ExecutionPanelController* execution_controller_ = nullptr;
 
-  // 模式切换
-  QAction* mode_toggle_action_ = nullptr;
-
   // 编辑菜单动作
   QAction* edit_undo_action_ = nullptr;
   QAction* edit_redo_action_ = nullptr;
@@ -201,6 +199,10 @@ class MainWindow : public SARibbonMainWindow {
   QAction* edit_find_action_ = nullptr;
   QAction* edit_replace_action_ = nullptr;
   QAction* edit_go_to_line_action_ = nullptr;
+
+  // Ribbon category 管理
+  SARibbonCategory* category_exec_ = nullptr;
+  bool switching_page_ = false;
 
   // 剪贴板
   QClipboard* clipboard_ = nullptr;

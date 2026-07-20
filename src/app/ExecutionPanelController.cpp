@@ -33,6 +33,8 @@
 #include "project/ProjectManager.h"
 #include "test_program/TestProgramData.h"
 #include "test_program/TestProgramEditorWidget.h"
+#include "ProjectInfo.h"
+#include "widgets/ProgramSelectionPopup.h"
 #include "widgets/BottomContainerWidget.h"
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
@@ -103,6 +105,9 @@ ExecutionPanelController::ExecutionPanelController(QWidget* parent_widget,
       new QAction(QIcon(), QStringLiteral("运行全部"), parent_widget_);
   label_ribbon_stats_ =
       new QLabel(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"), parent_widget_);
+  popup_ = new ProgramSelectionPopup(parent_widget_);
+  connect(popup_, &ProgramSelectionPopup::selectionChanged, this,
+          &ExecutionPanelController::updateRunControls);
 }
 
 void ExecutionPanelController::postInit(
@@ -110,7 +115,7 @@ void ExecutionPanelController::postInit(
     etest::core::SignalRegistry* signal_registry,
     std::shared_ptr<icd::Repository> icd_repository,
     EditorManager* editor_mgr,
-    TestProgramManagerWidget* test_program_mgr,
+    TestProgramManagerWidget* /*test_program_mgr*/,
     ProblemsPanel* problems_panel,
     BottomContainerWidget* bottom_container,
     AppStatusBarController* status_bar_ctrl) {
@@ -118,10 +123,13 @@ void ExecutionPanelController::postInit(
   signal_registry_ = signal_registry;
   icd_repository_ = std::move(icd_repository);
   editor_mgr_ = editor_mgr;
-  test_program_mgr_ = test_program_mgr;
   problems_panel_ = problems_panel;
   bottom_container_ = bottom_container;
   status_bar_ctrl_ = status_bar_ctrl;
+}
+
+void ExecutionPanelController::setProgramPopup(ProgramSelectionPopup* popup) {
+  popup_ = popup;
 }
 
 void ExecutionPanelController::updateIcdContext(
@@ -259,9 +267,15 @@ void ExecutionPanelController::connectEngineSignals() {
 }
 
 void ExecutionPanelController::syncControlStates() {
+  // 刷新 popup 程序列表，确保状态检查时列表已填充
+  // refreshList() 保留已有选中状态（selected_），不会丢失用户选择
+  if (popup_ && etest::core::project::ProjectManager::instance().isProjectOpen()) {
+    popup_->refreshList();
+  }
+
   if (!engine_) {
     act_run_->setEnabled(checkCanRun());
-    act_run_all_->setEnabled(checkCanRun());
+    act_run_all_->setEnabled(checkCanRunAll());
     act_pause_->setEnabled(false);
     act_stop_->setEnabled(false);
     act_verify_->setEnabled(checkCanVerify());
@@ -272,7 +286,7 @@ void ExecutionPanelController::syncControlStates() {
     case etest::engine::EngineState::Idle:
     case etest::engine::EngineState::Finished:
       act_run_->setEnabled(checkCanRun());
-      act_run_all_->setEnabled(checkCanRun());
+      act_run_all_->setEnabled(checkCanRunAll());
       act_pause_->setEnabled(false);
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(checkCanVerify());
@@ -299,7 +313,7 @@ void ExecutionPanelController::syncControlStates() {
       break;
     case etest::engine::EngineState::Error:
       act_run_->setEnabled(checkCanRun());
-      act_run_all_->setEnabled(checkCanRun());
+      act_run_all_->setEnabled(checkCanRunAll());
       act_pause_->setEnabled(false);
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(checkCanVerify());
@@ -331,19 +345,25 @@ bool ExecutionPanelController::checkCanVerify() const {
     return false;
   }
 
-  // 4. 测试程序可用（只要有来源即可，具体用例级验证由 verify() 完成）
-  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
-  auto* prog_editor =
-      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
-             : nullptr;
-  if (prog_editor) {
+  // 4. 测试程序可用（popup 全集非空即可，具体用例级验证由 verify() 完成）
+  if (popup_ && popup_->hasAnyProgram()) {
     return true;
   }
-  if (test_program_mgr_) {
-    // 树中有 .etprog 条目即可，不要求必须选中或勾选
-    if (test_program_mgr_->hasAnyProgram()) {
-      return true;
-    }
+  return false;
+}
+
+bool ExecutionPanelController::checkCanRunAll() const {
+  // 1. 基本预条件（项目/ICD/拓扑）
+  if (!checkCanVerify()) {
+    return false;
+  }
+  // 2. 必须通过验证
+  if (!debug_widget_ || !debug_widget_->canRun()) {
+    return false;
+  }
+  // 3. 项目有 .etprog（popup 全集非空即可）
+  if (popup_ && popup_->hasAnyProgram()) {
+    return true;
   }
   return false;
 }
@@ -357,21 +377,9 @@ bool ExecutionPanelController::checkCanRun() const {
   if (!debug_widget_ || !debug_widget_->canRun()) {
     return false;
   }
-  // 3. 有明确的运行目标（编辑器打开 / 勾选 / 选中任一）
-  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
-  auto* prog_editor =
-      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
-             : nullptr;
-  if (prog_editor) {
+  // 3. 有明确的运行目标（popup 选中集合非空）
+  if (popup_ && !popup_->selectedPaths().isEmpty()) {
     return true;
-  }
-  if (test_program_mgr_) {
-    if (!test_program_mgr_->checkedProgramPaths().isEmpty()) {
-      return true;
-    }
-    if (!test_program_mgr_->selectedProgramPath().isEmpty()) {
-      return true;
-    }
   }
   return false;
 }
@@ -383,7 +391,9 @@ void ExecutionPanelController::updateRunControls() {
     return;
   }
   act_run_->setEnabled(checkCanRun());
-  act_run_all_->setEnabled(checkCanRun());
+  act_run_all_->setEnabled(checkCanRunAll());
+  // popup 从空到有数据时 verify 状态可能变化，一并刷新
+  act_verify_->setEnabled(checkCanVerify());
 }
 
 void ExecutionPanelController::loadProjectTopologies() {
@@ -413,41 +423,45 @@ void ExecutionPanelController::loadProjectTopologies() {
 void ExecutionPanelController::run() {
   LOG_INFO("MAIN_UI", "点击「运行」");
 
-  // 0. 前提检查
+  if (!popup_) {
+    return;
+  }
+
+  // 1. 从 popup 获取选中目标
+  QStringList paths = popup_->selectedPaths();
+  if (paths.isEmpty()) {
+    QMessageBox::information(parent_widget_, QStringLiteral("运行"),
+                             QStringLiteral("请先选择要运行的测试程序"));
+    return;
+  }
+
+  // 2. 前提检查
   if (debug_widget_ && !debug_widget_->canRun()) {
     QMessageBox::warning(parent_widget_, QStringLiteral("运行"),
                          QStringLiteral("运行前提不满足，请先执行验证"));
     return;
   }
 
-  // 1. 获取测试程序数据
-  etest::app::TestProgramData data;
-  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
-  auto* prog_editor =
-      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
-             : nullptr;
-  if (prog_editor) {
-    if (editor->isModified()) {
-      editor->save();
-    }
-    data = prog_editor->programData();
-  } else if (test_program_mgr_) {
-    data = test_program_mgr_->loadSelectedProgramData();
-    if (data.name.isEmpty()) {
-      QMessageBox::information(
-          parent_widget_, QStringLiteral("运行"),
-          QStringLiteral("请先打开一个测试程序或从列表中选中一个"));
-      return;
-    }
+  // 3. 未保存提示（队列启动时一次性扫描）
+  if (!checkUnsavedAndPrompt(paths)) {
+    return;
   }
 
-  if (data.cases.isEmpty()) {
+  // 4. 选中 ≥2 个 → 串行队列
+  if (paths.size() > 1) {
+    run_queue_ = paths;
+    runNextInQueue();
+    return;
+  }
+
+  // 5. 单程序直接执行
+  etest::app::TestProgramData data = loadTestProgram(paths[0]);
+  if (data.name.isEmpty() || data.cases.isEmpty()) {
     QMessageBox::warning(parent_widget_, QStringLiteral("运行"),
                          QStringLiteral("测试程序中没有测试用例，无法运行"));
     return;
   }
 
-  // 2. 创建引擎（registry 和 repository 已在构造时传入）
   createEngine();
   if (!engine_) {
     return;
@@ -456,7 +470,7 @@ void ExecutionPanelController::run() {
   // 加载拓扑设备（含 monitors 累积）
   loadProjectTopologies();
 
-  // 3. 设置程序数据
+  // 设置程序数据
   current_program_name_ = data.name;
   engine_->setProgram(convertProgram(data));
 
@@ -467,7 +481,7 @@ void ExecutionPanelController::run() {
     status_bar_ctrl_->setExecStats(0, 0, 0);
   }
 
-  // 4. 启动 + 切换到运行态
+  // 启动 + 切换到运行态
   engine_->start();
   // 所有编辑器置为只读
   if (editor_mgr_) {
@@ -559,34 +573,24 @@ void ExecutionPanelController::verify() {
     warnings++;
   }
 
-  // 5. 测试程序可用
+  // 5. 测试程序可用（方案 A：选中非空校验选中，空则校验全集）
   bool has_program = false;
-  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
-  auto* prog_editor =
-      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
-             : nullptr;
-  if (prog_editor) {
-    has_program = !prog_editor->programData().cases.isEmpty();
-  } else if (test_program_mgr_) {
-    auto checked = test_program_mgr_->checkedProgramPaths();
-    if (checked.size() >= 2) {
-      // 串行模式：至少有一个勾选文件有可用用例
-      for (const auto& p : checked) {
-        auto data = loadTestProgram(p);
-        if (!data.cases.isEmpty()) {
-          has_program = true;
-          break;
-        }
+  if (popup_) {
+    QStringList targets = popup_->selectedPaths();
+    if (targets.isEmpty()) {
+      targets = popup_->allPaths();
+    }
+    for (const auto& p : targets) {
+      auto data = loadTestProgram(p);
+      if (!data.cases.isEmpty()) {
+        has_program = true;
+        break;
       }
-    } else {
-      // 单次模式：检查当前选中
-      auto data = test_program_mgr_->loadSelectedProgramData();
-      has_program = !data.cases.isEmpty();
     }
   }
   if (!has_program) {
     problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
-                         QStringLiteral("未选择有效的测试程序"));
+                         QStringLiteral("无可用测试程序"));
     errors++;
   }
 
@@ -620,31 +624,86 @@ void ExecutionPanelController::verify() {
 void ExecutionPanelController::runAll() {
   LOG_INFO("MAIN_UI", "点击「运行全部」");
 
-  // 如果当前编辑器打开了测试程序，退化为单次运行
-  auto* editor = editor_mgr_ ? editor_mgr_->currentEditor() : nullptr;
-  auto* prog_editor =
-      editor ? qobject_cast<TestProgramEditorWidget*>(editor->widget())
-             : nullptr;
-  if (prog_editor) {
-    run();
+  if (!popup_) {
     return;
   }
 
-  // 从管理器列表获取勾选的文件
-  QStringList paths;
-  if (test_program_mgr_) {
-    paths = test_program_mgr_->checkedProgramPaths();
-  }
-
-  if (paths.size() < 2) {
-    // 少于 2 个勾选 → 退化为单次运行
-    run();
+  // 1. 前提检查
+  if (debug_widget_ && !debug_widget_->canRun()) {
+    QMessageBox::warning(parent_widget_, QStringLiteral("运行全部"),
+                         QStringLiteral("运行前提不满足，请先执行验证"));
     return;
   }
 
-  // 多个勾选 → 串行队列执行
-  run_queue_ = paths;
+  // 2. 从 popup 获取全集（内部扫描 cases/*.etprog）
+  popup_->refreshList();
+  QStringList all_paths = popup_->allPaths();
+  if (all_paths.isEmpty()) {
+    QMessageBox::information(parent_widget_, QStringLiteral("运行全部"),
+                             QStringLiteral("项目中没有测试程序"));
+    return;
+  }
+
+  if (!checkUnsavedAndPrompt(all_paths)) {
+    return;
+  }
+
+  // 4. 全集串行队列执行
+  run_queue_ = all_paths;
   runNextInQueue();
+}
+
+bool ExecutionPanelController::checkUnsavedAndPrompt(const QStringList& paths) const {
+  if (!editor_mgr_) {
+    return true;
+  }
+
+  // 找出与运行目标匹配且有未保存修改的编辑器
+  QStringList unsavedFiles;
+  for (auto* editor : editor_mgr_->allEditors()) {
+    if (editor->isModified() && paths.contains(editor->filePath())) {
+      unsavedFiles.append(editor->filePath());
+    }
+  }
+
+  if (unsavedFiles.isEmpty()) {
+    return true;  // 无未保存，直接跑
+  }
+
+  // 弹模态确认框
+  QString msg = QStringLiteral("以下测试程序有未保存的修改：\n\n");
+  for (const auto& f : unsavedFiles) {
+    msg += QStringLiteral("  ") + QFileInfo(f).fileName() + QStringLiteral("\n");
+  }
+  msg += QStringLiteral("\n请选择操作：");
+
+  QMessageBox box(parent_widget_);
+  box.setWindowTitle(QStringLiteral("运行前保存"));
+  box.setText(msg);
+  auto* saveBtn = box.addButton(QStringLiteral("保存并运行"), QMessageBox::AcceptRole);
+  auto* runBtn = box.addButton(QStringLiteral("不保存运行"), QMessageBox::DestructiveRole);
+  box.addButton(QStringLiteral("取消"), QMessageBox::RejectRole);
+  box.exec();
+
+  QAbstractButton* clicked = box.clickedButton();
+  if (clicked == saveBtn) {
+    for (auto* editor : editor_mgr_->allEditors()) {
+      if (editor->isModified()) {
+        if (!editor->save()) {
+          QMessageBox::warning(
+              const_cast<QWidget*>(parent_widget_),
+              QStringLiteral("保存失败"),
+              QStringLiteral("无法保存文件: %1").arg(editor->filePath()));
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+  if (clicked == runBtn) {
+    return true;  // 不保存，跑磁盘内容
+  }
+  return false;  // 取消
 }
 
 void ExecutionPanelController::runNextInQueue() {

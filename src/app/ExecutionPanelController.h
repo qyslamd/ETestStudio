@@ -20,6 +20,7 @@ class TestProgramManagerWidget;
 class ProblemsPanel;
 class BottomContainerWidget;
 class ExecutionDashboard;
+class ProgramSelectionPopup;
 
 }  // namespace etest::app
 
@@ -83,6 +84,9 @@ class ExecutionPanelController : public QObject {
   // 执行仪表盘注入（用于连接监听器信号）
   void setDashboard(ExecutionDashboard* dashboard);
 
+  // 程序选择 popup 注入（阶段二）
+  void setProgramPopup(ProgramSelectionPopup* popup);
+
   // Ribbon 动作（供 MainWindow setupRibbon 获取）
   QAction* runAction() const { return act_run_; }
   QAction* pauseAction() const { return act_pause_; }
@@ -90,6 +94,9 @@ class ExecutionPanelController : public QObject {
   QAction* verifyAction() const { return act_verify_; }
   QAction* runAllAction() const { return act_run_all_; }
   QLabel* ribbonStatsLabel() const { return label_ribbon_stats_; }
+
+  // 程序选择 popup（供 MainWindow 放入 ribbon）
+  ProgramSelectionPopup* programPopup() const { return popup_; }
 
  signals:
   void engineStateChanged(etest::engine::EngineState state);
@@ -101,6 +108,9 @@ class ExecutionPanelController : public QObject {
   void refreshMonitorTree();
   bool checkCanVerify() const;
   bool checkCanRun() const;
+  bool checkCanRunAll() const;
+  /// 运行前检测未保存文件并提示，返回 true 表示可以继续
+  bool checkUnsavedAndPrompt(const QStringList& paths) const;
   /// 加载项目 topology/ 目录下所有 .etopo 到引擎
   void loadProjectTopologies();
 
@@ -128,12 +138,12 @@ class ExecutionPanelController : public QObject {
   etest::core::SignalRegistry* signal_registry_ = nullptr;
   std::shared_ptr<icd::Repository> icd_repository_;
   EditorManager* editor_mgr_ = nullptr;
-  TestProgramManagerWidget* test_program_mgr_ = nullptr;
   ProblemsPanel* problems_panel_ = nullptr;
   BottomContainerWidget* bottom_container_ = nullptr;
   AppStatusBarController* status_bar_ctrl_ = nullptr;
   QStackedWidget* central_stack_ = nullptr;
   ExecutionDashboard* dashboard_ = nullptr;
+  ProgramSelectionPopup* popup_ = nullptr;
 };
 
 }  // namespace etest::app

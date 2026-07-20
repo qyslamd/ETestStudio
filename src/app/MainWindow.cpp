@@ -92,6 +92,7 @@
 #include "widgets/LoadingOverlay.h"
 #include "widgets/LogOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
+#include "widgets/ProgramSelectionPopup.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -337,12 +338,6 @@ void MainWindow::initSignalsLate() {
             if (idx >= 0)
               bottom_container_->setPanelVisible(idx, checked);
             updateContainerVisibility();
-          });
-  connect(view_execution_output_action_, &QAction::triggered, this,
-          [this](bool checked) {
-            LOG_INFO("MAIN_UI", "切换「执行输出」面板 [visible={}]", checked);
-            // output 面板已迁出 bottom_container_，直接控制显隐
-            execution_output_panel_->setVisible(checked);
           });
   connect(view_problems_action_, &QAction::triggered, this,
           [this, updateContainerVisibility](bool checked) {
@@ -741,8 +736,6 @@ void MainWindow::initSignalsLate() {
         edit_find_action_->setEnabled(hasEditor);
         edit_replace_action_->setEnabled(hasEditor);
         edit_go_to_line_action_->setEnabled(hasEditor);
-
-        execution_controller_->syncControlStates();
       });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
@@ -930,12 +923,7 @@ void MainWindow::initSignalsLate() {
   // 用例管理器：双击文件打开编辑器
   auto* tpMgr = sidebar_->testProgramManager();
 
-  // 用例管理器：选中/勾选变化时更新运行按钮状态（不影响验证按钮）
-  connect(tpMgr, &TestProgramManagerWidget::programSelectionChanged, this,
-          [this]() { execution_controller_->updateRunControls(); });
-  connect(tpMgr, &TestProgramManagerWidget::checkedProgramsChanged, this,
-          [this]() { execution_controller_->updateRunControls(); });
-
+  // 运行按钮 enable 改由 popup 状态变化驱动，此处不再需要
   connect(tpMgr, &TestProgramManagerWidget::openFileRequested, tpMgr,
           [this](const QString& path) { editor_manager_->openFile(path); });
 
@@ -1106,34 +1094,66 @@ void MainWindow::lazyInit() {
           });
 
   // 执行控制器依赖注入（signal_registry_/icd_repository_ 项目打开时才可用）
+  // test_program_mgr 传 nullptr — 运行目标已改用 popup（阶段二），
+  // 期三改签名时正式移除该参数
   execution_controller_->postInit(
       execution_output_panel_, nullptr, nullptr,
-      editor_manager_, test_program_mgr_,
+      editor_manager_, nullptr,
       problems_panel_, bottom_container_, status_bar_ctrl_);
   execution_controller_->setCentralStack(central_stack_);
   execution_controller_->setDashboard(exec_dashboard_page_);
   exec_dashboard_page_->setOutputPanel(execution_output_panel_);
 
-  // 堆叠页切换时同步模式切换按钮状态
+  // ── central_stack page 切换 → category 显隐 + 编辑 action 副作用 ──
   connect(central_stack_, &QStackedWidget::currentChanged, this,
           [this](int index) {
+            // 副作用：编辑 action 的 ApplicationShortcut 在 page1 必须禁用
             if (index == 1) {
-              mode_toggle_action_->setText(QStringLiteral("切换编辑态"));
-              mode_toggle_action_->setChecked(true);
-              mode_toggle_action_->setIcon(
-                  AppIconProvider::instance().icon(QStringLiteral("edit")));
-              // Ribbon 底部指示线
+              disableEditActions();
               ribbonBar()->setObjectName(QStringLiteral("RunningMode"));
             } else {
-              mode_toggle_action_->setText(QStringLiteral("切换运行态"));
-              mode_toggle_action_->setChecked(false);
-              mode_toggle_action_->setIcon(
-                  AppIconProvider::instance().icon(QStringLiteral("run")));
+              enableEditActions();
               ribbonBar()->setObjectName(QString());
             }
             // 强制刷新 QSS
             ribbonBar()->style()->unpolish(ribbonBar());
             ribbonBar()->style()->polish(ribbonBar());
+
+            // 同步 ribbon 选中 tab（不隐藏 category，tab 始终可见）
+            // 避免 hideCategory 移除 tab 导致用户无法点击切页
+            if (!switching_page_) {
+              switching_page_ = true;
+              if (index == 1 && category_exec_) {
+                ribbonBar()->raiseCategory(category_exec_);
+              } else if (index == 0) {
+                // 不主动 raise 编辑组——让用户点击的 tab 保持选中
+              }
+              switching_page_ = false;
+            }
+          });
+
+  // ── Ribbon category tab 切换 → central_stack page 切换 ──
+  connect(ribbonBar(), &SARibbonBar::currentRibbonTabChanged, this,
+          [this](int index) {
+            if (switching_page_) {
+              return;
+            }
+            switching_page_ = true;
+
+            auto* cat = ribbonBar()->categoryByIndex(index);
+            if (cat) {
+              if (cat->objectName() == QStringLiteral("CategoryExec")) {
+                // 执行组 tab → page1
+                central_stack_->setCurrentIndex(1);
+              } else if (cat->categoryName() != QStringLiteral("工具") &&
+                         cat->categoryName() != QStringLiteral("帮助")) {
+                // 编辑组 tab（主页/视图）→ page0
+                central_stack_->setCurrentIndex(0);
+              }
+              // 公共组（工具/帮助）不切页
+            }
+
+            switching_page_ = false;
           });
 
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
@@ -1954,32 +1974,6 @@ void MainWindow::setupRibbon() {
       AppIconProvider::instance().icon(QStringLiteral("redo")));
   qab->addAction(edit_redo_action_);
   qab->addSeparator();
-  // ---- QAB mode toggle / login / settings ----
-  mode_toggle_action_ = new QAction(
-      AppIconProvider::instance().icon(QStringLiteral("run")),
-      QStringLiteral("切换运行态"), this);
-  mode_toggle_action_->setToolTip(QStringLiteral("切换到运行态 / 编辑态"));
-  mode_toggle_action_->setCheckable(true);
-  qab->addAction(mode_toggle_action_);
-
-  connect(mode_toggle_action_, &QAction::triggered, this, [this]() {
-    if (central_stack_->currentIndex() == 0) {
-      central_stack_->setCurrentIndex(1);
-      mode_toggle_action_->setText(QStringLiteral("切换编辑态"));
-      mode_toggle_action_->setChecked(true);
-      mode_toggle_action_->setIcon(
-          AppIconProvider::instance().icon(QStringLiteral("edit")));
-      disableEditActions();
-    } else {
-      central_stack_->setCurrentIndex(0);
-      mode_toggle_action_->setText(QStringLiteral("切换运行态"));
-      mode_toggle_action_->setChecked(false);
-      mode_toggle_action_->setIcon(
-          AppIconProvider::instance().icon(QStringLiteral("run")));
-      enableEditActions();
-    }
-  });
-
   // ---- QAB login ----
   {
     auto* login_action = new QAction(
@@ -2138,13 +2132,6 @@ void MainWindow::setupRibbon() {
     view_output_action_->setChecked(true);
     panel_panels->addLargeAction(view_output_action_);
 
-    view_execution_output_action_ = new QAction(QStringLiteral("输出"), this);
-    view_execution_output_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("tab_output")));
-    view_execution_output_action_->setCheckable(true);
-    view_execution_output_action_->setChecked(true);
-    panel_panels->addLargeAction(view_execution_output_action_);
-
     view_problems_action_ = new QAction(QStringLiteral("问题"), this);
     view_problems_action_->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("tab_problems")));
@@ -2171,7 +2158,13 @@ void MainWindow::setupRibbon() {
   //  运行
   // ============================================================
   {
-    auto* cat = ribbon->addCategoryPage(QStringLiteral("运行"));
+    category_exec_ = ribbon->addCategoryPage(QStringLiteral("执行"));
+    category_exec_->setObjectName(QStringLiteral("CategoryExec"));
+    auto* cat = category_exec_;
+
+    // 程序选择 Panel（popup 由 ExecutionPanelController 创建并持有）
+    auto* panel_select = cat->addPanel(QStringLiteral("程序选择"));
+    panel_select->addSmallWidget(execution_controller_->programPopup());
 
     // 执行控制 Panel（QAction 由 ExecutionPanelController 管理）
     auto* panel_control = cat->addPanel(QStringLiteral("执行控制"));
