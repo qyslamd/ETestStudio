@@ -20,7 +20,7 @@
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
 #define QT_ENDL endl
 #else
-#define QT_ENDL QT_ENDL
+#define QT_ENDL Qt::endl
 #endif
 
 #include <spdlog/spdlog.h>
