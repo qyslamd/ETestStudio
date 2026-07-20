@@ -142,6 +142,36 @@
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-relwithdebinfo-x86"
             }
+        },
+        {
+            "name": "ninja-debug-linux",
+            "displayName": "Ninja Debug (Linux)",
+            "description": "使用Ninja构建的Debug版本（Linux/WSL）",
+            "inherits": "ninja-debug",
+            "binaryDir": "${sourceDir}/build/ninja-debug-linux",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-debug-linux"
+            }
+        },
+        {
+            "name": "ninja-release-linux",
+            "displayName": "Ninja Release (Linux)",
+            "description": "使用Ninja构建的Release版本（Linux/WSL）",
+            "inherits": "ninja-release",
+            "binaryDir": "${sourceDir}/build/ninja-release-linux",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-release-linux"
+            }
+        },
+        {
+            "name": "ninja-relwithdebinfo-linux",
+            "displayName": "Ninja RelWithDebInfo (Linux)",
+            "description": "使用Ninja构建的RelWithDebInfo版本（Linux/WSL）",
+            "inherits": "ninja-relwithdebinfo",
+            "binaryDir": "${sourceDir}/build/ninja-relwithdebinfo-linux",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-relwithdebinfo-linux"
+            }
         }
     ],
     "buildPresets": [
@@ -220,6 +250,27 @@
             "description": "使用Ninja构建x86 RelWithDebInfo版本",
             "configurePreset": "ninja-relwithdebinfo-x86",
             "targets": "all"
+        },
+        {
+            "name": "ninja-debug-linux-build",
+            "displayName": "Ninja Build Debug (Linux)",
+            "description": "使用Ninja构建Linux Debug版本",
+            "configurePreset": "ninja-debug-linux",
+            "targets": "all"
+        },
+        {
+            "name": "ninja-release-linux-build",
+            "displayName": "Ninja Build Release (Linux)",
+            "description": "使用Ninja构建Linux Release版本",
+            "configurePreset": "ninja-release-linux",
+            "targets": "all"
+        },
+        {
+            "name": "ninja-relwithdebinfo-linux-build",
+            "displayName": "Ninja Build RelWithDebInfo (Linux)",
+            "description": "使用Ninja构建Linux RelWithDebInfo版本",
+            "configurePreset": "ninja-relwithdebinfo-linux",
+            "targets": "all"
         }
     ],
     "testPresets": [
@@ -276,6 +327,24 @@
             "displayName": "Ninja Test RelWithDebInfo (x86)",
             "description": "使用Ninja测试x86 RelWithDebInfo版本",
             "configurePreset": "ninja-relwithdebinfo-x86"
+        },
+        {
+            "name": "ninja-debug-linux-test",
+            "displayName": "Ninja Test Debug (Linux)",
+            "description": "使用Ninja测试Linux Debug版本",
+            "configurePreset": "ninja-debug-linux"
+        },
+        {
+            "name": "ninja-release-linux-test",
+            "displayName": "Ninja Test Release (Linux)",
+            "description": "使用Ninja测试Linux Release版本",
+            "configurePreset": "ninja-release-linux"
+        },
+        {
+            "name": "ninja-relwithdebinfo-linux-test",
+            "displayName": "Ninja Test RelWithDebInfo (Linux)",
+            "description": "使用Ninja测试Linux RelWithDebInfo版本",
+            "configurePreset": "ninja-relwithdebinfo-linux"
         }
     ]
 }

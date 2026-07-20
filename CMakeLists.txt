@@ -68,7 +68,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
 # 第三方依赖本地源码编译
 #=======================================
 # 查找Qt库
-find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test Xml Svg network Concurrent Sql
+find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test Xml Svg Network Concurrent Sql
     CONFIG REQUIRED)
 
 if(Qt5_FOUND)
