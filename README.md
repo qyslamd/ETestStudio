@@ -32,11 +32,19 @@ etest (主程序)
 
 ## 开发环境
 
+### Windows
 - Windows 10/11 64位
 - Visual Studio 2019 Community（需安装"使用 C++ 的桌面开发"工作负载）
 - Qt 5.15.2 (msvc2019_64)
 - CMake 3.19+
 - Git
+
+### Linux (WSL Ubuntu 20.04)
+- GCC 9+
+- Qt 5.12.x（系统包 `qtbase5-dev` 等，或自定义路径）
+- CMake 3.25+（`CMakePresets.json` 为 version 8）
+- Ninja
+- 可选 dev 包：`libqt5svg5-dev` / `qttools5-dev` / `qtbase5-private-dev`
 
 ## 环境搭建（给新同学）
 
@@ -86,6 +94,31 @@ scripts/run_app.bat
 ```
 
 首次构建较慢，因为 CMake 会自动解压并编译第三方库（zlib、spdlog、QScintilla、SARibbon 等）。后续构建只会编译你改动的代码。
+
+### Linux (WSL) 环境搭建
+
+1. 安装依赖：
+   ```bash
+   sudo apt install build-essential ninja-build git \
+       qtbase5-dev libqt5svg5-dev qttools5-dev qtbase5-private-dev
+   ```
+2. 安装 CMake 3.25+（系统包为 3.16，需升级），下载预编译二进制解压后加入 PATH：
+   ```bash
+   export PATH=/path/to/cmake-3.31.x-linux-x86_64/bin:$PATH
+   ```
+3. 创建 `local.cmake`（项目根目录，不入库）：
+   ```cmake
+   set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5")
+   set(QT_DIR  "/usr/lib/x86_64-linux-gnu/cmake/Qt5")
+   set(QT_LIB_DIR "/usr/lib/x86_64-linux-gnu")
+   set(QT_PLUGINS_DIR "/usr/lib/x86_64-linux-gnu/qt5/plugins")
+   ```
+4. 克隆并构建：
+   ```bash
+   git clone https://gitee.com/slamdd/etest-demo.git
+   cd etest-demo
+   scripts/build_ninja.sh -t debug
+   ```
 
 ### 确认环境变量
 
@@ -205,13 +238,43 @@ scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 scripts/build_ninja.bat --type=debug --target=ETestStudio --package
 ```
 
+#### Linux 构建
+
+```bash
+# 全量构建（debug）
+scripts/build_ninja.sh -t debug
+
+# 仅构建主程序
+scripts/build_ninja.sh -t debug -m ETestStudio
+
+# 仅配置不构建
+scripts/build_ninja.sh -t debug -c
+```
+
+参数与 `build_ninja.bat` 一致（`-t/-m/-c/-h`），但无 `-a`（架构）、`-d`（windeployqt）、`-p`（打包）。
+可执行文件输出到 `build/ninja-debug-linux/bin/`。
+
 ### 运行
+
+#### Windows
 
 ```bash
 scripts/run_app.bat
 ```
 
 可执行文件输出到 `build/ninja-debug/bin/`。
+
+#### Linux
+
+```bash
+# 方式一：用运行脚本（设置 Qt 插件路径等环境变量）
+./build/ninja-debug-linux/bin/run_app.sh
+
+# 方式二：直接运行（系统 Qt 无需额外环境变量）
+./build/ninja-debug-linux/bin/ETestStudio
+```
+
+> `run_app.sh` 由 CMake 生成，切换非系统 Qt 时修改 `local.cmake` 中的 `QT_LIB_DIR`/`QT_PLUGINS_DIR` 即可自动适配。
 
 ### 打包
 
@@ -235,7 +298,7 @@ scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 
 | 库 | 版本 | 说明 |
 |---|---|---|
-| Qt | 5.15.2 | Core、Gui、Widgets、PrintSupport、Test、Xml、Svg、Sql（官方共享库） |
+| Qt | 5.15.2 (Win) / 5.12.x (Linux) | Core、Gui、Widgets、PrintSupport、Test、Xml、Svg、Network、Concurrent、Sql。Windows 用 msvc2019_64 官方包，Linux 用系统包或自定义路径（见 `local.cmake`） |
 | Qt-Advanced-Docking-System | 3.8.3 | 高级停靠系统 |
 | SARibbon | 2.5.7 | Ribbon 风格界面 |
 | QWindowKit | 1.5.0 | 无边框窗口解决方案 |

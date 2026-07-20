@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 项目概述
-这是一个基于Qt/C++的学习研究项目，目标是实现自动化测试系统实现其核心功能。项目采用CMake构建系统，支持Windows平台。后续考虑迁移并支持常见的Linux发行版。
+这是一个基于Qt/C++的学习研究项目，目标是实现自动化测试系统实现其核心功能。项目采用CMake构建系统，支持 Windows 与 Linux（WSL Ubuntu 20.04）双平台构建。
 
 ## 常用命令
 ### 构建项目
@@ -26,6 +26,22 @@ scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 - 构建输出目录：`build/ninja-debug/`（debug）、`build/ninja-relwithdebinfo/`（relwithdebinfo）、`build/ninja-release/`（release）
 - 支持两种参数模式：旧模式（位置参数 `build_ninja.bat debug deploy`）和新模式（显式参数 `-t <type> -m <target> -d/-p`），详见 `scripts/build_ninja.bat -h`
 - 可执行文件输出到：`build/ninja-debug/bin/`
+
+### Linux (WSL) 构建
+```bash
+# 全量构建（默认 debug）
+scripts/build_ninja.sh -t debug
+
+# 仅构建主程序
+scripts/build_ninja.sh -t debug -m ETestStudio
+
+# 仅配置不构建
+scripts/build_ninja.sh -t debug -c
+```
+- 使用 Ninja 生成器，需 GCC 9+ / CMake 3.25+
+- 构建输出目录：`build/ninja-debug-linux/`（debug）、`build/ninja-relwithdebinfo-linux/`、`build/ninja-release-linux/`
+- 可执行文件输出到：`build/ninja-debug-linux/bin/`
+- 运行：`./build/ninja-debug-linux/bin/run_app.sh` 或直接 `./build/ninja-debug-linux/bin/ETestStudio`
 
 ## 代码风格
 - 所有生成的代码需要遵循clang-format的Google C++风格规范
@@ -145,7 +161,7 @@ etest (主程序)
 
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：
-- Qt 5.14.2（Core、Gui、Widgets、PrintSupport、Test、Xml、Svg），Qt使用官方编译的二进制发布包，默认是共享库
+- Qt 5.15.2（Windows，msvc2019_64）/ Qt 5.12.x（Linux，系统包），组件：Core、Gui、Widgets、PrintSupport、Test、Xml、Svg、Network、Concurrent、Sql。Qt使用官方编译的二进制发布包，默认是共享库
 - Qt-Advanced-Docking-System 3.8.3（高级停靠系统）
 - QXlsx 1.5.0（Excel读写）
 - zlib 1.3.2（压缩库）
