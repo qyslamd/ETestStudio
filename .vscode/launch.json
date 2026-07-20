@@ -271,6 +271,98 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "visualizerFile": "c:\\Users\\slamdd\\AppData\\Roaming\\Code\\User\\workspaceStorage\\a84805a3359624fdae5de85cd814b75f\\tonka3000.qtvsctools\\qt.natvis.xml"
+        },
+        {
+            "name": "ETestStudio (Linux)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ninja-debug-linux/bin/ETestStudio",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/ninja-debug-linux/bin",
+            "environment": [
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "/usr/lib/x86_64-linux-gnu/qt5/plugins"
+                }
+            ],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "text": "set pretty print on",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "topology-editor (Linux)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ninja-debug-linux/bin/topology-editor",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/ninja-debug-linux/bin",
+            "environment": [
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "/usr/lib/x86_64-linux-gnu/qt5/plugins"
+                }
+            ],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "text": "set pretty print on",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "protocol-editor (Linux)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ninja-debug-linux/bin/protocol-editor",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/ninja-debug-linux/bin",
+            "environment": [
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "/usr/lib/x86_64-linux-gnu/qt5/plugins"
+                }
+            ],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "text": "set pretty print on",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "test-program-editor (Linux)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ninja-debug-linux/bin/test-program-editor",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/ninja-debug-linux/bin",
+            "environment": [
+                {
+                    "name": "QT_PLUGIN_PATH",
+                    "value": "/usr/lib/x86_64-linux-gnu/qt5/plugins"
+                }
+            ],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "text": "set pretty print on",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }

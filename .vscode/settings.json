@@ -1,6 +1,6 @@
 {
     "editor.formatOnSave": true,
-    "clang-format.executable": "D:\\Qt\\Tools\\QtCreator\\bin\\clang\\bin\\clang-format.exe",
+    "clang-format.executable": "clang-format",
     "clang-format.fallbackStyle": "Chromium",
     "editor.fontSize": 14,
     "editor.fontFamily": "Cascadia Mono Light, Microsoft YaHei, monospace",
@@ -12,6 +12,12 @@
                 "/K",
                 "chcp 65001 >nul"
             ]
+        }
+    },
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.profiles.linux": {
+        "bash": {
+            "path": "bash"
         }
     },
     //"cmake.outputLogEncoding": "utf8",
