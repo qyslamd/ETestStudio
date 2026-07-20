@@ -34,14 +34,16 @@ void BottomContainerWidget::initUi() {
   tab_widget_->setObjectName(QStringLiteral("bottomTabWidget"));
   TabBarStyle::install(tab_widget_->tabBar(), QSize(110, 28));
 
+  // test
+  // tab_widget_->setTabPosition(QTabWidget::South);
+
   main_layout->addWidget(tab_widget_);
 
   // 关闭 tab → 隐藏面板
-  connect(tab_widget_, &QTabWidget::tabCloseRequested, this,
-          [this](int index) {
-            setPanelVisible(index, false);
-            emit panelVisibilityChanged();
-          });
+  connect(tab_widget_, &QTabWidget::tabCloseRequested, this, [this](int index) {
+    setPanelVisible(index, false);
+    emit panelVisibilityChanged();
+  });
 
   // Theme change: refresh tab icons
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,

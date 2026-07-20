@@ -63,11 +63,9 @@ void GitWidget::refresh() {
 }
 
 bool GitWidget::isGitRepo() const {
-  QProcess git;
-  git.setWorkingDirectory(project_root_);
-  git.start("git", {"rev-parse", "--is-inside-work-tree"});
-  if (!git.waitForFinished(3000)) return false;
-  return git.readAllStandardOutput().trimmed() == "true";
+  // 直检项目根目录下的 .git，避免 git rev-parse 向上搜索父级仓库
+  // 导致定位到非项目目录的 .git
+  return QDir(project_root_).exists(QStringLiteral(".git"));
 }
 
 QString GitWidget::currentBranch() const {
@@ -203,6 +201,33 @@ void GitWidget::showEmpty() {
       label->setText(QStringLiteral("不是 Git 仓库"));
     }
   }
+  // 初始化按钮仅在项目已打开且非 git 仓库时显示
+  init_repo_button_->setVisible(!project_root_.isEmpty() && !is_git_repo_);
+}
+
+bool GitWidget::initRepository(const QString& root) {
+  QString path = root.isEmpty() ? project_root_ : root;
+  if (path.isEmpty()) {
+    return false;
+  }
+  QProcess git;
+  git.setWorkingDirectory(path);
+  git.start("git", {"init"});
+  if (!git.waitForFinished(5000)) {
+    LOG_WARN("GIT", "git init timed out");
+    return false;
+  }
+  bool ok = (git.exitCode() == 0);
+  if (ok) {
+    LOG_INFO("GIT", "git init ok [root={}]", path.toStdString());
+    // 同步 project_root_，确保后续 refresh 能定位到正确目录
+    project_root_ = path;
+    refresh();
+  } else {
+    LOG_WARN("GIT", "git init failed: {}",
+             QString::fromUtf8(git.readAllStandardError()).toStdString());
+  }
+  return ok;
 }
 
 void GitWidget::initUi() {
@@ -293,6 +318,15 @@ void GitWidget::initUi() {
   emptyLabel->setObjectName("gitEmptyLabel");
   emptyLayout->addWidget(emptyLabel);
 
+  // 初始化 Git 仓库按钮（仅在项目已打开但未 init 时点击有效）
+  init_repo_button_ = new QToolButton(this);
+  init_repo_button_->setObjectName(QStringLiteral("gitInitButton"));
+  init_repo_button_->setText(QStringLiteral("初始化 Git 仓库"));
+  init_repo_button_->setToolTip(
+      QStringLiteral("在项目根目录执行 git init"));
+  init_repo_button_->setAutoRaise(true);
+  emptyLayout->addWidget(init_repo_button_);
+
   stack_->addWidget(empty_widget_);
 
   mainLayout->addWidget(stack_);
@@ -300,6 +334,10 @@ void GitWidget::initUi() {
 
 void GitWidget::initSignals() {
   connect(refresh_button_, &QAbstractButton::clicked, this, &GitWidget::refresh);
+
+  // 空状态页：点击初始化按钮 -> 通知上层确认 -> 执行 init
+  connect(init_repo_button_, &QAbstractButton::clicked, this,
+          [this]() { emit initRepoRequested(); });
 
   // Theme change: refresh git icons
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,

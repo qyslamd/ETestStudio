@@ -6,6 +6,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QProcess>
 
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
@@ -170,6 +171,21 @@ bool ProjectManager::createProject(const QString& name,
     return false;
   }
   addToRecentProjects(etprojPath);
+
+  // 新建项目自动初始化 Git 仓库，便于对测试程序等文件做版本管理
+  // 失败不阻断项目创建流程，仅记录日志
+  {
+    QProcess git;
+    git.setWorkingDirectory(projectDir);
+    git.start("git", {"init"});
+    if (git.waitForFinished(5000) && git.exitCode() == 0) {
+      LOG_INFO("PROJECT", "git init ok [dir={}]", projectDir.toStdString());
+    } else {
+      LOG_WARN("PROJECT", "git init failed [dir={}]: {}",
+               projectDir.toStdString(),
+               QString::fromUtf8(git.readAllStandardError()).toStdString());
+    }
+  }
 
   LOG_INFO("PROJECT", "项目创建成功：{}", projectDir.toStdString());
   emit projectCreated(projectDir);

@@ -20,9 +20,15 @@ class GitWidget : public QWidget {
   void setProjectRoot(const QString& path);
   QString projectRoot() const;
   void refresh();
+  /// 在指定目录执行 git init，root 为空时使用 project_root_
+  /// 成功返回 true。不依赖 project_root_ 的赋值时机，避免信号链
+  /// 顺序导致 onProjectOpened 调用时 project_root_ 尚未设置。
+  bool initRepository(const QString& root = QString());
 
  signals:
   void fileOpenRequested(const QString& filePath);
+  /// 请求在项目根目录初始化 Git 仓库（由上层确认后执行）
+  void initRepoRequested();
 
  private:
   void initUi();
@@ -47,6 +53,7 @@ class GitWidget : public QWidget {
   QStackedWidget* stack_ = nullptr;
   QWidget* content_widget_ = nullptr;
   QWidget* empty_widget_ = nullptr;
+  QToolButton* init_repo_button_ = nullptr;  ///< 空状态页的初始化按钮
 
   QString project_root_;
   bool is_git_repo_ = false;
