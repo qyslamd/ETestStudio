@@ -28,20 +28,20 @@ void throwFileException(::etest::core::common::FileException::Code code,
 }  // namespace
 
 bool FileUtil::exists(const QString& path) {
-  return std::filesystem::exists(path.toStdWString());
+  return std::filesystem::exists(toFsPath(path));
 }
 
 bool FileUtil::isFile(const QString& path) {
-  return std::filesystem::is_regular_file(path.toStdWString());
+  return std::filesystem::is_regular_file(toFsPath(path));
 }
 
 bool FileUtil::isDirectory(const QString& path) {
-  return std::filesystem::is_directory(path.toStdWString());
+  return std::filesystem::is_directory(toFsPath(path));
 }
 
 bool FileUtil::createDirectory(const QString& path) {
   try {
-    return std::filesystem::create_directories(path.toStdWString());
+    return std::filesystem::create_directories(toFsPath(path));
   } catch (const std::filesystem::filesystem_error& e) {
     throwFileException(::etest::core::common::FileException::Code::kIoError,
                        QString::fromStdString(e.what()),
@@ -52,7 +52,7 @@ bool FileUtil::createDirectory(const QString& path) {
 
 bool FileUtil::remove(const QString& path) {
   try {
-    return std::filesystem::remove_all(path.toStdWString()) > 0;
+    return std::filesystem::remove_all(toFsPath(path)) > 0;
   } catch (const std::filesystem::filesystem_error& e) {
     throwFileException(::etest::core::common::FileException::Code::kIoError,
                        QString::fromStdString(e.what()),
@@ -63,8 +63,8 @@ bool FileUtil::remove(const QString& path) {
 
 bool FileUtil::copy(const QString& src, const QString& dst) {
   try {
-    std::filesystem::copy_file(src.toStdWString(),
-                               dst.toStdWString(),
+    std::filesystem::copy_file(toFsPath(src),
+                                toFsPath(dst),
                                std::filesystem::copy_options::overwrite_existing);
     return true;
   } catch (const std::filesystem::filesystem_error& e) {
@@ -77,7 +77,7 @@ bool FileUtil::copy(const QString& src, const QString& dst) {
 
 bool FileUtil::move(const QString& src, const QString& dst) {
   try {
-    std::filesystem::rename(src.toStdWString(), dst.toStdWString());
+    std::filesystem::rename(toFsPath(src), toFsPath(dst));
     return true;
   } catch (const std::filesystem::filesystem_error& e) {
     throwFileException(::etest::core::common::FileException::Code::kIoError,
@@ -89,7 +89,7 @@ bool FileUtil::move(const QString& src, const QString& dst) {
 
 qint64 FileUtil::fileSize(const QString& path) {
   try {
-    return static_cast<qint64>(std::filesystem::file_size(path.toStdWString()));
+    return static_cast<qint64>(std::filesystem::file_size(toFsPath(path)));
   } catch (const std::filesystem::filesystem_error& e) {
     throwFileException(::etest::core::common::FileException::Code::kIoError,
                        QString::fromStdString(e.what()),
@@ -190,16 +190,16 @@ QStringList FileUtil::listFiles(const QString& dirPath, bool recursive) {
   try {
     if (recursive) {
       for (const auto& entry : std::filesystem::recursive_directory_iterator(
-               dirPath.toStdWString())) {
+               toFsPath(dirPath))) {
         if (entry.is_regular_file()) {
-          result.append(QString::fromStdWString(entry.path().wstring()));
+          result.append(QString::fromStdString(entry.path().u8string()));
         }
       }
     } else {
       for (const auto& entry :
-           std::filesystem::directory_iterator(dirPath.toStdWString())) {
+           std::filesystem::directory_iterator(toFsPath(dirPath))) {
         if (entry.is_regular_file()) {
-          result.append(QString::fromStdWString(entry.path().wstring()));
+          result.append(QString::fromStdString(entry.path().u8string()));
         }
       }
     }

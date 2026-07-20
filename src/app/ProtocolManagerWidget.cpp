@@ -26,6 +26,8 @@
 #include <icd/node.hpp>
 #include <icd/repository.hpp>
 
+#include "utils/FileUtil.h"
+
 #include "icd_utility/src/format/json_parser.hpp"
 #include "icd_utility/src/format/json_serializer.hpp"
 #include "icd_utility/src/format/xml_parser.hpp"
@@ -40,6 +42,8 @@
 #include "logger/Logger.h"
 
 namespace etest::app {
+
+using etest::core::utils::toFsPath;
 
 using etest::core::project::ProjectManager;
 using etest::core_ui::AppIconProvider;
@@ -352,7 +356,7 @@ void ProtocolManagerWidget::refreshListImpl() {
   }
 
   // 找到了：尝试加载
-  config_path_ = std::filesystem::path(path.toStdWString());
+  config_path_ = toFsPath(path);
   if (!loadIcdConfig()) {
     // 加载失败：显示空状态
     config_label_->setText(QStringLiteral("ICDConfig（加载失败）"));
@@ -428,7 +432,7 @@ bool ProtocolManagerWidget::loadIcdConfig() {
   if (!config_result) {
     load_error_ =
         QStringLiteral("解析 %1 失败：%2")
-            .arg(QString::fromStdWString(config_path_.filename().wstring()),
+            .arg(QString::fromStdString(config_path_.filename().u8string()),
                  QString::fromStdString(config_result.error().message));
     return false;
   }
@@ -460,8 +464,7 @@ bool ProtocolManagerWidget::loadIcdConfig() {
   QStringList missing_paths;
   for (const auto& entry : file_entries_) {
     // UTF-8 → UTF-16 正确转换，解决中文文件名加载问题
-    const std::filesystem::path entry_wpath(
-        QString::fromStdString(entry.path).toStdWString());
+    const auto entry_wpath = toFsPath(QString::fromStdString(entry.path));
     const std::filesystem::path abs_path =
         config_path_.parent_path() / entry_wpath;
     if (!std::filesystem::exists(abs_path)) {
@@ -564,7 +567,7 @@ void ProtocolManagerWidget::populateTree() {
   config_root_item_ = new QTreeWidgetItem(tree_);
   config_root_item_->setText(0, QStringLiteral("ICDConfig"));
   config_root_item_->setData(0, Qt::UserRole,
-                             QString::fromStdWString(config_path_.wstring()));
+                             QString::fromStdString(config_path_.u8string()));
   config_root_item_->setExpanded(true);
   QFont f = config_root_item_->font(0);
   f.setBold(true);
@@ -791,7 +794,7 @@ void ProtocolManagerWidget::onNewFrame() {
     }
   }
   // 新建帧的 rel 路径：name 是用户输入，可能含中文，统一用 wstring
-  const std::filesystem::path rel_path(safe_name.toStdWString() + L".xml");
+  const auto rel_path = toFsPath(safe_name + QStringLiteral(".xml"));
   const std::filesystem::path abs_path = config_path_.parent_path() / rel_path;
 
   // 创建空 Frame，写入 frame file
@@ -876,7 +879,7 @@ void ProtocolManagerWidget::onImportXml() {
   }
 
   namespace fs = std::filesystem;
-  const fs::path in_path(xml_path.toStdWString());
+  const fs::path in_path(toFsPath(xml_path));
 
   // 单帧导入：把 frame 文件复制到 protocol 目录，并加入 file_entries_
   if (is_frame) {
@@ -893,7 +896,7 @@ void ProtocolManagerWidget::onImportXml() {
     const QString rel_qstr = fi.completeBaseName() + QStringLiteral(".eprotox");
     // 转 wstring 避免 MSVC path::operator/ 的 ANSI 编码问题
     const std::filesystem::path abs_path =
-        config_path_.parent_path() / rel_qstr.toStdWString();
+        config_path_.parent_path() / toFsPath(rel_qstr);
 
     // 目标文件已存在：覆盖前先删除
     if (std::filesystem::exists(abs_path)) {
@@ -902,10 +905,10 @@ void ProtocolManagerWidget::onImportXml() {
     }
     // 复制源文件到 protocol 目录（保持原始 XML 内容）
     // ⚠️ 必须用 .wstring() 而非 .string()：后者在中文路径下输出 GBK 编码
-    if (!QFile::copy(xml_path, QString::fromStdWString(abs_path.wstring()))) {
+    if (!QFile::copy(xml_path, QString::fromStdString(abs_path.u8string()))) {
       QMessageBox::warning(this, QStringLiteral("导入失败"),
                            QStringLiteral("复制失败：%1")
-                               .arg(QString::fromStdWString(abs_path.wstring())));
+                               .arg(QString::fromStdString(abs_path.u8string())));
       return;
     }
 
@@ -944,7 +947,7 @@ void ProtocolManagerWidget::onImportXml() {
   QFileInfo fi(xml_path);
   // ⚠️ 必须用 .wstring() 而非 .string()：后者在中文路径下输出 GBK 编码
   const QString target =
-      QDir(QString::fromStdWString(config_path_.parent_path().wstring()))
+      QDir(QString::fromStdString(config_path_.parent_path().u8string()))
           .absoluteFilePath(fi.fileName());
   if (QFile::exists(target)) {
     int ret = QMessageBox::question(
@@ -960,7 +963,7 @@ void ProtocolManagerWidget::onImportXml() {
                          QStringLiteral("复制失败：%1").arg(target));
     return;
   }
-  config_path_ = fs::path(target.toStdWString());
+  config_path_ = toFsPath(target);
   loadIcdConfig();
   populateTree();
   updateStatusLabel();
@@ -1032,7 +1035,7 @@ void ProtocolManagerWidget::onOpenFrame(QTreeWidgetItem* item) {
   // ⚠️ 用 QDir 拼路径而非 std::filesystem::path：后者在 MSVC 上用 ANSI 编码，
   // 含中文时路径会变成乱码
   const QDir config_dir(
-      QString::fromStdWString(config_path_.parent_path().wstring()));
+      QString::fromStdString(config_path_.parent_path().u8string()));
   const QString frame_path =
       config_dir.absoluteFilePath(QString::fromStdString(entry.path));
   const int fid = item->data(0, kRoleFrameId).toInt();

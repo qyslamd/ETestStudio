@@ -35,10 +35,13 @@
 #include "format/json_serializer.hpp"
 #include "format/xml_serializer.hpp"
 #include "libui/dock_title_bar/DockTitleBar.h"
+#include "utils/FileUtil.h"
 
 #include <icd/loader.hpp>
 
 namespace etest::protocol {
+
+using etest::core::utils::toFsPath;
 namespace {
 
 void syncDockCloseAction(QAction* action) {
@@ -156,7 +159,7 @@ bool ProtocolEditorWidget::saveAs(const QString& path) {
   }
 
   if (format_ == ProtocolFormat::ConfigDriven) {
-    config_path_ = std::filesystem::path(path.toStdWString());
+    config_path_ = toFsPath(path);
     auto base_dir = config_path_.parent_path();
     std::error_code ec;
     std::filesystem::create_directories(base_dir, ec);
@@ -281,7 +284,7 @@ void ProtocolEditorWidget::openFile(const QString& filePath) {
   showLoadingOverlay();
 
   // ── Determine format from file extension ──
-  auto path = std::filesystem::path(filePath.toStdWString());
+  auto path = toFsPath(filePath);
   auto ext = path.extension().string();
 
   // Detect format
@@ -350,25 +353,27 @@ void ProtocolEditorWidget::openFile(const QString& filePath) {
           });
 
   switch (format_) {
-  case ProtocolFormat::Json:
+  case ProtocolFormat::Json: {
+    auto jsonPath = toFsPath(filePath);
     load_watcher_->setFuture(
-        QtConcurrent::run([filePath]() -> AsyncLoadResult {
-          auto result = icd::format::deserialize_repository(
-              std::filesystem::path(filePath.toStdWString()));
+        QtConcurrent::run([jsonPath]() -> AsyncLoadResult {
+          auto result = icd::format::deserialize_repository(jsonPath);
           if (!result) return {};
           return {std::make_shared<icd::Repository>(std::move(*result))};
         }));
     break;
+  }
 
-  case ProtocolFormat::Xml:
+  case ProtocolFormat::Xml: {
+    auto xmlPath = toFsPath(filePath);
     load_watcher_->setFuture(
-        QtConcurrent::run([filePath]() -> AsyncLoadResult {
-          auto result = icd::format::deserialize_xml_repository(
-              std::filesystem::path(filePath.toStdWString()));
+        QtConcurrent::run([xmlPath]() -> AsyncLoadResult {
+          auto result = icd::format::deserialize_xml_repository(xmlPath);
           if (!result) return {};
           return {std::make_shared<icd::Repository>(std::move(*result))};
         }));
     break;
+  }
 
   case ProtocolFormat::ConfigDriven:
     load_watcher_->setFuture(
@@ -450,14 +455,14 @@ bool ProtocolEditorWidget::saveByFormat() {
 // ── Save .eproto JSON ─────────────────────────────────────────
 bool ProtocolEditorWidget::saveEproto(const QString& path) {
   auto result = icd::format::serialize_repository(
-      std::filesystem::path(path.toStdWString()), repo_);
+      toFsPath(path), repo_);
   return result.has_value();
 }
 
 // ── Save .eprotox XML ─────────────────────────────────────────
 bool ProtocolEditorWidget::saveEprotox(const QString& path) {
   auto result = icd::format::serialize_xml_repository(
-      std::filesystem::path(path.toStdWString()), repo_);
+      toFsPath(path), repo_);
   return result.has_value();
 }
 
@@ -495,7 +500,7 @@ bool ProtocolEditorWidget::saveConfigDriven() {
       qWarning("saveConfigDriven: no file path for frame id %d", frame_ptr->id());
       continue;
     }
-    auto abs_path = base_dir / relPath.toStdWString();
+    auto abs_path = base_dir / toFsPath(relPath);
     auto result = icd::format::serialize_xml_frame_file(abs_path, *frame_ptr);
     if (!result) {
       qWarning("saveConfigDriven: failed to write frame file: %s",
@@ -587,7 +592,7 @@ bool ProtocolEditorWidget::deleteConfigFrameFile(int frame_id) {
   if (relPath.isEmpty())
     return false;
   if (!config_path_.empty()) {
-    auto abs_path = config_path_.parent_path() / relPath.toStdWString();
+    auto abs_path = config_path_.parent_path() / toFsPath(relPath);
     std::error_code ec;
     std::filesystem::remove(abs_path, ec);
   }
@@ -605,7 +610,7 @@ bool ProtocolEditorWidget::rewriteAllFrameFiles() {
                frame_ptr->id());
       continue;
     }
-    auto abs_path = base_dir / relPath.toStdWString();
+    auto abs_path = base_dir / toFsPath(relPath);
     auto result = icd::format::serialize_xml_frame_file(abs_path, *frame_ptr);
     if (!result) {
       qWarning("rewriteAllFrameFiles: failed: %s",

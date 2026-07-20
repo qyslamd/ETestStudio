@@ -4,9 +4,19 @@
 #include <QString>
 #include <QStringList>
 
+#include <filesystem>
+
 namespace etest {
 namespace core {
 namespace utils {
+
+inline std::filesystem::path toFsPath(const QString& qpath) {
+#ifdef Q_OS_WIN
+  return std::filesystem::path(qpath.toStdWString());
+#else
+  return std::filesystem::path(qpath.toUtf8().constData());
+#endif
+}
 
 class FileUtil {
  public:

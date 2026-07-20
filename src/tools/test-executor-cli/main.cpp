@@ -34,6 +34,10 @@
 #include <icd/node.hpp>
 #include <icd/repository.hpp>
 
+#include "utils/FileUtil.h"
+
+using etest::core::utils::toFsPath;
+
 #include "icd_utility/src/format/xml_parser.hpp"
 #include "icd_utility/src/schema/builder.hpp"
 #include "icd_utility/src/schema/schema.hpp"
@@ -413,18 +417,17 @@ int main(int argc, char* argv[]) {
         if (!configPath.isEmpty()) {
             // Parse ICDConfig to get frame file entries
             auto configResult = icd::format::parse_xml_config(
-                std::filesystem::path(configPath.toStdWString()));
+                toFsPath(configPath));
             if (configResult) {
                 icd::schema::SchemaConfig merged;
                 merged.files = configResult->files;
                 std::filesystem::path baseDir =
-                    std::filesystem::path(configPath.toStdWString()).parent_path();
+                    toFsPath(configPath).parent_path();
                 int loaded = 0, failed = 0;
                 for (const auto& fileEntry : configResult->files) {
                     // Proper UTF-8 → UTF-16 path conversion for Chinese filenames
                     std::filesystem::path framePath = baseDir /
-                        std::filesystem::path(
-                            QString::fromStdString(fileEntry.path).toStdWString());
+                        toFsPath(QString::fromStdString(fileEntry.path));
                     auto frameResult = icd::format::parse_xml_frame(framePath);
                     if (frameResult) {
                         if (fileEntry.id.has_value())

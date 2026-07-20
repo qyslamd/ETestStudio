@@ -114,7 +114,9 @@ void GlobalExceptionHandler::signalHandler(int signal) {
   LOG_FATAL("EXCEPTION", "捕获信号: {} ({}), 栈帧数: {}", name, signal,
             stackTrace.count('\n') + 1);
 
-  spdlog::default_logger()->flush();
+  if (auto logger = spdlog::default_logger()) {
+    logger->flush();
+  }
 
   emit instance().exceptionCaught(
       QString("Signal: %1 (%2)").arg(name).arg(signal), stackTrace);
@@ -142,7 +144,9 @@ void GlobalExceptionHandler::qtMessageHandler(
       break;
     case QtFatalMsg:
       LOG_FATAL(module, "{}", message.toStdString());
-      spdlog::default_logger()->flush();
+      if (auto logger = spdlog::default_logger()) {
+        logger->flush();
+      }
       etest::core::logger::Logger::shutdown();
       std::abort();
   }
