@@ -32,11 +32,4 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 
 #=======================================
 # 生成运行脚本，自动设置Qt运行时环境变量
-if(WIN32)
-    # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
-    configure_file(
-        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
-        "${CMAKE_BINARY_DIR}/bin/run_${TARGET_NAME}.bat"
-        @ONLY
-    )
-endif()
+configure_run_script("run_${TARGET_NAME}")

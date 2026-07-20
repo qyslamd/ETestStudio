@@ -10,6 +10,9 @@ if(MSVC)
     endif()
 else()
     set(Qt5_12_x_Path "/opt/qt5.12.12/5.12.12/gcc_64")
+    # Qt 运行时路径（供 run_app.sh 使用）
+    set(QT_LIB_DIR "${Qt5_12_x_Path}/lib")
+    set(QT_PLUGINS_DIR "${Qt5_12_x_Path}/plugins")
 endif()
 
 set(Qt5_DIR "${Qt5_12_x_Path}/lib/cmake/Qt5")

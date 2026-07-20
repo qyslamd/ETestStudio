@@ -1,0 +1,17 @@
+#!/bin/bash
+# 运行脚本：设置 Qt 运行时环境变量后启动程序
+# 由 CMake configure_file 生成，不要手动编辑
+
+# Qt 库搜索路径
+# 系统 Qt 无需设置（ld.so 默认搜索）；非系统 Qt 取消下行注释
+# export LD_LIBRARY_PATH="@QT_LIB_DIR@:${LD_LIBRARY_PATH}"
+
+# Qt 插件搜索路径
+export QT_PLUGIN_PATH="@QT_PLUGINS_DIR@"
+
+# 调试插件加载时取消下行注释
+# export QT_DEBUG_PLUGINS=1
+
+cd "@CMAKE_RUNTIME_OUTPUT_DIRECTORY@"
+
+./@TARGET_NAME@ "$@"

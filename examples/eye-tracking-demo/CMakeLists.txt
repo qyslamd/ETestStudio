@@ -23,10 +23,4 @@ set_target_properties(${TARGET_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-if(WIN32)
-    configure_file(
-        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
-        "${CMAKE_BINARY_DIR}/bin/run_${TARGET_NAME}.bat"
-        @ONLY
-    )
-endif()
+configure_run_script("run_${TARGET_NAME}")

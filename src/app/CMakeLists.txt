@@ -228,14 +228,7 @@ endif()
 
 #=======================================
 # 生成运行脚本，自动设置Qt运行时环境变量
-if(WIN32)
-    # QT_BIN_DIR 和 QT_PLUGINS_DIR 在顶层CMakeLists.txt中设置
-    configure_file(
-        "${CMAKE_SOURCE_DIR}/cmake/run_app.bat.in"
-        "${CMAKE_BINARY_DIR}/bin/run_app.bat"
-        @ONLY
-    )
-endif()
+configure_run_script("run_app")
 
 #=======================================
 # 拷贝测试工程到输出目录，方便调试

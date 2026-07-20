@@ -67,6 +67,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 #=======================================
 # 添加自己编写的一些cmake模块
 include(${CMAKE_SOURCE_DIR}/cmake/debug_helper.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/run_app.cmake)
 
 #=======================================
 # 第三方依赖本地源码编译
@@ -85,7 +86,22 @@ if(Qt5_FOUND)
         get_filename_component(QT_BIN_DIR "${QT_LIB_DIR}/../bin" ABSOLUTE)
         get_filename_component(QT_PLUGINS_DIR "${QT_BIN_DIR}/../plugins" ABSOLUTE)
     else()
-        # TODO：
+        # Linux: local.cmake 已提供 QT_PLUGINS_DIR 则用之，否则用 qmake 探测
+        if(NOT QT_PLUGINS_DIR)
+            find_program(QMAKE_EXECUTABLE NAMES qmake-qt5 qmake)
+            if(QMAKE_EXECUTABLE)
+                execute_process(COMMAND ${QMAKE_EXECUTABLE} -query QT_INSTALL_PLUGINS
+                    OUTPUT_VARIABLE _qt_plugins_dir OUTPUT_STRIP_TRAILING_WHITESPACE
+                    RESULT_VARIABLE _qmake_result)
+                if(_qmake_result EQUAL 0 AND _qt_plugins_dir)
+                    set(QT_PLUGINS_DIR "${_qt_plugins_dir}")
+                endif()
+            endif()
+        endif()
+        if(NOT QT_PLUGINS_DIR)
+            message(WARNING "QT_PLUGINS_DIR not set, run_app.sh may not find Qt plugins. "
+                "Set it in local.cmake (e.g. /usr/lib/x86_64-linux-gnu/qt5/plugins)")
+        endif()
     endif()
 endif()
 
