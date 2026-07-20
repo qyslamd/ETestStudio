@@ -57,6 +57,11 @@ class MonitorManager : public QObject {
   // 入参为 .etopo JSON 的 root object
   void loadFromTopology(const QJsonObject& topologyDoc);
 
+  // ── 追加拓扑文档的 monitors（累积模式，支持多拓扑合并） ──
+  // 不清理已有数据，把入参文档中的 monitors[] 追加到 tree_cache_ 和 lookup_table_
+  // monitorIndex 会按当前 tree_cache_ 大小偏移，避免跨拓扑索引冲突
+  void appendFromTopology(const QJsonObject& topologyDoc);
+
   // ── 订阅某个通道的采样通知（主线程同步调用） ──
   using SampleCallback = std::function<void(const MonitorSample&)>;
   void subscribe(int monitorIndex, int channelIndex, SampleCallback cb);

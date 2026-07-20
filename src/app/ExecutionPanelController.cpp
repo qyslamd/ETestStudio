@@ -386,6 +386,30 @@ void ExecutionPanelController::updateRunControls() {
   act_run_all_->setEnabled(checkCanRun());
 }
 
+void ExecutionPanelController::loadProjectTopologies() {
+  if (!engine_) {
+    return;
+  }
+  // 清空上一次累积的拓扑状态（设备 / monitors），避免跨运行残留
+  engine_->clearTopologyState();
+
+  auto& proj_mgr = etest::core::project::ProjectManager::instance();
+  if (!proj_mgr.isProjectOpen()) {
+    return;
+  }
+  QString topo_dir =
+      proj_mgr.currentProjectRoot() + QStringLiteral("/topology");
+  QDir topo_dir_obj(topo_dir);
+  if (!topo_dir_obj.exists()) {
+    return;
+  }
+  const auto topo_files = topo_dir_obj.entryInfoList(
+      {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
+  for (const QFileInfo& fi : topo_files) {
+    engine_->loadTopology(fi.absoluteFilePath());
+  }
+}
+
 void ExecutionPanelController::run() {
   LOG_INFO("MAIN_UI", "点击「运行」");
 
@@ -429,22 +453,8 @@ void ExecutionPanelController::run() {
     return;
   }
 
-  // 加载拓扑设备
-  {
-    auto& proj_mgr = etest::core::project::ProjectManager::instance();
-    if (proj_mgr.isProjectOpen()) {
-      QString topo_dir =
-          proj_mgr.currentProjectRoot() + QStringLiteral("/topology");
-      QDir topo_dir_obj(topo_dir);
-      if (topo_dir_obj.exists()) {
-        const auto topo_files = topo_dir_obj.entryInfoList(
-            {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
-        for (const QFileInfo& fi : topo_files) {
-          engine_->loadTopology(fi.absoluteFilePath());
-        }
-      }
-    }
-  }
+  // 加载拓扑设备（含 monitors 累积）
+  loadProjectTopologies();
 
   // 3. 设置程序数据
   current_program_name_ = data.name;
@@ -663,22 +673,8 @@ void ExecutionPanelController::runNextInQueue() {
     return;
   }
 
-  // 加载拓扑设备
-  {
-    auto& proj_mgr = etest::core::project::ProjectManager::instance();
-    if (proj_mgr.isProjectOpen()) {
-      QString topo_dir =
-          proj_mgr.currentProjectRoot() + QStringLiteral("/topology");
-      QDir topo_dir_obj(topo_dir);
-      if (topo_dir_obj.exists()) {
-        const auto topo_files = topo_dir_obj.entryInfoList(
-            {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
-        for (const QFileInfo& fi : topo_files) {
-          engine_->loadTopology(fi.absoluteFilePath());
-        }
-      }
-    }
-  }
+  // 加载拓扑设备（含 monitors 累积）
+  loadProjectTopologies();
 
   // 设置程序数据
   current_program_name_ = data.name;

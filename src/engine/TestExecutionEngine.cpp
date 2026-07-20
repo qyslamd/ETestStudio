@@ -96,6 +96,16 @@ void TestExecutionEngine::setTopologyDoc(const QJsonObject& topologyDoc) {
     topology_doc_ = topologyDoc;
 }
 
+void TestExecutionEngine::clearTopologyState() {
+    topology_doc_ = QJsonObject();
+    if (hw_manager_) {
+        hw_manager_->closeAllDevices();
+    }
+    if (monitor_manager_) {
+        monitor_manager_->clear();
+    }
+}
+
 bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
     QFile file(etopoPath);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -163,6 +173,13 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
         LOG_INFO("ENGINE", "MockUUT 构建成功 [count={}]", mockCount);
     }
 
+    // ── 累积 monitor 配置（支持多拓扑合并） ──
+    // start() 不再统一 loadFromTopology，改由 loadTopology 逐个追加，
+    // 避免多拓扑场景下 topology_doc_ 被最后一个覆盖导致 monitors 丢失
+    if (monitor_manager_) {
+        monitor_manager_->appendFromTopology(root);
+    }
+
     return ok;
 }
 
@@ -213,11 +230,9 @@ bool TestExecutionEngine::start() {
                 emit progressUpdated(current, total);
             });
 
-    // ── MonitorManager 集成：加载拓扑 + 监听硬件操作信号 ──
+    // ── MonitorManager 集成：监听硬件操作信号 ──
+    // monitors 已在 loadTopology() 中累积追加，此处只需连接信号
     if (monitor_manager_) {
-        if (!topology_doc_.isEmpty()) {
-            monitor_manager_->loadFromTopology(topology_doc_);
-        }
         connect(runner_.get(), &StepRunner::hardwareOperationFinished,
                 monitor_manager_.get(), &MonitorManager::onHardwareOpFinished);
     }

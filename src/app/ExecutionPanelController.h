@@ -101,6 +101,8 @@ class ExecutionPanelController : public QObject {
   void refreshMonitorTree();
   bool checkCanVerify() const;
   bool checkCanRun() const;
+  /// 加载项目 topology/ 目录下所有 .etopo 到引擎
+  void loadProjectTopologies();
 
   // 引擎
   etest::engine::TestExecutionEngine* engine_ = nullptr;

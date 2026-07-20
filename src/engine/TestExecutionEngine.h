@@ -47,6 +47,9 @@ public:
     void setProgram(const ProgramData& program);
     void setTopologyDoc(const QJsonObject& topologyDoc);
     bool loadTopology(const QString& etopoPath);
+    /// 清空已累积的拓扑状态（topology_doc_ / 设备 / monitors）
+    /// 在新一轮 run 重新 loadTopology 前调用，避免跨运行残留
+    void clearTopologyState();
 
     // 设置信号注册表与 ICD 仓库（必须在 start() 前调用）
     void setRegistry(etest::core::SignalRegistry* registry,

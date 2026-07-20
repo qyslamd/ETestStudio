@@ -19,12 +19,37 @@ void MonitorManager::loadFromTopology(const QJsonObject& topologyDoc) {
   buffer_.clear();
   subscribers_.clear();
 
+  appendFromTopology(topologyDoc);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// appendFromTopology - 追加拓扑中的 monitors（累积模式）
+// ═══════════════════════════════════════════════════════════════════
+// 不清理已有数据。monitorIndex 按当前 tree_cache_ 大小偏移，
+// 确保多拓扑合并时索引不冲突。channelIndex 保持拓扑内原值。
+void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
+  int indexOffset = tree_cache_.size();
+
+  // 建立 deviceName -> deviceId 映射，tap 中只存了 deviceName（设备显示名），
+  // 而 onHardwareOpFinished 回调使用的是 deviceId，必须在此转换
+  QHash<QString, QString> nameToId;
+  QJsonArray devicesArr = topologyDoc.value(QStringLiteral("devices")).toArray();
+  for (const auto& dv : devicesArr) {
+    QJsonObject dobj = dv.toObject();
+    QString id = dobj.value(QStringLiteral("id")).toString();
+    QString name = dobj.value(QStringLiteral("name")).toString();
+    if (!id.isEmpty() && !name.isEmpty()) {
+      nameToId.insert(name, id);
+    }
+  }
+
   QJsonArray monitorsArr = topologyDoc.value(QStringLiteral("monitors")).toArray();
   for (int mi = 0; mi < monitorsArr.size(); ++mi) {
     QJsonObject mobj = monitorsArr[mi].toObject();
 
+    int globalIndex = indexOffset + mi;
     MonitorTreeEntry entry;
-    entry.monitorIndex = mi;
+    entry.monitorIndex = globalIndex;
     entry.name = mobj.value(QStringLiteral("name")).toString();
     entry.deviceType = mobj.value(QStringLiteral("deviceType")).toString();
     entry.channelCount = mobj.value(QStringLiteral("channelCount")).toInt(1);
@@ -33,16 +58,28 @@ void MonitorManager::loadFromTopology(const QJsonObject& topologyDoc) {
     QJsonArray tapsArr = mobj.value(QStringLiteral("taps")).toArray();
     for (int ci = 0; ci < tapsArr.size(); ++ci) {
       QJsonObject tapObj = tapsArr[ci].toObject();
-      QString deviceId = tapObj.value(QStringLiteral("deviceId")).toString();
+      // tap 字段为 deviceName（显示名）+ devicePort（端口名）
+      QString deviceName = tapObj.value(QStringLiteral("deviceName")).toString();
       QString devicePort = tapObj.value(QStringLiteral("devicePort")).toString();
 
-      if (deviceId.isEmpty() || devicePort.isEmpty()) {
-        LOG_DEBUG("MONITOR", "跳过无效 tap: monitor={} tap={}", mi, ci);
+      if (deviceName.isEmpty() || devicePort.isEmpty()) {
+        LOG_DEBUG("MONITOR", "跳过无效 tap: monitor={} tap={} (deviceName={})",
+                  globalIndex, ci, deviceName.toStdString());
         continue;
       }
 
+      // deviceName -> deviceId 转换
+      auto it = nameToId.constFind(deviceName);
+      if (it == nameToId.constEnd()) {
+        LOG_WARN("MONITOR",
+                 "跳过 tap：找不到对应设备 deviceName={} monitor={} tap={}",
+                 deviceName.toStdString(), globalIndex, ci);
+        continue;
+      }
+      QString deviceId = it.value();
+
       MonitorTapInfo info;
-      info.monitorIndex = mi;
+      info.monitorIndex = globalIndex;
       info.channelIndex = ci;
       info.deviceId = deviceId;
       info.devicePort = devicePort;
@@ -52,8 +89,8 @@ void MonitorManager::loadFromTopology(const QJsonObject& topologyDoc) {
     }
   }
 
-  LOG_INFO("MONITOR", "加载 {} 个监听器, {} 个 tap 条目",
-           tree_cache_.size(), lookup_table_.size());
+  LOG_INFO("MONITOR", "追加 {} 个监听器，累计 {} 个监听器, {} 个 tap 条目",
+           monitorsArr.size(), tree_cache_.size(), lookup_table_.size());
 }
 
 // ═══════════════════════════════════════════════════════════════════
