@@ -1009,8 +1009,8 @@ void MainWindow::lazyInit() {
   step_timer.start();
   loading_overlay_ = new LoadingOverlay(this);
   loading_overlay_->setGeometry(
-      QRect(v_splitter_->mapTo(this, QPoint(0, 0)), v_splitter_->size()));
-  v_splitter_->installEventFilter(loading_overlay_);
+      QRect(central_stack_->mapTo(this, QPoint(0, 0)), central_stack_->size()));
+  central_stack_->installEventFilter(loading_overlay_);
   loading_overlay_->startWithTimeout(10000);
   QCoreApplication::processEvents();  // 立即渲染覆盖层
   LOG_INFO("LAZY", "  [1/12] LoadingOverlay: {} ms", step_timer.elapsed());
@@ -1793,7 +1793,7 @@ void MainWindow::resizeEvent(QResizeEvent* event) {
   SARibbonMainWindow::resizeEvent(event);
   if (loading_overlay_ && loading_overlay_->isVisible()) {
     loading_overlay_->setGeometry(
-        QRect(v_splitter_->mapTo(this, QPoint(0, 0)), v_splitter_->size()));
+        QRect(central_stack_->mapTo(this, QPoint(0, 0)), central_stack_->size()));
     loading_overlay_->raise();
   }
 }
