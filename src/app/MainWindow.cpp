@@ -128,7 +128,7 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
     default:
       break;
   }
-  return false;
+  return SARibbonMainWindow::eventFilter(obj, event);
 }
 
 MainWindow::~MainWindow() {
