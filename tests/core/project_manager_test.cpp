@@ -44,7 +44,7 @@ TEST_F(ProjectInfoTest, DefaultValues) {
 TEST_F(ProjectInfoTest, SettersAndGetters) {
   ProjectInfo info;
   info.setName("test_project");
-  info.setRootPath("/tmp/test");
+  info.setProjectFilePath("/tmp/test/test.etproj");
   info.setCreateTime(QDateTime(QDate(2026, 4, 23), QTime(15, 0, 0)));
 
   EXPECT_EQ(info.name(), "test_project");
@@ -55,21 +55,19 @@ TEST_F(ProjectInfoTest, SettersAndGetters) {
 TEST_F(ProjectInfoTest, ToJsonFromJson) {
   ProjectInfo original;
   original.setName("my_project");
-  original.setRootPath("/home/user/my_project");
+  original.setProjectFilePath("/home/user/my_project/my_project.etproj");
   original.setCreateTime(QDateTime(QDate(2026, 4, 23), QTime(10, 30, 0)));
-  original.setRecentFiles({"main.lua", "test.prot"});
 
   QJsonObject json = original.toJson();
   EXPECT_EQ(json["name"].toString(), "my_project");
   EXPECT_EQ(json["version"].toString(), "1.0");
-  EXPECT_EQ(json["root_path"].toString(), "/home/user/my_project");
+  EXPECT_FALSE(json.contains("root_path"));
+  EXPECT_FALSE(json.contains("recent_files"));
 
   ProjectInfo restored;
   ASSERT_TRUE(restored.fromJson(json));
   EXPECT_EQ(restored.name(), original.name());
   EXPECT_EQ(restored.version(), original.version());
-  EXPECT_EQ(restored.rootPath(), original.rootPath());
-  EXPECT_EQ(restored.recentFiles(), original.recentFiles());
 }
 
 TEST_F(ProjectInfoTest, FromJsonInvalid) {
@@ -89,7 +87,6 @@ TEST_F(ProjectInfoTest, SaveAndLoadFile) {
 
   ProjectInfo original;
   original.setName("file_test");
-  original.setRootPath(dir);
   original.setProjectFilePath(filePath);
   original.setCreateTime(QDateTime::currentDateTime());
 
@@ -123,7 +120,7 @@ TEST_F(ProjectInfoTest, LoadInvalidJsonFile) {
 
 TEST_F(ProjectInfoTest, DirectoryPathHelpers) {
   ProjectInfo info;
-  info.setRootPath("/home/user/project");
+  info.setProjectFilePath("/home/user/project/test.etproj");
 
   EXPECT_EQ(info.scriptsPath(), QDir("/home/user/project").filePath("scripts"));
   EXPECT_EQ(info.protocolPath(),
@@ -154,7 +151,7 @@ TEST_F(ProjectInfoTest, ScanDirectory) {
   QFile(dir + "/cases/test1.tcase").open(QIODevice::WriteOnly);
 
   ProjectInfo info;
-  info.setRootPath(dir);
+  info.setProjectFilePath(dir + "/test.etproj");
 
   // scanDirectory：协议文件
   QStringList protoFiles = info.scanDirectory("protocol", "eproto");
@@ -184,7 +181,7 @@ TEST_F(ProjectInfoTest, IsValid) {
   info.setName("test");
   EXPECT_FALSE(info.isValid());
 
-  info.setRootPath("/tmp/test");
+  info.setProjectFilePath("/tmp/test/test.etproj");
   EXPECT_TRUE(info.isValid());
 }
 

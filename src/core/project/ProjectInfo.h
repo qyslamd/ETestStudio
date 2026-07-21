@@ -23,16 +23,13 @@ class ProjectInfo {
   QDateTime createTime() const;
   QString rootPath() const;
   QString projectFilePath() const;
-  QStringList recentFiles() const;
   QVariantMap settings() const;
 
   // Setters
   void setVersion(const QString& v);
   void setName(const QString& n);
   void setCreateTime(const QDateTime& t);
-  void setRootPath(const QString& p);
   void setProjectFilePath(const QString& p);
-  void setRecentFiles(const QStringList& files);
   void setSettings(const QVariantMap& s);
 
   // 序列化
@@ -63,9 +60,7 @@ class ProjectInfo {
   QString version_{"1.0"};
   QString name_;
   QDateTime create_time_;
-  QString root_path_;
   QString project_file_path_;
-  QStringList recent_files_;
   QVariantMap settings_;
 };
 

@@ -115,21 +115,37 @@ MainWindow::MainWindow(QWidget* parent)
   LOG_INFO("MAIN", "主窗口初始化完成");
 }
 
-bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
-  switch (event->type()) {
-    case QEvent::MouseMove:
-    case QEvent::MouseButtonPress:
-    case QEvent::KeyPress:
-    case QEvent::Wheel:
-      if (tux_controller_) {
-        tux_controller_->onUserActivity();
-      }
-      break;
-    default:
-      break;
+namespace {
+
+class ScreenSaverWatcher : public QObject {
+ public:
+  explicit ScreenSaverWatcher(etest::app::TuxSaverController* ctrl,
+                              QObject* parent = nullptr)
+      : QObject(parent), ctrl_(ctrl) {}
+
+ protected:
+  bool eventFilter(QObject* obj, QEvent* event) override {
+    Q_UNUSED(obj)
+    switch (event->type()) {
+      case QEvent::MouseMove:
+      case QEvent::MouseButtonPress:
+      case QEvent::KeyPress:
+      case QEvent::Wheel:
+        if (ctrl_) {
+          ctrl_->onUserActivity();
+        }
+        break;
+      default:
+        break;
+    }
+    return false;
   }
-  return SARibbonMainWindow::eventFilter(obj, event);
-}
+
+ private:
+  etest::app::TuxSaverController* ctrl_ = nullptr;
+};
+
+}  // namespace
 
 MainWindow::~MainWindow() {
   // 清除ProjectManager中的脏检查回调，避免悬空指针
@@ -1263,7 +1279,7 @@ void MainWindow::lazyInit() {
   step_timer.restart();
   tux_controller_ = new TuxSaverController(this, this);
   tux_controller_->start();
-  qApp->installEventFilter(this);  // 全局事件捕获，用于重置屏保空闲计时器
+  qApp->installEventFilter(new ScreenSaverWatcher(tux_controller_, this));
   LOG_INFO("LAZY", "  [12/12] Tux 屏保: {} ms", step_timer.elapsed());
 
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,

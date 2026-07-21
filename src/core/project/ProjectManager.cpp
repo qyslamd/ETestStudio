@@ -155,7 +155,6 @@ bool ProjectManager::createProject(const QString& name,
     info->setVersion("1.0");
     info->setName(name);
     info->setCreateTime(QDateTime::currentDateTime());
-    info->setRootPath(projectDir);
     info->setProjectFilePath(etprojPath);
 
     // 写入.etproj文件
@@ -216,14 +215,7 @@ bool ProjectManager::openProject(const QString& filePath) {
     return false;
   }
 
-  // 修正rootPath为绝对路径
   QFileInfo fi(filePath);
-  QString rootPath = info->rootPath();
-  if (QDir::isRelativePath(rootPath)) {
-    rootPath = fi.absoluteDir().filePath(rootPath);
-    info->setRootPath(rootPath);
-  }
-
   QString projectPath = info->rootPath();
   m_impl->current_project = std::move(info);
 
@@ -330,7 +322,7 @@ bool ProjectManager::doCloseProject() {
     return true;
   }
 
-  // 保存recent_files等信息
+  // 保存项目文件
   m_impl->current_project->saveToFile();
 
   LOG_INFO("PROJECT", "项目关闭");

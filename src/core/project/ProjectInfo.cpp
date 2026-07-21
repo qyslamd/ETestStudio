@@ -21,17 +21,18 @@ ProjectInfo::ProjectInfo(const QString& filePath) {
 QString ProjectInfo::version() const { return version_; }
 QString ProjectInfo::name() const { return name_; }
 QDateTime ProjectInfo::createTime() const { return create_time_; }
-QString ProjectInfo::rootPath() const { return root_path_; }
+QString ProjectInfo::rootPath() const {
+  if (project_file_path_.isEmpty()) return {};
+  QFileInfo fi(project_file_path_);
+  return fi.absoluteDir().absolutePath();
+}
 QString ProjectInfo::projectFilePath() const { return project_file_path_; }
-QStringList ProjectInfo::recentFiles() const { return recent_files_; }
 QVariantMap ProjectInfo::settings() const { return settings_; }
 
 void ProjectInfo::setVersion(const QString& v) { version_ = v; }
 void ProjectInfo::setName(const QString& n) { name_ = n; }
 void ProjectInfo::setCreateTime(const QDateTime& t) { create_time_ = t; }
-void ProjectInfo::setRootPath(const QString& p) { root_path_ = p; }
 void ProjectInfo::setProjectFilePath(const QString& p) { project_file_path_ = p; }
-void ProjectInfo::setRecentFiles(const QStringList& files) { recent_files_ = files; }
 void ProjectInfo::setSettings(const QVariantMap& s) { settings_ = s; }
 
 QJsonObject ProjectInfo::toJson() const {
@@ -39,8 +40,6 @@ QJsonObject ProjectInfo::toJson() const {
   obj["version"] = version_;
   obj["name"] = name_;
   obj["create_time"] = create_time_.toString("yyyy-MM-dd HH:mm:ss");
-  obj["root_path"] = root_path_;
-  obj["recent_files"] = QJsonArray::fromStringList(recent_files_);
   obj["settings"] = QJsonObject::fromVariantMap(settings_);
 
   return obj;
@@ -55,23 +54,15 @@ bool ProjectInfo::fromJson(const QJsonObject& json) {
   name_ = json["name"].toString();
   create_time_ = QDateTime::fromString(json["create_time"].toString(),
                                        "yyyy-MM-dd HH:mm:ss");
-  root_path_ = json["root_path"].toString("./");
-
-  recent_files_.clear();
-  if (json.contains("recent_files")) {
-    QJsonArray arr = json["recent_files"].toArray();
-    for (const auto& item : arr) {
-      recent_files_.append(item.toString());
-    }
-  }
 
   settings_.clear();
   if (json.contains("settings")) {
     settings_ = json["settings"].toObject().toVariantMap();
   }
 
-  // 旧版 .etproj 文件可能包含 topology/protocols/test_programs/reports 字段，
-  // 这些已废弃，从文件系统读取。此处静默忽略以保证向后兼容。
+  // 旧版 .etproj 文件可能包含 root_path / recent_files / topology / protocols
+  // 及 test_programs / reports 字段，这些已废弃，从文件系统读取。
+  // 此处静默忽略以保证向后兼容。
 
   return true;
 }
@@ -116,40 +107,40 @@ bool ProjectInfo::saveToFile(const QString& filePath) const {
 }
 
 bool ProjectInfo::isValid() const {
-  return !name_.isEmpty() && !root_path_.isEmpty();
+  return !name_.isEmpty() && !project_file_path_.isEmpty();
 }
 
 QString ProjectInfo::scriptsPath() const {
-  return QDir(root_path_).filePath("scripts");
+  return QDir(rootPath()).filePath("scripts");
 }
 
 QString ProjectInfo::protocolPath() const {
-  return QDir(root_path_).filePath("protocol");
+  return QDir(rootPath()).filePath("protocol");
 }
 
 QString ProjectInfo::configPath() const {
-  return QDir(root_path_).filePath("config");
+  return QDir(rootPath()).filePath("config");
 }
 
 QString ProjectInfo::backupPath() const {
-  return QDir(root_path_).filePath("backup");
+  return QDir(rootPath()).filePath("backup");
 }
 
 QString ProjectInfo::topologyPath() const {
-  return QDir(root_path_).filePath("topology");
+  return QDir(rootPath()).filePath("topology");
 }
 
 QString ProjectInfo::reportsPath() const {
-  return QDir(root_path_).filePath("reports");
+  return QDir(rootPath()).filePath("reports");
 }
 
 QString ProjectInfo::casesPath() const {
-  return QDir(root_path_).filePath("cases");
+  return QDir(rootPath()).filePath("cases");
 }
 
 QStringList ProjectInfo::scanDirectory(const QString& subDir,
                                        const QString& suffix) const {
-  QDir dir(QDir(root_path_).filePath(subDir));
+  QDir dir(QDir(rootPath()).filePath(subDir));
   if (!dir.exists()) return {};
 
   QStringList result;
@@ -164,7 +155,7 @@ QStringList ProjectInfo::scanDirectory(const QString& subDir,
 
 QStringList ProjectInfo::scanDirectory(const QString& subDir,
                                         const QStringList& suffixes) const {
-  QDir dir(QDir(root_path_).filePath(subDir));
+  QDir dir(QDir(rootPath()).filePath(subDir));
   if (!dir.exists()) return {};
 
   QStringList filters;

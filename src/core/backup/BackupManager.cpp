@@ -7,10 +7,8 @@
 #include "config/ConfigManager.h"
 #include "config/ConfigDefs.h"
 #include "logger/Logger.h"
-#include "project/ProjectInfo.h"
 
 using namespace etest::core::config;
-using namespace etest::core::project;
 
 namespace etest {
 namespace core {
@@ -99,9 +97,7 @@ QList<QFileInfo> BackupManager::listBackups() const {
     return {};
   }
 
-  ProjectInfo info;
-  info.setRootPath(currentProjectPath_);
-  QDir backupDir(info.backupPath());
+  QDir backupDir(QDir(currentProjectPath_).filePath("backup"));
 
   if (!backupDir.exists()) {
     return {};
@@ -138,9 +134,7 @@ bool BackupManager::performBackup() {
   if (!customPath.isEmpty()) {
     backupDirPath = customPath;
   } else {
-    ProjectInfo info;
-    info.setRootPath(currentProjectPath_);
-    backupDirPath = info.backupPath();
+    backupDirPath = QDir(currentProjectPath_).filePath("backup");
   }
 
   QDir backupDir(backupDirPath);
@@ -175,9 +169,7 @@ void BackupManager::cleanupOldBackups() {
   if (!customPath.isEmpty()) {
     backupDirPath = customPath;
   } else {
-    ProjectInfo info;
-    info.setRootPath(currentProjectPath_);
-    backupDirPath = info.backupPath();
+    backupDirPath = QDir(currentProjectPath_).filePath("backup");
   }
 
   QDir backupDir(backupDirPath);

@@ -60,8 +60,8 @@ class WisdomDatabase::Impl {
 WisdomDatabase::~WisdomDatabase() { delete impl_; }
 
 WisdomDatabase& WisdomDatabase::instance() {
-  static WisdomDatabase db;
-  return db;
+  static WisdomDatabase* db = new WisdomDatabase();
+  return *db;
 }
 
 QVector<PoemData> WisdomDatabase::initDatabase(const QString& writablePath) {

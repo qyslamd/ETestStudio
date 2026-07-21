@@ -89,8 +89,41 @@
   (commit 466f6ce)
 
 - [x] **topology-demo 浅色主题 + SVG 图标修复**
-  添加 resource.qrc、AUTORCC、setDarkTheme(false)
-  (commit 7e15c75)
+   添加 resource.qrc、AUTORCC、setDarkTheme(false)
+   (commit 7e15c75)
+
+## 跨平台坑点记录
+
+### 函数局部静态单例 + QSqlDatabase 的析构顺序问题
+
+**现象**：`WisdomDatabase::instance()` 使用函数局部 `static WisdomDatabase db`，程序退出时析构函数访问 `QSqlDatabase::contains()` 导致 SIGSEGV。
+**仅在 GCC（Linux）上复现**，MSVC（Windows）上安全。
+
+**原因**：
+- 函数局部静态变量在首次调用时构造，在程序退出时以**构造的逆序**析构（§[basic.start.term]）
+- QSqlDatabase 内部维护一个全局连接注册表（也是静态存储期），其析构时机由 Qt 内部决定
+- GCC 和 MSVC 对**不同编译单元**（Qt 库 vs 用户代码）中静态变量的析构顺序有不同的实现策略
+- GCC 倾向于先析构用户代码中的静态对象，此时 QSqlDatabase 的注册表可能已被析构 → `QSqlDatabase::contains()` 访问已销毁内存 → SIGSEGV
+- MSVC 的析构顺序恰好相反，因此从未暴露
+
+**教训**：**凡是持有 QSqlDatabase 连接的单例，不应依赖析构函数来清理连接。** 因为无法保证你的析构函数在 QSqlDatabase 内部静态数据销毁之前执行。
+
+**修复方案**：改为堆分配单例，永不析构。这与 `QCoreApplication` 的典型模式一致——让 Qt 在 `QCoreApplication` 析构时自行清理 SQL 连接注册表。
+
+```cpp
+WisdomDatabase& WisdomDatabase::instance() {
+  static WisdomDatabase* db = new WisdomDatabase();
+  return *db;
+}
+```
+
+**适用场景**：任何在全局/静态生命周期中使用 Qt 资源（`QSqlDatabase`、`QNetworkAccessManager`、`QThread`、`QTimer` 等）的单例或静态对象。
+
+**一般性建议**：
+1. 函数局部静态变量适用于**纯数据**或**不依赖 Qt 内部静态数据的对象**
+2. 如果对象依赖 Qt 类（特别是涉及全局注册表的类如 `QSqlDatabase`），优先考虑堆分配（`new` + 永不 `delete`）
+3. 或者将初始化/清理托管给 `QCoreApplication` 的生命周期（如 `aboutToQuit` 信号中手动清理）
+4. 跨平台代码**必须**在 GCC 和 MSVC 下都测试退出路径——析构顺序是未定义行为，标准不保证一致性
 
 ## SARibbon的固定收起按钮
 ```txt
