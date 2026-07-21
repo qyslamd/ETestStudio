@@ -9,6 +9,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <limits>
 
 #include <execinfo.h>
 #include <fcntl.h>
@@ -18,6 +19,26 @@
 // dlfcn.h 预留：未来 V2 版本用 dladdr() 解析符号名
 
 #include "logger/Logger.h"
+
+namespace {
+// 崩溃日志文件名片段（编译期常量，sizeof 含 '\0'）
+constexpr char kCrashFilePrefix[] = "/etest_crash_";
+constexpr char kCrashFileExt[] = ".log";
+
+// long long 十进制最大位数（含符号位）
+constexpr size_t kTimestampMaxLen =
+    std::numeric_limits<long long>::digits10 + 1;
+
+// 终端提示文本片段
+constexpr char kTermCrashPrefix[] = "\n[ETestStudio] 程序崩溃 (";
+constexpr char kTermCrashMid[] = ")\n崩溃日志已写入: ";
+constexpr char kTermCrashSuffix[] = "\n使用 addr2line 解析调用栈地址。\n";
+
+/// 用 write 输出 C 字符串字面量，自动推导长度
+inline void writeStr(int fd, const char* s) {
+  write(fd, s, strlen(s));
+}
+}  // namespace
 
 namespace etest {
 namespace core {
@@ -170,18 +191,22 @@ void LinuxCrashHandler::doCrashDump(int signum, siginfo_t* info) {
   void* buffer[64];
   int frames = backtrace(buffer, 64);
 
-  // 2. 组装文件路径
-  char filepath[4096];
+  // 2. 组装文件路径：dump_path_ + kCrashFilePrefix + 时间戳 + kCrashFileExt
+  //    所有尺寸编译期推导，无魔数
+  char filepath[sizeof(s_instance->dump_path_)
+                + sizeof(kCrashFilePrefix) - 1
+                + kTimestampMaxLen
+                + sizeof(kCrashFileExt) - 1];
   time_t now = time(nullptr);
-  snprintf(filepath, sizeof(filepath), "%s/etest_crash_%lld.log",
-           s_instance->dump_path_, static_cast<long long>(now));
+  snprintf(filepath, sizeof(filepath), "%s%s%lld%s",
+           s_instance->dump_path_, kCrashFilePrefix,
+           static_cast<long long>(now), kCrashFileExt);
 
   // 3. 打开日志文件
   int fd = open(filepath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
   if (fd < 0) {
     // 降级：写入 stderr
-    const char* msg = "CrashHandler: 无法创建崩溃日志文件\n";
-    write(STDERR_FILENO, msg, strlen(msg));
+    writeStr(STDERR_FILENO, "CrashHandler: 无法创建崩溃日志文件\n");
     return;
   }
 
@@ -210,23 +235,17 @@ void LinuxCrashHandler::doCrashDump(int signum, siginfo_t* info) {
   backtrace_symbols_fd(buffer, frames, fd);
 
   // 8. 写入回调提示
-  const char* callbackNote =
-      "\n=== 提示 ===\n回调因信号安全约束未执行，请查看日志文件。\n"
-      "使用 addr2line -e <可执行文件> -f -C <地址> 解析调用栈。\n";
-  write(fd, callbackNote, strlen(callbackNote));
+  writeStr(fd, "\n=== 提示 ===\n回调因信号安全约束未执行，请查看日志文件。\n"
+               "使用 addr2line -e <可执行文件> -f -C <地址> 解析调用栈。\n");
 
   close(fd);
 
-  // 9. 输出到终端
-  char termMsg[4096];
-  int termLen = snprintf(termMsg, sizeof(termMsg),
-                         "\n[ETestStudio] 程序崩溃 (%s)\n"
-                         "崩溃日志已写入: %s\n"
-                         "使用 addr2line 解析调用栈地址。\n",
-                         getSignalName(signum), filepath);
-  if (termLen > 0) {
-    write(STDERR_FILENO, termMsg, static_cast<size_t>(termLen));
-  }
+  // 9. 输出到终端：用多次 write 替代 snprintf 拼接，零缓冲零魔数
+  writeStr(STDERR_FILENO, kTermCrashPrefix);
+  writeStr(STDERR_FILENO, getSignalName(signum));
+  writeStr(STDERR_FILENO, kTermCrashMid);
+  writeStr(STDERR_FILENO, filepath);
+  writeStr(STDERR_FILENO, kTermCrashSuffix);
 }
 
 void LinuxCrashHandler::signalHandler(int signum, siginfo_t* info,
