@@ -385,9 +385,14 @@ void ProjectStructureWidget::initSignals() {
 
           QMenu menu(recent_projects_view_);
           menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+          auto* copyPathAction = menu.addAction(QStringLiteral("复制路径"));
+          menu.addSeparator();
           auto* removeAction = menu.addAction(QStringLiteral("从列表中移除"));
-          if (menu.exec(recent_projects_view_->viewport()->mapToGlobal(pos)) ==
-              removeAction) {
+          QAction* chosen =
+              menu.exec(recent_projects_view_->viewport()->mapToGlobal(pos));
+          if (chosen == copyPathAction) {
+            QApplication::clipboard()->setText(path);
+          } else if (chosen == removeAction) {
             auto& cfg = etest::core::config::ConfigManager::instance();
             QStringList recentList = cfg.get<QStringList>(
                 etest::core::config::CONFIG_RECENT_PROJECT_LIST);
