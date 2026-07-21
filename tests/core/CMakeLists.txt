@@ -16,7 +16,7 @@ add_etest(
     LABELS CORE
 )
 
-# 崩溃捕获模块测试（仅Windows实现）
+# 崩溃捕获模块测试
 if(WIN32)
     add_etest(
         NAME test_core_crashhandler
@@ -29,6 +29,14 @@ if(WIN32)
     set(TARGET_NAME test_core_crashhandler)
     configure_file("${CMAKE_SOURCE_DIR}/cmake/run_disabled_test.bat.in"
                    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run_${TARGET_NAME}_disabled.bat" @ONLY)
+else()
+    add_etest(
+        NAME test_core_crashhandler
+        SOURCES crashhandler_test.cpp
+        LIBS etest_core
+        QT_MODULES Core Test Widgets
+        LABELS CORE
+    )
 endif()
 
 # 工具类测试

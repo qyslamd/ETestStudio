@@ -6,6 +6,8 @@
 
 #ifdef Q_OS_WIN
 #include "WindowsCrashHandler.h"
+#else
+#include "LinuxCrashHandler.h"
 #endif
 
 namespace etest {
@@ -16,8 +18,7 @@ std::unique_ptr<CrashHandler> CrashHandler::create() {
 #ifdef Q_OS_WIN
     return std::make_unique<WindowsCrashHandler>();
 #else
-    // TODO: Linux平台实现
-    return nullptr;
+    return std::make_unique<LinuxCrashHandler>();
 #endif
 }
 
