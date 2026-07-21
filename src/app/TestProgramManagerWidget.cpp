@@ -75,13 +75,6 @@ void TestProgramManagerWidget::initSignals() {
   connect(new_btn_, &QPushButton::clicked, this,
           &TestProgramManagerWidget::onNewTestProgram);
 
-  // 勾选状态变化 → 通知外部（如 ribbon 状态同步）
-  connect(tree_, &QTreeWidget::itemChanged, this,
-          [this](QTreeWidgetItem*, int column) {
-            if (column == 0) {
-              emit checkedProgramsChanged();
-            }
-          });
 }
 
 QString TestProgramManagerWidget::selectedProgramPath() const {
@@ -90,28 +83,6 @@ QString TestProgramManagerWidget::selectedProgramPath() const {
     return {};
   }
   return item->data(0, Qt::UserRole).toString();
-}
-
-TestProgramData TestProgramManagerWidget::loadSelectedProgramData() const {
-  QString path = selectedProgramPath();
-  if (path.isEmpty()) {
-    return {};
-  }
-  return loadTestProgram(path);
-}
-
-QStringList TestProgramManagerWidget::checkedProgramPaths() const {
-  QStringList paths;
-  for (int i = 0; i < tree_->topLevelItemCount(); ++i) {
-    auto* item = tree_->topLevelItem(i);
-    if (item->checkState(0) == Qt::Checked) {
-      QString path = item->data(0, Qt::UserRole).toString();
-      if (!path.isEmpty()) {
-        paths.append(path);
-      }
-    }
-  }
-  return paths;
 }
 
 bool TestProgramManagerWidget::hasAnyProgram() const {
@@ -137,8 +108,6 @@ void TestProgramManagerWidget::refreshList() {
     item->setText(0, QFileInfo(absPath).completeBaseName());
     item->setData(0, Qt::UserRole, absPath);
     item->setToolTip(0, absPath);
-    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-    item->setCheckState(0, Qt::Unchecked);
 
     // 解析该文件中的测试用例作为子节点
     TestProgramData suite = loadTestProgram(absPath);
