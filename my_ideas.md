@@ -125,6 +125,31 @@ WisdomDatabase& WisdomDatabase::instance() {
 3. 或者将初始化/清理托管给 `QCoreApplication` 的生命周期（如 `aboutToQuit` 信号中手动清理）
 4. 跨平台代码**必须**在 GCC 和 MSVC 下都测试退出路径——析构顺序是未定义行为，标准不保证一致性
 
+### Linux Debug 比 Windows Debug 快——Debug CRT 与 Qt 编译模式不对称
+
+**现象**：WSL2 Ubuntu 上 `-g` 编译的 Debug 程序比 Windows 本机 Debug 程序流畅很多。
+UI 响应、文件操作均有明显差距，实际逻辑相同。
+
+**原因**：
+- Windows Debug 模式下，MSVC 的 `/MDd`（Debug CRT）自动启用堆验证（填充 `0xDD`/
+  `0xFD`/`0xCC`）、每次 malloc/free 做完整边界检查、STL checked iterators 跑全量
+  范围校验。这些是**运行时开销**，与是否启动 VS 调试器无关
+- Qt 官方 Windows 发布包包含 `Qt5Widgetsd.dll`（Debug 版），全链路走 Debug 路径；
+  Linux 上 `apt` 装的 Qt 是 Release 版（`libqt5widgets.so`），即使 CMake 传
+  `-DCMAKE_BUILD_TYPE=Debug` 也只影响你自己的代码
+- GCC 的 `-g` 只生成 DWARF 调试符号（按需加载，零运行时开销），不开任何额外的
+  运行时检查
+
+**教训**：
+1. 跨平台对比性能时，必须意识到底层运行时库的差异——Windows Debug CRT 的开销不是
+   "调试符号"问题，而是**代码路径根本不同**
+2. 如果要在 Windows 上获得接近 Linux Debug 的响应速度，要么用 Release 编译，要么
+   用 `/MD` 替代 `/MDd`（但会失去堆检查和 checked iterators）
+3. `set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "Embedded")` + `/MD`（不加 `d`）可以
+   生成带调试信息的 Release 运行时模式，适合需要调试符号但又不想牺牲性能的场景
+4. 这个差异不影响逻辑正确性，只影响交互体验——适合在需要高频 UI 调试（布局、动画
+   调参）时临时切到 Linux 环境
+
 ## SARibbon的固定收起按钮
 ```txt
 
