@@ -1107,6 +1107,7 @@ void MainWindow::lazyInit() {
   // ── central_stack page 切换 → category 显隐 + 编辑 action 副作用 ──
   connect(central_stack_, &QStackedWidget::currentChanged, this,
           [this](int index) {
+            LOG_DEBUG("PAGE", "central_stack currentChanged -> page{}", index);
             // 副作用：编辑 action 的 ApplicationShortcut 在 page1 必须禁用
             if (index == 1) {
               disableEditActions();
@@ -1136,6 +1137,7 @@ void MainWindow::lazyInit() {
   connect(ribbonBar(), &SARibbonBar::currentRibbonTabChanged, this,
           [this](int index) {
             if (switching_page_) {
+              LOG_DEBUG("PAGE", "ribbon tab change skip (guard)");
               return;
             }
             switching_page_ = true;
@@ -1143,14 +1145,17 @@ void MainWindow::lazyInit() {
             auto* cat = ribbonBar()->categoryByIndex(index);
             if (cat) {
               if (cat->objectName() == QStringLiteral("CategoryExec")) {
-                // 执行组 tab → page1
+                LOG_DEBUG("PAGE", "ribbon tab[{}]='执行' -> page1", index);
                 central_stack_->setCurrentIndex(1);
               } else if (cat->categoryName() != QStringLiteral("工具") &&
                          cat->categoryName() != QStringLiteral("帮助")) {
-                // 编辑组 tab（主页/视图）→ page0
+                LOG_DEBUG("PAGE", "ribbon tab[{}]='{}' -> page0", index,
+                          cat->categoryName().toStdString());
                 central_stack_->setCurrentIndex(0);
+              } else {
+                LOG_DEBUG("PAGE", "ribbon tab[{}]='{}' (公共组, 不切页)",
+                          index, cat->categoryName().toStdString());
               }
-              // 公共组（工具/帮助）不切页
             }
 
             switching_page_ = false;
@@ -1159,6 +1164,7 @@ void MainWindow::lazyInit() {
   // ── 验证问题项双击 → 导航到 page0 对应 sidebar 页 ──
   connect(execution_controller_, &ExecutionPanelController::navigateRequested,
           this, [this](NavTarget target) {
+            LOG_INFO("MAIN_UI", "导航请求 [target={}]", static_cast<int>(target));
             // 切回 page0
             central_stack_->setCurrentIndex(0);
             // 同步将 ribbon 切到编辑组（当前高亮的是「执行」tab，视觉不一致）

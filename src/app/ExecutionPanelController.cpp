@@ -313,41 +313,39 @@ void ExecutionPanelController::syncControlStates() {
 }
 
 bool ExecutionPanelController::checkCanVerify() const {
-  // 仅检查项目是否已打开——ICD/拓扑/程序可用性由 verify() 自行发现和报告，
-  // 不在 enable 门限重复拦截，确保验证按钮始终可点以展示完整的缺失清单
-  return etest::core::project::ProjectManager::instance().isProjectOpen();
+  bool ok = etest::core::project::ProjectManager::instance().isProjectOpen();
+  LOG_DEBUG("ENABLE", "checkCanVerify={}", ok);
+  return ok;
 }
 
 bool ExecutionPanelController::checkCanRunAll() const {
-  // 1. 基本预条件（项目/ICD/拓扑）
   if (!checkCanVerify()) {
+    LOG_DEBUG("ENABLE", "checkCanRunAll=false (checkCanVerify)");
     return false;
   }
-  // 2. 必须通过验证
   if (!debug_widget_ || !debug_widget_->canRun()) {
+    LOG_DEBUG("ENABLE", "checkCanRunAll=false (canRun={})",
+              debug_widget_ ? debug_widget_->canRun() : false);
     return false;
   }
-  // 3. 项目有 .etprog（popup 全集非空即可）
-  if (popup_ && popup_->hasAnyProgram()) {
-    return true;
-  }
-  return false;
+  bool has = popup_ && popup_->hasAnyProgram();
+  LOG_DEBUG("ENABLE", "checkCanRunAll={}", has);
+  return has;
 }
 
 bool ExecutionPanelController::checkCanRun() const {
-  // 1. 基本预条件（项目/ICD/拓扑）
   if (!checkCanVerify()) {
+    LOG_DEBUG("ENABLE", "checkCanRun=false (checkCanVerify)");
     return false;
   }
-  // 2. 必须通过验证
   if (!debug_widget_ || !debug_widget_->canRun()) {
+    LOG_DEBUG("ENABLE", "checkCanRun=false (canRun={})",
+              debug_widget_ ? debug_widget_->canRun() : false);
     return false;
   }
-  // 3. 有明确的运行目标（popup 选中集合非空）
-  if (popup_ && !popup_->selectedPaths().isEmpty()) {
-    return true;
-  }
-  return false;
+  bool sel = popup_ && !popup_->selectedPaths().isEmpty();
+  LOG_DEBUG("ENABLE", "checkCanRun={}", sel);
+  return sel;
 }
 
 void ExecutionPanelController::updateRunControls() {
@@ -581,6 +579,7 @@ void ExecutionPanelController::verify() {
   }
 
   problems->showSummary(errors, warnings);
+  LOG_INFO("MAIN_UI", "校验完成 [errors={}, warnings={}]", errors, warnings);
 
   // 有问题时自动切到 page1 底部「问题」tab
   if (errors > 0 || warnings > 0) {
