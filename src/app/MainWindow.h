@@ -27,7 +27,6 @@ class ActivityBarWidget;
 class SidebarWidget;
 class ExecutionOutputPanel;
 class LogOutputPanel;
-class ProblemsPanel;
 class SettingsDialog;
 class TerminalPanel;
 class BottomContainerWidget;
@@ -148,7 +147,6 @@ class MainWindow : public SARibbonMainWindow {
   // 底部面板
   LogOutputPanel* log_panel_ = nullptr;
   ExecutionOutputPanel* execution_output_panel_ = nullptr;
-  ProblemsPanel* problems_panel_ = nullptr;
   TerminalPanel* terminal_panel_ = nullptr;
   BottomContainerWidget* bottom_container_ = nullptr;
   int bottom_container_height_ = 200;
@@ -171,7 +169,6 @@ class MainWindow : public SARibbonMainWindow {
   QMenu* recent_projects_menu_ = nullptr;
   QMenu* recent_files_menu_ = nullptr;
   QAction* view_output_action_ = nullptr;
-  QAction* view_problems_action_ = nullptr;
   QAction* view_terminal_action_ = nullptr;
   QAction* view_aux_sidebar_action_ = nullptr;
   QAction* new_project_action_ = nullptr;

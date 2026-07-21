@@ -91,7 +91,6 @@
 #include "widgets/HintBarWidget.h"
 #include "widgets/LoadingOverlay.h"
 #include "widgets/LogOutputPanel.h"
-#include "widgets/ProblemsPanel.h"
 #include "widgets/ProgramSelectionPopup.h"
 
 using namespace etest::core::config;
@@ -335,14 +334,6 @@ void MainWindow::initSignalsLate() {
           [this, updateContainerVisibility](bool checked) {
             LOG_INFO("MAIN_UI", "切换「日志」面板 [visible={}]", checked);
             int idx = bottom_container_->indexOf(log_panel_);
-            if (idx >= 0)
-              bottom_container_->setPanelVisible(idx, checked);
-            updateContainerVisibility();
-          });
-  connect(view_problems_action_, &QAction::triggered, this,
-          [this, updateContainerVisibility](bool checked) {
-            LOG_INFO("MAIN_UI", "切换「问题」面板 [visible={}]", checked);
-            int idx = bottom_container_->indexOf(problems_panel_);
             if (idx >= 0)
               bottom_container_->setPanelVisible(idx, checked);
             updateContainerVisibility();
@@ -952,14 +943,10 @@ void MainWindow::initSignalsLate() {
   connect(bottom_container_, &BottomContainerWidget::panelVisibilityChanged,
           this, [this, updateContainerVisibility]() {
             int outIdx = bottom_container_->indexOf(log_panel_);
-            int probIdx = bottom_container_->indexOf(problems_panel_);
             int termIdx = bottom_container_->indexOf(terminal_panel_);
             if (outIdx >= 0)
               view_output_action_->setChecked(
                   bottom_container_->isPanelVisible(outIdx));
-            if (probIdx >= 0)
-              view_problems_action_->setChecked(
-                  bottom_container_->isPanelVisible(probIdx));
             if (termIdx >= 0)
               view_terminal_action_->setChecked(
                   bottom_container_->isPanelVisible(termIdx));
@@ -1059,16 +1046,13 @@ void MainWindow::lazyInit() {
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
   // 3. 创建底部面板（显隐/尺寸在 lazyInit 末尾由 restoreLazyState 恢复）
+  // 注：page0 不再创建 ProblemsPanel，验证结果统一在 page1 底部「问题」tab（阶段三）
   step_timer.restart();
   log_panel_ = new LogOutputPanel(this);
   execution_output_panel_ = new ExecutionOutputPanel(this);
-  problems_panel_ = new ProblemsPanel(this);
   terminal_panel_ = new TerminalPanel(this);
   bottom_container_->addPanel(QStringLiteral("日志"), log_panel_,
                               QStringLiteral("tab_output"));
-
-  bottom_container_->addPanel(QStringLiteral("问题"), problems_panel_,
-                              QStringLiteral("tab_problems"));
   bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_,
                               QStringLiteral("tab_terminal"));
   LOG_INFO("LAZY", "  [3/12] 底部面板: {} ms", step_timer.elapsed());
@@ -1095,11 +1079,11 @@ void MainWindow::lazyInit() {
 
   // 执行控制器依赖注入（signal_registry_/icd_repository_ 项目打开时才可用）
   // test_program_mgr 传 nullptr — 运行目标已改用 popup（阶段二），
-  // 期三改签名时正式移除该参数
+  // test_program_mgr 传 nullptr - 运行目标已改用 popup（阶段二），参数位保留待后续清理
   execution_controller_->postInit(
       execution_output_panel_, nullptr, nullptr,
       editor_manager_, nullptr,
-      problems_panel_, bottom_container_, status_bar_ctrl_);
+      status_bar_ctrl_);
   execution_controller_->setCentralStack(central_stack_);
   execution_controller_->setDashboard(exec_dashboard_page_);
   exec_dashboard_page_->setOutputPanel(execution_output_panel_);
@@ -1233,24 +1217,19 @@ void MainWindow::lazyInit() {
     }
     bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
     bool outVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_LOG_VISIBLE, true);
-    bool probVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_PROBLEMS_VISIBLE, true);
     bool termVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE, true);
 
     int outIdx = bottom_container_->indexOf(log_panel_);
-    int probIdx = bottom_container_->indexOf(problems_panel_);
     int termIdx = bottom_container_->indexOf(terminal_panel_);
     if (outIdx >= 0)
       bottom_container_->setPanelVisible(outIdx, outVis);
-    if (probIdx >= 0)
-      bottom_container_->setPanelVisible(probIdx, probVis);
     if (termIdx >= 0)
       bottom_container_->setPanelVisible(termIdx, termVis);
 
     view_output_action_->setChecked(outVis);
-    view_problems_action_->setChecked(probVis);
     view_terminal_action_->setChecked(termVis);
 
-    bool anyVisible = outVis || probVis || termVis;
+    bool anyVisible = outVis || termVis;
     if (anyVisible) {
       bottom_container_->show();
       auto vSizes = v_splitter_->sizes();
@@ -2132,13 +2111,6 @@ void MainWindow::setupRibbon() {
     view_output_action_->setChecked(true);
     panel_panels->addLargeAction(view_output_action_);
 
-    view_problems_action_ = new QAction(QStringLiteral("问题"), this);
-    view_problems_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("tab_problems")));
-    view_problems_action_->setCheckable(true);
-    view_problems_action_->setChecked(true);
-    panel_panels->addLargeAction(view_problems_action_);
-
     view_terminal_action_ = new QAction(QStringLiteral("终端"), this);
     view_terminal_action_->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("tab_terminal")));
@@ -2348,14 +2320,10 @@ void MainWindow::saveWindowState() {
 
   // 底部面板状态（逐面板可见性 + 容器高度）
   int outIdx = bottom_container_->indexOf(log_panel_);
-  int probIdx = bottom_container_->indexOf(problems_panel_);
   int termIdx = bottom_container_->indexOf(terminal_panel_);
   if (outIdx >= 0)
     cfg.set(CONFIG_BOTTOM_PANEL_LOG_VISIBLE,
             bottom_container_->isPanelVisible(outIdx));
-  if (probIdx >= 0)
-    cfg.set(CONFIG_BOTTOM_PANEL_PROBLEMS_VISIBLE,
-            bottom_container_->isPanelVisible(probIdx));
   if (termIdx >= 0)
     cfg.set(CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE,
             bottom_container_->isPanelVisible(termIdx));

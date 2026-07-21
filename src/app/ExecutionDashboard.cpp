@@ -1,12 +1,16 @@
 #include "ExecutionDashboard.h"
 
 #include <QSplitter>
+#include <QTabBar>
+#include <QTabWidget>
 #include <QVBoxLayout>
 
 #include "ExecutionDebugWidget.h"
 #include "SignalTreePanel.h"
 #include "VisualizationArea.h"
+#include "libui/styles/TabBarStyle.h"
 #include "widgets/ExecutionOutputPanel.h"
+#include "widgets/ProblemsPanel.h"
 
 namespace etest::app {
 
@@ -24,7 +28,7 @@ void ExecutionDashboard::initUi() {
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
-  // ── 垂直 splitter：上方三列 + 下方输出面板 ──
+  // ── 垂直 splitter：上方三列 + 下方输出/问题 tab ──
   vert_splitter_ = new QSplitter(Qt::Vertical, this);
   vert_splitter_->setObjectName(QStringLiteral("ExecVertSplitter"));
 
@@ -48,8 +52,19 @@ void ExecutionDashboard::initUi() {
 
   vert_splitter_->addWidget(main_splitter_);
 
-  // ── 底部输出面板占位（由 MainWindow 通过 setOutputPanel 注入） ──
-  // output_panel_ 初始为 nullptr，注入后会被加到 vert_splitter_
+  // ── 底部输出/问题 tab ──
+  bottom_tabs_ = new QTabWidget(vert_splitter_);
+  bottom_tabs_->setObjectName(QStringLiteral("ExecBottomTabs"));
+  bottom_tabs_->setTabPosition(QTabWidget::North);
+  bottom_tabs_->setDocumentMode(true);
+  bottom_tabs_->tabBar()->setElideMode(Qt::ElideRight);
+  bottom_tabs_->tabBar()->setUsesScrollButtons(true);
+  // 与 page0 BottomContainerWidget 统一 tab 外观（Chrome 风格圆角 tab）
+  TabBarStyle::install(bottom_tabs_->tabBar(), QSize(110, 28));
+  // 输出 tab：占位，setOutputPanel 注入后填入
+  // 问题 tab：内部创建 ProblemsPanel
+  problems_panel_ = new ProblemsPanel(bottom_tabs_);
+  bottom_tabs_->addTab(problems_panel_, QStringLiteral("问题"));
 
   vert_splitter_->setStretchFactor(0, 1);
   vert_splitter_->setSizes({700, 200});
@@ -58,7 +73,7 @@ void ExecutionDashboard::initUi() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// setOutputPanel — 由 MainWindow 注入 ExecutionOutputPanel 实例
+// setOutputPanel - 由 MainWindow 注入 ExecutionOutputPanel 实例
 // ══════════════════════════════════════════════════════════════════════════════
 
 void ExecutionDashboard::setOutputPanel(ExecutionOutputPanel* panel) {
@@ -66,17 +81,37 @@ void ExecutionDashboard::setOutputPanel(ExecutionOutputPanel* panel) {
     return;
   }
 
-  // 移除旧的 output panel
+  // 移除旧的 output panel（从 tab widget 中移除并删除）
   if (output_panel_) {
-    output_panel_->setParent(nullptr);
+    int idx = bottom_tabs_->indexOf(output_panel_);
+    if (idx >= 0) {
+      bottom_tabs_->removeTab(idx);
+    }
     output_panel_->deleteLater();
   }
 
   output_panel_ = panel;
   if (output_panel_) {
-    vert_splitter_->addWidget(output_panel_);
-    vert_splitter_->setSizes({700, 200});
+    // 输出 tab 插在 index 0，问题 tab 顺延到 index 1
+    bottom_tabs_->insertTab(0, output_panel_, QStringLiteral("输出"));
+    bottom_tabs_->setCurrentIndex(0);
     output_panel_->show();
+  }
+}
+
+void ExecutionDashboard::setCurrentBottomTab(int index) {
+  if (index >= 0 && index < bottom_tabs_->count()) {
+    bottom_tabs_->setCurrentIndex(index);
+  }
+}
+
+void ExecutionDashboard::showProblemsTab() {
+  if (!problems_panel_) {
+    return;
+  }
+  int idx = bottom_tabs_->indexOf(problems_panel_);
+  if (idx >= 0) {
+    bottom_tabs_->setCurrentIndex(idx);
   }
 }
 

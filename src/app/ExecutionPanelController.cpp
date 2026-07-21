@@ -35,7 +35,6 @@
 #include "test_program/TestProgramEditorWidget.h"
 #include "ProjectInfo.h"
 #include "widgets/ProgramSelectionPopup.h"
-#include "widgets/BottomContainerWidget.h"
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
 
@@ -116,15 +115,11 @@ void ExecutionPanelController::postInit(
     std::shared_ptr<icd::Repository> icd_repository,
     EditorManager* editor_mgr,
     TestProgramManagerWidget* /*test_program_mgr*/,
-    ProblemsPanel* problems_panel,
-    BottomContainerWidget* bottom_container,
     AppStatusBarController* status_bar_ctrl) {
   output_panel_ = output_panel;
   signal_registry_ = signal_registry;
   icd_repository_ = std::move(icd_repository);
   editor_mgr_ = editor_mgr;
-  problems_panel_ = problems_panel;
-  bottom_container_ = bottom_container;
   status_bar_ctrl_ = status_bar_ctrl;
 }
 
@@ -479,6 +474,10 @@ void ExecutionPanelController::run() {
 
   // 启动 + 切换到运行态
   engine_->start();
+  // 切到「输出」tab（用户点运行应看到运行日志）
+  if (dashboard_) {
+    dashboard_->setCurrentBottomTab(0);
+  }
   // 所有编辑器置为只读
   if (editor_mgr_) {
     for (auto* ed : editor_mgr_->allEditors()) {
@@ -518,10 +517,13 @@ void ExecutionPanelController::stop() {
 
 void ExecutionPanelController::verify() {
   LOG_INFO("MAIN_UI", "点击「校验」");
-  if (!problems_panel_) {
+  if (!dashboard_) {
     return;
   }
-  auto* problems = problems_panel_;
+  auto* problems = dashboard_->problemsPanel();
+  if (!problems) {
+    return;
+  }
   problems->clearProblems();
   int errors = 0;
   int warnings = 0;
@@ -530,7 +532,8 @@ void ExecutionPanelController::verify() {
   auto& proj_mgr = etest::core::project::ProjectManager::instance();
   bool project_open = proj_mgr.isProjectOpen();
   if (!project_open) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+    problems->addProblem(NavTarget::Project, QStringLiteral("项目"),
+                         QStringLiteral("错误"),
                          QStringLiteral("未打开项目"));
     errors++;
   }
@@ -538,7 +541,8 @@ void ExecutionPanelController::verify() {
   // 2. ICD 协议已定义
   bool icd_loaded = icd_repository_ && !icd_repository_->frames().empty();
   if (!icd_loaded) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+    problems->addProblem(NavTarget::Icd, QStringLiteral("ICD 协议"),
+                         QStringLiteral("错误"),
                          QStringLiteral("ICD 协议未加载"));
     errors++;
   }
@@ -555,7 +559,8 @@ void ExecutionPanelController::verify() {
              .isEmpty();
   }
   if (!topo_exists) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+    problems->addProblem(NavTarget::Topology, QStringLiteral("拓扑"),
+                         QStringLiteral("错误"),
                          QStringLiteral("未找到拓扑文件"));
     errors++;
   }
@@ -564,7 +569,8 @@ void ExecutionPanelController::verify() {
   bool signal_bound =
       signal_registry_ && !signal_registry_->registeredDeviceIds().isEmpty();
   if (!signal_bound) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
+    problems->addProblem(NavTarget::Signal, QStringLiteral("拓扑"),
+                         QStringLiteral("警告"),
                          QStringLiteral("拓扑未绑定信号"));
     warnings++;
   }
@@ -585,27 +591,25 @@ void ExecutionPanelController::verify() {
     }
   }
   if (!has_program) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("错误"),
+    problems->addProblem(NavTarget::Program, QStringLiteral("测试程序"),
+                         QStringLiteral("错误"),
                          QStringLiteral("无可用测试程序"));
     errors++;
   }
 
   // 6. 硬件/Mock 状态
   if (!topo_exists && !signal_bound) {
-    problems->addProblem(QStringLiteral("运行"), QStringLiteral("警告"),
+    problems->addProblem(NavTarget::Hardware, QStringLiteral("硬件"),
+                         QStringLiteral("警告"),
                          QStringLiteral("硬件/Mock 未配置"));
     warnings++;
   }
 
   problems->showSummary(errors, warnings);
 
-  // 有问题时自动切到问题面板
-  if ((errors > 0 || warnings > 0) && bottom_container_) {
-    int idx = bottom_container_->indexOf(problems_panel_);
-    if (idx >= 0) {
-      bottom_container_->setCurrentPanel(idx);
-      bottom_container_->show();
-    }
+  // 有问题时自动切到 page1 底部「问题」tab
+  if (errors > 0 || warnings > 0) {
+    dashboard_->showProblemsTab();
   }
 
   // 刷新执行调试面板
@@ -756,6 +760,10 @@ void ExecutionPanelController::runNextInQueue() {
 
   // 启动
   engine_->start();
+  // 切到「输出」tab（运行中应看到运行日志）
+  if (dashboard_) {
+    dashboard_->setCurrentBottomTab(0);
+  }
 
   // 所有编辑器置为只读
   if (editor_mgr_) {
@@ -779,6 +787,11 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
     return;
   }
   debug_widget_ = dashboard_->debugWidget();
+
+  if (auto* problems = dashboard_->problemsPanel()) {
+    connect(problems, &ProblemsPanel::problemActivated, this,
+            [this](NavTarget target) { emit navigateRequested(target); });
+  }
 
   // ── SignalTreePanel checkbox → 创建/移除可视化组件 + 订阅/取消订阅 ──
   connect(dashboard_->signalTreePanel(), &SignalTreePanel::checkStateChanged,

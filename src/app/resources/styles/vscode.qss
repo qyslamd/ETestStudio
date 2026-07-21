@@ -1032,6 +1032,49 @@ etest--app--BottomContainerWidget QHeaderView::section {
     padding: 4px;
 }
 
+/* ==================== page1 执行仪表盘底部 tab（#ExecBottomTabs） ==================== */
+/* 复刻 BottomContainerWidget 的 tab/表格/文本样式，保持 page0/page1 底部视觉一致 */
+#ExecBottomTabs {
+    background-color: #1E1E1E;
+}
+#ExecBottomTabs::pane {
+    border: none;
+    background-color: #1E1E1E;
+}
+#ExecBottomTabs QToolButton {
+    background-color: transparent;
+    border: none;
+    color: #858585;
+    padding: 2px;
+}
+#ExecBottomTabs QToolButton:hover {
+    color: #FFFFFF;
+}
+#ExecBottomTabs QTextEdit {
+    background-color: #1E1E1E;
+    color: #CCCCCC;
+    border: none;
+}
+#ExecBottomTabs QTableWidget {
+    background-color: #1E1E1E;
+    color: #CCCCCC;
+    border: none;
+    gridline-color: #3C3C3C;
+}
+#ExecBottomTabs QTableWidget::item {
+    color: #CCCCCC;
+}
+#ExecBottomTabs QTableWidget::item:selected {
+    background-color: #264F78;
+    color: #FFFFFF;
+}
+#ExecBottomTabs QHeaderView::section {
+    background-color: #2D2D2D;
+    color: #858585;
+    border: none;
+    padding: 4px;
+}
+
 /* ==================== NewProjectDialog ==================== */
 QLabel#previewLabel {
     color: gray;

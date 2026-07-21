@@ -5,6 +5,8 @@
 #include <QString>
 #include <QStringList>
 
+#include "widgets/ProblemsPanel.h"  // NavTarget 定义（navigateRequested 信号参数）
+
 class QAction;
 class QLabel;
 class QStackedWidget;
@@ -17,8 +19,6 @@ class EditorManager;
 class ExecutionDebugWidget;
 class ExecutionOutputPanel;
 class TestProgramManagerWidget;
-class ProblemsPanel;
-class BottomContainerWidget;
 class ExecutionDashboard;
 class ProgramSelectionPopup;
 
@@ -47,13 +47,13 @@ class ExecutionPanelController : public QObject {
                                     QObject* parent = nullptr);
 
   // 两步初始化：Constructor 只创建 QAction，postInit 补全依赖
+  // 注：test_program_mgr 参数已废弃（阶段二迁移至 popup），保留参数位仅作过渡，
+  // 后续可一并清理签名。problems_panel/bottom_container 已于阶段三移除。
   void postInit(ExecutionOutputPanel* output_panel,
                 etest::core::SignalRegistry* signal_registry,
                 std::shared_ptr<icd::Repository> icd_repository,
                 EditorManager* editor_mgr,
                 TestProgramManagerWidget* test_program_mgr,
-                ProblemsPanel* problems_panel,
-                BottomContainerWidget* bottom_container,
                 AppStatusBarController* status_bar_ctrl);
 
   // 引擎生存期
@@ -99,6 +99,8 @@ class ExecutionPanelController : public QObject {
   void engineStateChanged(etest::engine::EngineState state);
   void execStatsUpdated(int pass, int fail, int elapsed);
   void preconditionResult(bool can_run);
+  /// 用户双击问题项请求导航，MainWindow 接收执行 page0 跳转
+  void navigateRequested(NavTarget target);
 
  private:
   void connectEngineSignals();
@@ -135,8 +137,6 @@ class ExecutionPanelController : public QObject {
   etest::core::SignalRegistry* signal_registry_ = nullptr;
   std::shared_ptr<icd::Repository> icd_repository_;
   EditorManager* editor_mgr_ = nullptr;
-  ProblemsPanel* problems_panel_ = nullptr;
-  BottomContainerWidget* bottom_container_ = nullptr;
   AppStatusBarController* status_bar_ctrl_ = nullptr;
   QStackedWidget* central_stack_ = nullptr;
   ExecutionDashboard* dashboard_ = nullptr;
