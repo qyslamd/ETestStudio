@@ -84,9 +84,6 @@ class ExecutionPanelController : public QObject {
   // 执行仪表盘注入（用于连接监听器信号）
   void setDashboard(ExecutionDashboard* dashboard);
 
-  // 程序选择 popup 注入（阶段二）
-  void setProgramPopup(ProgramSelectionPopup* popup);
-
   // Ribbon 动作（供 MainWindow setupRibbon 获取）
   QAction* runAction() const { return act_run_; }
   QAction* pauseAction() const { return act_pause_; }

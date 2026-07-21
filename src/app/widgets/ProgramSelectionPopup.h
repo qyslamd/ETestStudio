@@ -3,7 +3,6 @@
 
 #include <QListWidget>
 #include <QMenu>
-#include <QPushButton>
 #include <QSet>
 #include <QStringList>
 #include <QToolButton>

@@ -128,10 +128,6 @@ void ExecutionPanelController::postInit(
   status_bar_ctrl_ = status_bar_ctrl;
 }
 
-void ExecutionPanelController::setProgramPopup(ProgramSelectionPopup* popup) {
-  popup_ = popup;
-}
-
 void ExecutionPanelController::updateIcdContext(
     etest::core::SignalRegistry* signal_registry,
     std::shared_ptr<icd::Repository> icd_repository) {
@@ -687,14 +683,19 @@ bool ExecutionPanelController::checkUnsavedAndPrompt(const QStringList& paths) c
 
   QAbstractButton* clicked = box.clickedButton();
   if (clicked == saveBtn) {
-    for (auto* editor : editor_mgr_->allEditors()) {
-      if (editor->isModified()) {
-        if (!editor->save()) {
-          QMessageBox::warning(
-              const_cast<QWidget*>(parent_widget_),
-              QStringLiteral("保存失败"),
-              QStringLiteral("无法保存文件: %1").arg(editor->filePath()));
-          return false;
+    // 只保存属于运行目标且未保存的文件（unsavedFiles），不碰其他编辑器
+    for (const auto& f : unsavedFiles) {
+      // 从 editor_mgr_ 中查找对应路径的编辑器
+      for (auto* editor : editor_mgr_->allEditors()) {
+        if (editor->filePath() == f && editor->isModified()) {
+          if (!editor->save()) {
+            QMessageBox::warning(
+                const_cast<QWidget*>(parent_widget_),
+                QStringLiteral("保存失败"),
+                QStringLiteral("无法保存文件: %1").arg(f));
+            return false;
+          }
+          break;
         }
       }
     }
