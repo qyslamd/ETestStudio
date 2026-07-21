@@ -313,34 +313,9 @@ void ExecutionPanelController::syncControlStates() {
 }
 
 bool ExecutionPanelController::checkCanVerify() const {
-  // 1. 项目已打开
-  auto& proj_mgr = etest::core::project::ProjectManager::instance();
-  if (!proj_mgr.isProjectOpen()) {
-    return false;
-  }
-
-  // 2. ICD 已加载
-  if (!icd_repository_ || icd_repository_->frames().empty()) {
-    return false;
-  }
-
-  // 3. 拓扑文件存在
-  QString topo_dir =
-      proj_mgr.currentProjectRoot() + QStringLiteral("/topology");
-  QDir topo_dir_obj(topo_dir);
-  if (!topo_dir_obj.exists()) {
-    return false;
-  }
-  if (topo_dir_obj.entryList({QStringLiteral("*.etopo")}, QDir::Files)
-          .isEmpty()) {
-    return false;
-  }
-
-  // 4. 测试程序可用（popup 全集非空即可，具体用例级验证由 verify() 完成）
-  if (popup_ && popup_->hasAnyProgram()) {
-    return true;
-  }
-  return false;
+  // 仅检查项目是否已打开——ICD/拓扑/程序可用性由 verify() 自行发现和报告，
+  // 不在 enable 门限重复拦截，确保验证按钮始终可点以展示完整的缺失清单
+  return etest::core::project::ProjectManager::instance().isProjectOpen();
 }
 
 bool ExecutionPanelController::checkCanRunAll() const {
