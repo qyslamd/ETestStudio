@@ -90,7 +90,7 @@ void ProgramSelectionPopup::refreshList() {
   }
 
   // 修剪已删除文件的选中状态
-  QSet<QString> current(all_paths_.begin(), all_paths_.end());
+  QSet<QString> current = QSet<QString>::fromList(all_paths_);
   selected_.intersect(current);
 
   list_widget_->blockSignals(false);
