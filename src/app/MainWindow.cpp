@@ -1156,6 +1156,42 @@ void MainWindow::lazyInit() {
             switching_page_ = false;
           });
 
+  // ── 验证问题项双击 → 导航到 page0 对应 sidebar 页 ──
+  connect(execution_controller_, &ExecutionPanelController::navigateRequested,
+          this, [this](NavTarget target) {
+            // 切回 page0
+            central_stack_->setCurrentIndex(0);
+            // 同步将 ribbon 切到编辑组（当前高亮的是「执行」tab，视觉不一致）
+            if (!switching_page_) {
+              switching_page_ = true;
+              if (auto* homeCat = ribbonBar()->categoryByIndex(0)) {
+                ribbonBar()->raiseCategory(homeCat);
+              }
+              switching_page_ = false;
+            }
+
+            // 按 NavTarget 切 sidebar 到对应页
+            switch (target) {
+              case NavTarget::Project:
+                // 无目标可跳，仅切回 page0 即可
+                break;
+              case NavTarget::Icd:
+                sidebar_->switchPage(PageId::kProtocol);
+                break;
+              case NavTarget::Topology:
+              case NavTarget::Signal:
+                // Signal 表示拓扑未绑定信号，也跳到拓扑页让用户选 .etopo
+                sidebar_->switchPage(PageId::kTopology);
+                break;
+              case NavTarget::Program:
+                sidebar_->switchPage(PageId::kTestProgram);
+                break;
+              case NavTarget::Hardware:
+                sidebar_->switchPage(PageId::kHardware);
+                break;
+            }
+          });
+
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
