@@ -163,22 +163,6 @@ void MainWindow::initUi() {
   setMinimumSize(900, 600);
   setWindowIcon(QIcon(":/resources/icons/app_icon.ico"));
 
-  // 初始化 ThemeManager（加载 QSS、检测暗亮、同步遗留状态）
-  ThemeManager::instance();
-
-  // 直接给顶层主窗口设 palette，覆盖 native style 默认白底
-  {
-    QPalette pal = palette();
-    if (ThemeManager::instance().isDarkTheme()) {
-      pal.setColor(QPalette::Window, QColor("#1E1E1E"));
-      pal.setColor(QPalette::WindowText, QColor("#CCCCCC"));
-    } else {
-      pal.setColor(QPalette::Window, QColor("#F5F5F5"));
-      pal.setColor(QPalette::WindowText, QColor("#000000"));
-    }
-    setPalette(pal);
-  }
-
   setupRibbon();
   createStatusBar();
 
