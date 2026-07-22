@@ -31,6 +31,10 @@
         <file>resources/icons/svg/restore_dark.svg</file>
         <file>resources/icons/svg/folder_dark.svg</file>
         <file>resources/icons/svg/folder_light.svg</file>
+        <file>resources/icons/svg/lock_dark.svg</file>
+        <file>resources/icons/svg/lock_light.svg</file>
+        <file>resources/icons/svg/clear_dark.svg</file>
+        <file>resources/icons/svg/clear_light.svg</file>
         <file>resources/icons/svg/etlog_chart_dark.svg</file>
         <file>resources/icons/svg/etlog_chart_light.svg</file>
         <file>resources/icons/svg/etlog_timer_dark.svg</file>

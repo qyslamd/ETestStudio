@@ -20,6 +20,7 @@
 
 #include "PixmapOpacity.h"
 #include "ThemeManager.h"
+#include "core_ui/AppIconProvider.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "grid/grid_global_def.hpp"
@@ -171,9 +172,12 @@ void WelcomeWidget::initUi() {
   auto* opLayout = new QVBoxLayout(openProjectContent);
   opLayout->setContentsMargins(0, 0, 0, 0);
   opLayout->setAlignment(Qt::AlignCenter);
-  auto* opIcon = new QLabel(QStringLiteral("\xF0\x9F\x93\x82"));
+  auto* opIcon = new QLabel;
   opIcon->setObjectName("WelcomeActionIcon");
   opIcon->setAlignment(Qt::AlignCenter);
+  opIcon->setPixmap(etest::core_ui::AppIconProvider::instance()
+                        .icon(QStringLiteral("folder"))
+                        .pixmap(40, 40));
   auto* opText = new QLabel(QStringLiteral("打开项目"));
   opText->setObjectName("WelcomeActionText");
   opText->setAlignment(Qt::AlignCenter);
@@ -201,18 +205,31 @@ void WelcomeWidget::initUi() {
     tipLayout->setContentsMargins(16, 12, 16, 12);
     tipLayout->setSpacing(6);
 
-    auto* tipTitle =
-        new QLabel(QStringLiteral("\xF0\x9F\x92\xA1"
-                                  "每日提示："));
+    auto* tipTitleRow = new QWidget;
+    tipTitleRow->setObjectName("WelcomeTipTitleRow");
+    auto* tipTitleLayout = new QHBoxLayout(tipTitleRow);
+    tipTitleLayout->setContentsMargins(0, 0, 0, 0);
+    tipTitleLayout->setSpacing(6);
+
+    auto* tipIcon = new QLabel;
+    tipIcon->setObjectName("WelcomeTipIcon");
+    tipIcon->setPixmap(etest::core_ui::AppIconProvider::instance()
+                           .icon(QStringLiteral("lightbulb"))
+                           .pixmap(20, 20));
+    tipTitleLayout->addWidget(tipIcon);
+
+    auto* tipTitle = new QLabel(QStringLiteral("每日提示："));
     tipTitle->setObjectName("WelcomeTipTitle");
-    tipTitle->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    tipTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    tipTitleLayout->addWidget(tipTitle);
+    tipTitleLayout->addStretch();
 
     tip_content_label_ = new QLabel;
     tip_content_label_->setObjectName("WelcomeTipContent");
     tip_content_label_->setAlignment(Qt::AlignLeft);
     tip_content_label_->setWordWrap(true);
 
-    tipLayout->addWidget(tipTitle);
+    tipLayout->addWidget(tipTitleRow);
     tipLayout->addWidget(tip_content_label_);
 
     tip_tile_->setContentWidget(tipContainer);

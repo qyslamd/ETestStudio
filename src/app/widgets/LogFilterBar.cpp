@@ -6,6 +6,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include "core_ui/AppIconProvider.h"
+
 namespace etest::app {
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -86,7 +88,8 @@ void LogFilterBar::initUi() {
   // ── 滚动锁定 ──
   lock_btn_ = new QToolButton(this);
   lock_btn_->setObjectName(QStringLiteral("LockBtn"));
-  lock_btn_->setText(QStringLiteral("\xF0\x9F\x94\x92"));  // 🔒
+  lock_btn_->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("lock")));
   lock_btn_->setCheckable(true);
   lock_btn_->setAutoRaise(true);
   lock_btn_->setToolTip(QStringLiteral("滚动锁定"));
@@ -95,7 +98,8 @@ void LogFilterBar::initUi() {
   // ── 清空 ──
   clear_btn_ = new QToolButton(this);
   clear_btn_->setObjectName(QStringLiteral("ClearBtn"));
-  clear_btn_->setText(QStringLiteral("\xF0\x9F\x97\x91"));  // 🗑
+  clear_btn_->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("clear")));
   clear_btn_->setAutoRaise(true);
   clear_btn_->setToolTip(QStringLiteral("清空"));
   layout->addWidget(clear_btn_);

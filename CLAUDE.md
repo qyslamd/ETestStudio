@@ -51,6 +51,9 @@ scripts/build_ninja.sh -t debug -c
   - 所有样式统一写入 `src/app/resources/styles/` 下的 QSS 文件中；优先通过 `setObjectName` 使用 `#objectName` 选择器定位控件
   - 对于QPushButton或者QToolButon而言，如果明确不需要对外观定制，用QPushButton,否则用QToolButton
   - 如果 QSS 必须使用 Type Selector、Descendant Selector 或 Child Selector 定位带命名空间的 Qt/C++ 类，必须写 Qt 元对象系统使用的完整命名空间选择器：将 C++ 命名空间中的 `::` 替换为 `--`
+- **禁止在代码中使用 emoji 字符**（包括 `\xF0\x9F...` 等字节转义或直接粘贴的 emoji）
+  - 原因：WSL2 Ubuntu 等环境默认缺彩色 emoji 字体，渲染为豆腐块；跨平台表现不一致
+  - 替代方案：统一使用 `src/app/resources/icons/svg/` 下的 SVG 图标，通过 `AppIconProvider::instance().icon("name")` 加载；缺图时新增 SVG（配 `_light`/`_dark` 两套）而非用 emoji
 
 ## 代码架构
 项目采用分层、模块化架构设计，`src/` 下每个子目录对应一个独立的 CMake 构建目标：
