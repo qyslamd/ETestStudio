@@ -1,12 +1,13 @@
 #ifndef ETEST_UI_DOCK_AREA_TAB_BAR_STYLE_H_
 #define ETEST_UI_DOCK_AREA_TAB_BAR_STYLE_H_
 
+#include <QBrush>
 #include <QColor>
 #include <QLineF>
 #include <QPainterPath>
-#include <QBrush>
 
 #include "DockAreaTabBar.h"
+#include "TabStyleConstants.h"
 
 // Chrome 风格的 QADS DockAreaTabBar 自定义子类。
 // 通过 eventFilter 拦截 tabsContainerWidget 的 Paint 事件，
@@ -16,7 +17,7 @@ class DockAreaTabBarStyle : public ads::CDockAreaTabBar {
   Q_OBJECT
  public:
   explicit DockAreaTabBarStyle(ads::CDockAreaWidget* parent,
-                                int tab_height = 28);
+                                int tab_height = kTabBarHeight);
 
  protected:
   bool eventFilter(QObject* watched, QEvent* event) override;
@@ -52,8 +53,6 @@ class DockAreaTabBarStyle : public ads::CDockAreaTabBar {
   void applyViewportBackground();
 
   QWidget* tabs_container_ = nullptr;
-  static constexpr qreal kTopMargin = 0.0;
-  static constexpr qreal kHRatio = 1.0 / 5.0;
   bool dark_ = true;
 };
 

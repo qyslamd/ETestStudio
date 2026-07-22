@@ -234,7 +234,7 @@ void DockAreaTabBarStyle::applyViewportBackground() {
 
 QPainterPath DockAreaTabBarStyle::selectedTabPath(const QRectF& r,
                                                   TabPosition pos) const {
-  qreal per = r.height() * kHRatio;
+  qreal per = r.height() * kTabHRatio;
 
   QPointF p1, p2, p3, p4, p5, p6, p7, p8;
   QPainterPath path;
@@ -244,8 +244,8 @@ QPainterPath DockAreaTabBarStyle::selectedTabPath(const QRectF& r,
       path.moveTo(r.bottomLeft());
       p1 = QPointF(r.bottomLeft());
       p2 = QPointF(p1.x() + per, r.bottom() - per);
-      p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-      p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+      p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+      p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
       p5 = QPointF(r.right() - per, p4.y());
       p6 = QPointF(r.right(), p3.y());
       p7 = QPointF(r.right(), p2.y());
@@ -255,8 +255,8 @@ QPainterPath DockAreaTabBarStyle::selectedTabPath(const QRectF& r,
       path.moveTo(r.bottomLeft() - QPointF(per, 0));
       p1 = QPointF(r.left() - per, r.bottom());
       p2 = QPointF(p1.x() + per, r.bottom() - per);
-      p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-      p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+      p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+      p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
       p5 = QPointF(r.right() - per, p4.y());
       p6 = QPointF(r.right(), p3.y());
       p7 = QPointF(r.right(), p2.y());
@@ -266,8 +266,8 @@ QPainterPath DockAreaTabBarStyle::selectedTabPath(const QRectF& r,
       path.moveTo(r.bottomLeft() - QPointF(per, 0));
       p1 = QPointF(r.left() - per, r.bottom());
       p2 = QPointF(p1.x() + per, r.bottom() - per);
-      p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-      p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+      p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+      p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
       p5 = QPointF(r.right() - 2 * per, p4.y());
       p6 = QPointF(r.right() - per, p3.y());
       p7 = QPointF(r.right() - per, p2.y());
@@ -277,8 +277,8 @@ QPainterPath DockAreaTabBarStyle::selectedTabPath(const QRectF& r,
       path.moveTo(r.bottomLeft());
       p1 = QPointF(r.bottomLeft());
       p2 = QPointF(p1.x() + per, r.bottom() - per);
-      p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-      p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+      p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+      p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
       p5 = QPointF(r.right() - 2 * per, p4.y());
       p6 = QPointF(r.right() - per, p3.y());
       p7 = QPointF(r.right() - per, p2.y());
@@ -298,7 +298,7 @@ QPainterPath DockAreaTabBarStyle::selectedTabPath(const QRectF& r,
 
 QPainterPath DockAreaTabBarStyle::hoveredTabPath(
     const QRectF& r, TabPosition pos, SelectedPosition sel) const {
-  qreal per = r.height() * kHRatio;
+  qreal per = r.height() * kTabHRatio;
 
   QPointF p1, p2, p3, p4, p5, p6, p7, p8;
   QPainterPath path;
@@ -309,8 +309,8 @@ QPainterPath DockAreaTabBarStyle::hoveredTabPath(
         path.moveTo(r.bottomLeft());
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
@@ -319,8 +319,8 @@ QPainterPath DockAreaTabBarStyle::hoveredTabPath(
         path.moveTo(r.bottomLeft() - QPointF(per, 0));
         p1 = QPointF(r.left() - per, r.bottom());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - 2 * per, p4.y());
         p6 = QPointF(r.right() - per, p3.y());
         p7 = QPointF(r.right() - per, p2.y());
@@ -329,8 +329,8 @@ QPainterPath DockAreaTabBarStyle::hoveredTabPath(
         path.moveTo(r.bottomLeft() - QPointF(per, 0));
         p1 = QPointF(r.left() - per, r.bottom());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
@@ -349,8 +349,8 @@ QPainterPath DockAreaTabBarStyle::hoveredTabPath(
         path.moveTo(r.bottomLeft());
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
@@ -359,8 +359,8 @@ QPainterPath DockAreaTabBarStyle::hoveredTabPath(
         path.moveTo(r.bottomLeft() - QPointF(per, 0));
         p1 = QPointF(r.left() - per, r.bottom());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
@@ -379,8 +379,8 @@ QPainterPath DockAreaTabBarStyle::hoveredTabPath(
       if (pos == TabPosition::End) {
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x(), r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - 2 * per, p4.y());
         p6 = QPointF(r.right() - per, p3.y());
         p7 = QPointF(r.right() - per, p2.y());
@@ -388,8 +388,8 @@ QPainterPath DockAreaTabBarStyle::hoveredTabPath(
       } else {
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x(), r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + kTopMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + kTopMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());

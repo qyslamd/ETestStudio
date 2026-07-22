@@ -259,7 +259,7 @@ void TestProgramEditorWidget::initUi() {
   tab_widget_->tabBar()->setElideMode(Qt::ElideRight);
   tab_widget_->tabBar()->setUsesScrollButtons(true);
   // Chrome 风格 tab 形状（参考 draw_tab_shape demo）
-  TabBarStyle::install(tab_widget_->tabBar(), QSize(110, 28));
+  TabBarStyle::install(tab_widget_->tabBar());
   tab_widget_->tabBar()->setMovable(false);
   tab_widget_->setIconSize(QSize(16, 16));
 

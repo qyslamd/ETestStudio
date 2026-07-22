@@ -1,5 +1,7 @@
 #include "BottomContainerWidget.h"
 
+#include <QApplication>
+#include <QEvent>
 #include <QTabBar>
 
 #include "AppIconProvider.h"
@@ -32,7 +34,7 @@ void BottomContainerWidget::initUi() {
   tab_widget_->tabBar()->setUsesScrollButtons(true);
   tab_widget_->setAutoFillBackground(true);
   tab_widget_->setObjectName(QStringLiteral("bottomTabWidget"));
-  TabBarStyle::install(tab_widget_->tabBar(), QSize(110, 28));
+  TabBarStyle::install(tab_widget_->tabBar());
 
   // test
   // tab_widget_->setTabPosition(QTabWidget::South);
@@ -74,6 +76,9 @@ void BottomContainerWidget::setPanelVisible(int index, bool visible) {
   tab_widget_->tabBar()->setTabVisible(index, visible);
 #else
   tab_widget_->setTabEnabled(index, visible);
+  // setTabEnabled 不触发 layoutTabs()，手动发 StyleChange 事件强制重排
+  QEvent styleEvent(QEvent::StyleChange);
+  QApplication::sendEvent(tab_widget_->tabBar(), &styleEvent);
 #endif
   if (visible)
     tab_widget_->setCurrentIndex(index);

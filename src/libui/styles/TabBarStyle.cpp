@@ -59,10 +59,16 @@ QColor TabBarStyle::borderColor() const {
 }
 
 QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
-                                    const QStyleOption* option,
-                                    const QSize& size,
-                                    const QWidget* widget) const {
+                                     const QStyleOption* option,
+                                     const QSize& size,
+                                     const QWidget* widget) const {
   if (type == CT_TabBarTab) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+    // Qt 5.12 没有 setTabVisible，用 setTabEnabled(false) + 零尺寸模拟隐藏
+    if (!option->state.testFlag(QStyle::State_Enabled)) {
+      return QSize(0, 0);
+    }
+#endif
     QSize ret(size);
     ret.rheight() = qMax(size.height(), min_height_);
     ret.rwidth() = qMax(size.width(), min_width_);
@@ -75,6 +81,13 @@ void TabBarStyle::drawControl(QStyle::ControlElement element,
                               const QStyleOption* opt,
                               QPainter* p,
                               const QWidget* w) const {
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+  // Qt 5.12：setTabEnabled(false) 的 tab 不绘制
+  if ((element == CE_TabBarTabShape || element == CE_TabBarTabLabel) &&
+      !opt->state.testFlag(QStyle::State_Enabled)) {
+    return;
+  }
+#endif
   switch (element) {
     case CE_TabBarTabLabel:
       drawTabBarTabLabel(opt, p, w);
@@ -181,7 +194,7 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
   auto tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
   QRectF r = tabOption->rect;
 
-  qreal per = r.height() * HRatio;
+  qreal per = r.height() * kTabHRatio;
 
   QPointF p1, p2, p3, p4, p5, p6, p7, p8;
   QPainterPath path;
@@ -191,8 +204,8 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
 
       p1 = QPointF(r.bottomLeft());
       p2 = QPointF(p1.x() + per, r.bottom() - per);
-      p3 = QPointF(p2.x(), r.top() + topMargin + per);
-      p4 = QPointF(p3.x() + per, r.top() + topMargin);
+      p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+      p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
       p5 = QPointF(r.right() - per, p4.y());
       p6 = QPointF(r.right(), p3.y());
       p7 = QPointF(r.right(), p2.y());
@@ -204,8 +217,8 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
 
       p1 = QPointF(r.left() - per, r.bottom());
       p2 = QPointF(p1.x() + per, r.bottom() - per);
-      p3 = QPointF(p2.x(), r.top() + topMargin + per);
-      p4 = QPointF(p3.x() + per, r.top() + topMargin);
+      p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+      p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
       p5 = QPointF(r.right() - per, p4.y());
       p6 = QPointF(r.right(), p3.y());
       p7 = QPointF(r.right(), p2.y());
@@ -217,8 +230,8 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
 
       p1 = QPointF(r.left() - per, r.bottom());
       p2 = QPointF(p1.x() + per, r.bottom() - per);
-      p3 = QPointF(p2.x(), r.top() + topMargin + per);
-      p4 = QPointF(p3.x() + per, r.top() + topMargin);
+      p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+      p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
       p5 = QPointF(r.right() - 2 * per, p4.y());
       p6 = QPointF(r.right() - per, p3.y());
       p7 = QPointF(r.right() - per, p2.y());
@@ -229,8 +242,8 @@ QPainterPath TabBarStyle::getSelectedShape(const QStyleOption* option) const {
 
       p1 = QPointF(r.bottomLeft());
       p2 = QPointF(p1.x() + per, r.bottom() - per);
-      p3 = QPointF(p2.x(), r.top() + topMargin + per);
-      p4 = QPointF(p3.x() + per, r.top() + topMargin);
+      p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+      p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
       p5 = QPointF(r.right() - 2 * per, p4.y());
       p6 = QPointF(r.right() - per, p3.y());
       p7 = QPointF(r.right() - per, p2.y());
@@ -254,7 +267,7 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
   auto tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
   QRectF r = tabOption->rect;
 
-  qreal per = r.height() * HRatio;
+  qreal per = r.height() * kTabHRatio;
 
   QPointF p1, p2, p3, p4, p5, p6, p7, p8;
   QPainterPath path;
@@ -265,8 +278,8 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
 
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + topMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + topMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
@@ -277,8 +290,8 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
 
         p1 = QPointF(r.left() - per, r.bottom());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + topMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + topMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - 2 * per, p4.y());
         p6 = QPointF(r.right() - per, p3.y());
         p7 = QPointF(r.right() - per, p2.y());
@@ -288,8 +301,8 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
 
         p1 = QPointF(r.left() - per, r.bottom());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + topMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + topMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
@@ -311,8 +324,8 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
 
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + topMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + topMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
@@ -322,8 +335,8 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
 
         p1 = QPointF(r.left() - per, r.bottom());
         p2 = QPointF(p1.x() + per, r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + topMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + topMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());
@@ -344,8 +357,8 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
       if (tabOption->position == QStyleOptionTab::End) {
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x(), r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + topMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + topMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - 2 * per, p4.y());
         p6 = QPointF(r.right() - per, p3.y());
         p7 = QPointF(r.right() - per, p2.y());
@@ -353,8 +366,8 @@ QPainterPath TabBarStyle::getHoveredShape(const QStyleOption* option) const {
       } else {
         p1 = QPointF(r.bottomLeft());
         p2 = QPointF(p1.x(), r.bottom() - per);
-        p3 = QPointF(p2.x(), r.top() + topMargin + per);
-        p4 = QPointF(p3.x() + per, r.top() + topMargin);
+        p3 = QPointF(p2.x(), r.top() + kTabTopMargin + per);
+        p4 = QPointF(p3.x() + per, r.top() + kTabTopMargin);
         p5 = QPointF(r.right() - per, p4.y());
         p6 = QPointF(r.right(), p3.y());
         p7 = QPointF(r.right(), p2.y());

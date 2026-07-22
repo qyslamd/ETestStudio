@@ -60,7 +60,7 @@ void ExecutionDashboard::initUi() {
   bottom_tabs_->tabBar()->setElideMode(Qt::ElideRight);
   bottom_tabs_->tabBar()->setUsesScrollButtons(true);
   // 与 page0 BottomContainerWidget 统一 tab 外观（Chrome 风格圆角 tab）
-  TabBarStyle::install(bottom_tabs_->tabBar(), QSize(110, 28));
+  TabBarStyle::install(bottom_tabs_->tabBar());
   // 输出 tab：占位，setOutputPanel 注入后填入
   // 问题 tab：内部创建 ProblemsPanel
   problems_panel_ = new ProblemsPanel(bottom_tabs_);
