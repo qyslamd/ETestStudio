@@ -39,16 +39,16 @@ void ExecutionDashboard::initUi() {
   // objectName 由各组件构造函数自行设置，用于匹配 vscode.qss / default.qss 中的
   // #VisualizationArea / #ExecutionDebugWidget / #SignalTreeSearch 等选择器；
   // 此处不可覆盖，否则 QSS 选择器失配（曾导致可视化区在暗色主题下不显示 #252526 背景）。
-  debug_widget_ = new ExecutionDebugWidget(main_splitter_);
-
   signal_tree_ = new SignalTreePanel(main_splitter_);
 
   vis_area_ = new VisualizationArea(main_splitter_);
 
-  main_splitter_->addWidget(debug_widget_);
+  debug_widget_ = new ExecutionDebugWidget(main_splitter_);
+
   main_splitter_->addWidget(signal_tree_);
   main_splitter_->addWidget(vis_area_);
-  main_splitter_->setSizes({200, 250, 600});
+  main_splitter_->addWidget(debug_widget_);
+  main_splitter_->setSizes({250, 600, 200});
 
   vert_splitter_->addWidget(main_splitter_);
 

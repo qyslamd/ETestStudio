@@ -930,6 +930,10 @@ void ExecutionPanelController::clearData() {
       vis->clearData();
     }
   }
+  // 清空左侧执行进度树
+  if (debug_widget_) {
+    debug_widget_->clear();
+  }
   // 同步清空 MonitorManager 的采样 buffer，避免旧数据污染下次运行
   if (engine_) {
     auto* mm = engine_->monitorManager();
