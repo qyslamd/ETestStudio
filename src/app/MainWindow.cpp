@@ -2302,10 +2302,9 @@ void MainWindow::setupRibbon() {
                           QStringLiteral("测试程序编辑器"),
                           QStringLiteral("test-program-editor"),
                           QStringLiteral("ribbon_testprogram"));
-    addToolLauncherAction(tool_testexecutor_action_,
-                          QStringLiteral("测试执行器"),
-                          QStringLiteral("test-executor"),
-                          QStringLiteral("ribbon_testexecutor"));
+    addToolLauncherAction(
+        tool_testexecutor_action_, QStringLiteral("测试执行器"),
+        QStringLiteral("test-executor"), QStringLiteral("ribbon_testexecutor"));
   }
 
   // ============================================================
@@ -2351,6 +2350,9 @@ void MainWindow::setupRibbon() {
     // 响应外部触发的模式变化（如双击 tab）
     connect(ribbon, &SARibbonBar::ribbonModeChanged, this,
             [updateMinIcon](SARibbonBar::RibbonMode) { updateMinIcon(); });
+
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+            [updateMinIcon](bool) { updateMinIcon(); });
 
     updateMinIcon();
   }
