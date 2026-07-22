@@ -574,7 +574,7 @@ QWidget#sidebarActivityBar QToolButton:hover {
     border-radius: 3px;
     padding: 2px;
     qproperty-icon: url(:/resources/icons/svg/close_dark.svg);
-    qproperty-iconSize: 12px;
+    qproperty-iconSize: 14px;
 }
 #tabCloseButton:hover {
     background-color: rgba(0, 0, 0, 0.08);
@@ -1021,8 +1021,8 @@ etest--app--EtlogViewerWidget {
 #bottomTabWidget QTabBar::close-button {
     image: url(:/resources/icons/svg/close_dark.svg);
     subcontrol-position: right;
-    width: 20px;
-    height: 20px;
+    width: 14px;
+    height: 14px;
 }
 #bottomTabWidget QTabBar::close-button:hover {
     background-color: rgba(0, 0, 0, 0.05);

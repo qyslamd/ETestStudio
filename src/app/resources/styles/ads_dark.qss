@@ -110,7 +110,7 @@ QScrollArea#dockWidgetScrollArea {
     border-radius: 3px;
     padding: 2px;
     qproperty-icon: url(:/resources/icons/svg/close_light.svg);
-    qproperty-iconSize: 12px;
+    qproperty-iconSize: 14px;
 }
 
 #tabCloseButton:hover {

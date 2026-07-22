@@ -1975,8 +1975,8 @@ QToolButton#saverCloseBtn:pressed {
 #bottomTabWidget QTabBar::close-button {
     image: url(:/resources/icons/svg/close_light.svg);
     subcontrol-position: right;
-    width: 20px;
-    height: 20px;
+    width: 14px;
+    height: 14px;
 }
 #bottomTabWidget QTabBar::close-button:hover {
     background-color: rgba(255, 255, 255, 0.1);
