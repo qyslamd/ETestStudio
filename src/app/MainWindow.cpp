@@ -2244,9 +2244,9 @@ void MainWindow::setupRibbon() {
   }
 
   // ============================================================
-  //  工具
+  //  工具（独立工具启动入口，暂时关闭，后续按需恢复）
   // ============================================================
-  {
+  if (false) {
     auto* cat = ribbon->addCategoryPage(QStringLiteral("工具"));
 
     auto* panel_tools = cat->addPanel(QStringLiteral("工具"));
