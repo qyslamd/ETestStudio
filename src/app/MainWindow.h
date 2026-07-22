@@ -216,10 +216,10 @@ class MainWindow : public SARibbonMainWindow {
 
   // ── 执行引擎（委托给 ExecutionPanelController） ──
 
-  // Demo 启动
-  QAction* demo_topology_action_ = nullptr;
-  QAction* demo_protocol_action_ = nullptr;
-  QAction* demo_testprogram_action_ = nullptr;
+  // 附属工具启动
+  QAction* tool_topology_action_ = nullptr;
+  QAction* tool_protocol_action_ = nullptr;
+  QAction* tool_testprogram_action_ = nullptr;
 
   // 当前编辑器的信号连接
   QMetaObject::Connection current_editor_modification_connection_;
@@ -228,7 +228,7 @@ class MainWindow : public SARibbonMainWindow {
 
   bool first_show_ = true;
 
-  QAction* demo_testexecutor_action_ = nullptr;
+  QAction* tool_testexecutor_action_ = nullptr;
 };
 
 }  // namespace etest::app

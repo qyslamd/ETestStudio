@@ -2270,15 +2270,20 @@ void MainWindow::setupRibbon() {
 
     panel_tools->addSeparator();
 
-    auto addDemoAction = [&](QAction*& act, const QString& name,
-                             const QString& exeName, const QString& iconName) {
+    auto addToolLauncherAction = [&](QAction*& act, const QString& name,
+                                     const QString& exeName,
+                                     const QString& iconName) {
       act = new QAction(name, this);
       act->setIcon(AppIconProvider::instance().icon(iconName));
       QObject::connect(act, &QAction::triggered, this, [exeName, name]() {
         LOG_INFO("MAIN_UI", "启动独立工具「{}」 [exe={}]", name.toStdString(),
                  exeName.toStdString());
-        QString path =
-            QApplication::applicationDirPath() + QStringLiteral("/") + exeName;
+        QString path = QApplication::applicationDirPath() +
+                       QStringLiteral("/") + exeName
+#ifdef Q_OS_WIN
+                       + QStringLiteral(".exe")
+#endif
+            ;
         if (!QProcess::startDetached(path)) {
           QMessageBox::warning(
               nullptr, QStringLiteral("启动失败"),
@@ -2287,18 +2292,20 @@ void MainWindow::setupRibbon() {
       });
       panel_tools->addLargeAction(act);
     };
-    addDemoAction(demo_topology_action_, QStringLiteral("拓扑编辑器"),
-                  QStringLiteral("topology-editor.exe"),
-                  QStringLiteral("ribbon_topology"));
-    addDemoAction(demo_protocol_action_, QStringLiteral("帧协议编辑器"),
-                  QStringLiteral("protocol-editor.exe"),
-                  QStringLiteral("ribbon_protocol"));
-    addDemoAction(demo_testprogram_action_, QStringLiteral("测试程序编辑器"),
-                  QStringLiteral("test-program-editor.exe"),
-                  QStringLiteral("ribbon_testprogram"));
-    addDemoAction(demo_testexecutor_action_, QStringLiteral("测试执行器"),
-                  QStringLiteral("test-executor.exe"),
-                  QStringLiteral("ribbon_testexecutor"));
+    addToolLauncherAction(tool_topology_action_, QStringLiteral("拓扑编辑器"),
+                          QStringLiteral("topology-editor"),
+                          QStringLiteral("ribbon_topology"));
+    addToolLauncherAction(tool_protocol_action_, QStringLiteral("帧协议编辑器"),
+                          QStringLiteral("protocol-editor"),
+                          QStringLiteral("ribbon_protocol"));
+    addToolLauncherAction(tool_testprogram_action_,
+                          QStringLiteral("测试程序编辑器"),
+                          QStringLiteral("test-program-editor"),
+                          QStringLiteral("ribbon_testprogram"));
+    addToolLauncherAction(tool_testexecutor_action_,
+                          QStringLiteral("测试执行器"),
+                          QStringLiteral("test-executor"),
+                          QStringLiteral("ribbon_testexecutor"));
   }
 
   // ============================================================
