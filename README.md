@@ -1,6 +1,6 @@
 # ETestStudio
 
-基于 Qt/C++ 的学习研究项目，仿照凯云 ETest 测试系统实现其核心功能。
+基于 Qt/C++ 的学习研究项目，用于探索并实现测试系统实现其核心功能。
 
 ## 开发状态
 
@@ -10,15 +10,15 @@
 
 分层、模块化架构设计，`src/` 下每个子目录对应一个独立的 CMake 构建目标：
 
-| 模块 | 目录 | 说明 |
-|------|------|------|
-| **etest_core** | `src/core/` | 核心功能层：配置管理、日志系统（spdlog）、插件框架、项目管理、崩溃处理、通用工具 |
-| **etest_api** | `src/api/` | 纯头文件接口库（IEditor 等），无链接依赖 |
-| **etest_topology** | `src/topology/` | 拓扑编辑器：场景/视图/项/撤销/序列化/导出 |
-| **etest_protocol** | `src/protocol/` | ICD 协议编辑器：节点树/位图视图/属性面板 |
-| **etest_ui** | `src/libui/` | 跨模块共享 UI 组件库（如 DockTitleBar），被 topology、protocol 共用 |
-| **icd_utility** | `src/icd_utility/` | ICD 数据格式工具库（纯 C++17，无 Qt 依赖） |
-| **etest** | `src/app/` | 主程序：停靠界面布局、编辑器管理、欢迎页、终端、输出面板、屏保组件等 |
+| 模块               | 目录               | 说明                                                                             |
+| ------------------ | ------------------ | -------------------------------------------------------------------------------- |
+| **etest_core**     | `src/core/`        | 核心功能层：配置管理、日志系统（spdlog）、插件框架、项目管理、崩溃处理、通用工具 |
+| **etest_api**      | `src/api/`         | 纯头文件接口库（IEditor 等），无链接依赖                                         |
+| **etest_topology** | `src/topology/`    | 拓扑编辑器：场景/视图/项/撤销/序列化/导出                                        |
+| **etest_protocol** | `src/protocol/`    | ICD 协议编辑器：节点树/位图视图/属性面板                                         |
+| **etest_ui**       | `src/libui/`       | 跨模块共享 UI 组件库（如 DockTitleBar），被 topology、protocol 共用              |
+| **icd_utility**    | `src/icd_utility/` | ICD 数据格式工具库（纯 C++17，无 Qt 依赖）                                       |
+| **etest**          | `src/app/`         | 主程序：停靠界面布局、编辑器管理、欢迎页、终端、输出面板、屏保组件等             |
 
 ### 模组依赖关系
 
@@ -124,11 +124,11 @@ scripts/run_app.bat
 
 以下变量需要正确设置：
 
-| 变量名 | 示例值 | 说明 |
-|---|---|---|
-| `VS2019_CMD_DIR` | `D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build` | VS2019 环境初始化脚本目录，需包含 `vcvars64.bat` 和 `vcvars32.bat` |
-| `ETest_Qt5_Path` | `D:\Qt22\5.15.2` | Qt 5.15.2 安装路径 |
-| `ETest_CMake_Path` | `C:\Program Files\CMake\bin` | CMake 可执行文件目录 |
+| 变量名             | 示例值                                                                             | 说明                                                               |
+| ------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `VS2019_CMD_DIR`   | `D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build` | VS2019 环境初始化脚本目录，需包含 `vcvars64.bat` 和 `vcvars32.bat` |
+| `ETest_Qt5_Path`   | `D:\Qt22\5.15.2`                                                                   | Qt 5.15.2 安装路径                                                 |
+| `ETest_CMake_Path` | `C:\Program Files\CMake\bin`                                                       | CMake 可执行文件目录                                               |
 
 ## 使用 IDE 开发
 
@@ -193,15 +193,15 @@ cmake -S . --preset windows-debug
 build_ninja.bat [<type>] [<action>]
 ```
 
-| 命令 | 构建类型 | 目标 | 后续动作 |
-|------|---------|------|---------|
-| `build_ninja.bat` | debug | 全量 | — |
-| `build_ninja.bat debug` | debug | 全量 | — |
-| `build_ninja.bat relwithdebinfo` | relwithdebinfo | 全量 | — |
-| `build_ninja.bat release` | release | 全量 | — |
-| `build_ninja.bat debug deploy` | debug | 全量 | windeployqt |
-| `build_ninja.bat debug package` | debug | 全量 | windeployqt + ISCC |
-| `build_ninja.bat release package` | release | 全量 | windeployqt + ISCC |
+| 命令                              | 构建类型       | 目标 | 后续动作           |
+| --------------------------------- | -------------- | ---- | ------------------ |
+| `build_ninja.bat`                 | debug          | 全量 | —                  |
+| `build_ninja.bat debug`           | debug          | 全量 | —                  |
+| `build_ninja.bat relwithdebinfo`  | relwithdebinfo | 全量 | —                  |
+| `build_ninja.bat release`         | release        | 全量 | —                  |
+| `build_ninja.bat debug deploy`    | debug          | 全量 | windeployqt        |
+| `build_ninja.bat debug package`   | debug          | 全量 | windeployqt + ISCC |
+| `build_ninja.bat release package` | release        | 全量 | windeployqt + ISCC |
 
 #### 新模式（显式参数）
 
@@ -209,13 +209,13 @@ build_ninja.bat [<type>] [<action>]
 build_ninja.bat -t <type> [-m <target>] [-d|-p]
 ```
 
-| 参数 | 说明 |
-|------|------|
-| `-t, --type <type>` | 构建类型：debug / relwithdebinfo / release（默认 debug） |
-| `-m, --target <target>` | 构建目标（如 ETestStudio），省略则全量构建 |
-| `-d, --deploy` | 编译后执行 windeployqt |
-| `-p, --package` | 编译后执行 windeployqt + ISCC 打包 |
-| `-h, --help` | 显示帮助 |
+| 参数                    | 说明                                                     |
+| ----------------------- | -------------------------------------------------------- |
+| `-t, --type <type>`     | 构建类型：debug / relwithdebinfo / release（默认 debug） |
+| `-m, --target <target>` | 构建目标（如 ETestStudio），省略则全量构建               |
+| `-d, --deploy`          | 编译后执行 windeployqt                                   |
+| `-p, --package`         | 编译后执行 windeployqt + ISCC 打包                       |
+| `-h, --help`            | 显示帮助                                                 |
 
 `--type` 和 `--target` 支持两种写法：`-t debug` 或 `--type=debug`，`-m ETestStudio` 或 `--target=ETestStudio`。
 
@@ -296,21 +296,21 @@ scripts/build_ninja.bat -t relwithdebinfo -m ETestStudio -p
 
 项目集成了以下第三方库，均已在 CMake 中配置为静态编译：
 
-| 库 | 版本 | 说明 |
-|---|---|---|
-| Qt | 5.15.2 (Win) / 5.12.x (Linux) | Core、Gui、Widgets、PrintSupport、Test、Xml、Svg、Network、Concurrent、Sql。Windows 用 msvc2019_64 官方包，Linux 用系统包或自定义路径（见 `local.cmake`） |
-| Qt-Advanced-Docking-System | 3.8.3 | 高级停靠系统 |
-| SARibbon | 2.5.7 | Ribbon 风格界面 |
-| QWindowKit | 1.5.0 | 无边框窗口解决方案 |
-| QXlsx | 1.5.0 | Excel 读写 |
-| QScintilla | 2.11.3 | 高级文本编辑器组件 |
-| spdlog | 1.17.0 | 日志库 |
-| googletest | 1.17.0 | 单元测试框架 |
-| zlib | 1.3.2 | 压缩库 |
-| libpng | 1.6.43 | PNG 图像处理 |
-| libharu | 2.4.6 | PDF 生成 |
-| lua | 5.4.4 | 脚本语言支持 |
-| sol2 | 3.3.0 | Lua C++ 绑定库 |
-| Inno Setup | 6.x | 安装程序打包 |
+| 库                         | 版本                          | 说明                                                                                                                                                      |
+| -------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Qt                         | 5.15.2 (Win) / 5.12.x (Linux) | Core、Gui、Widgets、PrintSupport、Test、Xml、Svg、Network、Concurrent、Sql。Windows 用 msvc2019_64 官方包，Linux 用系统包或自定义路径（见 `local.cmake`） |
+| Qt-Advanced-Docking-System | 3.8.3                         | 高级停靠系统                                                                                                                                              |
+| SARibbon                   | 2.5.7                         | Ribbon 风格界面                                                                                                                                           |
+| QWindowKit                 | 1.5.0                         | 无边框窗口解决方案                                                                                                                                        |
+| QXlsx                      | 1.5.0                         | Excel 读写                                                                                                                                                |
+| QScintilla                 | 2.11.3                        | 高级文本编辑器组件                                                                                                                                        |
+| spdlog                     | 1.17.0                        | 日志库                                                                                                                                                    |
+| googletest                 | 1.17.0                        | 单元测试框架                                                                                                                                              |
+| zlib                       | 1.3.2                         | 压缩库                                                                                                                                                    |
+| libpng                     | 1.6.43                        | PNG 图像处理                                                                                                                                              |
+| libharu                    | 2.4.6                         | PDF 生成                                                                                                                                                  |
+| lua                        | 5.4.4                         | 脚本语言支持                                                                                                                                              |
+| sol2                       | 3.3.0                         | Lua C++ 绑定库                                                                                                                                            |
+| Inno Setup                 | 6.x                           | 安装程序打包                                                                                                                                              |
 
 > Qt 使用官方编译的二进制发布包，默认是共享库。MSVC2019 编译环境完全兼容 msvc2019_64 编译的 Qt 库。
