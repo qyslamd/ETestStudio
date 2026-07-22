@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QtMath>
 
 #include <icd/repository.hpp>
 
@@ -136,7 +137,14 @@ ADChannelSimulator::ADChannelSimulator(const QString& deviceId, int frameId,
 
 double ADChannelSimulator::readChannelValue(int channel) {
   Q_UNUSED(channel);
-  return fixed_value_;
+  // 如果设置了固定值（来自 MockResponses.json），使用固定值
+  if (fixed_value_ != 0.0) {
+    return fixed_value_;
+  }
+  // 默认生成正弦波：幅值 5V，频率 50Hz，每次调用推进相位
+  ++sample_counter_;
+  double t = sample_counter_ / 1000.0;  // 模拟 1kHz 采样率
+  return kAmplitude * qSin(2.0 * M_PI * kFrequency * t);
 }
 
 void ADChannelSimulator::setFixedValue(double value) { fixed_value_ = value; }

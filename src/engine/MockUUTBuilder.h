@@ -133,6 +133,9 @@ class ADChannelSimulator : public ChannelPortSimulator {
  private:
   int channel_;
   double fixed_value_ = 0.0;
+  qint64 sample_counter_ = 0;
+  static constexpr double kFrequency = 50.0;   // 正弦波频率, 配合 1kHz 采样
+  static constexpr double kAmplitude = 5.0;     // 幅值 ±5V
 };
 
 // ============================================================================
