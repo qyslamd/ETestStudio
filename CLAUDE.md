@@ -54,6 +54,13 @@ scripts/build_ninja.sh -t debug -c
 - **禁止在代码中使用 emoji 字符**（包括 `\xF0\x9F...` 等字节转义或直接粘贴的 emoji）
   - 原因：WSL2 Ubuntu 等环境默认缺彩色 emoji 字体，渲染为豆腐块；跨平台表现不一致
   - 替代方案：统一使用 `src/app/resources/icons/svg/` 下的 SVG 图标，通过 `AppIconProvider::instance().icon("name")` 加载；缺图时新增 SVG（配 `_light`/`_dark` 两套）而非用 emoji
+- **头文件保护符统一使用 `#pragma once`**
+  - 原因：MSVC 2019 / GCC 9+ 全部完整支持，无宏名冲突风险，比 `#ifndef` 更简洁、少一行样板代码
+  - 例外：对外发布的公共 SDK 头文件（如 `src/core/plugin_sdk/`）如需兼容远古编译器，可用 `#ifndef` 风格，但必须遵循命名格式 `ETEST_<MODULE>_<FILE_PATH>_H_`
+- **命名空间统一使用 C++17 折叠式 `namespace a::b { }`**
+  - 原因：简洁、减少缩进层次、与现已使用的折叠式风格对齐
+  - 所有 `etest` 系列模块（`core`、`app`、`topology`、`protocol`、`engine`、`libui` 等）统一用 `namespace etest::xxx {}`
+  - 非 `etest` 命名空间的模块（如 `icd` 工具库）保持其自有风格 `namespace icd {}`，但命名空间内部不再嵌套二级命名空间
 
 ## 代码架构
 项目采用分层、模块化架构设计，`src/` 下每个子目录对应一个独立的 CMake 构建目标：
