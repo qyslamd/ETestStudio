@@ -385,6 +385,10 @@ QWidget* SettingsDialog::createProjectPage() {
                  QStringLiteral("打开文件时自动打开其所属项目"),
                  CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT,
                  CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
+  addCheckBoxRow(card, QStringLiteral("提示初始化 Git 仓库"),
+                 QStringLiteral("打开未初始化 Git 的项目时弹窗询问是否初始化"),
+                 CONFIG_PROJECT_GIT_PROMPT_INIT,
+                 CONFIG_PROJECT_DEFAULT_GIT_PROMPT_INIT);
 
   layout->addStretch();
   return page;

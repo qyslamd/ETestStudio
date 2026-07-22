@@ -1633,18 +1633,35 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
 
   // 打开项目后检查 Git 仓库初始化状态，未 init 时弹窗询问
   // 只对"打开"项目触发，新建项目在 createProject 中已自动 init
+  // 用户可在弹窗勾「不再提示」或在设置页关闭，CONFIG_PROJECT_GIT_PROMPT_INIT 控制
   if (auto* gw = sidebar_->gitWidget()) {
     if (!QDir(projectPath).exists(QStringLiteral(".git"))) {
-      auto ret = QMessageBox::question(
-          this, QStringLiteral("Git 仓库"),
-          QStringLiteral("项目目录尚未初始化 Git 仓库，是否立即初始化？\n\n"
-                         "这将在项目根目录创建 .git 目录，"
-                         "方便您对测试程序文件进行版本管理。"),
-          QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-      if (ret == QMessageBox::Yes) {
-        // 直接传 projectPath，不依赖 project_root_ 的赋值时机
-        // （projectOpened 信号链中 setProjectRoot 在本函数之后执行）
-        gw->initRepository(projectPath);
+      bool prompt = ConfigManager::instance().get<bool>(
+          CONFIG_PROJECT_GIT_PROMPT_INIT,
+          CONFIG_PROJECT_DEFAULT_GIT_PROMPT_INIT);
+      if (prompt) {
+        QMessageBox box(this);
+        box.setWindowTitle(QStringLiteral("Git 仓库"));
+        box.setIcon(QMessageBox::Question);
+        box.setText(QStringLiteral(
+            "项目目录尚未初始化 Git 仓库，是否立即初始化？\n\n"
+            "这将在项目根目录创建 .git 目录，"
+            "方便您对测试程序文件进行版本管理。"));
+        box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        box.setDefaultButton(QMessageBox::Yes);
+        auto* dontAskCb =
+            new QCheckBox(QStringLiteral("不再提示"), &box);
+        box.setCheckBox(dontAskCb);
+        int ret = box.exec();
+        if (ret == QMessageBox::Yes) {
+          // 直接传 projectPath，不依赖 project_root_ 的赋值时机
+          // （projectOpened 信号链中 setProjectRoot 在本函数之后执行）
+          gw->initRepository(projectPath);
+        }
+        if (dontAskCb->isChecked()) {
+          ConfigManager::instance().set<bool>(CONFIG_PROJECT_GIT_PROMPT_INIT,
+                                              false);
+        }
       }
     }
   }

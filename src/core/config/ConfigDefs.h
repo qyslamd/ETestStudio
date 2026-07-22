@@ -92,6 +92,9 @@ constexpr const char* CONFIG_PLUGIN_SEARCH_PATHS =
 // 项目配置组
 constexpr const char* CONFIG_PROJECT_AUTO_OPEN_LAST = "project/auto_open_last";
 constexpr bool CONFIG_PROJECT_DEFAULT_AUTO_OPEN_LAST = false;
+// 打开项目时是否提示初始化 Git 仓库（用户可在弹窗勾「不再提示」关闭，或在设置页切换）
+constexpr const char* CONFIG_PROJECT_GIT_PROMPT_INIT = "project/git_prompt_init";
+constexpr bool CONFIG_PROJECT_DEFAULT_GIT_PROMPT_INIT = true;
 
 // 登录认证配置组
 constexpr const char* CONFIG_AUTH_REMEMBER_USERNAME = "auth/remember_username";

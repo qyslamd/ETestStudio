@@ -146,11 +146,12 @@
         {
             "name": "ninja-debug-linux",
             "displayName": "Ninja Debug (Linux)",
-            "description": "使用Ninja构建的Debug版本（Linux/WSL）",
+            "description": "使用Ninja构建的Debug版本（Linux/WSL）。GCC/Clang 的 Debug 不会自动定义 _DEBUG（不同于 MSVC），这里显式补上以与 Windows Debug 行为一致",
             "inherits": "ninja-debug",
             "binaryDir": "${sourceDir}/build/ninja-debug-linux",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-debug-linux"
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-debug-linux",
+                "CMAKE_CXX_FLAGS_DEBUG": "-g -D_DEBUG"
             }
         },
         {
