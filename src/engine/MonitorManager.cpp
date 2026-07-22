@@ -14,10 +14,8 @@ MonitorManager::MonitorManager(QObject* parent)
 // loadFromTopology — 从拓扑 JSON 重建查表和树缓存
 // ═══════════════════════════════════════════════════════════════════
 void MonitorManager::loadFromTopology(const QJsonObject& topologyDoc) {
-  lookup_table_.clear();
-  tree_cache_.clear();
-  buffer_.clear();
-  subscribers_.clear();
+  clearStructure();
+  clearRuntime();
 
   appendFromTopology(topologyDoc);
 }
@@ -239,12 +237,18 @@ QJsonArray MonitorManager::flushSamples() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// clear — 完全重置
+// clearRuntime — 清运行时数据（保留结构和订阅）
 // ═══════════════════════════════════════════════════════════════════
-void MonitorManager::clear() {
+void MonitorManager::clearRuntime() {
+  buffer_.clear();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// clearStructure — 清结构和订阅（保留运行时数据）
+// ═══════════════════════════════════════════════════════════════════
+void MonitorManager::clearStructure() {
   lookup_table_.clear();
   tree_cache_.clear();
-  buffer_.clear();
   subscribers_.clear();
 }
 

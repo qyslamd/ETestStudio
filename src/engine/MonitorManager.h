@@ -87,8 +87,11 @@ class MonitorManager : public QObject {
   // 返回 JSON array，格式见方案 2.3
   QJsonArray flushSamples();
 
-  // ── 清空所有订阅和数据 ──
-  void clear();
+  // ── 清空运行时数据（保留结构和订阅） ──
+  void clearRuntime();
+
+  // ── 清空结构和订阅（保留运行时数据） ──
+  void clearStructure();
 
  private:
   // key = (deviceId, portName)

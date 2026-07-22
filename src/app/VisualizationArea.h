@@ -40,6 +40,9 @@ class VisualizationArea : public QGraphicsView {
   // ── 当前数量 ──
   int visualizerCount() const { return items_.size(); }
 
+  // ── 当前活跃通道列表（供 syncProjectTopologies 恢复订阅使用） ──
+  QList<QPair<int, int>> activeChannels() const;
+
  signals:
   // ── 从可视化区内关闭某个组件（右键菜单等内部操作） ──
   void visualizerClosed(int monitorIndex, int channelIndex);

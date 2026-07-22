@@ -2,6 +2,7 @@
 #define ETEST_APP_SIGNAL_TREE_PANEL_H_
 
 #include <QHash>
+#include <QPair>
 #include <QWidget>
 
 #include "engine/MonitorManager.h"
@@ -27,7 +28,8 @@ class SignalTreePanel : public QWidget {
 
   // ── 设置树数据（来自 MonitorManager::monitorTree()） ──
   void setMonitorTree(
-      const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree);
+      const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree,
+      const QList<QPair<int, int>>& preCheckedChannels = {});
 
   // ── 更新某个通道的实时值缩略文本 ──
   void updateNodeValue(int monitorIndex, int channelIndex,
@@ -36,6 +38,9 @@ class SignalTreePanel : public QWidget {
   // ── 取消勾选某个通道（用于可视化区右键关闭时同步） ──
   void uncheckChannel(int monitorIndex, int channelIndex);
 
+  // ── 清空树和所有勾选（项目关闭时使用） ──
+  void clearTree();
+
  signals:
   // ── 叶节点 checkbox 状态变化 ──
   void checkStateChanged(int monitorIndex, int channelIndex, bool checked);
@@ -43,7 +48,8 @@ class SignalTreePanel : public QWidget {
  private:
   void initUi();
   void buildTree(
-      const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree);
+      const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree,
+      const QList<QPair<int, int>>& preCheckedChannels = {});
   void onFilterChanged(const QString& text);
 
   QLineEdit* search_box_ = nullptr;

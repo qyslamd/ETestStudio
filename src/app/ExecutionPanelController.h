@@ -1,6 +1,8 @@
 #ifndef ETEST_APP_EXECUTIONPANELCONTROLLER_H_
 #define ETEST_APP_EXECUTIONPANELCONTROLLER_H_
 
+#include <QDateTime>
+#include <QHash>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -83,6 +85,14 @@ class ExecutionPanelController : public QObject {
 
   // 执行仪表盘注入（用于连接监听器信号）
   void setDashboard(ExecutionDashboard* dashboard);
+  ExecutionDashboard* dashboard() const { return dashboard_; }
+
+  // 拓扑 / 监听器生命周期（由 MainWindow 在项目打开/关闭时调用）
+  void syncProjectTopologies();
+  void clearProjectState();
+
+  // 清空可视化组件采样数据（Ribbon 按钮触发）
+  void clearData();
 
   // Ribbon 动作（供 MainWindow setupRibbon 获取）
   QAction* runAction() const { return act_run_; }
@@ -95,6 +105,9 @@ class ExecutionPanelController : public QObject {
   // 程序选择 popup（供 MainWindow 放入 ribbon）
   ProgramSelectionPopup* programPopup() const { return popup_; }
 
+  // 清空数据按钮（供 MainWindow 放入 ribbon）
+  QAction* clearDataAction() const { return act_clear_data_; }
+
  signals:
   void engineStateChanged(etest::engine::EngineState state);
   void execStatsUpdated(int pass, int fail, int elapsed);
@@ -105,14 +118,13 @@ class ExecutionPanelController : public QObject {
  private:
   void connectEngineSignals();
   void refreshMonitorTree();
+  /// syncProjectTopologies 数据就绪后恢复 UI 勾选和订阅
+  void restoreMonitorUi();
   bool checkCanVerify() const;
   bool checkCanRun() const;
   bool checkCanRunAll() const;
   /// 运行前检测未保存文件并提示，返回 true 表示可以继续
   bool checkUnsavedAndPrompt(const QStringList& paths) const;
-  /// 加载项目 topology/ 目录下所有 .etopo 到引擎
-  void loadProjectTopologies();
-
   // 引擎
   etest::engine::TestExecutionEngine* engine_ = nullptr;
 
@@ -122,6 +134,7 @@ class ExecutionPanelController : public QObject {
   QAction* act_stop_ = nullptr;
   QAction* act_verify_ = nullptr;
   QAction* act_run_all_ = nullptr;
+  QAction* act_clear_data_ = nullptr;
   QLabel* label_ribbon_stats_ = nullptr;
 
   // 引擎状态
@@ -129,6 +142,9 @@ class ExecutionPanelController : public QObject {
   int fail_count_ = 0;
   QString current_program_name_;
   QStringList run_queue_;
+
+  // topology 文件 mtime 快照（供 syncProjectTopologies 判断变化）
+  QHash<QString, QDateTime> topo_mtimes_;
 
   // 外部依赖（通过 postInit 注入）
   QWidget* parent_widget_ = nullptr;

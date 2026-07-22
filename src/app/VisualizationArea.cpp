@@ -122,6 +122,19 @@ void VisualizationArea::clearAll() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// activeChannels — 当前活跃通道列表（供 syncProjectTopologies 恢复订阅使用）
+// ══════════════════════════════════════════════════════════════════════════════
+QList<QPair<int, int>> VisualizationArea::activeChannels() const {
+  QList<QPair<int, int>> channels;
+  channels.reserve(items_.size());
+  for (auto it = items_.constBegin(); it != items_.constEnd(); ++it) {
+    int key = it.key();
+    channels.append(qMakePair(key >> 16, key & 0xFFFF));
+  }
+  return channels;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // resizeEvent — 视图大小变化时重排
 // ══════════════════════════════════════════════════════════════════════════════
 

@@ -103,7 +103,11 @@ ExecutionPanelController::ExecutionPanelController(QWidget* parent_widget,
   act_run_all_ =
       new QAction(QIcon(), QStringLiteral("运行全部"), parent_widget_);
   label_ribbon_stats_ =
-      new QLabel(QStringLiteral("✅ 0  ❌ 0  ⏱ 0s"), parent_widget_);
+      new QLabel(QStringLiteral("P 0  F 0  T 0s"), parent_widget_);
+  act_clear_data_ = new QAction(QIcon(), QStringLiteral("清空数据"), parent_widget_);
+  act_clear_data_->setEnabled(false);
+  connect(act_clear_data_, &QAction::triggered, this,
+          &ExecutionPanelController::clearData);
   popup_ = new ProgramSelectionPopup(parent_widget_);
   connect(popup_, &ProgramSelectionPopup::selectionChanged, this,
           &ExecutionPanelController::updateRunControls);
@@ -182,7 +186,7 @@ void ExecutionPanelController::connectEngineSignals() {
                 state_text = QStringLiteral("已暂停");
                 break;
               case etest::engine::EngineState::Finished:
-                state_text = QStringLiteral("已完成 (✅%1 ❌%2)")
+                state_text = QStringLiteral("已完成 (P%1 F%2)")
                                  .arg(pass_count_)
                                  .arg(fail_count_);
                 break;
@@ -195,10 +199,6 @@ void ExecutionPanelController::connectEngineSignals() {
             }
             emit engineStateChanged(state);
           });
-
-  // 引擎启动后刷新监听器树
-  connect(engine_, &etest::engine::TestExecutionEngine::engineStarted, this,
-          &ExecutionPanelController::refreshMonitorTree);
 
   // 绑定调试面板
   if (debug_widget_) {
@@ -270,6 +270,7 @@ void ExecutionPanelController::syncControlStates() {
     act_pause_->setEnabled(false);
     act_stop_->setEnabled(false);
     act_verify_->setEnabled(checkCanVerify());
+    act_clear_data_->setEnabled(false);
     return;
   }
   auto state = engine_->state();
@@ -281,6 +282,7 @@ void ExecutionPanelController::syncControlStates() {
       act_pause_->setEnabled(false);
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(checkCanVerify());
+      act_clear_data_->setEnabled(true);
       break;
     case etest::engine::EngineState::Running:
       act_run_->setEnabled(false);
@@ -291,6 +293,7 @@ void ExecutionPanelController::syncControlStates() {
           AppIconProvider::instance().icon(QStringLiteral("pause")));
       act_stop_->setEnabled(true);
       act_verify_->setEnabled(false);
+      act_clear_data_->setEnabled(false);
       break;
     case etest::engine::EngineState::Paused:
       act_run_->setEnabled(false);
@@ -301,6 +304,7 @@ void ExecutionPanelController::syncControlStates() {
           AppIconProvider::instance().icon(QStringLiteral("resume")));
       act_stop_->setEnabled(true);
       act_verify_->setEnabled(false);
+      act_clear_data_->setEnabled(false);
       break;
     case etest::engine::EngineState::Error:
       act_run_->setEnabled(checkCanRun());
@@ -308,6 +312,7 @@ void ExecutionPanelController::syncControlStates() {
       act_pause_->setEnabled(false);
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(checkCanVerify());
+      act_clear_data_->setEnabled(true);
       break;
   }
 }
@@ -360,12 +365,39 @@ void ExecutionPanelController::updateRunControls() {
   act_verify_->setEnabled(checkCanVerify());
 }
 
-void ExecutionPanelController::loadProjectTopologies() {
+void ExecutionPanelController::restoreMonitorUi() {
+  if (!dashboard_ || !engine_) {
+    return;
+  }
+  auto* mm = engine_->monitorManager();
+  if (!mm) {
+    return;
+  }
+
+  auto* visArea = dashboard_->visualizationArea();
+  auto* treePanel = dashboard_->signalTreePanel();
+  QList<QPair<int, int> > active = visArea->activeChannels();
+  treePanel->setMonitorTree(mm->monitorTree(), active);
+
+  // 重新订阅（clearTopologyState 已清 subscribers_）
+  for (int i = 0; i < active.size(); ++i) {
+    int mi = active.at(i).first;
+    int ci = active.at(i).second;
+    SignalVisualizer* vis = visArea->visualizer(mi, ci);
+    if (vis) {
+      mm->subscribe(mi, ci,
+                    [vis](const etest::engine::MonitorSample& sample) {
+                      vis->onSampleCaptured(sample);
+                    });
+    }
+  }
+}
+
+
+void ExecutionPanelController::syncProjectTopologies() {
   if (!engine_) {
     return;
   }
-  // 清空上一次累积的拓扑状态（设备 / monitors），避免跨运行残留
-  engine_->clearTopologyState();
 
   auto& proj_mgr = etest::core::project::ProjectManager::instance();
   if (!proj_mgr.isProjectOpen()) {
@@ -379,9 +411,68 @@ void ExecutionPanelController::loadProjectTopologies() {
   }
   const auto topo_files = topo_dir_obj.entryInfoList(
       {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
+
+  auto* mm = engine_->monitorManager();
+  if (!mm) {
+    return;
+  }
+
+  bool tree_empty = mm->monitorTree().isEmpty();
+
+  if (tree_empty) {
+    // ── 首次加载 / 引擎重建后：直接追加 ──
+    for (const QFileInfo& fi : topo_files) {
+      engine_->loadTopology(fi.absoluteFilePath());
+    }
+    // 记录 mtime 快照
+    topo_mtimes_.clear();
+    for (const QFileInfo& fi : topo_files) {
+      topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
+    }
+    // 恢复 UI（首次加载时 activeChannels() 为空，退化为全 Unchecked）
+    restoreMonitorUi();
+    return;
+  }
+
+  // ── tree_cache_ 非空：检测拓扑变化 ──
+
+  // mtime 快照为空但树已有数据（setDashboard → refreshMonitorTree 早于首次 syncProjectTopologies）
+  // 直接记录快照并跳过，无需重建
+  if (topo_mtimes_.isEmpty()) {
+    for (const QFileInfo& fi : topo_files) {
+      topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
+    }
+    return;
+  }
+
+  bool changed = false;
+  if (topo_files.size() != topo_mtimes_.size()) {
+    changed = true;
+  } else {
+    for (const QFileInfo& fi : topo_files) {
+      auto it = topo_mtimes_.constFind(fi.absoluteFilePath());
+      if (it == topo_mtimes_.constEnd() || it.value() != fi.lastModified()) {
+        changed = true;
+        break;
+      }
+    }
+  }
+
+  if (!changed) {
+    // mtime 没变 + 文件列表一致：跳过
+    return;
+  }
+
+  // ── 拓扑变化：全量重建 ──
+  engine_->clearTopologyState();
   for (const QFileInfo& fi : topo_files) {
     engine_->loadTopology(fi.absoluteFilePath());
   }
+  topo_mtimes_.clear();
+  for (const QFileInfo& fi : topo_files) {
+    topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
+  }
+  restoreMonitorUi();
 }
 
 void ExecutionPanelController::run() {
@@ -431,8 +522,8 @@ void ExecutionPanelController::run() {
     return;
   }
 
-  // 加载拓扑设备（含 monitors 累积）
-  loadProjectTopologies();
+  // 同步拓扑数据（mtime 没变则跳过）
+  syncProjectTopologies();
 
   // 设置程序数据
   current_program_name_ = data.name;
@@ -711,8 +802,8 @@ void ExecutionPanelController::runNextInQueue() {
     return;
   }
 
-  // 加载拓扑设备（含 monitors 累积）
-  loadProjectTopologies();
+  // 同步拓扑数据（mtime 没变则跳过，引擎重建后 tree_cache_ 为空走首次加载路径）
+  syncProjectTopologies();
 
   // 设置程序数据
   current_program_name_ = data.name;
@@ -817,7 +908,52 @@ void ExecutionPanelController::refreshMonitorTree() {
   if (!mm) {
     return;
   }
-  dashboard_->signalTreePanel()->setMonitorTree(mm->monitorTree());
+  dashboard_->signalTreePanel()->setMonitorTree(mm->monitorTree(),
+      dashboard_->visualizationArea()->activeChannels());
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// clearData — 清空所有可视化组件的采样数据（Ribbon 按钮触发）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::clearData() {
+  if (!dashboard_) {
+    return;
+  }
+  auto* visArea = dashboard_->visualizationArea();
+  QList<QPair<int, int> > channels = visArea->activeChannels();
+  for (int i = 0; i < channels.size(); ++i) {
+    int mi = channels.at(i).first;
+    int ci = channels.at(i).second;
+    SignalVisualizer* vis = visArea->visualizer(mi, ci);
+    if (vis) {
+      vis->clearData();
+    }
+  }
+  // 同步清空 MonitorManager 的采样 buffer，避免旧数据污染下次运行
+  if (engine_) {
+    auto* mm = engine_->monitorManager();
+    if (mm) {
+      mm->clearRuntime();
+    }
+  }
+  LOG_INFO("MAIN_UI", "清空数据 [channels={}]", channels.size());
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// clearProjectState — 清理与当前项目相关的监听器状态（项目关闭时调用）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::clearProjectState() {
+  // 清理 UI
+  if (dashboard_) {
+    // 先清可视化组件（clearAll 发射 visualizerClosed → uncheckChannel 回调需 node_map_ 有效）
+    dashboard_->visualizationArea()->clearAll();
+    // 再清树
+    dashboard_->signalTreePanel()->clearTree();
+  }
+  // 清理 mtime 缓存
+  topo_mtimes_.clear();
 }
 
 }  // namespace etest::app

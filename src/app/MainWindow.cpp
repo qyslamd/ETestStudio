@@ -1677,6 +1677,9 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     tpMgr->refreshList();
   }
 
+  // 同步拓扑监听器数据到 MonitorManager（项目打开后树数据就绪）
+  execution_controller_->syncProjectTopologies();
+
   // 同步 ribbon 按钮 enable 状态
   execution_controller_->syncControlStates();
 
@@ -1726,6 +1729,9 @@ void MainWindow::onProjectClosed() {
 
   // M6: 清理 ICD 上下文
   execution_controller_->destroyEngine();
+
+  // 清理运行页监听器状态（树、可视化组件、mtime 缓存）
+  execution_controller_->clearProjectState();
 
   if (signal_registry_) {
     signal_registry_->clear();
@@ -2248,6 +2254,7 @@ void MainWindow::setupRibbon() {
     panel_control->addLargeAction(execution_controller_->runAction());
     panel_control->addSmallAction(execution_controller_->pauseAction());
     panel_control->addSmallAction(execution_controller_->stopAction());
+    panel_control->addSmallAction(execution_controller_->clearDataAction());
 
     connect(execution_controller_->runAction(), &QAction::triggered, this,
             [this]() { execution_controller_->run(); });

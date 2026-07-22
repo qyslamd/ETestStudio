@@ -1,6 +1,8 @@
 #include "SignalTreePanel.h"
 
 #include <QLineEdit>
+#include <QPair>
+#include <QSet>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
@@ -63,9 +65,10 @@ void SignalTreePanel::initUi() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 void SignalTreePanel::setMonitorTree(
-    const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree) {
+    const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree,
+    const QList<QPair<int, int>>& preCheckedChannels) {
   tree_data_ = tree;
-  buildTree(tree);
+  buildTree(tree, preCheckedChannels);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -73,9 +76,19 @@ void SignalTreePanel::setMonitorTree(
 // ══════════════════════════════════════════════════════════════════════════════
 
 void SignalTreePanel::buildTree(
-    const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree) {
+    const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree,
+    const QList<QPair<int, int>>& preCheckedChannels) {
   tree_->clear();
   node_map_.clear();
+
+  // 阻止重建过程中的 itemChanged 信号（checkState 设勾选不会误触 checkStateChanged）
+  QSignalBlocker blocker(tree_);
+
+  // 构建 preChecked 集合用于 O(n) 查找
+  QSet<QPair<int, int>> preSet;
+  for (const auto& ch : preCheckedChannels) {
+    preSet.insert(ch);
+  }
 
   for (const auto& entry : tree) {
     // 顶级：监听器名称
@@ -98,6 +111,11 @@ void SignalTreePanel::buildTree(
       // 存储 (monitorIndex, channelIndex) 到 UserRole
       int key = (entry.monitorIndex << 16) | ci;
       childItem->setData(0, Qt::UserRole, key);
+
+      // 如果该通道在 preChecked 集合中，恢复勾选
+      if (preSet.contains(qMakePair(entry.monitorIndex, ci))) {
+        childItem->setCheckState(0, Qt::Checked);
+      }
 
       node_map_.insert(key, childItem);
     }
@@ -124,6 +142,15 @@ void SignalTreePanel::updateNodeValue(int monitorIndex, int channelIndex,
   } else {
     item->setText(0, baseText);
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// clearTree — 清空树和所有勾选（项目关闭时使用）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void SignalTreePanel::clearTree() {
+  tree_->clear();
+  node_map_.clear();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

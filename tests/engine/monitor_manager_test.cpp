@@ -204,3 +204,77 @@ TEST(MonitorManagerTest, FlushClearsBuffer) {
     QJsonArray second = mgr.flushSamples();
     EXPECT_TRUE(second.isEmpty());
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 7: clearRuntime 清 buffer 但保留结构和订阅
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(MonitorManagerTest, ClearRuntime) {
+    MonitorManager mgr;
+    mgr.loadFromTopology(makeTestTopology());
+
+    // 建立一个订阅（用计数器验证 clearRuntime 后回调仍能触发）
+    int callCount = 0;
+    mgr.subscribe(0, 0, [&](const MonitorSample&) { ++callCount; });
+
+    // 写入 buffer 数据 + 验证订阅在 clearRuntime 前生效
+    mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
+                              QStringLiteral("ch0"),
+                              QByteArray(), 100.0, 1.0);
+    EXPECT_EQ(callCount, 1);
+
+    // 执行
+    mgr.clearRuntime();
+
+    // buffer 应清空
+    QJsonArray result = mgr.flushSamples();
+    EXPECT_TRUE(result.isEmpty());
+
+    // 树和订阅应保留
+    auto tree = mgr.monitorTree();
+    EXPECT_EQ(tree.size(), 2);
+
+    // 订阅仍有效（clearRuntime 后发同通道数据，回调应再触发）
+    mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
+                              QStringLiteral("ch0"),
+                              QByteArray(), 200.0, 2.0);
+    EXPECT_EQ(callCount, 2);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 8: clearStructure 清树和订阅但保留 buffer
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(MonitorManagerTest, ClearStructure) {
+    MonitorManager mgr;
+    mgr.loadFromTopology(makeTestTopology());
+
+    // 写入 buffer 数据
+    mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
+                              QStringLiteral("ch0"),
+                              QByteArray(), 100.0, 1.0);
+
+    // 建立一个订阅
+    mgr.subscribe(0, 0, [&](const MonitorSample&) {});
+
+    // 执行
+    mgr.clearStructure();
+
+    // 树应清空
+    auto tree = mgr.monitorTree();
+    EXPECT_TRUE(tree.isEmpty());
+
+    // 订阅应清空——再发射信号不会崩溃
+    mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
+                              QStringLiteral("ch0"),
+                              QByteArray(), 200.0, 2.0);
+    // （无断言：只验证不崩溃）
+
+    // buffer 应保留（flush 仍能拿到之前的数据，值不受 clearStructure 影响）
+    QJsonArray result = mgr.flushSamples();
+    ASSERT_EQ(result.size(), 1);
+    QJsonObject monObj = result[0].toObject();
+    QJsonArray channels = monObj[QStringLiteral("channels")].toArray();
+    ASSERT_EQ(channels.size(), 1);
+    QJsonArray samples = channels[0].toObject()[QStringLiteral("samples")].toArray();
+    ASSERT_EQ(samples.size(), 1);
+    EXPECT_DOUBLE_EQ(samples[0].toObject()[QStringLiteral("eng")].toDouble(), 1.0);
+}

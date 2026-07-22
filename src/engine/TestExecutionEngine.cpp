@@ -102,7 +102,8 @@ void TestExecutionEngine::clearTopologyState() {
         hw_manager_->closeAllDevices();
     }
     if (monitor_manager_) {
-        monitor_manager_->clear();
+        monitor_manager_->clearStructure();
+        monitor_manager_->clearRuntime();
     }
 }
 
