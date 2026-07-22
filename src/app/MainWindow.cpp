@@ -1166,6 +1166,13 @@ void MainWindow::lazyInit() {
             if (index == 1) {
               disableEditActions();
               ribbonBar()->setObjectName(QStringLiteral("RunningMode"));
+
+              // 切到执行页时检测拓扑变化（引擎 Idle 时才刷新，防关设备）
+              if (execution_controller_->engine() &&
+                  execution_controller_->engine()->state()
+                      == etest::engine::EngineState::Idle) {
+                execution_controller_->syncProjectTopologies();
+              }
             } else {
               enableEditActions();
               ribbonBar()->setObjectName(QString());
