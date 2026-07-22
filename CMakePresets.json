@@ -150,8 +150,7 @@
             "inherits": "ninja-debug",
             "binaryDir": "${sourceDir}/build/ninja-debug-linux",
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-debug-linux",
-                "CMAKE_CXX_FLAGS_DEBUG": "-g -D_DEBUG"
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/ninja-debug-linux"
             }
         },
         {
