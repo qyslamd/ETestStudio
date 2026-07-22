@@ -2108,3 +2108,47 @@ QToolButton#saverCloseBtn:pressed {
 #RunningMode {
     border-bottom: 3px solid #ff8800;
 }
+
+/* ==================== LogFilterBar（page0 输出面板筛选工具栏） ==================== */
+#LogFilterBar {
+    background: #252526;
+    border: none;
+}
+#LogFilterBar QLineEdit#LogFilterBox {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 2px;
+    padding: 2px 6px;
+    selection-background-color: #264F78;
+}
+#LogFilterBar QLineEdit#LogFilterBox:focus {
+    border-color: #007ACC;
+}
+/* 正则非法红框 */
+#LogFilterBar QLineEdit#LogFilterBox[invalid="true"] {
+    border: 1px solid #F44747;
+}
+#LogFilterBar QToolButton {
+    background-color: transparent;
+    border: 1px solid #3C3C3C;
+    border-radius: 3px;
+    color: #858585;
+    font-size: 12px;
+    padding: 1px 4px;
+}
+#LogFilterBar QToolButton:hover {
+    background-color: #505050;
+    color: #CCCCCC;
+}
+#LogFilterBar QToolButton:checked {
+    background-color: #094771;
+    border-color: #007ACC;
+    color: #FFFFFF;
+}
+/* 级别按钮按级别着色（checked 时高亮该级别色） */
+#LogFilterBar QToolButton#LevelDebugBtn:checked { color: #858585; }
+#LogFilterBar QToolButton#LevelInfoBtn:checked  { color: #CCCCCC; }
+#LogFilterBar QToolButton#LevelWarnBtn:checked  { color: #D7BA7D; }
+#LogFilterBar QToolButton#LevelErrorBtn:checked { color: #F44747; }
+#LogFilterBar QToolButton#LevelFatalBtn:checked { color: #FF0000; }

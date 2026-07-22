@@ -1145,3 +1145,45 @@ etest--app--EtlogViewerWidget {
 #RunningMode {
     border-bottom: 3px solid #ff8800;
 }
+
+/* ==================== LogFilterBar（page0 输出面板筛选工具栏） ==================== */
+#LogFilterBar {
+    background: palette(window);
+    border: none;
+}
+#LogFilterBar QLineEdit#LogFilterBox {
+    background-color: palette(base);
+    color: palette(text);
+    border: 1px solid palette(mid);
+    border-radius: 2px;
+    padding: 2px 6px;
+    selection-background-color: palette(highlight);
+}
+#LogFilterBar QLineEdit#LogFilterBox:focus {
+    border-color: #007ACC;
+}
+#LogFilterBar QLineEdit#LogFilterBox[invalid="true"] {
+    border: 1px solid #C62828;
+}
+#LogFilterBar QToolButton {
+    background-color: transparent;
+    border: 1px solid palette(mid);
+    border-radius: 3px;
+    color: palette(text);
+    font-size: 12px;
+    padding: 1px 4px;
+}
+#LogFilterBar QToolButton:hover {
+    background-color: palette(midlight);
+}
+#LogFilterBar QToolButton:checked {
+    background-color: palette(highlight);
+    color: palette(highlighted-text);
+    border-color: #007ACC;
+}
+/* 级别按钮 checked 时着该级别色（与 vscode 主题对齐） */
+#LogFilterBar QToolButton#LevelDebugBtn:checked { color: #6A9955; }
+#LogFilterBar QToolButton#LevelInfoBtn:checked  { color: #4E8C3A; }
+#LogFilterBar QToolButton#LevelWarnBtn:checked  { color: #B8860B; }
+#LogFilterBar QToolButton#LevelErrorBtn:checked { color: #C62828; }
+#LogFilterBar QToolButton#LevelFatalBtn:checked { color: #8B0000; }

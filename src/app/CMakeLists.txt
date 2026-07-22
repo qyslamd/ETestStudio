@@ -59,6 +59,10 @@ add_executable(${TARGET_NAME} WIN32
     EditorManager.cpp
     editors/EditorFactory.h
     editors/EditorFactory.cpp
+    widgets/LogFilter.h
+    widgets/LogFilter.cpp
+    widgets/LogFilterBar.h
+    widgets/LogFilterBar.cpp
     widgets/LogOutputPanel.h
     widgets/LogOutputPanel.cpp
     widgets/ExecutionOutputPanel.h
