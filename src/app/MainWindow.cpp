@@ -21,6 +21,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPalette>
 #include <QProcess>
 #include <QScrollBar>
 #include <QShortcut>
@@ -165,6 +166,19 @@ void MainWindow::initUi() {
   // 初始化 ThemeManager（加载 QSS、检测暗亮、同步遗留状态）
   ThemeManager::instance();
 
+  // 直接给顶层主窗口设 palette，覆盖 native style 默认白底
+  {
+    QPalette pal = palette();
+    if (ThemeManager::instance().isDarkTheme()) {
+      pal.setColor(QPalette::Window, QColor("#1E1E1E"));
+      pal.setColor(QPalette::WindowText, QColor("#CCCCCC"));
+    } else {
+      pal.setColor(QPalette::Window, QColor("#F5F5F5"));
+      pal.setColor(QPalette::WindowText, QColor("#000000"));
+    }
+    setPalette(pal);
+  }
+
   setupRibbon();
   createStatusBar();
 
@@ -215,12 +229,12 @@ void MainWindow::initUi() {
   dock_manager_ = new ads::CDockManager(editor_area);
   editor_area_layout->addWidget(dock_manager_, 1);
 
-  // 中央占位（lazyInit 时替换为 WelcomeWidget）
-  auto* placeholder = new QWidget(editor_area);
-  placeholder->setObjectName("CentralPlaceholder");
+  // 中央欢迎页（直接创建，消除白色占位闪烁）
+  welcome_widget_ = new WelcomeWidget(editor_area);
+  welcome_widget_->refreshRecentProjects();
   central_dock_ = new ads::CDockWidget(QStringLiteral("欢迎"));
   central_dock_->setObjectName("CentralDock");
-  central_dock_->setWidget(placeholder);
+  central_dock_->setWidget(welcome_widget_);
   central_dock_->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(central_dock_);
   central_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);
@@ -263,12 +277,13 @@ void MainWindow::initUi() {
   v_splitter_->setSizes({800, 0});       // 底部面板初始大小为 0（后续恢复）
 
   // 追踪底部面板高度变化（用户拖动 splitter 手柄时实时更新）
-  connect(v_splitter_, &QSplitter::splitterMoved, this, [this](int pos, int idx) {
-    auto s = v_splitter_->sizes();
-    if (s.size() >= 2) {
-      bottom_container_height_ = s[1];
-    }
-  });
+  connect(v_splitter_, &QSplitter::splitterMoved, this,
+          [this](int pos, int idx) {
+            auto s = v_splitter_->sizes();
+            if (s.size() >= 2) {
+              bottom_container_height_ = s[1];
+            }
+          });
 
   // 恢复窗口状态
   restoreWindowState();
@@ -313,7 +328,6 @@ void MainWindow::initSignalsEarly() {
             sidebar_->switchPage(id);
             activity_bar_->setActivePageId(id);
           });
-
 }
 
 void MainWindow::initSignalsLate() {
@@ -926,7 +940,6 @@ void MainWindow::initSignalsLate() {
   connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
           protocolMgr, &ProtocolManagerWidget::refreshList);
 
-
   // 用例管理器：双击文件打开编辑器
   auto* tpMgr = sidebar_->testProgramManager();
 
@@ -1062,7 +1075,8 @@ void MainWindow::lazyInit() {
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
   // 3. 创建底部面板（显隐/尺寸在 lazyInit 末尾由 restoreLazyState 恢复）
-  // 注：page0 不再创建 ProblemsPanel，验证结果统一在 page1 底部「问题」tab（阶段三）
+  // 注：page0 不再创建 ProblemsPanel，验证结果统一在 page1
+  // 底部「问题」tab（阶段三）
   step_timer.restart();
   log_panel_ = new LogOutputPanel(this);
   execution_output_panel_ = new ExecutionOutputPanel(this);
@@ -1095,11 +1109,10 @@ void MainWindow::lazyInit() {
 
   // 执行控制器依赖注入（signal_registry_/icd_repository_ 项目打开时才可用）
   // test_program_mgr 传 nullptr — 运行目标已改用 popup（阶段二），
-  // test_program_mgr 传 nullptr - 运行目标已改用 popup（阶段二），参数位保留待后续清理
-  execution_controller_->postInit(
-      execution_output_panel_, nullptr, nullptr,
-      editor_manager_, nullptr,
-      status_bar_ctrl_);
+  // test_program_mgr 传 nullptr - 运行目标已改用
+  // popup（阶段二），参数位保留待后续清理
+  execution_controller_->postInit(execution_output_panel_, nullptr, nullptr,
+                                  editor_manager_, nullptr, status_bar_ctrl_);
   execution_controller_->setCentralStack(central_stack_);
   execution_controller_->setDashboard(exec_dashboard_page_);
   exec_dashboard_page_->setOutputPanel(execution_output_panel_);
@@ -1153,8 +1166,8 @@ void MainWindow::lazyInit() {
                           cat->categoryName().toStdString());
                 central_stack_->setCurrentIndex(0);
               } else {
-                LOG_DEBUG("PAGE", "ribbon tab[{}]='{}' (公共组, 不切页)",
-                          index, cat->categoryName().toStdString());
+                LOG_DEBUG("PAGE", "ribbon tab[{}]='{}' (公共组, 不切页)", index,
+                          cat->categoryName().toStdString());
               }
             }
 
@@ -1164,7 +1177,8 @@ void MainWindow::lazyInit() {
   // ── 验证问题项双击 → 导航到 page0 对应 sidebar 页 ──
   connect(execution_controller_, &ExecutionPanelController::navigateRequested,
           this, [this](NavTarget target) {
-            LOG_INFO("MAIN_UI", "导航请求 [target={}]", static_cast<int>(target));
+            LOG_INFO("MAIN_UI", "导航请求 [target={}]",
+                     static_cast<int>(target));
             // 切回 page0
             central_stack_->setCurrentIndex(0);
             // 同步将 ribbon 切到编辑组（当前高亮的是「执行」tab，视觉不一致）
@@ -1201,15 +1215,8 @@ void MainWindow::lazyInit() {
   LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 5. 创建 WelcomeWidget 替换中央占位
-  step_timer.restart();
-  welcome_widget_ = new WelcomeWidget(this);
-  central_dock_->setWidget(welcome_widget_);
-  welcome_widget_->refreshRecentProjects();
-  LOG_INFO("LAZY", "  [5/12] WelcomeWidget: {} ms", step_timer.elapsed());
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-  // 6. 连接跨组件信号（此时所有子控件已就绪）
+  // 5. 连接跨组件信号（此时所有子控件已就绪）
+  // （WelcomeWidget 已在 initUi 中提前创建，避免白色占位闪烁）
   step_timer.restart();
   initSignalsLate();
   LOG_INFO("LAZY", "  [6/12] initSignalsLate: {} ms", step_timer.elapsed());
@@ -1623,7 +1630,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   }
   activity_bar_->setActivePageId(PageId::kProjectOverview);
 
-  // 确保测试程序树已加载（信号连接的 refreshList 在 onProjectOpened 返回后才执行）
+  // 确保测试程序树已加载（信号连接的 refreshList 在 onProjectOpened
+  // 返回后才执行）
   if (auto* tpMgr = sidebar_->testProgramManager()) {
     tpMgr->refreshList();
   }
@@ -1633,7 +1641,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
 
   // 打开项目后检查 Git 仓库初始化状态，未 init 时弹窗询问
   // 只对"打开"项目触发，新建项目在 createProject 中已自动 init
-  // 用户可在弹窗勾「不再提示」或在设置页关闭，CONFIG_PROJECT_GIT_PROMPT_INIT 控制
+  // 用户可在弹窗勾「不再提示」或在设置页关闭，CONFIG_PROJECT_GIT_PROMPT_INIT
+  // 控制
   if (auto* gw = sidebar_->gitWidget()) {
     if (!QDir(projectPath).exists(QStringLiteral(".git"))) {
       bool prompt = ConfigManager::instance().get<bool>(
@@ -1643,14 +1652,13 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
         QMessageBox box(this);
         box.setWindowTitle(QStringLiteral("Git 仓库"));
         box.setIcon(QMessageBox::Question);
-        box.setText(QStringLiteral(
-            "项目目录尚未初始化 Git 仓库，是否立即初始化？\n\n"
-            "这将在项目根目录创建 .git 目录，"
-            "方便您对测试程序文件进行版本管理。"));
+        box.setText(
+            QStringLiteral("项目目录尚未初始化 Git 仓库，是否立即初始化？\n\n"
+                           "这将在项目根目录创建 .git 目录，"
+                           "方便您对测试程序文件进行版本管理。"));
         box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
         box.setDefaultButton(QMessageBox::Yes);
-        auto* dontAskCb =
-            new QCheckBox(QStringLiteral("不再提示"), &box);
+        auto* dontAskCb = new QCheckBox(QStringLiteral("不再提示"), &box);
         box.setCheckBox(dontAskCb);
         int ret = box.exec();
         if (ret == QMessageBox::Yes) {
@@ -1866,8 +1874,8 @@ etest::engine::ProgramData convertProgram(
 void MainWindow::resizeEvent(QResizeEvent* event) {
   SARibbonMainWindow::resizeEvent(event);
   if (loading_overlay_ && loading_overlay_->isVisible()) {
-    loading_overlay_->setGeometry(
-        QRect(central_stack_->mapTo(this, QPoint(0, 0)), central_stack_->size()));
+    loading_overlay_->setGeometry(QRect(
+        central_stack_->mapTo(this, QPoint(0, 0)), central_stack_->size()));
     loading_overlay_->raise();
   }
 }
@@ -2030,9 +2038,9 @@ void MainWindow::setupRibbon() {
   qab->addSeparator();
   // ---- QAB login ----
   {
-    auto* login_action = new QAction(
-        AppIconProvider::instance().icon(QStringLiteral("account")),
-        QStringLiteral("登录"), this);
+    auto* login_action =
+        new QAction(AppIconProvider::instance().icon(QStringLiteral("account")),
+                    QStringLiteral("登录"), this);
     login_action->setToolTip(QStringLiteral("登录 / 用户管理"));
     qab->addAction(login_action);
     connect(login_action, &QAction::triggered, this, [this]() {
@@ -2122,10 +2130,10 @@ void MainWindow::setupRibbon() {
   }
 
   // ============================================================
-  //  主页
+  //  编辑
   // ============================================================
   {
-    auto* cat = ribbon->addCategoryPage(QStringLiteral("主页"));
+    auto* cat = ribbon->addCategoryPage(QStringLiteral("编辑"));
 
     // 文件 Panel
     auto* panel_file = cat->addPanel(QStringLiteral("文件"));
@@ -2154,51 +2162,6 @@ void MainWindow::setupRibbon() {
     panel_edit->addSmallAction(edit_find_action_);
     panel_edit->addSmallAction(edit_replace_action_);
     panel_edit->addSmallAction(edit_go_to_line_action_);
-  }
-
-  // ============================================================
-  //  视图
-  // ============================================================
-  {
-    auto* cat = ribbon->addCategoryPage(QStringLiteral("视图"));
-
-    auto* panel_panels = cat->addPanel(QStringLiteral("面板"));
-
-    auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
-    act_welcome->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("welcome")));
-    connect(act_welcome, &QAction::triggered, this, [this]() {
-      LOG_INFO("MAIN_UI", "点击 Ribbon「欢迎页」");
-      auto* centralDock = dock_manager_->findDockWidget("CentralDock");
-      if (!centralDock)
-        return;
-      if (centralDock->isClosed())
-        centralDock->toggleView(true);
-      if (auto* area = centralDock->dockAreaWidget())
-        area->setCurrentIndex(0);
-    });
-    panel_panels->addLargeAction(act_welcome);
-
-    view_output_action_ = new QAction(QStringLiteral("日志"), this);
-    view_output_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("tab_output")));
-    view_output_action_->setCheckable(true);
-    view_output_action_->setChecked(true);
-    panel_panels->addLargeAction(view_output_action_);
-
-    view_terminal_action_ = new QAction(QStringLiteral("终端"), this);
-    view_terminal_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("tab_terminal")));
-    view_terminal_action_->setCheckable(true);
-    view_terminal_action_->setChecked(true);
-    panel_panels->addLargeAction(view_terminal_action_);
-
-    view_aux_sidebar_action_ = new QAction(QStringLiteral("辅助侧边栏"), this);
-    view_aux_sidebar_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("sidebar")));
-    view_aux_sidebar_action_->setCheckable(true);
-    view_aux_sidebar_action_->setChecked(false);
-    panel_panels->addLargeAction(view_aux_sidebar_action_);
   }
 
   // ============================================================
@@ -2249,6 +2212,51 @@ void MainWindow::setupRibbon() {
     // 统计 Panel
     auto* panel_stats = cat->addPanel(QStringLiteral("统计"));
     panel_stats->addSmallWidget(execution_controller_->ribbonStatsLabel());
+  }
+
+  // ============================================================
+  //  视图
+  // ============================================================
+  {
+    auto* cat = ribbon->addCategoryPage(QStringLiteral("视图"));
+
+    auto* panel_panels = cat->addPanel(QStringLiteral("面板"));
+
+    auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
+    act_welcome->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("welcome")));
+    connect(act_welcome, &QAction::triggered, this, [this]() {
+      LOG_INFO("MAIN_UI", "点击 Ribbon「欢迎页」");
+      auto* centralDock = dock_manager_->findDockWidget("CentralDock");
+      if (!centralDock)
+        return;
+      if (centralDock->isClosed())
+        centralDock->toggleView(true);
+      if (auto* area = centralDock->dockAreaWidget())
+        area->setCurrentIndex(0);
+    });
+    panel_panels->addLargeAction(act_welcome);
+
+    view_output_action_ = new QAction(QStringLiteral("日志"), this);
+    view_output_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("tab_output")));
+    view_output_action_->setCheckable(true);
+    view_output_action_->setChecked(true);
+    panel_panels->addLargeAction(view_output_action_);
+
+    view_terminal_action_ = new QAction(QStringLiteral("终端"), this);
+    view_terminal_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("tab_terminal")));
+    view_terminal_action_->setCheckable(true);
+    view_terminal_action_->setChecked(true);
+    panel_panels->addLargeAction(view_terminal_action_);
+
+    view_aux_sidebar_action_ = new QAction(QStringLiteral("辅助侧边栏"), this);
+    view_aux_sidebar_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("sidebar")));
+    view_aux_sidebar_action_->setCheckable(true);
+    view_aux_sidebar_action_->setChecked(false);
+    panel_panels->addLargeAction(view_aux_sidebar_action_);
   }
 
   // ============================================================
@@ -2483,12 +2491,15 @@ void MainWindow::disableEditActions() {
 
 void MainWindow::enableEditActions() {
   // 文件操作（有编辑器时 enable）
-  bool hasEditors = editor_manager_ && editor_manager_->currentEditor() != nullptr;
+  bool hasEditors =
+      editor_manager_ && editor_manager_->currentEditor() != nullptr;
   save_action_->setEnabled(hasEditors);
   save_as_action_->setEnabled(hasEditors);
-  save_all_action_->setEnabled(hasEditors && editor_manager_->allEditors().size() > 1);
+  save_all_action_->setEnabled(hasEditors &&
+                               editor_manager_->allEditors().size() > 1);
   close_file_action_->setEnabled(hasEditors);
-  close_all_files_action_->setEnabled(hasEditors && editor_manager_->allEditors().size() > 1);
+  close_all_files_action_->setEnabled(hasEditors &&
+                                      editor_manager_->allEditors().size() > 1);
 
   // 编辑操作（有编辑器时 enable，后续由 EditorManager 精细控制）
   edit_undo_action_->setEnabled(hasEditors);
