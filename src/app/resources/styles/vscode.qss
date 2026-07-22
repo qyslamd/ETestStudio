@@ -2152,3 +2152,16 @@ QToolButton#saverCloseBtn:pressed {
 #LogFilterBar QToolButton#LevelWarnBtn:checked  { color: #D7BA7D; }
 #LogFilterBar QToolButton#LevelErrorBtn:checked { color: #F44747; }
 #LogFilterBar QToolButton#LevelFatalBtn:checked { color: #FF0000; }
+
+/* QAB 文件搜索框 */
+#RibbonSearchEdit {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    border-radius: 2px;
+    padding: 2px 6px;
+    selection-background-color: #264F78;
+}
+#RibbonSearchEdit:focus {
+    border-color: #007ACC;
+}

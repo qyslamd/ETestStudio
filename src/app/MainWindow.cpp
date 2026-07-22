@@ -10,6 +10,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileDialog>
+#include <QCompleter>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
@@ -19,6 +20,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPalette>
@@ -28,6 +30,7 @@
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QStringListModel>
 #include <QTimer>
 #include <QToolButton>
 #include "dialogs/AboutDialog.h"
@@ -407,6 +410,60 @@ void MainWindow::initSignalsLate() {
             psWidget, &ProjectStructureWidget::setProjectPath);
     connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
             psWidget, &ProjectStructureWidget::clearProjectPath);
+
+    // 文件列表变化时刷新搜索框 completer（buildTree / refreshCategory 后触发）
+    connect(psWidget, &ProjectStructureWidget::fileListChanged, this,
+            [this]() {
+              auto* psw = qobject_cast<ProjectStructureWidget*>(
+                  sidebar_->pageById(PageId::kProjectOverview));
+              if (!psw) {
+                return;
+              }
+              QStringList fileNames = psw->allFileNames();
+              auto* completerModel = qobject_cast<QStringListModel*>(
+                  ribbon_search_completer_->model());
+              if (completerModel) {
+                completerModel->setStringList(fileNames);
+              }
+            });
+    // 项目关闭时清空 completer model
+    connect(&projectMgr,
+            &etest::core::project::ProjectManager::projectClosed, this,
+            [this]() {
+              auto* completerModel = qobject_cast<QStringListModel*>(
+                  ribbon_search_completer_->model());
+              if (completerModel) {
+                completerModel->setStringList({});
+              }
+            });
+
+    // QAB 搜索框：textChanged 清空时清除树上选中
+    connect(ribbon_search_edit_, &QLineEdit::textChanged, this, [this]() {
+      if (ribbon_search_edit_->text().isEmpty()) {
+        auto* psw = qobject_cast<ProjectStructureWidget*>(
+            sidebar_->pageById(PageId::kProjectOverview));
+        if (psw) {
+          psw->clearTreeSelection();
+        }
+      }
+    });
+
+    // QAB 搜索框：completer activated -> 切侧边栏 + 定位树节点
+    connect(ribbon_search_completer_,
+            QOverload<const QString&>::of(&QCompleter::activated), this,
+            [this](const QString& fileName) {
+              auto* psw = qobject_cast<ProjectStructureWidget*>(
+                  sidebar_->pageById(PageId::kProjectOverview));
+              if (!psw) {
+                return;
+              }
+              sidebar_->switchPage(PageId::kProjectOverview);
+              if (!sidebar_->isContentVisible()) {
+                sidebar_->showContent();
+              }
+              activity_bar_->setActivePageId(PageId::kProjectOverview);
+              psw->locateFile(fileName);
+            });
 
     // 项目结构树：双击文件打开编辑器
     connect(
@@ -2059,6 +2116,23 @@ void MainWindow::setupRibbon() {
       settings_dialog_->activateWindow();
     });
   }
+  // ── QAB 文件搜索框 ──
+  qab->addSeparator();
+  ribbon_search_edit_ = new QLineEdit(this);
+  ribbon_search_edit_->setObjectName(QStringLiteral("RibbonSearchEdit"));
+  ribbon_search_edit_->setPlaceholderText(QStringLiteral("搜索文件..."));
+  ribbon_search_edit_->setFixedWidth(200);
+  ribbon_search_edit_->setClearButtonEnabled(true);
+  qab->addWidget(ribbon_search_edit_);
+
+  // QCompleter：项目打开时一次性填充文件名，completer 自动过滤
+  ribbon_search_completer_ = new QCompleter(ribbon_search_edit_);
+  ribbon_search_completer_->setCaseSensitivity(Qt::CaseInsensitive);
+  ribbon_search_completer_->setFilterMode(Qt::MatchContains);
+  ribbon_search_completer_->setModel(
+      new QStringListModel(ribbon_search_completer_));
+  ribbon_search_edit_->setCompleter(ribbon_search_completer_);
+
   // ── 登录菜单 ──
   login_menu_ = new QMenu(this);
   login_user_info_action_ =

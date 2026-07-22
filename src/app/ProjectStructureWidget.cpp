@@ -14,6 +14,7 @@
 #include <QFileInfo>
 #include <QFileSystemWatcher>
 #include <QFrame>
+#include <functional>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QJsonArray>
@@ -651,6 +652,7 @@ void ProjectStructureWidget::buildTree() {
 
   // 首次刷新硬件节点
   refreshHardwareDevices();
+  emit fileListChanged();
 }
 
 void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
@@ -717,6 +719,8 @@ void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
   if (!file_watcher_->directories().contains(dirPath)) {
     file_watcher_->addPath(dirPath);
   }
+
+  emit fileListChanged();
 }
 
 void ProjectStructureWidget::onDirectoryChanged(const QString& path) {
@@ -1529,6 +1533,54 @@ void ProjectStructureWidget::removeRecentFileFromConfig(const QString& path) {
     cfg.set(QString::fromLatin1(etest::core::config::CONFIG_RECENT_FILE_LIST),
             files);
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// QAB 搜索支持
+// ══════════════════════════════════════════════════════════════════════════════
+
+QStringList ProjectStructureWidget::allFileNames() const {
+  QStringList result;
+  if (!root_item_ || project_path_.isEmpty()) {
+    return result;
+  }
+  std::function<void(QStandardItem*)> collect;
+  collect = [&](QStandardItem* item) {
+    if (!item) {
+      return;
+    }
+    if (item->data(NodeTypeRole).toString() == QStringLiteral("file")) {
+      result << item->text();
+    }
+    for (int i = 0; i < item->rowCount(); ++i) {
+      collect(item->child(i));
+    }
+  };
+  collect(root_item_);
+  return result;
+}
+
+bool ProjectStructureWidget::locateFile(const QString& fileName) {
+  if (!root_item_ || project_path_.isEmpty()) {
+    return false;
+  }
+  QModelIndex startIndex = model_->index(0, 0);
+  QModelIndexList matches = model_->match(
+      startIndex, Qt::DisplayRole, fileName, -1,
+      Qt::MatchExactly | Qt::MatchRecursive);
+  for (const auto& idx : matches) {
+    if (idx.data(NodeTypeRole).toString() == QStringLiteral("file")) {
+      tree_view_->expand(idx.parent());
+      tree_view_->setCurrentIndex(idx);
+      tree_view_->scrollTo(idx, QAbstractItemView::EnsureVisible);
+      return true;
+    }
+  }
+  return false;
+}
+
+void ProjectStructureWidget::clearTreeSelection() {
+  tree_view_->clearSelection();
 }
 
 }  // namespace etest::app

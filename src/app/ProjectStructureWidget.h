@@ -7,6 +7,7 @@
 #include <QStandardItemModel>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QStringList>
 
 #include <QString>
 #include <QWidget>
@@ -81,16 +82,26 @@ class ProjectStructureWidget : public QWidget {
   // 文件系统监控 — 目录内容变化时发出，由 main_window 路由到对应管理器
   void directoryContentChanged(const QString& dirPath);
 
+  // 文件列表变化时发出（buildTree / refreshCategory 后）
+  void fileListChanged();
+
   // 硬件节点导航请求 — 右键/双击硬件设备跳转到平台设备树
   void hardwareDeviceNavigateRequested(const QString& deviceType,
                                        const QString& pluginId);
 
- public:
+  public:
   void refreshRecentProjects();
   void refreshRecentFiles();
   void setOpenFiles(const QStringList& paths);
   void onFileOpened(const QString& path);
   void onFileClosed(const QString& path);
+
+  /// 收集树中所有文件节点的文件名
+  QStringList allFileNames() const;
+  /// 按文件名精确定位项目树节点（选中 + 展开 + 滚动）
+  bool locateFile(const QString& fileName);
+  /// 清除树选中状态
+  void clearTreeSelection();
 
  private slots:
   void onCustomContextMenu(const QPoint& pos);

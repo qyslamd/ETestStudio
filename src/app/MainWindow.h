@@ -17,6 +17,8 @@ class Repository;
 class QMenu;
 class QAction;
 class QLabel;
+class QLineEdit;
+class QCompleter;
 class QSplitter;
 class QStackedWidget;
 class QTimer;
@@ -229,6 +231,10 @@ class MainWindow : public SARibbonMainWindow {
   bool first_show_ = true;
 
   QAction* tool_testexecutor_action_ = nullptr;
+
+  // QAB 文件搜索框
+  QLineEdit* ribbon_search_edit_ = nullptr;
+  QCompleter* ribbon_search_completer_ = nullptr;
 };
 
 }  // namespace etest::app
