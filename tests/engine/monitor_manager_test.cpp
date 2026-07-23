@@ -144,6 +144,7 @@ TEST(MonitorManagerTest, SubscribeCallback) {
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
                               QStringLiteral("ch0"),
                               QByteArray(), 999.0, 12.34);
+    mgr.flushNow();  // 定时器批处理改为同步触发
 
     EXPECT_TRUE(called);
     EXPECT_DOUBLE_EQ(captured.rawValue, 999.0);
@@ -166,6 +167,7 @@ TEST(MonitorManagerTest, Unsubscribe) {
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
                               QStringLiteral("ch0"),
                               QByteArray(), 100.0, 1.0);
+    mgr.flushNow();
 
     EXPECT_EQ(callCount, 0);
 }
@@ -220,6 +222,7 @@ TEST(MonitorManagerTest, ClearRuntime) {
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
                               QStringLiteral("ch0"),
                               QByteArray(), 100.0, 1.0);
+    mgr.flushNow();
     EXPECT_EQ(callCount, 1);
 
     // 执行
@@ -237,6 +240,7 @@ TEST(MonitorManagerTest, ClearRuntime) {
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
                               QStringLiteral("ch0"),
                               QByteArray(), 200.0, 2.0);
+    mgr.flushNow();
     EXPECT_EQ(callCount, 2);
 }
 

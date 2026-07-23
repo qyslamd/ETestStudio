@@ -955,9 +955,9 @@ void ExecutionPanelController::clearData() {
   if (debug_widget_) {
     debug_widget_->clear();
   }
-  // 同步清空 MonitorManager 的采样 buffer，避免旧数据污染下次运行
+  // 清空 CVT buffer_（波形归零），保留 history_buffer_（报告不受影响）
   if (monitor_manager_) {
-    monitor_manager_->clearRuntime();
+    monitor_manager_->clearData();
   }
   LOG_INFO("MAIN_UI", "清空数据 [channels={}]", channels.size());
 }

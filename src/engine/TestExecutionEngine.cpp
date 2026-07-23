@@ -196,6 +196,11 @@ bool TestExecutionEngine::start() {
     // 清理上一次运行残留（含线程等待）
     cleanupRunner();
 
+    // 清空 MonitorManager 的运行时数据，避免上一轮 CVT/history 残留污染本轮
+    if (monitor_manager_) {
+        monitor_manager_->clearRuntime();
+    }
+
     // 创建执行组件
     startExecution();
 

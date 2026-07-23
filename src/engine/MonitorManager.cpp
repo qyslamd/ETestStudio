@@ -1,5 +1,6 @@
 #include "MonitorManager.h"
 
+#include <QCoreApplication>
 #include <QJsonArray>
 #include <QJsonValue>
 
@@ -8,7 +9,19 @@
 namespace etest::engine {
 
 MonitorManager::MonitorManager(QObject* parent)
-    : QObject(parent) {}
+    : QObject(parent) {
+  // 30fps 定时器：批量把 CVT buffer_ 最新值推给 subscribers_，避免逐点 QueuedConnection 积压
+  flush_timer_.setInterval(kFlushIntervalMs);
+  connect(&flush_timer_, &QTimer::timeout, this, &MonitorManager::onFlushTimer);
+  // 仅在有事件循环的环境启动定时器（测试环境无 QCoreApplication 时跳过，避免告警）
+  if (QCoreApplication::instance()) {
+    flush_timer_.start();
+  }
+}
+
+MonitorManager::~MonitorManager() {
+  flush_timer_.stop();
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // loadFromTopology — 从拓扑 JSON 重建查表和树缓存
@@ -131,17 +144,54 @@ void MonitorManager::onHardwareOpFinished(const QString& deviceId,
     sample.rawFrame = rawFrame;
     sample.timestamp = QDateTime::currentDateTime();
 
-    buffer_.append(sample);
+    // CVT: 按 (mi, ci) 覆盖写，只保留最新值
+    buffer_[qMakePair(tapInfo.monitorIndex, tapInfo.channelIndex)] = sample;
+
+    // history: 追加写，上限保护（全局上限，长时多通道运行会截断旧数据）
+    history_buffer_.append(sample);
+    if (history_buffer_.size() > kMaxHistorySamples) {
+      // 超出上限删除最旧的，保留最新 kMaxHistorySamples 条
+      int removeCount = history_buffer_.size() - kMaxHistorySamples;
+      for (int i = 0; i < removeCount; ++i) {
+        history_buffer_.removeFirst();
+      }
+      static bool warned = false;
+      if (!warned) {
+        LOG_WARN("MONITOR",
+                 "history_buffer_ 已达上限 {}，旧采样数据将被丢弃（报告仅保留最新段）",
+                 kMaxHistorySamples);
+        warned = true;
+      }
+    }
+
+    // 标记有待推送，定时器到点批量推
+    pending_flush_ = true;
 
     LOG_DEBUG("MONITOR", "收到数据 -> mi={} ci={} eng={} [{} subscribers]",
               tapInfo.monitorIndex, tapInfo.channelIndex, engValue,
               subscribers_.size());
+  }
+}
 
-    // 按通道分发（如果有 subscriber）
-    auto subKey = qMakePair(tapInfo.monitorIndex, tapInfo.channelIndex);
-    auto subIt = subscribers_.constFind(subKey);
+// ═══════════════════════════════════════════════════════════════════
+// flushNow - 立即推送（测试用，正常由定时器触发）
+// ═══════════════════════════════════════════════════════════════════
+void MonitorManager::flushNow() {
+  onFlushTimer();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// onFlushTimer - 30fps 批量推送 CVT buffer_ 最新值给 subscribers_
+// ═══════════════════════════════════════════════════════════════════
+void MonitorManager::onFlushTimer() {
+  if (!pending_flush_) {
+    return;
+  }
+  pending_flush_ = false;
+  for (auto it = buffer_.constBegin(); it != buffer_.constEnd(); ++it) {
+    auto subIt = subscribers_.constFind(it.key());
     if (subIt != subscribers_.constEnd() && subIt.value()) {
-      subIt.value()(sample);
+      subIt.value()(it.value());
     }
   }
 }
@@ -168,7 +218,7 @@ QString MonitorManager::displayMode(int monitorIndex, int channelIndex) const {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// flushSamples — 序列化 buffer 为 JSON，清空 buffer
+// flushSamples - 序列化 history_buffer_ 为 JSON，清空 history_buffer_
 // ═══════════════════════════════════════════════════════════════════
 // 输出格式（每个有数据的 monitor 一个条目）：
 // [
@@ -186,7 +236,7 @@ QString MonitorManager::displayMode(int monitorIndex, int channelIndex) const {
 // ]
 // ═══════════════════════════════════════════════════════════════════
 QJsonArray MonitorManager::flushSamples() {
-  // 按 (monitorIndex, channelIndex) 分组
+  // 按 (monitorIndex, channelIndex) 分组，从 history_buffer_ 读取完整历史
   struct ChannelSamples {
     int monitorIndex;
     int channelIndex;
@@ -194,7 +244,7 @@ QJsonArray MonitorManager::flushSamples() {
   };
   QHash<int, QHash<int, QList<MonitorSample>>> grouped;
 
-  for (const auto& sample : buffer_) {
+  for (const auto& sample : history_buffer_) {
     grouped[sample.monitorIndex][sample.channelIndex].append(sample);
   }
 
@@ -253,7 +303,7 @@ QJsonArray MonitorManager::flushSamples() {
     monitorsArr.append(mObj);
   }
 
-  buffer_.clear();
+  history_buffer_.clear();
   return monitorsArr;
 }
 
@@ -262,6 +312,16 @@ QJsonArray MonitorManager::flushSamples() {
 // ═══════════════════════════════════════════════════════════════════
 void MonitorManager::clearRuntime() {
   buffer_.clear();
+  history_buffer_.clear();
+  pending_flush_ = false;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// clearData - 清 CVT buffer_（波形归零），保留 history_buffer_（报告不受影响）
+// ═══════════════════════════════════════════════════════════════════
+void MonitorManager::clearData() {
+  buffer_.clear();
+  pending_flush_ = false;
 }
 
 // ═══════════════════════════════════════════════════════════════════

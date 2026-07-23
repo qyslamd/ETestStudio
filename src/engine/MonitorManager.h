@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QString>
 #include <QPair>
+#include <QTimer>
 #include <functional>
 
 namespace etest::engine {
@@ -36,22 +37,27 @@ struct MonitorSample {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// MonitorManager — 监听器数据管理
+// MonitorManager - 监听器数据管理
 // ═══════════════════════════════════════════════════════════════════
 //
 // 职责：
-// 1. 从拓扑 JSON 加载监听器配置，建立 (deviceId, port) → MonitorTapInfo 查表
+// 1. 从拓扑 JSON 加载监听器配置，建立 (deviceId, port) -> MonitorTapInfo 查表
 // 2. 接收 StepRunner::hardwareOperationFinished 信号，查表匹配后记录采样
 // 3. 维护订阅表，按通道分发采样数据到 UI 组件
-// 4. 执行完成时将 buffer_ 序列化为 .etlog 的 monitors[] 段
+// 4. 执行完成时将 history_buffer_ 序列化为 .etlog 的 monitors[] 段
 //
-// 线程安全：全在主线程访问（信号通过 QueuedConnection 到主线程），无需锁。
+// 数据存储双轨：
+// - buffer_ (CVT): 按 (mi, ci) 只保留最新值，供 30fps 定时器批量推 visualizer
+// - history_buffer_: 追加写，上限 50000 条，供 flushSamples 生成 .etlog 报告
+//
+// 线程安全：全在主线程访问（信号通过 QueuedConnection 到主线程，定时器也在主线程），无需锁。
 // ═══════════════════════════════════════════════════════════════════
 class MonitorManager : public QObject {
   Q_OBJECT
 
  public:
   explicit MonitorManager(QObject* parent = nullptr);
+  ~MonitorManager() override;
 
   // ── 加载拓扑文档，重建查表（每次 start() 调用） ──
   // 遍历 monitors[].taps[]，用 tap.deviceId + tap.devicePort 建 lookup_table_
@@ -69,6 +75,7 @@ class MonitorManager : public QObject {
   void unsubscribe(int monitorIndex, int channelIndex);
 
   // ── 硬件操作完成回调（由 StepRunner 信号触发，主线程执行） ──
+  // 写入 CVT buffer_ + history_buffer_，标记 pendingFlush_，不直接推 visualizer
   void onHardwareOpFinished(const QString& deviceId,
                              const QString& portName,
                              const QByteArray& rawFrame,
@@ -92,19 +99,37 @@ class MonitorManager : public QObject {
   // 返回 JSON array，格式见方案 2.3
   QJsonArray flushSamples();
 
-  // ── 清空运行时数据（保留结构和订阅） ──
+  // ── 清空运行时数据（CVT buffer_ + history_buffer_，保留结构和订阅） ──
   void clearRuntime();
+
+  // ── 清空 CVT buffer_（波形归零），保留 history_buffer_（报告不受影响） ──
+  void clearData();
 
   // ── 清空结构和订阅（保留运行时数据） ──
   void clearStructure();
 
+  // ── 立即推送 CVT buffer_ 最新值给 subscribers_（测试用，正常由定时器触发） ──
+  void flushNow();
+
  private:
+  // 30fps 定时器回调：批量把 CVT buffer_ 最新值推给 subscribers_
+  void onFlushTimer();
+
   // key = (deviceId, portName)
   QHash<QPair<QString, QString>, QList<MonitorTapInfo>> lookup_table_;
   // key = (monitorIndex, channelIndex)
   QHash<QPair<int, int>, SampleCallback> subscribers_;
-  QList<MonitorSample> buffer_;
+  // CVT: key = (monitorIndex, channelIndex)，只保留最新值，供定时器推送
+  QHash<QPair<int, int>, MonitorSample> buffer_;
+  // 历史: 追加写，上限 kMaxHistorySamples，供 flushSamples 生成报告
+  QList<MonitorSample> history_buffer_;
   QList<MonitorTreeEntry> tree_cache_;
+
+  QTimer flush_timer_;
+  bool pending_flush_ = false;  // 有新数据待推送（主线程独占，无竞态）
+
+  static constexpr int kFlushIntervalMs = 33;        // ~30fps
+  static constexpr int kMaxHistorySamples = 50000;    // history_buffer_ 上限
 };
 
 }  // namespace etest::engine
