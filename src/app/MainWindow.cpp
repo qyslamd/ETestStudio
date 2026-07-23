@@ -1548,6 +1548,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   LOG_INFO("MAIN_UI", "项目已打开 [path={}]", projectPath.toStdString());
   close_project_action_->setEnabled(true);
   open_file_action_->setEnabled(false);
+  ribbon_search_edit_->setEnabled(true);
 
   // 记录项目打开时间戳
   QVariantMap timestamps = ConfigManager::instance().get<QVariantMap>(
@@ -1737,6 +1738,7 @@ void MainWindow::onProjectClosed() {
   LOG_INFO("MAIN_UI", "项目已关闭");
   close_project_action_->setEnabled(false);
   open_file_action_->setEnabled(true);
+  ribbon_search_edit_->setEnabled(false);
   status_bar_ctrl_->setProject(QStringLiteral("无打开项目"));
   updateWindowTitle();
   status_bar_ctrl_->setMessage(QStringLiteral("项目已关闭"));
@@ -2141,6 +2143,7 @@ void MainWindow::setupRibbon() {
   ribbon_search_edit_ = new QLineEdit(this);
   ribbon_search_edit_->setObjectName(QStringLiteral("RibbonSearchEdit"));
   ribbon_search_edit_->setPlaceholderText(QStringLiteral("搜索文件..."));
+  ribbon_search_edit_->setEnabled(false);
   ribbon_search_edit_->setFixedWidth(200);
   ribbon_search_edit_->setClearButtonEnabled(true);
   qab->addWidget(ribbon_search_edit_);

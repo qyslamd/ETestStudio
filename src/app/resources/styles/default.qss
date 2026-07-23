@@ -1200,3 +1200,8 @@ etest--app--EtlogViewerWidget {
 #RibbonSearchEdit:focus {
     border-color: #007ACC;
 }
+#RibbonSearchEdit:disabled {
+    background-color: #F0F0F0;
+    color: #B0B0B0;
+    border: 1px solid #F0F0F0;
+}

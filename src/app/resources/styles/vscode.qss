@@ -2165,3 +2165,8 @@ QToolButton#saverCloseBtn:pressed {
 #RibbonSearchEdit:focus {
     border-color: #007ACC;
 }
+#RibbonSearchEdit:disabled {
+    background-color: #2D2D2D;
+    color: #5A5A5A;
+    border: 1px solid #2D2D2D;
+}
