@@ -1,12 +1,14 @@
 #include "LogFilterBar.h"
 
 #include <QHBoxLayout>
+#include <QPalette>
 #include <QStyle>
 #include <QTimer>
 
 #include <spdlog/spdlog.h>
 
 #include "core_ui/AppIconProvider.h"
+#include "core_ui/ThemeManager.h"
 
 namespace etest::app {
 
@@ -65,6 +67,14 @@ void LogFilterBar::initUi() {
   filter_edit_->setObjectName(QStringLiteral("LogFilterBox"));
   filter_edit_->setClearButtonEnabled(true);
   filter_edit_->setPlaceholderText(QStringLiteral("过滤..."));
+  {
+    auto pal = filter_edit_->palette();
+    pal.setColor(QPalette::PlaceholderText,
+                 etest::core_ui::ThemeManager::instance().isDarkTheme()
+                     ? QColor("#858585")
+                     : QColor("#999999"));
+    filter_edit_->setPalette(pal);
+  }
   layout->addWidget(filter_edit_, 1);
 
   // ── 正则开关 ──
@@ -144,6 +154,15 @@ void LogFilterBar::initSignals() {
   // 清空
   connect(clear_btn_, &QToolButton::clicked, this,
           [this]() { emit clearRequested(); });
+
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this,
+          [this](bool isDark) {
+            auto pal = filter_edit_->palette();
+            pal.setColor(QPalette::PlaceholderText,
+                         isDark ? QColor("#858585") : QColor("#999999"));
+            filter_edit_->setPalette(pal);
+          });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

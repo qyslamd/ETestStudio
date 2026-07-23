@@ -1431,6 +1431,13 @@ void MainWindow::onThemeChanged(bool isDark) {
       }
     }
   }
+
+  if (ribbon_search_edit_) {
+    auto pal = ribbon_search_edit_->palette();
+    pal.setColor(QPalette::PlaceholderText,
+                 isDark ? QColor("#858585") : QColor("#999999"));
+    ribbon_search_edit_->setPalette(pal);
+  }
 }
 
 void MainWindow::createStatusBar() {
@@ -2145,6 +2152,15 @@ void MainWindow::setupRibbon() {
   ribbon_search_completer_->setModel(
       new QStringListModel(ribbon_search_completer_));
   ribbon_search_edit_->setCompleter(ribbon_search_completer_);
+
+  {
+    auto pal = ribbon_search_edit_->palette();
+    pal.setColor(QPalette::PlaceholderText,
+                 etest::core_ui::ThemeManager::instance().isDarkTheme()
+                     ? QColor("#858585")
+                     : QColor("#999999"));
+    ribbon_search_edit_->setPalette(pal);
+  }
 
   // ── 登录菜单 ──
   login_menu_ = new QMenu(this);
