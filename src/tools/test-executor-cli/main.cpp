@@ -495,6 +495,8 @@ int main(int argc, char* argv[]) {
 
     // -- Create engine --
     auto* engine = new etest::engine::TestExecutionEngine(registry, icdRepo.get(), &app);
+    // CLI 工具自建 MonitorManager（父对象为 engine，随引擎析构），用于 .etlog 报告中的 monitors[] 段
+    engine->setMonitorManager(new etest::engine::MonitorManager(engine));
 
     // -- Set registry (ensures resolver uses populated SignalRegistry) --
     engine->setRegistry(registry, icdRepo.get());

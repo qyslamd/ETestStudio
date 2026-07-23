@@ -70,7 +70,9 @@ public:
     int completedSteps() const;
 
     // -- 监听器 --
-    MonitorManager* monitorManager() const { return monitor_manager_.get(); }
+    // MonitorManager 由外部（ExecutionPanelController）持有，引擎通过指针引用
+    void setMonitorManager(MonitorManager* mm) { monitor_manager_ = mm; }
+    MonitorManager* monitorManager() const { return monitor_manager_; }
 
 signals:
     void engineStarted();
@@ -102,11 +104,11 @@ private:
     std::unique_ptr<SignalResolver> resolver_;
     std::unique_ptr<SignalCodec> codec_;
     std::unique_ptr<HardwareManager> hw_manager_;
-    std::unique_ptr<MonitorManager> monitor_manager_;
     std::unique_ptr<StepRunner> runner_;
     std::unique_ptr<ResultCollector> collector_;
 
     // 外部依赖（注入，不拥有）
+    MonitorManager* monitor_manager_ = nullptr;  // 由 ExecutionPanelController 持有
     etest::core::SignalRegistry* signal_registry_;
     icd::Repository* icd_repository_;
 

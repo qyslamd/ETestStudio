@@ -90,9 +90,14 @@ class ExecutionPanelController : public QObject {
   // 拓扑 / 监听器生命周期（由 MainWindow 在项目打开/关闭时调用）
   void syncProjectTopologies();
   void clearProjectState();
+  /// 清空 MonitorManager 结构与运行时数据（拓扑变化时调用）
+  void clearMonitorState();
 
   // 清空可视化组件采样数据（Ribbon 按钮触发）
   void clearData();
+
+  // MonitorManager 访问器（由 controller 持有，跨引擎重建保持）
+  etest::engine::MonitorManager* monitorManager() const { return monitor_manager_; }
 
   // Ribbon 动作（供 MainWindow setupRibbon 获取）
   QAction* runAction() const { return act_run_; }
@@ -118,8 +123,6 @@ class ExecutionPanelController : public QObject {
  private:
   void connectEngineSignals();
   void refreshMonitorTree();
-  /// syncProjectTopologies 数据就绪后恢复 UI 勾选和订阅
-  void restoreMonitorUi();
   bool checkCanVerify() const;
   bool checkCanRun() const;
   bool checkCanRunAll() const;
@@ -157,6 +160,9 @@ class ExecutionPanelController : public QObject {
   QStackedWidget* central_stack_ = nullptr;
   ExecutionDashboard* dashboard_ = nullptr;
   ProgramSelectionPopup* popup_ = nullptr;
+
+  // MonitorManager（由 controller 持有，跨引擎重建保持；注入到引擎使用）
+  etest::engine::MonitorManager* monitor_manager_ = nullptr;
 };
 
 }  // namespace etest::app

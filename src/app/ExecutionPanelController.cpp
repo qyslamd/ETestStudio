@@ -127,6 +127,11 @@ void ExecutionPanelController::postInit(
   icd_repository_ = std::move(icd_repository);
   editor_mgr_ = editor_mgr;
   status_bar_ctrl_ = status_bar_ctrl;
+
+  // 创建 MonitorManager（由 controller 持有，跨引擎重建保持）
+  if (!monitor_manager_) {
+    monitor_manager_ = new etest::engine::MonitorManager(this);
+  }
 }
 
 void ExecutionPanelController::updateIcdContext(
@@ -149,6 +154,8 @@ void ExecutionPanelController::createEngine() {
   }
   engine_ = new etest::engine::TestExecutionEngine(signal_registry_,
                                                    icd_repository_.get(), this);
+  // 注入外部 MonitorManager（由 controller 持有，引擎重建时保持）
+  engine_->setMonitorManager(monitor_manager_);
   connectEngineSignals();
 }
 
@@ -367,37 +374,15 @@ void ExecutionPanelController::updateRunControls() {
   act_verify_->setEnabled(checkCanVerify());
 }
 
-void ExecutionPanelController::restoreMonitorUi() {
-  if (!dashboard_ || !engine_) {
-    return;
-  }
-  auto* mm = engine_->monitorManager();
-  if (!mm) {
-    return;
-  }
-
-  auto* visArea = dashboard_->visualizationArea();
-  auto* treePanel = dashboard_->signalTreePanel();
-  QList<QPair<int, int> > active = visArea->activeChannels();
-  treePanel->setMonitorTree(mm->monitorTree(), active);
-
-  // 重新订阅（clearTopologyState 已清 subscribers_）
-  for (int i = 0; i < active.size(); ++i) {
-    int mi = active.at(i).first;
-    int ci = active.at(i).second;
-    SignalVisualizer* vis = visArea->visualizer(mi, ci);
-    if (vis) {
-      QPointer<SignalVisualizer> visGuard(vis);
-      mm->subscribe(mi, ci,
-                    [visGuard](const etest::engine::MonitorSample& sample) {
-                      if (visGuard) {
-                        visGuard->onSampleCaptured(sample);
-                      }
-                    });
-    }
+// 清空 MonitorManager 的结构（lookup_table_/tree_cache_/subscribers_）与运行时数据（buffer_）。
+// 注意：clearStructure 会清空 subscribers_，dashboard 中的可视化组件将收不到后续采样，
+// 用户需重新勾选通道恢复订阅。此为已知权衡（拓扑变化属低频场景，订阅恢复逻辑脆弱已移除）。
+void ExecutionPanelController::clearMonitorState() {
+  if (monitor_manager_) {
+    monitor_manager_->clearStructure();
+    monitor_manager_->clearRuntime();
   }
 }
-
 
 void ExecutionPanelController::syncProjectTopologies() {
   if (!engine_) {
@@ -417,7 +402,7 @@ void ExecutionPanelController::syncProjectTopologies() {
   const auto topo_files = topo_dir_obj.entryInfoList(
       {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
 
-  auto* mm = engine_->monitorManager();
+  auto* mm = monitor_manager_;
   if (!mm) {
     return;
   }
@@ -435,7 +420,7 @@ void ExecutionPanelController::syncProjectTopologies() {
       topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
     }
     // 恢复 UI（首次加载时 activeChannels() 为空，退化为全 Unchecked）
-    restoreMonitorUi();
+    refreshMonitorTree();
     return;
   }
 
@@ -470,6 +455,7 @@ void ExecutionPanelController::syncProjectTopologies() {
 
   // ── 拓扑变化：全量重建 ──
   engine_->clearTopologyState();
+  clearMonitorState();
   for (const QFileInfo& fi : topo_files) {
     engine_->loadTopology(fi.absoluteFilePath());
   }
@@ -477,7 +463,7 @@ void ExecutionPanelController::syncProjectTopologies() {
   for (const QFileInfo& fi : topo_files) {
     topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
   }
-  restoreMonitorUi();
+  refreshMonitorTree();
 }
 
 void ExecutionPanelController::run() {
@@ -871,9 +857,9 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
   connect(dashboard_->signalTreePanel(), &SignalTreePanel::checkStateChanged,
           this, [this](int mi, int ci, bool checked) {
             LOG_INFO("VISUAL",
-                     "checkStateChanged mi={} ci={} checked={} engine_={}",
-                     mi, ci, checked, (engine_ ? "non-null" : "null"));
-            auto* monitorMgr = engine_ ? engine_->monitorManager() : nullptr;
+                     "checkStateChanged mi={} ci={} checked={}",
+                     mi, ci, checked);
+            auto* monitorMgr = monitor_manager_;
             if (!monitorMgr) {
               LOG_WARN("VISUAL", "monitorMgr null, 跳过");
               return;
@@ -936,10 +922,10 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
 }
 
 void ExecutionPanelController::refreshMonitorTree() {
-  if (!dashboard_ || !engine_) {
+  if (!dashboard_) {
     return;
   }
-  auto* mm = engine_->monitorManager();
+  auto* mm = monitor_manager_;
   if (!mm) {
     return;
   }
@@ -970,11 +956,8 @@ void ExecutionPanelController::clearData() {
     debug_widget_->clear();
   }
   // 同步清空 MonitorManager 的采样 buffer，避免旧数据污染下次运行
-  if (engine_) {
-    auto* mm = engine_->monitorManager();
-    if (mm) {
-      mm->clearRuntime();
-    }
+  if (monitor_manager_) {
+    monitor_manager_->clearRuntime();
   }
   LOG_INFO("MAIN_UI", "清空数据 [channels={}]", channels.size());
 }
@@ -991,6 +974,8 @@ void ExecutionPanelController::clearProjectState() {
     // 再清树
     dashboard_->signalTreePanel()->clearTree();
   }
+  // 清理 MonitorManager 结构与运行时数据（项目切换时避免残留）
+  clearMonitorState();
   // 清理 mtime 缓存
   topo_mtimes_.clear();
 }

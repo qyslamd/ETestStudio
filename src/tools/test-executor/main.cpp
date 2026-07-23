@@ -539,6 +539,8 @@ void MainWindow::initEngine() {
   }
 
   engine_ = new etest::engine::TestExecutionEngine(registry_, icdRepo_, this);
+  // MonitorManager 由引擎持有（本工具不使用监听器 UI，但 loadTopology 需要它避免空指针）
+  engine_->setMonitorManager(new etest::engine::MonitorManager(engine_));
 
   connect(engine_, &etest::engine::TestExecutionEngine::engineStarted,
           this, &MainWindow::onEngineStarted);

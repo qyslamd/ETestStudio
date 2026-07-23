@@ -101,10 +101,7 @@ void TestExecutionEngine::clearTopologyState() {
     if (hw_manager_) {
         hw_manager_->closeAllDevices();
     }
-    if (monitor_manager_) {
-        monitor_manager_->clearStructure();
-        monitor_manager_->clearRuntime();
-    }
+    // MonitorManager 由外部持有，其状态清理不在此处理（见 ExecutionPanelController::clearMonitorState）
 }
 
 bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
@@ -232,10 +229,10 @@ bool TestExecutionEngine::start() {
             });
 
     // ── MonitorManager 集成：监听硬件操作信号 ──
-    // monitors 已在 loadTopology() 中累积追加，此处只需连接信号
+    // MonitorManager 由外部持有，此处通过指针连接（跨线程自动 QueuedConnection）
     if (monitor_manager_) {
         connect(runner_.get(), &StepRunner::hardwareOperationFinished,
-                monitor_manager_.get(), &MonitorManager::onHardwareOpFinished);
+                monitor_manager_, &MonitorManager::onHardwareOpFinished);
     }
 
     // 线程启动回调
@@ -373,7 +370,7 @@ void TestExecutionEngine::initEngine() {
                                                   icd_repository_);
     codec_ = std::make_unique<SignalCodec>();
     hw_manager_ = std::make_unique<HardwareManager>();
-    monitor_manager_ = std::make_unique<MonitorManager>(this);
+    // MonitorManager 由外部注入（setMonitorManager），不在 initEngine 中创建
 }
 
 void TestExecutionEngine::startExecution() {
