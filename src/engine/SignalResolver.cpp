@@ -20,7 +20,7 @@ ResolvedSignal SignalResolver::resolve(const QString& uuid) const {
 
     // 检查空指针
     if (!registry_ || !icd_repo_) {
-        spdlog::warn("[SignalResolver] registry_ or icd_repo_ is null");
+        LOG_WARN("SIGNAL", "[SignalResolver] registry_ or icd_repo_ is null");
         result.valid = false;
         return result;
     }
@@ -28,7 +28,7 @@ ResolvedSignal SignalResolver::resolve(const QString& uuid) const {
     // ① 查 SignalRegistry 获取设备/端口/帧/节点路径
     auto resolved = registry_->resolve(uuid);
     if (!resolved.has_value()) {
-        spdlog::warn("[SignalResolver] UUID {} not found in SignalRegistry"
+        LOG_WARN("SIGNAL", "[SignalResolver] UUID {} not found in SignalRegistry"
                      " (devices={} frames={})",
                      uuid.toStdString(),
                      registry_->registeredDeviceIds().size(),
@@ -36,7 +36,7 @@ ResolvedSignal SignalResolver::resolve(const QString& uuid) const {
         if (registry_->registeredDeviceIds().size() > 0) {
             // 列举注册的设备 ID
             QStringList ids = registry_->registeredDeviceIds();
-            spdlog::warn("[SignalResolver] Registered devices: [{}]",
+            LOG_WARN("SIGNAL", "[SignalResolver] Registered devices: [{}]",
                          ids.join(", ").toStdString());
         }
         result.valid = false;
@@ -62,7 +62,7 @@ void SignalResolver::fillFromIcd(ResolvedSignal& signal,
     // 查找 ICD 帧
     const auto* frame = icd_repo_->find(frameName.toStdString());
     if (!frame) {
-        spdlog::warn("[SignalResolver] Frame '{}' not found in ICD Repository",
+        LOG_WARN("SIGNAL", "[SignalResolver] Frame '{}' not found in ICD Repository",
                      frameName.toStdString());
         return;
     }
@@ -102,7 +102,7 @@ void SignalResolver::fillFromIcd(ResolvedSignal& signal,
     // 在帧中按路径查找节点
     const auto* node = findNodeByPath(frame, nodePath);
     if (!node) {
-        spdlog::warn("[SignalResolver] Node path '{}' not found in frame '{}'",
+        LOG_WARN("SIGNAL", "[SignalResolver] Node path '{}' not found in frame '{}'",
                      nodePath.toStdString(), frameName.toStdString());
         return;
     }

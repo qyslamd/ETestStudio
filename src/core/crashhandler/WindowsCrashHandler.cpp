@@ -140,12 +140,12 @@ void WindowsCrashHandler::doCrashHandler(PEXCEPTION_POINTERS pExceptionInfo) {
     if (QCoreApplication::instance()) {
         auto* app = QCoreApplication::instance();
         if (app->inherits("QApplication")) {
-            MessageBoxA(nullptr,
-                        ("程序发生异常，已生成崩溃日志：\n" + fullPath.toStdString() +
-                         "\n已生成转储文件：\n" + dumpFullPath.toStdString() +
-                         "\n\n请联系开发者解决问题。")
-                            .c_str(),
-                        "程序崩溃", MB_OK | MB_ICONERROR);
+            std::wstring msg =
+                L"程序发生异常，已生成崩溃日志：\n" + fullPath.toStdWString() +
+                L"\n已生成转储文件：\n" + dumpFullPath.toStdWString() +
+                L"\n\n请联系开发者解决问题。";
+            MessageBoxW(nullptr, msg.c_str(), L"程序崩溃",
+                        MB_OK | MB_ICONERROR);
         }
     }
 }

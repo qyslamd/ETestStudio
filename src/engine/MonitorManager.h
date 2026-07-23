@@ -19,6 +19,7 @@ struct MonitorTapInfo {
   int channelIndex = -1;   // = taps[] 数组下标，非物理通道号
   QString deviceId;         // 来自 tap.deviceId（UUID）
   QString devicePort;       // 来自 tap.devicePort
+  QString displayMode;      // 来自 tap.displayMode（waveform/led/meter/frame）
 };
 
 // ── 单次采样记录 ──
@@ -82,6 +83,10 @@ class MonitorManager : public QObject {
     int channelCount;
   };
   QList<MonitorTreeEntry> monitorTree() const;
+
+  // ── 查询某通道 tap 的 displayMode（供 UI 创建对应可视化组件） ──
+  // 找不到返回空字符串，调用方可回退到 "auto"
+  QString displayMode(int monitorIndex, int channelIndex) const;
 
   // ── 获取缓冲数据用于 .etlog 序列化（主线程调用） ──
   // 返回 JSON array，格式见方案 2.3

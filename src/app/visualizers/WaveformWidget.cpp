@@ -6,6 +6,7 @@
 #include <qcustomplot.h>
 
 #include "engine/MonitorManager.h"
+#include "logger/Logger.h"
 
 namespace etest::app {
 
@@ -77,6 +78,9 @@ void WaveformWidget::onSampleCaptured(
     const etest::engine::MonitorSample& sample) {
   int idx = findTraceIndex(sample.monitorIndex, sample.channelIndex);
   if (idx < 0) {
+    LOG_DEBUG("WAVEFORM", "丢弃数据: mi={} ci={} eng={} (traces_={}, 无对应迹线)",
+              sample.monitorIndex, sample.channelIndex, sample.engValue,
+              traces_.size());
     return;
   }
 

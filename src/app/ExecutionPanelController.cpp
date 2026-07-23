@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPointer>
 #include <QStackedWidget>
 #include <QWidget>
 #include "ExecutionDashboard.h"
@@ -15,6 +16,7 @@
 #include "engine/MonitorManager.h"
 #include "visualizers/SignalVisualizer.h"
 #include "visualizers/VisualizerFactory.h"
+#include "visualizers/WaveformWidget.h"
 
 
 #include "AppIconProvider.h"
@@ -385,9 +387,12 @@ void ExecutionPanelController::restoreMonitorUi() {
     int ci = active.at(i).second;
     SignalVisualizer* vis = visArea->visualizer(mi, ci);
     if (vis) {
+      QPointer<SignalVisualizer> visGuard(vis);
       mm->subscribe(mi, ci,
-                    [vis](const etest::engine::MonitorSample& sample) {
-                      vis->onSampleCaptured(sample);
+                    [visGuard](const etest::engine::MonitorSample& sample) {
+                      if (visGuard) {
+                        visGuard->onSampleCaptured(sample);
+                      }
                     });
     }
   }
@@ -568,6 +573,7 @@ void ExecutionPanelController::pause() {
 
 void ExecutionPanelController::stop() {
   LOG_INFO("MAIN_UI", "点击「停止」");
+  run_queue_.clear();  // 清空队列，防 engineFinished 推进下一个程序
   if (engine_) {
     engine_->stop();
   }
@@ -819,6 +825,9 @@ void ExecutionPanelController::runNextInQueue() {
   // 引擎结束后触发下一个
   connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
           [this]() {
+            if (run_queue_.isEmpty()) {
+              return;  // 队列已空（runAll 完成 / stop 清空），不再推进
+            }
             run_queue_.removeFirst();
             runNextInQueue();
           });
@@ -861,21 +870,47 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
   // ── SignalTreePanel checkbox → 创建/移除可视化组件 + 订阅/取消订阅 ──
   connect(dashboard_->signalTreePanel(), &SignalTreePanel::checkStateChanged,
           this, [this](int mi, int ci, bool checked) {
+            LOG_INFO("VISUAL",
+                     "checkStateChanged mi={} ci={} checked={} engine_={}",
+                     mi, ci, checked, (engine_ ? "non-null" : "null"));
             auto* monitorMgr = engine_ ? engine_->monitorManager() : nullptr;
             if (!monitorMgr) {
+              LOG_WARN("VISUAL", "monitorMgr null, 跳过");
               return;
             }
 
             if (checked) {
-              // 创建可视化组件（Phase 1：displayMode/signalType 均用默认值）
+              // 从拓扑 tap 读取 displayMode，未配置则回退 "auto"
+              QString mode = monitorMgr->displayMode(mi, ci);
+              if (mode.isEmpty()) {
+                mode = QStringLiteral("auto");
+              }
               auto* vis = createVisualizerFor(
-                  mi, ci, QStringLiteral("auto"), QString(),
+                  mi, ci, mode, QString(),
                   QStringLiteral("Monitor %1 Ch%2").arg(mi).arg(ci), nullptr);
               if (vis) {
+                LOG_INFO("ENGINE", "创建可视化 mi={} ci={} mode={} type={}",
+                         mi, ci, mode.toStdString(),
+                         vis->metaObject()->className());
+                // 波形组件需要先 addTrace，否则 onSampleCaptured 丢弃数据
+                if (auto* wave = qobject_cast<WaveformWidget*>(vis)) {
+                  // 按通道索引取色，保证同屏多通道可区分
+                  static const QColor kColors[] = {
+                      QColor(0, 120, 215), QColor(229, 57, 53),
+                      QColor(67, 160, 71), QColor(255, 152, 0),
+                      QColor(156, 39, 176), QColor(0, 151, 167),
+                      QColor(121, 85, 72), QColor(158, 158, 158)};
+                  QColor color = kColors[ci % 8];
+                  wave->addTrace(mi, ci, color);
+                }
                 // 先订阅再添加到可视化区（确保回调不会在未订阅时触发）
+                // 用 QPointer 保护，防 worker 线程排队事件在 widget 销毁后到达
+                QPointer<SignalVisualizer> visGuard(vis);
                 monitorMgr->subscribe(
-                    mi, ci, [vis](const etest::engine::MonitorSample& sample) {
-                      vis->onSampleCaptured(sample);
+                    mi, ci, [visGuard](const etest::engine::MonitorSample& sample) {
+                      if (visGuard) {
+                        visGuard->onSampleCaptured(sample);
+                      }
                     });
                 dashboard_->visualizationArea()->addVisualizer(mi, ci, vis);
               }

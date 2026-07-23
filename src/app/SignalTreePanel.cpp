@@ -3,6 +3,8 @@
 #include <QLineEdit>
 #include <QPair>
 #include <QSet>
+
+#include "logger/Logger.h"
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
@@ -56,6 +58,8 @@ void SignalTreePanel::initUi() {
             int monitorIndex = key >> 16;
             int channelIndex = key & 0xFFFF;
             bool checked = (item->checkState(0) == Qt::Checked);
+            LOG_DEBUG("VISUAL", "itemChanged -> mi={} ci={} checked={}",
+                      monitorIndex, channelIndex, checked);
             emit checkStateChanged(monitorIndex, channelIndex, checked);
           });
 }

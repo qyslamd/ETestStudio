@@ -18,9 +18,8 @@ double SignalCodec::linearMap(double raw, const ResolvedSignal& info) const {
 double SignalCodec::inverseLinearMap(double eng,
                                      const ResolvedSignal& info) const {
     if (std::fabs(info.coeff) < 1e-15) {
-        spdlog::warn("[SignalCodec] coeff is near-zero ({}), division by zero "
-                     "guarded, returning 0.0",
-                     info.coeff);
+        LOG_WARN("CODEC", "coeff is near-zero ({}), division by zero guarded, returning 0.0",
+                 info.coeff);
         return 0.0;
     }
     return (eng - info.offset) / info.coeff;
@@ -34,10 +33,8 @@ QVariant SignalCodec::encode(double engValue, const ResolvedSignal& info) {
         return QVariant(raw);
     }
     // 帧型信号应使用 encodeToFrame
-    spdlog::warn(
-        "[SignalCodec] encode() called for frame-type signal (type={}), "
-        "use encodeToFrame() instead",
-        static_cast<int>(info.signalType));
+    LOG_WARN("CODEC", "encode() called for frame-type signal (type={}), use encodeToFrame() instead",
+             static_cast<int>(info.signalType));
     return QVariant();
 }
 
@@ -55,8 +52,7 @@ double SignalCodec::decode(const QVariant& rawValue,
     bool ok = false;
     double raw = rawValue.toDouble(&ok);
     if (!ok) {
-        spdlog::warn("[SignalCodec] decode() received invalid QVariant, "
-                     "returning 0.0");
+        LOG_WARN("CODEC", "decode() received invalid QVariant, returning 0.0");
         return 0.0;
     }
     return linearMap(raw, info);
@@ -120,8 +116,8 @@ double SignalCodec::unpackBits(const QByteArray& data,
     int requiredBytes = (requiredBits + 7) / 8;
 
     if (data.size() < requiredBytes) {
-        spdlog::warn("[SignalCodec] Frame too short: need {} bytes but got {}",
-                     requiredBytes, data.size());
+        LOG_WARN("CODEC", "Frame too short: need {} bytes but got {}",
+                 requiredBytes, data.size());
         return 0.0;
     }
 

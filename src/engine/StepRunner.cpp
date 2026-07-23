@@ -347,7 +347,9 @@ StepResult StepRunner::execCheck(const TestStepData& step,
 
 StepResult StepRunner::execVerify(const TestStepData& step,
                                    const ResolvedSignal& signal) {
-    LOG_INFO("ENGINE", "VERIFY [target={}]", signal.deviceId.toStdString());
+    LOG_INFO("ENGINE", "VERIFY [device={} port={} value={}]",
+             signal.deviceId.toStdString(), signal.portName.toStdString(),
+             step.value);
     StepResult result;
     result.expectedValue = step.value;
 

@@ -81,6 +81,7 @@ void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
       info.channelIndex = ci;
       info.deviceId = deviceId;
       info.devicePort = devicePort;
+      info.displayMode = tapObj.value(QStringLiteral("displayMode")).toString();
 
       auto key = qMakePair(deviceId, devicePort);
       lookup_table_[key].append(info);
@@ -115,6 +116,8 @@ void MonitorManager::onHardwareOpFinished(const QString& deviceId,
   auto key = qMakePair(deviceId, portName);
   auto it = lookup_table_.constFind(key);
   if (it == lookup_table_.constEnd()) {
+    LOG_DEBUG("MONITOR", "忽略: deviceId={} portName={} (无匹配 tap)",
+              deviceId.toStdString(), portName.toStdString());
     return;  // 该设备端口没有挂载监听器
   }
 
@@ -130,6 +133,10 @@ void MonitorManager::onHardwareOpFinished(const QString& deviceId,
 
     buffer_.append(sample);
 
+    LOG_DEBUG("MONITOR", "收到数据 -> mi={} ci={} eng={} [{} subscribers]",
+              tapInfo.monitorIndex, tapInfo.channelIndex, engValue,
+              subscribers_.size());
+
     // 按通道分发（如果有 subscriber）
     auto subKey = qMakePair(tapInfo.monitorIndex, tapInfo.channelIndex);
     auto subIt = subscribers_.constFind(subKey);
@@ -144,6 +151,20 @@ void MonitorManager::onHardwareOpFinished(const QString& deviceId,
 // ═══════════════════════════════════════════════════════════════════
 QList<MonitorManager::MonitorTreeEntry> MonitorManager::monitorTree() const {
   return tree_cache_;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// displayMode - 查询某通道 tap 的 displayMode
+// ═══════════════════════════════════════════════════════════════════
+QString MonitorManager::displayMode(int monitorIndex, int channelIndex) const {
+  for (auto it = lookup_table_.constBegin(); it != lookup_table_.constEnd(); ++it) {
+    for (const auto& info : it.value()) {
+      if (info.monitorIndex == monitorIndex && info.channelIndex == channelIndex) {
+        return info.displayMode;
+      }
+    }
+  }
+  return QString();
 }
 
 // ═══════════════════════════════════════════════════════════════════

@@ -110,7 +110,7 @@ void TestExecutionEngine::clearTopologyState() {
 bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
     QFile file(etopoPath);
     if (!file.open(QIODevice::ReadOnly)) {
-        spdlog::error("[TestExecutionEngine] Cannot open topology: {}",
+        LOG_ERROR("ENGINE", "[TestExecutionEngine] Cannot open topology: {}",
                       etopoPath.toStdString());
         return false;
     }
@@ -121,13 +121,13 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
     QJsonParseError parseError;
     QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
-        spdlog::error("[TestExecutionEngine] JSON parse error: {}",
+        LOG_ERROR("ENGINE", "[TestExecutionEngine] JSON parse error: {}",
                       parseError.errorString().toStdString());
         return false;
     }
 
     if (!doc.isObject()) {
-        spdlog::error("[TestExecutionEngine] Topology root is not an object");
+        LOG_ERROR("ENGINE", "[TestExecutionEngine] Topology root is not an object");
         return false;
     }
 
@@ -137,7 +137,7 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
 
     // ── 校验 mock 一致性 ──
     if (!checkMockConsistency(root)) {
-        spdlog::error("[TestExecutionEngine] 拓扑中所有设备的 mock 值必须一致，"
+        LOG_ERROR("ENGINE", "[TestExecutionEngine] 拓扑中所有设备的 mock 值必须一致，"
                       "不能混合 mock 和真实设备");
         emit engineError(QStringLiteral("拓扑中所有设备的 mock 值必须一致，"
                                         "不能混合 mock 和真实设备"));
@@ -146,7 +146,7 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
 
     // ── 加载所有设备（传入 QJsonObject 单次解析） ──
     if (!hw_manager_) {
-        spdlog::error("[TestExecutionEngine] HardwareManager 未初始化");
+        LOG_ERROR("ENGINE", "[TestExecutionEngine] HardwareManager 未初始化");
         return false;
     }
     bool ok = hw_manager_->loadFromTopology(root);
@@ -161,7 +161,7 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
 
         std::vector<std::unique_ptr<MockUUT>> mockUUTs;
         if (!builder.buildAll(mockUUTs)) {
-            spdlog::error("[TestExecutionEngine] MockUUT 构建失败: {}",
+            LOG_ERROR("ENGINE", "[TestExecutionEngine] MockUUT 构建失败: {}",
                           builder.lastError().toStdString());
             emit engineError(
                 QStringLiteral("MockUUT 构建失败: %1").arg(builder.lastError()));
@@ -192,7 +192,7 @@ bool TestExecutionEngine::start() {
     LOG_INFO("ENGINE", "启动引擎");
     EngineState expected = EngineState::Idle;
     if (!state_.compare_exchange_strong(expected, EngineState::Running)) {
-        spdlog::warn("[TestExecutionEngine] start() ignored: state is not Idle");
+        LOG_WARN("ENGINE", "[TestExecutionEngine] start() ignored: state is not Idle");
         return false;
     }
 
@@ -252,8 +252,8 @@ bool TestExecutionEngine::start() {
         runner_.get(), "executeProgram", Qt::QueuedConnection,
         Q_ARG(ProgramData, current_program_));
     if (!invoked) {
-        spdlog::error(
-            "[TestExecutionEngine] Failed to invoke executeProgram on runner");
+        LOG_ERROR("ENGINE",
+                  "Failed to invoke executeProgram on runner");
         state_.store(EngineState::Error);
         emit engineError(QStringLiteral("Failed to start test execution"));
         emit engineStateChanged(EngineState::Error);
@@ -279,8 +279,8 @@ void TestExecutionEngine::stop() {
     if (worker_thread_.isRunning()) {
         worker_thread_.quit();
         if (!worker_thread_.wait(5000)) {
-            spdlog::warn(
-                "[TestExecutionEngine] Worker thread did not stop within 5s");
+            LOG_WARN("ENGINE",
+                     "Worker thread did not stop within 5s");
         }
     }
 
@@ -328,7 +328,7 @@ void TestExecutionEngine::saveReport(const QString& etlogPath) {
         // 2. 保存 .etlog（含 monitors[] 段）
         collector_->saveToFile(etlogPath);
     } else {
-        spdlog::warn("[TestExecutionEngine] No collector to save report");
+        LOG_WARN("ENGINE", "[TestExecutionEngine] No collector to save report");
     }
 }
 
@@ -351,13 +351,17 @@ void TestExecutionEngine::onWorkerFinished() {
     }
 
     worker_thread_.quit();
+    // 必须等待 worker 线程真正结束，否则 emit engineFinished 触发 destroyEngine
+    // 析构引擎/runner 时，worker 线程可能还在执行 StepRunner 代码（如 spdlog 调用）
+    // 导致访问已释放对象
+    worker_thread_.wait(5000);
 
     emit engineFinished();
     emit engineStateChanged(EngineState::Idle);
 }
 
 void TestExecutionEngine::onThreadStarted() {
-    spdlog::debug("[TestExecutionEngine] Worker thread started");
+    LOG_DEBUG("ENGINE", "[TestExecutionEngine] Worker thread started");
 }
 
 // ==========================================================================
@@ -385,8 +389,8 @@ void TestExecutionEngine::cleanupRunner() {
     if (worker_thread_.isRunning()) {
         worker_thread_.quit();
         if (!worker_thread_.wait(5000)) {
-            spdlog::warn(
-                "[TestExecutionEngine] Worker thread did not stop within 5s");
+            LOG_WARN("ENGINE",
+                     "Worker thread did not stop within 5s (destructor)");
         }
     }
 

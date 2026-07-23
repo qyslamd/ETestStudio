@@ -334,8 +334,8 @@ void ResultCollector::saveToFile(const QString& etlogPath) {
 
   QFile file(etlogPath);
   if (!file.open(QIODevice::WriteOnly)) {
-    spdlog::error("[ResultCollector] Cannot write etlog: {}",
-                  etlogPath.toStdString());
+    LOG_ERROR("ResultCollector", "Cannot write etlog: {}",
+              etlogPath.toStdString());
     return;
   }
 
