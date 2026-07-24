@@ -585,6 +585,23 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onAddDevice);
   connect(view_, &TopologyView::addUutPortRequested, this,
           &TopologyEditorWidget::onAddUutPort);
+  connect(view_, &TopologyView::addMonitorRequested, this,
+          [this](ConnectionItem* connItem) {
+    int ci = connItem->connectionIndex();
+    const auto* conn = doc_->connection(ci);
+    if (!conn) return;
+    TopologyMonitor mon;
+    mon.name = QStringLiteral("Monitor-%1_%2").arg(conn->deviceName).arg(conn->devicePort);
+    mon.connectionId = conn->id;
+    mon.position = connItem->pos() + QPointF(0, -60);
+    auto* cmd = new AddMonitorCommand(doc_, mon);
+    doc_->undoStack()->push(cmd);
+    if (auto* monItem = scene_->findMonitorItem(cmd->monitorIndex())) {
+      view_->centerOn(monItem);
+    }
+    LOG_INFO("TOPOLOGY_UI", "添加监听器 [name={} connectionId={}]",
+             mon.name.toStdString(), conn->id.toStdString());
+  });
   connect(view_, &TopologyView::deleteItemRequested, this,
           &TopologyEditorWidget::onDeleteItem);
   connect(view_, &TopologyView::saveTemplateRequested, this,
@@ -642,6 +659,10 @@ void TopologyEditorWidget::initSignals() {
 
   connect(doc_, &TopologyDocument::monitorChanged, this,
           [this](int) { scene_->updateTapVisuals(); });
+  connect(doc_, &TopologyDocument::monitorAdded, this,
+          [this](int mi) { scene_->updateTapVisuals(); });
+  connect(doc_, &TopologyDocument::monitorRemoved, this,
+          [this](int mi) { scene_->updateTapVisuals(); });
 
   // ── Product port changes: refresh UUT ports ──
   connect(doc_, &TopologyDocument::productPortAdded, this,

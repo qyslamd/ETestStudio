@@ -270,6 +270,9 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     connect(saveAct, &QAction::triggered, this,
             [this, dev]() { LOG_INFO("TOPOLOGY_UI", "右键保存模板"); emit saveTemplateRequested(dev); });
   } else if (conn) {
+    auto* addMonAct = menu.addAction(QStringLiteral("添加监听器"));
+    connect(addMonAct, &QAction::triggered, this,
+            [this, conn]() { LOG_INFO("TOPOLOGY_UI", "右键添加监听器"); emit addMonitorRequested(conn); });
     auto* delAct = menu.addAction(QStringLiteral("删除连线"));
     connect(delAct, &QAction::triggered, this,
             [this, conn]() { LOG_INFO("TOPOLOGY_UI", "右键删除连线"); emit deleteItemRequested(conn); });

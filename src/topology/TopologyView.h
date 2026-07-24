@@ -25,6 +25,7 @@ class TopologyView : public QGraphicsView {
   void addDeviceRequested(QPointF scenePos);
   void addUutPortRequested(int productIndex);
   void deleteItemRequested(QGraphicsItem* item);
+  void addMonitorRequested(ConnectionItem* item);
   void saveTemplateRequested(QGraphicsItem* item);
   void addDeviceFromTemplateRequested(QPointF scenePos);
   void productPortStyleChangeRequested(int productIndex, int portIndex,
