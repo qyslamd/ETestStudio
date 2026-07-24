@@ -1,0 +1,182 @@
+{
+    "cases": [
+        {
+            "description": "",
+            "name": "串口通信测试",
+            "steps": [
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "设定电流为1.50A",
+                    "target": "1c9d05219ba320737a49d1394a4ff64b",
+                    "timeoutMs": 5000,
+                    "value": "1.50"
+                },
+                {
+                    "cmd": "VERIFY",
+                    "delayMs": 0,
+                    "description": "验证电流回传值为1.50A",
+                    "target": "06e1995ac957fad0bc29144cd57719ca",
+                    "timeoutMs": 5000,
+                    "tolerance": {
+                        "enabled": true,
+                        "max": 0.01,
+                        "min": -0.01
+                    },
+                    "value": "1.50"
+                },
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "",
+                    "target": "9874b360cc771696ba59816dcf6dc01b",
+                    "timeoutMs": 5000,
+                    "value": "110"
+                }
+            ]
+        },
+        {
+            "description": "",
+            "name": "CAN通信测试",
+            "steps": [
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "发送控制指令",
+                    "target": "2df6de276b3899e3b9864a97bcf7d7f6",
+                    "timeoutMs": 5000,
+                    "value": "10.0"
+                },
+                {
+                    "cmd": "VERIFY",
+                    "delayMs": 0,
+                    "description": "验证状态回传值",
+                    "target": "9b77d8b8730a1cfcc8a880c30f8fbbda",
+                    "timeoutMs": 5000,
+                    "tolerance": {
+                        "enabled": true,
+                        "max": 0.1,
+                        "min": -0.1
+                    },
+                    "value": "1.0"
+                }
+            ]
+        },
+        {
+            "description": "",
+            "name": "A429通信测试",
+            "steps": [
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "发送Label150数据",
+                    "target": "39cd8c409a712b5c0826c301d71332c7",
+                    "timeoutMs": 5000,
+                    "value": "15.0"
+                },
+                {
+                    "cmd": "VERIFY",
+                    "delayMs": 0,
+                    "description": "验证Label155回传数据",
+                    "target": "2767d6a07c71b3d6a0e15f3d8cb2869c",
+                    "timeoutMs": 5000,
+                    "tolerance": {
+                        "enabled": true,
+                        "max": 0.1,
+                        "min": -0.1
+                    },
+                    "value": "0.0"
+                }
+            ]
+        },
+        {
+            "description": "",
+            "name": "AD采集测试",
+            "steps": [
+                {
+                    "cmd": "LOOP",
+                    "delayMs": 0,
+                    "description": "",
+                    "loopCount": 128,
+                    "loopIntervalMs": 0,
+                    "subSteps": [
+                        {
+                            "cmd": "VERIFY",
+                            "delayMs": 0,
+                            "description": "验证AD采集值为5.0V（来自MockResponses.json）",
+                            "target": "941dfd75ece23321d4f571e4e9eb17a5",
+                            "timeoutMs": 5000,
+                            "tolerance": {
+                                "enabled": true,
+                                "max": 10,
+                                "min": -10
+                            },
+                            "value": "5.0"
+                        },
+                        {
+                            "cmd": "DELAY",
+                            "delayMs": 2,
+                            "description": "",
+                            "target": "",
+                            "timeoutMs": 5000,
+                            "value": ""
+                        }
+                    ],
+                    "target": "",
+                    "timeoutMs": 5000,
+                    "value": ""
+                }
+            ]
+        },
+        {
+            "description": "",
+            "name": "DA输出测试",
+            "steps": [
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "设定DA输出电压为10.0V",
+                    "target": "07c482a1693a58d14d063ecedd66414b",
+                    "timeoutMs": 5000,
+                    "value": "10.0"
+                },
+                {
+                    "cmd": "VERIFY",
+                    "delayMs": 0,
+                    "description": "回读DA输出电压",
+                    "target": "07c482a1693a58d14d063ecedd66414b",
+                    "timeoutMs": 5000,
+                    "tolerance": {
+                        "enabled": true,
+                        "max": 0.01,
+                        "min": -0.01
+                    },
+                    "value": "10.0"
+                }
+            ]
+        }
+    ],
+    "description": "覆盖五种Mock设备的完整测试流程",
+    "name": "综合Mock测试",
+    "setup": [
+        {
+            "cmd": "ACTION",
+            "delayMs": 0,
+            "description": "Mock测试开始，所有设备为软件模拟",
+            "target": "",
+            "timeoutMs": 5000,
+            "value": ""
+        }
+    ],
+    "teardown": [
+        {
+            "cmd": "ACTION",
+            "delayMs": 0,
+            "description": "Mock测试完成",
+            "target": "",
+            "timeoutMs": 5000,
+            "value": ""
+        }
+    ],
+    "version": "1.1"
+}

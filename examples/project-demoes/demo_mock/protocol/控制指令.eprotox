@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+    <Name>控制指令</Name>
+    <Data>
+        <Item>
+            <Offset>0</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>8</BitWidth>
+            <Type>byte</Type>
+            <Name>CAN_ID</Name>
+            <Description>CAN ID</Description>
+            <IsScaled>0</IsScaled>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+        <Item>
+            <Offset>1</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>8</BitWidth>
+            <Type>byte</Type>
+            <Name>指令码</Name>
+            <Description>控制指令码</Description>
+            <IsScaled>0</IsScaled>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+        <Item>
+            <Offset>2</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>16</BitWidth>
+            <Type>word</Type>
+            <Name>控制参数</Name>
+            <Description>控制参数值</Description>
+            <IsScaled>1</IsScaled>
+            <ScaleA>0.1</ScaleA>
+            <Unit/>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+    </Data>
+</ICDData>

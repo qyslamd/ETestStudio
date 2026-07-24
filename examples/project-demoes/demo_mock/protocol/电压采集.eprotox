@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+    <Name>电压采集</Name>
+    <Data>
+        <Item>
+            <Offset>0</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>16</BitWidth>
+            <Type>word</Type>
+            <Name>AD采样值</Name>
+            <Description>AD通道采样值</Description>
+            <IsScaled>1</IsScaled>
+            <ScaleA>0.001</ScaleA>
+            <Unit>V</Unit>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+    </Data>
+</ICDData>
