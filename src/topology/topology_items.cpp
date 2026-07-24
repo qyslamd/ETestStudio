@@ -13,6 +13,8 @@
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsSceneMouseEvent>
+
+#include "core_ui/ThemeManager.h"
 #include <QLineF>
 #include <QMenu>
 #include <QPainter>
@@ -740,6 +742,26 @@ void ConnectionItem::paint(QPainter* painter,
   painter->setPen(Qt::NoPen);
   painter->setBrush(arrowColor);
   painter->drawPath(arrow_path_);
+
+  // ── 监听器 badge ──
+  if (has_monitor_) {
+    bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
+    QPointF mid = path().pointAtPercent(0.5);
+    QRectF badgeRect(mid.x() - kBadgeRadius, mid.y() - kBadgeRadius,
+                     kBadgeRadius * 2, kBadgeRadius * 2);
+
+    QColor bg = dark ? QColor(100, 180, 255) : QColor(0, 120, 215);
+    painter->setBrush(bg);
+    painter->setPen(QPen(Qt::white, 1.5));
+    painter->drawEllipse(badgeRect);
+
+    QFont f = painter->font();
+    f.setPointSize(8);
+    f.setBold(true);
+    painter->setFont(f);
+    painter->setPen(Qt::white);
+    painter->drawText(badgeRect, Qt::AlignCenter, QStringLiteral("M"));
+  }
 }
 
 DeviceItem* ConnectionItem::targetDevice() const {
@@ -757,6 +779,34 @@ void ConnectionItem::setStyle(PathStyle s) {
   }
   updatePath();
   update();
+}
+
+void ConnectionItem::setMonitorState(bool hasMonitor, int monitorIndex) {
+  has_monitor_ = hasMonitor;
+  monitor_index_ = monitorIndex;
+  prepareGeometryChange();
+  update();
+}
+
+void ConnectionItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
+  if (has_monitor_) {
+    QPointF mid = path().pointAtPercent(0.5);
+    QPointF d = event->scenePos() - mid;
+    // 检测区域略大于绘制半径，符合费茨定律
+    if (d.x() * d.x() + d.y() * d.y() <= (kBadgeRadius * 1.5) * (kBadgeRadius * 1.5)) {
+      // 点击 badge → 选中对应的监听器（QGraphicsScene::selectionChanged 自动触发属性面板更新）
+      auto* sc = qobject_cast<etest::topology::TopologyScene*>(this->scene());
+      if (sc) {
+        sc->clearSelection();
+        if (auto* monItem = sc->findMonitorItem(monitor_index_)) {
+          monItem->setSelected(true);
+        }
+      }
+      event->accept();
+      return;
+    }
+  }
+  QGraphicsPathItem::mousePressEvent(event);
 }
 
 // ═══════════════════════════════════════════════════════════════

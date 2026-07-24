@@ -209,6 +209,33 @@ void TopologyScene::updateTapVisuals() {
   }
   tap_lines_.clear();
 
+  // 更新连线上监听器 badge
+  for (auto* connItem : connection_items_) {
+    if (!connItem) continue;
+    int connIdx = connItem->connectionIndex();
+    if (connIdx < 0) {
+      connItem->setMonitorState(false, -1);
+      continue;
+    }
+    const auto* c = doc_->connection(connIdx);
+    if (!c) {
+      connItem->setMonitorState(false, -1);
+      continue;
+    }
+    // 查找该连线对应的监听器
+    bool found = false;
+    int foundMonIdx = -1;
+    for (int mi = 0; mi < doc_->monitorCount(); ++mi) {
+      const auto* mon = doc_->monitor(mi);
+      if (mon && mon->connectionId == c->id) {
+        found = true;
+        foundMonIdx = mi;
+        break;
+      }
+    }
+    connItem->setMonitorState(found, foundMonIdx);
+  }
+
   // Build a lookup: connection endpoint → monitorItem + tap index
   for (auto* monItem : monitor_items_) {
     if (!monItem)
