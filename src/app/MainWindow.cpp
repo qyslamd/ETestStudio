@@ -1617,7 +1617,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
             id = QUuid::createUuid().toString(QUuid::WithoutBraces);
           }
           signal_registry_->registerDevice(
-              id, name, dobj[QStringLiteral("type")].toString());
+              id, name, dobj[QStringLiteral("deviceType")].toString());
           QJsonArray ports = dobj[QStringLiteral("ports")].toArray();
           for (const QJsonValue& pv : ports) {
             QJsonObject pobj = pv.toObject();

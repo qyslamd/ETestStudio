@@ -104,19 +104,18 @@ SignalVisualizer* VisualizationArea::visualizer(int monitorIndex,
 
 void VisualizationArea::clearAll() {
   // 先复制一份 key 列表，避免迭代中修改容器
+  // 注意：emit visualizerClosed 会同步触发 removeVisualizer（通过 uncheckChannel 回调链），
+  // 该调用会 delete proxy 并 erase items_。emit 后 it/iter 可能已失效，必须重新查找。
   auto keys = items_.keys();
   for (int key : keys) {
-    auto it = items_.find(key);
-    if (it == items_.end()) {
-      continue;
-    }
-    // 发射关闭信号
-    int monitorIndex = key >> 16;
-    int channelIndex = key & 0xFFFF;
-    emit visualizerClosed(monitorIndex, channelIndex);
+    emit visualizerClosed(key >> 16, key & 0xFFFF);
 
-    scene_->removeItem(it->proxy);
-    delete it->proxy;
+    // emit 后该条目可能已被 removeVisualizer 删除，重新查找确认
+    auto it = items_.find(key);
+    if (it != items_.end()) {
+      scene_->removeItem(it->proxy);
+      delete it->proxy;
+    }
   }
   items_.clear();
 }

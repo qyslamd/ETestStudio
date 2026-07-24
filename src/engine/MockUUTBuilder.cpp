@@ -262,6 +262,18 @@ bool MockUUTBuilder::buildSingleUUT(const QJsonObject& product,
   }
 
   auto uut = std::make_unique<MockUUT>(productName);
+
+  // 建立 deviceName → deviceId 映射（连接中使用 deviceName，查找需用 deviceId）
+  QHash<QString, QString> nameToId;
+  for (const auto& devVal : devices) {
+    QJsonObject dev = devVal.toObject();
+    QString id = dev["id"].toString();
+    QString name = dev["name"].toString();
+    if (!id.isEmpty() && !name.isEmpty()) {
+      nameToId.insert(name, id);
+    }
+  }
+
   QJsonArray ports = product["ports"].toArray();
 
   for (const auto& portVal : ports) {
@@ -277,8 +289,8 @@ bool MockUUTBuilder::buildSingleUUT(const QJsonObject& product,
     bool found = false;
     for (const auto& connVal : connectionsArr) {
       QJsonObject conn = connVal.toObject();
-      if (conn["productName"].toString() == productName &&
-          conn["portName"].toString() == portName) {
+      if (conn["product"].toString() == productName &&
+          conn["port"].toString() == portName) {
         matchedConn = conn;
         found = true;
         break;
@@ -289,26 +301,30 @@ bool MockUUTBuilder::buildSingleUUT(const QJsonObject& product,
       continue;
     }
 
-    QString deviceName = matchedConn["deviceName"].toString();
+    QString deviceName = matchedConn["device"].toString();
     QString devicePortName = matchedConn["devicePort"].toString();
 
-    // 根据 deviceName 查找设备
+    // 根据 deviceName（显示名）查找设备，通过 nameToId 转为 deviceId
     QJsonObject matchedDevice;
     bool devFound = false;
-    for (const auto& devVal : devices) {
-      QJsonObject dev = devVal.toObject();
-      if (dev["id"].toString() == deviceName) {
-        matchedDevice = dev;
-        devFound = true;
-        break;
+    QString deviceId = nameToId.value(deviceName);
+    if (!deviceId.isEmpty()) {
+      for (const auto& devVal : devices) {
+        QJsonObject dev = devVal.toObject();
+        if (dev["id"].toString() == deviceId) {
+          matchedDevice = dev;
+          devFound = true;
+          break;
+        }
       }
     }
     if (!devFound) {
+      LOG_WARN("HARDWARE", "MockUUT 设备未找到: name={}", deviceName.toStdString());
       continue;
     }
 
-    QString deviceId = matchedDevice["id"].toString();
-    QString deviceType = matchedDevice["type"].toString();
+    deviceId = matchedDevice["id"].toString();
+    QString deviceType = matchedDevice["deviceType"].toString();
 
     // 根据设备类型决定创建帧型还是通道型模拟器
     if (deviceType == QStringLiteral("serial") ||
@@ -368,7 +384,7 @@ std::unique_ptr<FramePortSimulator> MockUUTBuilder::buildFrameSimulator(
     const QJsonObject& port, const QJsonObject& connection,
     const QJsonObject& device) {
   Q_UNUSED(connection);
-  QString deviceType = device["type"].toString();
+  QString deviceType = device["deviceType"].toString();
   QString portName = port["name"].toString();
   QString deviceId = device["id"].toString();
 
@@ -405,19 +421,35 @@ std::unique_ptr<FramePortSimulator> MockUUTBuilder::buildFrameSimulator(
 std::unique_ptr<ChannelPortSimulator> MockUUTBuilder::buildChannelSimulator(
     const QJsonObject& port, const QJsonObject& connection,
     const QJsonObject& device) {
-  Q_UNUSED(connection);
-  QString deviceType = device["type"].toString();
+  Q_UNUSED(port);
+  QString deviceType = device["deviceType"].toString();
   QString deviceId = device["id"].toString();
-  int channel = port["channel"].toInt(0);
 
-  // 解析 receiveFrames → frameId
-  QVector<int> receiveIds;
-  QStringList recvNames = frameNamesFromArray(port["receiveFrames"].toArray());
-  if (!resolveFrameNamesToIds(recvNames, receiveIds)) {
+  // 从连接获取设备端口名，在设备端口中找到对应的 boundFrames
+  QString devicePortName = connection["devicePort"].toString();
+  QJsonArray devPorts = device["ports"].toArray();
+  QJsonObject matchedDevPort;
+  for (const auto& dpVal : devPorts) {
+    QJsonObject dp = dpVal.toObject();
+    if (dp["name"].toString() == devicePortName) {
+      matchedDevPort = dp;
+      break;
+    }
+  }
+  if (matchedDevPort.isEmpty()) {
+    LOG_WARN("HARDWARE", "设备 {} 中未找到端口 {}", deviceId.toStdString(), devicePortName.toStdString());
     return nullptr;
   }
 
-  int frameId = receiveIds.isEmpty() ? 0 : receiveIds.first();
+  // 解析 boundFrames → frameId（从设备端口读取，UUT 端口无此字段）
+  QVector<int> frameIds;
+  QStringList recvNames = frameNamesFromArray(matchedDevPort["boundFrames"].toArray());
+  if (!resolveFrameNamesToIds(recvNames, frameIds)) {
+    return nullptr;
+  }
+
+  int frameId = frameIds.isEmpty() ? 0 : frameIds.first();
+  int channel = matchedDevPort["channel"].toInt(0);
 
   if (deviceType == QStringLiteral("ad")) {
     return std::make_unique<ADChannelSimulator>(deviceId, frameId, channel);

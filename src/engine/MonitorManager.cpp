@@ -166,10 +166,6 @@ void MonitorManager::onHardwareOpFinished(const QString& deviceId,
 
     // 标记有待推送，定时器到点批量推
     pending_flush_ = true;
-
-    LOG_DEBUG("MONITOR", "收到数据 -> mi={} ci={} eng={} [{} subscribers]",
-              tapInfo.monitorIndex, tapInfo.channelIndex, engValue,
-              subscribers_.size());
   }
 }
 

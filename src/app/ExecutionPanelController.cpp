@@ -861,7 +861,6 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
                      mi, ci, checked);
             auto* monitorMgr = monitor_manager_;
             if (!monitorMgr) {
-              LOG_WARN("VISUAL", "monitorMgr null, 跳过");
               return;
             }
 
@@ -893,9 +892,11 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
                 // 用 QPointer 保护，防 worker 线程排队事件在 widget 销毁后到达
                 QPointer<SignalVisualizer> visGuard(vis);
                 monitorMgr->subscribe(
-                    mi, ci, [visGuard](const etest::engine::MonitorSample& sample) {
+                    mi, ci, [visGuard, mi, ci](const etest::engine::MonitorSample& sample) {
                       if (visGuard) {
                         visGuard->onSampleCaptured(sample);
+                      } else {
+                        LOG_WARN("VISUAL", "subscriber 回调 visGuard=null, mi={} ci={}", mi, ci);
                       }
                     });
                 dashboard_->visualizationArea()->addVisualizer(mi, ci, vis);

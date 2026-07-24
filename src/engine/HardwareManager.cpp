@@ -216,13 +216,17 @@ QVariant HardwareManager::read(const ResolvedSignal& signal) {
   if (!mock_uuts_.isEmpty() &&
       (signal.signalType == SignalType::AD ||
        signal.signalType == SignalType::DA)) {
+    LOG_INFO("HARDWARE", "MockUUT AD/DA 读取 [device={} frameId={} mock_uuts={}]",
+             signal.deviceId.toStdString(), signal.frameId, mock_uuts_.size());
     for (auto* uut : mock_uuts_) {
       auto* sim = uut->findChannelSimulator(signal.frameId);
       if (sim) {
         double val = sim->readChannelValue(signal.channel);
+        LOG_INFO("HARDWARE", "  -> MockUUT ch={} val={}", signal.channel, val);
         return QVariant(val);
       }
     }
+    LOG_WARN("HARDWARE", "  -> MockUUT 无匹配 frameId={} 的通道模拟器, 走插件路径", signal.frameId);
   }
 
   IDevicePlugin* dev = pluginForDevice(signal.deviceId);
