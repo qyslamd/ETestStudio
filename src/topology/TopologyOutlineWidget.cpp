@@ -35,9 +35,6 @@ TopologyOutlineWidget::TopologyOutlineWidget(QWidget* parent)
           &TopologyOutlineWidget::onFilterTextChanged);
   connect(tree_, &QTreeWidget::itemClicked, this,
           &TopologyOutlineWidget::onTreeItemClicked);
-  tree_->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(tree_, &QTreeWidget::customContextMenuRequested, this,
-          &TopologyOutlineWidget::onTreeContextMenu);
 }
 
 void TopologyOutlineWidget::rebuildTree(TopologyDocument* doc) {
@@ -195,16 +192,23 @@ void TopologyOutlineWidget::addMonitorItem(int index, TopologyDocument* doc,
   item->setData(0, kRoleMainIdx, index);
   item->setData(0, kRoleSubIdx, -1);
 
-  // Show tapped connections as children
-  for (int ti = 0; ti < mon->taps.size(); ++ti) {
-    const auto& tap = mon->taps[ti];
-    auto* tapItem = new QTreeWidgetItem(item);
-    tapItem->setText(0, QStringLiteral("%1:%2 → %3:%4")
-                             .arg(tap.productName, tap.portName,
-                                  tap.deviceName, tap.devicePort));
-    tapItem->setData(0, kRoleTag, static_cast<int>(ItemTag::Tap));
-    tapItem->setData(0, kRoleMainIdx, index);
-    tapItem->setData(0, kRoleSubIdx, ti);
+  // Show connection info as child
+  if (!mon->connectionId.isEmpty()) {
+    QString connInfo = QStringLiteral("-");
+    for (int ci = 0; ci < doc->connectionCount(); ++ci) {
+      const auto* c = doc->connection(ci);
+      if (c && c->id == mon->connectionId) {
+        connInfo = QStringLiteral("%1.%2 → %3.%4")
+                       .arg(c->productName, c->portName,
+                            c->deviceName, c->devicePort);
+        break;
+      }
+    }
+    auto* connItem = new QTreeWidgetItem(item);
+    connItem->setText(0, connInfo);
+    connItem->setData(0, kRoleTag, static_cast<int>(ItemTag::Connection));
+    connItem->setData(0, kRoleMainIdx, index);
+    connItem->setData(0, kRoleSubIdx, 0);
   }
 }
 
@@ -306,26 +310,6 @@ void TopologyOutlineWidget::clearSelection() {
   updating_selection_ = true;
   tree_->clearSelection();
   updating_selection_ = false;
-}
-
-void TopologyOutlineWidget::onTreeContextMenu(const QPoint& pos) {
-  auto* item = tree_->itemAt(pos);
-  if (!item)
-    return;
-  auto tag = static_cast<ItemTag>(item->data(0, kRoleTag).toInt());
-  if (tag != ItemTag::Tap)
-    return;
-
-  int monIdx = item->data(0, kRoleMainIdx).toInt();
-  int tapIdx = item->data(0, kRoleSubIdx).toInt();
-
-  QMenu menu(this);
-  auto* unmountAction = menu.addAction(QStringLiteral("解除挂载"));
-  connect(unmountAction, &QAction::triggered, this, [this, monIdx, tapIdx]() {
-    LOG_INFO("TOPOLOGY_UI", "解除挂载");
-    emit unmountRequested(monIdx, tapIdx);
-  });
-  menu.exec(tree_->viewport()->mapToGlobal(pos));
 }
 
 }  // namespace etest::topology

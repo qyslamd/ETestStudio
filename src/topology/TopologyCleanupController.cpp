@@ -18,7 +18,8 @@ QUndoCommand* TopologyCleanupController::createCleanupCommand(
         new RemoveConnectionCommand(doc, entry.index, batchCmd);
         break;
       case InvalidEntry::MonitorTap:
-        new UnTapConnectionCommand(doc, entry.monIdx, entry.index, batchCmd);
+        new RemoveMonitorCommand(doc, entry.monIdx, batchCmd);
+        // entry.index 无意义（connectionId 模式下仅作索引占位）
         break;
     }
   }

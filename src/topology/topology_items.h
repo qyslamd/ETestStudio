@@ -243,11 +243,6 @@ class MonitorItem : public TopologyBlockItem {
   int monitorIndex() const { return monitor_index_; }
   MonitorPortItem* monitorPortItem() const { return port_; }
 
-  int tapCount() const;
-
-  // Per-tap hover state (for channel dots)
-  int hoveredTapIndex() const { return hovered_tap_index_; }
-
  protected:
   QColor blockFillColor() const override;
   QColor blockBorderColor() const override;
@@ -258,17 +253,11 @@ class MonitorItem : public TopologyBlockItem {
   qreal calcContentHeight() const override;
   void onResizeFinished(const QSizeF& oldSize, const QPointF& oldPos) override;
 
-  void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override;
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
-
  private:
   void layoutPort();
-  void updateDotHover(const QPointF& localPos);
 
   int monitor_index_;
   MonitorPortItem* port_ = nullptr;
-
-  int hovered_tap_index_ = -1;
 
   static constexpr qreal kWidth = 120.0;
   static constexpr qreal kBaseHeight = 80.0;

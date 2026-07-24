@@ -84,9 +84,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
                     int functionType,
                     const QString& pluginId,
                     const QPointF& scenePos);
-  void onDropMonitor(const QString& deviceType,
-                     int channelCount,
-                     const QPointF& scenePos);
+  void onDropMonitor(const QPointF& scenePos);
   void onOutlineNavigate(int itemType, int mainIndex, int subIndex);
   void onAddUutPort(int productIndex);
   void onCleanupInvalidConnections();

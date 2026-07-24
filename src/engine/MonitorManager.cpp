@@ -77,7 +77,7 @@ void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
     entry.monitorIndex = globalIndex;
     entry.name = mobj.value(QStringLiteral("name")).toString();
 
-    // 新格式（connectionId）或旧格式（taps）解析
+    // 按 connectionId 解析连线端点
     QString connectionId = mobj.value(QStringLiteral("connectionId")).toString();
     // 从 connectionId 派生 tap
     auto connIt = connIdToNamePort.constFind(connectionId);

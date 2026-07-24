@@ -354,34 +354,4 @@ class RemoveProductPortCommand : public QUndoCommand {
   QVector<ConnEntry> saved_connections_;
 };
 
-// ── TapConnectionCommand ──
-class TapConnectionCommand : public QUndoCommand {
- public:
-  TapConnectionCommand(TopologyDocument* doc, int monitorIndex,
-                       const TopologyMonitorTap& tap,
-                       QUndoCommand* parent = nullptr);
-  void undo() override;
-  void redo() override;
-
- private:
-  TopologyDocument* doc_;
-  int monitor_index_;
-  TopologyMonitorTap tap_;
-};
-
-// ── UnTapConnectionCommand ──
-class UnTapConnectionCommand : public QUndoCommand {
- public:
-  UnTapConnectionCommand(TopologyDocument* doc, int monitorIndex, int tapIndex,
-                         QUndoCommand* parent = nullptr);
-  void undo() override;
-  void redo() override;
-
- private:
-  TopologyDocument* doc_;
-  int monitor_index_;
-  int tap_index_;
-  TopologyMonitorTap tap_;
-};
-
 }  // namespace etest::topology

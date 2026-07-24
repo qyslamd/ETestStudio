@@ -36,28 +36,15 @@ TopologyConnection makeConnection() {
   return connection;
 }
 
-TopologyMonitor makeMonitor() {
-  TopologyMonitor monitor;
-  monitor.name = QStringLiteral("Monitor");
-  TopologyMonitorTap tap;
-  tap.productName = QStringLiteral("OldProduct");
-  tap.portName = QStringLiteral("OldPort");
-  tap.deviceName = QStringLiteral("OldDevice");
-  tap.devicePort = QStringLiteral("OldDevicePort");
-  monitor.taps.append(tap);
-  return monitor;
-}
-
 void populateConnectedDocument(TopologyDocument* doc) {
   doc->addProduct(makeProduct());
   doc->addDevice(makeDevice());
   doc->addConnection(makeConnection());
-  doc->addMonitor(makeMonitor());
 }
 
 }  // namespace
 
-TEST(DocumentRenameTest, RenameProductUpdatesConnectionsAndTaps) {
+TEST(DocumentRenameTest, RenameProductUpdatesConnections) {
   TopologyDocument doc;
   populateConnectedDocument(&doc);
 
@@ -65,10 +52,9 @@ TEST(DocumentRenameTest, RenameProductUpdatesConnectionsAndTaps) {
 
   EXPECT_EQ(doc.product(0)->name, QStringLiteral("NewProduct"));
   EXPECT_EQ(doc.connection(0)->productName, QStringLiteral("NewProduct"));
-  EXPECT_EQ(doc.monitor(0)->taps[0].productName, QStringLiteral("NewProduct"));
 }
 
-TEST(DocumentRenameTest, RenameProductPortUpdatesConnectionsAndTaps) {
+TEST(DocumentRenameTest, RenameProductPortUpdatesConnections) {
   TopologyDocument doc;
   populateConnectedDocument(&doc);
 
@@ -76,10 +62,9 @@ TEST(DocumentRenameTest, RenameProductPortUpdatesConnectionsAndTaps) {
 
   EXPECT_EQ(doc.product(0)->ports[0].name, QStringLiteral("NewPort"));
   EXPECT_EQ(doc.connection(0)->portName, QStringLiteral("NewPort"));
-  EXPECT_EQ(doc.monitor(0)->taps[0].portName, QStringLiteral("NewPort"));
 }
 
-TEST(DocumentRenameTest, RenameDeviceUpdatesConnectionsAndTaps) {
+TEST(DocumentRenameTest, RenameDeviceUpdatesConnections) {
   TopologyDocument doc;
   populateConnectedDocument(&doc);
 
@@ -87,10 +72,9 @@ TEST(DocumentRenameTest, RenameDeviceUpdatesConnectionsAndTaps) {
 
   EXPECT_EQ(doc.device(0)->name, QStringLiteral("NewDevice"));
   EXPECT_EQ(doc.connection(0)->deviceName, QStringLiteral("NewDevice"));
-  EXPECT_EQ(doc.monitor(0)->taps[0].deviceName, QStringLiteral("NewDevice"));
 }
 
-TEST(DocumentRenameTest, RenameDevicePortUpdatesConnectionsAndTaps) {
+TEST(DocumentRenameTest, RenameDevicePortUpdatesConnections) {
   TopologyDocument doc;
   populateConnectedDocument(&doc);
 
@@ -98,8 +82,6 @@ TEST(DocumentRenameTest, RenameDevicePortUpdatesConnectionsAndTaps) {
 
   EXPECT_EQ(doc.device(0)->ports[0].name, QStringLiteral("NewDevicePort"));
   EXPECT_EQ(doc.connection(0)->devicePort, QStringLiteral("NewDevicePort"));
-  EXPECT_EQ(doc.monitor(0)->taps[0].devicePort,
-            QStringLiteral("NewDevicePort"));
 }
 
 TEST(DocumentRenameTest, RenameRejectsInvalidIndexes) {

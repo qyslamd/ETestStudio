@@ -60,7 +60,7 @@ class MonitorManager : public QObject {
   ~MonitorManager() override;
 
   // ── 加载拓扑文档，重建查表（每次 start() 调用） ──
-  // 遍历 monitors[].taps[]，用 tap.deviceId + tap.devicePort 建 lookup_table_
+  // 遍历 monitors[]，按 connectionId 建 lookup_table_
   // 入参为 .etopo JSON 的 root object
   void loadFromTopology(const QJsonObject& topologyDoc);
 

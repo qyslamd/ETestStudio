@@ -153,7 +153,7 @@ TEST(ConnectionCleanupTest, MultipleInvalidConnections) {
   ASSERT_EQ(result.size(), 2);
 }
 
-TEST(ConnectionCleanupTest, InvalidMonitorTaps) {
+TEST(ConnectionCleanupTest, InvalidMonitorConnectionId) {
   TopologyDocument doc;
   doc.addProduct(makeProduct(QStringLiteral("UUT_1")));
   doc.addDevice(makeDevice(QStringLiteral("DEV_1"), QStringLiteral("EPH6272T")));
@@ -166,22 +166,25 @@ TEST(ConnectionCleanupTest, InvalidMonitorTaps) {
   conn.devicePort = QStringLiteral("CH01");
   doc.addConnection(conn);
 
-  // 添加监听器，挂载到一个不存在的连线
-  TopologyMonitor mon;
-  mon.name = QStringLiteral("Mon_1");
-  mon.deviceType = QStringLiteral("Monitor");
-  doc.addMonitor(mon);
+  // 添加监听器，connectionId 指向已存在的连线（应视为有效）
+  {
+    TopologyMonitor mon;
+    mon.name = QStringLiteral("Mon_Valid");
+    mon.connectionId = conn.id;
+    doc.addMonitor(mon);
+  }
 
-  TopologyMonitorTap tap;
-  tap.productName = QStringLiteral("UUT_1");
-  tap.portName = QStringLiteral("Port_GHOST");
-  tap.deviceName = QStringLiteral("DEV_1");
-  tap.devicePort = QStringLiteral("CH01");
-  doc.addTap(0, tap);
+  // 添加监听器，connectionId 为空（应视为无效）
+  {
+    TopologyMonitor mon;
+    mon.name = QStringLiteral("Mon_EmptyId");
+    doc.addMonitor(mon);
+  }
 
   auto result = ConnectionCleanup::findInvalid(&doc);
   ASSERT_EQ(result.size(), 1);
   EXPECT_EQ(result[0].type, InvalidEntry::MonitorTap);
+  ASSERT_EQ(result[0].monIdx, 1);
 }
 
 TEST(ConnectionCleanupTest, SortForRemovalDeletesUnstableIndexesSafely) {

@@ -68,19 +68,10 @@ class TopologyScene : public QGraphicsScene {
                      int functionType,
                      const QString& pluginId,
                      const QPointF& scenePos);
-  void monitorDropped(const QString& deviceType,
-                      int channelCount,
-                      const QPointF& scenePos);
+  void monitorDropped(const QPointF& scenePos);
 
  public:
-  // Tap mode — click a connection to attach it to a monitor
-  void startTapMode(int monitorIndex);
-  void finishTap(QPointF scenePos);
-  void cancelTapMode();
-  bool isTapModeActive() const { return tap_mode_monitor_ >= 0; }
-  int tapModeMonitorIndex() const { return tap_mode_monitor_; }
-
-  // Refresh tap visual indicators (dotted lines)
+  // Refresh connection badge indicators
   void updateTapVisuals();
 
  protected:
@@ -113,9 +104,6 @@ class TopologyScene : public QGraphicsScene {
   QGraphicsItem* moving_item_ = nullptr;
   QPointF move_start_pos_;
 
-  // Tap mode state
-  int tap_mode_monitor_ = -1;
-  QVector<QGraphicsItem*> tap_lines_;
 };
 
 }  // namespace etest::topology

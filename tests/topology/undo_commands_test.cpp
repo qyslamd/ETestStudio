@@ -38,28 +38,6 @@ TopologyConnection makeConnection(const QString& productName,
   return connection;
 }
 
-TopologyMonitorTap makeTap(const QString& productName,
-                           const QString& portName,
-                           const QString& deviceName,
-                           const QString& devicePort) {
-  TopologyMonitorTap tap;
-  tap.productName = productName;
-  tap.portName = portName;
-  tap.deviceName = deviceName;
-  tap.devicePort = devicePort;
-  return tap;
-}
-
-TopologyMonitor makeMonitorWithTaps(const QString& name) {
-  TopologyMonitor monitor;
-  monitor.name = name;
-  monitor.taps.append(makeTap(QStringLiteral("P1"), QStringLiteral("P1"),
-                              QStringLiteral("D1"), QStringLiteral("D1")));
-  monitor.taps.append(makeTap(QStringLiteral("P2"), QStringLiteral("P1"),
-                              QStringLiteral("D2"), QStringLiteral("D1")));
-  return monitor;
-}
-
 }  // namespace
 
 TEST(UndoCommandsTest, RemoveProductRedoDeletesOriginalProductAfterUndo) {
@@ -153,22 +131,6 @@ TEST(UndoCommandsTest, RemoveDevicePortRedoDeletesOriginalPortAfterUndo) {
   doc.undoStack()->redo();
   ASSERT_EQ(doc.device(0)->ports.size(), 1);
   EXPECT_EQ(doc.device(0)->ports[0].name, QStringLiteral("D2"));
-}
-
-TEST(UndoCommandsTest, UnTapRedoDeletesOriginalTapAfterUndo) {
-  TopologyDocument doc;
-  doc.addMonitor(makeMonitorWithTaps(QStringLiteral("Monitor")));
-
-  doc.undoStack()->push(new UnTapConnectionCommand(&doc, 0, 0));
-  ASSERT_EQ(doc.monitor(0)->taps.size(), 1);
-  EXPECT_EQ(doc.monitor(0)->taps[0].productName, QStringLiteral("P2"));
-
-  doc.undoStack()->undo();
-  ASSERT_EQ(doc.monitor(0)->taps.size(), 2);
-
-  doc.undoStack()->redo();
-  ASSERT_EQ(doc.monitor(0)->taps.size(), 1);
-  EXPECT_EQ(doc.monitor(0)->taps[0].productName, QStringLiteral("P2"));
 }
 
 TEST(UndoCommandsTest, SetProductPortStyleSupportsUndoRedo) {

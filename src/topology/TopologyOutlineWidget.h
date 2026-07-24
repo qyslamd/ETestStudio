@@ -25,16 +25,14 @@ class TopologyOutlineWidget : public QWidget {
  signals:
   // itemType: 0=UUT, 1=Device, 2=Connection, 3=Port, 4=DevicePort
   void navigateRequested(int itemType, int mainIndex, int subIndex);
-  void unmountRequested(int monIndex, int tapIndex);
 
  private slots:
   void onFilterTextChanged(const QString& text);
   void onTreeItemClicked(QTreeWidgetItem* item, int column);
-  void onTreeContextMenu(const QPoint& pos);
 
  private:
   // Values align with onOutlineNavigate scheme: 0=UUT, 1=Device, 2=Connection, 3=Port, 4=DevicePort, 5=Monitor
-  enum class ItemTag { Category = -1, Uut = 0, Device = 1, Connection = 2, Port = 3, DevicePort = 4, Monitor = 5, Tap = 6 };
+  enum class ItemTag { Category = -1, Uut = 0, Device = 1, Connection = 2, Port = 3, DevicePort = 4, Monitor = 5 };
 
   static constexpr int kRoleTag = Qt::UserRole + 1;
   static constexpr int kRoleMainIdx = Qt::UserRole + 2;

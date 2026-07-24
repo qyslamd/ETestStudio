@@ -80,16 +80,6 @@ struct TopologyConnection {
   PathStyle style = PathStyle::Bezier;
 };
 
-// Tap point identifying a connection by its endpoint names
-struct TopologyMonitorTap {
-  QString productName;
-  QString portName;
-  QString deviceName;
-  QString devicePort;
-  QString deviceId;                              // M4: 设备 UUID，挂载时由 deviceName 查 devices[].id 填入
-  QString displayMode = QStringLiteral("auto");  // M4: auto/waveform/led/meter/frame
-};
-
 // Listener / monitor device — attached to a connection
 struct TopologyMonitor {
   QString name;
@@ -97,10 +87,6 @@ struct TopologyMonitor {
   QString displayMode = QStringLiteral("waveform");  // waveform/led/meter/frame
   QPointF position{0, 0};
   QSizeF size{0, 0};
-  // 旧字段保留供旧格式兼容（读取时填充，写入时忽略）
-  QString deviceType;
-  int channelCount = 1;
-  QVector<TopologyMonitorTap> taps;
 };
 
 class TopologyDocument : public QObject {
@@ -165,11 +151,6 @@ class TopologyDocument : public QObject {
   const TopologyMonitor* monitor(int index) const;
   int monitorCount() const;
   int findMonitorIndex(const QString& name) const;
-
-  // Tap management
-  void addTap(int monitorIndex, const TopologyMonitorTap& tap);
-  int insertTap(int monitorIndex, int tapIndex, const TopologyMonitorTap& tap);
-  void removeTap(int monitorIndex, int tapIndex);
 
   bool canConnect(const QString& productName,
                   const QString& portName,

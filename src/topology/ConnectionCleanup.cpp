@@ -53,59 +53,29 @@ QVector<InvalidEntry> ConnectionCleanup::findInvalid(
     }
   }
 
-  // 检查无效监听器挂载
+  // 检查无效监听器挂载（按 connectionId 验证）
   for (int mi = 0; mi < doc->monitorCount(); ++mi) {
     const auto* mon = doc->monitor(mi);
     if (!mon) continue;
 
-    // 通道数不足的多余挂载标记为无效（旧的 .etopo 文件可能缺少 channelCount）
-    for (int ti = mon->channelCount; ti < mon->taps.size(); ++ti) {
-      const auto& tap = mon->taps[ti];
-      invalid.append({InvalidEntry::MonitorTap, ti, mi,
-          QStringLiteral("挂载: UUT \"%1/%2\" → 设备 \"%3/%4\" (超出通道数)")
-              .arg(tap.productName, tap.portName,
-                   tap.deviceName, tap.devicePort)});
+    if (mon->connectionId.isEmpty()) {
+      invalid.append({InvalidEntry::MonitorTap, 0, mi,
+          QStringLiteral("监听器 \"%1\" 未关联任何连线").arg(mon->name)});
+      continue;
     }
 
-    // 检查未超限的挂载是否有重复
-    int maxTi = qMin(mon->channelCount, mon->taps.size());
-    for (int ti = 0; ti < maxTi; ++ti) {
-      const auto& tap = mon->taps[ti];
-      for (int tj = ti + 1; tj < maxTi; ++tj) {
-        const auto& tap2 = mon->taps[tj];
-        if (tap.productName == tap2.productName &&
-            tap.portName == tap2.portName &&
-            tap.deviceName == tap2.deviceName &&
-            tap.devicePort == tap2.devicePort) {
-          invalid.append({InvalidEntry::MonitorTap, tj, mi,
-              QStringLiteral("挂载: UUT \"%1/%2\" → 设备 \"%3/%4\" (重复挂载)")
-                  .arg(tap2.productName, tap2.portName,
-                       tap2.deviceName, tap2.devicePort)});
-          break;
-        }
+    bool connFound = false;
+    for (int ci = 0; ci < doc->connectionCount(); ++ci) {
+      const auto* c = doc->connection(ci);
+      if (c && c->id == mon->connectionId) {
+        connFound = true;
+        break;
       }
     }
-
-    for (int ti = 0; ti < maxTi; ++ti) {
-      const auto& tap = mon->taps[ti];
-
-      bool connFound = false;
-      for (int ci = 0; ci < doc->connectionCount(); ++ci) {
-        const auto* c = doc->connection(ci);
-        if (c && c->productName == tap.productName &&
-            c->portName == tap.portName &&
-            c->deviceName == tap.deviceName &&
-            c->devicePort == tap.devicePort) {
-          connFound = true;
-          break;
-        }
-      }
-      if (!connFound) {
-        invalid.append({InvalidEntry::MonitorTap, ti, mi,
-            QStringLiteral("挂载: UUT \"%1/%2\" → 设备 \"%3/%4\" (关联连线已不存在)")
-                .arg(tap.productName, tap.portName,
-                     tap.deviceName, tap.devicePort)});
-      }
+    if (!connFound) {
+      invalid.append({InvalidEntry::MonitorTap, 0, mi,
+          QStringLiteral("监听器 \"%1\" 关联的连线（ID: %2）已不存在")
+              .arg(mon->name, mon->connectionId)});
     }
   }
 

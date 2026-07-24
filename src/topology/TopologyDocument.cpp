@@ -145,12 +145,6 @@ bool TopologyDocument::renameProduct(int index, const QString& newName) {
     if (connection.productName == oldName)
       connection.productName = newName;
   }
-  for (auto& monitor : monitors_) {
-    for (auto& tap : monitor.taps) {
-      if (tap.productName == oldName)
-        tap.productName = newName;
-    }
-  }
   emit productChanged(index);
   return true;
 }
@@ -245,12 +239,6 @@ bool TopologyDocument::renameDevice(int index, const QString& newName) {
     if (connection.deviceName == oldName)
       connection.deviceName = newName;
   }
-  for (auto& monitor : monitors_) {
-    for (auto& tap : monitor.taps) {
-      if (tap.deviceName == oldName)
-        tap.deviceName = newName;
-    }
-  }
   emit deviceChanged(index);
   return true;
 }
@@ -330,12 +318,6 @@ bool TopologyDocument::renameProductPort(int productIndex, int portIndex,
     if (connection.productName == prod->name && connection.portName == oldName)
       connection.portName = newName;
   }
-  for (auto& monitor : monitors_) {
-    for (auto& tap : monitor.taps) {
-      if (tap.productName == prod->name && tap.portName == oldName)
-        tap.portName = newName;
-    }
-  }
   emit productChanged(productIndex);
   return true;
 }
@@ -372,12 +354,6 @@ bool TopologyDocument::renameDevicePort(int deviceIndex, int portIndex,
   for (auto& connection : connections_) {
     if (connection.deviceName == dev->name && connection.devicePort == oldName)
       connection.devicePort = newName;
-  }
-  for (auto& monitor : monitors_) {
-    for (auto& tap : monitor.taps) {
-      if (tap.deviceName == dev->name && tap.devicePort == oldName)
-        tap.devicePort = newName;
-    }
   }
   emit deviceChanged(deviceIndex);
   return true;
@@ -510,36 +486,6 @@ int TopologyDocument::findMonitorIndex(const QString& name) const {
       return i;
   }
   return -1;
-}
-
-void TopologyDocument::addTap(int monitorIndex,
-                               const TopologyMonitorTap& tap) {
-  if (monitorIndex < 0 || monitorIndex >= monitors_.size())
-    return;
-  monitors_[monitorIndex].taps.append(tap);
-  emit monitorChanged(monitorIndex);
-}
-
-int TopologyDocument::insertTap(int monitorIndex, int tapIndex,
-                                const TopologyMonitorTap& tap) {
-  if (monitorIndex < 0 || monitorIndex >= monitors_.size())
-    return -1;
-  auto& mon = monitors_[monitorIndex];
-  if (tapIndex < 0 || tapIndex > mon.taps.size())
-    return -1;
-  mon.taps.insert(tapIndex, tap);
-  emit monitorChanged(monitorIndex);
-  return tapIndex;
-}
-
-void TopologyDocument::removeTap(int monitorIndex, int tapIndex) {
-  if (monitorIndex < 0 || monitorIndex >= monitors_.size())
-    return;
-  auto& mon = monitors_[monitorIndex];
-  if (tapIndex < 0 || tapIndex >= mon.taps.size())
-    return;
-  mon.taps.removeAt(tapIndex);
-  emit monitorChanged(monitorIndex);
 }
 
 void TopologyDocument::clear() {

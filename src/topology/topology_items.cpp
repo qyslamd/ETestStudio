@@ -876,49 +876,24 @@ void MonitorItem::paintContent(QPainter* painter,
   QRectF nameRect(rect.x() + 36, rect.y() + 4, rect.width() - 40, 20);
   painter->drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter, mon->name);
 
-  // Device type
-  f.setPointSize(7);
-  f.setBold(false);
-  painter->setFont(f);
-  painter->setPen(tc.textSecondary);
-  QRectF typeRect(rect.x() + 36, rect.y() + 22, rect.width() - 40, 16);
-  painter->drawText(typeRect, Qt::AlignLeft | Qt::AlignVCenter,
-                    QStringLiteral("[%1]").arg(mon->deviceType));
-
-  // Channel dot matrix: hollow = unused, filled = tapped
-  int maxCh = qMax(1, mon->channelCount);
-  int used = qMin(mon->taps.size(), maxCh);
+  // Connection status: single dot (filled if connected via connectionId)
+  bool hasConnection = !mon->connectionId.isEmpty();
   qreal dotY = rect.bottom() - 10;
-  qreal dotSpacing = 14.0;
-  qreal totalW = maxCh * dotSpacing;
-  qreal startX = rect.center().x() - totalW / 2.0;
-  for (int i = 0; i < maxCh && i < 16; ++i) {
-    qreal dx = startX + i * dotSpacing + 4;
-    QColor dotColor = tc.directionBidirectional;
-    if (i < used && i == hovered_tap_index_) {
-      // Highlighted used dot on hover
-      painter->setBrush(dotColor.lighter(160));
-      painter->setPen(QPen(dotColor, 2.0));
-      painter->drawEllipse(QPointF(dx, dotY), 5, 5);
-    } else if (i < used) {
-      painter->setBrush(dotColor);
-      painter->setPen(Qt::NoPen);
-      painter->drawEllipse(QPointF(dx, dotY), 4, 4);
-    } else {
-      painter->setBrush(Qt::NoBrush);
-      painter->setPen(QPen(dotColor, 1.0));
-      painter->drawEllipse(QPointF(dx, dotY), 4, 4);
-    }
+  qreal dotX = rect.center().x() + 4;
+  QColor dotColor = tc.directionBidirectional;
+  if (hasConnection) {
+    painter->setBrush(dotColor);
+    painter->setPen(Qt::NoPen);
+    painter->drawEllipse(QPointF(dotX, dotY), 4, 4);
+  } else {
+    painter->setBrush(Qt::NoBrush);
+    painter->setPen(QPen(dotColor, 1.0));
+    painter->drawEllipse(QPointF(dotX, dotY), 4, 4);
   }
 }
 
 qreal MonitorItem::calcContentHeight() const {
   return kBaseHeight;
-}
-
-int MonitorItem::tapCount() const {
-  const auto* mon = doc_->monitor(monitor_index_);
-  return mon ? mon->taps.size() : 0;
 }
 
 void MonitorItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
@@ -942,69 +917,6 @@ void MonitorItem::onResizeFinished(const QSizeF&, const QPointF& oldPos) {
     doc->undoStack()->push(new ResizeItemCommand(
         doc, idx, ResizeItemCommand::Monitor, oldSize, newSize, oldPos, newPos));
   });
-}
-
-// ── MonitorItem hover: channel dot highlight + tooltip ───────────
-
-void MonitorItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
-  TopologyBlockItem::hoverMoveEvent(event);
-  updateDotHover(event->pos());
-}
-
-void MonitorItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
-  TopologyBlockItem::hoverLeaveEvent(event);
-  if (hovered_tap_index_ >= 0) {
-    hovered_tap_index_ = -1;
-    setToolTip(QString());
-    update();
-  }
-}
-
-void MonitorItem::updateDotHover(const QPointF& localPos) {
-  const auto* mon = doc_->monitor(monitor_index_);
-  if (!mon || mon->taps.isEmpty()) {
-    if (hovered_tap_index_ >= 0) {
-      hovered_tap_index_ = -1;
-      setToolTip(QString());
-      update();
-    }
-    return;
-  }
-
-  int maxCh = qMax(1, mon->channelCount);
-  int used = qMin(mon->taps.size(), maxCh);
-  qreal dotSpacing = 14.0;
-  qreal totalW = maxCh * dotSpacing;
-  // Local coordinate calculation — same formula as paintContent()
-  qreal dotStartX = block_width_ / 2.0 - totalW / 2.0;
-  qreal dotY = kBaseHeight - 10;
-
-  int oldHover = hovered_tap_index_;
-  hovered_tap_index_ = -1;
-
-  for (int ti = 0; ti < used; ++ti) {
-    QPointF dotCenter(dotStartX + ti * dotSpacing + 4, dotY);
-    if (QLineF(localPos, dotCenter).length() <= 8.0) {
-      hovered_tap_index_ = ti;
-      break;
-    }
-  }
-
-  if (hovered_tap_index_ != oldHover) {
-    if (hovered_tap_index_ >= 0 &&
-        hovered_tap_index_ < mon->taps.size()) {
-      const auto& tap = mon->taps[hovered_tap_index_];
-      setToolTip(QStringLiteral("挂载 %1: %2.%3 → %4.%5\n点击取消挂载")
-                     .arg(hovered_tap_index_ + 1)
-                     .arg(tap.productName, tap.portName, tap.deviceName,
-                          tap.devicePort));
-      setCursor(Qt::PointingHandCursor);
-    } else {
-      setToolTip(QString());
-      setCursor(Qt::SizeAllCursor);
-    }
-    update();
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════

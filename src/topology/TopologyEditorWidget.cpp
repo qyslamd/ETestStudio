@@ -630,8 +630,8 @@ void TopologyEditorWidget::initSignals() {
   connect(scene_, &TopologyScene::deviceDropped, this,
           &TopologyEditorWidget::onDropDevice);
   connect(scene_, &TopologyScene::monitorDropped, this,
-          [this](const QString& type, int ch, const QPointF& pos) {
-            onDropMonitor(type, ch, pos);
+          [this](const QPointF& pos) {
+            onDropMonitor(pos);
           });
 
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
@@ -651,12 +651,6 @@ void TopologyEditorWidget::initSignals() {
   device_palette_dock_->installEventFilter(this);
   outline_dock_->installEventFilter(this);
   property_dock_->installEventFilter(this);
-  connect(outline_widget_, &TopologyOutlineWidget::unmountRequested, this,
-          [this](int monIdx, int tapIdx) {
-            doc_->undoStack()->push(
-                new UnTapConnectionCommand(doc_, monIdx, tapIdx));
-          });
-
   connect(doc_, &TopologyDocument::monitorChanged, this,
           [this](int) { scene_->updateTapVisuals(); });
   connect(doc_, &TopologyDocument::monitorAdded, this,
@@ -970,14 +964,10 @@ void TopologyEditorWidget::onDropDevice(const QString& deviceType,
   }
 }
 
-void TopologyEditorWidget::onDropMonitor(const QString& deviceType,
-                                         int channelCount,
-                                         const QPointF& scenePos) {
+void TopologyEditorWidget::onDropMonitor(const QPointF& scenePos) {
   int n = doc_->monitorCount() + 1;
   TopologyMonitor mon;
-  mon.deviceType = deviceType;
-  mon.name = QStringLiteral("%1_%2").arg(deviceType).arg(n, 2, 10, QChar('0'));
-  mon.channelCount = channelCount;
+  mon.name = QStringLiteral("Monitor_%1").arg(n, 2, 10, QChar('0'));
   mon.position = scenePos;
   mon.size = QSizeF(120, 60);
 
@@ -1268,21 +1258,10 @@ void TopologyEditorWidget::onCopy() {
         continue;
       QJsonObject obj;
       obj["name"] = m->name;
-      obj["deviceType"] = m->deviceType;
       obj["positionX"] = m->position.x();
       obj["positionY"] = m->position.y();
       obj["sizeWidth"] = m->size.width();
       obj["sizeHeight"] = m->size.height();
-      QJsonArray tapsArr;
-      for (const auto& tap : m->taps) {
-        QJsonObject tapObj;
-        tapObj["productName"] = tap.productName;
-        tapObj["portName"] = tap.portName;
-        tapObj["deviceName"] = tap.deviceName;
-        tapObj["devicePort"] = tap.devicePort;
-        tapsArr.append(tapObj);
-      }
-      obj["taps"] = tapsArr;
       monsArr.append(obj);
     }
   }
@@ -1407,7 +1386,6 @@ void TopologyEditorWidget::onPaste() {
     QJsonObject obj = val.toObject();
     TopologyMonitor mon;
     mon.name = obj["name"].toString();
-    mon.deviceType = obj["deviceType"].toString();
     mon.position = QPointF(obj["positionX"].toDouble() + 30,
                            obj["positionY"].toDouble() + 30);
     mon.size =
@@ -1421,27 +1399,6 @@ void TopologyEditorWidget::onPaste() {
                  QStringLiteral("%1_copy%2").arg(base).arg(suffix)) >= 0)
         ++suffix;
       mon.name = QStringLiteral("%1_copy%2").arg(base).arg(suffix);
-    }
-
-    QJsonArray tapsArr = obj["taps"].toArray();
-    for (const auto& tv : tapsArr) {
-      QJsonObject tapObj = tv.toObject();
-      TopologyMonitorTap tap;
-      tap.productName = tapObj["productName"].toString();
-      tap.portName = tapObj["portName"].toString();
-      tap.deviceName = tapObj["deviceName"].toString();
-      tap.devicePort = tapObj["devicePort"].toString();
-      // M4: 粘贴时按 deviceName 重新解析 deviceId（防跨文档 UUID 失效）
-      {
-        int devIdx = doc_->findDeviceIndex(tap.deviceName);
-        if (devIdx >= 0) {
-          const auto* dev = doc_->device(devIdx);
-          if (dev) tap.deviceId = dev->id;
-        }
-      }
-      tap.displayMode = tapObj["displayMode"].toString(
-          QStringLiteral("auto"));
-      mon.taps.append(tap);
     }
 
     auto* cmd = new AddMonitorCommand(doc_, mon);
@@ -1484,10 +1441,6 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
       break;
     }
     case 5:
-      target = scene_->findMonitorItem(mainIndex);
-      break;
-    case 6:
-      // Tap node navigates to the parent Monitor
       target = scene_->findMonitorItem(mainIndex);
       break;
     default:
