@@ -68,11 +68,9 @@ class TopologyScene : public QGraphicsScene {
                      int functionType,
                      const QString& pluginId,
                      const QPointF& scenePos);
-  void monitorDropped(const QPointF& scenePos);
-
  public:
   // Refresh connection badge indicators
-  void updateTapVisuals();
+  void updateMonitorBadges();
 
  protected:
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override;

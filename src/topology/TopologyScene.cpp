@@ -42,7 +42,7 @@ void TopologyScene::loadFromDocument() {
   for (int i = 0; i < doc_->connectionCount(); ++i) {
     addConnectionItem(i);
   }
-  updateTapVisuals();
+  updateMonitorBadges();
 }
 
 void TopologyScene::syncPositionsToDocument() {
@@ -138,7 +138,7 @@ MonitorItem* TopologyScene::addMonitorItem(int monitorIndex, const QPointF& pos)
 
 // ── Monitor badge indicators on connections ──────────────────
 
-void TopologyScene::updateTapVisuals() {
+void TopologyScene::updateMonitorBadges() {
   // 更新连线上监听器 badge
   for (auto* connItem : connection_items_) {
     if (!connItem) continue;
@@ -331,16 +331,12 @@ void TopologyScene::dropEvent(QGraphicsSceneDragDropEvent* event) {
         event->mimeData()->data(QLatin1String(kTopologyDeviceMime)));
     if (jdoc.isObject()) {
       QJsonObject obj = jdoc.object();
-      if (obj["isMonitor"].toBool()) {
-        emit monitorDropped(event->scenePos());
-      } else {
-        emit deviceDropped(obj["deviceType"].toString(),
+      emit deviceDropped(obj["deviceType"].toString(),
                            obj["channelCount"].toInt(),
                            obj["direction"].toInt(),
                            obj["functionType"].toInt(),
                            obj["pluginId"].toString(),
                            event->scenePos());
-      }
     }
     drag_preview_data_ = QJsonObject();
     event->acceptProposedAction();
@@ -354,7 +350,7 @@ void TopologyScene::onItemMoved() {
     if (conn)
       conn->updatePath();
   }
-  updateTapVisuals();
+  updateMonitorBadges();
 }
 
 DeviceItem* TopologyScene::deviceItemAt(QPointF scenePos) const {

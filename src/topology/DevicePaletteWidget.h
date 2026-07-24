@@ -10,13 +10,6 @@ class QMimeData;
 
 namespace etest::topology {
 
-// Monitored device entry (kept hard-coded — monitors aren't plugin-loaded)
-struct MonitorEntry {
-  QString deviceType;
-  QString displayName;
-  int channelCount;
-};
-
 // Subclassed to provide custom MIME data for drag operations.
 class DeviceListWidget : public QListWidget {
   Q_OBJECT
@@ -35,7 +28,6 @@ class DevicePaletteWidget : public QWidget {
 
  private:
   void populateDeviceTypes();
-  void addMonitorEntry();
   void onFilterChanged(const QString& text);
 
   DeviceListWidget* list_widget_ = nullptr;

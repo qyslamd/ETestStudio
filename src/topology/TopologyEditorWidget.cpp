@@ -629,10 +629,6 @@ void TopologyEditorWidget::initSignals() {
 
   connect(scene_, &TopologyScene::deviceDropped, this,
           &TopologyEditorWidget::onDropDevice);
-  connect(scene_, &TopologyScene::monitorDropped, this,
-          [this](const QPointF& pos) {
-            onDropMonitor(pos);
-          });
 
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
           &TopologyEditorWidget::onDocumentChanged);
@@ -652,11 +648,11 @@ void TopologyEditorWidget::initSignals() {
   outline_dock_->installEventFilter(this);
   property_dock_->installEventFilter(this);
   connect(doc_, &TopologyDocument::monitorChanged, this,
-          [this](int) { scene_->updateTapVisuals(); });
+          [this](int) { scene_->updateMonitorBadges(); });
   connect(doc_, &TopologyDocument::monitorAdded, this,
-          [this](int mi) { scene_->updateTapVisuals(); });
+          [this](int mi) { scene_->updateMonitorBadges(); });
   connect(doc_, &TopologyDocument::monitorRemoved, this,
-          [this](int mi) { scene_->updateTapVisuals(); });
+          [this](int mi) { scene_->updateMonitorBadges(); });
 
   // ── Product port changes: refresh UUT ports ──
   connect(doc_, &TopologyDocument::productPortAdded, this,
@@ -961,24 +957,6 @@ void TopologyEditorWidget::onDropDevice(const QString& deviceType,
   if (auto* devItem = scene_->findDeviceItem(cmd->deviceIndex())) {
     devItem->setSelected(true);
     view_->centerOn(devItem);
-  }
-}
-
-void TopologyEditorWidget::onDropMonitor(const QPointF& scenePos) {
-  int n = doc_->monitorCount() + 1;
-  TopologyMonitor mon;
-  mon.name = QStringLiteral("Monitor_%1").arg(n, 2, 10, QChar('0'));
-  mon.position = scenePos;
-  mon.size = QSizeF(120, 60);
-
-  auto* cmd = new AddMonitorCommand(doc_, mon);
-  doc_->undoStack()->push(cmd);
-  showStatusMessage(QStringLiteral("已拖放添加监听器: %1").arg(mon.name));
-
-  // 居中到新添加的 Monitor
-  if (auto* monItem = scene_->findMonitorItem(cmd->monitorIndex())) {
-    monItem->setSelected(true);
-    view_->centerOn(monItem);
   }
 }
 

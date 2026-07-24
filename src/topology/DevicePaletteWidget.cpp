@@ -32,7 +32,6 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
 
   QJsonObject obj;
   obj["deviceType"]    = item->data(Qt::UserRole).toString();
-  obj["isMonitor"]     = item->data(Qt::UserRole + 1).toBool();
   obj["channelCount"]  = item->data(Qt::UserRole + 2).toInt();
   obj["pluginId"]      = item->data(Qt::UserRole + 3).toString();
   obj["direction"]     = item->data(Qt::UserRole + 4).toInt();
@@ -91,7 +90,6 @@ void DevicePaletteWidget::populateDeviceTypes() {
         : QStringLiteral("%1 (%2ch)").arg(meta.name).arg(meta.device_channels);
     item->setText(display);
     item->setData(Qt::UserRole,     meta.device_type);          // deviceType
-    item->setData(Qt::UserRole + 1, QVariant(false));            // isMonitor
     item->setData(Qt::UserRole + 2, meta.device_channels);       // channelCount
     item->setData(Qt::UserRole + 3, meta.id);                    // pluginId
 
@@ -113,41 +111,6 @@ void DevicePaletteWidget::populateDeviceTypes() {
                       .arg(functionTypeToString(ft));
     item->setToolTip(tip);
     item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
-  }
-
-  // Add the hard-coded monitor entry
-  addMonitorEntry();
-}
-
-void DevicePaletteWidget::addMonitorEntry() {
-  static const MonitorEntry kMonitorTypes[] = {
-      {"Monitor-4CH", "Monitor-4CH (4通道监听器)", 4},
-  };
-  static const int kMonitorTypeCount =
-      sizeof(kMonitorTypes) / sizeof(kMonitorTypes[0]);
-
-  if (kMonitorTypeCount > 0) {
-    auto* sep = new QListWidgetItem(QStringLiteral("─── 监听器 ───"));
-    sep->setFlags(sep->flags() & ~Qt::ItemIsSelectable);
-    sep->setForeground(QColor(140, 140, 140));
-    list_widget_->addItem(sep);
-
-    for (int i = 0; i < kMonitorTypeCount; ++i) {
-      const auto& entry = kMonitorTypes[i];
-      auto* item = new QListWidgetItem(entry.displayName);
-      item->setData(Qt::UserRole, entry.deviceType);
-      item->setData(Qt::UserRole + 1, true);                    // isMonitor
-      item->setData(Qt::UserRole + 2, entry.channelCount);      // channelCount
-      item->setData(Qt::UserRole + 3, QString());                // pluginId（空）
-      item->setData(Qt::UserRole + 4,
-          static_cast<int>(TopologyPort::Direction::Bidirectional)); // direction
-      item->setData(Qt::UserRole + 5,
-          static_cast<int>(FunctionType::CUSTOM));               // functionType
-      item->setToolTip(QStringLiteral("%1\n拖放至画布添加监听器").arg(
-          entry.displayName));
-      item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
-      list_widget_->addItem(item);
-    }
   }
 }
 
