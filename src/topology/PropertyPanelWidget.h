@@ -146,10 +146,12 @@ class PropertyPanelWidget : public QWidget {
 
   // Monitor page widgets
   QLineEdit* monitor_name_edit_ = nullptr;
-  QLabel* monitor_type_label_ = nullptr;
-  QTableWidget* monitor_taps_table_ = nullptr;
+  QLabel* monitor_connection_label_ = nullptr;
+  QComboBox* monitor_display_mode_combo_ = nullptr;
+  QPushButton* monitor_delete_btn_ = nullptr;
   int editing_monitor_index_ = -1;
-  void onTapTableContextMenu(const QPoint& pos);
+  void onMonitorDisplayModeChanged();
+  void onMonitorDelete();
 };
 
 }  // namespace etest::topology

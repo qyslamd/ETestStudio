@@ -272,67 +272,37 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
   if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
     editing_monitor_index_ = mon->monitorIndex();
     auto* m = doc_->monitor(editing_monitor_index_);
-    if (m) {
-      monitor_name_edit_->blockSignals(true);
-      monitor_name_edit_->setText(m->name);
-      monitor_name_edit_->blockSignals(false);
-      monitor_type_label_->setText(m->deviceType);
-
-      // Populate taps table
-      monitor_taps_table_->setUpdatesEnabled(false);
-      monitor_taps_table_->blockSignals(true);
-      monitor_taps_table_->setRowCount(m->taps.size());
-      for (int r = 0; r < m->taps.size(); ++r) {
-        const auto& tap = m->taps[r];
-        monitor_taps_table_->setItem(
-            r, 0,
-            new QTableWidgetItem(
-                QStringLiteral("%1:%2").arg(tap.productName, tap.portName)));
-        monitor_taps_table_->setItem(
-            r, 1,
-            new QTableWidgetItem(
-                QStringLiteral("%1:%2").arg(tap.deviceName, tap.devicePort)));
-        // M4: 显示模式下拉
-        auto* modeCombo = new QComboBox();
-        modeCombo->addItem(QStringLiteral("auto"));
-        modeCombo->addItem(QStringLiteral("waveform"));
-        modeCombo->addItem(QStringLiteral("led"));
-        modeCombo->addItem(QStringLiteral("meter"));
-        modeCombo->addItem(QStringLiteral("frame"));
-        int modeIdx = modeCombo->findText(tap.displayMode);
-        if (modeIdx >= 0)
-          modeCombo->setCurrentIndex(modeIdx);
-        connect(modeCombo, &QComboBox::currentTextChanged, this,
-                [this, r](const QString& newMode) {
-                  if (editing_monitor_index_ < 0)
-                    return;
-                  const auto* mon = doc_->monitor(editing_monitor_index_);
-                  if (!mon || r >= mon->taps.size())
-                    return;
-                  QString oldMode = mon->taps[r].displayMode;
-                  if (oldMode == newMode)
-                    return;
-                  int mi = editing_monitor_index_;
-                  auto* cmd = new PropertyCommand(
-                      doc_,
-                      [doc = doc_, mi, r, oldMode]() {
-                        auto* m = doc->monitor(mi);
-                        if (m && r < m->taps.size())
-                          m->taps[r].displayMode = oldMode;
-                      },
-                      [doc = doc_, mi, r, newMode]() {
-                        auto* m = doc->monitor(mi);
-                        if (m && r < m->taps.size())
-                          m->taps[r].displayMode = newMode;
-                      },
-                      QStringLiteral("修改显示模式"));
-                  doc_->undoStack()->push(cmd);
-                });
-        monitor_taps_table_->setCellWidget(r, 2, modeCombo);
-      }
-      monitor_taps_table_->blockSignals(false);
-      monitor_taps_table_->setUpdatesEnabled(true);
+    if (!m) {
+      LOG_WARN("TOPOLOGY_UI",
+               "MonitorItem index %d not found in document",
+               editing_monitor_index_);
+      stack_->setCurrentIndex(PageEmpty);
+      return;
     }
+    monitor_name_edit_->blockSignals(true);
+    monitor_name_edit_->setText(m->name);
+    monitor_name_edit_->blockSignals(false);
+
+    // Resolve connection info from connectionId
+    QString connInfo = QStringLiteral("-");
+    for (int ci = 0; ci < doc_->connectionCount(); ++ci) {
+      auto* conn = doc_->connection(ci);
+      if (conn && conn->id == m->connectionId) {
+        connInfo = QStringLiteral("%1.%2 → %3.%4")
+                       .arg(conn->productName, conn->portName,
+                            conn->deviceName, conn->devicePort);
+        break;
+      }
+    }
+    monitor_connection_label_->setText(connInfo);
+
+    // Display mode
+    monitor_display_mode_combo_->blockSignals(true);
+    int modeIdx =
+        monitor_display_mode_combo_->findData(m->displayMode);
+    if (modeIdx >= 0)
+      monitor_display_mode_combo_->setCurrentIndex(modeIdx);
+    monitor_display_mode_combo_->blockSignals(false);
     stack_->setCurrentIndex(PageMonitor);
     return;
   }
@@ -341,6 +311,14 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
 }
 
 void PropertyPanelWidget::clearPanel() {
+  // Reset all editing indices to avoid stale-index risk when signals fire
+  editing_uut_index_ = -1;
+  editing_port_product_ = -1;
+  editing_port_index_ = -1;
+  editing_device_index_ = -1;
+  editing_device_port_device_ = -1;
+  editing_device_port_index_ = -1;
+  editing_monitor_index_ = -1;
   stack_->setCurrentIndex(PageEmpty);
 }
 
@@ -753,42 +731,70 @@ void PropertyPanelWidget::buildMonitorPage() {
   });
   form->addRow(QStringLiteral("名称"), monitor_name_edit_);
 
-  monitor_type_label_ = new QLabel(w);
-  form->addRow(QStringLiteral("设备类型"), monitor_type_label_);
+  // Connection info (read-only, resolved from connectionId)
+  monitor_connection_label_ = new QLabel(QStringLiteral("-"), w);
+  monitor_connection_label_->setWordWrap(true);
+  form->addRow(QStringLiteral("连线"), monitor_connection_label_);
+
+  // Display mode at monitor level
+  monitor_display_mode_combo_ = new QComboBox(w);
+  monitor_display_mode_combo_->addItem(QStringLiteral("波形"),
+                                       QStringLiteral("waveform"));
+  monitor_display_mode_combo_->addItem(QStringLiteral("LED"),
+                                       QStringLiteral("led"));
+  monitor_display_mode_combo_->addItem(QStringLiteral("仪表"),
+                                       QStringLiteral("meter"));
+  monitor_display_mode_combo_->addItem(QStringLiteral("帧数据"),
+                                       QStringLiteral("frame"));
+  connect(monitor_display_mode_combo_, &QComboBox::currentTextChanged,
+          this, &PropertyPanelWidget::onMonitorDisplayModeChanged);
+  form->addRow(QStringLiteral("显示模式"), monitor_display_mode_combo_);
+
   lay->addLayout(form);
+  lay->addStretch();
 
-  auto* tapsGroup = new QGroupBox(QStringLiteral("已挂载连线"), w);
-  auto* tapsLay = new QVBoxLayout(tapsGroup);
+  // Delete button
+  monitor_delete_btn_ = new QPushButton(QStringLiteral("删除监听器"), w);
+  monitor_delete_btn_->setObjectName(QStringLiteral("monitorDeleteBtn"));
+  connect(monitor_delete_btn_, &QPushButton::clicked,
+          this, &PropertyPanelWidget::onMonitorDelete);
+  lay->addWidget(monitor_delete_btn_);
 
-  monitor_taps_table_ = new QTableWidget(0, 3, w);
-  monitor_taps_table_->setHorizontalHeaderLabels({QStringLiteral("源"),
-                                                  QStringLiteral("目标"),
-                                                  QStringLiteral("显示模式")});
-  monitor_taps_table_->horizontalHeader()->setStretchLastSection(true);
-  monitor_taps_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
-  monitor_taps_table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  monitor_taps_table_->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(monitor_taps_table_, &QTableWidget::customContextMenuRequested, this,
-          &PropertyPanelWidget::onTapTableContextMenu);
-  tapsLay->addWidget(monitor_taps_table_);
-
-  lay->addWidget(tapsGroup);
   stack_->addWidget(w);
 }
 
-void PropertyPanelWidget::onTapTableContextMenu(const QPoint& pos) {
-  int row = monitor_taps_table_->rowAt(pos.y());
-  if (row < 0 || editing_monitor_index_ < 0)
+void PropertyPanelWidget::onMonitorDisplayModeChanged() {
+  if (editing_monitor_index_ < 0)
     return;
+  auto* mon = doc_->monitor(editing_monitor_index_);
+  if (!mon)
+    return;
+  QString oldMode = mon->displayMode;
+  QString newMode = monitor_display_mode_combo_->currentData().toString();
+  if (oldMode == newMode)
+    return;
+  int idx = editing_monitor_index_;
+  auto* cmd = new PropertyCommand(
+      doc_,
+      [doc = doc_, idx, oldMode]() {
+        if (auto* m = doc->monitor(idx))
+          m->displayMode = oldMode;
+      },
+      [doc = doc_, idx, newMode]() {
+        if (auto* m = doc->monitor(idx))
+          m->displayMode = newMode;
+      },
+      QStringLiteral("修改显示模式"));
+  doc_->undoStack()->push(cmd);
+}
 
-  QMenu menu(this);
-  auto* unmountAction = menu.addAction(QStringLiteral("解除挂载"));
-  connect(unmountAction, &QAction::triggered, this, [this, row]() {
-    LOG_INFO("TOPOLOGY_UI", "解除挂载");
-    doc_->undoStack()->push(
-        new UnTapConnectionCommand(doc_, editing_monitor_index_, row));
-  });
-  menu.exec(monitor_taps_table_->viewport()->mapToGlobal(pos));
+void PropertyPanelWidget::onMonitorDelete() {
+  if (editing_monitor_index_ < 0)
+    return;
+  int idx = editing_monitor_index_;
+  doc_->undoStack()->push(new RemoveMonitorCommand(doc_, idx));
+  clearPanel();
+  emit documentChanged();
 }
 
 // ── Slots ──────────────────────────────────────────────────────
