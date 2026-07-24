@@ -10,6 +10,7 @@
 #include "widgets/ProblemsPanel.h"  // NavTarget 定义（navigateRequested 信号参数）
 
 class QAction;
+class QDialog;
 class QLabel;
 class QStackedWidget;
 class QWidget;
@@ -23,6 +24,7 @@ class ExecutionOutputPanel;
 class TestProgramManagerWidget;
 class ExecutionDashboard;
 class ProgramSelectionPopup;
+class SignalTreePanel;
 
 }  // namespace etest::app
 
@@ -110,6 +112,12 @@ class ExecutionPanelController : public QObject {
   // 程序选择 popup（供 MainWindow 放入 ribbon）
   ProgramSelectionPopup* programPopup() const { return popup_; }
 
+  // 通道选择 action（供 MainWindow 放入 ribbon）
+  QAction* selectChannelsAction() const { return act_select_channels_; }
+
+  /// 弹出通道选择 Modal Dialog
+  void showChannelSelectionDialog();
+
   // 清空数据按钮（供 MainWindow 放入 ribbon）
   QAction* clearDataAction() const { return act_clear_data_; }
 
@@ -138,6 +146,7 @@ class ExecutionPanelController : public QObject {
   QAction* act_verify_ = nullptr;
   QAction* act_run_all_ = nullptr;
   QAction* act_clear_data_ = nullptr;
+  QAction* act_select_channels_ = nullptr;
   QLabel* label_ribbon_stats_ = nullptr;
 
   // 引擎状态
@@ -160,6 +169,10 @@ class ExecutionPanelController : public QObject {
   QStackedWidget* central_stack_ = nullptr;
   ExecutionDashboard* dashboard_ = nullptr;
   ProgramSelectionPopup* popup_ = nullptr;
+
+  // SignalTreePanel（供通道选择 Dialog 使用，parent = nullptr，由 Dialog 自动 reparent）
+  SignalTreePanel* signal_tree_ = nullptr;
+  QDialog* signal_tree_dialog_ = nullptr;
 
   // MonitorManager（由 controller 持有，跨引擎重建保持；注入到引擎使用）
   etest::engine::MonitorManager* monitor_manager_ = nullptr;

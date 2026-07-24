@@ -9,7 +9,6 @@ class QTabWidget;
 namespace etest::app {
 
 class ExecutionDebugWidget;
-class SignalTreePanel;
 class VisualizationArea;
 class ExecutionOutputPanel;
 class ProblemsPanel;
@@ -17,7 +16,8 @@ class ProblemsPanel;
 // ══════════════════════════════════════════════════════════════════════════════
 // ExecutionDashboard - page 1 执行仪表盘
 // ══════════════════════════════════════════════════════════════════════════════
-// 三列水平布局（执行调试 | 信号树 | 可视化区）+ 底部输出/问题 tab 面板。
+// 两列水平布局（可视化区 | 执行调试）+ 底部输出/问题 tab 面板。
+// 通道选择由 ribbon「通道选择」按钮打开 Modal Dialog 完成。
 // 在 run 模式切换时由 MainWindow 构建并设置到 central_stack_ page 1。
 // ══════════════════════════════════════════════════════════════════════════════
 class ExecutionDashboard : public QWidget {
@@ -27,7 +27,6 @@ class ExecutionDashboard : public QWidget {
   explicit ExecutionDashboard(QWidget* parent = nullptr);
 
   ExecutionDebugWidget* debugWidget() const { return debug_widget_; }
-  SignalTreePanel* signalTreePanel() const { return signal_tree_; }
   VisualizationArea* visualizationArea() const { return vis_area_; }
   ExecutionOutputPanel* outputPanel() const { return output_panel_; }
   /// 底部「问题」tab 的 ProblemsPanel（内部创建并持有）
@@ -47,7 +46,6 @@ class ExecutionDashboard : public QWidget {
   void initUi();
 
   ExecutionDebugWidget* debug_widget_ = nullptr;
-  SignalTreePanel* signal_tree_ = nullptr;
   VisualizationArea* vis_area_ = nullptr;
   ExecutionOutputPanel* output_panel_ = nullptr;
   ProblemsPanel* problems_panel_ = nullptr;

@@ -3,6 +3,8 @@
 #include <QAction>
 
 #include <QDateTime>
+#include <QDialog>
+#include <QVBoxLayout>
 #include <QDir>
 #include <QFileInfo>
 #include <QLabel>
@@ -113,6 +115,11 @@ ExecutionPanelController::ExecutionPanelController(QWidget* parent_widget,
   popup_ = new ProgramSelectionPopup(parent_widget_);
   connect(popup_, &ProgramSelectionPopup::selectionChanged, this,
           &ExecutionPanelController::updateRunControls);
+
+  signal_tree_ = new SignalTreePanel(parent_widget_);
+  act_select_channels_ =
+      new QAction(AppIconProvider::instance().icon(QStringLiteral("signal")),
+                  QStringLiteral("通道选择"), parent_widget_);
 }
 
 void ExecutionPanelController::postInit(
@@ -854,7 +861,7 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
   }
 
   // ── SignalTreePanel checkbox → 创建/移除可视化组件 + 订阅/取消订阅 ──
-  connect(dashboard_->signalTreePanel(), &SignalTreePanel::checkStateChanged,
+  connect(signal_tree_, &SignalTreePanel::checkStateChanged,
           this, [this](int mi, int ci, bool checked) {
             LOG_INFO("VISUAL",
                      "checkStateChanged mi={} ci={} checked={}",
@@ -912,10 +919,7 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
   // 取消勾选会触发 checkStateChanged(false) → unsubscribe + removeVisualizer
   connect(dashboard_->visualizationArea(), &VisualizationArea::visualizerClosed,
           this, [this](int mi, int ci) {
-            auto* tree = dashboard_ ? dashboard_->signalTreePanel() : nullptr;
-            if (tree) {
-              tree->uncheckChannel(mi, ci);
-            }
+            signal_tree_->uncheckChannel(mi, ci);
           });
 
   // ── 如果引擎已就绪，立即加载监听器树 ──
@@ -923,15 +927,13 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
 }
 
 void ExecutionPanelController::refreshMonitorTree() {
-  if (!dashboard_) {
-    return;
-  }
   auto* mm = monitor_manager_;
-  if (!mm) {
+  if (!mm || !signal_tree_) {
     return;
   }
-  dashboard_->signalTreePanel()->setMonitorTree(mm->monitorTree(),
-      dashboard_->visualizationArea()->activeChannels());
+  signal_tree_->setMonitorTree(mm->monitorTree(),
+      dashboard_ ? dashboard_->visualizationArea()->activeChannels()
+                 : QList<QPair<int, int>>());
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -973,12 +975,24 @@ void ExecutionPanelController::clearProjectState() {
     // 先清可视化组件（clearAll 发射 visualizerClosed → uncheckChannel 回调需 node_map_ 有效）
     dashboard_->visualizationArea()->clearAll();
     // 再清树
-    dashboard_->signalTreePanel()->clearTree();
+    signal_tree_->clearTree();
   }
   // 清理 MonitorManager 结构与运行时数据（项目切换时避免残留）
   clearMonitorState();
   // 清理 mtime 缓存
   topo_mtimes_.clear();
+}
+
+void ExecutionPanelController::showChannelSelectionDialog() {
+  if (!signal_tree_dialog_) {
+    signal_tree_dialog_ = new QDialog(parent_widget_);
+    signal_tree_dialog_->setWindowTitle(QStringLiteral("通道选择"));
+    signal_tree_dialog_->resize(380, 480);
+    auto* layout = new QVBoxLayout(signal_tree_dialog_);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(signal_tree_);
+  }
+  signal_tree_dialog_->exec();
 }
 
 }  // namespace etest::app

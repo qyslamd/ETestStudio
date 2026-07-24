@@ -2262,9 +2262,12 @@ void MainWindow::setupRibbon() {
     category_exec_->setObjectName(QStringLiteral("CategoryExec"));
     auto* cat = category_exec_;
 
-    // 程序选择 Panel（popup 由 ExecutionPanelController 创建并持有）
-    auto* panel_select = cat->addPanel(QStringLiteral("程序选择"));
+    // 运行配置 Panel（程序选择 popup + 通道选择 dialog，由 ExecutionPanelController 管理）
+    auto* panel_select = cat->addPanel(QStringLiteral("运行配置"));
     panel_select->addSmallWidget(execution_controller_->programPopup());
+    panel_select->addSmallAction(execution_controller_->selectChannelsAction());
+    connect(execution_controller_->selectChannelsAction(), &QAction::triggered,
+            this, [this]() { execution_controller_->showChannelSelectionDialog(); });
 
     // 执行控制 Panel（QAction 由 ExecutionPanelController 管理）
     auto* panel_control = cat->addPanel(QStringLiteral("执行控制"));
