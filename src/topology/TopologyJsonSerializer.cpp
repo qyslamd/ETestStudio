@@ -126,10 +126,6 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
     mObj["name"] = m->name;
     mObj["connectionId"] = m->connectionId;
     mObj["displayMode"] = m->displayMode;
-    mObj["positionX"] = m->position.x();
-    mObj["positionY"] = m->position.y();
-    if (m->size.isValid() && m->size.width() > 0)
-      mObj["size"] = QJsonArray{m->size.width(), m->size.height()};
     monitorsArr.append(mObj);
   }
   root["monitors"] = monitorsArr;
@@ -287,13 +283,6 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     mon.connectionId = mObj["connectionId"].toString();
     mon.displayMode = mObj["displayMode"].toString(
         QStringLiteral("waveform"));
-    mon.position =
-        QPointF(mObj["positionX"].toDouble(), mObj["positionY"].toDouble());
-    {
-      QJsonArray a = mObj["size"].toArray();
-      if (a.size() == 2)
-        mon.size = QSizeF(a[0].toDouble(), a[1].toDouble());
-    }
 
     doc->addMonitor(mon);
   }

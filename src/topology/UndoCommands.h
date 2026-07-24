@@ -168,22 +168,6 @@ class MoveDeviceCommand : public QUndoCommand {
   QPointF new_pos_;
 };
 
-// ── MoveMonitorCommand ──
-class MoveMonitorCommand : public QUndoCommand {
- public:
-  MoveMonitorCommand(TopologyDocument* doc, int monitorIndex,
-                     const QPointF& oldPos, const QPointF& newPos,
-                     QUndoCommand* parent = nullptr);
-  void undo() override;
-  void redo() override;
-
- private:
-  TopologyDocument* doc_;
-  int index_;
-  QPointF old_pos_;
-  QPointF new_pos_;
-};
-
 // ── PropertyCommand ── generic undoable property change
 class PropertyCommand : public QUndoCommand {
  public:
@@ -252,7 +236,7 @@ class SetConnectionStyleCommand : public QUndoCommand {
 // ── ResizeItemCommand ──
 class ResizeItemCommand : public QUndoCommand {
  public:
-  enum Type { Product, Device, Monitor };
+  enum Type { Product, Device };
 
   ResizeItemCommand(TopologyDocument* doc, int index, Type type,
                     const QSizeF& oldSize, const QSizeF& newSize,

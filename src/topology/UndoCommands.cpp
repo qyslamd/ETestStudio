@@ -276,33 +276,6 @@ void MoveDeviceCommand::redo() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  MoveMonitorCommand
-// ═══════════════════════════════════════════════════════════════
-
-MoveMonitorCommand::MoveMonitorCommand(TopologyDocument* doc, int monitorIndex,
-                                       const QPointF& oldPos,
-                                       const QPointF& newPos,
-                                       QUndoCommand* parent)
-    : QUndoCommand(parent), doc_(doc), index_(monitorIndex), old_pos_(oldPos),
-      new_pos_(newPos) {
-  setText(QStringLiteral("移动监听器"));
-}
-
-void MoveMonitorCommand::undo() {
-  auto* mon = doc_->monitor(index_);
-  if (mon) {
-    mon->position = old_pos_;
-  }
-}
-
-void MoveMonitorCommand::redo() {
-  auto* mon = doc_->monitor(index_);
-  if (mon) {
-    mon->position = new_pos_;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
 //  PropertyCommand
 // ═══════════════════════════════════════════════════════════════
 
@@ -425,8 +398,7 @@ ResizeItemCommand::ResizeItemCommand(TopologyDocument* doc, int index,
       old_size_(oldSize), new_size_(newSize), old_pos_(oldPos),
       new_pos_(newPos) {
   setText(type_ == Product ? QStringLiteral("调整 UUT 大小")
-           : type_ == Monitor ? QStringLiteral("调整监听器大小")
-                              : QStringLiteral("调整设备大小"));
+                           : QStringLiteral("调整设备大小"));
 }
 
 void ResizeItemCommand::undo() {
@@ -435,12 +407,6 @@ void ResizeItemCommand::undo() {
     if (prod) {
       prod->size = old_size_;
       prod->position = old_pos_;
-    }
-  } else if (type_ == Monitor) {
-    auto* mon = doc_->monitor(index_);
-    if (mon) {
-      mon->size = old_size_;
-      mon->position = old_pos_;
     }
   } else {
     auto* dev = doc_->device(index_);
@@ -457,12 +423,6 @@ void ResizeItemCommand::redo() {
     if (prod) {
       prod->size = new_size_;
       prod->position = new_pos_;
-    }
-  } else if (type_ == Monitor) {
-    auto* mon = doc_->monitor(index_);
-    if (mon) {
-      mon->size = new_size_;
-      mon->position = new_pos_;
     }
   } else {
     auto* dev = doc_->device(index_);

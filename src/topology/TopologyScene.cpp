@@ -35,10 +35,6 @@ void TopologyScene::loadFromDocument() {
     const auto* dev = doc_->device(i);
     addDeviceItem(i, dev->position);
   }
-  for (int i = 0; i < doc_->monitorCount(); ++i) {
-    const auto* mon = doc_->monitor(i);
-    addMonitorItem(i, mon->position);
-  }
   for (int i = 0; i < doc_->connectionCount(); ++i) {
     addConnectionItem(i);
   }
@@ -54,11 +50,6 @@ void TopologyScene::syncPositionsToDocument() {
   for (auto* dev : device_items_) {
     if (auto* d = doc_->device(dev->deviceIndex())) {
       d->position = dev->pos();
-    }
-  }
-  for (auto* mon : monitor_items_) {
-    if (auto* m = doc_->monitor(mon->monitorIndex())) {
-      m->position = mon->pos();
     }
   }
 }
@@ -128,14 +119,6 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
   return item;
 }
 
-MonitorItem* TopologyScene::addMonitorItem(int monitorIndex, const QPointF& pos) {
-  auto* item = new MonitorItem(monitorIndex, doc_);
-  item->setPos(pos);
-  addItem(item);
-  monitor_items_.append(item);
-  return item;
-}
-
 // ── Monitor badge indicators on connections ──────────────────
 
 void TopologyScene::updateMonitorBadges() {
@@ -185,8 +168,6 @@ void TopologyScene::continueConnectionDrag(QPointF scenePos) {
       center = p->sceneCenter();
     else if (auto* dp = qgraphicsitem_cast<DevicePortItem*>(drag_source_))
       center = dp->sceneCenter();
-    else if (auto* mp = qgraphicsitem_cast<MonitorPortItem*>(drag_source_))
-      center = mp->sceneCenter();
     QLineF line(center, scenePos);
     drag_line_->setLine(line);
   }
@@ -419,17 +400,6 @@ ConnectionItem* TopologyScene::connectionItemAt(QPointF scenePos) const {
   return nullptr;
 }
 
-MonitorPortItem* TopologyScene::monitorPortItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemBoundingRect,
-                           Qt::DescendingOrder);
-  for (auto* item : items) {
-    if (auto* mp = qgraphicsitem_cast<MonitorPortItem*>(item)) {
-      return mp;
-    }
-  }
-  return nullptr;
-}
-
 ConnectionItem* TopologyScene::findConnectionItem(int connIndex) const {
   for (auto* conn : connection_items_) {
     if (conn && conn->connectionIndex() == connIndex)
@@ -438,12 +408,9 @@ ConnectionItem* TopologyScene::findConnectionItem(int connIndex) const {
   return nullptr;
 }
 
-MonitorItem* TopologyScene::findMonitorItem(int monitorIndex) const {
-  for (auto* mon : monitor_items_) {
-    if (mon && mon->monitorIndex() == monitorIndex)
-      return mon;
-  }
-  return nullptr;
+void TopologyScene::emitMonitorBadgeClicked(int connIdx, int monIdx) {
+  badge_click_handled_ = true;
+  emit monitorBadgeClicked(connIdx, monIdx);
 }
 
 UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
@@ -466,11 +433,19 @@ void TopologyScene::clearScene() {
   uut_items_.clear();
   device_items_.clear();
   connection_items_.clear();
-  monitor_items_.clear();
 }
 
 void TopologyScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
+  badge_click_handled_ = false;
   QGraphicsScene::mousePressEvent(event);
+
+  if (badge_click_handled_) {
+    // Badge click was handled in ConnectionItem::mousePressEvent via
+    // emitMonitorBadgeClicked — skip itemSelected to avoid overwriting
+    // the monitor properties panel that was already set up.
+    badge_click_handled_ = false;
+    return;
+  }
 
   if (event->button() == Qt::LeftButton) {
     auto selected = selectedItems();
@@ -511,10 +486,6 @@ void TopologyScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
     } else if (auto* dev = qgraphicsitem_cast<DeviceItem*>(moving_item_)) {
       auto* cmd = new MoveDeviceCommand(doc_, dev->deviceIndex(),
                                         move_start_pos_, moving_item_->pos());
-      doc_->undoStack()->push(cmd);
-    } else if (auto* mon = qgraphicsitem_cast<MonitorItem*>(moving_item_)) {
-      auto* cmd = new MoveMonitorCommand(doc_, mon->monitorIndex(),
-                                         move_start_pos_, moving_item_->pos());
       doc_->undoStack()->push(cmd);
     }
   }

@@ -24,6 +24,7 @@ class PropertyPanelWidget : public QWidget {
                                QWidget* parent = nullptr);
 
   void showPropertiesFor(QGraphicsItem* item);
+  void showMonitorProperties(int monitorIndex);
   void clearPanel();
   // M3: 设置可用 ICD 帧名列表（由上层注入，standalone 模式保持空）
   void setAvailableIcdFrames(const QStringList& frames) {

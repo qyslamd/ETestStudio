@@ -269,44 +269,6 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
     return;
   }
 
-  if (auto* mon = qgraphicsitem_cast<MonitorItem*>(item)) {
-    editing_monitor_index_ = mon->monitorIndex();
-    auto* m = doc_->monitor(editing_monitor_index_);
-    if (!m) {
-      LOG_WARN("TOPOLOGY_UI",
-               "MonitorItem index %d not found in document",
-               editing_monitor_index_);
-      stack_->setCurrentIndex(PageEmpty);
-      return;
-    }
-    monitor_name_edit_->blockSignals(true);
-    monitor_name_edit_->setText(m->name);
-    monitor_name_edit_->blockSignals(false);
-
-    // Resolve connection info from connectionId
-    QString connInfo = QStringLiteral("-");
-    for (int ci = 0; ci < doc_->connectionCount(); ++ci) {
-      auto* conn = doc_->connection(ci);
-      if (conn && conn->id == m->connectionId) {
-        connInfo = QStringLiteral("%1.%2 → %3.%4")
-                       .arg(conn->productName, conn->portName,
-                            conn->deviceName, conn->devicePort);
-        break;
-      }
-    }
-    monitor_connection_label_->setText(connInfo);
-
-    // Display mode
-    monitor_display_mode_combo_->blockSignals(true);
-    int modeIdx =
-        monitor_display_mode_combo_->findData(m->displayMode);
-    if (modeIdx >= 0)
-      monitor_display_mode_combo_->setCurrentIndex(modeIdx);
-    monitor_display_mode_combo_->blockSignals(false);
-    stack_->setCurrentIndex(PageMonitor);
-    return;
-  }
-
   stack_->setCurrentIndex(PageEmpty);
 }
 
@@ -320,6 +282,41 @@ void PropertyPanelWidget::clearPanel() {
   editing_device_port_index_ = -1;
   editing_monitor_index_ = -1;
   stack_->setCurrentIndex(PageEmpty);
+}
+
+void PropertyPanelWidget::showMonitorProperties(int monitorIndex) {
+  editing_monitor_index_ = monitorIndex;
+  auto* m = doc_->monitor(monitorIndex);
+  if (!m) {
+    LOG_WARN("TOPOLOGY_UI",
+             "Monitor index %d not found in document", monitorIndex);
+    stack_->setCurrentIndex(PageEmpty);
+    return;
+  }
+  monitor_name_edit_->blockSignals(true);
+  monitor_name_edit_->setText(m->name);
+  monitor_name_edit_->blockSignals(false);
+
+  // Resolve connection info from connectionId
+  QString connInfo = QStringLiteral("-");
+  for (int ci = 0; ci < doc_->connectionCount(); ++ci) {
+    auto* conn = doc_->connection(ci);
+    if (conn && conn->id == m->connectionId) {
+      connInfo = QStringLiteral("%1.%2 → %3.%4")
+                     .arg(conn->productName, conn->portName,
+                          conn->deviceName, conn->devicePort);
+      break;
+    }
+  }
+  monitor_connection_label_->setText(connInfo);
+
+  // Display mode
+  monitor_display_mode_combo_->blockSignals(true);
+  int modeIdx = monitor_display_mode_combo_->findData(m->displayMode);
+  if (modeIdx >= 0)
+    monitor_display_mode_combo_->setCurrentIndex(modeIdx);
+  monitor_display_mode_combo_->blockSignals(false);
+  stack_->setCurrentIndex(PageMonitor);
 }
 
 // ── Page builders ──────────────────────────────────────────────

@@ -14,7 +14,6 @@ class TopologyDocument;
 class TopologyScene;
 class UutItem;
 class DeviceItem;
-class MonitorItem;
 
 enum class PortStyle { Circle, Triangle };
 
@@ -225,67 +224,6 @@ class ConnectionItem : public QGraphicsPathItem {
   bool has_monitor_ = false;
   int monitor_index_ = -1;
   static constexpr qreal kBadgeRadius = 8.0;
-};
-
-class MonitorPortItem;
-
-// ── MonitorItem ── passive monitoring device ────────────────────
-
-class MonitorItem : public TopologyBlockItem {
- public:
-  enum { Type = UserType + 6 };
-  int type() const override { return Type; }
-
-  MonitorItem(int monitorIndex,
-              TopologyDocument* doc,
-              QGraphicsItem* parent = nullptr);
-
-  int monitorIndex() const { return monitor_index_; }
-  MonitorPortItem* monitorPortItem() const { return port_; }
-
- protected:
-  QColor blockFillColor() const override;
-  QColor blockBorderColor() const override;
-  QPen blockBorderPen(qreal penWidth) const override;
-  void paintContent(QPainter* painter,
-                    const QStyleOptionGraphicsItem* option,
-                    const QRectF& rect) override;
-  qreal calcContentHeight() const override;
-  void onResizeFinished(const QSizeF& oldSize, const QPointF& oldPos) override;
-
- private:
-  void layoutPort();
-
-  int monitor_index_;
-  MonitorPortItem* port_ = nullptr;
-
-  static constexpr qreal kWidth = 120.0;
-  static constexpr qreal kBaseHeight = 80.0;
-  static constexpr qreal kCornerRadius = 10.0;
-};
-
-// ── MonitorPortItem ── drag anchor on MonitorItem left edge ────────
-
-class MonitorPortItem : public AbstractPortItem {
- public:
-  enum { Type = UserType + 7 };
-  int type() const override { return Type; }
-
-  MonitorPortItem(int monitorIndex,
-                  TopologyDocument* doc,
-                  MonitorItem* parent);
-
-  QRectF boundingRect() const override;
-  QPainterPath shape() const override;
-  void paint(QPainter* painter,
-             const QStyleOptionGraphicsItem* option,
-             QWidget* widget) override;
-  QPointF sceneCenter() const override;
-
-  int monitorIndex() const { return monitor_index_; }
-
- private:
-  int monitor_index_;
 };
 
 }  // namespace etest::topology

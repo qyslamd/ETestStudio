@@ -14,9 +14,7 @@ class UutItem;
 class DeviceItem;
 class DevicePortItem;
 class UutPortItem;
-class MonitorPortItem;
 class ConnectionItem;
-class MonitorItem;
 
 class TopologyScene : public QGraphicsScene {
   Q_OBJECT
@@ -34,7 +32,6 @@ class TopologyScene : public QGraphicsScene {
   UutItem* addProductItem(int productIndex, const QPointF& pos);
   DeviceItem* addDeviceItem(int deviceIndex, const QPointF& pos);
   ConnectionItem* addConnectionItem(int connIndex);
-  MonitorItem* addMonitorItem(int monitorIndex, const QPointF& pos);
 
   // Connection drag interaction (called from UutPortItem / DevicePortItem)
   void startConnectionDrag(QGraphicsItem* port, QPointF scenePos);
@@ -50,7 +47,6 @@ class TopologyScene : public QGraphicsScene {
 
   // Find items by index
   ConnectionItem* findConnectionItem(int connIndex) const;
-  MonitorItem* findMonitorItem(int monitorIndex) const;
 
   // Find items at scene position by type
   DeviceItem* deviceItemAt(QPointF scenePos) const;
@@ -58,7 +54,9 @@ class TopologyScene : public QGraphicsScene {
   UutPortItem* portItemAt(QPointF scenePos) const;
   UutItem* uutItemAt(QPointF scenePos) const;
   ConnectionItem* connectionItemAt(QPointF scenePos) const;
-  MonitorPortItem* monitorPortItemAt(QPointF scenePos) const;
+
+  /// Called from ConnectionItem when badge is clicked
+  void emitMonitorBadgeClicked(int connIdx, int monIdx);
 
  signals:
   void itemSelected(QGraphicsItem* item);
@@ -68,6 +66,9 @@ class TopologyScene : public QGraphicsScene {
                      int functionType,
                      const QString& pluginId,
                      const QPointF& scenePos);
+  /// Emitted when a connection badge is clicked
+  void monitorBadgeClicked(int connIdx, int monIdx);
+
  public:
   // Refresh connection badge indicators
   void updateMonitorBadges();
@@ -88,7 +89,6 @@ class TopologyScene : public QGraphicsScene {
   QVector<UutItem*> uut_items_;
   QVector<DeviceItem*> device_items_;
   QVector<ConnectionItem*> connection_items_;
-  QVector<MonitorItem*> monitor_items_;
 
   // Connection drag state (UutPortItem or DevicePortItem)
   QGraphicsItem* drag_source_ = nullptr;
@@ -102,6 +102,8 @@ class TopologyScene : public QGraphicsScene {
   QGraphicsItem* moving_item_ = nullptr;
   QPointF move_start_pos_;
 
+  // Flag to suppress itemSelected emission when badge click was handled
+  bool badge_click_handled_ = false;
 };
 
 }  // namespace etest::topology

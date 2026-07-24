@@ -84,6 +84,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
                     int functionType,
                     const QString& pluginId,
                     const QPointF& scenePos);
+  void onMonitorBadgeClicked(int connIdx, int monIdx);
   void onOutlineNavigate(int itemType, int mainIndex, int subIndex);
   void onAddUutPort(int productIndex);
   void onCleanupInvalidConnections();
@@ -136,7 +137,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QAction* zoom_fit_action_ = nullptr;
   QAction* export_image_action_ = nullptr;
   QAction* cleanup_action_ = nullptr;
-  // mount_action_ removed — use MonitorPortItem drag instead
+  // mount_action_ removed — badge click now drives the property panel
 
   void reloadToolbarIcons();
 
