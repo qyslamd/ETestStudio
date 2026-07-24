@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+  <Name />
+  <Data>
+    <Item>
+      <Offset>0</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>32</BitWidth>
+      <Type>float</Type>
+      <Name>示波器 CH4-信号波特率</Name>
+      <Description>波特率</Description>
+      <GroupName>CH4</GroupName>
+      <IsScaled>0</IsScaled>
+      <SystemName>示波器</SystemName>
+      <Tag>0</Tag>
+      <LinkTo>\UsbDP07504_3\ch3</LinkTo>
+    </Item>
+    <Item>
+      <Offset>4</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>32</BitWidth>
+      <Type>float</Type>
+      <Name>示波器 CH4-信号发送周期</Name>
+      <Description>发送周期</Description>
+      <GroupName>CH4</GroupName>
+      <IsScaled>0</IsScaled>
+      <SystemName>示波器</SystemName>
+      <Tag>0</Tag>
+      <LinkTo>\UsbDP07504_3\ch3</LinkTo>
+    </Item>
+    <Item>
+      <Offset>8</Offset>
+      <StartBit>0</StartBit>
+      <BitWidth>32</BitWidth>
+      <Type>dword</Type>
+      <Name>示波器 CH4-信号Arinc429数据</Name>
+      <Description>Arinc429数据</Description>
+      <GroupName>CH4</GroupName>
+      <IsScaled>0</IsScaled>
+      <SystemName>示波器</SystemName>
+      <Tag>60</Tag>
+      <LinkTo>\UsbDP07504_3\ch3</LinkTo>
+    </Item>
+  </Data>
+</ICDData>

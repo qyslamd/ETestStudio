@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>ISI-02#A429_IN1(174) 发送数据</Name>
+			<Description>发送的32位数据</Description>
+			<GroupName>ISI-02#A429_IN1(174)</GroupName>
+			<IsScaled>0</IsScaled>
+			<Childs>
+				<Item>
+					<Offset>0</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>8</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-02#A429_IN1(174) LABEL</Name>
+					<Description>8bit有效,八进制,174</Description>
+					<GroupName>ISI-02#A429_IN1(174)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>40</Tag>
+					<ValueTextList>124</ValueTextList>
+					<LinkTo>\6272T_08\ch8</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-02#A429_IN1(174) SDI</Name>
+					<Description>2bit有效,内容:不用=0,左单元=1,右单元=2,中间单元=3</Description>
+					<GroupName>ISI-02#A429_IN1(174)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>不用=0,左单元=1,右单元=2,中间单元=3</ValueTextList>
+					<LinkTo>\6272T_08\ch8</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>2</StartBit>
+					<BitWidth>3</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-02#A429_IN1(174) PAD</Name>
+					<Description>3bit有效</Description>
+					<GroupName>ISI-02#A429_IN1(174)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_08\ch8</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>16</BitWidth>
+					<Type>int</Type>
+					<Name>ISI-02#A429_IN1(174) East_or_West_Velocity（GNSS）</Name>
+					<Description>垂直偏差,16bit有效,范围:-4096~4095.875,0=正（东）,1= 负(西)</Description>
+					<GroupName>ISI-02#A429_IN1(174)</GroupName>
+					<IsScaled>1</IsScaled>
+					<ScaleA>0.125</ScaleA>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Unit>节</Unit>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_08\ch8</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-02#A429_IN1(174) SSM</Name>
+					<Description>2bit有效,内容:Failure_Warning=0,No_Computed_Data=1,Functional_Test=2,Normal_Operation=3</Description>
+					<GroupName>ISI-02#A429_IN1(174)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>Failure_Warning=0,No_Computed_Data=1,Functional_Test=2,Normal_Operation=3</ValueTextList>
+					<LinkTo>\6272T_08\ch8</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>7</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-02#A429_IN1(174) PARITY</Name>
+					<Description>1bit有效,Set to obtain odd word parity</Description>
+					<GroupName>ISI-02#A429_IN1(174)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>\6272T_08\ch8</LinkTo>
+				</Item>
+			</Childs>
+			<SystemName>ARINC429总线通讯模块</SystemName>
+		</Item>
+	</Data>
+</ICDData>

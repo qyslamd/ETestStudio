@@ -1,0 +1,251 @@
+{
+    "connections": [
+        {
+            "device": "多协议串口卡",
+            "devicePort": "ch0",
+            "port": "串口控制口",
+            "product": "综合仿真UUT",
+            "style": "bezier"
+        },
+        {
+            "device": "双通道CAN卡",
+            "devicePort": "ch0",
+            "port": "CAN总线口",
+            "product": "综合仿真UUT",
+            "style": "bezier"
+        },
+        {
+            "device": "双速率A429卡",
+            "devicePort": "ch0",
+            "port": "A429总线口",
+            "product": "综合仿真UUT",
+            "style": "bezier"
+        },
+        {
+            "device": "8通道AD采集卡",
+            "devicePort": "ai0",
+            "port": "AD采集口",
+            "product": "综合仿真UUT",
+            "style": "bezier"
+        },
+        {
+            "device": "4通道DA输出卡",
+            "devicePort": "ao0",
+            "port": "DA输出口",
+            "product": "综合仿真UUT",
+            "style": "bezier"
+        }
+    ],
+    "devices": [
+        {
+            "deviceType": "serial",
+            "id": "serial-device-1",
+            "name": "多协议串口卡",
+            "pluginId": "etest.plugin.device.mock_serial",
+            "ports": [
+                {
+                    "boundFrames": [
+                        "电压电流设定",
+                        "电压电流回传",
+                        "多通道设定",
+                        "多通道回传"
+                    ],
+                    "direction": "Output",
+                    "functionType": "CUSTOM",
+                    "name": "ch0",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                        "系统心跳"
+                    ],
+                    "direction": "Output",
+                    "functionType": "CUSTOM",
+                    "name": "ch1",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": 147,
+            "positionY": 62,
+            "properties": [
+            ]
+        },
+        {
+            "deviceType": "can",
+            "id": "can-device-1",
+            "name": "双通道CAN卡",
+            "pluginId": "etest.plugin.device.mock_can",
+            "ports": [
+                {
+                    "boundFrames": [
+                        "CAN控制帧",
+                        "CAN状态帧",
+                        "CAN过滤配置"
+                    ],
+                    "direction": "Output",
+                    "functionType": "CUSTOM",
+                    "name": "ch0",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": 148,
+            "positionY": 145,
+            "properties": [
+            ]
+        },
+        {
+            "deviceType": "a429",
+            "id": "a429-device-1",
+            "name": "双速率A429卡",
+            "pluginId": "etest.plugin.device.mock_a429",
+            "ports": [
+                {
+                    "boundFrames": [
+                        "A429发送",
+                        "A429接收"
+                    ],
+                    "direction": "Output",
+                    "functionType": "CUSTOM",
+                    "name": "ch0",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": 151,
+            "positionY": 228,
+            "properties": [
+            ]
+        },
+        {
+            "deviceType": "ad",
+            "id": "ad-device-1",
+            "name": "8通道AD采集卡",
+            "pluginId": "etest.plugin.device.mock_ad",
+            "ports": [
+                {
+                    "boundFrames": [
+                        "AD采样值"
+                    ],
+                    "direction": "Output",
+                    "functionType": "CUSTOM",
+                    "name": "ai0",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": 150,
+            "positionY": 311,
+            "properties": [
+            ]
+        },
+        {
+            "deviceType": "da",
+            "id": "da-device-1",
+            "name": "4通道DA输出卡",
+            "pluginId": "etest.plugin.device.mock_da",
+            "ports": [
+                {
+                    "boundFrames": [
+                        "DA输出电压"
+                    ],
+                    "direction": "Output",
+                    "functionType": "CUSTOM",
+                    "name": "ao0",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": 149,
+            "positionY": 395,
+            "properties": [
+            ]
+        }
+    ],
+    "monitors": [
+        {
+            "channelCount": 4,
+            "deviceType": "Monitor-4CH",
+            "name": "Monitor-4CH_01",
+            "positionX": 475,
+            "positionY": 353,
+            "size": [
+                120,
+                60
+            ],
+            "taps": [
+                {
+                    "deviceName": "8通道AD采集卡",
+                    "devicePort": "ai0",
+                    "displayMode": "waveform",
+                    "portName": "AD采集口",
+                    "productName": "综合仿真UUT"
+                },
+                {
+                    "deviceName": "4通道DA输出卡",
+                    "devicePort": "ao0",
+                    "displayMode": "waveform",
+                    "portName": "DA输出口",
+                    "productName": "综合仿真UUT"
+                }
+            ]
+        }
+    ],
+    "products": [
+        {
+            "name": "综合仿真UUT",
+            "ports": [
+                {
+                    "allowedDeviceTypes": [
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "CUSTOM",
+                    "name": "串口控制口",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "CUSTOM",
+                    "name": "CAN总线口",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "CUSTOM",
+                    "name": "A429总线口",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                    ],
+                    "direction": "Input",
+                    "functionType": "CUSTOM",
+                    "name": "AD采集口",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                    ],
+                    "direction": "Output",
+                    "functionType": "CUSTOM",
+                    "name": "DA输出口",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": 649,
+            "positionY": 171
+        }
+    ],
+    "version": 1
+}

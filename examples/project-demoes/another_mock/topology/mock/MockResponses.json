@@ -1,0 +1,91 @@
+{
+  "portBehaviors": [
+    {
+      "productName": "综合仿真UUT",
+      "deviceId": "serial-device-1",
+      "port": "串口控制口",
+      "responses": [
+        {
+          "frameId": 1,
+          "responseHex": "A5 01 E2 04 2C 01 01 BA"
+        },
+        {
+          "frameId": 3,
+          "responseHex": "BB 3F 80 00 00 00 00 00 00 00 00 00"
+        }
+      ]
+    },
+    {
+      "productName": "综合仿真UUT",
+      "deviceId": "can-device-1",
+      "port": "CAN总线口",
+      "responses": [
+        {
+          "frameId": 5,
+          "responseHex": "00 00 00 00 10 14 00 00"
+        }
+      ]
+    },
+    {
+      "productName": "综合仿真UUT",
+      "deviceId": "a429-device-1",
+      "port": "A429总线口",
+      "responses": [
+        {
+          "frameId": 7,
+          "responseHex": "00 00 00 00"
+        }
+      ]
+    },
+    {
+      "productName": "综合仿真UUT",
+      "deviceId": "ad-device-1",
+      "port": "AD采集口",
+      "responses": []
+    },
+    {
+      "productName": "冗余测试UUT",
+      "deviceId": "serial-primary",
+      "port": "主串口",
+      "responses": [
+        {
+          "frameId": 1,
+          "responseHex": "A5 01 F4 01 00 00 01 9C"
+        }
+      ]
+    },
+    {
+      "productName": "冗余测试UUT",
+      "deviceId": "serial-standby",
+      "port": "备串口",
+      "responses": [
+        {
+          "frameId": 3,
+          "responseHex": "BB 3F 80 00 00 00 00 00 00 00 00 00"
+        }
+      ]
+    },
+    {
+      "productName": "冗余测试UUT",
+      "deviceId": "can-monitor",
+      "port": "CAN监控口",
+      "responses": [
+        {
+          "frameId": 5,
+          "responseHex": "00 00 00 00 10 0A 00 00"
+        }
+      ]
+    },
+    {
+      "productName": "冗余测试UUT",
+      "deviceId": "a429-monitor",
+      "port": "A429监控口",
+      "responses": [
+        {
+          "frameId": 7,
+          "responseHex": "00 00 00 00"
+        }
+      ]
+    }
+  ]
+}

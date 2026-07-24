@@ -1,0 +1,49 @@
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>16</BitWidth>
+			<Type>word</Type>
+			<Name>ISI-01#A429_01 校验方式</Name>
+			<Description>无=0，奇校验=1，偶校验=2</Description>
+			<GroupName>ISI-01#A429_01</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>ARINC429总线通讯模块</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>无,奇校验,偶校验</ValueTextList>
+			<LinkTo>\6272T_01\ch1</LinkTo>
+		</Item>
+		<Item>
+			<Offset>2</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>16</BitWidth>
+			<Type>word</Type>
+			<Name>ISI-01#A429_01 发送周期</Name>
+			<Description>帧间隔时间，支持 1-65535ms。默认1000ms。</Description>
+			<GroupName>ISI-01#A429_01</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>ARINC429总线通讯模块</SystemName>
+			<Unit>ms</Unit>
+			<Tag>0</Tag>
+			<ValueTextList>1000</ValueTextList>
+			<LinkTo>\6272T_01\ch1</LinkTo>
+		</Item>
+		<Item>
+			<Offset>4</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>16</BitWidth>
+			<Type>word</Type>
+			<Name>ISI-01#A429_01 波特率</Name>
+			<Description>波特率设置值，100K=0,50K=1,48K=2,12.5K=3</Description>
+			<GroupName>ISI-01#A429_01</GroupName>
+			<IsScaled>0</IsScaled>
+			<SystemName>ARINC429总线通讯模块</SystemName>
+			<Tag>0</Tag>
+			<ValueTextList>100K=0,50K=1,48K=2,12.5K=3</ValueTextList>
+			<LinkTo>\6272T_01\ch1</LinkTo>
+		</Item>
+	</Data>
+</ICDData>

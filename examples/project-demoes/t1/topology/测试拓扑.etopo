@@ -1,0 +1,391 @@
+{
+    "connections": [
+        {
+            "device": "a429_01",
+            "devicePort": "ch0",
+            "port": "Port_IN1",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "a429_01",
+            "devicePort": "ch1",
+            "port": "Port_OUT1",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "ad_02",
+            "devicePort": "ch0",
+            "port": "Port_03",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "ad_02",
+            "devicePort": "ch1",
+            "port": "Port_04",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "ad_02",
+            "devicePort": "ch2",
+            "port": "Port_05",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "ad_02",
+            "devicePort": "ch3",
+            "port": "Port_06",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "ad_02",
+            "devicePort": "ch4",
+            "port": "Port_07",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "ad_02",
+            "devicePort": "ch5",
+            "port": "Port_08",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "ad_02",
+            "devicePort": "ch6",
+            "port": "Port_09",
+            "product": "UUT-01",
+            "style": "bezier"
+        },
+        {
+            "device": "ad_02",
+            "devicePort": "ch7",
+            "port": "Port_10",
+            "product": "UUT-01",
+            "style": "bezier"
+        }
+    ],
+    "devices": [
+        {
+            "deviceType": "a429",
+            "id": "173800fc-f346-42a5-ab6a-b5984ab0db96",
+            "name": "a429_01",
+            "pluginId": "etest.plugin.device.mock_a429",
+            "ports": [
+                {
+                    "boundFrames": [
+                        "A429_00_ISI_01_发送_Label050_6272T_00"
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "A429",
+                    "name": "ch0",
+                    "portStyle": 1,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                        "A429_00_ISI_01_发送_Label110_6272T_00"
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "A429",
+                    "name": "ch1",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": -992.95,
+            "positionY": -864.5500000000002,
+            "properties": [
+            ]
+        },
+        {
+            "deviceType": "ad",
+            "id": "49d70e98-6045-4fce-a87a-944667989aab",
+            "name": "ad_02",
+            "pluginId": "etest.plugin.device.mock_ad",
+            "ports": [
+                {
+                    "boundFrames": [
+                        "压力给定_发送静压总压_ComADTS300H_COM2"
+                    ],
+                    "direction": "Output",
+                    "functionType": "AD",
+                    "name": "ch0",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                        "压力给定_接收当前航空单位_ComADTS300H_COM2"
+                    ],
+                    "direction": "Output",
+                    "functionType": "AD",
+                    "name": "ch1",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                    ],
+                    "direction": "Output",
+                    "functionType": "AD",
+                    "name": "ch2",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                    ],
+                    "direction": "Output",
+                    "functionType": "AD",
+                    "name": "ch3",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                    ],
+                    "direction": "Output",
+                    "functionType": "AD",
+                    "name": "ch4",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                    ],
+                    "direction": "Output",
+                    "functionType": "AD",
+                    "name": "ch5",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                    ],
+                    "direction": "Output",
+                    "functionType": "AD",
+                    "name": "ch6",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                    ],
+                    "direction": "Output",
+                    "functionType": "AD",
+                    "name": "ch7",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": -993.95,
+            "positionY": -752.0999999999999,
+            "properties": [
+            ]
+        },
+        {
+            "deviceType": "can",
+            "id": "246d2266-e10c-46b5-af26-bf338c308c5d",
+            "name": "can_03",
+            "pluginId": "etest.plugin.device.mock_can",
+            "ports": [
+                {
+                    "boundFrames": [
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "CUSTOM",
+                    "name": "ch0",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "boundFrames": [
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "CUSTOM",
+                    "name": "ch1",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": -910.95,
+            "positionY": -358,
+            "properties": [
+            ]
+        }
+    ],
+    "monitors": [
+        {
+            "channelCount": 4,
+            "deviceType": "Monitor-4CH",
+            "name": "Monitor-4CH_01",
+            "positionX": -700.9499999999998,
+            "positionY": -528.45,
+            "size": [
+                120,
+                60
+            ],
+            "taps": [
+                {
+                    "deviceName": "ad_02",
+                    "devicePort": "ch7",
+                    "portName": "Port_10",
+                    "productName": "UUT-01"
+                },
+                {
+                    "deviceName": "ad_02",
+                    "devicePort": "ch6",
+                    "portName": "Port_09",
+                    "productName": "UUT-01"
+                },
+                {
+                    "deviceName": "ad_02",
+                    "devicePort": "ch5",
+                    "portName": "Port_08",
+                    "productName": "UUT-01"
+                },
+                {
+                    "deviceName": "ad_02",
+                    "devicePort": "ch4",
+                    "portName": "Port_07",
+                    "productName": "UUT-01"
+                }
+            ]
+        }
+    ],
+    "products": [
+        {
+            "name": "UUT-01",
+            "ports": [
+                {
+                    "allowedDeviceTypes": [
+                        "a429"
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "A429",
+                    "name": "Port_IN1",
+                    "portStyle": 1,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "a429"
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "A429",
+                    "name": "Port_OUT1",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "ad"
+                    ],
+                    "direction": "Input",
+                    "functionType": "AD",
+                    "name": "Port_03",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "ad"
+                    ],
+                    "direction": "Input",
+                    "functionType": "AD",
+                    "name": "Port_04",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "ad"
+                    ],
+                    "direction": "Input",
+                    "functionType": "AD",
+                    "name": "Port_05",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "ad"
+                    ],
+                    "direction": "Input",
+                    "functionType": "AD",
+                    "name": "Port_06",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "ad"
+                    ],
+                    "direction": "Input",
+                    "functionType": "AD",
+                    "name": "Port_07",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "ad"
+                    ],
+                    "direction": "Input",
+                    "functionType": "AD",
+                    "name": "Port_08",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "ad"
+                    ],
+                    "direction": "Input",
+                    "functionType": "AD",
+                    "name": "Port_09",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                        "ad"
+                    ],
+                    "direction": "Input",
+                    "functionType": "AD",
+                    "name": "Port_10",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                    ],
+                    "direction": "Bidirectional",
+                    "functionType": "CUSTOM",
+                    "name": "Port_11",
+                    "portStyle": 0,
+                    "positionHint": -1
+                },
+                {
+                    "allowedDeviceTypes": [
+                    ],
+                    "direction": "Input",
+                    "functionType": "CUSTOM",
+                    "name": "Port_12",
+                    "portStyle": 0,
+                    "positionHint": -1
+                }
+            ],
+            "positionX": -529,
+            "positionY": -829
+        }
+    ],
+    "version": 1
+}

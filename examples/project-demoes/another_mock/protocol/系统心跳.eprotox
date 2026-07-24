@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+    <Name>系统心跳</Name>
+    <Data>
+        <Item>
+            <Offset>0</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>16</BitWidth>
+            <Type>word</Type>
+            <Name>系统状态</Name>
+            <Description>bit0-3:运行状态 bit4-7:错误码</Description>
+            <IsScaled>0</IsScaled>
+            <ScaleA>0</ScaleA>
+            <Unit/>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+        <Item>
+            <Offset>2</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>16</BitWidth>
+            <Type>word</Type>
+            <Name>运行节拍</Name>
+            <Description>系统运行节拍数</Description>
+            <IsScaled>0</IsScaled>
+            <ScaleA>0</ScaleA>
+            <Unit/>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+    </Data>
+</ICDData>

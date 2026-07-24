@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+	<Name/>
+	<Data>
+		<Item>
+			<Offset>0</Offset>
+			<StartBit>0</StartBit>
+			<BitWidth>32</BitWidth>
+			<Type>dword</Type>
+			<Name>ISI-01#A429_OUT(221) 接收数据</Name>
+			<Description>接收的32位数据</Description>
+			<GroupName>ISI-01#A429_OUT(221)</GroupName>
+			<IsScaled>0</IsScaled>
+			<Childs>
+				<Item>
+					<Offset>0</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>8</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(221) LABEL</Name>
+					<Description>8bit有效,八进制,221</Description>
+					<GroupName>ISI-01#A429_OUT(221)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>40</Tag>
+					<ValueTextList>145</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>0</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(221) SDI</Name>
+					<Description>2bit有效,内容:All_Call_or_Not_Used=0,Left=1,Right=2,Unused=3</Description>
+					<GroupName>ISI-01#A429_OUT(221)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>All_Call_or_Not_Used=0,Left=1,Right=2,Unused=3</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>1</Offset>
+					<StartBit>2</StartBit>
+					<BitWidth>19</BitWidth>
+					<Type>int</Type>
+					<Name>ISI-01#A429_OUT(221) Voted_Body_AOA</Name>
+					<Description>19bit有效，-45-45</Description>
+					<GroupName>ISI-01#A429_OUT(221)</GroupName>
+					<IsScaled>1</IsScaled>
+					<ScaleA>0.000171662</ScaleA>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Unit>°</Unit>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>5</StartBit>
+					<BitWidth>2</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(221) SSM</Name>
+					<Description>2bit有效</Description>
+					<GroupName>ISI-01#A429_OUT(221)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+				<Item>
+					<Offset>3</Offset>
+					<StartBit>7</StartBit>
+					<BitWidth>1</BitWidth>
+					<Type>byte</Type>
+					<Name>ISI-01#A429_OUT(221) PARITY</Name>
+					<Description>1bit有效</Description>
+					<GroupName>ISI-01#A429_OUT(221)</GroupName>
+					<IsScaled>0</IsScaled>
+					<SystemName>ARINC429总线通讯模块</SystemName>
+					<Tag>0</Tag>
+					<ValueTextList>0</ValueTextList>
+					<LinkTo>5272_00\ch0</LinkTo>
+				</Item>
+			</Childs>
+			<SystemName>ARINC429总线通讯模块</SystemName>
+		</Item>
+	</Data>
+</ICDData>

@@ -1,0 +1,123 @@
+{
+    "version": "1.1",
+    "name": "冗余系统测试套件",
+    "description": "覆盖主备串口设备、CAN和A429混合的冗余系统测试",
+    "setup": [
+        {
+            "cmd": "ACTION",
+            "delayMs": 0,
+            "description": "冗余系统测试开始",
+            "target": "",
+            "timeoutMs": 5000,
+            "value": ""
+        }
+    ],
+    "cases": [
+        {
+            "name": "主备串口独立测试",
+            "description": "两个串口设备独立工作",
+            "steps": [
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "主串口设定5.00V",
+                    "target": "7b5b99742d39a7de04f4bdf58671d54f",
+                    "timeoutMs": 10000,
+                    "value": "5.0"
+                },
+                {
+                    "cmd": "VERIFY",
+                    "delayMs": 0,
+                    "description": "主串口验证5.00V",
+                    "target": "6d08c5ebf76a6af8db0a10bb2d200335",
+                    "timeoutMs": 10000,
+                    "value": "5.0",
+                    "tolerance": {
+                        "enabled": true,
+                        "max": 0.05,
+                        "min": -0.05
+                    }
+                },
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "备串口通道值128",
+                    "target": "d8d55bf70c5cb83444d5de642bc375b5",
+                    "timeoutMs": 10000,
+                    "value": "128"
+                },
+                {
+                    "cmd": "VERIFY",
+                    "delayMs": 0,
+                    "description": "备串口回读128",
+                    "target": "87a4e459c618c76e032a42be25d197ae",
+                    "timeoutMs": 10000,
+                    "value": "128",
+                    "tolerance": {
+                        "enabled": true,
+                        "max": 1,
+                        "min": -1
+                    }
+                }
+            ]
+        },
+        {
+            "name": "CAN+A429混合测试",
+            "description": "CAN与A429同时工作",
+            "steps": [
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "CAN设定参数10.0",
+                    "target": "682e4209eed93c5274ff52abbc60182c",
+                    "timeoutMs": 10000,
+                    "value": "10.0"
+                },
+                {
+                    "cmd": "VERIFY",
+                    "delayMs": 0,
+                    "description": "CAN验证参数1.0",
+                    "target": "a371bf6c6cc642bc1be9ac379e7f6148",
+                    "timeoutMs": 10000,
+                    "value": "1.0",
+                    "tolerance": {
+                        "enabled": true,
+                        "max": 0.2,
+                        "min": -0.2
+                    }
+                },
+                {
+                    "cmd": "SET",
+                    "delayMs": 0,
+                    "description": "A429发送3.0",
+                    "target": "762f3677b7a228025705d21b5c1b6e8d",
+                    "timeoutMs": 10000,
+                    "value": "3.0"
+                },
+                {
+                    "cmd": "VERIFY",
+                    "delayMs": 0,
+                    "description": "A429接收0.0",
+                    "target": "e81b492d4af7e7bc3bc752367994e940",
+                    "timeoutMs": 10000,
+                    "value": "0.0",
+                    "tolerance": {
+                        "enabled": true,
+                        "max": 0.2,
+                        "min": -0.2
+                    }
+                }
+            ]
+        }
+    ],
+    "teardown": [
+        {
+            "cmd": "ACTION",
+            "delayMs": 0,
+            "description": "冗余系统测试完成",
+            "target": "",
+            "timeoutMs": 5000,
+            "value": ""
+        }
+    ]
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ICDData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="IcdSchema.xsd">
+    <Name>AD采样值</Name>
+    <Data>
+        <Item>
+            <Offset>0</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>8</BitWidth>
+            <Type>byte</Type>
+            <Name>通道号</Name>
+            <Description>AD通道(0-7)</Description>
+            <IsScaled>0</IsScaled>
+            <ScaleA>0</ScaleA>
+            <Unit/>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+        <Item>
+            <Offset>1</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>16</BitWidth>
+            <Type>word</Type>
+            <Name>采样值</Name>
+            <Description>原始AD值,单位0.001V</Description>
+            <IsScaled>1</IsScaled>
+            <ScaleA>0.001</ScaleA>
+            <Unit/>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+        <Item>
+            <Offset>3</Offset>
+            <StartBit>0</StartBit>
+            <BitWidth>8</BitWidth>
+            <Type>byte</Type>
+            <Name>量程代码</Name>
+            <Description>0x01=±10V 0x02=±5V</Description>
+            <IsScaled>0</IsScaled>
+            <ScaleA>0</ScaleA>
+            <Unit/>
+            <Tag>0</Tag>
+            <ValueTextList>0</ValueTextList>
+        </Item>
+    </Data>
+</ICDData>
