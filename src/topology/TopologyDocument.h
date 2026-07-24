@@ -72,6 +72,7 @@ struct TopologyDevice {
 };
 
 struct TopologyConnection {
+  QString id;             // 全局唯一标识（UUID），供监听器引用
   QString productName;
   QString portName;
   QString deviceName;
@@ -89,13 +90,16 @@ struct TopologyMonitorTap {
   QString displayMode = QStringLiteral("auto");  // M4: auto/waveform/led/meter/frame
 };
 
-// Listener / monitor device — passively taps existing connections
+// Listener / monitor device — attached to a connection
 struct TopologyMonitor {
   QString name;
-  QString deviceType;
-  int channelCount = 1;
+  QString connectionId;           // 引用 TopologyConnection.id
+  QString displayMode = QStringLiteral("waveform");  // waveform/led/meter/frame
   QPointF position{0, 0};
   QSizeF size{0, 0};
+  // 旧字段保留供旧格式兼容（读取时填充，写入时忽略）
+  QString deviceType;
+  int channelCount = 1;
   QVector<TopologyMonitorTap> taps;
 };
 

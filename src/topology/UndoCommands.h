@@ -126,14 +126,14 @@ class RemoveConnectionCommand : public QUndoCommand {
   void redo() override;
 
  private:
-  struct SavedTap {
+  struct SavedMonitor {
     int monitorIndex;
-    TopologyMonitorTap tap;
+    TopologyMonitor monitor;
   };
   TopologyDocument* doc_;
   int index_;
   TopologyConnection conn_;
-  QVector<SavedTap> saved_taps_;
+  QVector<SavedMonitor> saved_monitors_;
 };
 
 // ── MoveProductCommand ──

@@ -41,9 +41,9 @@ void MonitorManager::loadFromTopology(const QJsonObject& topologyDoc) {
 void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
   int indexOffset = tree_cache_.size();
 
-  // 建立 deviceName -> deviceId 映射，tap 中只存了 deviceName（设备显示名），
-  // 而 onHardwareOpFinished 回调使用的是 deviceId，必须在此转换
+  // 建立 deviceName -> deviceId / deviceType 映射
   QHash<QString, QString> nameToId;
+  QHash<QString, QString> nameToType;
   QJsonArray devicesArr = topologyDoc.value(QStringLiteral("devices")).toArray();
   for (const auto& dv : devicesArr) {
     QJsonObject dobj = dv.toObject();
@@ -51,6 +51,20 @@ void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
     QString name = dobj.value(QStringLiteral("name")).toString();
     if (!id.isEmpty() && !name.isEmpty()) {
       nameToId.insert(name, id);
+      nameToType.insert(name, dobj.value(QStringLiteral("deviceType")).toString());
+    }
+  }
+
+  // 建立 connectionId -> (deviceName, devicePort) 映射
+  QHash<QString, QPair<QString, QString>> connIdToNamePort;
+  QJsonArray connsArr = topologyDoc.value(QStringLiteral("connections")).toArray();
+  for (const auto& cv : connsArr) {
+    QJsonObject cobj = cv.toObject();
+    QString cid = cobj.value(QStringLiteral("id")).toString();
+    if (!cid.isEmpty()) {
+      connIdToNamePort.insert(cid,
+          qMakePair(cobj.value(QStringLiteral("device")).toString(),
+                    cobj.value(QStringLiteral("devicePort")).toString()));
     }
   }
 
@@ -62,43 +76,32 @@ void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
     MonitorTreeEntry entry;
     entry.monitorIndex = globalIndex;
     entry.name = mobj.value(QStringLiteral("name")).toString();
-    entry.deviceType = mobj.value(QStringLiteral("deviceType")).toString();
-    entry.channelCount = mobj.value(QStringLiteral("channelCount")).toInt(1);
-    tree_cache_.append(entry);
 
-    QJsonArray tapsArr = mobj.value(QStringLiteral("taps")).toArray();
-    for (int ci = 0; ci < tapsArr.size(); ++ci) {
-      QJsonObject tapObj = tapsArr[ci].toObject();
-      // tap 字段为 deviceName（显示名）+ devicePort（端口名）
-      QString deviceName = tapObj.value(QStringLiteral("deviceName")).toString();
-      QString devicePort = tapObj.value(QStringLiteral("devicePort")).toString();
-
-      if (deviceName.isEmpty() || devicePort.isEmpty()) {
-        LOG_DEBUG("MONITOR", "跳过无效 tap: monitor={} tap={} (deviceName={})",
-                  globalIndex, ci, deviceName.toStdString());
-        continue;
-      }
-
-      // deviceName -> deviceId 转换
-      auto it = nameToId.constFind(deviceName);
-      if (it == nameToId.constEnd()) {
-        LOG_WARN("MONITOR",
-                 "跳过 tap：找不到对应设备 deviceName={} monitor={} tap={}",
-                 deviceName.toStdString(), globalIndex, ci);
-        continue;
-      }
-      QString deviceId = it.value();
+    // 新格式（connectionId）或旧格式（taps）解析
+    QString connectionId = mobj.value(QStringLiteral("connectionId")).toString();
+    // 从 connectionId 派生 tap
+    auto connIt = connIdToNamePort.constFind(connectionId);
+    if (connIt != connIdToNamePort.constEnd()) {
+      QString deviceName = connIt.value().first;
+      QString devicePort = connIt.value().second;
+      entry.deviceType = nameToType.value(deviceName);
+      QString deviceId = nameToId.value(deviceName);
 
       MonitorTapInfo info;
       info.monitorIndex = globalIndex;
-      info.channelIndex = ci;
+      info.channelIndex = 0;
       info.deviceId = deviceId;
       info.devicePort = devicePort;
-      info.displayMode = tapObj.value(QStringLiteral("displayMode")).toString();
-
+      info.displayMode = mobj.value(QStringLiteral("displayMode")).toString();
       auto key = qMakePair(deviceId, devicePort);
       lookup_table_[key].append(info);
+      entry.channelCount = 1;
+    } else {
+      LOG_WARN("MONITOR", "监听器 {} 引用不存在的 connectionId={}",
+               entry.name.toStdString(), connectionId.toStdString());
+      entry.channelCount = 0;
     }
+    tree_cache_.append(entry);
   }
 
   LOG_INFO("MONITOR", "追加 {} 个监听器，累计 {} 个监听器, {} 个 tap 条目",

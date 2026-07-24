@@ -19,60 +19,55 @@ static QJsonObject makeTestTopology() {
     QJsonObject dev1;
     dev1[QStringLiteral("id")] = QStringLiteral("dev-uuid-1");
     dev1[QStringLiteral("name")] = QStringLiteral("AD卡1");
-    dev1[QStringLiteral("type")] = QStringLiteral("ad");
+    dev1[QStringLiteral("deviceType")] = QStringLiteral("ad");
+    QJsonArray ports1;
+    QJsonObject port1;
+    port1["name"] = QStringLiteral("ch0");
+    ports1.append(port1);
+    dev1["ports"] = ports1;
     devicesArr.append(dev1);
     QJsonObject dev2;
     dev2[QStringLiteral("id")] = QStringLiteral("dev-uuid-2");
     dev2[QStringLiteral("name")] = QStringLiteral("串口1");
-    dev2[QStringLiteral("type")] = QStringLiteral("serial");
+    dev2[QStringLiteral("deviceType")] = QStringLiteral("serial");
+    QJsonArray ports2;
+    QJsonObject port2;
+    port2["name"] = QStringLiteral("tx");
+    ports2.append(port2);
+    dev2["ports"] = ports2;
     devicesArr.append(dev2);
     root[QStringLiteral("devices")] = devicesArr;
 
-    // monitors
-    QJsonArray monitorsArr;
+    // connections
+    QJsonArray connsArr;
+    QJsonObject conn0;
+    conn0["id"] = QStringLiteral("conn-ad");
+    conn0["device"] = QStringLiteral("AD卡1");
+    conn0["devicePort"] = QStringLiteral("ch0");
+    conn0["product"] = QStringLiteral("UUT1");
+    conn0["port"] = QStringLiteral("out1");
+    connsArr.append(conn0);
+    QJsonObject conn1;
+    conn1["id"] = QStringLiteral("conn-serial");
+    conn1["device"] = QStringLiteral("串口1");
+    conn1["devicePort"] = QStringLiteral("tx");
+    conn1["product"] = QStringLiteral("UUT1");
+    conn1["port"] = QStringLiteral("rx");
+    connsArr.append(conn1);
+    root["connections"] = connsArr;
 
-    // Monitor 0: AD监听器, 2通道
+    // monitors（新格式：connectionId + displayMode）
+    QJsonArray monitorsArr;
     QJsonObject mon0;
     mon0[QStringLiteral("name")] = QStringLiteral("监听器_AD");
-    mon0[QStringLiteral("deviceType")] = QStringLiteral("monitor_ad");
-    mon0[QStringLiteral("channelCount")] = 2;
-    QJsonArray taps0;
-    QJsonObject tap00;
-    tap00[QStringLiteral("deviceId")] = QStringLiteral("dev-uuid-1");
-    tap00[QStringLiteral("devicePort")] = QStringLiteral("ch0");
-    tap00[QStringLiteral("productName")] = QStringLiteral("UUT1");
-    tap00[QStringLiteral("portName")] = QStringLiteral("out1");
-    tap00[QStringLiteral("deviceName")] = QStringLiteral("AD卡1");
-    tap00[QStringLiteral("displayMode")] = QStringLiteral("waveform");
-    taps0.append(tap00);
-    QJsonObject tap01;
-    tap01[QStringLiteral("deviceId")] = QStringLiteral("dev-uuid-1");
-    tap01[QStringLiteral("devicePort")] = QStringLiteral("ch1");
-    tap01[QStringLiteral("productName")] = QStringLiteral("UUT1");
-    tap01[QStringLiteral("portName")] = QStringLiteral("out2");
-    tap01[QStringLiteral("deviceName")] = QStringLiteral("AD卡1");
-    tap01[QStringLiteral("displayMode")] = QStringLiteral("waveform");
-    taps0.append(tap01);
-    mon0[QStringLiteral("taps")] = taps0;
+    mon0[QStringLiteral("connectionId")] = QStringLiteral("conn-ad");
+    mon0[QStringLiteral("displayMode")] = QStringLiteral("waveform");
     monitorsArr.append(mon0);
-
-    // Monitor 1: 串口监听器, 1通道
     QJsonObject mon1;
     mon1[QStringLiteral("name")] = QStringLiteral("监听器_串口");
-    mon1[QStringLiteral("deviceType")] = QStringLiteral("monitor_serial");
-    mon1[QStringLiteral("channelCount")] = 1;
-    QJsonArray taps1;
-    QJsonObject tap10;
-    tap10[QStringLiteral("deviceId")] = QStringLiteral("dev-uuid-2");
-    tap10[QStringLiteral("devicePort")] = QStringLiteral("tx");
-    tap10[QStringLiteral("productName")] = QStringLiteral("UUT1");
-    tap10[QStringLiteral("portName")] = QStringLiteral("rx");
-    tap10[QStringLiteral("deviceName")] = QStringLiteral("串口1");
-    tap10[QStringLiteral("displayMode")] = QStringLiteral("meter");
-    taps1.append(tap10);
-    mon1[QStringLiteral("taps")] = taps1;
+    mon1[QStringLiteral("connectionId")] = QStringLiteral("conn-serial");
+    mon1[QStringLiteral("displayMode")] = QStringLiteral("meter");
     monitorsArr.append(mon1);
-
     root[QStringLiteral("monitors")] = monitorsArr;
     return root;
 }
@@ -89,8 +84,8 @@ TEST(MonitorManagerTest, LoadFromTopology) {
     auto tree = mgr.monitorTree();
     ASSERT_EQ(tree.size(), 2);
     EXPECT_EQ(tree[0].name, QStringLiteral("监听器_AD"));
-    EXPECT_EQ(tree[0].deviceType, QStringLiteral("monitor_ad"));
-    EXPECT_EQ(tree[0].channelCount, 2);
+    EXPECT_EQ(tree[0].deviceType, QStringLiteral("ad"));  // 从 device 派生
+    EXPECT_EQ(tree[0].channelCount, 1);  // 一个 connection = 一个通道
     EXPECT_EQ(tree[1].name, QStringLiteral("监听器_串口"));
     EXPECT_EQ(tree[1].channelCount, 1);
 }
@@ -281,4 +276,76 @@ TEST(MonitorManagerTest, ClearStructure) {
     QJsonArray samples = channels[0].toObject()[QStringLiteral("samples")].toArray();
     ASSERT_EQ(samples.size(), 1);
     EXPECT_DOUBLE_EQ(samples[0].toObject()[QStringLiteral("eng")].toDouble(), 1.0);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 9: appendFromTopology 新格式 connectionId + displayMode 路径
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(MonitorManagerTest, NewFormatConnectionId) {
+    // 构建新格式拓扑 JSON：connections 带 id，monitors 用 connectionId 引用
+    QJsonObject root;
+
+    // devices（需要一个 AD 设备）
+    QJsonArray devicesArr;
+    QJsonObject dev;
+    dev["id"] = QStringLiteral("ad-device-uuid");
+    dev["name"] = QStringLiteral("AD卡");
+    dev["deviceType"] = QStringLiteral("ad");
+    dev["mock"] = true;
+    QJsonArray portsArr;
+    QJsonObject port;
+    port["name"] = QStringLiteral("ch0");
+    port["boundFrames"] = QJsonArray{QStringLiteral("电压采集")};
+    portsArr.append(port);
+    dev["ports"] = portsArr;
+    devicesArr.append(dev);
+    root["devices"] = devicesArr;
+
+    // connections（带 id）
+    QJsonArray connsArr;
+    QJsonObject conn;
+    conn["id"] = QStringLiteral("conn-ad-001");
+    conn["device"] = QStringLiteral("AD卡");
+    conn["devicePort"] = QStringLiteral("ch0");
+    conn["product"] = QStringLiteral("测试UUT");
+    conn["port"] = QStringLiteral("AD口");
+    connsArr.append(conn);
+    root["connections"] = connsArr;
+
+    // monitors（新格式：connectionId + displayMode）
+    QJsonArray monitorsArr;
+    QJsonObject mon;
+    mon["name"] = QStringLiteral("Monitor-AD");
+    mon["connectionId"] = QStringLiteral("conn-ad-001");
+    mon["displayMode"] = QStringLiteral("waveform");
+    monitorsArr.append(mon);
+    root["monitors"] = monitorsArr;
+
+    MonitorManager mgr;
+    mgr.appendFromTopology(root);
+
+    // 验证 tree_cache_
+    auto tree = mgr.monitorTree();
+    ASSERT_EQ(tree.size(), 1);
+    EXPECT_EQ(tree[0].name, QStringLiteral("Monitor-AD"));
+    EXPECT_EQ(tree[0].deviceType, QStringLiteral("ad"));
+
+    // 验证 displayMode 查找
+    QString mode = mgr.displayMode(0, 0);
+    EXPECT_EQ(mode, QStringLiteral("waveform"));
+
+    // 验证数据路由：发射匹配的设备/端口信号应能写入 CVT buffer_
+    mgr.onHardwareOpFinished(QStringLiteral("ad-device-uuid"),
+                              QStringLiteral("ch0"),
+                              QByteArray(), 100.0, 5.0);
+
+    // flush 确认收到数据
+    QJsonArray result = mgr.flushSamples();
+    ASSERT_EQ(result.size(), 1);
+    QJsonObject monObj = result[0].toObject();
+    QJsonArray channels = monObj[QStringLiteral("channels")].toArray();
+    ASSERT_EQ(channels.size(), 1);
+    QJsonArray samples = channels[0].toObject()[QStringLiteral("samples")].toArray();
+    ASSERT_EQ(samples.size(), 1);
+    EXPECT_DOUBLE_EQ(samples[0].toObject()[QStringLiteral("eng")].toDouble(), 5.0);
 }

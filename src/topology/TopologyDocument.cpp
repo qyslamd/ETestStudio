@@ -385,7 +385,11 @@ bool TopologyDocument::renameDevicePort(int deviceIndex, int portIndex,
 
 int TopologyDocument::addConnection(const TopologyConnection& conn) {
   int index = connections_.size();
-  connections_.append(conn);
+  TopologyConnection c = conn;
+  if (c.id.isEmpty()) {
+    c.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  }
+  connections_.append(c);
   emit connectionAdded(index);
   return index;
 }
@@ -394,7 +398,11 @@ int TopologyDocument::insertConnection(int index,
                                        const TopologyConnection& conn) {
   if (index < 0 || index > connections_.size())
     return -1;
-  connections_.insert(index, conn);
+  TopologyConnection c = conn;
+  if (c.id.isEmpty()) {
+    c.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  }
+  connections_.insert(index, c);
   emit connectionAdded(index);
   return index;
 }

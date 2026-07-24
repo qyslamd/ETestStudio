@@ -108,6 +108,7 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
   for (int i = 0; i < doc.connectionCount(); ++i) {
     const auto* c = doc.connection(i);
     QJsonObject cObj;
+    cObj["id"] = c->id;
     cObj["product"] = c->productName;
     cObj["port"] = c->portName;
     cObj["device"] = c->deviceName;
@@ -123,27 +124,12 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
     const auto* m = doc.monitor(i);
     QJsonObject mObj;
     mObj["name"] = m->name;
-    mObj["deviceType"] = m->deviceType;
-    mObj["channelCount"] = m->channelCount;
+    mObj["connectionId"] = m->connectionId;
+    mObj["displayMode"] = m->displayMode;
     mObj["positionX"] = m->position.x();
     mObj["positionY"] = m->position.y();
     if (m->size.isValid() && m->size.width() > 0)
       mObj["size"] = QJsonArray{m->size.width(), m->size.height()};
-
-    QJsonArray tapsArr;
-    for (const auto& tap : m->taps) {
-      QJsonObject tapObj;
-      tapObj["productName"] = tap.productName;
-      tapObj["portName"] = tap.portName;
-      tapObj["deviceName"] = tap.deviceName;
-      tapObj["devicePort"] = tap.devicePort;
-      if (!tap.deviceId.isEmpty())
-        tapObj["deviceId"] = tap.deviceId;
-      if (tap.displayMode != QStringLiteral("auto"))
-        tapObj["displayMode"] = tap.displayMode;
-      tapsArr.append(tapObj);
-    }
-    mObj["taps"] = tapsArr;
     monitorsArr.append(mObj);
   }
   root["monitors"] = monitorsArr;
@@ -283,6 +269,7 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
   for (const auto& cVal : connsArr) {
     QJsonObject cObj = cVal.toObject();
     TopologyConnection conn;
+    conn.id = cObj["id"].toString();  // 新格式有 id，旧格式无则 addConnection 自动补
     conn.productName = cObj["product"].toString();
     conn.portName = cObj["port"].toString();
     conn.deviceName = cObj["device"].toString();
@@ -297,8 +284,9 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     QJsonObject mObj = mVal.toObject();
     TopologyMonitor mon;
     mon.name = mObj["name"].toString();
-    mon.deviceType = mObj["deviceType"].toString();
-    mon.channelCount = mObj["channelCount"].toInt(1);
+    mon.connectionId = mObj["connectionId"].toString();
+    mon.displayMode = mObj["displayMode"].toString(
+        QStringLiteral("waveform"));
     mon.position =
         QPointF(mObj["positionX"].toDouble(), mObj["positionY"].toDouble());
     {
@@ -307,27 +295,6 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
         mon.size = QSizeF(a[0].toDouble(), a[1].toDouble());
     }
 
-    QJsonArray tapsArr = mObj["taps"].toArray();
-    for (const auto& tapVal : tapsArr) {
-      QJsonObject tapObj = tapVal.toObject();
-      TopologyMonitorTap tap;
-      tap.productName = tapObj["productName"].toString();
-      tap.portName = tapObj["portName"].toString();
-      tap.deviceName = tapObj["deviceName"].toString();
-      tap.devicePort = tapObj["devicePort"].toString();
-      // M4: 新字段，旧文件无 deviceId 则用 deviceName 反查补上
-      tap.deviceId = tapObj["deviceId"].toString();
-      if (tap.deviceId.isEmpty()) {
-        int devIdx = doc->findDeviceIndex(tap.deviceName);
-        if (devIdx >= 0) {
-          const auto* dev = doc->device(devIdx);
-          if (dev) tap.deviceId = dev->id;
-        }
-      }
-      tap.displayMode = tapObj["displayMode"].toString(
-          QStringLiteral("auto"));
-      mon.taps.append(tap);
-    }
     doc->addMonitor(mon);
   }
 
