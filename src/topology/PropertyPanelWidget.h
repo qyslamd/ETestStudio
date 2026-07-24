@@ -24,7 +24,6 @@ class PropertyPanelWidget : public QWidget {
                                QWidget* parent = nullptr);
 
   void showPropertiesFor(QGraphicsItem* item);
-  void showMonitorProperties(int monitorIndex);
   void clearPanel();
   // M3: 设置可用 ICD 帧名列表（由上层注入，standalone 模式保持空）
   void setAvailableIcdFrames(const QStringList& frames) {
@@ -41,7 +40,6 @@ class PropertyPanelWidget : public QWidget {
   void buildDevicePage();
   void buildConnectionPage();
   void buildDevicePortPage();
-  void buildMonitorPage();
 
   void onUutNameChanged();
   void onUutAddPort();
@@ -75,15 +73,14 @@ class PropertyPanelWidget : public QWidget {
   QVector<QPair<QString, QString>> saved_device_properties_;
   QVector<TopologyDevicePort> saved_device_ports_;
 
-  // Index mapping: 0=empty, 1=uut, 2=port, 3=device, 4=connection, 5=deviceport, 6=monitor
+  // Index mapping: 0=empty, 1=uut, 2=port, 3=device, 4=connection, 5=deviceport
   enum Page {
     PageEmpty = 0,
     PageUut,
     PagePort,
     PageDevice,
     PageConnection,
-    PageDevicePort,
-    PageMonitor
+    PageDevicePort
   };
 
   // UUT page widgets
@@ -145,7 +142,8 @@ class PropertyPanelWidget : public QWidget {
   // M3: 可用 ICD 帧名列表（由上层注入）
   QStringList available_icd_frames_;
 
-  // Monitor page widgets
+  // Monitor section (embedded in connection page)
+  QWidget* monitor_section_ = nullptr;
   QLineEdit* monitor_name_edit_ = nullptr;
   QLabel* monitor_connection_label_ = nullptr;
   QComboBox* monitor_display_mode_combo_ = nullptr;

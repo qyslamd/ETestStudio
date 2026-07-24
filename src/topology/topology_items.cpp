@@ -789,20 +789,8 @@ void ConnectionItem::setMonitorState(bool hasMonitor, int monitorIndex) {
 }
 
 void ConnectionItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
-  if (has_monitor_) {
-    QPointF mid = path().pointAtPercent(0.5);
-    QPointF d = event->scenePos() - mid;
-    // 检测区域略大于绘制半径，符合费茨定律
-    if (d.x() * d.x() + d.y() * d.y() <= (kBadgeRadius * 1.5) * (kBadgeRadius * 1.5)) {
-      // 点击 badge → 通知场景直接显示监听器属性（不再经过 MonitorItem）
-      auto* sc = qobject_cast<etest::topology::TopologyScene*>(this->scene());
-      if (sc) {
-        sc->emitMonitorBadgeClicked(conn_index_, monitor_index_);
-      }
-      event->accept();
-      return;
-    }
-  }
+  // Badge is purely visual — click falls through to select the connection,
+  // which triggers showPropertiesFor → PageConnection with monitor info.
   QGraphicsPathItem::mousePressEvent(event);
 }
 

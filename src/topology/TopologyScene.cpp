@@ -408,11 +408,6 @@ ConnectionItem* TopologyScene::findConnectionItem(int connIndex) const {
   return nullptr;
 }
 
-void TopologyScene::emitMonitorBadgeClicked(int connIdx, int monIdx) {
-  badge_click_handled_ = true;
-  emit monitorBadgeClicked(connIdx, monIdx);
-}
-
 UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
   auto items = this->items(scenePos, Qt::IntersectsItemShape,
                            Qt::DescendingOrder);
@@ -436,16 +431,7 @@ void TopologyScene::clearScene() {
 }
 
 void TopologyScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
-  badge_click_handled_ = false;
   QGraphicsScene::mousePressEvent(event);
-
-  if (badge_click_handled_) {
-    // Badge click was handled in ConnectionItem::mousePressEvent via
-    // emitMonitorBadgeClicked — skip itemSelected to avoid overwriting
-    // the monitor properties panel that was already set up.
-    badge_click_handled_ = false;
-    return;
-  }
 
   if (event->button() == Qt::LeftButton) {
     auto selected = selectedItems();

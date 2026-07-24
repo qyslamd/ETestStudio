@@ -55,9 +55,6 @@ class TopologyScene : public QGraphicsScene {
   UutItem* uutItemAt(QPointF scenePos) const;
   ConnectionItem* connectionItemAt(QPointF scenePos) const;
 
-  /// Called from ConnectionItem when badge is clicked
-  void emitMonitorBadgeClicked(int connIdx, int monIdx);
-
  signals:
   void itemSelected(QGraphicsItem* item);
   void deviceDropped(const QString& deviceType,
@@ -66,8 +63,6 @@ class TopologyScene : public QGraphicsScene {
                      int functionType,
                      const QString& pluginId,
                      const QPointF& scenePos);
-  /// Emitted when a connection badge is clicked
-  void monitorBadgeClicked(int connIdx, int monIdx);
 
  public:
   // Refresh connection badge indicators
@@ -101,9 +96,6 @@ class TopologyScene : public QGraphicsScene {
   // Move tracking
   QGraphicsItem* moving_item_ = nullptr;
   QPointF move_start_pos_;
-
-  // Flag to suppress itemSelected emission when badge click was handled
-  bool badge_click_handled_ = false;
 };
 
 }  // namespace etest::topology

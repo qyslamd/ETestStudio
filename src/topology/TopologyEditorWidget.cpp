@@ -594,12 +594,15 @@ void TopologyEditorWidget::initSignals() {
     mon.name = QStringLiteral("Monitor-%1_%2").arg(conn->deviceName).arg(conn->devicePort);
     mon.connectionId = conn->id;
     auto* cmd = new AddMonitorCommand(doc_, mon);
+    // Save index before push — push may trigger scene rebuild which invalidates connItem
+    int savedConnIdx = ci;
     doc_->undoStack()->push(cmd);
-    // Select the connection and show monitor properties
-    scene_->clearSelection();
-    connItem->setSelected(true);
-    view_->centerOn(connItem);
-    property_panel_->showMonitorProperties(cmd->monitorIndex());
+    // Find connection in the (potentially rebuilt) scene
+    if (auto* newConn = scene_->findConnectionItem(savedConnIdx)) {
+      scene_->clearSelection();
+      newConn->setSelected(true);
+      view_->centerOn(newConn);
+    }
     LOG_INFO("TOPOLOGY_UI", "添加监听器 [name={} connectionId={}]",
              mon.name.toStdString(), conn->id.toStdString());
   });
@@ -630,8 +633,6 @@ void TopologyEditorWidget::initSignals() {
 
   connect(scene_, &TopologyScene::deviceDropped, this,
           &TopologyEditorWidget::onDropDevice);
-  connect(scene_, &TopologyScene::monitorBadgeClicked, this,
-          &TopologyEditorWidget::onMonitorBadgeClicked);
 
   connect(property_panel_, &PropertyPanelWidget::documentChanged, this,
           &TopologyEditorWidget::onDocumentChanged);
@@ -1391,7 +1392,6 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
       break;
     }
     case 5: {
-      property_panel_->showMonitorProperties(mainIndex);
       // Center on the connection this monitor is attached to
       const auto* mon = doc_->monitor(mainIndex);
       if (mon) {
@@ -1403,6 +1403,7 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
               scene_->clearSelection();
               connItem->setSelected(true);
               view_->centerOn(connItem);
+              property_panel_->showPropertiesFor(connItem);
             }
             break;
           }
@@ -1423,17 +1424,6 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
 }
 
 // ── Export Image ──────────────────────────────────────────────
-
-void TopologyEditorWidget::onMonitorBadgeClicked(int connIdx, int monIdx) {
-  // Select the connection and show monitor properties
-  auto* connItem = scene_->findConnectionItem(connIdx);
-  if (connItem) {
-    scene_->clearSelection();
-    connItem->setSelected(true);
-    view_->centerOn(connItem);
-  }
-  property_panel_->showMonitorProperties(monIdx);
-}
 
 void TopologyEditorWidget::onExportImage() {
   LOG_INFO("TOPOLOGY_UI", "导出图片");
