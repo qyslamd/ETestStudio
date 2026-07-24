@@ -36,6 +36,9 @@ void ValueLabelWidget::initUi() {
   layout->addWidget(ts_label_);
 
   layout->addStretch();
+
+  setObjectName(QStringLiteral("ValueLabelWidget"));
+  setAutoFillBackground(true);
 }
 
 void ValueLabelWidget::onSampleCaptured(const etest::engine::MonitorSample& sample) {

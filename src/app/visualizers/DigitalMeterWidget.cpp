@@ -53,6 +53,9 @@ void DigitalMeterWidget::initUi() {
   layout->addWidget(ts_label_);
 
   layout->addStretch();
+
+  setObjectName(QStringLiteral("MeterWidget"));
+  setAutoFillBackground(true);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

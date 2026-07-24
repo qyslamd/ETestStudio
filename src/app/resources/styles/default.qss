@@ -1042,6 +1042,11 @@ etest--app--EtlogViewerWidget {
     border-radius: 2px;
 }
 
+/* Visualizer 容器背景 */
+#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget {
+    background-color: #FFFFFF;
+}
+
 /* StateLEDWidget */
 #LEDTitle {
     font-size: 12px;

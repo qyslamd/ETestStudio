@@ -1997,6 +1997,11 @@ QToolButton#saverCloseBtn:pressed {
     border-radius: 2px;
 }
 
+/* Visualizer 容器背景 */
+#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget {
+    background-color: #1E1E1E;
+}
+
 /* StateLEDWidget */
 #LEDTitle {
     font-size: 12px;

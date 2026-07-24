@@ -49,6 +49,7 @@ class WaveformWidget : public SignalVisualizer {
   };
 
   void initUi();
+  void applyTheme();
   int findTraceIndex(int monitorIndex, int channelIndex) const;
   void updateAxes();
 

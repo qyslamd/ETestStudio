@@ -58,6 +58,9 @@ void StateLEDWidget::initUi() {
 
   layout->addStretch();
 
+  setObjectName(QStringLiteral("LEDWidget"));
+  setAutoFillBackground(true);
+
   // 初始：OFF（红色）
   updateLED(false);
 }

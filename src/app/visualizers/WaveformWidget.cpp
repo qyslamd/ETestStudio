@@ -5,6 +5,7 @@
 
 #include <qcustomplot.h>
 
+#include "core_ui/ThemeManager.h"
 #include "engine/MonitorManager.h"
 #include "logger/Logger.h"
 
@@ -44,6 +45,12 @@ WaveformWidget::WaveformWidget(const QString& title, QWidget* parent)
   // 允许用户交互
   custom_plot_->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
+  applyTheme();
+
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this,
+          [this]() { applyTheme(); });
+
   // 连接鼠标滚轮缩放（调整时间窗口）
   connect(custom_plot_->xAxis, QOverload<const QCPRange&>::of(&QCPAxis::rangeChanged),
           this, [this](const QCPRange& range) {
@@ -68,6 +75,9 @@ void WaveformWidget::initUi() {
   custom_plot_ = new QCustomPlot(this);
   custom_plot_->setObjectName(QStringLiteral("WaveformPlot"));
   layout->addWidget(custom_plot_, 1);
+
+  setObjectName(QStringLiteral("WaveformWidget"));
+  setAutoFillBackground(true);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -204,6 +214,35 @@ int WaveformWidget::findTraceIndex(int monitorIndex,
 void WaveformWidget::updateAxes() {
   custom_plot_->xAxis->setRange(last_key_ - time_window_, last_key_);
   custom_plot_->yAxis->rescale(true);
+  custom_plot_->replot();
+}
+
+void WaveformWidget::applyTheme() {
+  bool dark =
+      etest::core_ui::ThemeManager::instance().isDarkTheme();
+
+  QColor bg = dark ? QColor("#252526") : QColor("#F5F5F5");
+  QColor plotBg = dark ? QColor("#1E1E1E") : QColor("#FFFFFF");
+  QColor axisClr = dark ? QColor("#AAAAAA") : QColor("#333333");
+  QColor tickClr = dark ? QColor("#888888") : QColor("#666666");
+  QColor gridClr = dark ? QColor("#333333") : QColor("#E0E0E0");
+  QColor subGridClr = dark ? QColor("#2A2A2A") : QColor("#EEEEEE");
+
+  custom_plot_->setBackground(QBrush(bg));
+  custom_plot_->axisRect()->setBackground(QBrush(plotBg));
+
+  for (auto* axis : {custom_plot_->xAxis, custom_plot_->yAxis,
+                     custom_plot_->xAxis2, custom_plot_->yAxis2}) {
+    axis->setBasePen(QPen(axisClr, 1));
+    axis->setTickPen(QPen(tickClr, 1));
+    axis->setSubTickPen(QPen(tickClr, 1));
+    axis->setTickLabelColor(tickClr);
+    axis->setLabelColor(axisClr);
+    axis->grid()->setPen(QPen(gridClr, 1));
+    axis->grid()->setSubGridPen(QPen(subGridClr, 1));
+    axis->grid()->setZeroLinePen(QPen(axisClr, 1));
+  }
+
   custom_plot_->replot();
 }
 
