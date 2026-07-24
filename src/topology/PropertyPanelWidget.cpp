@@ -300,28 +300,34 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
         modeCombo->addItem(QStringLiteral("meter"));
         modeCombo->addItem(QStringLiteral("frame"));
         int modeIdx = modeCombo->findText(tap.displayMode);
-        if (modeIdx >= 0) modeCombo->setCurrentIndex(modeIdx);
+        if (modeIdx >= 0)
+          modeCombo->setCurrentIndex(modeIdx);
         connect(modeCombo, &QComboBox::currentTextChanged, this,
                 [this, r](const QString& newMode) {
-          if (editing_monitor_index_ < 0) return;
-          const auto* mon = doc_->monitor(editing_monitor_index_);
-          if (!mon || r >= mon->taps.size()) return;
-          QString oldMode = mon->taps[r].displayMode;
-          if (oldMode == newMode) return;
-          int mi = editing_monitor_index_;
-          auto* cmd = new PropertyCommand(
-              doc_,
-              [doc = doc_, mi, r, oldMode]() {
-                auto* m = doc->monitor(mi);
-                if (m && r < m->taps.size()) m->taps[r].displayMode = oldMode;
-              },
-              [doc = doc_, mi, r, newMode]() {
-                auto* m = doc->monitor(mi);
-                if (m && r < m->taps.size()) m->taps[r].displayMode = newMode;
-              },
-              QStringLiteral("修改显示模式"));
-          doc_->undoStack()->push(cmd);
-        });
+                  if (editing_monitor_index_ < 0)
+                    return;
+                  const auto* mon = doc_->monitor(editing_monitor_index_);
+                  if (!mon || r >= mon->taps.size())
+                    return;
+                  QString oldMode = mon->taps[r].displayMode;
+                  if (oldMode == newMode)
+                    return;
+                  int mi = editing_monitor_index_;
+                  auto* cmd = new PropertyCommand(
+                      doc_,
+                      [doc = doc_, mi, r, oldMode]() {
+                        auto* m = doc->monitor(mi);
+                        if (m && r < m->taps.size())
+                          m->taps[r].displayMode = oldMode;
+                      },
+                      [doc = doc_, mi, r, newMode]() {
+                        auto* m = doc->monitor(mi);
+                        if (m && r < m->taps.size())
+                          m->taps[r].displayMode = newMode;
+                      },
+                      QStringLiteral("修改显示模式"));
+                  doc_->undoStack()->push(cmd);
+                });
         monitor_taps_table_->setCellWidget(r, 2, modeCombo);
       }
       monitor_taps_table_->blockSignals(false);
@@ -706,7 +712,7 @@ void PropertyPanelWidget::buildDevicePortPage() {
   devport_frames_list_ = new QListWidget(w);
   devport_frames_list_->setFrameShape(QFrame::NoFrame);
   devport_frames_list_->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  devport_frames_list_->setAlternatingRowColors(true);
+  // devport_frames_list_->setAlternatingRowColors(true);
   devport_frames_list_->setMinimumHeight(60);
   devport_frames_stack_->addWidget(devport_frames_list_);  // index 1
 
@@ -755,9 +761,9 @@ void PropertyPanelWidget::buildMonitorPage() {
   auto* tapsLay = new QVBoxLayout(tapsGroup);
 
   monitor_taps_table_ = new QTableWidget(0, 3, w);
-  monitor_taps_table_->setHorizontalHeaderLabels(
-      {QStringLiteral("源"), QStringLiteral("目标"),
-       QStringLiteral("显示模式")});
+  monitor_taps_table_->setHorizontalHeaderLabels({QStringLiteral("源"),
+                                                  QStringLiteral("目标"),
+                                                  QStringLiteral("显示模式")});
   monitor_taps_table_->horizontalHeader()->setStretchLastSection(true);
   monitor_taps_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
   monitor_taps_table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
