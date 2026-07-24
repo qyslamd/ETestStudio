@@ -1557,6 +1557,7 @@ QStringList ProjectStructureWidget::allFileNames() const {
     }
   };
   collect(root_item_);
+  result.removeDuplicates();
   return result;
 }
 
