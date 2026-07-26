@@ -244,6 +244,10 @@
         <file>resources/icons/svg/ribbon_collapse_dark.svg</file>
         <file>resources/icons/svg/ribbon_expand_light.svg</file>
         <file>resources/icons/svg/ribbon_expand_dark.svg</file>
+        <file>resources/icons/svg/signal_light.svg</file>
+        <file>resources/icons/svg/signal_dark.svg</file>
+        <file>resources/icons/svg/monitor_light.svg</file>
+        <file>resources/icons/svg/monitor_dark.svg</file>
         <file alias="translations/ads_zh_CN.qm">resources/translations/ads_zh_CN.qm</file>
         <file alias="translations/SARibbon_zh_CN.qm">resources/translations/SARibbon_zh_CN.qm</file>
         <file>resources/data/poems.db</file>

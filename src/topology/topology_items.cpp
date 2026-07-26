@@ -14,6 +14,7 @@
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsSceneMouseEvent>
 
+#include "core_ui/AppIconProvider.h"
 #include "core_ui/ThemeManager.h"
 #include <QLineF>
 #include <QMenu>
@@ -755,12 +756,9 @@ void ConnectionItem::paint(QPainter* painter,
     painter->setPen(QPen(Qt::white, 1.5));
     painter->drawEllipse(badgeRect);
 
-    QFont f = painter->font();
-    f.setPointSize(8);
-    f.setBold(true);
-    painter->setFont(f);
-    painter->setPen(Qt::white);
-    painter->drawText(badgeRect, Qt::AlignCenter, QStringLiteral("M"));
+    auto monitorIcon = etest::core_ui::AppIconProvider::instance().icon(
+        QStringLiteral("monitor"));
+    monitorIcon.paint(painter, badgeRect.toAlignedRect());
   }
 }
 
