@@ -118,25 +118,48 @@ void TopologyView::renderLegendCache() {
   struct DevEntry {
     QColor fill;
     QColor border;
-    Qt::PenStyle penStyle;
     QString label;
   };
-  QColor monitorFill = tc.monitorFill;
-  monitorFill.setAlpha(160);
   DevEntry devs[] = {
-      {tc.deviceFill, tc.deviceBorder, Qt::SolidLine,
-       QStringLiteral("激励设备")},
-      {tc.uutFill, tc.uutBorder, Qt::SolidLine, QStringLiteral("UUT")},
-      {monitorFill, tc.monitorBorder, Qt::DashLine,
-       QStringLiteral("监听设备")},
+      {tc.deviceFill, tc.deviceBorder, QStringLiteral("激励设备")},
+      {tc.uutFill, tc.uutBorder, QStringLiteral("UUT")},
   };
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < 2; ++i) {
     qreal ey = 84 + i * 18;
     p.setBrush(devs[i].fill);
-    p.setPen(QPen(devs[i].border, 1.5, devs[i].penStyle));
+    p.setPen(QPen(devs[i].border, 1.5));
     p.drawRoundedRect(QRectF(8, ey + 1, 14, 10), 2, 2);
     p.setPen(tc.legendText);
     p.drawText(QRectF(28, ey, 76, 14), Qt::AlignLeft, devs[i].label);
+  }
+
+  // Monitor badge entry
+  {
+    qreal ey = 122;
+    bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
+    QColor badgeColor = dark ? QColor(100, 180, 255) : QColor(0, 120, 215);
+
+    // Connection line segment
+    p.setPen(QPen(tc.connectionLine, 1.0));
+    p.drawLine(QPointF(8, ey + 7), QPointF(26, ey + 7));
+
+    // Badge circle
+    p.setBrush(badgeColor);
+    p.setPen(QPen(Qt::white, 1.0));
+    p.drawEllipse(QPointF(17, ey + 7), 6, 6);
+
+    // "M" text in badge
+    QFont bf = p.font();
+    bf.setPointSize(6);
+    bf.setBold(true);
+    p.setFont(bf);
+    p.setPen(Qt::white);
+    p.drawText(QRectF(11, ey + 1, 12, 12), Qt::AlignCenter, QStringLiteral("M"));
+    p.setFont(f);
+
+    // Label
+    p.setPen(tc.legendText);
+    p.drawText(QRectF(34, ey, 72, 14), Qt::AlignLeft, QStringLiteral("监听器"));
   }
 
   p.end();

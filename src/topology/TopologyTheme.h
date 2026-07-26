@@ -13,9 +13,6 @@ struct TopologyColors {
   // Device
   QColor deviceFill;
   QColor deviceBorder;
-  // Monitor
-  QColor monitorFill;
-  QColor monitorBorder;
   // Connection
   QColor connectionLine;
   QColor connectionHover;
