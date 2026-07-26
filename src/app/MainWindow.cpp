@@ -1952,6 +1952,24 @@ void MainWindow::showEvent(QShowEvent* event) {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
+  // 引擎运行中弹窗确认
+  auto* engine = execution_controller_ ? execution_controller_->engine() : nullptr;
+  if (engine) {
+    auto state = engine->state();
+    if (state == etest::engine::EngineState::Running ||
+        state == etest::engine::EngineState::Paused) {
+      auto ret = QMessageBox::question(
+          this, QStringLiteral("确认关闭"),
+          QStringLiteral("测试程序正在执行中，关闭主窗口将终止当前运行。\n确定要关闭吗？"),
+          QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+      if (ret != QMessageBox::Yes) {
+        event->ignore();
+        return;
+      }
+      execution_controller_->stop();
+    }
+  }
+
   // 尝试关闭所有编辑器文件，如果用户取消则不关闭程序
   if (!editor_manager_->closeAllFiles()) {
     event->ignore();
