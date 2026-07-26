@@ -4,13 +4,13 @@
 #include <QCheckBox>
 #include <QClipboard>
 #include <QCloseEvent>
+#include <QCompleter>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileDialog>
-#include <QCompleter>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
@@ -37,6 +37,7 @@
 #include "dialogs/IcdSignalSelection.h"
 #include "dialogs/LoginDialog.h"
 #include "dialogs/UserManagerDialog.h"
+
 
 #include "SARibbonBar.h"
 #include "SARibbonCategory.h"
@@ -412,24 +413,22 @@ void MainWindow::initSignalsLate() {
             psWidget, &ProjectStructureWidget::clearProjectPath);
 
     // 文件列表变化时刷新搜索框 completer（buildTree / refreshCategory 后触发）
-    connect(psWidget, &ProjectStructureWidget::fileListChanged, this,
-            [this]() {
-              auto* psw = qobject_cast<ProjectStructureWidget*>(
-                  sidebar_->pageById(PageId::kProjectOverview));
-              if (!psw) {
-                return;
-              }
-              QStringList fileNames = psw->allFileNames();
-              auto* completerModel = qobject_cast<QStringListModel*>(
-                  ribbon_search_completer_->model());
-              if (completerModel) {
-                completerModel->setStringList(fileNames);
-              }
-            });
+    connect(psWidget, &ProjectStructureWidget::fileListChanged, this, [this]() {
+      auto* psw = qobject_cast<ProjectStructureWidget*>(
+          sidebar_->pageById(PageId::kProjectOverview));
+      if (!psw) {
+        return;
+      }
+      QStringList fileNames = psw->allFileNames();
+      auto* completerModel =
+          qobject_cast<QStringListModel*>(ribbon_search_completer_->model());
+      if (completerModel) {
+        completerModel->setStringList(fileNames);
+      }
+    });
     // 项目关闭时清空 completer model
-    connect(&projectMgr,
-            &etest::core::project::ProjectManager::projectClosed, this,
-            [this]() {
+    connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
+            this, [this]() {
               auto* completerModel = qobject_cast<QStringListModel*>(
                   ribbon_search_completer_->model());
               if (completerModel) {
@@ -1169,8 +1168,8 @@ void MainWindow::lazyInit() {
 
               // 切到执行页时检测拓扑变化（引擎 Idle 时才刷新，防关设备）
               if (execution_controller_->engine() &&
-                  execution_controller_->engine()->state()
-                      == etest::engine::EngineState::Idle) {
+                  execution_controller_->engine()->state() ==
+                      etest::engine::EngineState::Idle) {
                 execution_controller_->syncProjectTopologies();
               }
             } else {
@@ -1949,18 +1948,21 @@ void MainWindow::showEvent(QShowEvent* event) {
     first_show_ = false;
     onThemeChanged(ThemeManager::instance().isDarkTheme());
   }
+
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
   // 引擎运行中弹窗确认
-  auto* engine = execution_controller_ ? execution_controller_->engine() : nullptr;
+  auto* engine =
+      execution_controller_ ? execution_controller_->engine() : nullptr;
   if (engine) {
     auto state = engine->state();
     if (state == etest::engine::EngineState::Running ||
         state == etest::engine::EngineState::Paused) {
       auto ret = QMessageBox::question(
           this, QStringLiteral("确认关闭"),
-          QStringLiteral("测试程序正在执行中，关闭主窗口将终止当前运行。\n确定要关闭吗？"),
+          QStringLiteral(
+              "测试程序正在执行中，关闭主窗口将终止当前运行。\n确定要关闭吗？"),
           QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
       if (ret != QMessageBox::Yes) {
         event->ignore();
@@ -2280,46 +2282,44 @@ void MainWindow::setupRibbon() {
     category_exec_->setObjectName(QStringLiteral("CategoryExec"));
     auto* cat = category_exec_;
 
-    // 运行配置 Panel（程序选择 popup + 通道选择 dialog，由 ExecutionPanelController 管理）
+    // 运行配置 Panel（程序选择 popup + 通道选择 + 验证，由
+    // ExecutionPanelController 管理）
     auto* panel_select = cat->addPanel(QStringLiteral("运行配置"));
     panel_select->addSmallWidget(execution_controller_->programPopup());
     panel_select->addSmallAction(execution_controller_->selectChannelsAction());
     connect(execution_controller_->selectChannelsAction(), &QAction::triggered,
-            this, [this]() { execution_controller_->showChannelSelectionDialog(); });
+            this,
+            [this]() { execution_controller_->showChannelSelectionDialog(); });
+    execution_controller_->verifyAction()->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("verify")));
+    panel_select->addLargeAction(execution_controller_->verifyAction());
 
     // 执行控制 Panel（QAction 由 ExecutionPanelController 管理）
     auto* panel_control = cat->addPanel(QStringLiteral("执行控制"));
     execution_controller_->runAction()->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("run")));
+    execution_controller_->runAllAction()->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("run_all")));
     execution_controller_->pauseAction()->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("pause")));
     execution_controller_->stopAction()->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("stop")));
-    execution_controller_->verifyAction()->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("verify")));
-    panel_control->addLargeAction(execution_controller_->verifyAction());
     panel_control->addLargeAction(execution_controller_->runAction());
+    panel_control->addLargeAction(execution_controller_->runAllAction());
     panel_control->addSmallAction(execution_controller_->pauseAction());
     panel_control->addSmallAction(execution_controller_->stopAction());
     panel_control->addSmallAction(execution_controller_->clearDataAction());
 
     connect(execution_controller_->runAction(), &QAction::triggered, this,
             [this]() { execution_controller_->run(); });
+    connect(execution_controller_->runAllAction(), &QAction::triggered, this,
+            [this]() { execution_controller_->runAll(); });
     connect(execution_controller_->pauseAction(), &QAction::triggered, this,
             [this]() { execution_controller_->pause(); });
     connect(execution_controller_->stopAction(), &QAction::triggered, this,
             [this]() { execution_controller_->stop(); });
     connect(execution_controller_->verifyAction(), &QAction::triggered, this,
             [this]() { execution_controller_->verify(); });
-
-    // 运行方式 Panel
-    auto* panel_mode = cat->addPanel(QStringLiteral("运行方式"));
-    execution_controller_->runAllAction()->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("run_all")));
-    panel_mode->addLargeAction(execution_controller_->runAllAction());
-
-    connect(execution_controller_->runAllAction(), &QAction::triggered, this,
-            [this]() { execution_controller_->runAll(); });
 
     // 统计 Panel
     auto* panel_stats = cat->addPanel(QStringLiteral("统计"));
