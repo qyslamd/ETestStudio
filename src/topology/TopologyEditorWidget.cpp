@@ -591,7 +591,9 @@ void TopologyEditorWidget::initSignals() {
     const auto* conn = doc_->connection(ci);
     if (!conn) return;
     TopologyMonitor mon;
-    mon.name = QStringLiteral("Monitor-%1_%2").arg(conn->deviceName).arg(conn->devicePort);
+    mon.name = QStringLiteral("%1_%2_%3_%4_监听器")
+                   .arg(conn->deviceName, conn->devicePort, conn->portName,
+                        conn->productName);
     mon.connectionId = conn->id;
     auto* cmd = new AddMonitorCommand(doc_, mon);
     // Save index before push — push may trigger scene rebuild which invalidates connItem

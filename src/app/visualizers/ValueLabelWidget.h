@@ -23,7 +23,7 @@ class ValueLabelWidget : public SignalVisualizer {
 
   void onSampleCaptured(const etest::engine::MonitorSample& sample) override;
   void clearData() override;
-  QList<QPair<int, int>> displayedSignals() const override;
+  QList<int> displayedSignals() const override;
 
  private:
   void initUi();
@@ -33,7 +33,6 @@ class ValueLabelWidget : public SignalVisualizer {
   QLabel* raw_label_ = nullptr;      // 原始值
   QLabel* ts_label_ = nullptr;       // 最后采样时间
   int monitor_index_ = -1;
-  int channel_index_ = -1;
 };
 
 }  // namespace etest::app

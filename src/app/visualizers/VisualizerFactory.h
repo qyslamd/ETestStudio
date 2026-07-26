@@ -23,7 +23,7 @@ class SignalVisualizer;
 //        其他         → ValueLabelWidget
 //   3. 兜底 → ValueLabelWidget
 // ══════════════════════════════════════════════════════════════════════════════
-SignalVisualizer* createVisualizerFor(int monitorIndex, int channelIndex,
+SignalVisualizer* createVisualizerFor(int monitorIndex,
                                        const QString& displayMode,
                                        const QString& signalType,
                                        const QString& title,

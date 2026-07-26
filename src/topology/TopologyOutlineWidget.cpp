@@ -192,24 +192,6 @@ void TopologyOutlineWidget::addMonitorItem(int index, TopologyDocument* doc,
   item->setData(0, kRoleMainIdx, index);
   item->setData(0, kRoleSubIdx, -1);
 
-  // Show connection info as child
-  if (!mon->connectionId.isEmpty()) {
-    QString connInfo = QStringLiteral("-");
-    for (int ci = 0; ci < doc->connectionCount(); ++ci) {
-      const auto* c = doc->connection(ci);
-      if (c && c->id == mon->connectionId) {
-        connInfo = QStringLiteral("%1.%2 → %3.%4")
-                       .arg(c->productName, c->portName,
-                            c->deviceName, c->devicePort);
-        break;
-      }
-    }
-    auto* connItem = new QTreeWidgetItem(item);
-    connItem->setText(0, connInfo);
-    connItem->setData(0, kRoleTag, static_cast<int>(ItemTag::Connection));
-    connItem->setData(0, kRoleMainIdx, index);
-    connItem->setData(0, kRoleSubIdx, 0);
-  }
 }
 
 void TopologyOutlineWidget::onFilterTextChanged(const QString& text) {

@@ -24,7 +24,7 @@ class StateLEDWidget : public SignalVisualizer {
 
   void onSampleCaptured(const etest::engine::MonitorSample& sample) override;
   void clearData() override;
-  QList<QPair<int, int>> displayedSignals() const override;
+  QList<int> displayedSignals() const override;
 
  private:
   void initUi();
@@ -37,7 +37,6 @@ class StateLEDWidget : public SignalVisualizer {
   QLabel* ts_label_ = nullptr;        // 最后变化时间
 
   int monitor_index_ = -1;
-  int channel_index_ = -1;
   bool previous_on_ = false;
   int pulse_count_ = 0;
   QDateTime last_change_ts_;

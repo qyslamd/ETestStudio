@@ -37,7 +37,7 @@ void MonitorManager::loadFromTopology(const QJsonObject& topologyDoc) {
 // appendFromTopology - 追加拓扑中的 monitors（累积模式）
 // ═══════════════════════════════════════════════════════════════════
 // 不清理已有数据。monitorIndex 按当前 tree_cache_ 大小偏移，
-// 确保多拓扑合并时索引不冲突。channelIndex 保持拓扑内原值。
+// 确保多拓扑合并时索引不冲突。
 void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
   int indexOffset = tree_cache_.size();
 
@@ -89,17 +89,14 @@ void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
 
       MonitorTapInfo info;
       info.monitorIndex = globalIndex;
-      info.channelIndex = 0;
       info.deviceId = deviceId;
       info.devicePort = devicePort;
       info.displayMode = mobj.value(QStringLiteral("displayMode")).toString();
       auto key = qMakePair(deviceId, devicePort);
       lookup_table_[key].append(info);
-      entry.channelCount = 1;
     } else {
       LOG_WARN("MONITOR", "监听器 {} 引用不存在的 connectionId={}",
                entry.name.toStdString(), connectionId.toStdString());
-      entry.channelCount = 0;
     }
     tree_cache_.append(entry);
   }
@@ -111,14 +108,13 @@ void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
 // ═══════════════════════════════════════════════════════════════════
 // subscribe / unsubscribe — 通道订阅
 // ═══════════════════════════════════════════════════════════════════
-void MonitorManager::subscribe(int monitorIndex, int channelIndex,
+void MonitorManager::subscribe(int monitorIndex,
                                 SampleCallback cb) {
-  auto key = qMakePair(monitorIndex, channelIndex);
-  subscribers_[key] = std::move(cb);
+  subscribers_[monitorIndex] = std::move(cb);
 }
 
-void MonitorManager::unsubscribe(int monitorIndex, int channelIndex) {
-  subscribers_.remove(qMakePair(monitorIndex, channelIndex));
+void MonitorManager::unsubscribe(int monitorIndex) {
+  subscribers_.remove(monitorIndex);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -141,14 +137,13 @@ void MonitorManager::onHardwareOpFinished(const QString& deviceId,
   for (const auto& tapInfo : tapInfos) {
     MonitorSample sample;
     sample.monitorIndex = tapInfo.monitorIndex;
-    sample.channelIndex = tapInfo.channelIndex;
     sample.engValue = engValue;
     sample.rawValue = rawValue;
     sample.rawFrame = rawFrame;
     sample.timestamp = QDateTime::currentDateTime();
 
-    // CVT: 按 (mi, ci) 覆盖写，只保留最新值
-    buffer_[qMakePair(tapInfo.monitorIndex, tapInfo.channelIndex)] = sample;
+    // CVT: 按 monitorIndex 覆盖写，只保留最新值
+    buffer_[tapInfo.monitorIndex] = sample;
 
     // history: 追加写，上限保护（全局上限，长时多通道运行会截断旧数据）
     history_buffer_.append(sample);
@@ -205,10 +200,10 @@ QList<MonitorManager::MonitorTreeEntry> MonitorManager::monitorTree() const {
 // ═══════════════════════════════════════════════════════════════════
 // displayMode - 查询某通道 tap 的 displayMode
 // ═══════════════════════════════════════════════════════════════════
-QString MonitorManager::displayMode(int monitorIndex, int channelIndex) const {
+QString MonitorManager::displayMode(int monitorIndex) const {
   for (auto it = lookup_table_.constBegin(); it != lookup_table_.constEnd(); ++it) {
     for (const auto& info : it.value()) {
-      if (info.monitorIndex == monitorIndex && info.channelIndex == channelIndex) {
+      if (info.monitorIndex == monitorIndex) {
         return info.displayMode;
       }
     }
@@ -222,46 +217,31 @@ QString MonitorManager::displayMode(int monitorIndex, int channelIndex) const {
 // 输出格式（每个有数据的 monitor 一个条目）：
 // [
 //   {
-//     "name": "...", "deviceType": "...", "channelCount": N,
-//     "channels": [
-//       {
-//         "index": ci,
-//         "samples": [
-//           { "raw": ..., "eng": ..., "ts": "..." }
-//         ]
-//       }
+//     "name": "...", "deviceType": "...",
+//     "samples": [
+//       { "raw": ..., "eng": ..., "ts": "..." }
 //     ]
 //   }
 // ]
 // ═══════════════════════════════════════════════════════════════════
 QJsonArray MonitorManager::flushSamples() {
-  // 按 (monitorIndex, channelIndex) 分组，从 history_buffer_ 读取完整历史
-  struct ChannelSamples {
-    int monitorIndex;
-    int channelIndex;
-    QList<MonitorSample> samples;
-  };
-  QHash<int, QHash<int, QList<MonitorSample>>> grouped;
-
+  // 按 monitorIndex 分组
+  QHash<int, QList<MonitorSample>> grouped;
   for (const auto& sample : history_buffer_) {
-    grouped[sample.monitorIndex][sample.channelIndex].append(sample);
+    grouped[sample.monitorIndex].append(sample);
   }
 
-  // 构建 JSON：仅输出有数据的 monitor
   QJsonArray monitorsArr;
-
   for (auto mit = grouped.constBegin(); mit != grouped.constEnd(); ++mit) {
-    int mi = mit.key();
+    int monitorIndex = mit.key();
+    const auto& samples = mit.value();
 
-    // 从 tree_cache_ 查找 monitor 元信息
     QString name;
     QString deviceType;
-    int channelCount = 0;
     for (const auto& entry : tree_cache_) {
-      if (entry.monitorIndex == mi) {
+      if (entry.monitorIndex == monitorIndex) {
         name = entry.name;
         deviceType = entry.deviceType;
-        channelCount = entry.channelCount;
         break;
       }
     }
@@ -269,36 +249,21 @@ QJsonArray MonitorManager::flushSamples() {
     QJsonObject mObj;
     mObj[QStringLiteral("name")] = name;
     mObj[QStringLiteral("deviceType")] = deviceType;
-    mObj[QStringLiteral("channelCount")] = channelCount;
 
-    QJsonArray channelsArr;
-    const auto& chMap = mit.value();
-
-    for (auto cit = chMap.constBegin(); cit != chMap.constEnd(); ++cit) {
-      int ci = cit.key();
-      const auto& samples = cit.value();
-
-      QJsonObject chObj;
-      chObj[QStringLiteral("index")] = ci;
-
-      QJsonArray samplesArr;
-      for (const auto& sample : samples) {
-        QJsonObject sObj;
-        sObj[QStringLiteral("eng")] = sample.engValue;
-        if (sample.rawFrame.isEmpty()) {
-          sObj[QStringLiteral("raw")] = sample.rawValue;
-        } else {
-          sObj[QStringLiteral("raw")] =
-              QString::fromLatin1(sample.rawFrame.toHex(' ').toUpper());
-        }
-        sObj[QStringLiteral("ts")] = sample.timestamp.toString(Qt::ISODate);
-        samplesArr.append(sObj);
+    QJsonArray samplesArr;
+    for (const auto& sample : samples) {
+      QJsonObject sObj;
+      sObj[QStringLiteral("eng")] = sample.engValue;
+      if (sample.rawFrame.isEmpty()) {
+        sObj[QStringLiteral("raw")] = sample.rawValue;
+      } else {
+        sObj[QStringLiteral("raw")] =
+            QString::fromLatin1(sample.rawFrame.toHex(' ').toUpper());
       }
-      chObj[QStringLiteral("samples")] = samplesArr;
-      channelsArr.append(chObj);
+      sObj[QStringLiteral("ts")] = sample.timestamp.toString(Qt::ISODate);
+      samplesArr.append(sObj);
     }
-
-    mObj[QStringLiteral("channels")] = channelsArr;
+    mObj[QStringLiteral("samples")] = samplesArr;
     monitorsArr.append(mObj);
   }
 

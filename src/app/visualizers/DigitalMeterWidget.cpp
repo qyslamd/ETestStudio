@@ -65,7 +65,6 @@ void DigitalMeterWidget::initUi() {
 void DigitalMeterWidget::onSampleCaptured(
     const etest::engine::MonitorSample& sample) {
   monitor_index_ = sample.monitorIndex;
-  channel_index_ = sample.channelIndex;
   previous_value_ = current_value_;
   current_value_ = sample.engValue;
 
@@ -137,7 +136,6 @@ void DigitalMeterWidget::clearData() {
   ts_label_->setText(QString());
 
   monitor_index_ = -1;
-  channel_index_ = -1;
   current_value_ = 0.0;
   previous_value_ = 0.0;
   min_value_ = 0.0;
@@ -149,9 +147,9 @@ void DigitalMeterWidget::clearData() {
 // displayedSignals
 // ══════════════════════════════════════════════════════════════════════════════
 
-QList<QPair<int, int>> DigitalMeterWidget::displayedSignals() const {
-  if (monitor_index_ >= 0 && channel_index_ >= 0) {
-    return {{monitor_index_, channel_index_}};
+QList<int> DigitalMeterWidget::displayedSignals() const {
+  if (monitor_index_ >= 0) {
+    return {monitor_index_};
   }
   return {};
 }

@@ -1,13 +1,11 @@
 #include "SignalTreePanel.h"
 
 #include <QLineEdit>
-#include <QPair>
 #include <QSet>
+#include <QListWidget>
+#include <QVBoxLayout>
 
 #include "logger/Logger.h"
-#include <QTreeWidget>
-#include <QTreeWidgetItem>
-#include <QVBoxLayout>
 
 namespace etest::app {
 
@@ -35,182 +33,120 @@ void SignalTreePanel::initUi() {
   connect(search_box_, &QLineEdit::textChanged,
           this, &SignalTreePanel::onFilterChanged);
 
-  // 树
-  tree_ = new QTreeWidget(this);
-  tree_->setObjectName(QStringLiteral("SignalTree"));
-  tree_->setHeaderHidden(true);
-  tree_->setFrameShape(QFrame::NoFrame);
-  tree_->setRootIsDecorated(true);
-  tree_->setAnimated(true);
-  layout->addWidget(tree_, 1);
+  // 扁平列表
+  list_ = new QListWidget(this);
+  list_->setObjectName(QStringLiteral("SignalTree"));
+  list_->setFrameShape(QFrame::NoFrame);
+  layout->addWidget(list_, 1);
 
   // checkbox 变化 → 发射 checkStateChanged 信号
-  connect(tree_, &QTreeWidget::itemChanged, this,
-          [this](QTreeWidgetItem* item, int column) {
-            if (column != 0) {
-              return;
-            }
-            if (!item || item->parent() == nullptr) {
-              // 只处理叶节点（有 parent 的通道节点）
-              return;
-            }
-            int key = item->data(0, Qt::UserRole).toInt();
-            int monitorIndex = key >> 16;
-            int channelIndex = key & 0xFFFF;
-            bool checked = (item->checkState(0) == Qt::Checked);
-            LOG_DEBUG("VISUAL", "itemChanged -> mi={} ci={} checked={}",
-                      monitorIndex, channelIndex, checked);
-            emit checkStateChanged(monitorIndex, channelIndex, checked);
-          });
+  connect(list_, &QListWidget::itemChanged, this,
+          [this](QListWidgetItem* item) {
+    if (!item) return;
+    int monitorIndex = item->data(Qt::UserRole).toInt();
+    bool checked = (item->checkState() == Qt::Checked);
+    LOG_DEBUG("VISUAL", "itemChanged -> monitorIndex={} checked={}",
+              monitorIndex, checked);
+    emit checkStateChanged(monitorIndex, checked);
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// setMonitorTree — 设置树数据，构建界面
+// setMonitorTree — 设置数据，构建界面
 // ══════════════════════════════════════════════════════════════════════════════
 
 void SignalTreePanel::setMonitorTree(
     const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree,
-    const QList<QPair<int, int>>& preCheckedChannels) {
+    const QList<int>& preCheckedMonitors) {
   tree_data_ = tree;
-  buildTree(tree, preCheckedChannels);
+  buildTree(tree, preCheckedMonitors);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// buildTree — 按监听器→通道构建两级 QTreeWidget
+// buildTree — 按监听器列表构建扁平列表
 // ══════════════════════════════════════════════════════════════════════════════
 
 void SignalTreePanel::buildTree(
     const QList<etest::engine::MonitorManager::MonitorTreeEntry>& tree,
-    const QList<QPair<int, int>>& preCheckedChannels) {
-  tree_->clear();
+    const QList<int>& preCheckedMonitors) {
+  list_->clear();
   node_map_.clear();
 
-  // 阻止重建过程中的 itemChanged 信号（checkState 设勾选不会误触 checkStateChanged）
-  QSignalBlocker blocker(tree_);
+  QSignalBlocker blocker(list_);
 
-  // 构建 preChecked 集合用于 O(n) 查找
-  QSet<QPair<int, int>> preSet;
-  for (const auto& ch : preCheckedChannels) {
-    preSet.insert(ch);
+  QSet<int> preSet;
+  for (int mi : preCheckedMonitors) {
+    preSet.insert(mi);
   }
 
   for (const auto& entry : tree) {
-    // 顶级：监听器名称
-    auto* topItem = new QTreeWidgetItem(tree_);
-    QString topText = entry.name;
-    if (!entry.deviceType.isEmpty()) {
-      topText += QStringLiteral(" [%1]").arg(entry.deviceType);
-    }
-    topItem->setText(0, topText);
-    topItem->setFlags(topItem->flags() & ~Qt::ItemIsUserCheckable);
-    topItem->setExpanded(true);
-
-    // 二级：通道
-    for (int ci = 0; ci < entry.channelCount; ++ci) {
-      auto* childItem = new QTreeWidgetItem(topItem);
-      childItem->setText(0, QStringLiteral("ch%1").arg(ci));
-      childItem->setFlags(childItem->flags() | Qt::ItemIsUserCheckable);
-      childItem->setCheckState(0, Qt::Unchecked);
-
-      // 存储 (monitorIndex, channelIndex) 到 UserRole
-      int key = (entry.monitorIndex << 16) | ci;
-      childItem->setData(0, Qt::UserRole, key);
-
-      // 如果该通道在 preChecked 集合中，恢复勾选
-      if (preSet.contains(qMakePair(entry.monitorIndex, ci))) {
-        childItem->setCheckState(0, Qt::Checked);
-      }
-
-      node_map_.insert(key, childItem);
-    }
+    auto* item = new QListWidgetItem(list_);
+    item->setText(entry.name);
+    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+    item->setCheckState(preSet.contains(entry.monitorIndex)
+                             ? Qt::Checked : Qt::Unchecked);
+    item->setData(Qt::UserRole, entry.monitorIndex);
+    node_map_.insert(entry.monitorIndex, item);
   }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// updateNodeValue — 更新某个通道的实时值缩略文本
+// updateNodeValue — 更新某个监听器的实时值缩略文本
 // ══════════════════════════════════════════════════════════════════════════════
 
-void SignalTreePanel::updateNodeValue(int monitorIndex, int channelIndex,
+void SignalTreePanel::updateNodeValue(int monitorIndex,
                                        const QString& valueText) {
-  int key = (monitorIndex << 16) | channelIndex;
-  auto it = node_map_.constFind(key);
+  auto it = node_map_.constFind(monitorIndex);
   if (it == node_map_.constEnd()) {
     return;
   }
 
-  // 在名称后追加缩略值（如 "ch0  5.02V"）
-  QTreeWidgetItem* item = it.value();
-  QString baseText = QStringLiteral("ch%1").arg(channelIndex);
+  QListWidgetItem* item = it.value();
   if (!valueText.isEmpty()) {
-    item->setText(0, QStringLiteral("%1  %2").arg(baseText, valueText));
+    QString prefix = tree_data_.value(monitorIndex).name;
+    item->setText(QStringLiteral("%1  %2").arg(prefix, valueText));
   } else {
-    item->setText(0, baseText);
+    item->setText(tree_data_.value(monitorIndex).name);
   }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// clearTree — 清空树和所有勾选（项目关闭时使用）
+// uncheckMonitor — 取消勾选某个监听器（可视化区右键关闭时同步）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void SignalTreePanel::uncheckMonitor(int monitorIndex) {
+  auto it = node_map_.constFind(monitorIndex);
+  if (it == node_map_.constEnd()) {
+    return;
+  }
+  it.value()->setCheckState(Qt::Unchecked);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// clearTree — 清空（项目关闭时使用）
 // ══════════════════════════════════════════════════════════════════════════════
 
 void SignalTreePanel::clearTree() {
-  tree_->clear();
+  list_->clear();
   node_map_.clear();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// uncheckChannel — 取消勾选某个通道（可视化区右键关闭时同步）
-// ══════════════════════════════════════════════════════════════════════════════
-
-void SignalTreePanel::uncheckChannel(int monitorIndex, int channelIndex) {
-  int key = (monitorIndex << 16) | channelIndex;
-  auto it = node_map_.constFind(key);
-  if (it == node_map_.constEnd()) {
-    return;
-  }
-  it.value()->setCheckState(0, Qt::Unchecked);
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// onFilterChanged — 搜索框文本变化时过滤树节点
+// onFilterChanged — 搜索框文本变化时过滤列表
 // ══════════════════════════════════════════════════════════════════════════════
 
 void SignalTreePanel::onFilterChanged(const QString& text) {
   if (text.isEmpty()) {
-    // 恢复所有
-    for (int i = 0; i < tree_->topLevelItemCount(); ++i) {
-      tree_->topLevelItem(i)->setHidden(false);
-      for (int j = 0; j < tree_->topLevelItem(i)->childCount(); ++j) {
-        tree_->topLevelItem(i)->child(j)->setHidden(false);
-      }
+    for (int i = 0; i < list_->count(); ++i) {
+      list_->item(i)->setHidden(false);
     }
     return;
   }
 
   QString filter = text.trimmed().toLower();
-  for (int i = 0; i < tree_->topLevelItemCount(); ++i) {
-    auto* topItem = tree_->topLevelItem(i);
-    bool topMatch = topItem->text(0).toLower().contains(filter);
-
-    // 先隐藏所有子节点
-    bool hasVisibleChild = false;
-    for (int j = 0; j < topItem->childCount(); ++j) {
-      auto* child = topItem->child(j);
-      bool childMatch = child->text(0).toLower().contains(filter);
-      child->setHidden(!childMatch);
-      if (childMatch) {
-        hasVisibleChild = true;
-      }
-    }
-
-    // 顶级节点：匹配则显示所有子，不匹配且有匹配子则显示
-    if (topMatch) {
-      topItem->setHidden(false);
-      for (int j = 0; j < topItem->childCount(); ++j) {
-        topItem->child(j)->setHidden(false);
-      }
-    } else {
-      topItem->setHidden(!hasVisibleChild);
-    }
+  for (int i = 0; i < list_->count(); ++i) {
+    auto* item = list_->item(i);
+    item->setHidden(!item->text().toLower().contains(filter));
   }
 }
 

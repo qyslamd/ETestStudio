@@ -31,8 +31,8 @@ class SignalVisualizer : public QWidget {
   // ── 清空所有数据（如运行停止或重新开始） ──
   virtual void clearData() = 0;
 
-  // ── 返回当前展示的信号标识列表（(monitorIndex, channelIndex)） ──
-  virtual QList<QPair<int, int>> displayedSignals() const = 0;
+  // ── 返回当前展示的信号标识列表（monitorIndex 列表） ──
+  virtual QList<int> displayedSignals() const = 0;
 };
 
 }  // namespace etest::app

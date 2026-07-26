@@ -72,7 +72,6 @@ void StateLEDWidget::initUi() {
 void StateLEDWidget::onSampleCaptured(
     const etest::engine::MonitorSample& sample) {
   monitor_index_ = sample.monitorIndex;
-  channel_index_ = sample.channelIndex;
 
   bool current_on = (sample.engValue >= 0.5);
 
@@ -119,7 +118,6 @@ void StateLEDWidget::clearData() {
   pulse_count_ = 0;
   last_change_ts_ = QDateTime();
   monitor_index_ = -1;
-  channel_index_ = -1;
 
   updateLED(false);
   pulse_label_->setText(QStringLiteral("脉冲: 0"));
@@ -130,9 +128,9 @@ void StateLEDWidget::clearData() {
 // displayedSignals
 // ══════════════════════════════════════════════════════════════════════════════
 
-QList<QPair<int, int>> StateLEDWidget::displayedSignals() const {
-  if (monitor_index_ >= 0 && channel_index_ >= 0) {
-    return {{monitor_index_, channel_index_}};
+QList<int> StateLEDWidget::displayedSignals() const {
+  if (monitor_index_ >= 0) {
+    return {monitor_index_};
   }
   return {};
 }

@@ -85,9 +85,7 @@ TEST(MonitorManagerTest, LoadFromTopology) {
     ASSERT_EQ(tree.size(), 2);
     EXPECT_EQ(tree[0].name, QStringLiteral("监听器_AD"));
     EXPECT_EQ(tree[0].deviceType, QStringLiteral("ad"));  // 从 device 派生
-    EXPECT_EQ(tree[0].channelCount, 1);  // 一个 connection = 一个通道
     EXPECT_EQ(tree[1].name, QStringLiteral("监听器_串口"));
-    EXPECT_EQ(tree[1].channelCount, 1);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -112,11 +110,7 @@ TEST(MonitorManagerTest, MatchTapAndBuffer) {
     EXPECT_EQ(monObj[QStringLiteral("name")].toString(),
               QStringLiteral("监听器_AD"));
 
-    QJsonArray channels = monObj[QStringLiteral("channels")].toArray();
-    ASSERT_EQ(channels.size(), 1);  // 只有 ch0 有数据
-    EXPECT_EQ(channels[0].toObject()[QStringLiteral("index")].toInt(), 0);
-
-    QJsonArray samples = channels[0].toObject()[QStringLiteral("samples")].toArray();
+    QJsonArray samples = monObj[QStringLiteral("samples")].toArray();
     ASSERT_EQ(samples.size(), 1);
     EXPECT_DOUBLE_EQ(samples[0].toObject()[QStringLiteral("eng")].toDouble(), 5.02);
     EXPECT_DOUBLE_EQ(samples[0].toObject()[QStringLiteral("raw")].toDouble(), 2699.0);
@@ -131,7 +125,7 @@ TEST(MonitorManagerTest, SubscribeCallback) {
 
     bool called = false;
     MonitorSample captured;
-    mgr.subscribe(0, 0, [&](const MonitorSample& sample) {
+    mgr.subscribe(0, [&](const MonitorSample& sample) {
         called = true;
         captured = sample;
     });
@@ -145,7 +139,6 @@ TEST(MonitorManagerTest, SubscribeCallback) {
     EXPECT_DOUBLE_EQ(captured.rawValue, 999.0);
     EXPECT_DOUBLE_EQ(captured.engValue, 12.34);
     EXPECT_EQ(captured.monitorIndex, 0);
-    EXPECT_EQ(captured.channelIndex, 0);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -156,8 +149,8 @@ TEST(MonitorManagerTest, Unsubscribe) {
     mgr.loadFromTopology(makeTestTopology());
 
     int callCount = 0;
-    mgr.subscribe(0, 0, [&](const MonitorSample&) { ++callCount; });
-    mgr.unsubscribe(0, 0);
+    mgr.subscribe(0, [&](const MonitorSample&) { ++callCount; });
+    mgr.unsubscribe(0);
 
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
                               QStringLiteral("ch0"),
@@ -211,7 +204,7 @@ TEST(MonitorManagerTest, ClearRuntime) {
 
     // 建立一个订阅（用计数器验证 clearRuntime 后回调仍能触发）
     int callCount = 0;
-    mgr.subscribe(0, 0, [&](const MonitorSample&) { ++callCount; });
+    mgr.subscribe(0, [&](const MonitorSample&) { ++callCount; });
 
     // 写入 buffer 数据 + 验证订阅在 clearRuntime 前生效
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
@@ -252,7 +245,7 @@ TEST(MonitorManagerTest, ClearStructure) {
                               QByteArray(), 100.0, 1.0);
 
     // 建立一个订阅
-    mgr.subscribe(0, 0, [&](const MonitorSample&) {});
+    mgr.subscribe(0, [&](const MonitorSample&) {});
 
     // 执行
     mgr.clearStructure();
@@ -271,9 +264,7 @@ TEST(MonitorManagerTest, ClearStructure) {
     QJsonArray result = mgr.flushSamples();
     ASSERT_EQ(result.size(), 1);
     QJsonObject monObj = result[0].toObject();
-    QJsonArray channels = monObj[QStringLiteral("channels")].toArray();
-    ASSERT_EQ(channels.size(), 1);
-    QJsonArray samples = channels[0].toObject()[QStringLiteral("samples")].toArray();
+    QJsonArray samples = monObj[QStringLiteral("samples")].toArray();
     ASSERT_EQ(samples.size(), 1);
     EXPECT_DOUBLE_EQ(samples[0].toObject()[QStringLiteral("eng")].toDouble(), 1.0);
 }
@@ -331,7 +322,7 @@ TEST(MonitorManagerTest, NewFormatConnectionId) {
     EXPECT_EQ(tree[0].deviceType, QStringLiteral("ad"));
 
     // 验证 displayMode 查找
-    QString mode = mgr.displayMode(0, 0);
+    QString mode = mgr.displayMode(0);
     EXPECT_EQ(mode, QStringLiteral("waveform"));
 
     // 验证数据路由：发射匹配的设备/端口信号应能写入 CVT buffer_
@@ -343,9 +334,7 @@ TEST(MonitorManagerTest, NewFormatConnectionId) {
     QJsonArray result = mgr.flushSamples();
     ASSERT_EQ(result.size(), 1);
     QJsonObject monObj = result[0].toObject();
-    QJsonArray channels = monObj[QStringLiteral("channels")].toArray();
-    ASSERT_EQ(channels.size(), 1);
-    QJsonArray samples = channels[0].toObject()[QStringLiteral("samples")].toArray();
+    QJsonArray samples = monObj[QStringLiteral("samples")].toArray();
     ASSERT_EQ(samples.size(), 1);
     EXPECT_DOUBLE_EQ(samples[0].toObject()[QStringLiteral("eng")].toDouble(), 5.0);
 }

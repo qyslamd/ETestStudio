@@ -23,7 +23,7 @@ class DigitalMeterWidget : public SignalVisualizer {
 
   void onSampleCaptured(const etest::engine::MonitorSample& sample) override;
   void clearData() override;
-  QList<QPair<int, int>> displayedSignals() const override;
+  QList<int> displayedSignals() const override;
 
  private:
   void initUi();
@@ -38,7 +38,6 @@ class DigitalMeterWidget : public SignalVisualizer {
   QLabel* ts_label_ = nullptr;        // 时间戳
 
   int monitor_index_ = -1;
-  int channel_index_ = -1;
   double current_value_ = 0.0;
   double min_value_ = 0.0;
   double max_value_ = 0.0;

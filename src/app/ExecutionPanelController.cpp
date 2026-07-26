@@ -862,64 +862,57 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
 
   // ── SignalTreePanel checkbox → 创建/移除可视化组件 + 订阅/取消订阅 ──
   connect(signal_tree_, &SignalTreePanel::checkStateChanged,
-          this, [this](int mi, int ci, bool checked) {
+          this, [this](int monitorIndex, bool checked) {
             LOG_INFO("VISUAL",
-                     "checkStateChanged mi={} ci={} checked={}",
-                     mi, ci, checked);
+                     "checkStateChanged monitorIndex={} checked={}",
+                     monitorIndex, checked);
             auto* monitorMgr = monitor_manager_;
             if (!monitorMgr) {
               return;
             }
 
             if (checked) {
-              // 从拓扑 tap 读取 displayMode，未配置则回退 "auto"
-              QString mode = monitorMgr->displayMode(mi, ci);
+              QString mode = monitorMgr->displayMode(monitorIndex);
               if (mode.isEmpty()) {
                 mode = QStringLiteral("auto");
               }
               auto* vis = createVisualizerFor(
-                  mi, ci, mode, QString(),
-                  QStringLiteral("Monitor %1 Ch%2").arg(mi).arg(ci), nullptr);
+                  monitorIndex, mode, QString(),
+                  QStringLiteral("Monitor %1").arg(monitorIndex), nullptr);
               if (vis) {
-                LOG_INFO("ENGINE", "创建可视化 mi={} ci={} mode={} type={}",
-                         mi, ci, mode.toStdString(),
+                LOG_INFO("ENGINE", "创建可视化 monitorIndex={} mode={} type={}",
+                         monitorIndex, mode.toStdString(),
                          vis->metaObject()->className());
-                // 波形组件需要先 addTrace，否则 onSampleCaptured 丢弃数据
                 if (auto* wave = qobject_cast<WaveformWidget*>(vis)) {
-                  // 按通道索引取色，保证同屏多通道可区分
                   static const QColor kColors[] = {
                       QColor(0, 120, 215), QColor(229, 57, 53),
                       QColor(67, 160, 71), QColor(255, 152, 0),
                       QColor(156, 39, 176), QColor(0, 151, 167),
                       QColor(121, 85, 72), QColor(158, 158, 158)};
-                  QColor color = kColors[ci % 8];
-                  wave->addTrace(mi, ci, color);
+                  QColor color = kColors[monitorIndex % 8];
+                  wave->addTrace(monitorIndex, color);
                 }
-                // 先订阅再添加到可视化区（确保回调不会在未订阅时触发）
-                // 用 QPointer 保护，防 worker 线程排队事件在 widget 销毁后到达
                 QPointer<SignalVisualizer> visGuard(vis);
                 monitorMgr->subscribe(
-                    mi, ci, [visGuard, mi, ci](const etest::engine::MonitorSample& sample) {
+                    monitorIndex, [visGuard](const etest::engine::MonitorSample& sample) {
                       if (visGuard) {
                         visGuard->onSampleCaptured(sample);
                       } else {
-                        LOG_WARN("VISUAL", "subscriber 回调 visGuard=null, mi={} ci={}", mi, ci);
+                        LOG_WARN("VISUAL", "subscriber 回调 visGuard=null");
                       }
                     });
-                dashboard_->visualizationArea()->addVisualizer(mi, ci, vis);
+                dashboard_->visualizationArea()->addVisualizer(monitorIndex, vis);
               }
             } else {
-              // 必须先取消订阅再删除 widget（防 callback 在野指针上触发）
-              monitorMgr->unsubscribe(mi, ci);
-              dashboard_->visualizationArea()->removeVisualizer(mi, ci);
+              monitorMgr->unsubscribe(monitorIndex);
+              dashboard_->visualizationArea()->removeVisualizer(monitorIndex);
             }
           });
 
   // ── 可视化区右键关闭 → 同步取消勾选信号树 ──
-  // 取消勾选会触发 checkStateChanged(false) → unsubscribe + removeVisualizer
   connect(dashboard_->visualizationArea(), &VisualizationArea::visualizerClosed,
-          this, [this](int mi, int ci) {
-            signal_tree_->uncheckChannel(mi, ci);
+          this, [this](int monitorIndex) {
+            signal_tree_->uncheckMonitor(monitorIndex);
           });
 
   // ── 如果引擎已就绪，立即加载监听器树 ──
@@ -933,7 +926,7 @@ void ExecutionPanelController::refreshMonitorTree() {
   }
   signal_tree_->setMonitorTree(mm->monitorTree(),
       dashboard_ ? dashboard_->visualizationArea()->activeChannels()
-                 : QList<QPair<int, int>>());
+                 : QList<int>());
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -945,11 +938,9 @@ void ExecutionPanelController::clearData() {
     return;
   }
   auto* visArea = dashboard_->visualizationArea();
-  QList<QPair<int, int> > channels = visArea->activeChannels();
-  for (int i = 0; i < channels.size(); ++i) {
-    int mi = channels.at(i).first;
-    int ci = channels.at(i).second;
-    SignalVisualizer* vis = visArea->visualizer(mi, ci);
+  QList<int> channels = visArea->activeChannels();
+  for (int mi : channels) {
+    SignalVisualizer* vis = visArea->visualizer(mi);
     if (vis) {
       vis->clearData();
     }

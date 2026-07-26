@@ -86,10 +86,10 @@ void WaveformWidget::initUi() {
 
 void WaveformWidget::onSampleCaptured(
     const etest::engine::MonitorSample& sample) {
-  int idx = findTraceIndex(sample.monitorIndex, sample.channelIndex);
+  int idx = findTraceIndex(sample.monitorIndex);
   if (idx < 0) {
-    LOG_DEBUG("WAVEFORM", "丢弃数据: mi={} ci={} eng={} (traces_={}, 无对应迹线)",
-              sample.monitorIndex, sample.channelIndex, sample.engValue,
+    LOG_DEBUG("WAVEFORM", "丢弃数据: mi={} eng={} (traces_={}, 无对应迹线)",
+              sample.monitorIndex, sample.engValue,
               traces_.size());
     return;
   }
@@ -147,11 +147,11 @@ void WaveformWidget::clearData() {
 // displayedSignals — 返回当前所有迹线的标识列表
 // ══════════════════════════════════════════════════════════════════════════════
 
-QList<QPair<int, int>> WaveformWidget::displayedSignals() const {
-  QList<QPair<int, int>> result;
+QList<int> WaveformWidget::displayedSignals() const {
+  QList<int> result;
   result.reserve(traces_.size());
   for (int i = 0; i < traces_.size(); ++i) {
-    result.append({traces_[i].monitorIndex, traces_[i].channelIndex});
+    result.append(traces_[i].monitorIndex);
   }
   return result;
 }
@@ -160,15 +160,13 @@ QList<QPair<int, int>> WaveformWidget::displayedSignals() const {
 // addTrace — 添加新迹线
 // ══════════════════════════════════════════════════════════════════════════════
 
-void WaveformWidget::addTrace(int monitorIndex, int channelIndex,
-                               const QColor& color) {
-  if (findTraceIndex(monitorIndex, channelIndex) >= 0) {
+void WaveformWidget::addTrace(int monitorIndex, const QColor& color) {
+  if (findTraceIndex(monitorIndex) >= 0) {
     return;
   }
 
   Trace trace;
   trace.monitorIndex = monitorIndex;
-  trace.channelIndex = channelIndex;
   trace.color = color;
 
   trace.graph = custom_plot_->addGraph();
@@ -184,10 +182,9 @@ void WaveformWidget::addTrace(int monitorIndex, int channelIndex,
 // removeTrace — 移除迹线
 // ══════════════════════════════════════════════════════════════════════════════
 
-void WaveformWidget::removeTrace(int monitorIndex, int channelIndex) {
+void WaveformWidget::removeTrace(int monitorIndex) {
   for (int i = 0; i < traces_.size(); ++i) {
-    if (traces_[i].monitorIndex == monitorIndex &&
-        traces_[i].channelIndex == channelIndex) {
+    if (traces_[i].monitorIndex == monitorIndex) {
       custom_plot_->removeGraph(traces_[i].graph);
       traces_.removeAt(i);
       custom_plot_->replot();
@@ -200,11 +197,9 @@ void WaveformWidget::removeTrace(int monitorIndex, int channelIndex) {
 // helper
 // ══════════════════════════════════════════════════════════════════════════════
 
-int WaveformWidget::findTraceIndex(int monitorIndex,
-                                    int channelIndex) const {
+int WaveformWidget::findTraceIndex(int monitorIndex) const {
   for (int i = 0; i < traces_.size(); ++i) {
-    if (traces_[i].monitorIndex == monitorIndex &&
-        traces_[i].channelIndex == channelIndex) {
+    if (traces_[i].monitorIndex == monitorIndex) {
       return i;
     }
   }

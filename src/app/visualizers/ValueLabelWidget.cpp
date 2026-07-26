@@ -43,7 +43,6 @@ void ValueLabelWidget::initUi() {
 
 void ValueLabelWidget::onSampleCaptured(const etest::engine::MonitorSample& sample) {
   monitor_index_ = sample.monitorIndex;
-  channel_index_ = sample.channelIndex;
 
   // 工程值
   value_label_->setText(QStringLiteral("%1").arg(sample.engValue, 0, 'f', 3));
@@ -67,12 +66,11 @@ void ValueLabelWidget::clearData() {
   raw_label_->setText(QStringLiteral("原始: --"));
   ts_label_->setText(QString());
   monitor_index_ = -1;
-  channel_index_ = -1;
 }
 
-QList<QPair<int, int>> ValueLabelWidget::displayedSignals() const {
-  if (monitor_index_ >= 0 && channel_index_ >= 0) {
-    return {{monitor_index_, channel_index_}};
+QList<int> ValueLabelWidget::displayedSignals() const {
+  if (monitor_index_ >= 0) {
+    return {monitor_index_};
   }
   return {};
 }

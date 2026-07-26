@@ -40,13 +40,13 @@ VisualizationArea::~VisualizationArea() {
 // addVisualizer — 添加可视化组件到网格
 // ══════════════════════════════════════════════════════════════════════════════
 
-void VisualizationArea::addVisualizer(int monitorIndex, int channelIndex,
+void VisualizationArea::addVisualizer(int monitorIndex,
                                        SignalVisualizer* visualizer) {
   if (!visualizer) {
     return;
   }
 
-  int key = (monitorIndex << 16) | channelIndex;
+  int key = monitorIndex;
 
   // 已存在则不重复添加
   if (items_.contains(key)) {
@@ -69,8 +69,8 @@ void VisualizationArea::addVisualizer(int monitorIndex, int channelIndex,
 // removeVisualizer — 移除某个可视化组件
 // ══════════════════════════════════════════════════════════════════════════════
 
-void VisualizationArea::removeVisualizer(int monitorIndex, int channelIndex) {
-  int key = (monitorIndex << 16) | channelIndex;
+void VisualizationArea::removeVisualizer(int monitorIndex) {
+  int key = monitorIndex;
   auto it = items_.find(key);
   if (it == items_.end()) {
     return;
@@ -88,9 +88,8 @@ void VisualizationArea::removeVisualizer(int monitorIndex, int channelIndex) {
 // visualizer — 按索引查找
 // ══════════════════════════════════════════════════════════════════════════════
 
-SignalVisualizer* VisualizationArea::visualizer(int monitorIndex,
-                                                 int channelIndex) const {
-  int key = (monitorIndex << 16) | channelIndex;
+SignalVisualizer* VisualizationArea::visualizer(int monitorIndex) const {
+  int key = monitorIndex;
   auto it = items_.constFind(key);
   if (it != items_.constEnd()) {
     return it->widget;
@@ -108,7 +107,7 @@ void VisualizationArea::clearAll() {
   // 该调用会 delete proxy 并 erase items_。emit 后 it/iter 可能已失效，必须重新查找。
   auto keys = items_.keys();
   for (int key : keys) {
-    emit visualizerClosed(key >> 16, key & 0xFFFF);
+    emit visualizerClosed(key);
 
     // emit 后该条目可能已被 removeVisualizer 删除，重新查找确认
     auto it = items_.find(key);
@@ -123,14 +122,8 @@ void VisualizationArea::clearAll() {
 // ══════════════════════════════════════════════════════════════════════════════
 // activeChannels — 当前活跃通道列表（供 syncProjectTopologies 恢复订阅使用）
 // ══════════════════════════════════════════════════════════════════════════════
-QList<QPair<int, int>> VisualizationArea::activeChannels() const {
-  QList<QPair<int, int>> channels;
-  channels.reserve(items_.size());
-  for (auto it = items_.constBegin(); it != items_.constEnd(); ++it) {
-    int key = it.key();
-    channels.append(qMakePair(key >> 16, key & 0xFFFF));
-  }
-  return channels;
+QList<int> VisualizationArea::activeChannels() const {
+  return items_.keys();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -179,14 +172,11 @@ void VisualizationArea::contextMenuEvent(QContextMenuEvent* event) {
     return;
   }
 
-  int monitorIndex = foundKey >> 16;
-  int channelIndex = foundKey & 0xFFFF;
-
   QMenu menu(this);
   QAction* closeAction = menu.addAction(QStringLiteral("关闭可视化"));
   if (menu.exec(event->globalPos()) == closeAction) {
-    emit visualizerClosed(monitorIndex, channelIndex);
-    removeVisualizer(monitorIndex, channelIndex);
+    emit visualizerClosed(foundKey);
+    removeVisualizer(foundKey);
   }
 }
 
