@@ -1,6 +1,7 @@
 #include "StepRunner.h"
 
 #include <QElapsedTimer>
+#include <QStringList>
 #include <QThread>
 #include <QtGlobal>
 
@@ -14,6 +15,35 @@
 #include <cmath>
 
 namespace etest::engine {
+
+namespace {
+
+// 根据 ResolvedSignal 拼接人类可读的 targetName。
+// 格式：deviceName/portName · nodePath
+// deviceName 为空 -> portName · nodePath
+// portName 为空 -> deviceName · nodePath
+// nodePath 为空 -> deviceName/portName
+// 全空 -> 空字符串
+QString buildTargetName(const ResolvedSignal& signal) {
+    QStringList parts;
+    if (!signal.deviceName.isEmpty()) {
+        parts.append(signal.deviceName);
+    }
+    if (!signal.portName.isEmpty()) {
+        parts.append(signal.portName);
+    }
+    QString prefix = parts.join(QLatin1Char('/'));
+
+    if (signal.nodePath.isEmpty()) {
+        return prefix;
+    }
+    if (prefix.isEmpty()) {
+        return signal.nodePath;
+    }
+    return prefix + QStringLiteral(" · ") + signal.nodePath;
+}
+
+}  // namespace
 
 // ==========================================================================
 // Construction
@@ -193,12 +223,16 @@ StepResult StepRunner::executeSingleStep(const TestStepData& step,
     if (!signal.valid) {
         result.setStatus(ERROR)
             .setMessage(QStringLiteral("Signal not found: ") + step.target);
+        result.targetName = step.target;
         result.elapsedMs = static_cast<int>(timer.elapsed());
         emit stepFinished(caseIndex, stepPath, result);
         return result;
     }
 
-    LOG_INFO("ENGINE", "执行步骤 [cmd={} target={}]", step.command.toStdString(), step.target.toStdString());
+    QString targetName = buildTargetName(signal);
+    LOG_INFO("ENGINE", "执行步骤 [cmd={} target={} targetName={}]",
+             step.command.toStdString(), step.target.toStdString(),
+             targetName.toStdString());
 
     // ── Dispatch by command type ──
     CommandType ct = commandType(step.command);
@@ -233,6 +267,7 @@ StepResult StepRunner::executeSingleStep(const TestStepData& step,
     result.stepPath = stepPath;
     result.command = step.command;
     result.target = step.target;
+    result.targetName = targetName;
     result.timestamp = QDateTime::currentDateTime();
     result.elapsedMs = static_cast<int>(timer.elapsed());
 

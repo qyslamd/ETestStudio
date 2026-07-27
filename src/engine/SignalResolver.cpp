@@ -44,8 +44,11 @@ ResolvedSignal SignalResolver::resolve(const QString& uuid) const {
     }
 
     result.deviceId = resolved->deviceId;
+    result.deviceName = resolved->deviceName;
     result.deviceType = resolved->deviceType;
     result.portName = resolved->portName;
+    result.frameName = resolved->frameName;
+    result.nodePath = resolved->nodePath;
 
     // ② 查 ICD Repository 补充编码属性
     fillFromIcd(result, resolved->frameName, resolved->nodePath);

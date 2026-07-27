@@ -37,9 +37,9 @@ void ExecutionOutputPanel::appendResult(
       "%4")
       .arg(ts.toHtmlEscaped(), color, icon,
            result.command.toHtmlEscaped());
-  if (!result.target.isEmpty()) {
+  if (!result.targetName.isEmpty()) {
     html += QStringLiteral(" <span style='color:#888888'>%1</span>")
-                .arg(result.target.toHtmlEscaped());
+                .arg(result.targetName.toHtmlEscaped());
   }
   if (result.elapsedMs > 0) {
     html += QStringLiteral(" <span style='color:%1'>(%2ms)</span>")

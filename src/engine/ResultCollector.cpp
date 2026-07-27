@@ -6,7 +6,6 @@
 #include <spdlog/spdlog.h>
 #include "StepRunner.h"
 #include "logger/Logger.h"
-#include "logger/Logger.h"
 
 namespace etest::engine {
 
@@ -259,6 +258,10 @@ QJsonObject ResultCollector::buildStepJson(const StepResult& step) {
 
   if (!step.target.isEmpty()) {
     obj["target"] = step.target;
+  }
+
+  if (!step.targetName.isEmpty()) {
+    obj["targetName"] = step.targetName;
   }
 
   obj["status"] = statusToString(step.status);

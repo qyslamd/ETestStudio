@@ -247,7 +247,7 @@ void ExecutionDebugWidget::onStepStarted(int caseIndex,
     QStringList segments = stepPath.split(QLatin1Char('/'));
     displayText = segments.last();
   } else {
-    displayText = QStringLiteral("%1 %2").arg(command).arg(target);
+    displayText = command;
   }
   item->setIcon(0, statusIcon(etest::engine::PENDING));
   item->setText(0, displayText);
@@ -273,11 +273,17 @@ void ExecutionDebugWidget::onStepFinished(
   }
 
   QTreeWidgetItem* item = it.value();
-  QString displayText =
-      QStringLiteral("%1 %2 (%3ms)")
-          .arg(result.command)
-          .arg(result.target)
-          .arg(result.elapsedMs);
+  QString displayText;
+  if (result.targetName.isEmpty()) {
+    displayText = QStringLiteral("%1 (%2ms)")
+                     .arg(result.command)
+                     .arg(result.elapsedMs);
+  } else {
+    displayText = QStringLiteral("%1 %2 (%3ms)")
+                     .arg(result.command)
+                     .arg(result.targetName)
+                     .arg(result.elapsedMs);
+  }
   item->setIcon(0, statusIcon(result.status));
   item->setText(0, displayText);
   item->setData(0, Qt::UserRole, static_cast<int>(result.status));

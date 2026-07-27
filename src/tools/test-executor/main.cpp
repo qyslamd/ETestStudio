@@ -22,6 +22,7 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPlainTextEdit>
+#include <QSet>
 #include <QSize>
 #include <QSplitter>
 #include <QStatusBar>
@@ -680,10 +681,16 @@ void MainWindow::addStepTreeItems(
     QString stepPath = QStringLiteral("%1.%2").arg(prefix).arg(j + 1);
 
     QString cmd = step.command;
-    QString target = step.target;
+    QString upperCmd = cmd.trimmed().toUpper();
+    // control-flow 步骤无信号 target，列留空；信号步骤的 target 是 UUID，运行时解析
+    static const QSet<QString> kControlFlow = {
+        QStringLiteral("DELAY"), QStringLiteral("LOOP"),
+        QStringLiteral("WHILE"), QStringLiteral("IF")};
+    QString target = kControlFlow.contains(upperCmd)
+                         ? QString()
+                         : QStringLiteral("(待解析)");
 
     // Determine if this step has sub-items
-    QString upperCmd = cmd.trimmed().toUpper();
     bool hasSubSteps =
         !step.subSteps.isEmpty() ||
         (upperCmd == QStringLiteral("IF") && !step.thenSteps.isEmpty());
@@ -721,7 +728,7 @@ void MainWindow::addStepTreeItems(
         QString subPath = QStringLiteral("%1.%2").arg(stepPath).arg(k + 1);
         const auto& sub = step.subSteps[k];
         auto* subItem = new QTreeWidgetItem(
-            {sub.command, sub.command, sub.target});
+            {sub.command, sub.command, QStringLiteral("(待解析)")});
         subItem->setData(0, StepPathRole, subPath);
         subItem->setData(0, CaseIndexRole, caseIndex);
         subItem->setToolTip(
@@ -750,7 +757,7 @@ void MainWindow::addStepTreeItems(
             QStringLiteral("%1.THEN.%2").arg(stepPath).arg(k + 1);
         const auto& ts = step.thenSteps[k];
         auto* thenItem = new QTreeWidgetItem(
-            {ts.command, ts.command, ts.target});
+            {ts.command, ts.command, QStringLiteral("(待解析)")});
         thenItem->setData(0, StepPathRole, thenPath);
         thenItem->setData(0, CaseIndexRole, caseIndex);
         thenItem->setToolTip(
@@ -765,7 +772,7 @@ void MainWindow::addStepTreeItems(
             QStringLiteral("%1.ELSE.%2").arg(stepPath).arg(k + 1);
         const auto& es = step.elseSteps[k];
         auto* elseItem = new QTreeWidgetItem(
-            {es.command, es.command, es.target});
+            {es.command, es.command, QStringLiteral("(待解析)")});
         elseItem->setData(0, StepPathRole, elsePath);
         elseItem->setData(0, CaseIndexRole, caseIndex);
         elseItem->setToolTip(
@@ -970,6 +977,9 @@ void MainWindow::onStepFinished(
     if (spaceIdx >= 0) {
       it.value()->setText(
           0, statusIcon(result.status) + text.mid(spaceIdx));
+    }
+    if (!result.targetName.isEmpty()) {
+      it.value()->setText(2, result.targetName);
     }
     // Color code by result
     it.value()->setBackground(0, QBrush());  // reset highlight

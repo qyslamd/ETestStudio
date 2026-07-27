@@ -124,7 +124,10 @@ TEST(SignalResolverTest, KnownUuidReturnsValid) {
     auto result = resolver.resolve(uuid);
     EXPECT_TRUE(result.valid);
     EXPECT_EQ(result.deviceId, "dev-fuel-001");
+    EXPECT_EQ(result.deviceName, "燃油阀门控制器");
     EXPECT_EQ(result.portName, "ch0");
+    EXPECT_EQ(result.frameName, "TestFrame");
+    EXPECT_EQ(result.nodePath, "业务数据/FuelValve");
 }
 
 // Test 4: 解析 ICD 节点属性（coeff, offset, unit, engMin, engMax）

@@ -564,8 +564,11 @@ int main(int argc, char* argv[]) {
             QTextStream out(stdout);
             QString detail = result.message.isEmpty()
                 ? QStringLiteral("OK") : result.message;
-            out << "    [" << stepPath << "] " << result.command
-                << " " << statusIcon(result.status)
+            out << "    [" << stepPath << "] " << result.command;
+            if (!result.targetName.isEmpty()) {
+                out << " " << result.targetName;
+            }
+            out << " " << statusIcon(result.status)
                 << " (" << result.elapsedMs << "ms)"
                 << " [" << detail << "]" << QT_ENDL;
 

@@ -68,6 +68,7 @@ struct StepResult {
     QString stepPath;
     QString command;
     QString target;
+    QString targetName;
     StepStatus status = PENDING;
     QString message;
     double actualValue = 0.0;

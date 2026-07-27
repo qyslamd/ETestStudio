@@ -30,6 +30,7 @@ TEST(ResultCollectorTest, BasicReportStructure) {
     stepResult.stepPath = "0";
     stepResult.command = "SET";
     stepResult.target = "uuid-abc123";
+    stepResult.targetName = QStringLiteral("燃油阀门控制器/ch0 · 业务数据/FuelValve");
     stepResult.status = PASS;
     stepResult.elapsedMs = 12;
     stepResult.timestamp = QDateTime::currentDateTime();
@@ -97,6 +98,8 @@ TEST(ResultCollectorTest, BasicReportStructure) {
     EXPECT_EQ(stepObj["path"].toString(), QStringLiteral("0"));
     EXPECT_EQ(stepObj["command"].toString(), QStringLiteral("SET"));
     EXPECT_EQ(stepObj["target"].toString(), QStringLiteral("uuid-abc123"));
+    EXPECT_EQ(stepObj["targetName"].toString(),
+              QStringLiteral("燃油阀门控制器/ch0 · 业务数据/FuelValve"));
     EXPECT_EQ(stepObj["status"].toString(), QStringLiteral("PASS"));
     EXPECT_EQ(stepObj["elapsedMs"].toInt(), 12);
     EXPECT_TRUE(stepObj.contains("timestamp"));
