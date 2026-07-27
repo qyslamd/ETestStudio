@@ -134,6 +134,22 @@
   - Phase 1 完成后，根据实际使用反馈再决定是否追加
   - 如果走 Lua 执行器路线，lua-debugger-demo 的 LuaDebugger 类几乎可直接复用（含 breakpoints + 变量 inspect + 调用栈）
 
+### StepValidation 校验器与 StepRunner 引擎命令列表不一致
+
+- **发现日期**: 2026-07-27
+- **来源**: 编写「命令演示」测试程序时发现
+- **现状**:
+  - `src/engine/StepRunner.cpp:700` 的 `commandType()` 支持 8 种命令：SET / CHECK / VERIFY / WAIT / DELAY / LOOP / WHILE / IF
+  - `src/test_program/StepValidation.cpp:18-24` 的 `validCommands` 列表只有 10 种：SET / VERIFY / WAIT / DELAY / ACTION / LOG / INJECT_FAULT / CLEAR_FAULT / PHOTO / RECORD
+  - **`CHECK` 在引擎层支持，但在校验器层缺失**，导致测试程序编辑器对 CHECK 命令报「未知命令类型: CHECK」
+- **影响**: 用户无法在测试程序编辑器中使用 CHECK 命令，必须用 VERIFY 替代（两者行为几乎一样，CHECK 用 `step.tolerance` double，VERIFY 用 `tolerance` 对象）
+- **建议**:
+  - 在 `validCommands` 列表中补上 `CHECK`
+  - 或统一 CHECK/VERIFY 为同一命令（如果确实没有语义差异）
+
+### 测试程序编辑器的布局存在一些小问题
+具体来说：TestProgramEditorWidget中间区域怎么是一个滚动区域啊，我的测试程序假设某个步骤校验不通过，由于它最顶层是一个滚动区域，这个Label就要滚动才能看到，体验很差
+
 ---
 
 ## 三、待讨论的开放问题

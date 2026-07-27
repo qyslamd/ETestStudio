@@ -259,16 +259,20 @@ void ExecutionPanelController::connectEngineSignals() {
             if (current_program_name_.isEmpty()) {
               return;
             }
-            auto& proj_mgr = etest::core::project::ProjectManager::instance();
-            QString report_dir =
-                proj_mgr.currentProjectRoot() + QStringLiteral("/reports");
-            QDir().mkpath(report_dir);
-            QString timestamp =
-                QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
-            QString etlog_path = report_dir + QStringLiteral("/") +
-                                 current_program_name_ + QStringLiteral("_") +
-                                 timestamp + QStringLiteral(".etlog");
-            engine_->saveReport(etlog_path);
+            if (run_segments_.isEmpty()) {
+              // 单程序运行：保存单个报告
+              saveSingleReport(current_program_name_);
+            } else {
+              // 合并运行：一次性 flush monitor 数据，再按程序分段保存
+              engine_->flushMonitorData();
+              QString timestamp =
+                  QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+              for (const auto& seg : run_segments_) {
+                saveSegmentReport(seg.name, seg.startCaseIndex,
+                                  seg.caseCount, timestamp);
+              }
+              run_segments_.clear();
+            }
           });
 }
 
@@ -499,10 +503,44 @@ void ExecutionPanelController::run() {
     return;
   }
 
-  // 4. 选中 ≥2 个 → 串行队列
+  // 4. 选中 >=2 个 -> 合并执行（不重建引擎）
   if (paths.size() > 1) {
-    run_queue_ = paths;
-    runNextInQueue();
+    etest::engine::ProgramData merged =
+        mergePrograms(paths, QStringLiteral("选中程序"));
+    if (merged.cases.isEmpty()) {
+      QMessageBox::warning(parent_widget_, QStringLiteral("运行"),
+                           QStringLiteral("选中的程序中没有可用测试用例"));
+      return;
+    }
+
+    createEngine();
+    if (!engine_) {
+      return;
+    }
+
+    syncProjectTopologies();
+
+    current_program_name_ = QStringLiteral("选中程序");
+    engine_->setProgram(merged);
+
+    pass_count_ = 0;
+    fail_count_ = 0;
+    if (status_bar_ctrl_) {
+      status_bar_ctrl_->setExecStats(0, 0, 0);
+    }
+
+    engine_->start();
+    if (dashboard_) {
+      dashboard_->setCurrentBottomTab(0);
+    }
+    if (editor_mgr_) {
+      for (auto* ed : editor_mgr_->allEditors()) {
+        ed->setReadOnly(true);
+      }
+    }
+    if (central_stack_) {
+      central_stack_->setCurrentIndex(1);
+    }
     return;
   }
 
@@ -565,7 +603,7 @@ void ExecutionPanelController::pause() {
 
 void ExecutionPanelController::stop() {
   LOG_INFO("MAIN_UI", "点击「停止」");
-  run_queue_.clear();  // 清空队列，防 engineFinished 推进下一个程序
+  run_segments_.clear();  // 清空分段，防 engineFinished 尝试切片未执行完的 cases
   if (engine_) {
     engine_->stop();
   }
@@ -711,9 +749,43 @@ void ExecutionPanelController::runAll() {
     return;
   }
 
-  // 4. 全集串行队列执行
-  run_queue_ = all_paths;
-  runNextInQueue();
+  // 4. 合并所有程序为单个 ProgramData 执行（不重建引擎）
+  etest::engine::ProgramData merged =
+      mergePrograms(all_paths, QStringLiteral("全部程序"));
+  if (merged.cases.isEmpty()) {
+    QMessageBox::warning(parent_widget_, QStringLiteral("运行全部"),
+                         QStringLiteral("没有可用的测试程序"));
+    return;
+  }
+
+  createEngine();
+  if (!engine_) {
+    return;
+  }
+
+  syncProjectTopologies();
+
+  current_program_name_ = QStringLiteral("全部程序");
+  engine_->setProgram(merged);
+
+  pass_count_ = 0;
+  fail_count_ = 0;
+  if (status_bar_ctrl_) {
+    status_bar_ctrl_->setExecStats(0, 0, 0);
+  }
+
+  engine_->start();
+  if (dashboard_) {
+    dashboard_->setCurrentBottomTab(0);
+  }
+  if (editor_mgr_) {
+    for (auto* ed : editor_mgr_->allEditors()) {
+      ed->setReadOnly(true);
+    }
+  }
+  if (central_stack_) {
+    central_stack_->setCurrentIndex(1);
+  }
 }
 
 bool ExecutionPanelController::checkUnsavedAndPrompt(const QStringList& paths) const {
@@ -774,76 +846,60 @@ bool ExecutionPanelController::checkUnsavedAndPrompt(const QStringList& paths) c
   return false;  // 取消
 }
 
-void ExecutionPanelController::runNextInQueue() {
-  if (run_queue_.isEmpty()) {
-    return;
-  }
+etest::engine::ProgramData ExecutionPanelController::mergePrograms(
+    const QStringList& paths, const QString& suiteName) {
+  run_segments_.clear();
 
-  // 加载队列中的下一个程序
-  QString path = run_queue_.first();
-  etest::app::TestProgramData data = loadTestProgram(path);
-  if (data.name.isEmpty() || data.cases.isEmpty()) {
-    run_queue_.removeFirst();
-    runNextInQueue();  // 跳过无效项
-    return;
-  }
+  etest::engine::ProgramData merged;
+  merged.suiteName = suiteName;
 
-  LOG_INFO("MAIN_UI", "队列执行测试程序 [name={}]", data.name.toStdString());
-
-  // 重置引擎（每次创建全新的引擎实例）
-  if (engine_) {
-    destroyEngine();
-  }
-  createEngine();
-  if (!engine_) {
-    run_queue_.clear();
-    return;
-  }
-
-  // 同步拓扑数据（mtime 没变则跳过，引擎重建后 tree_cache_ 为空走首次加载路径）
-  syncProjectTopologies();
-
-  // 设置程序数据
-  current_program_name_ = data.name;
-  engine_->setProgram(convertProgram(data));
-
-  // 重置统计
-  pass_count_ = 0;
-  fail_count_ = 0;
-  if (status_bar_ctrl_) {
-    status_bar_ctrl_->setExecStats(0, 0, 0);
-  }
-
-  // 引擎结束后触发下一个
-  connect(engine_, &etest::engine::TestExecutionEngine::engineFinished, this,
-          [this]() {
-            if (run_queue_.isEmpty()) {
-              return;  // 队列已空（runAll 完成 / stop 清空），不再推进
-            }
-            run_queue_.removeFirst();
-            runNextInQueue();
-          });
-
-  // 启动
-  engine_->start();
-  // 切到「输出」tab（运行中应看到运行日志）
-  if (dashboard_) {
-    dashboard_->setCurrentBottomTab(0);
-  }
-
-  // 所有编辑器置为只读
-  if (editor_mgr_) {
-    for (auto* ed : editor_mgr_->allEditors()) {
-      ed->setReadOnly(true);
+  int caseOffset = 0;
+  for (const QString& path : paths) {
+    etest::app::TestProgramData data = loadTestProgram(path);
+    if (data.name.isEmpty() || data.cases.isEmpty()) {
+      LOG_WARN("MAIN_UI", "跳过空或加载失败的程序 [path={}]",
+               path.toStdString());
+      continue;
     }
+
+    etest::engine::ProgramData prog = convertProgram(data);
+    merged.cases.append(prog.cases);
+    run_segments_.append({data.name, caseOffset, prog.cases.size()});
+    caseOffset += prog.cases.size();
+
+    LOG_INFO("MAIN_UI", "合并程序 [name={} cases={}]",
+             data.name.toStdString(), prog.cases.size());
   }
 
-  if (central_stack_) {
-    central_stack_->setCurrentIndex(1);
-  }
+  return merged;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+void ExecutionPanelController::saveSingleReport(const QString& programName) {
+  auto& proj_mgr = etest::core::project::ProjectManager::instance();
+  QString report_dir =
+      proj_mgr.currentProjectRoot() + QStringLiteral("/reports");
+  QDir().mkpath(report_dir);
+  QString timestamp =
+      QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+  QString etlog_path = report_dir + QStringLiteral("/") + programName +
+                       QStringLiteral("_") + timestamp +
+                       QStringLiteral(".etlog");
+  engine_->saveReport(etlog_path);
+}
+
+void ExecutionPanelController::saveSegmentReport(const QString& programName,
+                                                  int startCase,
+                                                  int caseCount,
+                                                  const QString& timestamp) {
+  auto& proj_mgr = etest::core::project::ProjectManager::instance();
+  QString report_dir =
+      proj_mgr.currentProjectRoot() + QStringLiteral("/reports");
+  QDir().mkpath(report_dir);
+  QString etlog_path = report_dir + QStringLiteral("/") + programName +
+                       QStringLiteral("_") + timestamp +
+                       QStringLiteral(".etlog");
+  engine_->saveReportSegment(etlog_path, programName, startCase, caseCount);
+}// ══════════════════════════════════════════════════════════════════════════════
 // setDashboard — 注入执行仪表盘并连接监听器信号
 // ══════════════════════════════════════════════════════════════════════════════
 

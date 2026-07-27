@@ -64,6 +64,13 @@ public:
 
     // -- 结果 --
     void saveReport(const QString& etlogPath);
+    /// 一次性 flush 监听器数据到 ResultCollector（合并运行分段保存前调用）
+    void flushMonitorData();
+    /// 分段保存报告（不 flush，依赖外部已调 flushMonitorData）
+    void saveReportSegment(const QString& etlogPath,
+                           const QString& suiteName,
+                           int startCase,
+                           int caseCount);
 
     // -- 进度 --
     int totalSteps() const;

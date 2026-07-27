@@ -334,6 +334,25 @@ void TestExecutionEngine::saveReport(const QString& etlogPath) {
     }
 }
 
+void TestExecutionEngine::flushMonitorData() {
+    if (collector_ && monitor_manager_) {
+        collector_->setMonitorData(monitor_manager_->flushSamples());
+    }
+}
+
+void TestExecutionEngine::saveReportSegment(const QString& etlogPath,
+                                             const QString& suiteName,
+                                             int startCase,
+                                             int caseCount) {
+    if (!collector_) {
+        LOG_WARN("ENGINE",
+                 "[TestExecutionEngine] No collector to save segment report");
+        return;
+    }
+    // 不 flush，依赖外部已调 flushMonitorData
+    collector_->saveSegmentToFile(etlogPath, suiteName, startCase, caseCount);
+}
+
 int TestExecutionEngine::totalSteps() const {
     return total_steps_;
 }

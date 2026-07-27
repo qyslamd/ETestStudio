@@ -349,4 +349,114 @@ void ResultCollector::saveToFile(const QString& etlogPath) {
   LOG_INFO("ResultCollector", "Wrote etlog: {}", etlogPath.toStdString());
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Segment export -- 按程序分段切分报告
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ResultCollector::traverseSteps(
+    const QJsonObject& step,
+    const std::function<void(const QJsonObject&)>& fn) {
+  fn(step);
+
+  // LOOP / WHILE 迭代子步骤
+  const QJsonArray iterations = step.value(QStringLiteral("iterations")).toArray();
+  for (const auto& iterVal : iterations) {
+    const QJsonObject iter = iterVal.toObject();
+    const QJsonArray subSteps = iter.value(QStringLiteral("subSteps")).toArray();
+    for (const auto& subVal : subSteps) {
+      traverseSteps(subVal.toObject(), fn);
+    }
+  }
+
+  // IF 分支子步骤
+  const QJsonObject branches = step.value(QStringLiteral("branches")).toObject();
+  if (!branches.isEmpty()) {
+    for (const auto& key : {QStringLiteral("then"), QStringLiteral("else")}) {
+      const QJsonArray branchSteps = branches.value(key).toArray();
+      for (const auto& subVal : branchSteps) {
+        traverseSteps(subVal.toObject(), fn);
+      }
+    }
+  }
+}
+
+void ResultCollector::saveSegmentToFile(const QString& etlogPath,
+                                        const QString& suiteName,
+                                        int startCase,
+                                        int caseCount) {
+  QJsonObject segment = current_report_;
+  segment[QStringLiteral("suiteName")] = suiteName;
+
+  // 切分 cases 数组
+  const QJsonArray allCases = segment.value(QStringLiteral("cases")).toArray();
+  QJsonArray segCases;
+  int totalSteps = 0;
+  int errorCount = 0;
+  int passCount = 0;
+  int failCount = 0;
+  int durationMs = 0;
+
+  for (int i = startCase; i < startCase + caseCount && i < allCases.size(); ++i) {
+    const QJsonObject caseObj = allCases[i].toObject();
+    segCases.append(caseObj);
+
+    durationMs += caseObj.value(QStringLiteral("durationMs")).toInt();
+
+    // 顶层步骤统计 pass/fail
+    const QJsonArray steps = caseObj.value(QStringLiteral("steps")).toArray();
+    for (const auto& stepVal : steps) {
+      const QJsonObject step = stepVal.toObject();
+      const QString status = step.value(QStringLiteral("status")).toString();
+      if (status == QStringLiteral("PASS")) {
+        ++passCount;
+      } else if (status == QStringLiteral("FAIL") ||
+                 status == QStringLiteral("TIMEOUT") ||
+                 status == QStringLiteral("ERROR")) {
+        ++failCount;
+      }
+
+      // 递归遍历所有步骤（含子步骤）统计 totalSteps 和 errorCount
+      traverseSteps(step, [&](const QJsonObject& s) {
+        ++totalSteps;
+        if (s.value(QStringLiteral("status")).toString() ==
+            QStringLiteral("ERROR")) {
+          ++errorCount;
+        }
+      });
+    }
+  }
+
+  segment[QStringLiteral("cases")] = segCases;
+
+  // 重算 summary
+  QJsonObject summary = segment.value(QStringLiteral("summary")).toObject();
+  summary[QStringLiteral("totalCases")] = segCases.size();
+  summary[QStringLiteral("totalSteps")] = totalSteps;
+  summary[QStringLiteral("passCount")] = passCount;
+  summary[QStringLiteral("failCount")] = failCount;
+  summary[QStringLiteral("errorCount")] = errorCount;
+  summary[QStringLiteral("durationMs")] = durationMs;
+  segment[QStringLiteral("summary")] = summary;
+
+  // monitor 数据完整保留
+  if (!monitor_data_.isEmpty()) {
+    segment[QStringLiteral("monitors")] = monitor_data_;
+  }
+
+  QFile file(etlogPath);
+  if (!file.open(QIODevice::WriteOnly)) {
+    LOG_ERROR("ResultCollector", "Cannot write segment etlog: {}",
+              etlogPath.toStdString());
+    return;
+  }
+
+  QJsonDocument doc(segment);
+  file.write(doc.toJson(QJsonDocument::Indented));
+  file.close();
+
+  LOG_INFO("ResultCollector", "Wrote segment etlog: {} [suite={} cases={}]",
+           etlogPath.toStdString(), suiteName.toStdString(),
+           segCases.size());
+}
+
 }  // namespace etest::engine

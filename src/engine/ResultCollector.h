@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
+#include <functional>
 
 namespace etest::engine {
 
@@ -21,6 +22,10 @@ class ResultCollector : public QObject {
 
     void attach(StepRunner* runner);
     void saveToFile(const QString& etlogPath);
+    void saveSegmentToFile(const QString& etlogPath,
+                           const QString& suiteName,
+                           int startCase,
+                           int caseCount);
     void setMonitorData(const QJsonArray& monitors);
     void clear();
 
@@ -36,6 +41,10 @@ class ResultCollector : public QObject {
     static QJsonObject buildIterationJson(const IterationResult& iteration);
     static QString statusToString(int status);
     static QString aggregateCaseStatus(const QJsonArray& steps);
+
+    // 递归遍历步骤树（含 LOOP/WHILE 迭代子步骤 + IF 分支子步骤）
+    static void traverseSteps(const QJsonObject& step,
+                              const std::function<void(const QJsonObject&)>& fn);
 
     QJsonObject current_report_;
     QJsonObject current_case_;

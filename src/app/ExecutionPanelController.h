@@ -3,6 +3,7 @@
 
 #include <QDateTime>
 #include <QHash>
+#include <QList>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -75,7 +76,6 @@ class ExecutionPanelController : public QObject {
   void stop();
   void verify();
   void runAll();
-  void runNextInQueue();
   /// 仅更新 run/runAll 的 enable 状态（不重算 verify）
   void updateRunControls();
 
@@ -136,6 +136,17 @@ class ExecutionPanelController : public QObject {
   bool checkCanRunAll() const;
   /// 运行前检测未保存文件并提示，返回 true 表示可以继续
   bool checkUnsavedAndPrompt(const QStringList& paths) const;
+
+  /// 合并多个测试程序为单个 ProgramData，记录各程序的 case 范围
+  etest::engine::ProgramData mergePrograms(const QStringList& paths,
+                                            const QString& suiteName);
+  /// 单程序报告保存（抽取自 engineFinished lambda）
+  void saveSingleReport(const QString& programName);
+  /// 分段报告保存（合并运行时按程序切分）
+  void saveSegmentReport(const QString& programName,
+                         int startCase, int caseCount,
+                         const QString& timestamp);
+
   // 引擎
   etest::engine::TestExecutionEngine* engine_ = nullptr;
 
@@ -153,7 +164,14 @@ class ExecutionPanelController : public QObject {
   int pass_count_ = 0;
   int fail_count_ = 0;
   QString current_program_name_;
-  QStringList run_queue_;
+
+  // 合并运行时的程序分段信息（run_segments_ 非空表示合并运行）
+  struct ProgramSegment {
+    QString name;         // 程序名（报告文件名用）
+    int startCaseIndex;   // 合并 ProgramData 中的起始 case 索引
+    int caseCount;        // 该程序的 case 数量
+  };
+  QList<ProgramSegment> run_segments_;
 
   // topology 文件 mtime 快照（供 syncProjectTopologies 判断变化）
   QHash<QString, QDateTime> topo_mtimes_;
