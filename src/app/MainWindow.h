@@ -116,6 +116,7 @@ class MainWindow : public SARibbonMainWindow {
   // 运行态/编辑态 Action 管理
   void disableEditActions();
   void enableEditActions();
+  void toggleSidebar();
 
   // QADS
   static void setupDockTitleBarButtons(ads::CDockAreaWidget* area);
@@ -171,6 +172,7 @@ class MainWindow : public SARibbonMainWindow {
   QMenu* recent_files_menu_ = nullptr;
   QAction* view_output_action_ = nullptr;
   QAction* view_terminal_action_ = nullptr;
+  QAction* view_sidebar_action_ = nullptr;
   QAction* view_aux_sidebar_action_ = nullptr;
   QAction* new_project_action_ = nullptr;
   QAction* open_project_action_ = nullptr;

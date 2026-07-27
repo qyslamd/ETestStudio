@@ -1,4 +1,4 @@
-﻿#include "MainWindow.h"
+#include "MainWindow.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -866,26 +866,10 @@ void MainWindow::initSignalsLate() {
 
   // VSCode风格快捷键
   // Ctrl+B 切换侧边栏
-  auto* toggleSidebar = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_B), this);
-  connect(toggleSidebar, &QShortcut::activated, this, [this]() {
+  auto* sidebarShortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_B), this);
+  connect(sidebarShortcut, &QShortcut::activated, this, [this]() {
     LOG_INFO("MAIN_UI", "快捷键 Ctrl+B 切换侧边栏");
-    if (sidebar_->isContentVisible()) {
-      auto sizes = h_splitter_->sizes();
-      if (!sizes.isEmpty()) {
-        sidebar_expanded_width_ = sizes[0];
-        sizes[0] = 0;
-        h_splitter_->setSizes(sizes);
-      }
-      sidebar_->hideContent();
-      activity_bar_->clearActivePage();
-    } else {
-      sidebar_->showContent();
-      auto sizes = h_splitter_->sizes();
-      if (!sizes.isEmpty()) {
-        sizes[0] = sidebar_expanded_width_;
-        h_splitter_->setSizes(sizes);
-      }
-    }
+    toggleSidebar();
   });
 
   // Ctrl+Shift+F 全局搜索
@@ -2272,6 +2256,57 @@ void MainWindow::setupRibbon() {
     panel_edit->addSmallAction(edit_find_action_);
     panel_edit->addSmallAction(edit_replace_action_);
     panel_edit->addSmallAction(edit_go_to_line_action_);
+
+    // 视图 Panel
+    auto* panel_view = cat->addPanel(QStringLiteral("视图"));
+
+    auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
+    act_welcome->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("welcome")));
+    connect(act_welcome, &QAction::triggered, this, [this]() {
+      LOG_INFO("MAIN_UI", "点击 Ribbon「欢迎页」");
+      auto* centralDock = dock_manager_->findDockWidget("CentralDock");
+      if (!centralDock)
+        return;
+      if (centralDock->isClosed())
+        centralDock->toggleView(true);
+      if (auto* area = centralDock->dockAreaWidget())
+        area->setCurrentIndex(0);
+    });
+    panel_view->addLargeAction(act_welcome);
+
+    panel_view->addSeparator();
+
+    view_sidebar_action_ = new QAction(QStringLiteral("侧边栏"), this);
+    view_sidebar_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("sidebar")));
+    view_sidebar_action_->setCheckable(true);
+    view_sidebar_action_->setChecked(true);
+    connect(view_sidebar_action_, &QAction::triggered, this, [this]() {
+      toggleSidebar();
+    });
+    panel_view->addSmallAction(view_sidebar_action_);
+
+    view_output_action_ = new QAction(QStringLiteral("日志"), this);
+    view_output_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("tab_output")));
+    view_output_action_->setCheckable(true);
+    view_output_action_->setChecked(true);
+    panel_view->addSmallAction(view_output_action_);
+
+    view_terminal_action_ = new QAction(QStringLiteral("终端"), this);
+    view_terminal_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("tab_terminal")));
+    view_terminal_action_->setCheckable(true);
+    view_terminal_action_->setChecked(true);
+    panel_view->addSmallAction(view_terminal_action_);
+
+    view_aux_sidebar_action_ = new QAction(QStringLiteral("辅助侧边栏"), this);
+    view_aux_sidebar_action_->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("sidebar")));
+    view_aux_sidebar_action_->setCheckable(true);
+    view_aux_sidebar_action_->setChecked(false);
+    panel_view->addSmallAction(view_aux_sidebar_action_);
   }
 
   // ============================================================
@@ -2324,51 +2359,6 @@ void MainWindow::setupRibbon() {
     // 统计 Panel
     auto* panel_stats = cat->addPanel(QStringLiteral("统计"));
     panel_stats->addSmallWidget(execution_controller_->ribbonStatsLabel());
-  }
-
-  // ============================================================
-  //  视图
-  // ============================================================
-  {
-    auto* cat = ribbon->addCategoryPage(QStringLiteral("视图"));
-
-    auto* panel_panels = cat->addPanel(QStringLiteral("面板"));
-
-    auto* act_welcome = new QAction(QStringLiteral("欢迎页"), this);
-    act_welcome->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("welcome")));
-    connect(act_welcome, &QAction::triggered, this, [this]() {
-      LOG_INFO("MAIN_UI", "点击 Ribbon「欢迎页」");
-      auto* centralDock = dock_manager_->findDockWidget("CentralDock");
-      if (!centralDock)
-        return;
-      if (centralDock->isClosed())
-        centralDock->toggleView(true);
-      if (auto* area = centralDock->dockAreaWidget())
-        area->setCurrentIndex(0);
-    });
-    panel_panels->addLargeAction(act_welcome);
-
-    view_output_action_ = new QAction(QStringLiteral("日志"), this);
-    view_output_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("tab_output")));
-    view_output_action_->setCheckable(true);
-    view_output_action_->setChecked(true);
-    panel_panels->addLargeAction(view_output_action_);
-
-    view_terminal_action_ = new QAction(QStringLiteral("终端"), this);
-    view_terminal_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("tab_terminal")));
-    view_terminal_action_->setCheckable(true);
-    view_terminal_action_->setChecked(true);
-    panel_panels->addLargeAction(view_terminal_action_);
-
-    view_aux_sidebar_action_ = new QAction(QStringLiteral("辅助侧边栏"), this);
-    view_aux_sidebar_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("sidebar")));
-    view_aux_sidebar_action_->setCheckable(true);
-    view_aux_sidebar_action_->setChecked(false);
-    panel_panels->addLargeAction(view_aux_sidebar_action_);
   }
 
   // ============================================================
@@ -2560,6 +2550,9 @@ void MainWindow::restoreWindowState() {
   } else {
     sidebar_->hideContent();
   }
+  if (view_sidebar_action_) {
+    view_sidebar_action_->setChecked(sidebarVisible);
+  }
   // 恢复侧边栏展开宽度
   sidebar_expanded_width_ = cfg.get<int>(CONFIG_SIDEBAR_EXPANDED_WIDTH, 280);
 
@@ -2588,6 +2581,33 @@ void MainWindow::setupDockTitleBarButtons(ads::CDockAreaWidget* area) {
 // ══════════════════════════════════════════════════════════════════════════════
 // disableEditActions — 切换到运行态时禁用编辑相关 action
 // ══════════════════════════════════════════════════════════════════════════════
+
+void MainWindow::toggleSidebar() {
+  LOG_INFO("MAIN_UI", "切换「侧边栏」");
+  if (sidebar_->isContentVisible()) {
+    auto sizes = h_splitter_->sizes();
+    if (!sizes.isEmpty()) {
+      sidebar_expanded_width_ = sizes[0];
+      sizes[0] = 0;
+      h_splitter_->setSizes(sizes);
+    }
+    sidebar_->hideContent();
+    activity_bar_->clearActivePage();
+    if (view_sidebar_action_) {
+      view_sidebar_action_->setChecked(false);
+    }
+  } else {
+    sidebar_->showContent();
+    auto sizes = h_splitter_->sizes();
+    if (!sizes.isEmpty()) {
+      sizes[0] = sidebar_expanded_width_;
+      h_splitter_->setSizes(sizes);
+    }
+    if (view_sidebar_action_) {
+      view_sidebar_action_->setChecked(true);
+    }
+  }
+}
 
 void MainWindow::disableEditActions() {
   save_action_->setEnabled(false);
