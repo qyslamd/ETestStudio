@@ -10,6 +10,7 @@
 #include <QVBoxLayout>
 
 #include "core/SignalRegistry.h"
+#include "core_ui/AppIconProvider.h"
 #include "engine/TestExecutionEngine.h"
 #include "icd/repository.hpp"
 #include "project/ProjectManager.h"
@@ -225,7 +226,9 @@ void ExecutionDebugWidget::onSuiteFinished(const QString& name, int pass,
 void ExecutionDebugWidget::onCaseStarted(int caseIndex, const QString& name) {
   case_names_[caseIndex] = name;
   auto* item = new QTreeWidgetItem(tree_progress_);
-  item->setText(0, QStringLiteral("□ %1").arg(name));
+  item->setIcon(0, etest::core_ui::AppIconProvider::instance().icon(
+                       QStringLiteral("status_case")));
+  item->setText(0, name);
   item->setExpanded(true);
   case_items_[caseIndex] = item;
 }
@@ -244,11 +247,9 @@ void ExecutionDebugWidget::onStepStarted(int caseIndex,
     QStringList segments = stepPath.split(QLatin1Char('/'));
     displayText = segments.last();
   } else {
-    displayText =
-        QStringLiteral("%1 %2 %3").arg(statusIcon(etest::engine::PENDING))
-            .arg(command)
-            .arg(target);
+    displayText = QStringLiteral("%1 %2").arg(command).arg(target);
   }
+  item->setIcon(0, statusIcon(etest::engine::PENDING));
   item->setText(0, displayText);
   item->setData(0, Qt::UserRole, static_cast<int>(etest::engine::PENDING));
 
@@ -273,11 +274,11 @@ void ExecutionDebugWidget::onStepFinished(
 
   QTreeWidgetItem* item = it.value();
   QString displayText =
-      QStringLiteral("%1 %2 %3 (%4ms)")
-          .arg(statusIcon(result.status))
+      QStringLiteral("%1 %2 (%3ms)")
           .arg(result.command)
           .arg(result.target)
           .arg(result.elapsedMs);
+  item->setIcon(0, statusIcon(result.status));
   item->setText(0, displayText);
   item->setData(0, Qt::UserRole, static_cast<int>(result.status));
 
@@ -320,41 +321,23 @@ void ExecutionDebugWidget::updateStats() {
   }
 }
 
-QString ExecutionDebugWidget::statusIcon(
+QIcon ExecutionDebugWidget::statusIcon(
     etest::engine::StepStatus status) const {
+  using etest::core_ui::AppIconProvider;
   switch (status) {
     case etest::engine::PASS:
-      return QStringLiteral("✅");
+      return AppIconProvider::instance().icon(QStringLiteral("status_pass"));
     case etest::engine::FAIL:
-      return QStringLiteral("❌");
+      return AppIconProvider::instance().icon(QStringLiteral("status_fail"));
     case etest::engine::TIMEOUT:
-      return QStringLiteral("⏱");
+      return AppIconProvider::instance().icon(QStringLiteral("status_timeout"));
     case etest::engine::SKIPPED:
-      return QStringLiteral("⬜");
+      return AppIconProvider::instance().icon(QStringLiteral("status_skipped"));
     case etest::engine::ERROR:
-      return QStringLiteral("❌");
+      return AppIconProvider::instance().icon(QStringLiteral("status_fail"));
     case etest::engine::PENDING:
     default:
-      return QStringLiteral("⏳");
-  }
-}
-
-QString ExecutionDebugWidget::statusHtmlColor(
-    etest::engine::StepStatus status) const {
-  switch (status) {
-    case etest::engine::PASS:
-      return QStringLiteral("#1B7A2B");
-    case etest::engine::FAIL:
-      return QStringLiteral("#C62828");
-    case etest::engine::TIMEOUT:
-      return QStringLiteral("#BD6B00");
-    case etest::engine::SKIPPED:
-      return QStringLiteral("#999999");
-    case etest::engine::ERROR:
-      return QStringLiteral("#C62828");
-    case etest::engine::PENDING:
-    default:
-      return QStringLiteral("#888888");
+      return AppIconProvider::instance().icon(QStringLiteral("status_pending"));
   }
 }
 

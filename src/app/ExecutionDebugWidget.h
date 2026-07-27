@@ -1,6 +1,7 @@
 #ifndef ETEST_APP_EXECUTION_DEBUG_WIDGET_H_
 #define ETEST_APP_EXECUTION_DEBUG_WIDGET_H_
 
+#include <QIcon>
 #include <QLabel>
 #include <QWidget>
 
@@ -60,8 +61,7 @@ class ExecutionDebugWidget : public QWidget {
   void initSignals();
   void updateStats();
   void checkPreconditions();
-  QString statusIcon(etest::engine::StepStatus status) const;
-  QString statusHtmlColor(etest::engine::StepStatus status) const;
+  QIcon statusIcon(etest::engine::StepStatus status) const;
   QTreeWidgetItem* findOrCreateStepItem(int caseIndex,
                                         const QString& stepPath);
 

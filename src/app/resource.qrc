@@ -232,6 +232,18 @@
         <file>resources/icons/svg/testprog_tab_horizontal_light.svg</file>
         <file>resources/icons/svg/testprog_tab_vertical_dark.svg</file>
         <file>resources/icons/svg/testprog_tab_vertical_light.svg</file>
+        <file>resources/icons/svg/status_pass_dark.svg</file>
+        <file>resources/icons/svg/status_pass_light.svg</file>
+        <file>resources/icons/svg/status_fail_dark.svg</file>
+        <file>resources/icons/svg/status_fail_light.svg</file>
+        <file>resources/icons/svg/status_timeout_dark.svg</file>
+        <file>resources/icons/svg/status_timeout_light.svg</file>
+        <file>resources/icons/svg/status_skipped_dark.svg</file>
+        <file>resources/icons/svg/status_skipped_light.svg</file>
+        <file>resources/icons/svg/status_pending_dark.svg</file>
+        <file>resources/icons/svg/status_pending_light.svg</file>
+        <file>resources/icons/svg/status_case_dark.svg</file>
+        <file>resources/icons/svg/status_case_light.svg</file>
         <file>resources/icons/svg/tab_output_dark.svg</file>
         <file>resources/icons/svg/tab_output_light.svg</file>
         <file>resources/icons/svg/tab_terminal_dark.svg</file>
