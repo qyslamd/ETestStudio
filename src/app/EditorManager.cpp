@@ -358,7 +358,7 @@ void EditorManager::openFile(const QString& filePath,
   }
 
   auto* dock = new ads::CDockWidget(fi.fileName());
-  dock->setWidget(editor->widget());
+  dock->setWidget(editor->widget(), ads::CDockWidget::ForceNoScrollArea);
   dock->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
   dock->setFeature(ads::CDockWidget::CustomCloseHandling, true);
   dock->tabWidget()->setElideMode(Qt::ElideNone);
@@ -647,7 +647,7 @@ void EditorManager::createEditor(const QString& editorType,
   }
 
   auto* dock = new ads::CDockWidget(title);
-  dock->setWidget(editor->widget());
+  dock->setWidget(editor->widget(), ads::CDockWidget::ForceNoScrollArea);
   dock->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
   dock->setFeature(ads::CDockWidget::CustomCloseHandling, true);
 

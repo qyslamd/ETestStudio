@@ -17,11 +17,12 @@ QStringList validateStep(const TestStepData& step) {
   // 通用：所有命令共用
   static const QStringList validCommands = [] {
     QStringList list = {
-        QStringLiteral("SET"),         QStringLiteral("VERIFY"),
-        QStringLiteral("WAIT"),        QStringLiteral("DELAY"),
-        QStringLiteral("ACTION"),      QStringLiteral("LOG"),
-        QStringLiteral("INJECT_FAULT"), QStringLiteral("CLEAR_FAULT"),
-        QStringLiteral("PHOTO"),       QStringLiteral("RECORD")};
+        QStringLiteral("SET"),         QStringLiteral("CHECK"),
+        QStringLiteral("VERIFY"),      QStringLiteral("WAIT"),
+        QStringLiteral("DELAY"),       QStringLiteral("ACTION"),
+        QStringLiteral("LOG"),         QStringLiteral("INJECT_FAULT"),
+        QStringLiteral("CLEAR_FAULT"), QStringLiteral("PHOTO"),
+        QStringLiteral("RECORD")};
     if (kControlFlowEnabled) {
       list << QStringLiteral("LOOP") << QStringLiteral("WHILE")
            << QStringLiteral("IF");
@@ -45,15 +46,15 @@ QStringList validateStep(const TestStepData& step) {
     if (step.target.trimmed().isEmpty()) {
       issues << QStringLiteral("SET: 目标不能为空");
     }
-  } else if (cmd == QStringLiteral("VERIFY")) {
+  } else if (cmd == QStringLiteral("CHECK") || cmd == QStringLiteral("VERIFY")) {
     if (step.target.trimmed().isEmpty()) {
-      issues << QStringLiteral("VERIFY: 目标不能为空");
+      issues << QStringLiteral("%1: 目标不能为空").arg(cmd);
     }
     if (!step.value.isValid() || step.value.toString().trimmed().isEmpty()) {
-      issues << QStringLiteral("VERIFY: 期望值不能为空");
+      issues << QStringLiteral("%1: 期望值不能为空").arg(cmd);
     }
     if (step.tolerance.enabled && step.tolerance.min > step.tolerance.max) {
-      issues << QStringLiteral("VERIFY: 容差下限不能大于上限");
+      issues << QStringLiteral("%1: 容差下限不能大于上限").arg(cmd);
     }
   } else if (cmd == QStringLiteral("WAIT")) {
     if (step.condition.target.trimmed().isEmpty()) {
