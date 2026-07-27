@@ -379,7 +379,10 @@ void EtlogViewerWidget::populateStepDetail(const QJsonObject& step) {
           .arg(colorForStatus(status).name()));
 
   detail_command_->setText(step["command"].toString());
-  detail_target_->setText(step["target"].toString());
+  QString targetDisplay = step.contains("targetName")
+                              ? step["targetName"].toString()
+                              : step["target"].toString();
+  detail_target_->setText(targetDisplay);
 
   detail_expected_->setText(step.contains("expectedValue")
                                 ? QString::number(step["expectedValue"].toDouble())
@@ -571,7 +574,9 @@ QList<QStandardItem*> EtlogViewerWidget::createStepRow(const QJsonObject& step,
                                                         const QString& path) {
   QString status = step["status"].toString();
   QString cmd = step["command"].toString();
-  QString target = step["target"].toString();
+  QString target = step.contains("targetName")
+                       ? step["targetName"].toString()
+                       : step["target"].toString();
   int elapsed = step["elapsedMs"].toInt();
 
   auto* item0 = new QStandardItem(cmd);

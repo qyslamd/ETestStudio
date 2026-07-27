@@ -285,6 +285,7 @@ if (!result.targetName.isEmpty()) {
 | `src/engine/StepRunner.cpp` | 修改 | `executeSingleStep` 填充 `targetName`；`LOG_INFO`（L201）同时打印 `targetName` |
 | `src/app/ExecutionDebugWidget.cpp` | 修改 | `onStepStarted`/`onStepFinished` 消费 `targetName` |
 | `src/app/widgets/ExecutionOutputPanel.cpp` | 修改 | `appendResult` 改用 `result.targetName` 展示 |
+| `src/app/editors/EtlogViewerWidget.cpp` | 修改 | etlog 回看优先读 `targetName`，旧 etlog 回退到 `target` |
 | `src/engine/ResultCollector.cpp` | 修改 | `buildStepJson` 追加 `targetName` 序列化 |
 | `src/tools/test-executor/main.cpp` | 修改 | `addStepTreeItems` 加载阶段填"(待解析)"；`onStepFinished` 更新第 2 列 |
 | `src/tools/test-executor-cli/main.cpp` | 修改 | 同步改造 `targetName` 展示 |
