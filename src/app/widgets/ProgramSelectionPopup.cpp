@@ -1,13 +1,14 @@
 #include "ProgramSelectionPopup.h"
 
-#include <QFileInfo>
 #include <QDir>
-#include <QVBoxLayout>
+#include <QFileInfo>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QWidgetAction>
 
-#include "ProjectManager.h"
+#include "AppIconProvider.h"
 #include "ProjectInfo.h"
+#include "ProjectManager.h"
 #include "logger/Logger.h"
 
 namespace etest::app {
@@ -18,10 +19,14 @@ ProgramSelectionPopup::ProgramSelectionPopup(QWidget* parent)
   layout->setContentsMargins(0, 0, 0, 0);
 
   button_ = new QToolButton(this);
+  button_->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("testprogram")));
+  button_->setIconSize(QSize(16, 16));
   button_->setText(QStringLiteral("程序选择"));
   button_->setToolTip(QStringLiteral("选择要运行的测试程序"));
   button_->setPopupMode(QToolButton::InstantPopup);
-  button_->setMinimumWidth(120);
+  button_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  // button_->setMinimumWidth(120);
 
   menu_ = new QMenu(this);
   list_widget_ = new QListWidget(menu_);
@@ -29,11 +34,11 @@ ProgramSelectionPopup::ProgramSelectionPopup(QWidget* parent)
   list_widget_->setMinimumWidth(250);
   list_widget_->setMaximumHeight(300);
 
-  connect(list_widget_, &QListWidget::itemChanged,
-          this, &ProgramSelectionPopup::onItemChanged);
+  connect(list_widget_, &QListWidget::itemChanged, this,
+          &ProgramSelectionPopup::onItemChanged);
   // 菜单弹出前刷新列表
-  connect(menu_, &QMenu::aboutToShow,
-          this, &ProgramSelectionPopup::refreshList);
+  connect(menu_, &QMenu::aboutToShow, this,
+          &ProgramSelectionPopup::refreshList);
 
   // QWidgetAction 将 list widget 嵌入 menu
   auto* widget_action = new QWidgetAction(menu_);
@@ -80,13 +85,12 @@ void ProgramSelectionPopup::refreshList() {
   scanPrograms();
 
   for (const QString& path : all_paths_) {
-    auto* item = new QListWidgetItem(QFileInfo(path).completeBaseName(),
-                                     list_widget_);
+    auto* item =
+        new QListWidgetItem(QFileInfo(path).completeBaseName(), list_widget_);
     item->setData(Qt::UserRole, path);
     item->setToolTip(path);
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-    item->setCheckState(selected_.contains(path) ? Qt::Checked
-                                                  : Qt::Unchecked);
+    item->setCheckState(selected_.contains(path) ? Qt::Checked : Qt::Unchecked);
   }
 
   // 修剪已删除文件的选中状态
@@ -108,8 +112,8 @@ void ProgramSelectionPopup::scanPrograms() {
     return;
   }
 
-  all_paths_ = project->scanDirectory(
-      QStringLiteral("cases"), QStringLiteral("etprog"));
+  all_paths_ =
+      project->scanDirectory(QStringLiteral("cases"), QStringLiteral("etprog"));
 }
 
 void ProgramSelectionPopup::onItemChanged(QListWidgetItem* item) {
@@ -129,8 +133,7 @@ void ProgramSelectionPopup::onItemChanged(QListWidgetItem* item) {
 void ProgramSelectionPopup::updateButtonText() {
   int n = selectedCount();
   if (n > 0) {
-    button_->setText(
-        QStringLiteral("已选 %1 个").arg(n));
+    button_->setText(QStringLiteral("已选 %1 个").arg(n));
   } else {
     button_->setText(QStringLiteral("程序选择"));
   }

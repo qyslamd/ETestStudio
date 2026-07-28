@@ -38,7 +38,6 @@
 #include "dialogs/LoginDialog.h"
 #include "dialogs/UserManagerDialog.h"
 
-
 #include "SARibbonBar.h"
 #include "SARibbonCategory.h"
 #include "SARibbonPanel.h"
@@ -318,12 +317,10 @@ void MainWindow::initSignalsEarly() {
           });
 
   // 引擎状态 -> 编辑锁
-  connect(execution_controller_,
-          &ExecutionPanelController::engineStateChanged, this,
-          [this](etest::engine::EngineState state) {
-            bool locked =
-                (state == etest::engine::EngineState::Running ||
-                 state == etest::engine::EngineState::Paused);
+  connect(execution_controller_, &ExecutionPanelController::engineStateChanged,
+          this, [this](etest::engine::EngineState state) {
+            bool locked = (state == etest::engine::EngineState::Running ||
+                           state == etest::engine::EngineState::Paused);
             running_locked_ = locked;
             if (locked) {
               disableEditActions();
@@ -759,7 +756,8 @@ void MainWindow::initSignalsLate() {
             current_editor_selection_connection_ =
                 connect(sci_editor, &QsciScintilla::selectionChanged, this,
                         [this, sci_editor]() {
-                          if (running_locked_) return;
+                          if (running_locked_)
+                            return;
                           bool hasSelection = sci_editor->hasSelectedText();
                           edit_cut_action_->setEnabled(hasSelection);
                           edit_copy_action_->setEnabled(hasSelection);
@@ -768,7 +766,8 @@ void MainWindow::initSignalsLate() {
             current_editor_state_connection_ =
                 connect(textEditor, &TextEditorWidget::editorStateChanged, this,
                         [this, editor]() {
-                          if (running_locked_) return;
+                          if (running_locked_)
+                            return;
                           edit_undo_action_->setEnabled(editor->canUndo());
                           edit_redo_action_->setEnabled(editor->canRedo());
                         });
@@ -781,7 +780,8 @@ void MainWindow::initSignalsLate() {
             auto* stack = topoEditor->document()->undoStack();
             current_editor_state_connection_ = connect(
                 stack, &QUndoStack::indexChanged, this, [this, editor]() {
-                  if (running_locked_) return;
+                  if (running_locked_)
+                    return;
                   edit_undo_action_->setEnabled(editor->canUndo());
                   edit_redo_action_->setEnabled(editor->canRedo());
                 });
@@ -817,7 +817,8 @@ void MainWindow::initSignalsLate() {
         edit_find_action_->setEnabled(hasEditor);
         edit_replace_action_->setEnabled(hasEditor);
         edit_go_to_line_action_->setEnabled(hasEditor);
-        if (running_locked_) disableEditActions();
+        if (running_locked_)
+          disableEditActions();
       });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
@@ -887,7 +888,8 @@ void MainWindow::initSignalsLate() {
 
   // VSCode风格快捷键
   // Ctrl+B 切换侧边栏
-  auto* sidebarShortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_B), this);
+  auto* sidebarShortcut =
+      new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_B), this);
   connect(sidebarShortcut, &QShortcut::activated, this, [this]() {
     LOG_INFO("MAIN_UI", "快捷键 Ctrl+B 切换侧边栏");
     toggleSidebar();
@@ -1951,7 +1953,6 @@ void MainWindow::showEvent(QShowEvent* event) {
     first_show_ = false;
     onThemeChanged(ThemeManager::instance().isDarkTheme());
   }
-
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
@@ -2301,9 +2302,8 @@ void MainWindow::setupRibbon() {
         AppIconProvider::instance().icon(QStringLiteral("sidebar")));
     view_sidebar_action_->setCheckable(true);
     view_sidebar_action_->setChecked(true);
-    connect(view_sidebar_action_, &QAction::triggered, this, [this]() {
-      toggleSidebar();
-    });
+    connect(view_sidebar_action_, &QAction::triggered, this,
+            [this]() { toggleSidebar(); });
     panel_view->addSmallAction(view_sidebar_action_);
 
     view_output_action_ = new QAction(QStringLiteral("日志"), this);
@@ -2358,6 +2358,8 @@ void MainWindow::setupRibbon() {
         AppIconProvider::instance().icon(QStringLiteral("pause")));
     execution_controller_->stopAction()->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("stop")));
+    execution_controller_->clearDataAction()->setIcon(
+        AppIconProvider::instance().icon(QStringLiteral("clear")));
     panel_control->addLargeAction(execution_controller_->runAction());
     panel_control->addLargeAction(execution_controller_->runAllAction());
     panel_control->addSmallAction(execution_controller_->pauseAction());
@@ -2383,7 +2385,7 @@ void MainWindow::setupRibbon() {
   // ============================================================
   //  工具（独立工具启动入口，暂时关闭，后续按需恢复）
   // ============================================================
-  if (false) {
+  if (true) {
     auto* cat = ribbon->addCategoryPage(QStringLiteral("工具"));
 
     auto* panel_tools = cat->addPanel(QStringLiteral("工具"));
