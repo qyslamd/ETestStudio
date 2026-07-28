@@ -4,13 +4,13 @@
 
 #include <QDateTime>
 #include <QDialog>
-#include <QVBoxLayout>
 #include <QDir>
 #include <QFileInfo>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPointer>
 #include <QStackedWidget>
+#include <QVBoxLayout>
 #include <QWidget>
 #include "ExecutionDashboard.h"
 #include "SignalTreePanel.h"
@@ -20,11 +20,11 @@
 #include "visualizers/VisualizerFactory.h"
 #include "visualizers/WaveformWidget.h"
 
-
 #include "AppIconProvider.h"
 #include "AppStatusBarController.h"
 #include "EditorManager.h"
 #include "ExecutionDebugWidget.h"
+#include "ProjectInfo.h"
 #include "SignalRegistry.h"
 #include "TestProgramManagerWidget.h"
 #include "api/IEditor.h"
@@ -37,11 +37,9 @@
 #include "project/ProjectManager.h"
 #include "test_program/TestProgramData.h"
 #include "test_program/TestProgramEditorWidget.h"
-#include "ProjectInfo.h"
-#include "widgets/ProgramSelectionPopup.h"
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
-
+#include "widgets/ProgramSelectionPopup.h"
 
 using namespace etest::core::config;
 using etest::core_ui::AppIconProvider;
@@ -108,7 +106,8 @@ ExecutionPanelController::ExecutionPanelController(QWidget* parent_widget,
       new QAction(QIcon(), QStringLiteral("运行全部"), parent_widget_);
   label_ribbon_stats_ =
       new QLabel(QStringLiteral("P 0  F 0  T 0s"), parent_widget_);
-  act_clear_data_ = new QAction(QIcon(), QStringLiteral("清空数据"), parent_widget_);
+  act_clear_data_ =
+      new QAction(QIcon(), QStringLiteral("清空数据"), parent_widget_);
   act_clear_data_->setEnabled(false);
   connect(act_clear_data_, &QAction::triggered, this,
           &ExecutionPanelController::clearData);
@@ -268,8 +267,8 @@ void ExecutionPanelController::connectEngineSignals() {
               QString timestamp =
                   QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
               for (const auto& seg : run_segments_) {
-                saveSegmentReport(seg.name, seg.startCaseIndex,
-                                  seg.caseCount, timestamp);
+                saveSegmentReport(seg.name, seg.startCaseIndex, seg.caseCount,
+                                  timestamp);
               }
               run_segments_.clear();
             }
@@ -279,7 +278,8 @@ void ExecutionPanelController::connectEngineSignals() {
 void ExecutionPanelController::syncControlStates() {
   // 刷新 popup 程序列表，确保状态检查时列表已填充
   // refreshList() 保留已有选中状态（selected_），不会丢失用户选择
-  if (popup_ && etest::core::project::ProjectManager::instance().isProjectOpen()) {
+  if (popup_ &&
+      etest::core::project::ProjectManager::instance().isProjectOpen()) {
     popup_->refreshList();
   }
 
@@ -290,6 +290,10 @@ void ExecutionPanelController::syncControlStates() {
     act_stop_->setEnabled(false);
     act_verify_->setEnabled(checkCanVerify());
     act_clear_data_->setEnabled(false);
+    bool projectOpen =
+        etest::core::project::ProjectManager::instance().isProjectOpen();
+    popup_->setEnabled(projectOpen);
+    act_select_channels_->setEnabled(projectOpen);
     return;
   }
   auto state = engine_->state();
@@ -302,6 +306,8 @@ void ExecutionPanelController::syncControlStates() {
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(checkCanVerify());
       act_clear_data_->setEnabled(true);
+      popup_->setEnabled(true);
+      act_select_channels_->setEnabled(true);
       break;
     case etest::engine::EngineState::Running:
       act_run_->setEnabled(false);
@@ -313,6 +319,8 @@ void ExecutionPanelController::syncControlStates() {
       act_stop_->setEnabled(true);
       act_verify_->setEnabled(false);
       act_clear_data_->setEnabled(false);
+      popup_->setEnabled(false);
+      act_select_channels_->setEnabled(false);
       break;
     case etest::engine::EngineState::Paused:
       act_run_->setEnabled(false);
@@ -324,6 +332,8 @@ void ExecutionPanelController::syncControlStates() {
       act_stop_->setEnabled(true);
       act_verify_->setEnabled(false);
       act_clear_data_->setEnabled(false);
+      popup_->setEnabled(false);
+      act_select_channels_->setEnabled(false);
       break;
     case etest::engine::EngineState::Error:
       act_run_->setEnabled(checkCanRun());
@@ -332,6 +342,8 @@ void ExecutionPanelController::syncControlStates() {
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(checkCanVerify());
       act_clear_data_->setEnabled(true);
+      popup_->setEnabled(true);
+      act_select_channels_->setEnabled(true);
       break;
   }
 }
@@ -384,8 +396,10 @@ void ExecutionPanelController::updateRunControls() {
   act_verify_->setEnabled(checkCanVerify());
 }
 
-// 清空 MonitorManager 的结构（lookup_table_/tree_cache_/subscribers_）与运行时数据（buffer_）。
-// 注意：clearStructure 会清空 subscribers_，dashboard 中的可视化组件将收不到后续采样，
+// 清空 MonitorManager
+// 的结构（lookup_table_/tree_cache_/subscribers_）与运行时数据（buffer_）。
+// 注意：clearStructure 会清空 subscribers_，dashboard
+// 中的可视化组件将收不到后续采样，
 // 用户需重新勾选通道恢复订阅。此为已知权衡（拓扑变化属低频场景，订阅恢复逻辑脆弱已移除）。
 void ExecutionPanelController::clearMonitorState() {
   if (monitor_manager_) {
@@ -436,8 +450,8 @@ void ExecutionPanelController::syncProjectTopologies() {
 
   // ── tree_cache_ 非空：检测拓扑变化 ──
 
-  // mtime 快照为空但树已有数据（setDashboard → refreshMonitorTree 早于首次 syncProjectTopologies）
-  // 直接记录快照并跳过，无需重建
+  // mtime 快照为空但树已有数据（setDashboard → refreshMonitorTree 早于首次
+  // syncProjectTopologies） 直接记录快照并跳过，无需重建
   if (topo_mtimes_.isEmpty()) {
     for (const QFileInfo& fi : topo_files) {
       topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
@@ -603,7 +617,8 @@ void ExecutionPanelController::pause() {
 
 void ExecutionPanelController::stop() {
   LOG_INFO("MAIN_UI", "点击「停止」");
-  run_segments_.clear();  // 清空分段，防 engineFinished 尝试切片未执行完的 cases
+  run_segments_
+      .clear();  // 清空分段，防 engineFinished 尝试切片未执行完的 cases
   if (engine_) {
     engine_->stop();
   }
@@ -633,8 +648,7 @@ void ExecutionPanelController::verify() {
   bool project_open = proj_mgr.isProjectOpen();
   if (!project_open) {
     problems->addProblem(NavTarget::Project, QStringLiteral("项目"),
-                         QStringLiteral("错误"),
-                         QStringLiteral("未打开项目"));
+                         QStringLiteral("错误"), QStringLiteral("未打开项目"));
     errors++;
   }
 
@@ -788,7 +802,8 @@ void ExecutionPanelController::runAll() {
   }
 }
 
-bool ExecutionPanelController::checkUnsavedAndPrompt(const QStringList& paths) const {
+bool ExecutionPanelController::checkUnsavedAndPrompt(
+    const QStringList& paths) const {
   if (!editor_mgr_) {
     return true;
   }
@@ -808,15 +823,18 @@ bool ExecutionPanelController::checkUnsavedAndPrompt(const QStringList& paths) c
   // 弹模态确认框
   QString msg = QStringLiteral("以下测试程序有未保存的修改：\n\n");
   for (const auto& f : unsavedFiles) {
-    msg += QStringLiteral("  ") + QFileInfo(f).fileName() + QStringLiteral("\n");
+    msg +=
+        QStringLiteral("  ") + QFileInfo(f).fileName() + QStringLiteral("\n");
   }
   msg += QStringLiteral("\n请选择操作：");
 
   QMessageBox box(parent_widget_);
   box.setWindowTitle(QStringLiteral("运行前保存"));
   box.setText(msg);
-  auto* saveBtn = box.addButton(QStringLiteral("保存并运行"), QMessageBox::AcceptRole);
-  auto* runBtn = box.addButton(QStringLiteral("不保存运行"), QMessageBox::DestructiveRole);
+  auto* saveBtn =
+      box.addButton(QStringLiteral("保存并运行"), QMessageBox::AcceptRole);
+  auto* runBtn =
+      box.addButton(QStringLiteral("不保存运行"), QMessageBox::DestructiveRole);
   box.addButton(QStringLiteral("取消"), QMessageBox::RejectRole);
   box.exec();
 
@@ -828,10 +846,9 @@ bool ExecutionPanelController::checkUnsavedAndPrompt(const QStringList& paths) c
       for (auto* editor : editor_mgr_->allEditors()) {
         if (editor->filePath() == f && editor->isModified()) {
           if (!editor->save()) {
-            QMessageBox::warning(
-                const_cast<QWidget*>(parent_widget_),
-                QStringLiteral("保存失败"),
-                QStringLiteral("无法保存文件: %1").arg(f));
+            QMessageBox::warning(const_cast<QWidget*>(parent_widget_),
+                                 QStringLiteral("保存失败"),
+                                 QStringLiteral("无法保存文件: %1").arg(f));
             return false;
           }
           break;
@@ -847,7 +864,8 @@ bool ExecutionPanelController::checkUnsavedAndPrompt(const QStringList& paths) c
 }
 
 etest::engine::ProgramData ExecutionPanelController::mergePrograms(
-    const QStringList& paths, const QString& suiteName) {
+    const QStringList& paths,
+    const QString& suiteName) {
   run_segments_.clear();
 
   etest::engine::ProgramData merged;
@@ -867,8 +885,8 @@ etest::engine::ProgramData ExecutionPanelController::mergePrograms(
     run_segments_.append({data.name, caseOffset, prog.cases.size()});
     caseOffset += prog.cases.size();
 
-    LOG_INFO("MAIN_UI", "合并程序 [name={} cases={}]",
-             data.name.toStdString(), prog.cases.size());
+    LOG_INFO("MAIN_UI", "合并程序 [name={} cases={}]", data.name.toStdString(),
+             prog.cases.size());
   }
 
   return merged;
@@ -879,8 +897,7 @@ void ExecutionPanelController::saveSingleReport(const QString& programName) {
   QString report_dir =
       proj_mgr.currentProjectRoot() + QStringLiteral("/reports");
   QDir().mkpath(report_dir);
-  QString timestamp =
-      QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+  QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
   QString etlog_path = report_dir + QStringLiteral("/") + programName +
                        QStringLiteral("_") + timestamp +
                        QStringLiteral(".etlog");
@@ -888,9 +905,9 @@ void ExecutionPanelController::saveSingleReport(const QString& programName) {
 }
 
 void ExecutionPanelController::saveSegmentReport(const QString& programName,
-                                                  int startCase,
-                                                  int caseCount,
-                                                  const QString& timestamp) {
+                                                 int startCase,
+                                                 int caseCount,
+                                                 const QString& timestamp) {
   auto& proj_mgr = etest::core::project::ProjectManager::instance();
   QString report_dir =
       proj_mgr.currentProjectRoot() + QStringLiteral("/reports");
@@ -899,7 +916,7 @@ void ExecutionPanelController::saveSegmentReport(const QString& programName,
                        QStringLiteral("_") + timestamp +
                        QStringLiteral(".etlog");
   engine_->saveReportSegment(etlog_path, programName, startCase, caseCount);
-}// ══════════════════════════════════════════════════════════════════════════════
+}  // ══════════════════════════════════════════════════════════════════════════════
 // setDashboard — 注入执行仪表盘并连接监听器信号
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -918,7 +935,8 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
   // ── 可视化区右键关闭 → 同步取消勾选信号树 ──
   connect(dashboard_->visualizationArea(), &VisualizationArea::visualizerClosed,
           this, [this](int monitorIndex) {
-            if (signal_tree_) signal_tree_->uncheckMonitor(monitorIndex);
+            if (signal_tree_)
+              signal_tree_->uncheckMonitor(monitorIndex);
           });
 
   // ── 如果引擎已就绪，立即加载监听器树 ──
@@ -930,9 +948,10 @@ void ExecutionPanelController::refreshMonitorTree() {
   if (!mm || !signal_tree_) {
     return;
   }
-  signal_tree_->setMonitorTree(mm->monitorTree(),
-      dashboard_ ? dashboard_->visualizationArea()->activeChannels()
-                 : QList<int>());
+  signal_tree_->setMonitorTree(
+      mm->monitorTree(), dashboard_
+                             ? dashboard_->visualizationArea()->activeChannels()
+                             : QList<int>());
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -969,10 +988,12 @@ void ExecutionPanelController::clearData() {
 void ExecutionPanelController::clearProjectState() {
   // 清理 UI
   if (dashboard_) {
-    // 先清可视化组件（clearAll 发射 visualizerClosed → uncheckChannel 回调需 node_map_ 有效）
+    // 先清可视化组件（clearAll 发射 visualizerClosed → uncheckChannel 回调需
+    // node_map_ 有效）
     dashboard_->visualizationArea()->clearAll();
     // 再清树
-    if (signal_tree_) signal_tree_->clearTree();
+    if (signal_tree_)
+      signal_tree_->clearTree();
   }
   // 清理 MonitorManager 结构与运行时数据（项目切换时避免残留）
   clearMonitorState();
@@ -984,6 +1005,8 @@ void ExecutionPanelController::showChannelSelectionDialog() {
   if (!signal_tree_dialog_) {
     signal_tree_dialog_ = new QDialog(parent_widget_);
     signal_tree_dialog_->setWindowTitle(QStringLiteral("通道选择"));
+    signal_tree_dialog_->setWindowFlags(signal_tree_dialog_->windowFlags() &
+                                        ~Qt::WindowContextHelpButtonHint);
     signal_tree_dialog_->resize(380, 480);
     auto* layout = new QVBoxLayout(signal_tree_dialog_);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -991,43 +1014,49 @@ void ExecutionPanelController::showChannelSelectionDialog() {
     if (!signal_tree_) {
       signal_tree_ = new SignalTreePanel(signal_tree_dialog_);
       refreshMonitorTree();
-      connect(signal_tree_, &SignalTreePanel::checkStateChanged,
-              this, [this](int monitorIndex, bool checked) {
-        // 创建/移除可视化组件 + 订阅/取消订阅（逻辑见 setDashboard）
-        LOG_INFO("VISUAL", "checkStateChanged monitorIndex={} checked={}",
-                 monitorIndex, checked);
-        auto* monitorMgr = monitor_manager_;
-        if (!monitorMgr) return;
-        if (checked) {
-          QString mode = monitorMgr->displayMode(monitorIndex);
-          if (mode.isEmpty()) mode = QStringLiteral("auto");
-          auto* vis = createVisualizerFor(
-              monitorIndex, mode, QString(),
-              QStringLiteral("Monitor %1").arg(monitorIndex), nullptr);
-          if (vis) {
-            LOG_INFO("ENGINE", "创建可视化 monitorIndex={} mode={} type={}",
-                     monitorIndex, mode.toStdString(),
-                     vis->metaObject()->className());
-            if (auto* wave = qobject_cast<WaveformWidget*>(vis)) {
-              static const QColor kColors[] = {
-                  QColor(0, 120, 215), QColor(229, 57, 53),
-                  QColor(67, 160, 71), QColor(255, 152, 0),
-                  QColor(156, 39, 176), QColor(0, 151, 167),
-                  QColor(121, 85, 72), QColor(158, 158, 158)};
-              wave->addTrace(monitorIndex, kColors[monitorIndex % 8]);
+      connect(
+          signal_tree_, &SignalTreePanel::checkStateChanged, this,
+          [this](int monitorIndex, bool checked) {
+            // 创建/移除可视化组件 + 订阅/取消订阅（逻辑见 setDashboard）
+            LOG_INFO("VISUAL", "checkStateChanged monitorIndex={} checked={}",
+                     monitorIndex, checked);
+            auto* monitorMgr = monitor_manager_;
+            if (!monitorMgr)
+              return;
+            if (checked) {
+              QString mode = monitorMgr->displayMode(monitorIndex);
+              if (mode.isEmpty())
+                mode = QStringLiteral("auto");
+              auto* vis = createVisualizerFor(
+                  monitorIndex, mode, QString(),
+                  QStringLiteral("Monitor %1").arg(monitorIndex), nullptr);
+              if (vis) {
+                LOG_INFO("ENGINE", "创建可视化 monitorIndex={} mode={} type={}",
+                         monitorIndex, mode.toStdString(),
+                         vis->metaObject()->className());
+                if (auto* wave = qobject_cast<WaveformWidget*>(vis)) {
+                  static const QColor kColors[] = {
+                      QColor(0, 120, 215),  QColor(229, 57, 53),
+                      QColor(67, 160, 71),  QColor(255, 152, 0),
+                      QColor(156, 39, 176), QColor(0, 151, 167),
+                      QColor(121, 85, 72),  QColor(158, 158, 158)};
+                  wave->addTrace(monitorIndex, kColors[monitorIndex % 8]);
+                }
+                QPointer<SignalVisualizer> visGuard(vis);
+                monitorMgr->subscribe(
+                    monitorIndex,
+                    [visGuard](const etest::engine::MonitorSample& s) {
+                      if (visGuard)
+                        visGuard->onSampleCaptured(s);
+                    });
+                dashboard_->visualizationArea()->addVisualizer(monitorIndex,
+                                                               vis);
+              }
+            } else {
+              monitorMgr->unsubscribe(monitorIndex);
+              dashboard_->visualizationArea()->removeVisualizer(monitorIndex);
             }
-            QPointer<SignalVisualizer> visGuard(vis);
-            monitorMgr->subscribe(
-                monitorIndex, [visGuard](const etest::engine::MonitorSample& s) {
-                  if (visGuard) visGuard->onSampleCaptured(s);
-                });
-            dashboard_->visualizationArea()->addVisualizer(monitorIndex, vis);
-          }
-        } else {
-          monitorMgr->unsubscribe(monitorIndex);
-          dashboard_->visualizationArea()->removeVisualizer(monitorIndex);
-        }
-      });
+          });
     }
     layout->addWidget(signal_tree_);
   }

@@ -316,6 +316,23 @@ void MainWindow::initSignalsEarly() {
             sidebar_->switchPage(id);
             activity_bar_->setActivePageId(id);
           });
+
+  // 引擎状态 -> 编辑锁
+  connect(execution_controller_,
+          &ExecutionPanelController::engineStateChanged, this,
+          [this](etest::engine::EngineState state) {
+            bool locked =
+                (state == etest::engine::EngineState::Running ||
+                 state == etest::engine::EngineState::Paused);
+            running_locked_ = locked;
+            if (locked) {
+              disableEditActions();
+              sidebar_->setEnabled(false);
+            } else {
+              enableEditActions();
+              sidebar_->setEnabled(true);
+            }
+          });
 }
 
 void MainWindow::initSignalsLate() {
@@ -742,6 +759,7 @@ void MainWindow::initSignalsLate() {
             current_editor_selection_connection_ =
                 connect(sci_editor, &QsciScintilla::selectionChanged, this,
                         [this, sci_editor]() {
+                          if (running_locked_) return;
                           bool hasSelection = sci_editor->hasSelectedText();
                           edit_cut_action_->setEnabled(hasSelection);
                           edit_copy_action_->setEnabled(hasSelection);
@@ -750,6 +768,7 @@ void MainWindow::initSignalsLate() {
             current_editor_state_connection_ =
                 connect(textEditor, &TextEditorWidget::editorStateChanged, this,
                         [this, editor]() {
+                          if (running_locked_) return;
                           edit_undo_action_->setEnabled(editor->canUndo());
                           edit_redo_action_->setEnabled(editor->canRedo());
                         });
@@ -762,6 +781,7 @@ void MainWindow::initSignalsLate() {
             auto* stack = topoEditor->document()->undoStack();
             current_editor_state_connection_ = connect(
                 stack, &QUndoStack::indexChanged, this, [this, editor]() {
+                  if (running_locked_) return;
                   edit_undo_action_->setEnabled(editor->canUndo());
                   edit_redo_action_->setEnabled(editor->canRedo());
                 });
@@ -797,6 +817,7 @@ void MainWindow::initSignalsLate() {
         edit_find_action_->setEnabled(hasEditor);
         edit_replace_action_->setEnabled(hasEditor);
         edit_go_to_line_action_->setEnabled(hasEditor);
+        if (running_locked_) disableEditActions();
       });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
@@ -1145,9 +1166,8 @@ void MainWindow::lazyInit() {
   connect(central_stack_, &QStackedWidget::currentChanged, this,
           [this](int index) {
             LOG_DEBUG("PAGE", "central_stack currentChanged -> page{}", index);
-            // 副作用：编辑 action 的 ApplicationShortcut 在 page1 必须禁用
+            // 编辑锁由引擎状态驱动，切页时不再禁用/恢复 edit action
             if (index == 1) {
-              disableEditActions();
               ribbonBar()->setObjectName(QStringLiteral("RunningMode"));
 
               // 切到执行页时检测拓扑变化（引擎 Idle 时才刷新，防关设备）
@@ -1157,7 +1177,6 @@ void MainWindow::lazyInit() {
                 execution_controller_->syncProjectTopologies();
               }
             } else {
-              enableEditActions();
               ribbonBar()->setObjectName(QString());
             }
             // 强制刷新 QSS
@@ -2623,6 +2642,9 @@ void MainWindow::disableEditActions() {
   edit_find_action_->setEnabled(false);
   edit_replace_action_->setEnabled(false);
   edit_go_to_line_action_->setEnabled(false);
+  new_project_action_->setEnabled(false);
+  open_project_action_->setEnabled(false);
+  open_file_action_->setEnabled(false);
   // 视图面板操作在运行态保持可用
 }
 
@@ -2651,6 +2673,10 @@ void MainWindow::enableEditActions() {
   edit_find_action_->setEnabled(hasEditors);
   edit_replace_action_->setEnabled(hasEditors);
   edit_go_to_line_action_->setEnabled(hasEditors);
+  new_project_action_->setEnabled(true);
+  open_project_action_->setEnabled(true);
+  open_file_action_->setEnabled(
+      etest::core::project::ProjectManager::instance().isProjectOpen());
   // 视图面板操作始终可用，无需在此恢复
 }
 

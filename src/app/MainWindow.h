@@ -203,6 +203,7 @@ class MainWindow : public SARibbonMainWindow {
   // Ribbon category 管理
   SARibbonCategory* category_exec_ = nullptr;
   bool switching_page_ = false;
+  bool running_locked_ = false;
 
   // 剪贴板
   QClipboard* clipboard_ = nullptr;
