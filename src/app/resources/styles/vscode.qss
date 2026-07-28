@@ -1770,43 +1770,39 @@ QToolButton#userMgrCloseBtn:hover {
   color: #eee;
 }
 
-/* ==================== HintBar ==================== */
-QWidget#HintBar {
-    background-color: #252526;
-    border-bottom: 1px solid #3C3C3C;
-}
-QWidget#HintItem {
-    background-color: #3D3200;
-    border-bottom: 1px solid #665500;
-}
-QLabel#HintIndicator {
-    color: #569CD6;
-    font-size: 10px;
-}
-QLabel#HintText {
-    color: #CCCCCC;
-    font-size: 12px;
-}
-QToolButton#HintActionBtn {
+/* ==================== HintPopup ==================== */
+QFrame#HintPopupContent {
     background-color: #2D2D2D;
-    color: #75BEFF;
     border: 1px solid #3C3C3C;
-    border-radius: 3px;
-    font-size: 11px;
-    padding: 0 8px;
+    border-radius: 6px;
 }
-QToolButton#HintActionBtn:hover {
-    background-color: #383838;
-    border-color: #569CD6;
+QFrame#HintPopupToolbar {
+    background-color: #333333;
 }
-QToolButton#HintCloseBtn {
+QFrame#HintPopupSeparator {
+    background-color: #3C3C3C;
+}
+QListView#HintPopupList {
+    background-color: #2D2D2D;
+    border: none;
+    outline: none;
+}
+QLabel#HintPopupEmpty {
+    color: #666666;
+    font-size: 13px;
+    padding: 40px;
+}
+QToolButton#HintPopupMarkAllBtn,
+QToolButton#HintPopupClearBtn {
     background: transparent;
     border: none;
-    color: #666;
-    font-size: 12px;
+    color: #CCCCCC;
+    font-size: 11px;
+    padding: 2px 8px;
 }
-QToolButton#HintCloseBtn:hover {
-    color: #FFFFFF;
+QToolButton#HintPopupMarkAllBtn:hover,
+QToolButton#HintPopupClearBtn:hover {
+    color: #75BEFF;
 }
 
 /* ==================== ProjectStructureWidget Placeholder ==================== */

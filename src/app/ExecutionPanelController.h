@@ -123,6 +123,8 @@ class ExecutionPanelController : public QObject {
 
  signals:
   void engineStateChanged(etest::engine::EngineState state);
+  /// 引擎正常执行完成（非手动 stop、非 Error），携带最终 pass/fail 计数
+  void engineFinished(int pass, int fail);
   void execStatsUpdated(int pass, int fail, int elapsed);
   void preconditionResult(bool can_run);
   /// 用户双击问题项请求导航，MainWindow 接收执行 page0 跳转

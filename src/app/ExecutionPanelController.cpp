@@ -272,6 +272,8 @@ void ExecutionPanelController::connectEngineSignals() {
               }
               run_segments_.clear();
             }
+            // 通知外部：引擎正常完成，携带 pass/fail 计数
+            emit engineFinished(pass_count_, fail_count_);
           });
 }
 

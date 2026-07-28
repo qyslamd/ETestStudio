@@ -27,6 +27,10 @@
         <file>resources/icons/svg/git_light.svg</file>
         <file>resources/icons/svg/settings_dark.svg</file>
         <file>resources/icons/svg/settings_light.svg</file>
+        <file>resources/icons/svg/message_dark.svg</file>
+        <file>resources/icons/svg/message_light.svg</file>
+        <file>resources/icons/svg/message_alert_dark.svg</file>
+        <file>resources/icons/svg/message_alert_light.svg</file>
         <file>resources/icons/svg/maximize_dark.svg</file>
         <file>resources/icons/svg/restore_dark.svg</file>
         <file>resources/icons/svg/folder_dark.svg</file>

@@ -17,8 +17,14 @@ add_executable(${TARGET_NAME} WIN32
     main.cpp
     MainWindow.h
     MainWindow.cpp
-    widgets/HintBarWidget.h
-    widgets/HintBarWidget.cpp
+    widgets/HintButton.h
+    widgets/HintButton.cpp
+    widgets/HintPopup.h
+    widgets/HintPopup.cpp
+    widgets/HintMessageDelegate.h
+    widgets/HintMessageDelegate.cpp
+    widgets/MessageService.h
+    widgets/MessageService.cpp
     ActivityBarWidget.h
     ActivityBarWidget.cpp
     AppStatusBarController.h

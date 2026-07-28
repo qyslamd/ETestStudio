@@ -3,7 +3,6 @@
 #include "widgets/ProjectTreeDelegate.h"
 
 #include <QApplication>
-#include "logger/Logger.h"
 #include <QClipboard>
 #include <QContextMenuEvent>
 #include <QDateTime>
@@ -14,7 +13,6 @@
 #include <QFileInfo>
 #include <QFileSystemWatcher>
 #include <QFrame>
-#include <functional>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QJsonArray>
@@ -35,6 +33,9 @@
 #include <QTreeView>
 #include <QUrl>
 #include <QVBoxLayout>
+#include <functional>
+#include "logger/Logger.h"
+
 
 #include "AppIconProvider.h"
 #include "ConfigManager.h"
@@ -88,13 +89,6 @@ void ProjectStructureWidget::initUi() {
   auto* c1_layout = new QVBoxLayout(card1);
   c1_layout->setContentsMargins(9, 9, 9, 9);
   c1_layout->setSpacing(6);
-
-  auto* ph_icon = new QLabel(card1);
-  ph_icon->setPixmap(AppIconProvider::instance()
-                         .icon(QStringLiteral("project"))
-                         .pixmap(48, 48));
-  ph_icon->setAlignment(Qt::AlignCenter);
-  c1_layout->addWidget(ph_icon);
 
   auto* ph_title = new QLabel(QStringLiteral("没有打开的项目"), card1);
   ph_title->setObjectName(QStringLiteral("PhTitle"));
@@ -299,16 +293,14 @@ void ProjectStructureWidget::initSignals() {
   }
 
   // 项目管理按钮
-  connect(new_proj_btn_, &QAbstractButton::clicked, this,
-          [this]() {
-            LOG_INFO("PROJECT_UI", "点击「新建项目」");
-            emit newProjectRequested();
-          });
-  connect(open_proj_btn_, &QAbstractButton::clicked, this,
-          [this]() {
-            LOG_INFO("PROJECT_UI", "点击「打开项目」");
-            emit openProjectRequested();
-          });
+  connect(new_proj_btn_, &QAbstractButton::clicked, this, [this]() {
+    LOG_INFO("PROJECT_UI", "点击「新建项目」");
+    emit newProjectRequested();
+  });
+  connect(open_proj_btn_, &QAbstractButton::clicked, this, [this]() {
+    LOG_INFO("PROJECT_UI", "点击「打开项目」");
+    emit openProjectRequested();
+  });
 
   // 文件监视器
   connect(file_watcher_, &QFileSystemWatcher::directoryChanged, this,
@@ -340,7 +332,8 @@ void ProjectStructureWidget::initSignals() {
   connect(open_files_view_, &QListView::clicked, this,
           [this](const QModelIndex& index) {
             QString path = index.data(FilePathRole).toString();
-            LOG_INFO("PROJECT_UI", "点击已打开文件 [path={}]", path.toStdString());
+            LOG_INFO("PROJECT_UI", "点击已打开文件 [path={}]",
+                     path.toStdString());
             if (!path.isEmpty())
               emit openFileActivateRequested(path);
           });
@@ -1180,8 +1173,7 @@ void ProjectStructureWidget::populateReportCategory(
             });
 
   QSet<QString> seenPrograms;
-  QRegularExpression re(
-      QStringLiteral("^(.+)_\\d{8}_\\d{6}\\.etlog$"));
+  QRegularExpression re(QStringLiteral("^(.+)_\\d{8}_\\d{6}\\.etlog$"));
 
   for (const auto& fi : sorted) {
     QString relPath = dirPath + fi.fileName();
@@ -1566,9 +1558,9 @@ bool ProjectStructureWidget::locateFile(const QString& fileName) {
     return false;
   }
   QModelIndex startIndex = model_->index(0, 0);
-  QModelIndexList matches = model_->match(
-      startIndex, Qt::DisplayRole, fileName, -1,
-      Qt::MatchExactly | Qt::MatchRecursive);
+  QModelIndexList matches =
+      model_->match(startIndex, Qt::DisplayRole, fileName, -1,
+                    Qt::MatchExactly | Qt::MatchRecursive);
   for (const auto& idx : matches) {
     if (idx.data(NodeTypeRole).toString() == QStringLiteral("file")) {
       tree_view_->expand(idx.parent());

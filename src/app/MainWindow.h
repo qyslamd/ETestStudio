@@ -1,5 +1,4 @@
-#ifndef ETEST_APP_MAINWINDOW_H_
-#define ETEST_APP_MAINWINDOW_H_
+#pragma once
 
 #include <memory>
 
@@ -33,7 +32,7 @@ class SettingsDialog;
 class TerminalPanel;
 class BottomContainerWidget;
 class EditorManager;
-class HintBarWidget;
+class HintButton;
 class WelcomeWidget;
 class LoadingOverlay;
 class TestProgramManagerWidget;
@@ -59,6 +58,9 @@ class MainWindow : public SARibbonMainWindow {
  public:
   explicit MainWindow(QWidget* parent = nullptr);
   ~MainWindow() override;
+
+  /// 切换页面（page 0=编辑态, 1=执行仪表盘），可指定侧边栏页
+  void navigateTo(int page, const QString& sidebarId = {});
 
  protected:
   void resizeEvent(QResizeEvent* event) override;
@@ -131,8 +133,8 @@ class MainWindow : public SARibbonMainWindow {
   QSplitter* h_splitter_ = nullptr;  // 水平：Sidebar / 垂直区域 / AuxSidebar
   QSplitter* v_splitter_ = nullptr;  // 垂直：ContainerWidget / BottomContainer
 
-  // 提示栏
-  HintBarWidget* hint_bar_ = nullptr;
+  // 消息提示按钮
+  HintButton* hint_button_ = nullptr;
 
   // 编辑器管理
   EditorManager* editor_manager_ = nullptr;
@@ -242,4 +244,3 @@ class MainWindow : public SARibbonMainWindow {
 
 }  // namespace etest::app
 
-#endif  // ETEST_APP_MAINWINDOW_H_

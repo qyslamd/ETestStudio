@@ -92,7 +92,8 @@
 #include "utils/SignalSyncHelper.h"
 #include "widgets/BottomContainerWidget.h"
 #include "widgets/ExecutionOutputPanel.h"
-#include "widgets/HintBarWidget.h"
+#include "widgets/HintButton.h"
+#include "widgets/MessageService.h"
 #include "widgets/LoadingOverlay.h"
 #include "widgets/LogOutputPanel.h"
 #include "widgets/ProgramSelectionPopup.h"
@@ -159,6 +160,9 @@ MainWindow::~MainWindow() {
   // 显式断开与ProjectManager的所有信号连接
   // Qt会在接收者销毁时自动断开，但显式断开更清晰
   projectMgr.disconnect(this);
+
+  // 清空消息服务，避免回调 lambda 持有悬空 this
+  MessageService::instance().clearAll();
 }
 
 void MainWindow::initUi() {
@@ -204,9 +208,6 @@ void MainWindow::initUi() {
   auto* editor_area_layout = new QVBoxLayout(editor_area);
   editor_area_layout->setContentsMargins(0, 0, 0, 0);
   editor_area_layout->setSpacing(0);
-
-  hint_bar_ = new HintBarWidget(editor_area);
-  editor_area_layout->addWidget(hint_bar_);
 
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
   ads::CDockManager::setConfigFlag(
@@ -329,6 +330,14 @@ void MainWindow::initSignalsEarly() {
               enableEditActions();
               sidebar_->setEnabled(true);
             }
+          });
+
+  // 引擎正常执行完成 -> 发消息 5（仅 engineFinished，不含手动 stop / Error）
+  connect(execution_controller_, &ExecutionPanelController::engineFinished, this,
+          [this](int pass, int fail) {
+            MessageService::instance().postHint(
+                QStringLiteral("测试执行完成 P%1 F%2").arg(pass).arg(fail),
+                QStringLiteral("查看"), [this]() { navigateTo(1); });
           });
 }
 
@@ -1291,19 +1300,14 @@ void MainWindow::lazyInit() {
   LOG_INFO("LAZY", "  [8/12] 插件+硬件: {} ms", step_timer.elapsed());
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 9. 发布提示消息（DEBUG模式打开）
-#ifdef _DEBUG
-  step_timer.restart();
-  hint_bar_->postHint(QStringLiteral("已打开项目「测试项目」"));
-  hint_bar_->postHint(QStringLiteral("编译完成，发现 2 个警告"));
-  hint_bar_->postHint(QStringLiteral("有新版本可用，请更新"),
-                      QStringLiteral("更新"), [] { /* 占位 */ });
-  hint_bar_->postHint(QStringLiteral("文件「test_spec.xml」已自动保存"),
-                      QStringLiteral("查看"), [] { /* 占位 */ });
-  hint_bar_->postHint(QStringLiteral("远程连接已断开，尝试重连中..."),
-                      QStringLiteral("重试"), [] { /* 占位 */ });
-  LOG_INFO("LAZY", "  [9/12] 提示消息: {} ms", step_timer.elapsed());
-#endif
+  // 9. 硬件插件加载完成消息
+  {
+    int pluginCount =
+        etest::core::plugin::PluginManager::instance().loadedPlugins().size();
+    MessageService::instance().postHint(
+        QStringLiteral("已加载 %1 个硬件插件").arg(pluginCount),
+        QStringLiteral("查看"), [this]() { navigateTo(0, PageId::kHardware); });
+  }
 
   // 10. 恢复底部面板状态（逐面板可见性 + 容器显隐）
   step_timer.restart();
@@ -1597,6 +1601,10 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
     LOG_DEBUG("UUID", "ICD Repository loaded, frames={}",
               icd_repository_->frames().size());
 
+    MessageService::instance().postHint(
+        QStringLiteral("ICD 协议仓库解析完成"),
+        QStringLiteral("查看"), [this]() { navigateTo(0, PageId::kProtocol); });
+
     // 预注册项目中的已有拓扑设备：扫描 topology/ 目录下所有 .etopo 文件
     const QString topoDir = projectPath + QStringLiteral("/topology");
     QDir topoDirObj(topoDir);
@@ -1699,8 +1707,35 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   // 同步拓扑监听器数据到 MonitorManager（项目打开后树数据就绪）
   execution_controller_->syncProjectTopologies();
 
+  // 消息中心：项目打开 + 拓扑同步
+  {
+    auto* project = etest::core::project::ProjectManager::instance()
+                        .currentProject();
+    QString projectName =
+        project ? project->name() : QStringLiteral("未知项目");
+    MessageService::instance().postHint(
+        QStringLiteral("项目「%1」已打开").arg(projectName),
+        QStringLiteral("查看"),
+        [this]() { navigateTo(0, PageId::kProjectOverview); });
+    MessageService::instance().postHint(
+        QStringLiteral("拓扑数据已同步"),
+        QStringLiteral("查看"), [this]() { navigateTo(0, PageId::kTopology); });
+  }
+
   // 同步 ribbon 按钮 enable 状态
   execution_controller_->syncControlStates();
+
+  // 消息中心：程序扫描完成
+  {
+    int progCount =
+        execution_controller_->programPopup()->allPaths().size();
+    if (progCount > 0) {
+      MessageService::instance().postHint(
+          QStringLiteral("发现 %1 个测试程序").arg(progCount),
+          QStringLiteral("查看"),
+          [this]() { navigateTo(0, PageId::kTestProgram); });
+    }
+  }
 
   // 打开项目后检查 Git 仓库初始化状态，未 init 时弹窗询问
   // 只对"打开"项目触发，新建项目在 createProject 中已自动 init
@@ -2169,8 +2204,13 @@ void MainWindow::setupRibbon() {
   ribbon_search_edit_->setPlaceholderText(QStringLiteral("搜索文件..."));
   ribbon_search_edit_->setEnabled(false);
   ribbon_search_edit_->setFixedWidth(200);
+  ribbon_search_edit_->setMinimumHeight(24);
   ribbon_search_edit_->setClearButtonEnabled(true);
   qab->addWidget(ribbon_search_edit_);
+
+  // ── QAB 消息提示按钮 ──
+  hint_button_ = new HintButton(this);
+  qab->addWidget(hint_button_);
 
   // QCompleter：项目打开时一次性填充文件名，completer 自动过滤
   ribbon_search_completer_ = new QCompleter(ribbon_search_edit_);
@@ -2388,7 +2428,7 @@ void MainWindow::setupRibbon() {
   if (true) {
     auto* cat = ribbon->addCategoryPage(QStringLiteral("工具"));
 
-    auto* panel_tools = cat->addPanel(QStringLiteral("工具"));
+    auto* panel_tools = cat->addPanel(QStringLiteral("编辑工具"));
     auto* act_settings = new QAction(
         AppIconProvider::instance().icon(QStringLiteral("ribbon_settings")),
         QStringLiteral("设置"), this);
@@ -2627,6 +2667,19 @@ void MainWindow::toggleSidebar() {
     if (view_sidebar_action_) {
       view_sidebar_action_->setChecked(true);
     }
+  }
+}
+
+void MainWindow::navigateTo(int page, const QString& sidebarId) {
+  if (page == 0 || page == 1) {
+    central_stack_->setCurrentIndex(page);
+  }
+  if (!sidebarId.isEmpty()) {
+    if (!sidebar_->isContentVisible()) {
+      sidebar_->showContent();
+    }
+    sidebar_->switchPage(sidebarId);
+    activity_bar_->setActivePageId(sidebarId);
   }
 }
 
