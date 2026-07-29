@@ -175,8 +175,8 @@ class ExecutionPanelController : public QObject {
   };
   QList<ProgramSegment> run_segments_;
 
-  // topology 文件 mtime 快照（供 syncProjectTopologies 判断变化）
-  QHash<QString, QDateTime> topo_mtimes_;
+  // topology.etopo 的 mtime 快照（供 syncProjectTopologies 判断变化）
+  QDateTime topo_mtime_;
 
   // 外部依赖（通过 postInit 注入）
   QWidget* parent_widget_ = nullptr;

@@ -1214,6 +1214,10 @@ QStandardItem* ProjectStructureWidget::createFileItem(
     iconName = QStringLiteral("file_eproto");
   } else if (suffix == QStringLiteral("etopo")) {
     iconName = QStringLiteral("file_etopo");
+    if (fileName == QStringLiteral("topology.etopo")) {
+      item->setData(true, IsEffectiveTopologyRole);
+      item->setEditable(false);  // 固定文件名，禁止重命名
+    }
   } else if (suffix == QStringLiteral("json")) {
     iconName = QStringLiteral("file_json");
   } else if (suffix == QStringLiteral("lua")) {

@@ -13,6 +13,10 @@ class ProjectTreeDelegate : public QStyledItemDelegate {
 
   void paint(QPainter* painter, const QStyleOptionViewItem& option,
              const QModelIndex& index) const override;
+
+ private:
+  void drawBadge(QPainter* painter, const QStyleOptionViewItem& option,
+                 const QString& text, const QColor& color) const;
 };
 
 }  // namespace etest::app

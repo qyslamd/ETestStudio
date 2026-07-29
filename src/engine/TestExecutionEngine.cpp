@@ -171,11 +171,11 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
         LOG_INFO("ENGINE", "MockUUT 构建成功 [count={}]", mockCount);
     }
 
-    // ── 累积 monitor 配置（支持多拓扑合并） ──
-    // start() 不再统一 loadFromTopology，改由 loadTopology 逐个追加，
-    // 避免多拓扑场景下 topology_doc_ 被最后一个覆盖导致 monitors 丢失
+    // ── 加载 monitor 配置（单拓扑覆盖语义） ──
+    // loadFromTopology 内部先 clearStructure + clearRuntime 再 appendFromTopology，
+    // 确保单拓扑下每次加载都是干净的覆盖，无累积残留
     if (monitor_manager_) {
-        monitor_manager_->appendFromTopology(root);
+        monitor_manager_->loadFromTopology(root);
     }
 
     return ok;

@@ -38,6 +38,7 @@ enum ProjectNodeRole {
   RelativePathRole,                 // 相对于项目根目录的路径
   CategoryIdRole,                   // category 的标识（如 "protocol"）
   IsLatestRole,                     // bool: 报告分类中每个程序名的最新文件
+  IsEffectiveTopologyRole,          // bool: topology.etopo（引擎加载的唯一拓扑文件）
 };
 
 struct CategoryInfo {

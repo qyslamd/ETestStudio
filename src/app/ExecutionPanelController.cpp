@@ -423,72 +423,73 @@ void ExecutionPanelController::syncProjectTopologies() {
       proj_mgr.currentProjectRoot() + QStringLiteral("/topology");
   QDir topo_dir_obj(topo_dir);
   if (!topo_dir_obj.exists()) {
+    LOG_WARN("ENGINE", "拓扑目录不存在: {}", topo_dir.toStdString());
     return;
   }
-  const auto topo_files = topo_dir_obj.entryInfoList(
-      {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
+  // 单拓扑约束：只加载 topology/topology.etopo
+  QString topo_path =
+      topo_dir_obj.absoluteFilePath(QStringLiteral("topology.etopo"));
+  QFileInfo topo_fi(topo_path);
 
   auto* mm = monitor_manager_;
   if (!mm) {
     return;
   }
 
+  // ── 检测多余 .etopo 文件并警告 ──
+  const auto extra_files = topo_dir_obj.entryInfoList(
+      {QStringLiteral("*.etopo")}, QDir::Files, QDir::Name);
+  for (const auto& fi : extra_files) {
+    if (fi.fileName() != QStringLiteral("topology.etopo")) {
+      LOG_WARN("ENGINE", "检测到多余 .etopo 文件，已忽略: {}",
+               fi.fileName().toStdString());
+    }
+  }
+
+  // ── topology.etopo 不存在 ──
+  if (!topo_fi.exists()) {
+    if (!extra_files.isEmpty()) {
+      LOG_WARN("ENGINE", "topology.etopo 不存在，目录下有其他 .etopo 文件，"
+               "请手动重命名为 topology.etopo");
+    } else {
+      LOG_WARN("ENGINE", "拓扑文件缺失: topology.etopo 不存在，请创建拓扑");
+    }
+    return;
+  }
+
+  QDateTime current_mtime = topo_fi.lastModified();
   bool tree_empty = mm->monitorTree().isEmpty();
 
   if (tree_empty) {
-    // ── 首次加载 / 引擎重建后：直接追加 ──
-    for (const QFileInfo& fi : topo_files) {
-      engine_->loadTopology(fi.absoluteFilePath());
+    // ── 首次加载 / 引擎重建后 ──
+    bool ok = engine_->loadTopology(topo_path);
+    if (!ok) {
+      LOG_ERROR("ENGINE", "拓扑文件加载失败: {}",
+                topo_path.toStdString());
+      return;
     }
-    // 记录 mtime 快照
-    topo_mtimes_.clear();
-    for (const QFileInfo& fi : topo_files) {
-      topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
-    }
-    // 恢复 UI（首次加载时 activeChannels() 为空，退化为全 Unchecked）
+    topo_mtime_ = current_mtime;
     refreshMonitorTree();
     return;
   }
 
-  // ── tree_cache_ 非空：检测拓扑变化 ──
-
-  // mtime 快照为空但树已有数据（setDashboard → refreshMonitorTree 早于首次
-  // syncProjectTopologies） 直接记录快照并跳过，无需重建
-  if (topo_mtimes_.isEmpty()) {
-    for (const QFileInfo& fi : topo_files) {
-      topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
-    }
+  // ── mtime 未变：跳过 ──
+  if (topo_mtime_.isValid() && topo_mtime_ == current_mtime) {
     return;
   }
 
-  bool changed = false;
-  if (topo_files.size() != topo_mtimes_.size()) {
-    changed = true;
-  } else {
-    for (const QFileInfo& fi : topo_files) {
-      auto it = topo_mtimes_.constFind(fi.absoluteFilePath());
-      if (it == topo_mtimes_.constEnd() || it.value() != fi.lastModified()) {
-        changed = true;
-        break;
-      }
-    }
-  }
-
-  if (!changed) {
-    // mtime 没变 + 文件列表一致：跳过
-    return;
-  }
-
-  // ── 拓扑变化：全量重建 ──
+  // ── mtime 变了：全量重建 ──
+  // clearMonitorState() 仍在 loadTopology 之前调用：loadTopology 有多个早返回路径
+  // （文件损坏、JSON 解析失败等）不会到达 loadFromTopology，此时 monitor 需已是干净状态
   engine_->clearTopologyState();
   clearMonitorState();
-  for (const QFileInfo& fi : topo_files) {
-    engine_->loadTopology(fi.absoluteFilePath());
+  bool ok = engine_->loadTopology(topo_path);
+  if (!ok) {
+    LOG_ERROR("ENGINE", "拓扑文件加载失败: {}",
+              topo_path.toStdString());
+    return;
   }
-  topo_mtimes_.clear();
-  for (const QFileInfo& fi : topo_files) {
-    topo_mtimes_[fi.absoluteFilePath()] = fi.lastModified();
-  }
+  topo_mtime_ = current_mtime;
   refreshMonitorTree();
 }
 
@@ -1000,7 +1001,7 @@ void ExecutionPanelController::clearProjectState() {
   // 清理 MonitorManager 结构与运行时数据（项目切换时避免残留）
   clearMonitorState();
   // 清理 mtime 缓存
-  topo_mtimes_.clear();
+  topo_mtime_ = QDateTime();
 }
 
 void ExecutionPanelController::showChannelSelectionDialog() {
