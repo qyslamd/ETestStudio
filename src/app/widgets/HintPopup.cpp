@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QListView>
 #include <QMouseEvent>
+#include <QStackedWidget>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -15,10 +16,7 @@
 namespace etest::app {
 
 static constexpr int kPopupWidth = 360;
-static constexpr int kPopupMaxHeight = 400;
-static constexpr int kPopupMinHeight = 140;
-// toolbar 32 + separator 1
-static constexpr int kChromeHeight = 33;
+static constexpr int kPopupFixedHeight = 320;
 
 HintPopup::HintPopup(QWidget* parent) : QWidget(parent) {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint |
@@ -28,7 +26,7 @@ HintPopup::HintPopup(QWidget* parent) : QWidget(parent) {
 #endif
   setAttribute(Qt::WA_NoMouseReplay);
   setFixedWidth(kPopupWidth);
-  setFixedHeight(kPopupMinHeight);
+  setFixedHeight(kPopupFixedHeight);
 
   // 内容容器（QSS 绘制边框 + 圆角，替代 QGraphicsDropShadowEffect）
   auto* content = new QFrame(this);
@@ -72,8 +70,12 @@ HintPopup::HintPopup(QWidget* parent) : QWidget(parent) {
   separator->setFixedHeight(1);
   layout->addWidget(separator);
 
+  // 内容区域：QStackedWidget（page0=消息列表，page1=空提示）
+  content_stack_ = new QStackedWidget(content);
+  content_stack_->setObjectName(QStringLiteral("HintPopupStack"));
+
   // QListView
-  list_view_ = new QListView(content);
+  list_view_ = new QListView(content_stack_);
   list_view_->setObjectName(QStringLiteral("HintPopupList"));
   list_view_->setModel(&MessageService::instance());
   list_view_->setSelectionMode(QAbstractItemView::NoSelection);
@@ -87,15 +89,18 @@ HintPopup::HintPopup(QWidget* parent) : QWidget(parent) {
   // 安装事件过滤器以追踪 per-region hover
   list_view_->viewport()->installEventFilter(this);
 
-  layout->addWidget(list_view_);
+  content_stack_->addWidget(list_view_);  // page 0
 
   // 空消息提示
-  empty_label_ = new QLabel(content);
+  empty_label_ = new QLabel(content_stack_);
   empty_label_->setObjectName(QStringLiteral("HintPopupEmpty"));
   empty_label_->setAlignment(Qt::AlignCenter);
   empty_label_->setText(QStringLiteral("暂无消息"));
-  empty_label_->hide();
-  layout->addWidget(empty_label_);
+  content_stack_->addWidget(empty_label_);  // page 1
+
+  content_stack_->setCurrentIndex(0);
+
+  layout->addWidget(content_stack_);
 
   // 连接 delegate 信号 -> MessageService
   connect(delegate_, &HintMessageDelegate::actionTriggered, this,
@@ -178,16 +183,7 @@ void HintPopup::showBelow(const QPoint& globalPos) {
 
 void HintPopup::refresh() {
   int count = MessageService::instance().rowCount();
-  if (count == 0) {
-    list_view_->hide();
-    empty_label_->show();
-    setFixedHeight(kPopupMinHeight);
-  } else {
-    empty_label_->hide();
-    list_view_->show();
-    int h = kChromeHeight + count * HintMessageDelegate::kItemHeight;
-    setFixedHeight(qMin(h, kPopupMaxHeight));
-  }
+  content_stack_->setCurrentIndex(count == 0 ? 1 : 0);
 }
 
 }  // namespace etest::app

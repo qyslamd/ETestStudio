@@ -4,6 +4,7 @@
 
 class QLabel;
 class QListView;
+class QStackedWidget;
 class QToolButton;
 
 namespace etest::app {
@@ -19,7 +20,7 @@ class HintPopup : public QWidget {
   /// 显示在指定全局坐标的右下方（补偿阴影边距使内容框对齐）
   void showBelow(const QPoint& globalPos);
 
-  /// 根据 QListView 内容调整显示（空/非空切换 + 高度自适应）
+  /// 根据 QListView 内容切换显示（空/非空页面切换）
   void refresh();
 
  protected:
@@ -28,6 +29,7 @@ class HintPopup : public QWidget {
  private:
   QListView* list_view_ = nullptr;
   QLabel* empty_label_ = nullptr;
+  QStackedWidget* content_stack_ = nullptr;
   HintMessageDelegate* delegate_ = nullptr;
   QToolButton* mark_all_btn_ = nullptr;
   QToolButton* clear_btn_ = nullptr;
