@@ -2672,7 +2672,20 @@ void MainWindow::toggleSidebar() {
 
 void MainWindow::navigateTo(int page, const QString& sidebarId) {
   if (page == 0 || page == 1) {
-    central_stack_->setCurrentIndex(page);
+    if (!switching_page_) {
+      switching_page_ = true;
+      central_stack_->setCurrentIndex(page);
+      if (page == 0) {
+        if (auto* homeCat = ribbonBar()->categoryByIndex(0)) {
+          ribbonBar()->raiseCategory(homeCat);
+        }
+      } else if (page == 1 && category_exec_) {
+        ribbonBar()->raiseCategory(category_exec_);
+      }
+      switching_page_ = false;
+    } else {
+      central_stack_->setCurrentIndex(page);
+    }
   }
   if (!sidebarId.isEmpty()) {
     if (!sidebar_->isContentVisible()) {
