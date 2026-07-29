@@ -154,14 +154,13 @@ void ProjectStructureWidget::initUi() {
 
   sc_layout->addWidget(card1);
 
-  // ── 卡片 3：最近浏览 ──
+  // ── 卡片 3：最近项目 ──
   auto* card3 = new QFrame(scroll_content);
   card3->setObjectName(QStringLiteral("PhCard"));
   auto* c3_layout = new QVBoxLayout(card3);
   c3_layout->setContentsMargins(9, 9, 9, 9);
   c3_layout->setSpacing(6);
 
-  // 最近项目（紧凑列表，复用 OpenFileDelegate，与已打开文件列表风格一致）
   auto* recent_proj_label = new QLabel(QStringLiteral("最近项目"), card3);
   recent_proj_label->setObjectName(QStringLiteral("PhSectionLabel"));
   c3_layout->addWidget(recent_proj_label);
@@ -177,9 +176,18 @@ void ProjectStructureWidget::initUi() {
   recent_projects_view_->setItemDelegate(rp_delegate);
   c3_layout->addWidget(recent_projects_view_);
 
-  auto* recent_file_label = new QLabel(QStringLiteral("最近文件"), card3);
+  sc_layout->addWidget(card3);
+
+  // ── 卡片 4：最近文件 ──
+  auto* card4 = new QFrame(scroll_content);
+  card4->setObjectName(QStringLiteral("PhCard"));
+  auto* c4_layout = new QVBoxLayout(card4);
+  c4_layout->setContentsMargins(9, 9, 9, 9);
+  c4_layout->setSpacing(6);
+
+  auto* recent_file_label = new QLabel(QStringLiteral("最近文件"), card4);
   recent_file_label->setObjectName(QStringLiteral("PhSectionLabel"));
-  c3_layout->addWidget(recent_file_label);
+  c4_layout->addWidget(recent_file_label);
 
   recent_files_view_ = new QListView();
   recent_files_view_->setFrameShape(QFrame::NoFrame);
@@ -190,9 +198,9 @@ void ProjectStructureWidget::initUi() {
   rf_delegate->setCloseButtonVisible(false);
   recent_files_view_->setItemDelegate(rf_delegate);
   recent_files_view_->setFixedHeight(200);
-  c3_layout->addWidget(recent_files_view_);
+  c4_layout->addWidget(recent_files_view_);
 
-  sc_layout->addWidget(card3);
+  sc_layout->addWidget(card4);
 
   sc_layout->addStretch();
 
