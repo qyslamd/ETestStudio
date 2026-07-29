@@ -10,6 +10,7 @@ namespace etest::app {
 // Role 常量（定义在 ProjectStructureWidget.h 的 ProjectNodeRole 枚举中）
 static constexpr int kIsLatestRole = Qt::UserRole + 4;
 static constexpr int kIsEffectiveTopologyRole = Qt::UserRole + 5;
+static constexpr int kIsIcdConfigRole = Qt::UserRole + 6;
 
 ProjectTreeDelegate::ProjectTreeDelegate(QObject* parent)
     : QStyledItemDelegate(parent) {}
@@ -19,8 +20,9 @@ void ProjectTreeDelegate::paint(QPainter* painter,
                                 const QModelIndex& index) const {
   bool is_latest = index.data(kIsLatestRole).toBool();
   bool is_effective_topo = index.data(kIsEffectiveTopologyRole).toBool();
+  bool is_icd_config = index.data(kIsIcdConfigRole).toBool();
 
-  if (!is_latest && !is_effective_topo) {
+  if (!is_latest && !is_effective_topo && !is_icd_config) {
     QStyledItemDelegate::paint(painter, option, index);
     return;
   }
@@ -36,6 +38,8 @@ void ProjectTreeDelegate::paint(QPainter* painter,
     drawBadge(painter, option, tr("最新"), QColor(76, 175, 80));
   } else if (is_effective_topo) {
     drawBadge(painter, option, tr("生效"), QColor(33, 150, 243));
+  } else if (is_icd_config) {
+    drawBadge(painter, option, tr("配置"), QColor(255, 152, 0));
   }
 }
 

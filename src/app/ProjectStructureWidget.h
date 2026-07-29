@@ -39,6 +39,7 @@ enum ProjectNodeRole {
   CategoryIdRole,                   // category 的标识（如 "protocol"）
   IsLatestRole,                     // bool: 报告分类中每个程序名的最新文件
   IsEffectiveTopologyRole,          // bool: topology.etopo（引擎加载的唯一拓扑文件）
+  IsIcdConfigRole,                  // bool: ICDConfig.xml/json（协议配置容器文件）
 };
 
 struct CategoryInfo {
@@ -133,6 +134,9 @@ class ProjectStructureWidget : public QWidget {
   QStandardItem* createFileItem(const QString& fileName,
                                 const QString& relativePath);
   void populateReportCategory(QStandardItem* catItem,
+                              const QFileInfoList& entries,
+                              const QString& dirPath);
+  void populateBackupCategory(QStandardItem* catItem,
                               const QFileInfoList& entries,
                               const QString& dirPath);
   QString absolutePath(const QString& relativePath) const;

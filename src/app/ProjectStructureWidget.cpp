@@ -549,6 +549,8 @@ void ProjectStructureWidget::buildTree() {
 
       if (cat.id == "report") {
         populateReportCategory(catItem, entries, cat.dirPath);
+      } else if (cat.id == "backup") {
+        populateBackupCategory(catItem, entries, cat.dirPath);
       } else {
         for (const auto& fi : entries) {
           QString relPath = cat.dirPath + fi.fileName();
@@ -690,6 +692,11 @@ void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
     QString dirPath = QDir(project_path_).relativeFilePath(dir.absolutePath()) +
                       QStringLiteral("/");
     populateReportCategory(catItem, entries, dirPath);
+    fileCount = catItem->rowCount();
+  } else if (catId == "backup") {
+    QString dirPath = QDir(project_path_).relativeFilePath(dir.absolutePath()) +
+                      QStringLiteral("/");
+    populateBackupCategory(catItem, entries, dirPath);
     fileCount = catItem->rowCount();
   } else {
     for (const auto& fi : entries) {
@@ -1199,6 +1206,25 @@ void ProjectStructureWidget::populateReportCategory(
   }
 }
 
+void ProjectStructureWidget::populateBackupCategory(
+    QStandardItem* catItem,
+    const QFileInfoList& entries,
+    const QString& dirPath) {
+  QFileInfoList sorted = entries;
+  std::sort(sorted.begin(), sorted.end(),
+            [](const QFileInfo& a, const QFileInfo& b) {
+              return a.lastModified() > b.lastModified();
+            });
+
+  for (int i = 0; i < sorted.size(); ++i) {
+    const auto& fi = sorted[i];
+    QString relPath = dirPath + fi.fileName();
+    auto* item = createFileItem(fi.fileName(), relPath);
+    item->setData(i == 0, IsLatestRole);
+    catItem->appendRow(item);
+  }
+}
+
 QStandardItem* ProjectStructureWidget::createFileItem(
     const QString& fileName,
     const QString& relativePath) {
@@ -1243,6 +1269,12 @@ QStandardItem* ProjectStructureWidget::createFileItem(
     iconName = QStringLiteral("file_generic");
   }
   item->setIcon(AppIconProvider::instance().icon(iconName));
+
+  if (fi.completeBaseName().toLower() == QStringLiteral("icdconfig") &&
+      (suffix == QStringLiteral("xml") || suffix == QStringLiteral("json"))) {
+    item->setData(true, IsIcdConfigRole);
+    item->setEditable(false);
+  }
 
   return item;
 }
