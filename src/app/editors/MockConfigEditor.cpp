@@ -2,6 +2,8 @@
 
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QHBoxLayout>
+#include <QPushButton>
 #include <QFile>
 #include <QFileInfo>
 #include <QFormLayout>
@@ -133,6 +135,16 @@ void MockConfigEditor::initUi() {
   frLayout->addWidget(new QLabel(QStringLiteral("回复帧:"), frame_response_page_));
   frLayout->addWidget(fr_reply_frame_);
   frLayout->addWidget(fr_field_table_);
+
+  // 添加/删除行按钮
+  auto* frBtnLayout = new QHBoxLayout();
+  fr_add_row_btn_ = new QPushButton(QStringLiteral("添加行"));
+  fr_del_row_btn_ = new QPushButton(QStringLiteral("删除行"));
+  frBtnLayout->addWidget(fr_add_row_btn_);
+  frBtnLayout->addWidget(fr_del_row_btn_);
+  frBtnLayout->addStretch();
+  frLayout->addLayout(frBtnLayout);
+
   frLayout->addWidget(new QLabel(QStringLiteral("帧预览:"), frame_response_page_));
   frLayout->addWidget(fr_hex_preview_);
   frLayout->addStretch();
@@ -172,6 +184,10 @@ void MockConfigEditor::initSignals() {
           this, &MockConfigEditor::onFrFieldChanged);
   connect(fr_reply_frame_, &QComboBox::currentTextChanged,
           this, &MockConfigEditor::onReplyFrameChanged);
+  connect(fr_add_row_btn_, &QPushButton::clicked,
+          this, &MockConfigEditor::onFrAddRow);
+  connect(fr_del_row_btn_, &QPushButton::clicked,
+          this, &MockConfigEditor::onFrDeleteRow);
 }
 
 void MockConfigEditor::setIcdRepository(icd::Repository* repo) {
@@ -331,6 +347,18 @@ void MockConfigEditor::buildNavTree() {
       QJsonObject device = deviceMap.value(deviceName);
       QString deviceType = device["deviceType"].toString();
       QString deviceId = device["id"].toString();
+      QString devicePortName = matchedConn["devicePort"].toString();
+
+      // 从设备端口提取 boundFrames
+      QJsonArray boundFrames;
+      QJsonArray devicePorts = device["ports"].toArray();
+      for (const auto& dpVal : devicePorts) {
+        QJsonObject dp = dpVal.toObject();
+        if (dp["name"].toString() == devicePortName) {
+          boundFrames = dp["boundFrames"].toArray();
+          break;
+        }
+      }
 
       // 查 MockResponses 配置
       QJsonObject behavior;
@@ -350,6 +378,7 @@ void MockConfigEditor::buildNavTree() {
       portItem->setData(0, Qt::UserRole + 2, deviceId);
       portItem->setData(0, Qt::UserRole + 3, portName);
       portItem->setData(0, Qt::UserRole + 4, deviceType);
+      portItem->setData(0, Qt::UserRole + 6, QVariant::fromValue(boundFrames));
 
       if (deviceType == QStringLiteral("serial") ||
           deviceType == QStringLiteral("can") ||
@@ -362,7 +391,11 @@ void MockConfigEditor::buildNavTree() {
           QString frameName = resp["frameName"].toString();
           QString replyFrameName = resp["replyFrameName"].toString();
           auto* respItem = new QTreeWidgetItem(portItem);
-          respItem->setText(0, QStringLiteral("%1 -> %2").arg(frameName, replyFrameName));
+          if (frameName.isEmpty()) {
+            respItem->setText(0, QStringLiteral("(无帧名) -> %1").arg(replyFrameName));
+          } else {
+            respItem->setText(0, QStringLiteral("%1 -> %2").arg(frameName, replyFrameName));
+          }
           respItem->setData(0, Qt::UserRole, QStringLiteral("response"));
           respItem->setData(0, Qt::UserRole + 4, frameName);
           respItem->setData(0, Qt::UserRole + 5, replyFrameName);
@@ -505,7 +538,12 @@ void MockConfigEditor::onCurrentItemChanged(QTreeWidgetItem* current,
               current->data(0, Qt::UserRole + 5).toString() == replyFrameName) {
             fr_info_label_->setText(current->text(0));
             fr_reply_frame_->clear();
-            if (icd_repo_) {
+            QJsonArray boundFrames = portItem->data(0, Qt::UserRole + 6).value<QJsonArray>();
+            if (!boundFrames.isEmpty()) {
+              for (const auto& bfVal : boundFrames) {
+                fr_reply_frame_->addItem(bfVal.toString());
+              }
+            } else if (icd_repo_) {
               for (const auto& frame : icd_repo_->frames()) {
                 fr_reply_frame_->addItem(QString::fromStdString(std::string(frame->name())));
               }
@@ -666,9 +704,20 @@ void MockConfigEditor::onFrFieldChanged(QTableWidgetItem* item) {
         resp["replyFrameName"].toString() == current_reply_frame_name_) {
       QJsonArray fieldValues = resp["fieldValues"].toArray();
       if (item->row() < fieldValues.size()) {
+        // 更新现有行
         QJsonObject fv = fieldValues[item->row()].toObject();
         fv["engValue"] = item->text().toDouble();
         fieldValues.replace(item->row(), fv);
+      } else {
+        // 新增行：补齐 fieldValues 数组并创建新条目
+        while (fieldValues.size() < item->row()) {
+          fieldValues.append(QJsonObject());
+        }
+        QJsonObject fv;
+        auto* pathItem = fr_field_table_->item(item->row(), 0);
+        fv["nodePath"] = pathItem ? pathItem->text() : QString();
+        fv["engValue"] = item->text().toDouble();
+        fieldValues.append(fv);
       }
       resp["fieldValues"] = fieldValues;
       responses.replace(i, resp);
@@ -724,6 +773,48 @@ void MockConfigEditor::onReplyFrameChanged(const QString& text) {
   port_behaviors_.replace(idx, b);
   markModified();
   updateHexPreview(text);
+}
+
+void MockConfigEditor::onFrAddRow() {
+  int row = fr_field_table_->rowCount();
+  fr_field_table_->insertRow(row);
+  fr_field_table_->setItem(row, 0, new QTableWidgetItem(QString()));
+  fr_field_table_->setItem(row, 1, new QTableWidgetItem(QStringLiteral("0")));
+  fr_field_table_->setItem(row, 2, new QTableWidgetItem(QString()));
+  fr_field_table_->setItem(row, 3, new QTableWidgetItem(QString()));
+  markModified();
+}
+
+void MockConfigEditor::onFrDeleteRow() {
+  int row = fr_field_table_->currentRow();
+  if (row < 0) {
+    return;
+  }
+  fr_field_table_->removeRow(row);
+  // 同步从 JSON 中移除
+  int idx = findCurrentBehaviorIndex();
+  if (idx < 0) {
+    return;
+  }
+  QJsonObject b = port_behaviors_[idx].toObject();
+  QJsonArray responses = b["responses"].toArray();
+  for (int i = 0; i < responses.size(); ++i) {
+    QJsonObject resp = responses[i].toObject();
+    if (resp["frameName"].toString() == current_frame_name_ &&
+        resp["replyFrameName"].toString() == current_reply_frame_name_) {
+      QJsonArray fieldValues = resp["fieldValues"].toArray();
+      if (row < fieldValues.size()) {
+        fieldValues.removeAt(row);
+      }
+      resp["fieldValues"] = fieldValues;
+      responses.replace(i, resp);
+      break;
+    }
+  }
+  b["responses"] = responses;
+  port_behaviors_.replace(idx, b);
+  markModified();
+  updateHexPreview(current_reply_frame_name_);
 }
 
 }  // namespace etest::app

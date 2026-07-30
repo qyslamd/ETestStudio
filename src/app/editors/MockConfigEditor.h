@@ -17,6 +17,7 @@ class QDoubleSpinBox;
 class QLabel;
 class QSplitter;
 class QStackedWidget;
+class QPushButton;
 class QTableWidget;
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -108,6 +109,8 @@ class MockConfigEditor : public QWidget, public IEditor {
   QComboBox* fr_reply_frame_ = nullptr;
   QTableWidget* fr_field_table_ = nullptr;
   QLabel* fr_hex_preview_ = nullptr;
+  QPushButton* fr_add_row_btn_ = nullptr;
+  QPushButton* fr_del_row_btn_ = nullptr;
 
   // 真实模式提示页
   QLabel* real_mode_hint_ = nullptr;
@@ -126,6 +129,8 @@ class MockConfigEditor : public QWidget, public IEditor {
   void onAdValueChanged();
   void onFrFieldChanged(QTableWidgetItem* item);
   void onReplyFrameChanged(const QString& text);
+  void onFrAddRow();
+  void onFrDeleteRow();
   void markModified();
 };
 
