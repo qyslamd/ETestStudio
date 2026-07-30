@@ -111,6 +111,22 @@ class MockConfigEditor : public QWidget, public IEditor {
   QLabel* fr_hex_preview_ = nullptr;
   QPushButton* fr_add_row_btn_ = nullptr;
   QPushButton* fr_del_row_btn_ = nullptr;
+  QPushButton* fr_del_resp_btn_ = nullptr;
+
+  // 未配置提示页
+  QWidget* unconfig_hint_page_ = nullptr;
+  QPushButton* create_config_btn_ = nullptr;
+
+  // serial/can/a429 端口编辑页
+  QWidget* frame_port_page_ = nullptr;
+  QLabel* frame_port_info_label_ = nullptr;
+  QWidget* frame_port_resp_list_ = nullptr;
+  QPushButton* fr_add_resp_btn_ = nullptr;
+  QPushButton* fr_del_port_config_btn_ = nullptr;
+
+  // UUT 概览页
+  QWidget* uut_overview_page_ = nullptr;
+  QTableWidget* uut_overview_table_ = nullptr;
 
   // 真实模式提示页
   QLabel* real_mode_hint_ = nullptr;
@@ -125,12 +141,21 @@ class MockConfigEditor : public QWidget, public IEditor {
   QString current_reply_frame_name_;
 
   int findCurrentBehaviorIndex() const;
+  int findCurrentResponseIndex() const;
   void onDaValueChanged();
   void onAdValueChanged();
   void onFrFieldChanged(QTableWidgetItem* item);
   void onReplyFrameChanged(const QString& text);
   void onFrAddRow();
   void onFrDeleteRow();
+  void onCreateConfigClicked();
+  void onFrDelPortConfigClicked();
+  void onFrAddRespClicked();
+  void onFrDelRespClicked();
+  void onFrNodePathDoubleClicked(QTableWidgetItem* item);
+  void rebuildFramePortRespList();
+  void rebuildUutOverview();
+  QString showIcdSignalPicker(const QString& currentPath);
   void markModified();
 };
 
