@@ -9,6 +9,7 @@
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
+#include "ThemeManager.h"
 
 namespace etest::app {
 
@@ -195,10 +196,12 @@ QWidget* SettingsDialog::createAppearancePage() {
     auto* rightLayout = addSettingRow(cardAppearance, QStringLiteral("主题"),
                                       QStringLiteral("应用程序界面色彩主题"));
     auto* combo = new QComboBox();
-    combo->addItem(QStringLiteral("默认主题"), QStringLiteral("default"));
-    combo->addItem(QStringLiteral("VS Code 暗黑"), QStringLiteral("vscode"));
-    combo->addItem(QStringLiteral("中国红"), QStringLiteral("chinese_red"));
-    combo->addItem(QStringLiteral("酸橙 Lime"), QStringLiteral("lime"));
+    for (const auto& themeId :
+         etest::core_ui::ThemeManager::instance().availableThemes()) {
+      combo->addItem(
+          etest::core_ui::ThemeManager::instance().themeDisplayName(themeId),
+          themeId);
+    }
     combo->setFixedWidth(160);
 
     QString val = ConfigManager::instance().get<QString>(

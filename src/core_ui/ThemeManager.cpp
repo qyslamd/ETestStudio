@@ -7,222 +7,81 @@
 #include <QRegularExpression>
 #include <QSet>
 
+#include <nlohmann/json.hpp>
+
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 
 namespace etest::core_ui {
 
 using namespace etest::core::config;
+using json = nlohmann::json;
 
-// ── 内置 palette 工厂 ──
-
-static ThemePalette makeDarkPalette() {
-  ThemePalette p;
-  p.themeId = QStringLiteral("vscode");
-  p.isDark = true;
-  p.ribbonBaseTheme = 5;
-  p.ribbonQssPath =
-      QStringLiteral(":/resources/styles/ribbon_vscode.qss");
-  p.windowBackground = QColor("#1E1E1E");
-  p.panelBackground = QColor("#252526");
-  p.toolbarBackground = QColor("#3C3C3C");
-  p.hoverBackground = QColor("#505050");
-  p.selectionBackground = QColor("#094771");
-  p.borderColor = QColor("#454545");
-  p.textColor = QColor("#CCCCCC");
-  p.secondaryTextColor = QColor("#858585");
-  p.disabledTextColor = QColor("#5A5A5A");
-  p.accentColor = QColor("#007ACC");
-  p.statusBarBackground = QColor("#007ACC");
-  p.clockFaceBackground = QColor("#252526");
-  p.clockHandColor = QColor("#CCCCCC");
-  p.clockSecondaryColor = QColor("#858585");
-  p.clockAccentColor = QColor(0xFF, 0x66, 0x00);
-  // Editor: VS Code Dark+
-  p.editorColors = {
-      {CONFIG_EDITOR_THEME_PAPER, "#1E1E1E"},
-      {CONFIG_EDITOR_THEME_TEXT, "#CCCCCC"},
-      {CONFIG_EDITOR_THEME_CARET_LINE, "#2E2E2E"},
-      {CONFIG_EDITOR_THEME_CARET, "#CCCCCC"},
-      {CONFIG_EDITOR_THEME_SELECTION_BG, "#264F78"},
-      {CONFIG_EDITOR_THEME_SELECTION_FG, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_MARGIN_BG, "#252525"},
-      {CONFIG_EDITOR_THEME_LINE_NUMBER, "#858585"},
-      {CONFIG_EDITOR_THEME_INDENT_GUIDE, "#434343"},
-      {CONFIG_EDITOR_THEME_BRACE_LIGHT_BG, "#264F78"},
-      {CONFIG_EDITOR_THEME_BRACE_LIGHT_FG, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_BRACE_BAD_BG, "#8B0000"},
-      {CONFIG_EDITOR_THEME_BRACE_BAD_FG, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_FOLD_MARGIN, "#858585"},
-      {CONFIG_EDITOR_SYNTAX_KEYWORD, "#569CD6"},
-      {CONFIG_EDITOR_SYNTAX_COMMENT, "#6A9955"},
-      {CONFIG_EDITOR_SYNTAX_STRING, "#CE9178"},
-      {CONFIG_EDITOR_SYNTAX_NUMBER, "#B5CEA8"},
-      {CONFIG_EDITOR_SYNTAX_FUNCTION, "#DCDCAA"},
-      {CONFIG_EDITOR_SYNTAX_TAG, "#569CD6"},
-      {CONFIG_EDITOR_SYNTAX_PREPROCESSOR, "#9B9B9B"},
-      {CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS, "#4EC9B0"},
-      {CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ, "#D7BA7D"},
-      {CONFIG_EDITOR_SYNTAX_PROPERTY, "#DCDCAA"},
-      {CONFIG_EDITOR_SYNTAX_OPERATOR, "#CCCCCC"},
-  };
-  return p;
+static QColor parseColor(const json& j) {
+  if (j.is_string()) {
+    std::string s = j.get<std::string>();
+    return QColor(QString::fromStdString(s));
+  }
+  return QColor();
 }
 
-static ThemePalette makeLightPalette() {
-  ThemePalette p;
-  p.themeId = QStringLiteral("default");
-  p.isDark = false;
-  p.ribbonBaseTheme = 2;  // Office2021Blue
-  p.windowBackground = QColor(0xF0, 0xF0, 0xF0);
-  p.panelBackground = QColor(0xF0, 0xF0, 0xF0);
-  p.toolbarBackground = QColor(0xF0, 0xF0, 0xF0);
-  p.hoverBackground = QColor(0xE0, 0xE0, 0xE0);
-  p.selectionBackground = QColor(0xCC, 0xE4, 0xF7);
-  p.borderColor = QColor(0xCC, 0xCC, 0xCC);
-  p.textColor = QColor(0x33, 0x33, 0x33);
-  p.secondaryTextColor = QColor(0x88, 0x88, 0x88);
-  p.disabledTextColor = QColor(0xAA, 0xAA, 0xAA);
-  p.accentColor = QColor("#007ACC");
-  p.statusBarBackground = QColor(0xF0, 0xF0, 0xF0);
-  p.clockFaceBackground = QColor(0xF6, 0xF6, 0xF6);
-  p.clockHandColor = QColor(0x33, 0x33, 0x33);
-  p.clockSecondaryColor = QColor(0x55, 0x55, 0x55);
-  p.clockAccentColor = QColor(0xFF, 0x66, 0x00);
-  // Editor: VS Code Light+
-  p.editorColors = {
-      {CONFIG_EDITOR_THEME_PAPER, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_TEXT, "#000000"},
-      {CONFIG_EDITOR_THEME_CARET_LINE, "#E8F0FE"},
-      {CONFIG_EDITOR_THEME_CARET, "#000000"},
-      {CONFIG_EDITOR_THEME_SELECTION_BG, "#ADD6FF"},
-      {CONFIG_EDITOR_THEME_SELECTION_FG, "#000000"},
-      {CONFIG_EDITOR_THEME_MARGIN_BG, "#F3F3F3"},
-      {CONFIG_EDITOR_THEME_LINE_NUMBER, "#888888"},
-      {CONFIG_EDITOR_THEME_INDENT_GUIDE, "#D3D3D3"},
-      {CONFIG_EDITOR_THEME_BRACE_LIGHT_BG, "#ADD6FF"},
-      {CONFIG_EDITOR_THEME_BRACE_LIGHT_FG, "#000000"},
-      {CONFIG_EDITOR_THEME_BRACE_BAD_BG, "#E57373"},
-      {CONFIG_EDITOR_THEME_BRACE_BAD_FG, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_FOLD_MARGIN, "#888888"},
-      {CONFIG_EDITOR_SYNTAX_KEYWORD, "#0000FF"},
-      {CONFIG_EDITOR_SYNTAX_COMMENT, "#008000"},
-      {CONFIG_EDITOR_SYNTAX_STRING, "#A31515"},
-      {CONFIG_EDITOR_SYNTAX_NUMBER, "#098658"},
-      {CONFIG_EDITOR_SYNTAX_FUNCTION, "#795E26"},
-      {CONFIG_EDITOR_SYNTAX_TAG, "#800000"},
-      {CONFIG_EDITOR_SYNTAX_PREPROCESSOR, "#888888"},
-      {CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS, "#267F99"},
-      {CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ, "#E57373"},
-      {CONFIG_EDITOR_SYNTAX_PROPERTY, "#795E26"},
-      {CONFIG_EDITOR_SYNTAX_OPERATOR, "#000000"},
-  };
-  return p;
-}
+// ── JSON 加载 ──
 
-static ThemePalette makeChineseRedPalette() {
-  ThemePalette p;
-  p.themeId = QStringLiteral("chinese_red");
-  p.isDark = true;
-  p.ribbonBaseTheme = 5;
-  p.ribbonQssPath =
-      QStringLiteral(":/resources/styles/ribbon_chinese_red.qss");
-  p.windowBackground = QColor("#1A1A1A");
-  p.panelBackground = QColor("#241F20");
-  p.toolbarBackground = QColor("#33292B");
-  p.hoverBackground = QColor("#4A3437");
-  p.selectionBackground = QColor("#5D1A1A");
-  p.borderColor = QColor("#4A3A3C");
-  p.textColor = QColor("#D4C5C5");
-  p.secondaryTextColor = QColor("#9A8585");
-  p.disabledTextColor = QColor("#5A4A4A");
-  p.accentColor = QColor("#C62828");
-  p.statusBarBackground = QColor("#B71C1C");
-  p.clockFaceBackground = QColor("#241F20");
-  p.clockHandColor = QColor("#D4C5C5");
-  p.clockSecondaryColor = QColor("#9A8585");
-  p.clockAccentColor = QColor("#D4AF37");
-  // Editor: 基于 Dark+，关键字/标签用中国红，函数用金色
-  p.editorColors = {
-      {CONFIG_EDITOR_THEME_PAPER, "#1A1A1A"},
-      {CONFIG_EDITOR_THEME_TEXT, "#D4C5C5"},
-      {CONFIG_EDITOR_THEME_CARET_LINE, "#2A2425"},
-      {CONFIG_EDITOR_THEME_CARET, "#D4C5C5"},
-      {CONFIG_EDITOR_THEME_SELECTION_BG, "#4A1A1A"},
-      {CONFIG_EDITOR_THEME_SELECTION_FG, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_MARGIN_BG, "#241F20"},
-      {CONFIG_EDITOR_THEME_LINE_NUMBER, "#9A8585"},
-      {CONFIG_EDITOR_THEME_INDENT_GUIDE, "#4A3A3C"},
-      {CONFIG_EDITOR_THEME_BRACE_LIGHT_BG, "#4A1A1A"},
-      {CONFIG_EDITOR_THEME_BRACE_LIGHT_FG, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_BRACE_BAD_BG, "#8B0000"},
-      {CONFIG_EDITOR_THEME_BRACE_BAD_FG, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_FOLD_MARGIN, "#9A8585"},
-      {CONFIG_EDITOR_SYNTAX_KEYWORD, "#C62828"},
-      {CONFIG_EDITOR_SYNTAX_COMMENT, "#6A9955"},
-      {CONFIG_EDITOR_SYNTAX_STRING, "#CE9178"},
-      {CONFIG_EDITOR_SYNTAX_NUMBER, "#B5CEA8"},
-      {CONFIG_EDITOR_SYNTAX_FUNCTION, "#D4AF37"},
-      {CONFIG_EDITOR_SYNTAX_TAG, "#C62828"},
-      {CONFIG_EDITOR_SYNTAX_PREPROCESSOR, "#9B9B9B"},
-      {CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS, "#4EC9B0"},
-      {CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ, "#D7BA7D"},
-      {CONFIG_EDITOR_SYNTAX_PROPERTY, "#D4AF37"},
-      {CONFIG_EDITOR_SYNTAX_OPERATOR, "#D4C5C5"},
-  };
-  return p;
-}
+bool ThemeManager::loadPaletteFromJson(const QString& path,
+                                       ThemePalette& out) {
+  QFile f(path);
+  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return false;
+  }
+  QByteArray data = f.readAll();
+  f.close();
 
-static ThemePalette makeLimePalette() {
-  ThemePalette p;
-  p.themeId = QStringLiteral("lime");
-  p.isDark = false;
-  p.ribbonBaseTheme = 2;
-  p.ribbonQssPath =
-      QStringLiteral(":/resources/styles/ribbon_lime.qss");
-  p.windowBackground = QColor("#F5FFF5");
-  p.panelBackground = QColor("#E8F5E8");
-  p.toolbarBackground = QColor("#DCEEDC");
-  p.hoverBackground = QColor("#C8E6C8");
-  p.selectionBackground = QColor("#81C784");
-  p.borderColor = QColor("#C8E6C8");
-  p.textColor = QColor("#1B3A1B");
-  p.secondaryTextColor = QColor("#558B55");
-  p.disabledTextColor = QColor("#A5D6A5");
-  p.accentColor = QColor("#00CC00");
-  p.statusBarBackground = QColor("#00CC00");
-  p.clockFaceBackground = QColor("#E8F5E8");
-  p.clockHandColor = QColor("#1B3A1B");
-  p.clockSecondaryColor = QColor("#558B55");
-  p.clockAccentColor = QColor("#00FF00");
-  p.editorColors = {
-      {CONFIG_EDITOR_THEME_PAPER, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_TEXT, "#000000"},
-      {CONFIG_EDITOR_THEME_CARET_LINE, "#E8F5E8"},
-      {CONFIG_EDITOR_THEME_CARET, "#000000"},
-      {CONFIG_EDITOR_THEME_SELECTION_BG, "#A5D6A5"},
-      {CONFIG_EDITOR_THEME_SELECTION_FG, "#000000"},
-      {CONFIG_EDITOR_THEME_MARGIN_BG, "#F5FFF5"},
-      {CONFIG_EDITOR_THEME_LINE_NUMBER, "#558B55"},
-      {CONFIG_EDITOR_THEME_INDENT_GUIDE, "#C8E6C8"},
-      {CONFIG_EDITOR_THEME_BRACE_LIGHT_BG, "#A5D6A5"},
-      {CONFIG_EDITOR_THEME_BRACE_LIGHT_FG, "#000000"},
-      {CONFIG_EDITOR_THEME_BRACE_BAD_BG, "#E57373"},
-      {CONFIG_EDITOR_THEME_BRACE_BAD_FG, "#FFFFFF"},
-      {CONFIG_EDITOR_THEME_FOLD_MARGIN, "#558B55"},
-      {CONFIG_EDITOR_SYNTAX_KEYWORD, "#009900"},
-      {CONFIG_EDITOR_SYNTAX_COMMENT, "#558B55"},
-      {CONFIG_EDITOR_SYNTAX_STRING, "#A31515"},
-      {CONFIG_EDITOR_SYNTAX_NUMBER, "#098658"},
-      {CONFIG_EDITOR_SYNTAX_FUNCTION, "#795E26"},
-      {CONFIG_EDITOR_SYNTAX_TAG, "#009900"},
-      {CONFIG_EDITOR_SYNTAX_PREPROCESSOR, "#888888"},
-      {CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS, "#267F99"},
-      {CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ, "#E57373"},
-      {CONFIG_EDITOR_SYNTAX_PROPERTY, "#795E26"},
-      {CONFIG_EDITOR_SYNTAX_OPERATOR, "#000000"},
-  };
-  return p;
+  try {
+    json j = json::parse(data.toStdString());
+
+    out.themeId = QString::fromStdString(j.value("themeId", std::string()));
+    out.isDark = j.value("isDark", false);
+    out.ribbonBaseTheme = j.value("ribbonBaseTheme", 5);
+
+    auto& colors = j["colors"];
+    if (!colors.is_null()) {
+      auto setColor = [&](const char* key, QColor& target) {
+        auto it = colors.find(key);
+        if (it != colors.end()) target = parseColor(*it);
+      };
+      setColor("windowBackground", out.windowBackground);
+      setColor("panelBackground", out.panelBackground);
+      setColor("toolbarBackground", out.toolbarBackground);
+      setColor("hoverBackground", out.hoverBackground);
+      setColor("selectionBackground", out.selectionBackground);
+      setColor("borderColor", out.borderColor);
+      setColor("textColor", out.textColor);
+      setColor("secondaryTextColor", out.secondaryTextColor);
+      setColor("disabledTextColor", out.disabledTextColor);
+      setColor("accentColor", out.accentColor);
+      setColor("statusBarBackground", out.statusBarBackground);
+      setColor("clockFaceBackground", out.clockFaceBackground);
+      setColor("clockHandColor", out.clockHandColor);
+      setColor("clockSecondaryColor", out.clockSecondaryColor);
+      setColor("clockAccentColor", out.clockAccentColor);
+    }
+
+    auto& editor = j["editorColors"];
+    if (editor.is_object()) {
+      for (auto it = editor.begin(); it != editor.end(); ++it) {
+        if (it.value().is_string()) {
+          std::string val = it.value().get<std::string>();
+          out.editorColors[QString::fromStdString(it.key())] =
+              QString::fromStdString(val);
+        }
+      }
+    }
+
+    return true;
+  } catch (const json::exception& e) {
+    qWarning("Theme JSON parse error: %s", e.what());
+    return false;
+  }
 }
 
 // ── ThemeManager ──
@@ -254,10 +113,28 @@ ThemeManager::ThemeManager(QObject* parent) : QObject(parent) {
 ThemeManager::~ThemeManager() = default;
 
 void ThemeManager::registerBuiltinPalettes() {
-  palettes_[QStringLiteral("default")] = makeLightPalette();
-  palettes_[QStringLiteral("vscode")] = makeDarkPalette();
-  palettes_[QStringLiteral("chinese_red")] = makeChineseRedPalette();
-  palettes_[QStringLiteral("lime")] = makeLimePalette();
+  QDir dir(QStringLiteral(":/resources/themes"));
+  if (!dir.exists()) {
+    return;
+  }
+  const auto entries =
+      dir.entryInfoList({QStringLiteral("*.json")}, QDir::Files);
+  for (const auto& fi : entries) {
+    ThemePalette p;
+    if (loadPaletteFromJson(fi.absoluteFilePath(), p)) {
+      palettes_[p.themeId] = p;
+      // Read displayName from JSON for SettingsDialog
+      QFile f(fi.absoluteFilePath());
+      if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        try {
+          json j = json::parse(f.readAll().toStdString());
+          display_names_[p.themeId] =
+              QString::fromStdString(j.value("displayName", std::string()));
+        } catch (...) {}
+        f.close();
+      }
+    }
+  }
 }
 
 bool ThemeManager::isDarkTheme() const {
@@ -273,10 +150,22 @@ int ThemeManager::ribbonBaseTheme() const {
 }
 
 QString ThemeManager::ribbonQssPath() const {
-  return palette_ ? palette_->ribbonQssPath : QString();
+  // Auto-derive: if ribbon_<themeId>.qss exists, return its path
+  if (palette_) {
+    QString path = QStringLiteral(":/resources/styles/ribbon_%1.qss")
+                       .arg(palette_->themeId);
+    if (QFileInfo::exists(path)) {
+      return path;
+    }
+  }
+  return QString();
 }
 
-// -- 语义色板（一行委托）--
+QString ThemeManager::themeDisplayName(const QString& themeId) const {
+  return display_names_.value(themeId, themeId);
+}
+
+// -- 语义色板（一行委托） --
 
 QColor ThemeManager::windowBackground() const {
   return palette_ ? palette_->windowBackground : QColor();
@@ -325,21 +214,7 @@ QColor ThemeManager::clockAccentColor() const {
 }
 
 QStringList ThemeManager::availableThemes() const {
-  QSet<QString> themes;
-  QDir dir(QStringLiteral(":/resources/styles"));
-  if (dir.exists()) {
-    const auto entries = dir.entryList({QStringLiteral("*.qss")}, QDir::Files);
-    for (const auto& fn : entries) {
-      if (!fn.startsWith(QStringLiteral("ads_"))) {
-        themes.insert(QFileInfo(fn).completeBaseName());
-      }
-    }
-  }
-  if (themes.isEmpty()) {
-    themes.insert(QStringLiteral("default"));
-    themes.insert(QStringLiteral("vscode"));
-  }
-  return themes.values();
+  return display_names_.keys();
 }
 
 void ThemeManager::setTheme(const QString& themeId) {
