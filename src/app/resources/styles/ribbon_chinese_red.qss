@@ -9,7 +9,7 @@ dark style theme 2
 字体颜色:#D4C5C5
 按钮背景颜色：#33292B
 按钮hover背景:#4A3437
-选中边框颜色:#C62828
+选中边框颜色:#C72523
 */
 
 /*SARibbonBar*/
@@ -38,11 +38,11 @@ SARibbonButtonGroupWidget > QToolButton:hover {
 }
 SARibbonButtonGroupWidget > QToolButton:pressed{
     background-color: #4A3437;
-    border:1px solid #C62828;
+    border:1px solid #C72523;
 }
 SARibbonButtonGroupWidget > QToolButton:checked {
     background-color: #4A3437;
-    border:1px solid #C62828;
+    border:1px solid #C72523;
 }
 /* SARibbonButtonGroupWidget下ToolButton按钮 菜单状态 */
 /*MenuButtonPopup*/
@@ -55,7 +55,7 @@ SARibbonButtonGroupWidget > QToolButton[popupMode="1"]::menu-button:hover {
 }
 /* pressed 状态 - MenuButtonPopup 模式的菜单按钮部分 */
 SARibbonButtonGroupWidget > QToolButton[popupMode="1"]::menu-button:pressed {
-    background-color: #C62828;
+    background-color: #C72523;
 }
 /* 直接弹出菜单模式，偏移8px，让下拉按钮能看到 */
 SARibbonButtonGroupWidget > QToolButton[popupMode="2"] {
@@ -200,7 +200,7 @@ SARibbonToolButton{
 } 
 
 SARibbonToolButton:focus {
-  border: 1px solid #C62828;
+  border: 1px solid #C72523;
 }
 SARibbonToolButton:pressed{
     color:#D4C5C5;
@@ -208,7 +208,7 @@ SARibbonToolButton:pressed{
 }
 SARibbonToolButton:checked{
     color:#D4C5C5;
-    border: 1px solid #C62828;
+    border: 1px solid #C72523;
     background-color: #4A3437;
 }
 SARibbonToolButton:hover {
@@ -235,7 +235,7 @@ SARibbonMenu::item {
   background-color: #33292B;
 }
 SARibbonMenu::item:selected {
-  border: 1px solid #C62828;
+  border: 1px solid #C72523;
   background-color: #4A3437;
 }
 SARibbonMenu::item:hover {
@@ -265,7 +265,7 @@ SARibbonGalleryGroup::item {
 }
 SARibbonGalleryGroup::item:selected {
   background-color: #4A3437;
-  border: 1px solid #C62828;
+  border: 1px solid #C72523;
 }
 SARibbonGalleryGroup::item:hover {
   background-color: #4A3437;
@@ -284,11 +284,11 @@ SARibbonPanel > QLineEdit {
   border:1px solid #1A1A1A;
   background-color: #4A3437;
   color: #D4C5C5;
-  selection-background-color: #C62828;
+  selection-background-color: #C72523;
   selection-color: #D4C5C5;
 }
 SARibbonPanel > QLineEdit:hover{
-    border: 1px solid #C62828;
+    border: 1px solid #C72523;
 }
 
 /*Panel下QCheckBox的特化*/
@@ -310,12 +310,12 @@ SARibbonPanel > QComboBox {
   background-color: #33292B;
 }
 SARibbonPanel > QComboBox:hover{
-  border: 1px solid #C62828;
+  border: 1px solid #C72523;
 }
 SARibbonPanel > QComboBox:editable {
   color : #D4C5C5;
   background-color: #4A3437;
-  selection-background-color: #C62828;
+  selection-background-color: #C72523;
   selection-color: #D4C5C5;
 }
 SARibbonPanel > QComboBox::drop-down {
@@ -326,7 +326,7 @@ SARibbonPanel > QComboBox::drop-down {
 }
 SARibbonPanel > QComboBox::drop-down:hover {
   border: none;
-  background-color: #C62828;
+  background-color: #C72523;
 }
 SARibbonPanel > QComboBox::down-arrow {
   image: url(:/SARibbon/image/resource/ArrowDown.png);
@@ -337,7 +337,7 @@ SARibbonPanel > QComboBox::down-arrow {
 
 /*SARibbonCategoryScrollButton*/
 SARibbonCategoryScrollButton {
-  border: 1px solid #C62828;
+  border: 1px solid #C72523;
   color: #D4C5C5;
   background-color: #33292B;
 }

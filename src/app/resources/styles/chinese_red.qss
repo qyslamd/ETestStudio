@@ -72,7 +72,7 @@ QToolButton:disabled {
 
 /* 状态栏 */
 QStatusBar {
-    background-color: #C62828;
+    background-color: #C72523;
     color: #FFFFFF;
     font-size: 12px;
     border-top: 1px solid #8B1818;
@@ -147,14 +147,14 @@ QSplitter::handle:horizontal {
     width: 3px;
 }
 QSplitter::handle:horizontal:hover {
-    background-color: #C62828;
+    background-color: #C72523;
 }
 QSplitter::handle:vertical {
     background-color: #33292B;
     height: 3px;
 }
 QSplitter::handle:vertical:hover {
-    background-color: #C62828;
+    background-color: #C72523;
 }
 
 /* Tab Widget — 由 TabBarStyle 全权自绘，不使用 QSS */
@@ -239,7 +239,7 @@ QTreeView::branch:open:has-children:has-siblings {
 QTreeView QLineEdit {
     background-color: #33292B;
     color: #D4C5C5;
-    border: 1px solid #C62828;
+    border: 1px solid #C72523;
     padding: 0px 2px;
     margin: 0px;
     selection-background-color: #4A1A1A;
@@ -325,7 +325,7 @@ QLineEdit {
     selection-background-color: #4A1A1A;
 }
 QLineEdit:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 
 /* 对话框 */
@@ -349,7 +349,7 @@ QComboBox {
     padding: 4px 8px;
 }
 QComboBox:hover {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 QComboBox::drop-down {
     border: none;
@@ -374,7 +374,7 @@ QSpinBox {
     padding: 4px 8px;
 }
 QSpinBox:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 
 /* DoubleSpinBox */
@@ -388,10 +388,10 @@ QDoubleSpinBox {
     selection-color: #FFFFFF;
 }
 QDoubleSpinBox:hover {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 QDoubleSpinBox:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 QDoubleSpinBox:disabled {
     background-color: #2A2425;
@@ -440,8 +440,8 @@ QRadioButton::indicator {
     background-color: #33292B;
 }
 QRadioButton::indicator:checked {
-    background-color: #C62828;
-    border-color: #C62828;
+    background-color: #C72523;
+    border-color: #C72523;
 }
 
 /* GroupBox */
@@ -476,7 +476,7 @@ QProgressBar {
     color: transparent;
 }
 QProgressBar::chunk {
-    background-color: #C62828;
+    background-color: #C72523;
     border-radius: 2px;
 }
 
@@ -520,7 +520,7 @@ QWidget#sidebarActivityBar QToolButton:hover {
     color: #FFFFFF;
 }
 QWidget#sidebarActivityBar QToolButton:checked {
-    border-left: 2px solid #C62828;
+    border-left: 2px solid #C72523;
     color: #FFFFFF;
     background-color: #3A2E30;
 }
@@ -692,7 +692,7 @@ TestProgramEditorWidget QLineEdit {
     selection-background-color: #4A1A1A;
 }
 TestProgramEditorWidget QLineEdit:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 TestProgramEditorWidget QTextEdit {
     background-color: #33292B;
@@ -702,7 +702,7 @@ TestProgramEditorWidget QTextEdit {
     selection-background-color: #4A1A1A;
 }
 TestProgramEditorWidget QTextEdit:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 TestProgramEditorWidget QTableWidget {
     background-color: #241F20;
@@ -785,7 +785,7 @@ StepDetailPanel QComboBox {
 StepDetailPanel QDoubleSpinBox:focus,
 StepDetailPanel QLineEdit:focus,
 StepDetailPanel QComboBox:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 
 StepDetailPanel QComboBox::drop-down {
@@ -822,8 +822,8 @@ StepDetailPanel QCheckBox::indicator {
 }
 
 StepDetailPanel QCheckBox::indicator:checked {
-    background-color: #C62828;
-    border-color: #C62828;
+    background-color: #C72523;
+    border-color: #C72523;
 }
 
 StepDetailPanel QTableWidget {
@@ -847,7 +847,7 @@ etest--app--SearchWidget QLineEdit {
     selection-background-color: #4A1A1A;
 }
 etest--app--SearchWidget QLineEdit:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 etest--app--SearchWidget QToolButton {
     background-color: transparent;
@@ -858,7 +858,7 @@ etest--app--SearchWidget QToolButton {
 }
 etest--app--SearchWidget QToolButton:hover {
     background-color: #4A3437;
-    border-color: #C62828;
+    border-color: #C72523;
 }
 etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn,
 etest--app--SearchWidget QToolButton#searchWholeWordBtn,
@@ -881,7 +881,7 @@ etest--app--SearchWidget QToolButton#searchCaseSensitiveBtn:checked,
 etest--app--SearchWidget QToolButton#searchWholeWordBtn:checked,
 etest--app--SearchWidget QToolButton#searchRegexModeBtn:checked {
     background-color: #5D1A1A;
-    border-color: #C62828;
+    border-color: #C72523;
     color: #FFFFFF;
 }
 etest--app--SearchWidget QTreeWidget {
@@ -950,7 +950,7 @@ GitWidget QTextEdit {
     font-size: 13px;
 }
 GitWidget QTextEdit:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 GitWidget QToolButton#refresh_button_ {
     background-color: transparent;
@@ -1163,7 +1163,7 @@ etest--app--TerminalPanel QPlainTextEdit {
     padding-right: 8px;
 }
 #protocolStatusBar {
-    background-color: #C62828;
+    background-color: #C72523;
     color: white;
     font-size: 12px;
 }
@@ -1310,7 +1310,7 @@ QWidget#WelcomeProjectCardContent {
 }
 QWidget#WelcomeProjectCardContent:hover {
     background-color: #3A2E30;
-    border-color: #C62828;
+    border-color: #C72523;
 }
 QLabel#WelcomeRecentCardName {
     color: #D4C5C5;
@@ -1452,7 +1452,7 @@ etest--app--SettingsDialog QSpinBox {
     padding: 4px 8px;
 }
 etest--app--SettingsDialog QSpinBox:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 etest--app--SettingsDialog QSpinBox::up-button,
 etest--app--SettingsDialog QSpinBox::down-button {
@@ -1475,7 +1475,7 @@ etest--app--SettingsDialog QComboBox {
     padding: 4px 8px;
 }
 etest--app--SettingsDialog QComboBox:hover {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 etest--app--SettingsDialog QComboBox::drop-down {
     background-color: #33292B;
@@ -1503,7 +1503,7 @@ etest--app--SettingsDialog QLineEdit {
     padding: 4px 8px;
 }
 etest--app--SettingsDialog QLineEdit:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 
 /* 设置页中的复选框 */
@@ -1546,7 +1546,7 @@ etest--app--SettingsDialog QCheckBox::indicator:indeterminate {
 }
 #aboutHeader {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-        stop: 0 #C62828, stop: 1 #8B2020);
+        stop: 0 #C72523, stop: 1 #8B2020);
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
 }
@@ -1668,7 +1668,7 @@ QToolButton#aboutOkButton:pressed {
 }
 QToolButton#loginButton {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-    stop:0 #8B2020, stop:1 #C62828);
+    stop:0 #8B2020, stop:1 #C72523);
   color: white;
   border: none;
   border-radius: 8px;
@@ -1842,7 +1842,7 @@ QToolButton#PhProjectBtn {
 }
 QToolButton#PhProjectBtn:hover {
     background-color: #3A2E30;
-    border-color: #C62828;
+    border-color: #C72523;
 }
 QToolButton#PhProjectBtn:pressed {
     background-color: #5D1A1A;
@@ -1869,7 +1869,7 @@ QFrame#PhCard {
     border-radius: 8px;
 }
 QFrame#PhCard:hover {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 QToolButton#PhQuickBtn {
     background-color: #2A2425;
@@ -1881,7 +1881,7 @@ QToolButton#PhQuickBtn {
 }
 QToolButton#PhQuickBtn:hover {
     background-color: #3A2E30;
-    border-color: #C62828;
+    border-color: #C72523;
 }
 QToolButton#PhQuickBtn:pressed {
     background-color: #5D1A1A;
@@ -2124,7 +2124,7 @@ QToolButton#saverCloseBtn:pressed {
     selection-background-color: #4A1A1A;
 }
 #LogFilterBar QLineEdit#LogFilterBox:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 /* 正则非法红框 */
 #LogFilterBar QLineEdit#LogFilterBox[invalid="true"] {
@@ -2144,7 +2144,7 @@ QToolButton#saverCloseBtn:pressed {
 }
 #LogFilterBar QToolButton:checked {
     background-color: #5D1A1A;
-    border-color: #C62828;
+    border-color: #C72523;
     color: #FFFFFF;
 }
 /* 级别按钮按级别着色（checked 时高亮该级别色） */
@@ -2164,7 +2164,7 @@ QToolButton#saverCloseBtn:pressed {
     selection-background-color: #4A1A1A;
 }
 #RibbonSearchEdit:focus {
-    border-color: #C62828;
+    border-color: #C72523;
 }
 #RibbonSearchEdit:disabled {
     background-color: #2A2425;
