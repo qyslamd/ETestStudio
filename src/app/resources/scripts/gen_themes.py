@@ -261,6 +261,12 @@ for t in themes:
     # Fix double hashes from c5c5c5 replacement
     ribbon = ribbon.replace('##', '#')
 
+    # Fix SARibbonPanelLabel: give it a visible background (not transparent)
+    # so the label area is visually distinct from the white panel
+    ribbon = ribbon.replace(
+        'SARibbonPanelLabel {\n    background-color: transparent;',
+        'SARibbonPanelLabel {\n    background-color: ' + p3 + ';')
+
     # Insert QToolButton block
     qtool_block = '''
 /* SARibbonButtonGroupWidget\xe4\xb8\x8b\xe6\x8c\x89\xe9\x92\xae\xe8\xae\xbe\xe7\xbd\xae*/

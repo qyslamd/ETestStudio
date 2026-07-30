@@ -106,7 +106,7 @@ SARibbonPanel > SARibbonButtonGroupWidget {
 /*SARibbonPanelLabel Panel下标题栏*/
 
 SARibbonPanelLabel {
-    background-color: transparent;
+    background-color: #FFE8F0;;
     color: #B0607A;
 }
 
