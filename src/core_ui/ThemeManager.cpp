@@ -20,7 +20,9 @@ static ThemePalette makeDarkPalette() {
   ThemePalette p;
   p.themeId = QStringLiteral("vscode");
   p.isDark = true;
-  p.ribbonBaseTheme = 5;  // Dark2
+  p.ribbonBaseTheme = 5;
+  p.ribbonQssPath =
+      QStringLiteral(":/resources/styles/ribbon_vscode.qss");
   p.windowBackground = QColor("#1E1E1E");
   p.panelBackground = QColor("#252526");
   p.toolbarBackground = QColor("#3C3C3C");
@@ -122,7 +124,9 @@ static ThemePalette makeChineseRedPalette() {
   ThemePalette p;
   p.themeId = QStringLiteral("chinese_red");
   p.isDark = true;
-  p.ribbonBaseTheme = 5;  // Dark2
+  p.ribbonBaseTheme = 5;
+  p.ribbonQssPath =
+      QStringLiteral(":/resources/styles/ribbon_chinese_red.qss");
   p.windowBackground = QColor("#1A1A1A");
   p.panelBackground = QColor("#241F20");
   p.toolbarBackground = QColor("#33292B");
@@ -213,6 +217,10 @@ QString ThemeManager::currentTheme() const {
 
 int ThemeManager::ribbonBaseTheme() const {
   return palette_ ? palette_->ribbonBaseTheme : 5;
+}
+
+QString ThemeManager::ribbonQssPath() const {
+  return palette_ ? palette_->ribbonQssPath : QString();
 }
 
 // -- 语义色板（一行委托）--

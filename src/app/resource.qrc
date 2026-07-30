@@ -7,6 +7,8 @@
         <file>resources/styles/default.qss</file>
         <file>resources/styles/vscode.qss</file>
         <file>resources/styles/chinese_red.qss</file>
+        <file>resources/styles/ribbon_chinese_red.qss</file>
+        <file>resources/styles/ribbon_vscode.qss</file>
         <file>resources/styles/ads_dark.qss</file>
         <file>resources/icons/svg/close_light.svg</file>
         <file>resources/icons/svg/close_dark.svg</file>

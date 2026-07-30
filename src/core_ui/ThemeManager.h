@@ -24,6 +24,7 @@ class ThemeManager : public QObject {
   QString currentTheme() const;
   QStringList availableThemes() const;
   int ribbonBaseTheme() const;
+  QString ribbonQssPath() const;
 
   void setTheme(const QString& themeId);
 

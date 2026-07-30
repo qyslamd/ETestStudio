@@ -1,0 +1,401 @@
+﻿/* 
+start ribbon set
+dark style theme 2
+参考AutoCAD 2021的界面配色
+
+深色背景颜色:#1E1E1E
+浅色背景颜色:#3C3C3C
+更浅一层背景颜色:#505050 一般是控件的编辑区域颜色
+字体颜色:#CCCCCC
+按钮背景颜色：#3C3C3C
+按钮hover背景:#505050
+选中边框颜色:#007ACC
+*/
+
+/*SARibbonBar*/
+SARibbonBar{
+  background-color: #1E1E1E;
+  border: solid #1E1E1E;
+  color: #CCCCCC;
+}
+
+
+/*SARibbonButtonGroupWidget,SARibbonSystemButtonBar和RightButtonGroup都是使用此控件，pannel里面的按钮组也是使用此控件*/
+SARibbonButtonGroupWidget{
+  background-color: transparent;
+}
+
+/* SARibbonButtonGroupWidget下按钮设置*/
+SARibbonButtonGroupWidget > QToolButton {
+    border: none;
+    color: #CCCCCC;
+    background-color: transparent;
+    padding: 0 2px;
+}
+/* SARibbonButtonGroupWidget下ToolButton按钮 hover.pressed.checked 状态 */
+SARibbonButtonGroupWidget > QToolButton:hover {
+    background-color: #505050;
+}
+SARibbonButtonGroupWidget > QToolButton:pressed{
+    background-color: #505050;
+    border:1px solid #007ACC;
+}
+SARibbonButtonGroupWidget > QToolButton:checked {
+    background-color: #505050;
+    border:1px solid #007ACC;
+}
+/* SARibbonButtonGroupWidget下ToolButton按钮 菜单状态 */
+/*MenuButtonPopup*/
+SARibbonButtonGroupWidget > QToolButton[popupMode="1"]{
+    padding-right: 12px;
+}
+/* hover 状态 - MenuButtonPopup 模式的菜单按钮部分 */
+SARibbonButtonGroupWidget > QToolButton[popupMode="1"]::menu-button:hover {
+    background-color: #505050; /* 比主按钮hover状态更亮的颜色 */
+}
+/* pressed 状态 - MenuButtonPopup 模式的菜单按钮部分 */
+SARibbonButtonGroupWidget > QToolButton[popupMode="1"]::menu-button:pressed {
+    background-color: #007ACC;
+}
+/* 直接弹出菜单模式，偏移8px，让下拉按钮能看到 */
+SARibbonButtonGroupWidget > QToolButton[popupMode="2"] {
+    padding-right: 8px;
+}
+/* 无菜单的按钮保持小边距 */
+SARibbonButtonGroupWidget > QToolButton[popupMode="0"]{
+    padding: 0 2px;
+}
+
+/*SARibbonCtrlContainer*/
+SARibbonCtrlContainer {
+  background-color: transparent;
+}
+
+/*
+SARibbonSeparatorWidget
+注意，SARibbonSeparatorWidget的背景颜色是使用color
+*/
+SARibbonSeparatorWidget {
+  color: #454545;
+}
+
+/*SARibbonCategory*/
+SARibbonCategory {
+  background-color: #1E1E1E;
+  /*顶部有一条线*/
+  border-top:1px solid #3C3C3C;
+}
+SARibbonCategory:focus {
+  outline: none;
+}
+
+/*
+SARibbonCategory下的SARibbonSeparatorWidget
+注意，SARibbonSeparatorWidget的背景颜色是使用color
+*/
+SARibbonCategory > SARibbonSeparatorWidget {
+  color: transparent;
+}
+
+/*SARibbonPanel*/
+
+SARibbonPanel {
+  background-color: #3C3C3C;
+  border: none;
+}
+
+/*
+SARibbonPanel下的SARibbonSeparatorWidget
+注意，SARibbonSeparatorWidget的背景颜色是使用color
+*/
+SARibbonPanel > SARibbonSeparatorWidget {
+  color: #454545;
+}
+
+/*SARibbonPanelLabel Panel下标题栏*/
+SARibbonPanelLabel {
+    background-color: #505050;
+    color: #CCCCCC;
+}
+
+/*SARibbonPanelOptionButton*/
+SARibbonPanelOptionButton {
+  border:none;
+  background-color: transparent;
+  color:#CCCCCC;
+}
+
+SARibbonPanelOptionButton:hover {
+  background-color:#505050;
+}
+
+
+/*SARibbonApplicationButton*/
+SARibbonApplicationButton{
+  color:#CCCCCC;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  background-color: #3C3C3C;
+}
+
+SARibbonApplicationButton:hover{
+  background-color: #505050;
+}
+
+SARibbonApplicationButton:pressed{
+  background-color: #505050;
+}
+
+SARibbonApplicationButton:focus{
+  outline: none;
+}
+
+SARibbonApplicationButton::menu-indicator {
+  /*subcontrol-position: right;*/
+  width:0px;
+}
+
+/*SARibbonTabBar*/
+SARibbonTabBar{
+    background-color: transparent;
+}
+
+SARibbonTabBar::tab {
+  color: #858585;
+  border:1px solid transparent;/*加上边框，否则选中后加入边框后会有1px的偏移*/
+  background: transparent;
+  margin-top: 0px;
+  margin-right: 0px;
+  margin-left: 5px;
+  margin-bottom: 0px;
+  min-width: 50px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+SARibbonTabBar::tab:selected {
+  color: #CCCCCC;
+  background-color: #3C3C3C;
+}
+
+SARibbonTabBar::tab:hover:!selected {
+  /*border:1px solid #3C3C3C;*/
+  border-top:1px solid #3C3C3C;
+  border-right:1px solid #3C3C3C;
+  border-left:1px solid #3C3C3C;
+  border-bottom:1px solid transparent;
+  color: white;
+}
+
+SARibbonTabBar::tab:!selected {
+  color: #858585;
+}
+
+/*SARibbonToolButton*/
+
+SARibbonToolButton{
+    border:none;
+    color:#CCCCCC;
+    background-color:#3C3C3C;
+} 
+
+SARibbonToolButton:focus {
+  border: 1px solid #007ACC;
+}
+SARibbonToolButton:pressed{
+    color:#CCCCCC;
+    background-color: #505050;
+}
+SARibbonToolButton:checked{
+    color:#CCCCCC;
+    border: 1px solid #007ACC;
+    background-color: #505050;
+}
+SARibbonToolButton:hover {
+    color:#CCCCCC;
+    background-color: #505050;
+}
+
+
+SARibbonGalleryButton{
+  background-color:#3C3C3C;
+  border: 1px solid #505050;
+  color: #CCCCCC;
+}
+
+
+/*SARibbonMenu*/
+SARibbonMenu {
+  color:#CCCCCC;
+  background-color: #505050;
+
+}
+SARibbonMenu::item {
+  padding: 5px;
+  background-color: #3C3C3C;
+}
+SARibbonMenu::item:selected {
+  border: 1px solid #007ACC;
+  background-color: #505050;
+}
+SARibbonMenu::item:hover {
+    color:#CCCCCC;
+    border: 1px solid transparent;
+    background-color: #505050;
+}
+SARibbonMenu::icon{
+  margin-left: 1px;
+}
+
+/*SARibbonGallery*/
+SARibbonGallery {
+  background-color: #505050;
+  color: #CCCCCC;
+  border: 1px solid #454545;
+}
+
+/*SARibbonGalleryGroup*/
+SARibbonGalleryGroup {
+  show-decoration-selected: 1;
+  background-color: transparent;
+  color: #CCCCCC;
+}
+SARibbonGalleryGroup::item {
+  color: #CCCCCC;
+}
+SARibbonGalleryGroup::item:selected {
+  background-color: #505050;
+  border: 1px solid #007ACC;
+}
+SARibbonGalleryGroup::item:hover {
+  background-color: #505050;
+  border: 1px solid transparent;
+}
+
+
+/*RibbonGalleryViewport*/
+
+SARibbonGalleryViewport {
+  background-color: #505050;
+}
+
+/*Panel下QLineEdit的特化*/
+SARibbonPanel > QLineEdit {
+  border:1px solid #1E1E1E;
+  background-color: #505050;
+  color: #CCCCCC;
+  selection-background-color: #007ACC;
+  selection-color: #CCCCCC;
+}
+SARibbonPanel > QLineEdit:hover{
+    border: 1px solid #007ACC;
+}
+
+/*Panel下QCheckBox的特化*/
+SARibbonPanel > QCheckBox{
+    color:#CCCCCC;
+    background-color:transparent;
+}
+
+/*Panel下QRadioButton的特化*/
+SARibbonPanel > QRadioButton{
+    color:#CCCCCC;
+    background-color:transparent;
+}
+
+/*Panel下QComboBox的特化*/
+SARibbonPanel > QComboBox {
+  color : #CCCCCC;
+  border: 1px solid #1E1E1E;
+  background-color: #3C3C3C;
+}
+SARibbonPanel > QComboBox:hover{
+  border: 1px solid #007ACC;
+}
+SARibbonPanel > QComboBox:editable {
+  color : #CCCCCC;
+  background-color: #505050;
+  selection-background-color: #007ACC;
+  selection-color: #CCCCCC;
+}
+SARibbonPanel > QComboBox::drop-down {
+  subcontrol-origin: padding;
+  subcontrol-position: top right;
+  width: 1em;
+  border: none;
+}
+SARibbonPanel > QComboBox::drop-down:hover {
+  border: none;
+  background-color: #007ACC;
+}
+SARibbonPanel > QComboBox::down-arrow {
+  image: url(:/SARibbon/image/resource/ArrowDown.png);
+}
+
+
+
+
+/*SARibbonCategoryScrollButton*/
+SARibbonCategoryScrollButton {
+  border: 1px solid #007ACC;
+  color: #CCCCCC;
+  background-color: #3C3C3C;
+}
+
+SARibbonCategoryScrollButton[arrowType="3"] {
+  border-right-width: 1px;
+}
+
+SARibbonCategoryScrollButton[arrowType="4"] {
+  border-left-width: 1px;
+}
+/*SARibbonSystemToolButton*/
+
+SARibbonSystemToolButton {
+  background-color: transparent;
+  border:none;
+}
+
+SARibbonSystemToolButton:focus {
+  outline: none;
+}
+
+/* 深色模式的系统按钮设置 */
+/*Min*/
+SARibbonSystemToolButton#SAMinimizeWindowButton {
+  background-position:center;
+  background-repeat: no-repeat;
+  background-image: url(:/SARibbon/image/resource/Titlebar_Min_Hover.svg);
+}
+SARibbonSystemToolButton#SAMinimizeWindowButton:hover{
+  background-color: #666666;
+}
+SARibbonSystemToolButton#SAMinimizeWindowButton:pressed{
+  background-color: #555555;
+}
+/*Max*/
+SARibbonSystemToolButton#SAMaximizeWindowButton {
+    background-position:center;
+    background-repeat: no-repeat;
+    background-image: url(:/SARibbon/image/resource/Titlebar_Max_Hover.svg);
+}
+SARibbonSystemToolButton#SAMaximizeWindowButton:hover {
+    background-color: #666666;
+}
+SARibbonSystemToolButton#SAMaximizeWindowButton:checked {
+    background-image: url(:/SARibbon/image/resource/Titlebar_Normal_Hover.svg) center;
+}
+
+
+/*Close*/
+SARibbonSystemToolButton#SACloseWindowButton {
+    background-position:center;
+    background-repeat: no-repeat;
+    background-image: url(:/SARibbon/image/resource/Titlebar_Close_Hover.svg);
+}
+SARibbonSystemToolButton#SACloseWindowButton:hover {
+  background-color: #CC3333;
+}
+SARibbonSystemToolButton#SACloseWindowButton:pressed {
+    background-color: #E55555;
+}

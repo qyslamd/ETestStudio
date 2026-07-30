@@ -14,6 +14,9 @@ struct ThemePalette {
   // 0=Office2013, 1=Office2016Blue, 2=Office2021Blue, 3=Windows7, 4=Dark, 5=Dark2
   int ribbonBaseTheme = 5;
 
+  // 自定义 SARibbon QSS 路径（非空时加载覆盖内置主题颜色）
+  QString ribbonQssPath;
+
   // 语义颜色
   QColor windowBackground;
   QColor panelBackground;

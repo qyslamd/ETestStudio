@@ -1411,6 +1411,16 @@ void MainWindow::onThemeChanged(bool isDark) {
   setRibbonTheme(
       static_cast<SARibbonTheme>(ThemeManager::instance().ribbonBaseTheme()));
 
+  // 如果主题有自定义 Ribbon QSS，加载覆盖内置主题颜色
+  QString ribbonQss = ThemeManager::instance().ribbonQssPath();
+  if (!ribbonQss.isEmpty()) {
+    QFile f(ribbonQss);
+    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      this->setStyleSheet(QString::fromUtf8(f.readAll()));
+      f.close();
+    }
+  }
+
   // 后设 QADS 暗色样式（覆盖 QADS 内置 widget 级 default.css）
   if (dock_manager_) {
     QString adsQss;
@@ -2544,6 +2554,16 @@ void MainWindow::setupRibbon() {
   // 初始化 Ribbon 主题，与当前 ThemeManager 主题一致
   setRibbonTheme(
       static_cast<SARibbonTheme>(ThemeManager::instance().ribbonBaseTheme()));
+
+  // 如果有自定义 Ribbon QSS，覆盖内置主题颜色
+  QString ribbonQss = ThemeManager::instance().ribbonQssPath();
+  if (!ribbonQss.isEmpty()) {
+    QFile f(ribbonQss);
+    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      this->setStyleSheet(QString::fromUtf8(f.readAll()));
+      f.close();
+    }
+  }
 
   // 设置 Ribbon 运行按钮的初始状态
   execution_controller_->syncControlStates();
