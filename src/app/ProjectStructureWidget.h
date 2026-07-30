@@ -40,6 +40,7 @@ enum ProjectNodeRole {
   IsLatestRole,                     // bool: 报告分类中每个程序名的最新文件
   IsEffectiveTopologyRole,          // bool: topology.etopo（引擎加载的唯一拓扑文件）
   IsIcdConfigRole,                  // bool: ICDConfig.xml/json（协议配置容器文件）
+  IsMockConfigRole,                 // bool: MockResponses.emock（Mock 响应配置）
 };
 
 struct CategoryInfo {

@@ -1252,6 +1252,11 @@ QStandardItem* ProjectStructureWidget::createFileItem(
       item->setData(true, IsEffectiveTopologyRole);
       item->setEditable(false);  // 固定文件名，禁止重命名
     }
+  } else if (suffix == QStringLiteral("emock")) {
+    iconName = QStringLiteral("file_json");
+    if (fileName == QStringLiteral("MockResponses.emock")) {
+      item->setData(true, IsMockConfigRole);
+    }
   } else if (suffix == QStringLiteral("json")) {
     iconName = QStringLiteral("file_json");
   } else if (suffix == QStringLiteral("lua")) {
