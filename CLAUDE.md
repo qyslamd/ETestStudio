@@ -188,6 +188,20 @@ etest (主程序)
 
 主题数据全在 JSON 中定义，无需改 C++ 代码：
 
+### 快速生成（推荐）
+
+使用 `src/app/resources/scripts/gen_themes.py` 批量生成，只需在脚本中填写主题 ID、显示名和主色值：
+
+```python
+themes = [
+    { 'id': 'my_theme', 'displayName': '我的主题 My Theme', 'accent': '#FF6600' },
+]
+```
+
+运行后自动生成 JSON + QSS + Ribbon QSS 三个文件。
+
+### 手动创建
+
 1. `src/app/resources/themes/<id>.json` — 15 个语义色 + 26 个编辑器色
 2. `src/app/resources/styles/<id>.qss` — 基于 `vscode.qss`（暗色）或 `default.qss`（亮色）替换颜色
 3. `src/app/resources/styles/ribbon_<id>.qss` — 基于 `theme-dark2.qss`（暗色）或 `theme-office2021-blue.qss`（亮色）替换颜色
