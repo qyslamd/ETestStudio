@@ -173,6 +173,58 @@ static ThemePalette makeChineseRedPalette() {
   return p;
 }
 
+static ThemePalette makeLimePalette() {
+  ThemePalette p;
+  p.themeId = QStringLiteral("lime");
+  p.isDark = false;
+  p.ribbonBaseTheme = 2;
+  p.ribbonQssPath =
+      QStringLiteral(":/resources/styles/ribbon_lime.qss");
+  p.windowBackground = QColor("#F5FFF5");
+  p.panelBackground = QColor("#E8F5E8");
+  p.toolbarBackground = QColor("#DCEEDC");
+  p.hoverBackground = QColor("#C8E6C8");
+  p.selectionBackground = QColor("#81C784");
+  p.borderColor = QColor("#C8E6C8");
+  p.textColor = QColor("#1B3A1B");
+  p.secondaryTextColor = QColor("#558B55");
+  p.disabledTextColor = QColor("#A5D6A5");
+  p.accentColor = QColor("#00CC00");
+  p.statusBarBackground = QColor("#00CC00");
+  p.clockFaceBackground = QColor("#E8F5E8");
+  p.clockHandColor = QColor("#1B3A1B");
+  p.clockSecondaryColor = QColor("#558B55");
+  p.clockAccentColor = QColor("#00FF00");
+  p.editorColors = {
+      {CONFIG_EDITOR_THEME_PAPER, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_TEXT, "#000000"},
+      {CONFIG_EDITOR_THEME_CARET_LINE, "#E8F5E8"},
+      {CONFIG_EDITOR_THEME_CARET, "#000000"},
+      {CONFIG_EDITOR_THEME_SELECTION_BG, "#A5D6A5"},
+      {CONFIG_EDITOR_THEME_SELECTION_FG, "#000000"},
+      {CONFIG_EDITOR_THEME_MARGIN_BG, "#F5FFF5"},
+      {CONFIG_EDITOR_THEME_LINE_NUMBER, "#558B55"},
+      {CONFIG_EDITOR_THEME_INDENT_GUIDE, "#C8E6C8"},
+      {CONFIG_EDITOR_THEME_BRACE_LIGHT_BG, "#A5D6A5"},
+      {CONFIG_EDITOR_THEME_BRACE_LIGHT_FG, "#000000"},
+      {CONFIG_EDITOR_THEME_BRACE_BAD_BG, "#E57373"},
+      {CONFIG_EDITOR_THEME_BRACE_BAD_FG, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_FOLD_MARGIN, "#558B55"},
+      {CONFIG_EDITOR_SYNTAX_KEYWORD, "#009900"},
+      {CONFIG_EDITOR_SYNTAX_COMMENT, "#558B55"},
+      {CONFIG_EDITOR_SYNTAX_STRING, "#A31515"},
+      {CONFIG_EDITOR_SYNTAX_NUMBER, "#098658"},
+      {CONFIG_EDITOR_SYNTAX_FUNCTION, "#795E26"},
+      {CONFIG_EDITOR_SYNTAX_TAG, "#009900"},
+      {CONFIG_EDITOR_SYNTAX_PREPROCESSOR, "#888888"},
+      {CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS, "#267F99"},
+      {CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ, "#E57373"},
+      {CONFIG_EDITOR_SYNTAX_PROPERTY, "#795E26"},
+      {CONFIG_EDITOR_SYNTAX_OPERATOR, "#000000"},
+  };
+  return p;
+}
+
 // ── ThemeManager ──
 
 ThemeManager& ThemeManager::instance() {
@@ -205,6 +257,7 @@ void ThemeManager::registerBuiltinPalettes() {
   palettes_[QStringLiteral("default")] = makeLightPalette();
   palettes_[QStringLiteral("vscode")] = makeDarkPalette();
   palettes_[QStringLiteral("chinese_red")] = makeChineseRedPalette();
+  palettes_[QStringLiteral("lime")] = makeLimePalette();
 }
 
 bool ThemeManager::isDarkTheme() const {
