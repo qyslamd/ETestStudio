@@ -41,9 +41,9 @@ void ProjectTreeDelegate::paint(QPainter* painter,
   } else if (is_effective_topo) {
     drawBadge(painter, option, tr("生效"), QColor(33, 150, 243));
   } else if (is_icd_config) {
-    drawBadge(painter, option, tr("配置"), QColor(255, 152, 0));
+    drawBadge(painter, option, tr("协议"), QColor(255, 152, 0));
   } else if (is_mock_config) {
-    drawBadge(painter, option, tr("Mock"), QColor(156, 39, 176));
+    drawBadge(painter, option, tr("响应"), QColor(156, 39, 176));
   }
 }
 
