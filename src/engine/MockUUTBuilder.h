@@ -15,6 +15,11 @@
 
 #include "MockTypes.h"
 
+#include "SignalCodec.h"
+#include "SignalRegistry.h"
+#include "SignalResolver.h"
+#include "WaveformGenerator.h"
+
 namespace icd {
 class Repository;
 }  // namespace icd
@@ -129,13 +134,14 @@ class ADChannelSimulator : public ChannelPortSimulator {
 
   double readChannelValue(int channel) override;
   void setFixedValue(double value);
+  void setWaveform(etest::core::WaveformGenerator::WaveformType type,
+                   double amplitude, double frequency, double offset);
+  void setSeries(const QVector<double>& data);
 
  private:
   int channel_;
-  double fixed_value_ = 0.0;
   qint64 sample_counter_ = 0;
-  static constexpr double kFrequency = 1.0;    // 正弦波频率 1Hz，2048 点约画 2 个周期
-  static constexpr double kAmplitude = 5000.0;  // 幅值 ±5000（经 ICD scale 0.001 后为 ±5V）
+  etest::core::WaveformGenerator waveform_gen_;
 };
 
 // ============================================================================
@@ -180,7 +186,7 @@ class MockUUTBuilder {
   // 调用 lastError() 获取错误详情
   bool buildAll(std::vector<std::unique_ptr<MockUUT>>& out);
 
-  // 加载响应配置。filePath 是 mock/MockResponses.json 的完整路径
+  // 加载响应配置。filePath 是 MockResponses.emock 的完整路径
   // 必须在 buildAll() 之前调用
   void loadResponseConfigFile(const QString& filePath);
 
@@ -206,6 +212,9 @@ class MockUUTBuilder {
   // 从端口 JSON 中提取 sendFrames/receiveFrames 的 name 列表
   QStringList frameNamesFromArray(const QJsonArray& arr) const;
 
+  etest::core::SignalRegistry signal_registry_;
+  std::unique_ptr<SignalResolver> signal_resolver_;
+  SignalCodec signal_codec_;
   icd::Repository* icd_repo_;
   QJsonObject topology_doc_;
   QJsonArray frame_responses_;

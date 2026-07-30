@@ -1,6 +1,7 @@
 #include "DevicePaletteWidget.h"
 
 #include <QDrag>
+#include <QFont>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLineEdit>
@@ -78,31 +79,60 @@ DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QWidget(parent) {
 void DevicePaletteWidget::populateDeviceTypes() {
   list_widget_->clear();
 
-  // Load device types from PluginManager
   auto& pm = etest::core::plugin::PluginManager::instance();
-  for (const auto& meta : pm.loadedPlugins()) {
-    if (meta.category != "device") continue;
-    if (meta.device_type.isEmpty()) continue;
 
+  // 按 is_mock 分组：真实设备在前，Mock 设备在后
+  QVector<etest::core::plugin::PluginMetaData> real_devices;
+  QVector<etest::core::plugin::PluginMetaData> mock_devices;
+  for (const auto& meta : pm.loadedPlugins()) {
+    if (meta.category != "device") {
+      continue;
+    }
+    if (meta.device_type.isEmpty()) {
+      continue;
+    }
+    if (meta.is_mock) {
+      mock_devices.append(meta);
+    } else {
+      real_devices.append(meta);
+    }
+  }
+
+  // 分节标题项（不可选、不可拖拽）
+  auto addHeader = [this](const QString& title) {
+    auto* header = new QListWidgetItem(list_widget_);
+    header->setText(title);
+    header->setFlags(Qt::NoItemFlags);
+    QFont font = header->font();
+    font.setBold(true);
+    header->setFont(font);
+    header->setData(Qt::UserRole + 6, true);  // 标记为标题项（过滤时跳过）
+  };
+
+  // 设备项
+  auto addDevice = [this](const etest::core::plugin::PluginMetaData& meta,
+                          bool is_mock) {
     auto* item = new QListWidgetItem(list_widget_);
-    QString display = meta.name.isEmpty()
-        ? meta.device_type
-        : QStringLiteral("%1 (%2ch)").arg(meta.name).arg(meta.device_channels);
+    QString base_name = meta.name.isEmpty() ? meta.device_type : meta.name;
+    QString display = is_mock
+        ? QStringLiteral("[Mock] %1 (%2ch)").arg(base_name).arg(meta.device_channels)
+        : QStringLiteral("%1 (%2ch)").arg(base_name).arg(meta.device_channels);
     item->setText(display);
-    item->setData(Qt::UserRole,     meta.device_type);          // deviceType
-    item->setData(Qt::UserRole + 2, meta.device_channels);       // channelCount
-    item->setData(Qt::UserRole + 3, meta.id);                    // pluginId
+    item->setData(Qt::UserRole,     meta.device_type);
+    item->setData(Qt::UserRole + 2, meta.device_channels);
+    item->setData(Qt::UserRole + 3, meta.id);
 
     int direction = static_cast<int>(TopologyPort::Direction::Bidirectional);
-    if (meta.device_direction == "Input")
+    if (meta.device_direction == "Input") {
       direction = static_cast<int>(TopologyPort::Direction::Input);
-    else if (meta.device_direction == "Output")
+    } else if (meta.device_direction == "Output") {
       direction = static_cast<int>(TopologyPort::Direction::Output);
-    item->setData(Qt::UserRole + 4, direction);                  // direction
+    }
+    item->setData(Qt::UserRole + 4, direction);
 
     FunctionType ft = stringToFunctionType(meta.device_function.isEmpty()
         ? QStringLiteral("CUSTOM") : meta.device_function);
-    item->setData(Qt::UserRole + 5, static_cast<int>(ft));       // functionType
+    item->setData(Qt::UserRole + 5, static_cast<int>(ft));
 
     QString tip = QStringLiteral("%1\n%2ch %3 %4\n拖放至画布创建设备")
                       .arg(display)
@@ -111,12 +141,28 @@ void DevicePaletteWidget::populateDeviceTypes() {
                       .arg(functionTypeToString(ft));
     item->setToolTip(tip);
     item->setFlags(item->flags() | Qt::ItemIsDragEnabled);
+  };
+
+  if (!real_devices.isEmpty()) {
+    addHeader(QStringLiteral("真实设备"));
+    for (const auto& meta : real_devices) {
+      addDevice(meta, false);
+    }
+  }
+  if (!mock_devices.isEmpty()) {
+    addHeader(QStringLiteral("Mock 设备"));
+    for (const auto& meta : mock_devices) {
+      addDevice(meta, true);
+    }
   }
 }
 
 void DevicePaletteWidget::onFilterChanged(const QString& text) {
   for (int i = 0; i < list_widget_->count(); ++i) {
     auto* item = list_widget_->item(i);
+    if (item->data(Qt::UserRole + 6).toBool()) {
+      continue;  // 跳过标题项
+    }
     item->setHidden(!item->text().contains(text, Qt::CaseInsensitive));
   }
 }

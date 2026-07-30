@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTimer>
 #include "IADevicePlugin.h"
+#include "WaveformGenerator.h"
 
 namespace etest {
 namespace plugins {
@@ -100,12 +101,11 @@ class MockADPlugin : public QObject, public core::plugin::IADevicePlugin {
   QVector<int> buffer_write_pos_;
   QVector<core::plugin::ADChannelConfig> channel_configs_;
 
-  // 注入数据（测试用）
-  QVector<QVector<double>> injected_data_;
+  // 每通道波形生成器（替代 injected_data_ + 硬编码正弦波）
+  QVector<etest::core::WaveformGenerator> waveform_gens_;
 
   static constexpr int kChannelCount = 8;
   static constexpr int kResolution = 16;
-  static constexpr double kDefaultFrequency = 1.0;  // 默认正弦波频率 1Hz
 };
 
 }  // namespace mock

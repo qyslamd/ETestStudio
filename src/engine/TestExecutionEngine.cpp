@@ -11,6 +11,9 @@
 
 #include "logger/Logger.h"
 
+#include "plugin_sdk/IPlugin.h"
+#include "plugin_sdk/PluginManager.h"
+
 #include "HardwareManager.h"
 #include "MockUUTBuilder.h"
 #include "ResultCollector.h"
@@ -24,23 +27,39 @@ namespace etest::engine {
 // 静态辅助：Mock 一致性校验
 // ==========================================================================
 
+static bool deviceIsMock(const QJsonObject& deviceObj) {
+    QString pluginId = deviceObj["pluginId"].toString();
+    if (pluginId.isEmpty()) {
+        return false;
+    }
+    auto* plugin = etest::core::plugin::PluginManager::instance().plugin(pluginId);
+    if (!plugin) {
+        return false;
+    }
+    return plugin->metaData().is_mock;
+}
+
 static bool hasMockDevices(const QJsonObject& root) {
     QJsonArray devices = root["devices"].toArray();
     for (const auto& d : devices) {
-        if (d.toObject()["mock"].toBool())
+        if (deviceIsMock(d.toObject())) {
             return true;
+        }
     }
     return false;
 }
 
 static bool checkMockConsistency(const QJsonObject& root) {
     QJsonArray devices = root["devices"].toArray();
-    if (devices.isEmpty()) return true;
+    if (devices.isEmpty()) {
+        return true;
+    }
 
-    bool firstMock = devices[0].toObject()["mock"].toBool();
+    bool firstMock = deviceIsMock(devices[0].toObject());
     for (const auto& d : devices) {
-        if (d.toObject()["mock"].toBool() != firstMock)
+        if (deviceIsMock(d.toObject()) != firstMock) {
             return false;
+        }
     }
     return true;
 }
@@ -134,10 +153,9 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
 
     // ── 校验 mock 一致性 ──
     if (!checkMockConsistency(root)) {
-        LOG_ERROR("ENGINE", "[TestExecutionEngine] 拓扑中所有设备的 mock 值必须一致，"
-                      "不能混合 mock 和真实设备");
-        emit engineError(QStringLiteral("拓扑中所有设备的 mock 值必须一致，"
-                                        "不能混合 mock 和真实设备"));
+        LOG_ERROR("ENGINE", "[TestExecutionEngine] 拓扑中不能混合 Mock 设备和真实设备");
+        emit engineError(QStringLiteral("拓扑中不能混合 Mock 设备和真实设备，"
+                                        "请检查设备选用的插件类型"));
         return false;
     }
 
@@ -154,7 +172,7 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
         QFileInfo fi(etopoPath);
 
         builder.loadResponseConfigFile(
-            fi.absolutePath() + QStringLiteral("/mock/MockResponses.json"));
+            fi.absolutePath() + QStringLiteral("/MockResponses.emock"));
 
         std::vector<std::unique_ptr<MockUUT>> mockUUTs;
         if (!builder.buildAll(mockUUTs)) {

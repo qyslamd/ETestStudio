@@ -133,21 +133,31 @@ ChannelPortSimulator::ChannelPortSimulator(const QString& deviceId,
 
 ADChannelSimulator::ADChannelSimulator(const QString& deviceId, int frameId,
                                          int channel)
-    : ChannelPortSimulator(deviceId, frameId), channel_(channel) {}
+    : ChannelPortSimulator(deviceId, frameId), channel_(channel) {
+  // 默认正弦波：幅值 ±5000（经 ICD scale 0.001 后为 ±5V），频率 1Hz
+  waveform_gen_.setWaveform(
+      etest::core::WaveformGenerator::WaveformType::Sine, 5000.0, 1.0, 0.0);
+}
 
 double ADChannelSimulator::readChannelValue(int channel) {
   Q_UNUSED(channel);
-  // 如果设置了固定值（来自 MockResponses.json），使用固定值
-  if (fixed_value_ != 0.0) {
-    return fixed_value_;
-  }
-  // 默认生成正弦波：幅值 5V，频率 50Hz，每次调用推进相位
   ++sample_counter_;
-  double t = sample_counter_ / 1000.0;  // 模拟 1kHz 采样率
-  return kAmplitude * qSin(2.0 * M_PI * kFrequency * t);
+  return waveform_gen_.generate(sample_counter_, 1000.0);
 }
 
-void ADChannelSimulator::setFixedValue(double value) { fixed_value_ = value; }
+void ADChannelSimulator::setFixedValue(double value) {
+  waveform_gen_.setFixed(value);
+}
+
+void ADChannelSimulator::setWaveform(
+    etest::core::WaveformGenerator::WaveformType type,
+    double amplitude, double frequency, double offset) {
+  waveform_gen_.setWaveform(type, amplitude, frequency, offset);
+}
+
+void ADChannelSimulator::setSeries(const QVector<double>& data) {
+  waveform_gen_.setSeries(data);
+}
 
 // ============================================================================
 // MockUUT
@@ -198,6 +208,7 @@ std::optional<MockResponse> MockUUT::onFrameWritten(
 MockUUTBuilder::MockUUTBuilder(icd::Repository* icdRepo,
                                  const QJsonObject& topologyDoc)
     : icd_repo_(icdRepo), topology_doc_(topologyDoc) {
+  signal_resolver_ = std::make_unique<SignalResolver>(&signal_registry_, icdRepo);
   if (!icd_repo_) {
     last_error_ = QStringLiteral("ICD Repository 为空");
   }
@@ -342,11 +353,61 @@ bool MockUUTBuilder::buildSingleUUT(const QJsonObject& product,
             QJsonArray responses = resp["responses"].toArray();
             for (const auto& rVal : responses) {
               QJsonObject r = rVal.toObject();
-              int frameId = r["frameId"].toInt();
-              QString hex = r["responseHex"].toString();
-              QByteArray bytes =
-                  QByteArray::fromHex(hex.remove(' ').toLatin1());
-              sim->setResponseConfig(frameId, bytes);
+              if (r.contains("responseHex")) {
+                // 旧格式兼容：frameId + responseHex
+                int frameId = r["frameId"].toInt();
+                QString hex = r["responseHex"].toString();
+                QByteArray bytes =
+                    QByteArray::fromHex(hex.remove(' ').toLatin1());
+                sim->setResponseConfig(frameId, bytes);
+                continue;
+              }
+              // 新格式：frameName + replyFrameName + fieldValues[]
+              QString frameName = r["frameName"].toString();
+              QString replyFrameName = r["replyFrameName"].toString();
+              QJsonArray fieldValues = r["fieldValues"].toArray();
+
+              // 从 frameName 查 ICD 得到收到帧的 frameId
+              QVector<int> ids;
+              if (!resolveFrameNamesToIds({frameName}, ids) || ids.isEmpty()) {
+                LOG_WARN("ENGINE",
+                         "MockUUT: 无法解析触发帧名 frame={}",
+                         frameName.toStdString());
+                continue;
+              }
+
+              // 逐字段编码为回复帧字节，按 bitOffset 合并
+              QByteArray frameBytes;
+              for (const auto& fvVal : fieldValues) {
+                QJsonObject fv = fvVal.toObject();
+                QString nodePath = fv["nodePath"].toString();
+                double engValue = fv["engValue"].toDouble();
+
+                ResolvedSignal signal =
+                    signal_resolver_->buildFromIcd(replyFrameName, nodePath);
+                if (!signal.valid) {
+                  LOG_WARN("ENGINE",
+                           "MockUUT: 无法解析回复帧字段 frame={} node={}",
+                           replyFrameName.toStdString(),
+                           nodePath.toStdString());
+                  continue;
+                }
+                QByteArray fieldBytes =
+                    signal_codec_.encodeToFrame(engValue, signal);
+                if (frameBytes.size() < fieldBytes.size()) {
+                  int oldSize = frameBytes.size();
+                  frameBytes.resize(fieldBytes.size());
+                  for (int k = oldSize; k < frameBytes.size(); ++k) {
+                    frameBytes[k] = '\0';
+                  }
+                }
+                for (int i = 0; i < fieldBytes.size(); ++i) {
+                  frameBytes[i] = static_cast<char>(
+                      static_cast<unsigned char>(frameBytes[i]) |
+                      static_cast<unsigned char>(fieldBytes[i]));
+                }
+              }
+              sim->setResponseConfig(ids[0], frameBytes);
             }
           }
         }
@@ -356,17 +417,45 @@ bool MockUUTBuilder::buildSingleUUT(const QJsonObject& product,
       // AD 通道型端口
       auto sim = buildChannelSimulator(port, matchedConn, matchedDevice);
       if (sim) {
-        // 应用 AD 配置（fixedValue）
+        // 应用 AD 配置
         for (const auto& respVal : frame_responses_) {
           QJsonObject resp = respVal.toObject();
           if (resp["productName"].toString() == productName &&
               resp["deviceId"].toString() == deviceId &&
               resp["port"].toString() == portName) {
-            if (resp.contains("fixedValue")) {
-              auto* adSim = dynamic_cast<ADChannelSimulator*>(sim.get());
-              if (adSim) {
+            auto* adSim = dynamic_cast<ADChannelSimulator*>(sim.get());
+            if (!adSim) {
+              break;
+            }
+            if (resp.contains("mode")) {
+              // 新格式：按 mode 配置 WaveformGenerator
+              QString mode = resp["mode"].toString();
+              if (mode == "fixed") {
                 adSim->setFixedValue(resp["fixedValue"].toDouble());
+              } else if (mode == "waveform") {
+                QJsonObject wf = resp["waveform"].toObject();
+                auto type = etest::core::WaveformGenerator::WaveformType::Sine;
+                QString typeStr = wf["type"].toString();
+                if (typeStr == "square") {
+                  type = etest::core::WaveformGenerator::WaveformType::Square;
+                } else if (typeStr == "triangle") {
+                  type = etest::core::WaveformGenerator::WaveformType::Triangle;
+                }
+                adSim->setWaveform(type, wf["amplitude"].toDouble(),
+                                   wf["frequency"].toDouble(),
+                                   wf["offset"].toDouble());
+              } else if (mode == "series") {
+                QJsonArray seriesArr = resp["series"].toArray();
+                QVector<double> series;
+                for (const auto& sv : seriesArr) {
+                  series.append(sv.toDouble());
+                }
+                adSim->setSeries(series);
               }
+            } else if (resp.contains("fixedValue")) {
+              // 旧格式兼容：fixedValue != 0 用固定值，fixedValue == 0 也用固定值（0V）
+              double fv = resp["fixedValue"].toDouble();
+              adSim->setFixedValue(fv);
             }
           }
         }

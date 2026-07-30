@@ -32,6 +32,14 @@ MockADPlugin::MockADPlugin() {
   trigger_delay_timer_->setSingleShot(true);
   connect(trigger_delay_timer_, &QTimer::timeout, this,
           &MockADPlugin::startFillingData);
+
+  // 初始化每通道波形生成器：默认正弦波（归一化幅值 1.0，频率 1Hz）
+  // openDevice 中重置为默认以清除之前 injectChannelData 设置的 series
+  waveform_gens_.resize(kChannelCount);
+  for (auto& gen : waveform_gens_) {
+    gen.setWaveform(etest::core::WaveformGenerator::WaveformType::Sine,
+                    1.0, 1.0, 0.0);
+  }
 }
 
 MockADPlugin::~MockADPlugin() {
@@ -69,7 +77,10 @@ bool MockADPlugin::openDevice() {
   buffer_write_pos_.resize(kChannelCount);
   buffer_write_pos_.fill(0);
   channel_configs_.resize(kChannelCount);
-  injected_data_.resize(kChannelCount);
+  for (auto& gen : waveform_gens_) {
+    gen.setWaveform(etest::core::WaveformGenerator::WaveformType::Sine,
+                    1.0, 1.0, 0.0);
+  }
 
   for (int i = 0; i < kChannelCount; ++i) {
     ring_buffers_[i].resize(sample_length_);
@@ -89,7 +100,6 @@ void MockADPlugin::closeDevice() {
   ring_buffers_.clear();
   buffer_write_pos_.clear();
   channel_configs_.clear();
-  injected_data_.clear();
   sample_status_ = ADSampleStatus::Idle;
   LOG_INFO("MOCK_AD", "Mock AD设备已关闭");
 }
@@ -244,16 +254,9 @@ void MockADPlugin::onAcquisitionTick() {
 double MockADPlugin::generateSample(int channel) const {
   double range = channel_configs_[channel].range;
 
-  // 有注入数据时循环回放
-  if (channel < injected_data_.size() && !injected_data_[channel].isEmpty()) {
-    const auto& data = injected_data_[channel];
-    int idx = sample_counter_ % data.size();
-    return data[idx] * range;  // 注入数据归一化到 [-1, 1]，乘以量程
-  }
-
-  // 默认：生成正弦波
-  double t = sample_counter_ / sample_rate_;
-  double value = qSin(2.0 * M_PI * kDefaultFrequency * t);
+  // WaveformGenerator 输出归一化值，乘以量程缩放为实际采集值
+  double value = waveform_gens_[channel].generate(sample_counter_,
+                                                   sample_rate_);
 
   // 加少量噪声模拟真实采集
   value += (QRandomGenerator::global()->bounded(1.0) * 2.0 - 1.0) * 0.01;
@@ -313,17 +316,17 @@ QVector<double> MockADPlugin::readAllChannelsData(int count) {
 }
 
 void MockADPlugin::injectChannelData(int channel, const QVector<double>& data) {
-  if (channel < 0 || channel >= kChannelCount) return;
-  if (injected_data_.size() <= channel) {
-    injected_data_.resize(kChannelCount);
+  if (channel < 0 || channel >= kChannelCount) {
+    return;
   }
-  injected_data_[channel] = data;
+  waveform_gens_[channel].setSeries(data);
   LOG_INFO("MOCK_AD", "通道 {} 注入 {} 个采样点", channel, data.size());
 }
 
 void MockADPlugin::clearInjectedData() {
-  for (auto& d : injected_data_) {
-    d.clear();
+  for (auto& gen : waveform_gens_) {
+    gen.setWaveform(etest::core::WaveformGenerator::WaveformType::Sine,
+                    1.0, 1.0, 0.0);
   }
   LOG_INFO("MOCK_AD", "已清除所有注入数据");
 }

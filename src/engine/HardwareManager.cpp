@@ -65,7 +65,12 @@ bool HardwareManager::loadFromTopology(const QJsonObject& root) {
     // 注入 type 字段（device 级别），供 instantiateDevice 的 mock 分支使用
     properties.insert(QStringLiteral("type"), dObj["type"].toString());
 
-    bool mock = dObj["mock"].toBool(false);
+    // 通过 pluginId 反查 is_mock，不再读 dObj["mock"] 字段
+    bool mock = false;
+    IPlugin* plugin = PluginManager::instance().plugin(pluginId);
+    if (plugin) {
+      mock = plugin->metaData().is_mock;
+    }
     if (instantiateDevice(deviceId, pluginId, properties, mock)) {
       ++loaded;
     } else {

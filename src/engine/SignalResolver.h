@@ -74,6 +74,11 @@ class SignalResolver {
 
   ResolvedSignal resolve(const QString& uuid) const;
 
+  // 直接从 ICD 构造 ResolvedSignal（不走 SignalRegistry/UUID），
+  // 供 MockUUTBuilder / MockConfigEditor 复用 ICD 属性提取逻辑。
+  ResolvedSignal buildFromIcd(const QString& frameName,
+                               const QString& nodePath) const;
+
  private:
   // 从 ICD Repository 中查找节点并填充编码属性
   void fillFromIcd(ResolvedSignal& signal, const QString& frameName,

@@ -19,6 +19,7 @@
 #include "editors/ImageViewerWidget.h"
 #include "editors/EtlogViewerWidget.h"
 #include "editors/TextEditorWidget.h"
+#include "editors/MockConfigEditor.h"
 #include "TestProgramEditorWidget.h"
 #include "SignalRegistry.h"
 #include "dialogs/IcdSignalSelection.h"
@@ -99,6 +100,30 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerFactory(
       "etlog", [](const QString& id, QWidget* parent) {
         return new EtlogViewerWidget(id, parent);
+      });
+
+  // Mock 配置编辑器
+  EditorFactoryRegistry::registerExtension("emock", "mockconfig");
+  EditorFactoryRegistry::registerFactory(
+      "mockconfig",
+      [](const QString& id, QWidget* parent) {
+        return new MockConfigEditor(id, parent);
+      },
+      [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
+        auto* mc = qobject_cast<MockConfigEditor*>(editor->widget());
+        if (!mc) {
+          return;
+        }
+        mc->setIcdRepository(mgr->icdRepository());
+        QObject::connect(
+            mc, &MockConfigEditor::modificationChanged, mgr,
+            [editor, dock, mgr](bool modified) {
+              dock->setWindowTitle(
+                  (modified ? QStringLiteral("* ") : QString())
+                      .append(editor->displayName()));
+              emit mgr->unsavedChangesChanged();
+              emit mgr->modificationChanged(modified);
+            });
       });
 
   EditorFactoryRegistry::registerFactory(

@@ -59,6 +59,15 @@ ResolvedSignal SignalResolver::resolve(const QString& uuid) const {
     return result;
 }
 
+ResolvedSignal SignalResolver::buildFromIcd(const QString& frameName,
+                                              const QString& nodePath) const {
+    ResolvedSignal result;
+    result.frameName = frameName;
+    result.nodePath = nodePath;
+    fillFromIcd(result, frameName, nodePath);
+    return result;
+}
+
 void SignalResolver::fillFromIcd(ResolvedSignal& signal,
                                   const QString& frameName,
                                   const QString& nodePath) const {
@@ -136,6 +145,7 @@ void SignalResolver::fillFromIcd(ResolvedSignal& signal,
     if (attrs.max.has_value()) {
         signal.engMax = static_cast<double>(attrs.max.value());
     }
+    signal.valid = true;
 
     // rawMin/rawMax 在 ICD 数据中不直接存储，Phase 1 中保持默认值 0
 }

@@ -26,6 +26,7 @@ set(SOURCES
     terminal/PtyProcess.cpp
     terminal/VtParser.cpp
     SignalRegistry.cpp
+    WaveformGenerator.cpp
 )
 
 set(HEADERS
@@ -64,6 +65,7 @@ set(HEADERS
     terminal/PtyProcess.h
     terminal/VtParser.h
     SignalRegistry.h
+    WaveformGenerator.h
 )
 
 if(WIN32)

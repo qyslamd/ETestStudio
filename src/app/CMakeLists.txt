@@ -61,6 +61,8 @@ add_executable(${TARGET_NAME} WIN32
     editors/ImageViewerWidget.cpp
     editors/EtlogViewerWidget.h
     editors/EtlogViewerWidget.cpp
+    editors/MockConfigEditor.h
+    editors/MockConfigEditor.cpp
     EditorManager.h
     EditorManager.cpp
     editors/EditorFactory.h

@@ -3,6 +3,8 @@
 > **版本**: v5.1
 > **日期**: 2026-07-10
 > **状态**: 设计完成（四轮评审通过）
+>
+> **废弃声明**：本文档中涉及 `mock` 字段、`/mock/MockResponses.json` 路径、`responseHex` 的描述已被 `docs/plan/Mock模式推断与配置方案.md` 取代。模式推断改用 `pluginId` 反查 `is_mock`，配置文件改为 `topology/MockResponses.emock`，response 结构改为 `replyFrameName + fieldValues[]`（旧格式 `responseHex` 保留兼容）。凡涉及上述内容的章节（1.2 设计约束、2.2 拓扑 JSON 示例、2.3 Mock 标记、3.4 引擎匹配逻辑、7 loadTopology 代码示例、9 文件清单）均以此废弃声明为准。
 
 ## 1. 背景与问题
 

@@ -1525,7 +1525,21 @@ void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
             .arg(dev.deviceType));
     return;
   }
-  dev.pluginId = matched.first().id;
+  // 同 device_type 可能有 mock 和真实两个插件，优先选真实插件
+  const auto* chosen = &matched.first();
+  for (const auto& meta : matched) {
+    if (!meta.is_mock) {
+      chosen = &meta;
+      break;
+    }
+  }
+  if (matched.size() > 1) {
+    LOG_WARN("TOPOLOGY_UI",
+        "设备类型 \"{}\" 有 {} 个插件，选择: {} (is_mock={})",
+        dev.deviceType.toStdString(), matched.size(),
+        chosen->id.toStdString(), chosen->is_mock);
+  }
+  dev.pluginId = chosen->id;
 
   // Load properties
   for (const auto& propVal : properties) {
