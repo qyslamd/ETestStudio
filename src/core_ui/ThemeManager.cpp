@@ -102,6 +102,9 @@ ThemeManager::ThemeManager(QObject* parent) : QObject(parent) {
   loadQss(theme);
   current_theme_ = theme;
   auto it = palettes_.find(theme);
+  if (it == palettes_.end()) {
+    it = palettes_.find(QStringLiteral("default"));
+  }
   palette_ = (it != palettes_.end()) ? &it.value() : nullptr;
   is_dark_ = palette_ ? palette_->isDark : true;
   applyEditorTheme();
@@ -114,26 +117,50 @@ ThemeManager::~ThemeManager() = default;
 
 void ThemeManager::registerBuiltinPalettes() {
   QDir dir(QStringLiteral(":/resources/themes"));
-  if (!dir.exists()) {
-    return;
-  }
-  const auto entries =
-      dir.entryInfoList({QStringLiteral("*.json")}, QDir::Files);
-  for (const auto& fi : entries) {
-    ThemePalette p;
-    if (loadPaletteFromJson(fi.absoluteFilePath(), p)) {
-      palettes_[p.themeId] = p;
-      // Read displayName from JSON for SettingsDialog
-      QFile f(fi.absoluteFilePath());
-      if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        try {
-          json j = json::parse(f.readAll().toStdString());
-          display_names_[p.themeId] =
-              QString::fromStdString(j.value("displayName", std::string()));
-        } catch (...) {}
-        f.close();
+  if (dir.exists()) {
+    const auto entries =
+        dir.entryInfoList({QStringLiteral("*.json")}, QDir::Files);
+    for (const auto& fi : entries) {
+      ThemePalette p;
+      if (loadPaletteFromJson(fi.absoluteFilePath(), p)) {
+        palettes_[p.themeId] = p;
+        QFile f(fi.absoluteFilePath());
+        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+          try {
+            json j = json::parse(f.readAll().toStdString());
+            display_names_[p.themeId] =
+                QString::fromStdString(j.value("displayName", std::string()));
+          } catch (...) {}
+          f.close();
+        }
       }
     }
+  }
+
+  // 兜底：确保 default 永远存在
+  if (!palettes_.contains(QStringLiteral("default"))) {
+    ThemePalette fallback;
+    fallback.themeId = QStringLiteral("default");
+    fallback.isDark = false;
+    fallback.ribbonBaseTheme = 2;
+    fallback.windowBackground = QColor(0xF0, 0xF0, 0xF0);
+    fallback.panelBackground = QColor(0xF0, 0xF0, 0xF0);
+    fallback.toolbarBackground = QColor(0xF0, 0xF0, 0xF0);
+    fallback.hoverBackground = QColor(0xE0, 0xE0, 0xE0);
+    fallback.selectionBackground = QColor(0xCC, 0xE4, 0xF7);
+    fallback.borderColor = QColor(0xCC, 0xCC, 0xCC);
+    fallback.textColor = QColor(0x33, 0x33, 0x33);
+    fallback.secondaryTextColor = QColor(0x88, 0x88, 0x88);
+    fallback.disabledTextColor = QColor(0xAA, 0xAA, 0xAA);
+    fallback.accentColor = QColor("#007ACC");
+    fallback.statusBarBackground = QColor(0xF0, 0xF0, 0xF0);
+    fallback.clockFaceBackground = QColor(0xF6, 0xF6, 0xF6);
+    fallback.clockHandColor = QColor(0x33, 0x33, 0x33);
+    fallback.clockSecondaryColor = QColor(0x55, 0x55, 0x55);
+    fallback.clockAccentColor = QColor(0xFF, 0x66, 0x00);
+    palettes_[QStringLiteral("default")] = fallback;
+    display_names_[QStringLiteral("default")] =
+        QStringLiteral("默认主题");
   }
 }
 
@@ -223,6 +250,9 @@ void ThemeManager::setTheme(const QString& themeId) {
 
   current_theme_ = themeId;
   auto it = palettes_.find(themeId);
+  if (it == palettes_.end()) {
+    it = palettes_.find(QStringLiteral("default"));
+  }
   palette_ = (it != palettes_.end()) ? &it.value() : nullptr;
   is_dark_ = palette_ ? palette_->isDark : true;
 

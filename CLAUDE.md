@@ -184,6 +184,18 @@ etest (主程序)
 ## 调试和定位问题
 1. 该项目是一个Qt的GUI程序。大模型Agent工具无法运行查看运行后的状态，唯一的手段就是通过增加日志。我是用了spdlog封装了 `LOG_INFO`、`LOG_DEBUG`等，必要的时候添加上日志！
 
+## 新增主题（JSON 驱动，零 C++ 改动）
+
+主题数据全在 JSON 中定义，无需改 C++ 代码：
+
+1. `src/app/resources/themes/<id>.json` — 15 个语义色 + 26 个编辑器色
+2. `src/app/resources/styles/<id>.qss` — 基于 `vscode.qss`（暗色）或 `default.qss`（亮色）替换颜色
+3. `src/app/resources/styles/ribbon_<id>.qss` — 基于 `theme-dark2.qss`（暗色）或 `theme-office2021-blue.qss`（亮色）替换颜色
+4. 亮色 ribbon QSS 必须补 `SARibbonButtonGroupWidget > QToolButton` + `SARibbonQuickAccessBar` 块（见 `ribbon_lime.qss` 头部），暗色不需要
+5. 用 Python 批量替换颜色时，旧值和新值都要带 `#` 前缀避双井号
+6. `src/app/resource.qrc` 注册 3 个文件
+7. 零 C++ 改动
+
 ## 第三方依赖
 项目集成了以下第三方库，均已在CMake中配置为静态编译：
 - Qt 5.15.2（Windows，msvc2019_64）/ Qt 5.12.x（Linux，系统包），组件：Core、Gui、Widgets、PrintSupport、Test、Xml、Svg、Network、Concurrent、Sql。Qt使用官方编译的二进制发布包，默认是共享库

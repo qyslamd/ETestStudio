@@ -16,6 +16,9 @@
         <file>resources/themes/vscode.json</file>
         <file>resources/themes/chinese_red.json</file>
         <file>resources/themes/lime.json</file>
+        <file>resources/themes/gold.json</file>
+        <file>resources/styles/gold.qss</file>
+        <file>resources/styles/ribbon_gold.qss</file>
         <file>resources/icons/svg/close_light.svg</file>
         <file>resources/icons/svg/close_dark.svg</file>
         <file>resources/icons/svg/dock_close_light.svg</file>
