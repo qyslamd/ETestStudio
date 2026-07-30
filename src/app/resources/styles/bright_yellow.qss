@@ -1137,8 +1137,8 @@ etest--app--TerminalPanel QPlainTextEdit {
 
 /* ==================== ProtocolEditorWidget ==================== */
 #protocolToolbar {
-    background-color: #2d2d2d;
-    border-bottom: 1px solid #3c3c3c;
+    background-color: #FFF3D0;
+    border-bottom: 1px solid #FFF3D0;
 }
 #protocolToolbar QToolButton:checked {
     background-color: #FFD700;
@@ -1655,7 +1655,7 @@ QToolButton#aboutOkButton:pressed {
   color: #2A2015;
 }
 #loginUsername, #loginPassword {
-  background: #3c3c3c;
+  background: #FFF3D0;
   border: 1px solid #B7A64C;
   border-radius: 8px;
   padding: 8px 12px;
@@ -1664,7 +1664,7 @@ QToolButton#aboutOkButton:pressed {
 }
 #loginUsername:focus, #loginPassword:focus {
   border-color: #FFD700;
-  background: #3c3c3c;
+  background: #FFF3D0;
 }
 QToolButton#loginButton {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -1730,11 +1730,11 @@ QToolButton#userMgrAddBtn:hover {
   background: #C9AA00;
 }
 #userMgrTable {
-  border: 1px solid #3c3c3c;
+  border: 1px solid #FFF3D0;
   border-radius: 8px;
   gridline-color: #333;
   color: #2A2015;
-  background: #1e1e1e;
+  background: #FFFBEA;
 }
 #userMgrTable::item {
   padding: 6px 12px;

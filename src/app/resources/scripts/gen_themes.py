@@ -132,15 +132,21 @@ for t in themes:
     qss = qss.replace('VSCode Dark Theme for ETest Demo', '{} Light Theme for ETest Studio'.format(t['displayName']))
 
     # Color replacements: vscode dark -> light with accent
+    # Handle both uppercase and lowercase hex in the source
+    def repl(old_upper, new_val):
+        qss = qss.replace(old_upper, new_val)
+        qss = qss.replace(old_upper.lower(), new_val)
+        return qss
+
     # Main backgrounds
-    qss = qss.replace('#1E1E1E', p1)
-    qss = qss.replace('#252526', p2)
-    qss = qss.replace('#2D2D2D', p3)
-    qss = qss.replace('#3C3C3C', p3)
-    qss = qss.replace('#333333', p3)
-    qss = qss.replace('#2A2D2E', p4)
-    qss = qss.replace('#2A2A2B', p2)
-    qss = qss.replace('#252525', p2)
+    qss = repl('#1E1E1E', p1)
+    qss = repl('#252526', p2)
+    qss = repl('#2D2D2D', p3)
+    qss = repl('#3C3C3C', p3)
+    qss = repl('#333333', p3)
+    qss = repl('#2A2D2E', p4)
+    qss = repl('#2A2A2B', p2)
+    qss = repl('#252525', p2)
 
     # Hover/press/selection
     qss = qss.replace('#505050', p4)
@@ -208,6 +214,8 @@ for t in themes:
     qss = qss.replace('#555', dis)
     qss = qss.replace('#ffffff', '#FFFFFF')
     qss = qss.replace('#FFFFFF', '#FFFFFF')
+
+    # Fix disabled RibbonSearchEdit border
 
     # Fix disabled RibbonSearchEdit border
     # (background and border are same color in disabled state)
