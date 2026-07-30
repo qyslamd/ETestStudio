@@ -2457,6 +2457,54 @@ void MainWindow::setupRibbon() {
 
     panel_tools->addSeparator();
 
+    // 检查硬件设备（平台相关实现）
+    check_hardware_action_ = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("hardware")),
+        QStringLiteral("检查硬件设备"), this);
+    check_hardware_action_->setToolTip(
+        QStringLiteral("查看系统硬件设备列表，确认测试板卡是否被识别"));
+    QObject::connect(check_hardware_action_, &QAction::triggered, this, [this]() {
+#ifdef Q_OS_WIN
+      QProcess::startDetached(QStringLiteral("cmd.exe"),
+                               QStringList{QStringLiteral("/c"),
+                                           QStringLiteral("start"),
+                                           QStringLiteral("devmgmt.msc")});
+#else
+      QProcess lspci;
+      lspci.start(QStringLiteral("lspci"), QStringList());
+      if (lspci.waitForFinished(3000)) {
+        QString output = QString::fromUtf8(lspci.readAllStandardOutput());
+        if (output.trimmed().isEmpty()) {
+          lspci.start(QStringLiteral("lspci"),
+                      QStringList{QStringLiteral("-v")});
+          if (lspci.waitForFinished(3000)) {
+            output = QString::fromUtf8(lspci.readAllStandardOutput());
+          }
+        }
+        if (output.trimmed().isEmpty()) {
+          output = QStringLiteral("无法读取硬件信息，请尝试以管理员身份运行\n\n"
+                                  "命令: lspci");
+        }
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle(QStringLiteral("硬件设备列表"));
+        msgBox.setDetailedText(output);
+        msgBox.setText(
+            QStringLiteral(
+                "PCI/PCIe 设备列表（共 %1 行）")
+                .arg(output.count(QStringLiteral("\n"))));
+        msgBox.exec();
+      } else {
+        QMessageBox::warning(this, QStringLiteral("错误"),
+                             QStringLiteral("无法执行 lspci，请确认已安装 pciutils"));
+      }
+#endif
+    });
+
+    auto* panel_hardware = cat->addPanel(QStringLiteral("硬件"));
+    panel_hardware->addLargeAction(check_hardware_action_);
+
+    panel_tools->addSeparator();
+
     auto addToolLauncherAction = [&](QAction*& act, const QString& name,
                                      const QString& exeName,
                                      const QString& iconName) {

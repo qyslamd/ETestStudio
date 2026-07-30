@@ -227,6 +227,7 @@ class MainWindow : public SARibbonMainWindow {
   QAction* tool_topology_action_ = nullptr;
   QAction* tool_protocol_action_ = nullptr;
   QAction* tool_testprogram_action_ = nullptr;
+  QAction* check_hardware_action_ = nullptr;
 
   // 当前编辑器的信号连接
   QMetaObject::Connection current_editor_modification_connection_;
