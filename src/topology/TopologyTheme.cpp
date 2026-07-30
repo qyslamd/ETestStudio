@@ -60,7 +60,24 @@ const TopologyColors& topologyColors() {
     initialized = true;
   }
 
-  return etest::core_ui::ThemeManager::instance().isDarkTheme() ? dark : light;
+  static TopologyColors cached;
+  static QString cachedTheme;
+  QString currentTheme = etest::core_ui::ThemeManager::instance().currentTheme();
+  if (cachedTheme != currentTheme) {
+    auto& tm = etest::core_ui::ThemeManager::instance();
+    cached = tm.isDarkTheme() ? dark : light;
+    if (tm.isDarkTheme()) {
+      cached.sceneBackground = tm.windowBackground();
+      cached.textPrimary = tm.textColor();
+      cached.textSecondary = tm.secondaryTextColor();
+      cached.legendBackground = QColor(tm.panelBackground());
+      cached.legendBackground.setAlpha(220);
+      cached.legendText = tm.textColor();
+      cached.legendBorder = tm.borderColor();
+    }
+    cachedTheme = currentTheme;
+  }
+  return cached;
 }
 
 }  // namespace etest::topology

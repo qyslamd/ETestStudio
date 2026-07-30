@@ -2,8 +2,11 @@
 
 #include <QColor>
 #include <QObject>
+#include <QHash>
 #include <QString>
 #include <QStringList>
+
+#include "ThemePalette.h"
 
 namespace etest::core_ui {
 
@@ -20,6 +23,7 @@ class ThemeManager : public QObject {
   bool isDarkTheme() const;
   QString currentTheme() const;
   QStringList availableThemes() const;
+  int ribbonBaseTheme() const;
 
   void setTheme(const QString& themeId);
 
@@ -46,11 +50,14 @@ class ThemeManager : public QObject {
  private:
   explicit ThemeManager(QObject* parent = nullptr);
 
+  void registerBuiltinPalettes();
   void loadQss(const QString& themeId);
   bool detectDarkFromQss(const QString& qss) const;
   void applyEditorTheme();
   void onConfigChanged(const QString& key);
 
+  QHash<QString, ThemePalette> palettes_;
+  const ThemePalette* palette_ = nullptr;
   QString current_theme_;
   bool is_dark_ = true;
 };

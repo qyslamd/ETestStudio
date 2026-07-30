@@ -35,27 +35,32 @@ void TabBarStyle::setDarkTheme(bool dark) {
 // ── 主题色（dark_ 派生） ──
 
 QBrush TabBarStyle::selectedBrush(const QRect& tabRect) const {
-  if (!dark_)
+  auto& tm = etest::core_ui::ThemeManager::instance();
+  if (!tm.isDarkTheme()) {
     return QBrush(QColor(0xFF, 0xFF, 0xFF));
+  }
+  QColor base = tm.panelBackground();
   QLinearGradient grad(0, 0, 0, tabRect.height());
-  grad.setColorAt(0.0, QColor(0x5E, 0x5E, 0x60));
-  grad.setColorAt(0.5, QColor(0x46, 0x46, 0x48));
-  grad.setColorAt(1.0, QColor(0x2D, 0x2D, 0x2D));
+  grad.setColorAt(0.0, base.lighter(130));
+  grad.setColorAt(0.5, base.lighter(110));
+  grad.setColorAt(1.0, base);
   return QBrush(grad);
 }
 QColor TabBarStyle::hoveredColor() const {
-  return dark_ ? QColor(0x4C, 0x4C, 0x4E) : QColor(0xE8, 0xE8, 0xE8);
+  return etest::core_ui::ThemeManager::instance().hoverBackground();
 }
 QColor TabBarStyle::dividerColor() const {
-  return dark_ ? QColor(0x3C, 0x3C, 0x3C) : QColor(0xD8, 0xD8, 0xD8);
+  return etest::core_ui::ThemeManager::instance().borderColor();
 }
 QColor TabBarStyle::textColor(bool selected) const {
-  if (selected)
-    return dark_ ? QColor(0xFF, 0xFF, 0xFF) : QColor(0x33, 0x33, 0x33);
-  return dark_ ? QColor(0xCC, 0xCC, 0xCC) : QColor(0x88, 0x88, 0x88);
+  auto& tm = etest::core_ui::ThemeManager::instance();
+  if (selected) {
+    return tm.textColor();
+  }
+  return tm.secondaryTextColor();
 }
 QColor TabBarStyle::borderColor() const {
-  return dark_ ? QColor(0x00, 0x00, 0x00, 0x00) : QColor(0xD0, 0xD0, 0xD0);
+  return etest::core_ui::ThemeManager::instance().borderColor();
 }
 
 QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
@@ -116,16 +121,17 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
     painter->drawPolygon(polygon);
     painter->restore();
 
-    // dark 下选中 tab 追加红色外框
+    // dark 下选中 tab 追加渐变外框（从语义色板获取强调色）
     if (dark_) {
       painter->save();
       painter->setRenderHint(QPainter::Antialiasing);
+      QColor accent = etest::core_ui::ThemeManager::instance().accentColor();
       QLinearGradient grad(option->rect.left(), 0, option->rect.right(), 0);
-      grad.setColorAt(0.0,  QColor(0x0A, 0x3A, 0x5C));
-      grad.setColorAt(0.15, QColor(0x40, 0xB0, 0xEE));
-      grad.setColorAt(0.5,  QColor(0x90, 0xDD, 0xFF));
-      grad.setColorAt(0.85, QColor(0x40, 0xB0, 0xEE));
-      grad.setColorAt(1.0,  QColor(0x0A, 0x3A, 0x5C));
+      grad.setColorAt(0.0,  accent.darker(180));
+      grad.setColorAt(0.15, accent.darker(110));
+      grad.setColorAt(0.5,  accent);
+      grad.setColorAt(0.85, accent.darker(110));
+      grad.setColorAt(1.0,  accent.darker(180));
       painter->setPen(QPen(QBrush(grad), 1));
       painter->setBrush(Qt::NoBrush);
       painter->drawPath(path);

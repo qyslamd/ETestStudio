@@ -14,12 +14,171 @@ namespace etest::core_ui {
 
 using namespace etest::core::config;
 
+// ── 内置 palette 工厂 ──
+
+static ThemePalette makeDarkPalette() {
+  ThemePalette p;
+  p.themeId = QStringLiteral("vscode");
+  p.isDark = true;
+  p.ribbonBaseTheme = 5;  // Dark2
+  p.windowBackground = QColor("#1E1E1E");
+  p.panelBackground = QColor("#252526");
+  p.toolbarBackground = QColor("#3C3C3C");
+  p.hoverBackground = QColor("#505050");
+  p.selectionBackground = QColor("#094771");
+  p.borderColor = QColor("#454545");
+  p.textColor = QColor("#CCCCCC");
+  p.secondaryTextColor = QColor("#858585");
+  p.disabledTextColor = QColor("#5A5A5A");
+  p.accentColor = QColor("#007ACC");
+  p.statusBarBackground = QColor("#007ACC");
+  p.clockFaceBackground = QColor("#252526");
+  p.clockHandColor = QColor("#CCCCCC");
+  p.clockSecondaryColor = QColor("#858585");
+  p.clockAccentColor = QColor(0xFF, 0x66, 0x00);
+  // Editor: VS Code Dark+
+  p.editorColors = {
+      {CONFIG_EDITOR_THEME_PAPER, "#1E1E1E"},
+      {CONFIG_EDITOR_THEME_TEXT, "#CCCCCC"},
+      {CONFIG_EDITOR_THEME_CARET_LINE, "#2E2E2E"},
+      {CONFIG_EDITOR_THEME_CARET, "#CCCCCC"},
+      {CONFIG_EDITOR_THEME_SELECTION_BG, "#264F78"},
+      {CONFIG_EDITOR_THEME_SELECTION_FG, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_MARGIN_BG, "#252525"},
+      {CONFIG_EDITOR_THEME_LINE_NUMBER, "#858585"},
+      {CONFIG_EDITOR_THEME_INDENT_GUIDE, "#434343"},
+      {CONFIG_EDITOR_THEME_BRACE_LIGHT_BG, "#264F78"},
+      {CONFIG_EDITOR_THEME_BRACE_LIGHT_FG, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_BRACE_BAD_BG, "#8B0000"},
+      {CONFIG_EDITOR_THEME_BRACE_BAD_FG, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_FOLD_MARGIN, "#858585"},
+      {CONFIG_EDITOR_SYNTAX_KEYWORD, "#569CD6"},
+      {CONFIG_EDITOR_SYNTAX_COMMENT, "#6A9955"},
+      {CONFIG_EDITOR_SYNTAX_STRING, "#CE9178"},
+      {CONFIG_EDITOR_SYNTAX_NUMBER, "#B5CEA8"},
+      {CONFIG_EDITOR_SYNTAX_FUNCTION, "#DCDCAA"},
+      {CONFIG_EDITOR_SYNTAX_TAG, "#569CD6"},
+      {CONFIG_EDITOR_SYNTAX_PREPROCESSOR, "#9B9B9B"},
+      {CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS, "#4EC9B0"},
+      {CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ, "#D7BA7D"},
+      {CONFIG_EDITOR_SYNTAX_PROPERTY, "#DCDCAA"},
+      {CONFIG_EDITOR_SYNTAX_OPERATOR, "#CCCCCC"},
+  };
+  return p;
+}
+
+static ThemePalette makeLightPalette() {
+  ThemePalette p;
+  p.themeId = QStringLiteral("default");
+  p.isDark = false;
+  p.ribbonBaseTheme = 2;  // Office2021Blue
+  p.windowBackground = QColor(0xF0, 0xF0, 0xF0);
+  p.panelBackground = QColor(0xF0, 0xF0, 0xF0);
+  p.toolbarBackground = QColor(0xF0, 0xF0, 0xF0);
+  p.hoverBackground = QColor(0xE0, 0xE0, 0xE0);
+  p.selectionBackground = QColor(0xCC, 0xE4, 0xF7);
+  p.borderColor = QColor(0xCC, 0xCC, 0xCC);
+  p.textColor = QColor(0x33, 0x33, 0x33);
+  p.secondaryTextColor = QColor(0x88, 0x88, 0x88);
+  p.disabledTextColor = QColor(0xAA, 0xAA, 0xAA);
+  p.accentColor = QColor("#007ACC");
+  p.statusBarBackground = QColor(0xF0, 0xF0, 0xF0);
+  p.clockFaceBackground = QColor(0xF6, 0xF6, 0xF6);
+  p.clockHandColor = QColor(0x33, 0x33, 0x33);
+  p.clockSecondaryColor = QColor(0x55, 0x55, 0x55);
+  p.clockAccentColor = QColor(0xFF, 0x66, 0x00);
+  // Editor: VS Code Light+
+  p.editorColors = {
+      {CONFIG_EDITOR_THEME_PAPER, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_TEXT, "#000000"},
+      {CONFIG_EDITOR_THEME_CARET_LINE, "#E8F0FE"},
+      {CONFIG_EDITOR_THEME_CARET, "#000000"},
+      {CONFIG_EDITOR_THEME_SELECTION_BG, "#ADD6FF"},
+      {CONFIG_EDITOR_THEME_SELECTION_FG, "#000000"},
+      {CONFIG_EDITOR_THEME_MARGIN_BG, "#F3F3F3"},
+      {CONFIG_EDITOR_THEME_LINE_NUMBER, "#888888"},
+      {CONFIG_EDITOR_THEME_INDENT_GUIDE, "#D3D3D3"},
+      {CONFIG_EDITOR_THEME_BRACE_LIGHT_BG, "#ADD6FF"},
+      {CONFIG_EDITOR_THEME_BRACE_LIGHT_FG, "#000000"},
+      {CONFIG_EDITOR_THEME_BRACE_BAD_BG, "#E57373"},
+      {CONFIG_EDITOR_THEME_BRACE_BAD_FG, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_FOLD_MARGIN, "#888888"},
+      {CONFIG_EDITOR_SYNTAX_KEYWORD, "#0000FF"},
+      {CONFIG_EDITOR_SYNTAX_COMMENT, "#008000"},
+      {CONFIG_EDITOR_SYNTAX_STRING, "#A31515"},
+      {CONFIG_EDITOR_SYNTAX_NUMBER, "#098658"},
+      {CONFIG_EDITOR_SYNTAX_FUNCTION, "#795E26"},
+      {CONFIG_EDITOR_SYNTAX_TAG, "#800000"},
+      {CONFIG_EDITOR_SYNTAX_PREPROCESSOR, "#888888"},
+      {CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS, "#267F99"},
+      {CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ, "#E57373"},
+      {CONFIG_EDITOR_SYNTAX_PROPERTY, "#795E26"},
+      {CONFIG_EDITOR_SYNTAX_OPERATOR, "#000000"},
+  };
+  return p;
+}
+
+static ThemePalette makeChineseRedPalette() {
+  ThemePalette p;
+  p.themeId = QStringLiteral("chinese_red");
+  p.isDark = true;
+  p.ribbonBaseTheme = 5;  // Dark2
+  p.windowBackground = QColor("#1A1A1A");
+  p.panelBackground = QColor("#241F20");
+  p.toolbarBackground = QColor("#33292B");
+  p.hoverBackground = QColor("#4A3437");
+  p.selectionBackground = QColor("#5D1A1A");
+  p.borderColor = QColor("#4A3A3C");
+  p.textColor = QColor("#D4C5C5");
+  p.secondaryTextColor = QColor("#9A8585");
+  p.disabledTextColor = QColor("#5A4A4A");
+  p.accentColor = QColor("#C62828");
+  p.statusBarBackground = QColor("#B71C1C");
+  p.clockFaceBackground = QColor("#241F20");
+  p.clockHandColor = QColor("#D4C5C5");
+  p.clockSecondaryColor = QColor("#9A8585");
+  p.clockAccentColor = QColor("#D4AF37");
+  // Editor: 基于 Dark+，关键字/标签用中国红，函数用金色
+  p.editorColors = {
+      {CONFIG_EDITOR_THEME_PAPER, "#1A1A1A"},
+      {CONFIG_EDITOR_THEME_TEXT, "#D4C5C5"},
+      {CONFIG_EDITOR_THEME_CARET_LINE, "#2A2425"},
+      {CONFIG_EDITOR_THEME_CARET, "#D4C5C5"},
+      {CONFIG_EDITOR_THEME_SELECTION_BG, "#4A1A1A"},
+      {CONFIG_EDITOR_THEME_SELECTION_FG, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_MARGIN_BG, "#241F20"},
+      {CONFIG_EDITOR_THEME_LINE_NUMBER, "#9A8585"},
+      {CONFIG_EDITOR_THEME_INDENT_GUIDE, "#4A3A3C"},
+      {CONFIG_EDITOR_THEME_BRACE_LIGHT_BG, "#4A1A1A"},
+      {CONFIG_EDITOR_THEME_BRACE_LIGHT_FG, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_BRACE_BAD_BG, "#8B0000"},
+      {CONFIG_EDITOR_THEME_BRACE_BAD_FG, "#FFFFFF"},
+      {CONFIG_EDITOR_THEME_FOLD_MARGIN, "#9A8585"},
+      {CONFIG_EDITOR_SYNTAX_KEYWORD, "#C62828"},
+      {CONFIG_EDITOR_SYNTAX_COMMENT, "#6A9955"},
+      {CONFIG_EDITOR_SYNTAX_STRING, "#CE9178"},
+      {CONFIG_EDITOR_SYNTAX_NUMBER, "#B5CEA8"},
+      {CONFIG_EDITOR_SYNTAX_FUNCTION, "#D4AF37"},
+      {CONFIG_EDITOR_SYNTAX_TAG, "#C62828"},
+      {CONFIG_EDITOR_SYNTAX_PREPROCESSOR, "#9B9B9B"},
+      {CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS, "#4EC9B0"},
+      {CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ, "#D7BA7D"},
+      {CONFIG_EDITOR_SYNTAX_PROPERTY, "#D4AF37"},
+      {CONFIG_EDITOR_SYNTAX_OPERATOR, "#D4C5C5"},
+  };
+  return p;
+}
+
+// ── ThemeManager ──
+
 ThemeManager& ThemeManager::instance() {
   static ThemeManager inst;
   return inst;
 }
 
 ThemeManager::ThemeManager(QObject* parent) : QObject(parent) {
+  registerBuiltinPalettes();
+
   auto& cfg = ConfigManager::instance();
   QString theme =
       cfg.get<QString>(CONFIG_APPEARANCE_THEME,
@@ -27,6 +186,9 @@ ThemeManager::ThemeManager(QObject* parent) : QObject(parent) {
 
   loadQss(theme);
   current_theme_ = theme;
+  auto it = palettes_.find(theme);
+  palette_ = (it != palettes_.end()) ? &it.value() : nullptr;
+  is_dark_ = palette_ ? palette_->isDark : true;
   applyEditorTheme();
 
   connect(&cfg, &ConfigManager::configChanged, this,
@@ -34,6 +196,12 @@ ThemeManager::ThemeManager(QObject* parent) : QObject(parent) {
 }
 
 ThemeManager::~ThemeManager() = default;
+
+void ThemeManager::registerBuiltinPalettes() {
+  palettes_[QStringLiteral("default")] = makeLightPalette();
+  palettes_[QStringLiteral("vscode")] = makeDarkPalette();
+  palettes_[QStringLiteral("chinese_red")] = makeChineseRedPalette();
+}
 
 bool ThemeManager::isDarkTheme() const {
   return is_dark_;
@@ -43,98 +211,56 @@ QString ThemeManager::currentTheme() const {
   return current_theme_;
 }
 
-// -- 语义色板 --
-
-static bool isChineseRed(const QString& theme) {
-  return theme == QStringLiteral("chinese_red");
+int ThemeManager::ribbonBaseTheme() const {
+  return palette_ ? palette_->ribbonBaseTheme : 5;
 }
+
+// -- 语义色板（一行委托）--
 
 QColor ThemeManager::windowBackground() const {
-  if (isChineseRed(current_theme_)) return QColor("#1A1A1A");
-  if (is_dark_) return QColor("#1E1E1E");
-  return QColor(0xF0, 0xF0, 0xF0);
+  return palette_ ? palette_->windowBackground : QColor();
 }
-
 QColor ThemeManager::panelBackground() const {
-  if (isChineseRed(current_theme_)) return QColor("#241F20");
-  if (is_dark_) return QColor("#252526");
-  return QColor(0xF0, 0xF0, 0xF0);
+  return palette_ ? palette_->panelBackground : QColor();
 }
-
 QColor ThemeManager::toolbarBackground() const {
-  if (isChineseRed(current_theme_)) return QColor("#33292B");
-  if (is_dark_) return QColor("#3C3C3C");
-  return QColor(0xF0, 0xF0, 0xF0);
+  return palette_ ? palette_->toolbarBackground : QColor();
 }
-
 QColor ThemeManager::hoverBackground() const {
-  if (isChineseRed(current_theme_)) return QColor("#4A3437");
-  if (is_dark_) return QColor("#505050");
-  return QColor(0xE0, 0xE0, 0xE0);
+  return palette_ ? palette_->hoverBackground : QColor();
 }
-
 QColor ThemeManager::selectionBackground() const {
-  if (isChineseRed(current_theme_)) return QColor("#5D1A1A");
-  if (is_dark_) return QColor("#094771");
-  return QColor(0xCC, 0xE4, 0xF7);
+  return palette_ ? palette_->selectionBackground : QColor();
 }
-
 QColor ThemeManager::borderColor() const {
-  if (isChineseRed(current_theme_)) return QColor("#4A3A3C");
-  if (is_dark_) return QColor("#454545");
-  return QColor(0xCC, 0xCC, 0xCC);
+  return palette_ ? palette_->borderColor : QColor();
 }
-
 QColor ThemeManager::textColor() const {
-  if (isChineseRed(current_theme_)) return QColor("#D4C5C5");
-  if (is_dark_) return QColor("#CCCCCC");
-  return QColor(0x33, 0x33, 0x33);
+  return palette_ ? palette_->textColor : QColor();
 }
-
 QColor ThemeManager::secondaryTextColor() const {
-  if (isChineseRed(current_theme_)) return QColor("#9A8585");
-  if (is_dark_) return QColor("#858585");
-  return QColor(0x88, 0x88, 0x88);
+  return palette_ ? palette_->secondaryTextColor : QColor();
 }
-
 QColor ThemeManager::disabledTextColor() const {
-  if (isChineseRed(current_theme_)) return QColor("#5A4A4A");
-  if (is_dark_) return QColor("#5A5A5A");
-  return QColor(0xAA, 0xAA, 0xAA);
+  return palette_ ? palette_->disabledTextColor : QColor();
 }
-
 QColor ThemeManager::accentColor() const {
-  if (isChineseRed(current_theme_)) return QColor("#C62828");
-  return QColor("#007ACC");
+  return palette_ ? palette_->accentColor : QColor();
 }
-
 QColor ThemeManager::statusBarBackground() const {
-  if (isChineseRed(current_theme_)) return QColor("#B71C1C");
-  if (is_dark_) return QColor("#007ACC");
-  return QColor(0xF0, 0xF0, 0xF0);
+  return palette_ ? palette_->statusBarBackground : QColor();
 }
-
 QColor ThemeManager::clockFaceBackground() const {
-  if (isChineseRed(current_theme_)) return QColor("#241F20");
-  if (is_dark_) return QColor("#252526");
-  return QColor(0xF6, 0xF6, 0xF6);
+  return palette_ ? palette_->clockFaceBackground : QColor();
 }
-
 QColor ThemeManager::clockHandColor() const {
-  if (isChineseRed(current_theme_)) return QColor("#D4C5C5");
-  if (is_dark_) return QColor("#CCCCCC");
-  return QColor(0x33, 0x33, 0x33);
+  return palette_ ? palette_->clockHandColor : QColor();
 }
-
 QColor ThemeManager::clockSecondaryColor() const {
-  if (isChineseRed(current_theme_)) return QColor("#9A8585");
-  if (is_dark_) return QColor("#858585");
-  return QColor(0x55, 0x55, 0x55);
+  return palette_ ? palette_->clockSecondaryColor : QColor();
 }
-
 QColor ThemeManager::clockAccentColor() const {
-  if (isChineseRed(current_theme_)) return QColor("#D4AF37");
-  return QColor(0xFF, 0x66, 0x00);
+  return palette_ ? palette_->clockAccentColor : QColor();
 }
 
 QStringList ThemeManager::availableThemes() const {
@@ -160,6 +286,9 @@ void ThemeManager::setTheme(const QString& themeId) {
     return;
 
   current_theme_ = themeId;
+  auto it = palettes_.find(themeId);
+  palette_ = (it != palettes_.end()) ? &it.value() : nullptr;
+  is_dark_ = palette_ ? palette_->isDark : true;
 
   loadQss(themeId);
   applyEditorTheme();
@@ -180,8 +309,6 @@ void ThemeManager::loadQss(const QString& themeId) {
 
   is_dark_ = detectDarkFromQss(qss);
 
-  // ads_dark.qss 同时设到 qApp（覆盖浮动窗口等顶级 QADS 窗口）
-  // 和 CDockManager（覆盖 QADS 内置 widget 级 default.css）
   if (is_dark_) {
     QFile adsFile(QStringLiteral(":/resources/styles/ads_dark.qss"));
     if (adsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -201,7 +328,6 @@ bool ThemeManager::detectDarkFromQss(const QString& qss) const {
   if (!match.hasMatch()) return false;
 
   QString hex = match.captured(1).trimmed();
-  // Parse hex color manually (no QColor dependency)
   if (hex.startsWith('#')) hex = hex.mid(1);
   if (hex.length() < 6) return false;
   bool ok1, ok2, ok3;
@@ -214,163 +340,11 @@ bool ThemeManager::detectDarkFromQss(const QString& qss) const {
 }
 
 void ThemeManager::applyEditorTheme() {
+  if (!palette_) return;
   auto& cfg = ConfigManager::instance();
-  if (isChineseRed(current_theme_)) {
-    // ChineseRed 配色：基于 Dark+，关键字/标签用中国红，函数用金色
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_PAPER),
-            QStringLiteral("#1A1A1A"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_TEXT),
-            QStringLiteral("#D4C5C5"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_CARET_LINE),
-            QStringLiteral("#2A2425"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_CARET),
-            QStringLiteral("#D4C5C5"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_SELECTION_BG),
-            QStringLiteral("#4A1A1A"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_SELECTION_FG),
-            QStringLiteral("#FFFFFF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_MARGIN_BG),
-            QStringLiteral("#241F20"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_LINE_NUMBER),
-            QStringLiteral("#9A8585"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_INDENT_GUIDE),
-            QStringLiteral("#4A3A3C"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_LIGHT_BG),
-            QStringLiteral("#4A1A1A"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_LIGHT_FG),
-            QStringLiteral("#FFFFFF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_BAD_BG),
-            QStringLiteral("#8B0000"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_BAD_FG),
-            QStringLiteral("#FFFFFF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_FOLD_MARGIN),
-            QStringLiteral("#9A8585"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_KEYWORD),
-            QStringLiteral("#C62828"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_COMMENT),
-            QStringLiteral("#6A9955"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_STRING),
-            QStringLiteral("#CE9178"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_NUMBER),
-            QStringLiteral("#B5CEA8"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_FUNCTION),
-            QStringLiteral("#D4AF37"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_TAG),
-            QStringLiteral("#C62828"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_PREPROCESSOR),
-            QStringLiteral("#9B9B9B"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS),
-            QStringLiteral("#4EC9B0"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ),
-            QStringLiteral("#D7BA7D"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_PROPERTY),
-            QStringLiteral("#D4AF37"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_OPERATOR),
-            QStringLiteral("#D4C5C5"));
-  } else if (is_dark_) {
-    // VS Code Dark+ 配色
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_PAPER),
-            QStringLiteral("#1E1E1E"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_TEXT),
-            QStringLiteral("#CCCCCC"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_CARET_LINE),
-            QStringLiteral("#2E2E2E"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_CARET),
-            QStringLiteral("#CCCCCC"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_SELECTION_BG),
-            QStringLiteral("#264F78"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_SELECTION_FG),
-            QStringLiteral("#FFFFFF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_MARGIN_BG),
-            QStringLiteral("#252525"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_LINE_NUMBER),
-            QStringLiteral("#858585"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_INDENT_GUIDE),
-            QStringLiteral("#434343"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_LIGHT_BG),
-            QStringLiteral("#264F78"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_LIGHT_FG),
-            QStringLiteral("#FFFFFF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_BAD_BG),
-            QStringLiteral("#8B0000"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_BAD_FG),
-            QStringLiteral("#FFFFFF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_FOLD_MARGIN),
-            QStringLiteral("#858585"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_KEYWORD),
-            QStringLiteral("#569CD6"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_COMMENT),
-            QStringLiteral("#6A9955"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_STRING),
-            QStringLiteral("#CE9178"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_NUMBER),
-            QStringLiteral("#B5CEA8"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_FUNCTION),
-            QStringLiteral("#DCDCAA"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_TAG),
-            QStringLiteral("#569CD6"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_PREPROCESSOR),
-            QStringLiteral("#9B9B9B"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS),
-            QStringLiteral("#4EC9B0"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ),
-            QStringLiteral("#D7BA7D"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_PROPERTY),
-            QStringLiteral("#DCDCAA"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_OPERATOR),
-            QStringLiteral("#CCCCCC"));
-  } else {
-    // VS Code Light+ 配色
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_PAPER),
-            QStringLiteral("#FFFFFF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_TEXT),
-            QStringLiteral("#000000"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_CARET_LINE),
-            QStringLiteral("#E8F0FE"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_CARET),
-            QStringLiteral("#000000"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_SELECTION_BG),
-            QStringLiteral("#ADD6FF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_SELECTION_FG),
-            QStringLiteral("#000000"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_MARGIN_BG),
-            QStringLiteral("#F3F3F3"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_LINE_NUMBER),
-            QStringLiteral("#888888"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_INDENT_GUIDE),
-            QStringLiteral("#D3D3D3"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_LIGHT_BG),
-            QStringLiteral("#ADD6FF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_LIGHT_FG),
-            QStringLiteral("#000000"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_BAD_BG),
-            QStringLiteral("#E57373"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_BRACE_BAD_FG),
-            QStringLiteral("#FFFFFF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_THEME_FOLD_MARGIN),
-            QStringLiteral("#888888"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_KEYWORD),
-            QStringLiteral("#0000FF"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_COMMENT),
-            QStringLiteral("#008000"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_STRING),
-            QStringLiteral("#A31515"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_NUMBER),
-            QStringLiteral("#098658"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_FUNCTION),
-            QStringLiteral("#795E26"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_TAG),
-            QStringLiteral("#800000"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_PREPROCESSOR),
-            QStringLiteral("#888888"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_GLOBAL_CLASS),
-            QStringLiteral("#267F99"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_ESCAPE_SEQ),
-            QStringLiteral("#E57373"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_PROPERTY),
-            QStringLiteral("#795E26"));
-    cfg.set(QString::fromLatin1(CONFIG_EDITOR_SYNTAX_OPERATOR),
-            QStringLiteral("#000000"));
+  for (auto it = palette_->editorColors.constBegin();
+       it != palette_->editorColors.constEnd(); ++it) {
+    cfg.set(it.key(), it.value());
   }
 }
 

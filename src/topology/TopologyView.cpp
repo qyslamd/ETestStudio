@@ -136,8 +136,7 @@ void TopologyView::renderLegendCache() {
   // Monitor badge entry
   {
     qreal ey = 122;
-    bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
-    QColor badgeColor = dark ? QColor(100, 180, 255) : QColor(0, 120, 215);
+    QColor badgeColor = etest::core_ui::ThemeManager::instance().accentColor();
 
     // Connection line segment
     p.setPen(QPen(tc.connectionLine, 1.0));

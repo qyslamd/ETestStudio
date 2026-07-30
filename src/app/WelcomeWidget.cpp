@@ -244,14 +244,11 @@ void WelcomeWidget::initUi() {
   eye_widget_->setObjectName("WelcomeEyeWidget");
   eye_widget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   eye_widget_->setMinimumSize(200, 40);
-  if (ThemeManager::instance().isDarkTheme()) {
-    eye_widget_->setOutlineColor(QColor(0xCC, 0xCC, 0xCC));
-    eye_widget_->setPupilColor(QColor(0x2C, 0x2C, 0x2C));
-    eye_widget_->setEyebrowColor(QColor(0x88, 0x88, 0x99));
-  } else {
-    eye_widget_->setOutlineColor(QColor(0xB0, 0xB0, 0xB0));
-    eye_widget_->setPupilColor(QColor(0x44, 0x44, 0x44));
-    eye_widget_->setEyebrowColor(QColor(0x77, 0x77, 0x77));
+  {
+    auto& tm = ThemeManager::instance();
+    eye_widget_->setOutlineColor(tm.textColor());
+    eye_widget_->setPupilColor(tm.panelBackground().darker(150));
+    eye_widget_->setEyebrowColor(tm.secondaryTextColor());
   }
 
   auto* eyeContent = new QWidget;

@@ -213,15 +213,14 @@ void WaveformWidget::updateAxes() {
 }
 
 void WaveformWidget::applyTheme() {
-  bool dark =
-      etest::core_ui::ThemeManager::instance().isDarkTheme();
+  auto& tm = etest::core_ui::ThemeManager::instance();
 
-  QColor bg = dark ? QColor("#252526") : QColor("#F5F5F5");
-  QColor plotBg = dark ? QColor("#1E1E1E") : QColor("#FFFFFF");
-  QColor axisClr = dark ? QColor("#AAAAAA") : QColor("#333333");
-  QColor tickClr = dark ? QColor("#888888") : QColor("#666666");
-  QColor gridClr = dark ? QColor("#333333") : QColor("#E0E0E0");
-  QColor subGridClr = dark ? QColor("#2A2A2A") : QColor("#EEEEEE");
+  QColor bg = tm.panelBackground();
+  QColor plotBg = tm.windowBackground();
+  QColor axisClr = tm.textColor();
+  QColor tickClr = tm.secondaryTextColor();
+  QColor gridClr = tm.borderColor();
+  QColor subGridClr = tm.borderColor().lighter(120);
 
   custom_plot_->setBackground(QBrush(bg));
   custom_plot_->axisRect()->setBackground(QBrush(plotBg));

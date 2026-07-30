@@ -70,9 +70,7 @@ void LogFilterBar::initUi() {
   {
     auto pal = filter_edit_->palette();
     pal.setColor(QPalette::PlaceholderText,
-                 etest::core_ui::ThemeManager::instance().isDarkTheme()
-                     ? QColor("#858585")
-                     : QColor("#999999"));
+                 etest::core_ui::ThemeManager::instance().secondaryTextColor());
     filter_edit_->setPalette(pal);
   }
   layout->addWidget(filter_edit_, 1);
@@ -160,7 +158,7 @@ void LogFilterBar::initSignals() {
           [this](bool isDark) {
             auto pal = filter_edit_->palette();
             pal.setColor(QPalette::PlaceholderText,
-                         isDark ? QColor("#858585") : QColor("#999999"));
+                         etest::core_ui::ThemeManager::instance().secondaryTextColor());
             filter_edit_->setPalette(pal);
           });
 }

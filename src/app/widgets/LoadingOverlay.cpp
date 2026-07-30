@@ -87,18 +87,16 @@ void LoadingOverlay::paintEvent(QPaintEvent*) {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
-    bool dark = ThemeManager::instance().isDarkTheme();
+    auto& tm = ThemeManager::instance();
 
-    // 当前透明度 = 脉冲值（正常态）或 fade 值（淡出态）
     int alpha = fade_timer_->isActive() ? fade_alpha_ : pulse_alpha_;
 
-    QColor bg = dark ? QColor(30, 30, 46) : QColor(245, 245, 245);
+    QColor bg = tm.windowBackground();
     bg.setAlpha(alpha);
     p.fillRect(rect(), bg);
 
-    // 脉冲光圈（绘制一个半透明圆环）
     if (!fade_timer_->isActive() || fade_alpha_ > 60) {
-        QColor circleColor = dark ? QColor(100, 140, 255) : QColor(0, 120, 215);
+        QColor circleColor = tm.accentColor();
         circleColor.setAlpha(pulse_alpha_);
 
         QPointF center = rect().center();
@@ -118,7 +116,7 @@ void LoadingOverlay::paintEvent(QPaintEvent*) {
         p.drawEllipse(center, radius * 0.6, radius * 0.6);
 
         // "正在加载..." 文字
-        QColor textColor = dark ? Qt::white : Qt::black;
+        QColor textColor = tm.textColor();
         textColor.setAlpha(
             fade_timer_->isActive()
                 ? qMin(fade_alpha_, 255)

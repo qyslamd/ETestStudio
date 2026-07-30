@@ -326,16 +326,17 @@ void FieldSectionItem::setHoveredNode(const icd::Node* node, bool on) {
 
 void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
                              QWidget*) {
-  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
+  auto& tm = etest::core_ui::ThemeManager::instance();
 
   int cols = std::min(bit_width_, bits_per_row_);
   int rows = (bit_width_ + bits_per_row_ - 1) / bits_per_row_;
   int sec_w = sectionWidth();
   int sec_h = totalHeight();
 
-  QColor bg = dark ? QColor(32, 32, 35) : QColor(245, 245, 247);
+  QColor bg = tm.panelBackground();
+  bool dark = tm.isDarkTheme();
   if (highlighted_) {
-    bg = dark ? QColor(38, 38, 42) : QColor(238, 238, 242);
+    bg = tm.hoverBackground();
   }
   painter->fillRect(0, 0, sec_w, sec_h, bg);
 
@@ -593,23 +594,24 @@ void ChildFieldItem::setHovered(bool on) {
 
 void ChildFieldItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
                            QWidget*) {
-  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
+  auto& tm = etest::core_ui::ThemeManager::instance();
+  bool dark = tm.isDarkTheme();
   int rh = kRowHeight;
 
   // Selection/hover background
   if (highlighted_) {
     QColor sel = color_;
-    sel.setAlpha(dark ? 50 : 30);
+    sel.setAlpha(tm.isDarkTheme() ? 50 : 30);
     painter->fillRect(0, 0, row_width_, rh, sel);
   } else if (hovered_) {
     QColor ho = Qt::white;
-    ho.setAlpha(dark ? 15 : 25);
+    ho.setAlpha(tm.isDarkTheme() ? 15 : 25);
     painter->fillRect(0, 0, row_width_, rh, ho);
   }
 
   // Tree connector: ├─ or └─
   QString connector = is_last_ ? QStringLiteral("  └─ ") : QStringLiteral("  ├─ ");
-  painter->setPen(dark ? QColor(160, 160, 165) : QColor(130, 130, 135));
+  painter->setPen(tm.isDarkTheme() ? QColor(160, 160, 165) : QColor(130, 130, 135));
   painter->setFont(row_font_);
   QFontMetrics fm(row_font_);
   int conn_w = fm.horizontalAdvance(connector);
@@ -802,12 +804,13 @@ void ContainerFieldItem::setHoveredNode(const icd::Node* node, bool on) {
 
 void ContainerFieldItem::paint(QPainter* painter,
                                const QStyleOptionGraphicsItem*, QWidget*) {
-  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
+  auto& tm = etest::core_ui::ThemeManager::instance();
+  bool dark = tm.isDarkTheme();
   int sec_w = sectionWidth();
   int sec_h = totalHeight();
 
   // Container background
-  QColor bg = dark ? QColor(28, 28, 32) : QColor(248, 248, 250);
+  QColor bg = tm.panelBackground();
   painter->fillRect(0, 0, sec_w, sec_h, bg);
 
   // Header bar
@@ -932,9 +935,8 @@ void ContainerFieldItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
 }
 
 IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent) : QGraphicsScene(parent) {
-  setBackgroundBrush(etest::core_ui::ThemeManager::instance().isDarkTheme()
-                         ? QColor(24, 24, 26)
-                         : QColor(252, 252, 253));
+  setBackgroundBrush(
+      etest::core_ui::ThemeManager::instance().windowBackground());
 }
 
 void IcdBitLayoutScene::appendLayoutItem(LayoutNodeItem* item) {
@@ -1053,9 +1055,8 @@ void IcdBitLayoutView::initUi() {
   view_->setRenderHint(QPainter::Antialiasing);
   view_->setDragMode(QGraphicsView::ScrollHandDrag);
   view_->setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
-  view_->setBackgroundBrush(etest::core_ui::ThemeManager::instance().isDarkTheme()
-                                ? QColor(24, 24, 26)
-                                : QColor(252, 252, 253));
+  view_->setBackgroundBrush(
+      etest::core_ui::ThemeManager::instance().windowBackground());
   view_->setFrameShape(QFrame::NoFrame);
   view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   view_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -1072,11 +1073,10 @@ void IcdBitLayoutView::initUi() {
 
   connect(&etest::core_ui::ThemeManager::instance(),
           &etest::core_ui::ThemeManager::themeChanged, this, [this](bool) {
-            bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
-            scene_->setBackgroundBrush(dark ? QColor(24, 24, 26)
-                                            : QColor(252, 252, 253));
-            view_->setBackgroundBrush(dark ? QColor(24, 24, 26)
-                                           : QColor(252, 252, 253));
+            QColor bg =
+                etest::core_ui::ThemeManager::instance().windowBackground();
+            scene_->setBackgroundBrush(bg);
+            view_->setBackgroundBrush(bg);
             if (last_frame_) {
               loadFromFrame(*last_frame_);
             }

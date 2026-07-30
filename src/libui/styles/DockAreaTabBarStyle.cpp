@@ -46,7 +46,7 @@ bool DockAreaTabBarStyle::eventFilter(QObject* watched, QEvent* event) {
     if (watched == vp) {
       QPainter painter(vp);
       painter.fillRect(vp->rect(),
-                       dark_ ? QColor("#252526") : QColor("#F0F0F0"));
+                       etest::core_ui::ThemeManager::instance().panelBackground());
       return true;
     }
   }
@@ -57,7 +57,7 @@ bool DockAreaTabBarStyle::eventFilter(QObject* watched, QEvent* event) {
     painter.setRenderHint(QPainter::Antialiasing);
     // 先填充背景色，再画 tab 形状
     painter.fillRect(tabs_container_->rect(),
-                     dark_ ? QColor("#252526") : QColor("#F0F0F0"));
+                     etest::core_ui::ThemeManager::instance().panelBackground());
     paintAllTabs(&painter);
     return true;  // 吃掉事件，阻止默认 paintEvent
   }
@@ -87,7 +87,7 @@ bool DockAreaTabBarStyle::eventFilter(QObject* watched, QEvent* event) {
 
 void DockAreaTabBarStyle::paintEvent(QPaintEvent* event) {
   QPainter painter(this);
-  painter.fillRect(rect(), dark_ ? QColor("#252526") : QColor("#F0F0F0"));
+  painter.fillRect(rect(), etest::core_ui::ThemeManager::instance().panelBackground());
   ads::CDockAreaTabBar::paintEvent(event);
 }
 
@@ -118,15 +118,16 @@ void DockAreaTabBarStyle::paintAllTabs(QPainter* painter) {
       painter->drawPolygon(path.toFillPolygon());
       painter->restore();
 
-      // dark 下选中 tab 追加蓝色渐变描边
+      // dark 下选中 tab 追加渐变描边（从语义色板获取强调色）
       if (dark_) {
         painter->save();
+        QColor accent = etest::core_ui::ThemeManager::instance().accentColor();
         QLinearGradient grad(r.left(), 0, r.right(), 0);
-        grad.setColorAt(0.0, QColor(0x0A, 0x3A, 0x5C));
-        grad.setColorAt(0.15, QColor(0x40, 0xB0, 0xEE));
-        grad.setColorAt(0.5, QColor(0x90, 0xDD, 0xFF));
-        grad.setColorAt(0.85, QColor(0x40, 0xB0, 0xEE));
-        grad.setColorAt(1.0, QColor(0x0A, 0x3A, 0x5C));
+        grad.setColorAt(0.0, accent.darker(180));
+        grad.setColorAt(0.15, accent.darker(110));
+        grad.setColorAt(0.5, accent);
+        grad.setColorAt(0.85, accent.darker(110));
+        grad.setColorAt(1.0, accent.darker(180));
         painter->setPen(QPen(QBrush(grad), 1));
         painter->setBrush(Qt::NoBrush);
         painter->drawPath(path);
@@ -184,26 +185,28 @@ DockAreaTabBarStyle::SelectedPosition DockAreaTabBarStyle::mapSelectedPosition(
 // ── 色值（从 TabBarStyle 移植） ──────────────────────────────
 
 QBrush DockAreaTabBarStyle::selectedBrush(const QRect& tabRect) const {
-  if (!dark_) {
+  auto& tm = etest::core_ui::ThemeManager::instance();
+  if (!tm.isDarkTheme()) {
     return QBrush(QColor(0xFF, 0xFF, 0xFF));
   }
+  QColor base = tm.panelBackground();
   QLinearGradient grad(0, 0, 0, tabRect.height());
-  grad.setColorAt(0.0, QColor(0x5E, 0x5E, 0x60));
-  grad.setColorAt(0.5, QColor(0x46, 0x46, 0x48));
-  grad.setColorAt(1.0, QColor(0x2D, 0x2D, 0x2D));
+  grad.setColorAt(0.0, base.lighter(130));
+  grad.setColorAt(0.5, base.lighter(110));
+  grad.setColorAt(1.0, base);
   return QBrush(grad);
 }
 
 QColor DockAreaTabBarStyle::hoveredColor() const {
-  return dark_ ? QColor(0x4C, 0x4C, 0x4E) : QColor(0xE8, 0xE8, 0xE8);
+  return etest::core_ui::ThemeManager::instance().hoverBackground();
 }
 
 QColor DockAreaTabBarStyle::dividerColor() const {
-  return dark_ ? QColor(0x3C, 0x3C, 0x3C) : QColor(0xD8, 0xD8, 0xD8);
+  return etest::core_ui::ThemeManager::instance().borderColor();
 }
 
 QColor DockAreaTabBarStyle::borderColor() const {
-  return dark_ ? QColor(0x00, 0x00, 0x00, 0x00) : QColor(0xD0, 0xD0, 0xD0);
+  return etest::core_ui::ThemeManager::instance().borderColor();
 }
 
 void DockAreaTabBarStyle::onThemeChanged() {

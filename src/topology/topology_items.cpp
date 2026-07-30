@@ -746,12 +746,11 @@ void ConnectionItem::paint(QPainter* painter,
 
   // ── 监听器 badge ──
   if (has_monitor_) {
-    bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
     QPointF mid = path().pointAtPercent(0.5);
     QRectF badgeRect(mid.x() - kBadgeRadius, mid.y() - kBadgeRadius,
                      kBadgeRadius * 2, kBadgeRadius * 2);
 
-    QColor bg = dark ? QColor(100, 180, 255) : QColor(0, 120, 215);
+    QColor bg = etest::core_ui::ThemeManager::instance().accentColor();
     painter->setBrush(bg);
     painter->setPen(QPen(Qt::white, 1.5));
     painter->drawEllipse(badgeRect);

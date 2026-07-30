@@ -1407,9 +1407,9 @@ void MainWindow::onThemeChanged(bool isDark) {
     settings_dialog_->setStyleSheet(qApp->styleSheet());
   }
 
-  // 先切 Ribbon 主题（可能触发 style recalculation）
-  setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
-                        : SARibbonTheme::RibbonThemeOffice2021Blue);
+  // 切 Ribbon 主题（数据驱动：从 ThemeManager 获取基础主题枚举）
+  setRibbonTheme(
+      static_cast<SARibbonTheme>(ThemeManager::instance().ribbonBaseTheme()));
 
   // 后设 QADS 暗色样式（覆盖 QADS 内置 widget 级 default.css）
   if (dock_manager_) {
@@ -1443,7 +1443,7 @@ void MainWindow::onThemeChanged(bool isDark) {
   if (ribbon_search_edit_) {
     auto pal = ribbon_search_edit_->palette();
     pal.setColor(QPalette::PlaceholderText,
-                 isDark ? QColor("#858585") : QColor("#999999"));
+                 ThemeManager::instance().secondaryTextColor());
     ribbon_search_edit_->setPalette(pal);
   }
 }
@@ -2223,9 +2223,7 @@ void MainWindow::setupRibbon() {
   {
     auto pal = ribbon_search_edit_->palette();
     pal.setColor(QPalette::PlaceholderText,
-                 etest::core_ui::ThemeManager::instance().isDarkTheme()
-                     ? QColor("#858585")
-                     : QColor("#999999"));
+                 etest::core_ui::ThemeManager::instance().secondaryTextColor());
     ribbon_search_edit_->setPalette(pal);
   }
 
@@ -2544,9 +2542,8 @@ void MainWindow::setupRibbon() {
   ribbon->setMinimumMode(minimized);
 
   // 初始化 Ribbon 主题，与当前 ThemeManager 主题一致
-  bool isDark = ThemeManager::instance().isDarkTheme();
-  setRibbonTheme(isDark ? SARibbonTheme::RibbonThemeDark2
-                        : SARibbonTheme::RibbonThemeOffice2021Blue);
+  setRibbonTheme(
+      static_cast<SARibbonTheme>(ThemeManager::instance().ribbonBaseTheme()));
 
   // 设置 Ribbon 运行按钮的初始状态
   execution_controller_->syncControlStates();
