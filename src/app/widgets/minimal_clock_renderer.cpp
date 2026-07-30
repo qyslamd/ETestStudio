@@ -2,6 +2,10 @@
 
 #include <QtMath>
 
+#include "ThemeManager.h"
+
+using etest::core_ui::ThemeManager;
+
 // 面板半径，所有字号表达为它的百分比
 static constexpr int kFaceRadius = 98;
 
@@ -14,8 +18,7 @@ void MinimalClockRenderer::beginPaint(QPainter& painter,
 }
 
 void MinimalClockRenderer::drawBackground(QPainter& p) const {
-  // thin border circle
-  p.setPen(QPen(QColor(255, 255, 255, 200), 2));
+  p.setPen(QPen(ThemeManager::instance().clockHandColor(), 2));
   p.setBrush(Qt::NoBrush);
   p.drawEllipse(-98, -98, 196, 196);
 }
@@ -23,7 +26,7 @@ void MinimalClockRenderer::drawBackground(QPainter& p) const {
 void MinimalClockRenderer::drawFace(QPainter&) const {}
 
 void MinimalClockRenderer::drawTicks(QPainter& p) const {
-  p.setPen(QPen(QColor(255, 255, 255, 200), 2));
+  p.setPen(QPen(ThemeManager::instance().clockHandColor(), 2));
   for (int i = 0; i < 12; i++) {
     double a = i * 30.0 * M_PI / 180.0;
     int x1 = static_cast<int>(80 * cos(a - M_PI / 2));
@@ -40,7 +43,7 @@ void MinimalClockRenderer::drawHourHand(QPainter& p, int hour,
                                         int minute) const {
   p.save();
   p.setPen(Qt::NoPen);
-  p.setBrush(QColor(255, 255, 255, 220));
+  p.setBrush(ThemeManager::instance().clockHandColor());
   p.rotate(30.0 * hour + 0.5 * minute);
   p.drawRect(-3, -40, 6, 40);
   p.restore();
@@ -50,7 +53,7 @@ void MinimalClockRenderer::drawMinuteHand(QPainter& p, int minute,
                                           int second) const {
   p.save();
   p.setPen(Qt::NoPen);
-  p.setBrush(QColor(255, 255, 255, 180));
+  p.setBrush(ThemeManager::instance().clockHandColor());
   p.rotate(6.0 * minute + 0.1 * second);
   p.drawRect(-2, -55, 4, 55);
   p.restore();
@@ -59,14 +62,14 @@ void MinimalClockRenderer::drawMinuteHand(QPainter& p, int minute,
 void MinimalClockRenderer::drawSecondHand(QPainter& p, int second) const {
   p.save();
   p.setPen(Qt::NoPen);
-  p.setBrush(QColor(255, 107, 107));
+  p.setBrush(ThemeManager::instance().clockAccentColor());
   p.rotate(6.0 * second);
   p.drawRect(-1, -60, 2, 60);
   p.restore();
 }
 
 void MinimalClockRenderer::drawCenterDot(QPainter& p) const {
-  p.setBrush(QColor(255, 107, 107));
+  p.setBrush(ThemeManager::instance().clockAccentColor());
   p.drawEllipse(-4, -4, 8, 8);
 }
 
@@ -74,9 +77,9 @@ void MinimalClockRenderer::drawDateInfo(QPainter&, const QDateTime&) const {}
 
 void MinimalClockRenderer::drawDigitalTime(QPainter& p,
                                            const QDateTime& now) const {
-  p.setPen(QColor(255, 255, 255, 200));
+  p.setPen(ThemeManager::instance().clockHandColor());
   QFont f = p.font();
-  f.setPixelSize(static_cast<int>(kFaceRadius * 0.20));  // 19
+  f.setPixelSize(static_cast<int>(kFaceRadius * 0.20));
   f.setBold(true);
   p.setFont(f);
   p.drawText(QRect(-80, 30, 160, 30), Qt::AlignCenter,

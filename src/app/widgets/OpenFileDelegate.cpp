@@ -3,6 +3,7 @@
 #include <QApplication>
 
 #include "AppIconProvider.h"
+#include "ThemeManager.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStyle>
@@ -110,7 +111,7 @@ void OpenFileDelegate::paint(QPainter* painter,
 
     painter->setPen(Qt::NoPen);
     if (btnHovered) {
-      painter->setBrush(QColor(200, 60, 60, 200));
+      painter->setBrush(etest::core_ui::ThemeManager::instance().accentColor());
     } else {
       QColor btnBg = option.palette.color(QPalette::WindowText);
       btnBg.setAlpha(60);

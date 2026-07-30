@@ -3,6 +3,10 @@
 #include <QPainterPath>
 #include <QtMath>
 
+#include "ThemeManager.h"
+
+using etest::core_ui::ThemeManager;
+
 // 面板半径，所有字号表达为它的百分比
 static constexpr int kFaceRadius = 190;
 
@@ -16,7 +20,7 @@ void ModernClockRenderer::beginPaint(QPainter& painter,
 
 void ModernClockRenderer::drawBackground(QPainter& p) const {
   // outer border ring
-  p.setPen(QPen(QColor(0x33, 0x33, 0x33), 10));
+  p.setPen(QPen(ThemeManager::instance().clockHandColor(), 10));
   p.setBrush(Qt::NoBrush);
   p.drawEllipse(-195, -195, 390, 390);
 }
@@ -24,24 +28,21 @@ void ModernClockRenderer::drawBackground(QPainter& p) const {
 void ModernClockRenderer::drawFace(QPainter& p) const {
   // face fill
   p.setPen(Qt::NoPen);
-  p.setBrush(QColor(0xF6, 0xF6, 0xF6));
+  p.setBrush(ThemeManager::instance().clockFaceBackground());
   p.drawEllipse(-190, -190, 380, 380);
 }
 
 void ModernClockRenderer::drawTicks(QPainter& p) const {
-  p.setPen(QPen(QColor(0x55, 0x55, 0x55), 2));
+  p.setPen(QPen(ThemeManager::instance().clockSecondaryColor(), 2));
 
   for (int i = 0; i < 60; i++) {
     p.save();
     p.rotate(i * 6.0);
-    // tick starts near the edge and points inward
     if (i % 5 == 0) {
-      // hour tick — longer, thicker
-      p.setPen(QPen(QColor(0x33, 0x33, 0x33), 3));
+      p.setPen(QPen(ThemeManager::instance().clockHandColor(), 3));
       p.drawLine(175, 0, 188, 0);
     } else {
-      // minute tick
-      p.setPen(QPen(QColor(0x55, 0x55, 0x55), 2));
+      p.setPen(QPen(ThemeManager::instance().clockSecondaryColor(), 2));
       p.drawLine(180, 0, 188, 0);
     }
     p.restore();
@@ -49,9 +50,9 @@ void ModernClockRenderer::drawTicks(QPainter& p) const {
 }
 
 void ModernClockRenderer::drawNumbers(QPainter& p) const {
-  const int numSize = static_cast<int>(kFaceRadius * 0.16);   // 30
-  const int boldSize = static_cast<int>(kFaceRadius * 0.20);  // 38
-  const int boxSize = boldSize + 6;                            // 44
+  const int numSize = static_cast<int>(kFaceRadius * 0.16);
+  const int boldSize = static_cast<int>(kFaceRadius * 0.20);
+  const int boxSize = boldSize + 6;
 
   QFont f = p.font();
   f.setPixelSize(numSize);
@@ -59,6 +60,8 @@ void ModernClockRenderer::drawNumbers(QPainter& p) const {
   p.setFont(f);
 
   static const int radii = 135;
+  QColor handColor = ThemeManager::instance().clockHandColor();
+  QColor secColor = ThemeManager::instance().clockSecondaryColor();
   for (int i = 1; i <= 12; i++) {
     double angle = i * 30.0 * M_PI / 180.0;
     double x = radii * qSin(angle);
@@ -69,10 +72,10 @@ void ModernClockRenderer::drawNumbers(QPainter& p) const {
       QFont bold_f = f;
       bold_f.setPixelSize(boldSize);
       p.setFont(bold_f);
-      p.setPen(QColor(0x33, 0x33, 0x33));
+      p.setPen(handColor);
     } else {
       p.setFont(f);
-      p.setPen(QColor(0x55, 0x55, 0x55));
+      p.setPen(secColor);
     }
     p.drawText(r, Qt::AlignCenter, QString::number(i));
   }
@@ -82,9 +85,8 @@ void ModernClockRenderer::drawHourHand(QPainter& p, int hour,
                                        int minute) const {
   p.save();
   p.setPen(Qt::NoPen);
-  p.setBrush(QColor(0x33, 0x33, 0x33));
+  p.setBrush(ThemeManager::instance().clockHandColor());
   p.rotate(30.0 * hour + 0.5 * minute);
-  // draw from center downward (past center for counter-balance)
   QPainterPath path;
   path.moveTo(-6, 10);
   path.lineTo(-4, -75);
@@ -100,7 +102,7 @@ void ModernClockRenderer::drawMinuteHand(QPainter& p, int minute,
                                          int second) const {
   p.save();
   p.setPen(Qt::NoPen);
-  p.setBrush(QColor(0x33, 0x33, 0x33));
+  p.setBrush(ThemeManager::instance().clockHandColor());
   p.rotate(6.0 * minute + 0.1 * second);
   QPainterPath path;
   path.moveTo(-4, 12);
@@ -115,7 +117,7 @@ void ModernClockRenderer::drawMinuteHand(QPainter& p, int minute,
 
 void ModernClockRenderer::drawSecondHand(QPainter& p, int second) const {
   p.save();
-  p.setPen(QPen(QColor(0xFF, 0x66, 0x00), 2));
+  p.setPen(QPen(ThemeManager::instance().clockAccentColor(), 2));
   p.rotate(6.0 * second);
   p.drawLine(0, 20, 0, -155);
   p.restore();
@@ -123,7 +125,7 @@ void ModernClockRenderer::drawSecondHand(QPainter& p, int second) const {
 
 void ModernClockRenderer::drawCenterDot(QPainter& p) const {
   p.setPen(Qt::NoPen);
-  p.setBrush(QColor(0x33, 0x33, 0x33));
+  p.setBrush(ThemeManager::instance().clockHandColor());
   p.drawEllipse(-7, -7, 14, 14);
 }
 
@@ -139,10 +141,10 @@ void ModernClockRenderer::drawDateInfo(QPainter& p,
           .arg(week_day[now.date().dayOfWeek() % 7]);
 
   QFont f = p.font();
-  f.setPixelSize(static_cast<int>(kFaceRadius * 0.11));  // 20
+  f.setPixelSize(static_cast<int>(kFaceRadius * 0.11));
   f.setBold(true);
   p.setFont(f);
-  p.setPen(QColor(0x55, 0x55, 0x55));
+  p.setPen(ThemeManager::instance().clockSecondaryColor());
   p.drawText(QRect(-80, 25, 160, 20), Qt::AlignCenter, dateStr);
 }
 
@@ -153,14 +155,15 @@ void ModernClockRenderer::drawDigitalTime(QPainter& p,
   int s = now.time().second();
 
   QFont f = p.font();
-  f.setPixelSize(static_cast<int>(kFaceRadius * 0.12));  // 22
+  f.setPixelSize(static_cast<int>(kFaceRadius * 0.12));
   f.setBold(true);
   p.setFont(f);
-  p.setPen(Qt::white);
+  p.setPen(ThemeManager::instance().textColor());
 
+  QColor digitBg = ThemeManager::instance().clockSecondaryColor();
   auto drawDigit = [&](int val, int x) {
     QRect bg(x, 60, 22, 28);
-    p.fillRect(bg, QColor(0x55, 0x55, 0x55));
+    p.fillRect(bg, digitBg);
     p.drawText(bg, Qt::AlignCenter,
                QStringLiteral("%1").arg(val, 2, 10, QLatin1Char('0')));
   };

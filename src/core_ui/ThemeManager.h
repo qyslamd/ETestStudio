@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QColor>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -21,6 +22,23 @@ class ThemeManager : public QObject {
   QStringList availableThemes() const;
 
   void setTheme(const QString& themeId);
+
+  // -- 语义色板 --
+  QColor windowBackground() const;
+  QColor panelBackground() const;
+  QColor toolbarBackground() const;
+  QColor hoverBackground() const;
+  QColor selectionBackground() const;
+  QColor borderColor() const;
+  QColor textColor() const;
+  QColor secondaryTextColor() const;
+  QColor disabledTextColor() const;
+  QColor accentColor() const;
+  QColor statusBarBackground() const;
+  QColor clockFaceBackground() const;
+  QColor clockHandColor() const;
+  QColor clockSecondaryColor() const;
+  QColor clockAccentColor() const;
 
  signals:
   void themeChanged(bool isDark);

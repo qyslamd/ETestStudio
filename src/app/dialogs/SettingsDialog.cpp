@@ -197,6 +197,7 @@ QWidget* SettingsDialog::createAppearancePage() {
     auto* combo = new QComboBox();
     combo->addItem(QStringLiteral("默认主题"), QStringLiteral("default"));
     combo->addItem(QStringLiteral("VS Code 暗黑"), QStringLiteral("vscode"));
+    combo->addItem(QStringLiteral("中国红"), QStringLiteral("chinese_red"));
     combo->setFixedWidth(160);
 
     QString val = ConfigManager::instance().get<QString>(
