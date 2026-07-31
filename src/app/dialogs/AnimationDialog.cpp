@@ -1,5 +1,6 @@
 #include "AnimationDialog.h"
 
+#include <QApplication>
 #include <QGraphicsDropShadowEffect>
 #include <QKeyEvent>
 #include <QPaintEvent>
@@ -7,6 +8,7 @@
 #include <QPainterPath>
 #include <QPropertyAnimation>
 #include <QRandomGenerator>
+#include <QScreen>
 #include <QShowEvent>
 #include <QVariantAnimation>
 
@@ -43,10 +45,29 @@ void AnimationDialog::setWidget(QWidget* widget) {
 }
 
 void AnimationDialog::showEvent(QShowEvent* event) {
+#ifdef Q_OS_WIN
   if (parentWidget()) {
     auto* top = parentWidget()->window();
     setGeometry(top->geometry());
   }
+#else
+  // 没有父窗口，尝试查找主窗口
+  QWidget* mainWindow = nullptr;
+  for (QWidget* widget : qApp->topLevelWidgets()) {
+    if (widget->isVisible() &&
+        QString::fromLatin1(widget->metaObject()->className()) ==
+            "MainWindow") {
+      mainWindow = widget;
+      break;
+    }
+  }
+  if (mainWindow) {
+    setGeometry(mainWindow->geometry());
+  } else {
+    // 找不到主窗口时，可回退到屏幕尺寸（或保持原状）
+    setGeometry(QApplication::primaryScreen()->availableGeometry());
+  }
+#endif
   actShowAnimation();
 }
 
@@ -99,9 +120,11 @@ void AnimationDialog::actShowAnimation() {
   }
 
   // 截图：关阴影 → grab → 恢复阴影
-  if (shadowEffect_) shadowEffect_->setEnabled(false);
+  if (shadowEffect_)
+    shadowEffect_->setEnabled(false);
   cachedPixmap_ = widget_->grab();
-  if (shadowEffect_) shadowEffect_->setEnabled(true);
+  if (shadowEffect_)
+    shadowEffect_->setEnabled(true);
   widget_->hide();
 
   auto* anime = new QVariantAnimation(this);
@@ -121,8 +144,7 @@ void AnimationDialog::actShowAnimation() {
     widget_->move(center);
     widget_->show();
   });
-  connect(anime, &QVariantAnimation::finished, anime,
-          &QObject::deleteLater);
+  connect(anime, &QVariantAnimation::finished, anime, &QObject::deleteLater);
   anime->start();
 }
 
@@ -160,9 +182,11 @@ void AnimationDialog::actHideAnimation(std::function<void()> func) {
   }
 
   // 截图：关阴影 → grab → 恢复阴影
-  if (shadowEffect_) shadowEffect_->setEnabled(false);
+  if (shadowEffect_)
+    shadowEffect_->setEnabled(false);
   cachedPixmap_ = widget_->grab();
-  if (shadowEffect_) shadowEffect_->setEnabled(true);
+  if (shadowEffect_)
+    shadowEffect_->setEnabled(true);
   widget_->hide();
 
   auto* anime = new QVariantAnimation(this);
@@ -180,10 +204,10 @@ void AnimationDialog::actHideAnimation(std::function<void()> func) {
     snapshotOffset_ = {};
     cachedPixmap_ = {};
     emit hideAnimationFinished();
-    if (func) func();
+    if (func)
+      func();
   });
-  connect(anime, &QVariantAnimation::finished, anime,
-          &QObject::deleteLater);
+  connect(anime, &QVariantAnimation::finished, anime, &QObject::deleteLater);
   anime->start();
 }
 

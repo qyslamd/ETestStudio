@@ -4,18 +4,18 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDoubleSpinBox>
-#include <QHeaderView>
-#include <QHBoxLayout>
-#include "core_ui/AppIconProvider.h"
-#include <QPushButton>
 #include <QFile>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QHash>
+#include <QHeaderView>
 #include <QJsonDocument>
 #include <QLabel>
-#include <QPair>
+#include <QLayout>
 #include <QMessageBox>
+#include <QPair>
+#include <QPushButton>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStyledItemDelegate>
@@ -23,8 +23,8 @@
 #include <QTableWidgetItem>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
-#include <QLayout>
 #include <QVBoxLayout>
+#include "core_ui/AppIconProvider.h"
 
 #include "logger/Logger.h"
 
@@ -37,7 +37,8 @@ namespace {
 class DoubleSpinDelegate : public QStyledItemDelegate {
  public:
   using QStyledItemDelegate::QStyledItemDelegate;
-  QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem&,
+  QWidget* createEditor(QWidget* parent,
+                        const QStyleOptionViewItem&,
                         const QModelIndex&) const override {
     auto* spin = new QDoubleSpinBox(parent);
     spin->setRange(-999999, 999999);
@@ -49,7 +50,8 @@ class DoubleSpinDelegate : public QStyledItemDelegate {
 class ReadOnlyDelegate : public QStyledItemDelegate {
  public:
   using QStyledItemDelegate::QStyledItemDelegate;
-  QWidget* createEditor(QWidget*, const QStyleOptionViewItem&,
+  QWidget* createEditor(QWidget*,
+                        const QStyleOptionViewItem&,
                         const QModelIndex&) const override {
     return nullptr;
   }
@@ -90,7 +92,8 @@ void MockConfigEditor::initUi() {
   auto* adLayout = new QVBoxLayout(ad_port_page_);
   ad_port_label_ = new QLabel(ad_port_page_);
   ad_mode_combo_ = new QComboBox(ad_port_page_);
-  ad_mode_combo_->addItems({QStringLiteral("固定值"), QStringLiteral("波形"), QStringLiteral("序列")});
+  ad_mode_combo_->addItems({QStringLiteral("固定值"), QStringLiteral("波形"),
+                            QStringLiteral("序列")});
   ad_mode_stack_ = new QStackedWidget(ad_port_page_);
   // 固定值页
   auto* fixedPage = new QWidget();
@@ -104,7 +107,8 @@ void MockConfigEditor::initUi() {
   auto* wfPage = new QWidget();
   auto* wfLayout = new QFormLayout(wfPage);
   ad_wf_type_ = new QComboBox(wfPage);
-  ad_wf_type_->addItems({QStringLiteral("正弦"), QStringLiteral("方波"), QStringLiteral("三角波")});
+  ad_wf_type_->addItems({QStringLiteral("正弦"), QStringLiteral("方波"),
+                         QStringLiteral("三角波")});
   ad_wf_amplitude_ = new QDoubleSpinBox(wfPage);
   ad_wf_amplitude_->setRange(0, 999999);
   ad_wf_frequency_ = new QDoubleSpinBox(wfPage);
@@ -122,8 +126,10 @@ void MockConfigEditor::initUi() {
   auto* seriesLayout = new QVBoxLayout(seriesPage);
   ad_series_table_ = new QTableWidget(seriesPage);
   ad_series_table_->setColumnCount(2);
-  ad_series_table_->setHorizontalHeaderLabels({QStringLiteral("索引"), QStringLiteral("值(V)")});
-  ad_series_table_->setItemDelegateForColumn(1, new DoubleSpinDelegate(ad_series_table_));
+  ad_series_table_->setHorizontalHeaderLabels(
+      {QStringLiteral("索引"), QStringLiteral("值(V)")});
+  ad_series_table_->setItemDelegateForColumn(
+      1, new DoubleSpinDelegate(ad_series_table_));
   seriesLayout->addWidget(ad_series_table_);
   ad_mode_stack_->addWidget(seriesPage);
   adLayout->addWidget(ad_port_label_);
@@ -139,7 +145,8 @@ void MockConfigEditor::initUi() {
   fr_info_label_ = new QLabel(frame_response_page_);
   frHeaderLayout->addWidget(fr_info_label_);
   frHeaderLayout->addStretch();
-  fr_del_resp_btn_ = new QPushButton(QStringLiteral("删除此响应"), frame_response_page_);
+  fr_del_resp_btn_ =
+      new QPushButton(QStringLiteral("删除此响应"), frame_response_page_);
   frHeaderLayout->addWidget(fr_del_resp_btn_);
   frLayout->addLayout(frHeaderLayout);
   fr_reply_frame_ = new QComboBox(frame_response_page_);
@@ -148,7 +155,8 @@ void MockConfigEditor::initUi() {
   fr_field_table_->setItemDelegateForColumn(
       1, new DoubleSpinDelegate(fr_field_table_));
   // column 0（字段路径）不可编辑，双击触发 ICD 信号选择对话框
-  fr_field_table_->setItemDelegateForColumn(0, new ReadOnlyDelegate(fr_field_table_));
+  fr_field_table_->setItemDelegateForColumn(
+      0, new ReadOnlyDelegate(fr_field_table_));
   fr_field_table_->setHorizontalHeaderLabels(
       {QStringLiteral("字段路径"), QStringLiteral("工程值"),
        QStringLiteral("单位"), QStringLiteral("hex")});
@@ -156,8 +164,19 @@ void MockConfigEditor::initUi() {
   QFont monoFont = fr_hex_preview_->font();
   monoFont.setFamily(QStringLiteral("Consolas"));
   fr_hex_preview_->setFont(monoFont);
-  frLayout->addWidget(new QLabel(QStringLiteral("回复帧:"), frame_response_page_));
-  frLayout->addWidget(fr_reply_frame_);
+  if (0) {
+    frLayout->addWidget(
+        new QLabel(QStringLiteral("回复帧:"), frame_response_page_));
+    frLayout->addWidget(fr_reply_frame_);
+  } else {
+    auto layoutTemp = new QHBoxLayout();
+    layoutTemp->setContentsMargins(0, 0, 0, 0);
+    layoutTemp->addWidget(
+        new QLabel(QStringLiteral("回复帧:"), frame_response_page_));
+    layoutTemp->addWidget(fr_reply_frame_);
+    layoutTemp->addStretch();
+    frLayout->addLayout(layoutTemp);
+  }
   frLayout->addWidget(fr_field_table_);
 
   // 添加/删除行按钮
@@ -169,7 +188,8 @@ void MockConfigEditor::initUi() {
   frBtnLayout->addStretch();
   frLayout->addLayout(frBtnLayout);
 
-  frLayout->addWidget(new QLabel(QStringLiteral("帧预览:"), frame_response_page_));
+  frLayout->addWidget(
+      new QLabel(QStringLiteral("帧预览:"), frame_response_page_));
   frLayout->addWidget(fr_hex_preview_);
   frLayout->addStretch();
   edit_area_->addWidget(frame_response_page_);
@@ -178,10 +198,12 @@ void MockConfigEditor::initUi() {
   unconfig_hint_page_ = new QWidget();
   auto* uncLayout = new QVBoxLayout(unconfig_hint_page_);
   uncLayout->addStretch();
-  auto* uncLabel = new QLabel(QStringLiteral("该端口尚未配置 Mock 响应"), unconfig_hint_page_);
+  auto* uncLabel = new QLabel(QStringLiteral("该端口尚未配置 Mock 响应"),
+                              unconfig_hint_page_);
   uncLabel->setAlignment(Qt::AlignCenter);
   uncLayout->addWidget(uncLabel);
-  create_config_btn_ = new QPushButton(QStringLiteral("为此端口创建 Mock 配置"), unconfig_hint_page_);
+  create_config_btn_ = new QPushButton(QStringLiteral("为此端口创建 Mock 配置"),
+                                       unconfig_hint_page_);
   create_config_btn_->setObjectName(QStringLiteral("createConfigBtn"));
   auto* btnLayout = new QHBoxLayout();
   btnLayout->addStretch();
@@ -196,13 +218,16 @@ void MockConfigEditor::initUi() {
   auto* fpLayout = new QVBoxLayout(frame_port_page_);
   frame_port_info_label_ = new QLabel(frame_port_page_);
   fpLayout->addWidget(frame_port_info_label_);
-  fpLayout->addWidget(new QLabel(QStringLiteral("已有响应:"), frame_port_page_));
+  fpLayout->addWidget(
+      new QLabel(QStringLiteral("已有响应:"), frame_port_page_));
   frame_port_resp_list_ = new QWidget(frame_port_page_);
   frame_port_resp_list_->setLayout(new QVBoxLayout());
   fpLayout->addWidget(frame_port_resp_list_);
   auto* fpBtnLayout = new QHBoxLayout();
-  fr_add_resp_btn_ = new QPushButton(QStringLiteral("新建响应"), frame_port_page_);
-  fr_del_port_config_btn_ = new QPushButton(QStringLiteral("删除此端口配置"), frame_port_page_);
+  fr_add_resp_btn_ =
+      new QPushButton(QStringLiteral("新建响应"), frame_port_page_);
+  fr_del_port_config_btn_ =
+      new QPushButton(QStringLiteral("删除此端口配置"), frame_port_page_);
   fpBtnLayout->addWidget(fr_add_resp_btn_);
   fpBtnLayout->addWidget(fr_del_port_config_btn_);
   fpBtnLayout->addStretch();
@@ -213,7 +238,8 @@ void MockConfigEditor::initUi() {
   // UUT 概览页
   uut_overview_page_ = new QWidget();
   auto* uutLayout = new QVBoxLayout(uut_overview_page_);
-  uutLayout->addWidget(new QLabel(QStringLiteral("端口配置概览"), uut_overview_page_));
+  uutLayout->addWidget(
+      new QLabel(QStringLiteral("端口配置概览"), uut_overview_page_));
   uut_overview_table_ = new QTableWidget(uut_overview_page_);
   uut_overview_table_->setColumnCount(4);
   uut_overview_table_->setHorizontalHeaderLabels(
@@ -226,7 +252,8 @@ void MockConfigEditor::initUi() {
   edit_area_->addWidget(uut_overview_page_);
 
   // 真实模式提示页
-  real_mode_hint_ = new QLabel(QStringLiteral("真实模式项目无需 Mock 配置"), splitter_);
+  real_mode_hint_ =
+      new QLabel(QStringLiteral("真实模式项目无需 Mock 配置"), splitter_);
   real_mode_hint_->setAlignment(Qt::AlignCenter);
   edit_area_->addWidget(real_mode_hint_);
 
@@ -238,8 +265,8 @@ void MockConfigEditor::initUi() {
 }
 
 void MockConfigEditor::initSignals() {
-  connect(nav_tree_, &QTreeWidget::currentItemChanged,
-          this, &MockConfigEditor::onCurrentItemChanged);
+  connect(nav_tree_, &QTreeWidget::currentItemChanged, this,
+          &MockConfigEditor::onCurrentItemChanged);
   connect(ad_mode_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
           ad_mode_stack_, &QStackedWidget::setCurrentIndex);
   // 编辑回写
@@ -247,34 +274,36 @@ void MockConfigEditor::initSignals() {
           this, &MockConfigEditor::onDaValueChanged);
   connect(ad_fixed_spin_, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
           this, &MockConfigEditor::onAdValueChanged);
-  connect(ad_wf_amplitude_, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &MockConfigEditor::onAdValueChanged);
-  connect(ad_wf_frequency_, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &MockConfigEditor::onAdValueChanged);
+  connect(ad_wf_amplitude_,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &MockConfigEditor::onAdValueChanged);
+  connect(ad_wf_frequency_,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &MockConfigEditor::onAdValueChanged);
   connect(ad_wf_offset_, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
           this, &MockConfigEditor::onAdValueChanged);
   connect(ad_mode_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, &MockConfigEditor::onAdValueChanged);
-  connect(ad_series_table_, &QTableWidget::itemChanged,
-          this, &MockConfigEditor::onAdValueChanged);
-  connect(fr_field_table_, &QTableWidget::itemChanged,
-          this, &MockConfigEditor::onFrFieldChanged);
-  connect(fr_reply_frame_, &QComboBox::currentTextChanged,
-          this, &MockConfigEditor::onReplyFrameChanged);
-  connect(fr_field_table_, &QTableWidget::itemDoubleClicked,
-          this, &MockConfigEditor::onFrNodePathDoubleClicked);
-  connect(fr_add_row_btn_, &QPushButton::clicked,
-          this, &MockConfigEditor::onFrAddRow);
-  connect(fr_del_row_btn_, &QPushButton::clicked,
-          this, &MockConfigEditor::onFrDeleteRow);
-  connect(create_config_btn_, &QPushButton::clicked,
-          this, &MockConfigEditor::onCreateConfigClicked);
-  connect(fr_del_port_config_btn_, &QPushButton::clicked,
-          this, &MockConfigEditor::onFrDelPortConfigClicked);
-  connect(fr_add_resp_btn_, &QPushButton::clicked,
-          this, &MockConfigEditor::onFrAddRespClicked);
-  connect(fr_del_resp_btn_, &QPushButton::clicked,
-          this, &MockConfigEditor::onFrDelRespClicked);
+  connect(ad_series_table_, &QTableWidget::itemChanged, this,
+          &MockConfigEditor::onAdValueChanged);
+  connect(fr_field_table_, &QTableWidget::itemChanged, this,
+          &MockConfigEditor::onFrFieldChanged);
+  connect(fr_reply_frame_, &QComboBox::currentTextChanged, this,
+          &MockConfigEditor::onReplyFrameChanged);
+  connect(fr_field_table_, &QTableWidget::itemDoubleClicked, this,
+          &MockConfigEditor::onFrNodePathDoubleClicked);
+  connect(fr_add_row_btn_, &QPushButton::clicked, this,
+          &MockConfigEditor::onFrAddRow);
+  connect(fr_del_row_btn_, &QPushButton::clicked, this,
+          &MockConfigEditor::onFrDeleteRow);
+  connect(create_config_btn_, &QPushButton::clicked, this,
+          &MockConfigEditor::onCreateConfigClicked);
+  connect(fr_del_port_config_btn_, &QPushButton::clicked, this,
+          &MockConfigEditor::onFrDelPortConfigClicked);
+  connect(fr_add_resp_btn_, &QPushButton::clicked, this,
+          &MockConfigEditor::onFrAddRespClicked);
+  connect(fr_del_resp_btn_, &QPushButton::clicked, this,
+          &MockConfigEditor::onFrDelRespClicked);
 }
 
 void MockConfigEditor::setIcdRepository(icd::Repository* repo) {
@@ -292,9 +321,8 @@ QString MockConfigEditor::displayName() const {
 }
 
 QString MockConfigEditor::editorId() const {
-  return file_path_.isEmpty()
-             ? QStringLiteral("editor://mockconfig/new")
-             : file_path_;
+  return file_path_.isEmpty() ? QStringLiteral("editor://mockconfig/new")
+                              : file_path_;
 }
 
 QString MockConfigEditor::editorType() const {
@@ -473,10 +501,12 @@ void MockConfigEditor::buildNavTree() {
           deviceType == QStringLiteral("can") ||
           deviceType == QStringLiteral("a429")) {
         if (!hasBehavior) {
-          portItem->setText(0, QStringLiteral("%1 (%2, 未配置)").arg(portName, deviceType));
+          portItem->setText(
+              0, QStringLiteral("%1 (%2, 未配置)").arg(portName, deviceType));
         } else {
           // 帧型端口
-          portItem->setText(0, QStringLiteral("%1 (%2)").arg(portName, deviceType));
+          portItem->setText(
+              0, QStringLiteral("%1 (%2)").arg(portName, deviceType));
           QJsonArray responses = behavior["responses"].toArray();
           for (const auto& respVal : responses) {
             QJsonObject resp = respVal.toObject();
@@ -484,9 +514,11 @@ void MockConfigEditor::buildNavTree() {
             QString replyFrameName = resp["replyFrameName"].toString();
             auto* respItem = new QTreeWidgetItem(portItem);
             if (frameName.isEmpty()) {
-              respItem->setText(0, QStringLiteral("(无帧名) -> %1").arg(replyFrameName));
+              respItem->setText(
+                  0, QStringLiteral("(无帧名) -> %1").arg(replyFrameName));
             } else {
-              respItem->setText(0, QStringLiteral("%1 -> %2").arg(frameName, replyFrameName));
+              respItem->setText(
+                  0, QStringLiteral("%1 -> %2").arg(frameName, replyFrameName));
             }
             respItem->setData(0, Qt::UserRole, QStringLiteral("response"));
             respItem->setData(0, Qt::UserRole + 4, frameName);
@@ -495,12 +527,12 @@ void MockConfigEditor::buildNavTree() {
         }
       } else if (deviceType == QStringLiteral("ad")) {
         if (!hasBehavior) {
-          portItem->setText(0, QStringLiteral("%1 (%2, 未配置)").arg(portName, deviceType));
+          portItem->setText(
+              0, QStringLiteral("%1 (%2, 未配置)").arg(portName, deviceType));
         } else {
           // AD 通道型端口
-          QString mode = behavior.contains("mode")
-                              ? behavior["mode"].toString()
-                              : QStringLiteral("fixed");
+          QString mode = behavior.contains("mode") ? behavior["mode"].toString()
+                                                   : QStringLiteral("fixed");
           QString summary;
           if (mode == "waveform") {
             summary = QStringLiteral("波形");
@@ -510,15 +542,20 @@ void MockConfigEditor::buildNavTree() {
             double fv = behavior["fixedValue"].toDouble();
             summary = QStringLiteral("固定值: %1").arg(fv);
           }
-          portItem->setText(0, QStringLiteral("%1 (%2, %3)").arg(portName, deviceType, summary));
+          portItem->setText(
+              0,
+              QStringLiteral("%1 (%2, %3)").arg(portName, deviceType, summary));
         }
       } else if (deviceType == QStringLiteral("da")) {
         if (!hasBehavior) {
-          portItem->setText(0, QStringLiteral("%1 (%2, 未配置)").arg(portName, deviceType));
+          portItem->setText(
+              0, QStringLiteral("%1 (%2, 未配置)").arg(portName, deviceType));
         } else {
           // DA 通道型端口
           double fv = behavior["fixedValue"].toDouble();
-          portItem->setText(0, QStringLiteral("%1 (%2, 固定值: %3)").arg(portName, deviceType).arg(fv));
+          portItem->setText(0, QStringLiteral("%1 (%2, 固定值: %3)")
+                                   .arg(portName, deviceType)
+                                   .arg(fv));
         }
       }
     }
@@ -528,7 +565,7 @@ void MockConfigEditor::buildNavTree() {
 }
 
 void MockConfigEditor::onCurrentItemChanged(QTreeWidgetItem* current,
-                                              QTreeWidgetItem* previous) {
+                                            QTreeWidgetItem* previous) {
   Q_UNUSED(previous);
   if (!current) {
     return;
@@ -606,8 +643,11 @@ void MockConfigEditor::onCurrentItemChanged(QTreeWidgetItem* current,
               QJsonArray seriesArr = b["series"].toArray();
               ad_series_table_->setRowCount(seriesArr.size());
               for (int i = 0; i < seriesArr.size(); ++i) {
-                ad_series_table_->setItem(i, 0, new QTableWidgetItem(QString::number(i)));
-                ad_series_table_->setItem(i, 1, new QTableWidgetItem(QString::number(seriesArr[i].toDouble())));
+                ad_series_table_->setItem(
+                    i, 0, new QTableWidgetItem(QString::number(i)));
+                ad_series_table_->setItem(i, 1,
+                                          new QTableWidgetItem(QString::number(
+                                              seriesArr[i].toDouble())));
               }
             }
           } else {
@@ -617,7 +657,8 @@ void MockConfigEditor::onCurrentItemChanged(QTreeWidgetItem* current,
           break;
         }
       }
-    } else if (deviceType == "serial" || deviceType == "can" || deviceType == "a429") {
+    } else if (deviceType == "serial" || deviceType == "can" ||
+               deviceType == "a429") {
       edit_area_->setCurrentWidget(frame_port_page_);
       frame_port_info_label_->setText(current->text(0));
       rebuildFramePortRespList();
@@ -647,14 +688,16 @@ void MockConfigEditor::onCurrentItemChanged(QTreeWidgetItem* current,
           QString replyFrameName = resp["replyFrameName"].toString();
           fr_info_label_->setText(current->text(0));
           fr_reply_frame_->clear();
-          QJsonArray boundFrames = portItem->data(0, Qt::UserRole + 6).value<QJsonArray>();
+          QJsonArray boundFrames =
+              portItem->data(0, Qt::UserRole + 6).value<QJsonArray>();
           if (!boundFrames.isEmpty()) {
             for (const auto& bfVal : boundFrames) {
               fr_reply_frame_->addItem(bfVal.toString());
             }
           } else if (icd_repo_) {
             for (const auto& frame : icd_repo_->frames()) {
-              fr_reply_frame_->addItem(QString::fromStdString(std::string(frame->name())));
+              fr_reply_frame_->addItem(
+                  QString::fromStdString(std::string(frame->name())));
             }
           }
           fr_reply_frame_->setCurrentText(replyFrameName);
@@ -662,8 +705,11 @@ void MockConfigEditor::onCurrentItemChanged(QTreeWidgetItem* current,
           fr_field_table_->setRowCount(fieldValues.size());
           for (int i = 0; i < fieldValues.size(); ++i) {
             QJsonObject fv = fieldValues[i].toObject();
-            fr_field_table_->setItem(i, 0, new QTableWidgetItem(fv["nodePath"].toString()));
-            fr_field_table_->setItem(i, 1, new QTableWidgetItem(QString::number(fv["engValue"].toDouble())));
+            fr_field_table_->setItem(
+                i, 0, new QTableWidgetItem(fv["nodePath"].toString()));
+            fr_field_table_->setItem(i, 1,
+                                     new QTableWidgetItem(QString::number(
+                                         fv["engValue"].toDouble())));
             fr_field_table_->setItem(i, 2, new QTableWidgetItem(QString()));
             fr_field_table_->setItem(i, 3, new QTableWidgetItem(QString()));
           }
@@ -702,9 +748,9 @@ void MockConfigEditor::updateHexPreview(const QString& replyFrameName) {
       }
     }
     for (int j = 0; j < fieldBytes.size(); ++j) {
-      frameBytes[j] = static_cast<char>(
-          static_cast<unsigned char>(frameBytes[j]) |
-          static_cast<unsigned char>(fieldBytes[j]));
+      frameBytes[j] =
+          static_cast<char>(static_cast<unsigned char>(frameBytes[j]) |
+                            static_cast<unsigned char>(fieldBytes[j]));
     }
     if (auto* hexItem = fr_field_table_->item(i, 3)) {
       hexItem->setText(QString::fromLatin1(fieldBytes.toHex(' ')));
@@ -715,7 +761,8 @@ void MockConfigEditor::updateHexPreview(const QString& replyFrameName) {
 
 int MockConfigEditor::findCurrentResponseIndex() const {
   QTreeWidgetItem* item = nav_tree_->currentItem();
-  if (!item || item->data(0, Qt::UserRole).toString() != QStringLiteral("response")) {
+  if (!item ||
+      item->data(0, Qt::UserRole).toString() != QStringLiteral("response")) {
     return -1;
   }
   QTreeWidgetItem* parent = item->parent();
@@ -809,10 +856,10 @@ void MockConfigEditor::onFrFieldChanged(QTableWidgetItem* item) {
   }
   int idx = findCurrentBehaviorIndex();
   if (idx < 0) {
-    LOG_WARN("MOCK_CFG", "帧响应编辑无对应 behavior 条目 [prod={} dev={} port={}]",
-             current_product_name_.toStdString(),
-             current_device_id_.toStdString(),
-             current_port_name_.toStdString());
+    LOG_WARN(
+        "MOCK_CFG", "帧响应编辑无对应 behavior 条目 [prod={} dev={} port={}]",
+        current_product_name_.toStdString(), current_device_id_.toStdString(),
+        current_port_name_.toStdString());
     return;
   }
   QJsonObject b = port_behaviors_[idx].toObject();
@@ -857,7 +904,8 @@ bool MockConfigEditor::isRealMode() const {
     if (pluginId.isEmpty()) {
       continue;
     }
-    auto* plugin = etest::core::plugin::PluginManager::instance().plugin(pluginId);
+    auto* plugin =
+        etest::core::plugin::PluginManager::instance().plugin(pluginId);
     if (!plugin) {
       return false;  // 插件未加载，保守地认为非真实模式
     }
@@ -953,8 +1001,10 @@ void MockConfigEditor::rebuildFramePortRespList() {
     QTreeWidgetItem* uutItem = nav_tree_->topLevelItem(uutIdx);
     for (int pIdx = 0; pIdx < uutItem->childCount(); ++pIdx) {
       QTreeWidgetItem* childPort = uutItem->child(pIdx);
-      if (childPort->data(0, Qt::UserRole + 2).toString() == current_device_id_ &&
-          childPort->data(0, Qt::UserRole + 3).toString() == current_port_name_) {
+      if (childPort->data(0, Qt::UserRole + 2).toString() ==
+              current_device_id_ &&
+          childPort->data(0, Qt::UserRole + 3).toString() ==
+              current_port_name_) {
         portItem = childPort;
         break;
       }
@@ -976,8 +1026,9 @@ void MockConfigEditor::rebuildFramePortRespList() {
 
     auto* label = new QLabel(
         QStringLiteral("%1 -> %2  (%3 字段)")
-            .arg(frameName.isEmpty() ? QStringLiteral("?") : frameName,
-                 replyFrameName.isEmpty() ? QStringLiteral("?") : replyFrameName)
+            .arg(
+                frameName.isEmpty() ? QStringLiteral("?") : frameName,
+                replyFrameName.isEmpty() ? QStringLiteral("?") : replyFrameName)
             .arg(fieldCount),
         rowWidget);
     rowLayout->addWidget(label);
@@ -1014,8 +1065,7 @@ void MockConfigEditor::rebuildUutOverview() {
   QHash<QPair<QString, QString>, QJsonObject> connMap;
   for (const auto& connVal : connections) {
     QJsonObject conn = connVal.toObject();
-    connMap.insert(
-        {conn["product"].toString(), conn["port"].toString()}, conn);
+    connMap.insert({conn["product"].toString(), conn["port"].toString()}, conn);
   }
 
   for (const auto& prodVal : products) {
@@ -1053,10 +1103,8 @@ void MockConfigEditor::rebuildUutOverview() {
       int row = uut_overview_table_->rowCount();
       uut_overview_table_->insertRow(row);
 
-      uut_overview_table_->setItem(
-          row, 0, new QTableWidgetItem(portName));
-      uut_overview_table_->setItem(
-          row, 1, new QTableWidgetItem(deviceName));
+      uut_overview_table_->setItem(row, 0, new QTableWidgetItem(portName));
+      uut_overview_table_->setItem(row, 1, new QTableWidgetItem(deviceName));
 
       auto makeStatusItem = [](const QString& text, const QString& iconName) {
         auto* item = new QTableWidgetItem(text);
@@ -1067,35 +1115,43 @@ void MockConfigEditor::rebuildUutOverview() {
 
       if (behavior.isEmpty()) {
         uut_overview_table_->setItem(
-            row, 2, makeStatusItem(QStringLiteral("未配置"), QStringLiteral("status_fail")));
+            row, 2,
+            makeStatusItem(QStringLiteral("未配置"),
+                           QStringLiteral("status_fail")));
         uut_overview_table_->setItem(row, 3, new QTableWidgetItem(QString()));
       } else if (deviceType == "ad") {
-        QString mode = behavior.contains("mode")
-                           ? behavior["mode"].toString()
-                           : QStringLiteral("fixed");
+        QString mode = behavior.contains("mode") ? behavior["mode"].toString()
+                                                 : QStringLiteral("fixed");
         QString summary;
         if (mode == "waveform") {
           summary = QStringLiteral("波形");
         } else if (mode == "series") {
           summary = QStringLiteral("序列");
         } else {
-          summary = QStringLiteral("固定值 %1 V").arg(behavior["fixedValue"].toDouble());
+          summary = QStringLiteral("固定值 %1 V")
+                        .arg(behavior["fixedValue"].toDouble());
         }
         uut_overview_table_->setItem(
-            row, 2, makeStatusItem(QStringLiteral("已配置"), QStringLiteral("status_pass")));
+            row, 2,
+            makeStatusItem(QStringLiteral("已配置"),
+                           QStringLiteral("status_pass")));
         uut_overview_table_->setItem(row, 3, new QTableWidgetItem(summary));
       } else if (deviceType == "da") {
         uut_overview_table_->setItem(
-            row, 2, makeStatusItem(QStringLiteral("已配置"), QStringLiteral("status_pass")));
+            row, 2,
+            makeStatusItem(QStringLiteral("已配置"),
+                           QStringLiteral("status_pass")));
         uut_overview_table_->setItem(
             row, 3,
-            new QTableWidgetItem(
-                QStringLiteral("固定值 %1 V").arg(behavior["fixedValue"].toDouble())));
+            new QTableWidgetItem(QStringLiteral("固定值 %1 V")
+                                     .arg(behavior["fixedValue"].toDouble())));
       } else if (deviceType == "serial" || deviceType == "can" ||
                  deviceType == "a429") {
         int respCount = behavior["responses"].toArray().size();
         uut_overview_table_->setItem(
-            row, 2, makeStatusItem(QStringLiteral("已配置"), QStringLiteral("status_pass")));
+            row, 2,
+            makeStatusItem(QStringLiteral("已配置"),
+                           QStringLiteral("status_pass")));
         uut_overview_table_->setItem(
             row, 3,
             new QTableWidgetItem(QStringLiteral("%1 条响应").arg(respCount)));
@@ -1125,8 +1181,10 @@ void MockConfigEditor::onFrDelPortConfigClicked() {
     QTreeWidgetItem* uutItem = nav_tree_->topLevelItem(uutIdx);
     for (int pIdx = 0; pIdx < uutItem->childCount(); ++pIdx) {
       QTreeWidgetItem* portItem = uutItem->child(pIdx);
-      if (portItem->data(0, Qt::UserRole + 2).toString() == current_device_id_ &&
-          portItem->data(0, Qt::UserRole + 3).toString() == current_port_name_) {
+      if (portItem->data(0, Qt::UserRole + 2).toString() ==
+              current_device_id_ &&
+          portItem->data(0, Qt::UserRole + 3).toString() ==
+              current_port_name_) {
         uutItem->removeChild(portItem);
         delete portItem;
         break;
@@ -1170,12 +1228,15 @@ void MockConfigEditor::onFrAddRespClicked() {
   }
 
   // 获取 boundFrames 确定默认值
-  QJsonArray boundFrames = portItem->data(0, Qt::UserRole + 6).value<QJsonArray>();
+  QJsonArray boundFrames =
+      portItem->data(0, Qt::UserRole + 6).value<QJsonArray>();
 
   // 创建新响应
   QJsonObject newResp;
-  newResp["frameName"] = boundFrames.size() > 0 ? boundFrames[0].toString() : QString();
-  newResp["replyFrameName"] = boundFrames.size() > 1 ? boundFrames[1].toString() : QString();
+  newResp["frameName"] =
+      boundFrames.size() > 0 ? boundFrames[0].toString() : QString();
+  newResp["replyFrameName"] =
+      boundFrames.size() > 1 ? boundFrames[1].toString() : QString();
   newResp["fieldValues"] = QJsonArray();
 
   QJsonObject b = port_behaviors_[behIdx].toObject();
@@ -1191,7 +1252,8 @@ void MockConfigEditor::onFrAddRespClicked() {
   if (frameName.isEmpty()) {
     respItem->setText(0, QStringLiteral("(无帧名) -> %1").arg(replyFrameName));
   } else {
-    respItem->setText(0, QStringLiteral("%1 -> %2").arg(frameName, replyFrameName));
+    respItem->setText(
+        0, QStringLiteral("%1 -> %2").arg(frameName, replyFrameName));
   }
   respItem->setData(0, Qt::UserRole, QStringLiteral("response"));
   respItem->setData(0, Qt::UserRole + 4, frameName);
@@ -1366,7 +1428,8 @@ QString MockConfigEditor::showIcdSignalPicker(const QString& currentPath) {
   }
 
   auto* pathLabel = new QLabel(
-      QStringLiteral("当前路径: %1").arg(currentPath.isEmpty() ? QStringLiteral("(无)") : currentPath),
+      QStringLiteral("当前路径: %1")
+          .arg(currentPath.isEmpty() ? QStringLiteral("(无)") : currentPath),
       &dlg);
 
   connect(tree, &QTreeWidget::currentItemChanged, &dlg,
@@ -1389,7 +1452,8 @@ QString MockConfigEditor::showIcdSignalPicker(const QString& currentPath) {
                 QStringLiteral("当前路径: %1").arg(parts.join(QChar('.'))));
           });
 
-  auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+  auto* buttons = new QDialogButtonBox(
+      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
   connect(buttons, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
   connect(buttons, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
@@ -1446,8 +1510,10 @@ void MockConfigEditor::onCreateConfigClicked() {
     QTreeWidgetItem* uutItem = nav_tree_->topLevelItem(uutIdx);
     for (int pIdx = 0; pIdx < uutItem->childCount(); ++pIdx) {
       QTreeWidgetItem* portItem = uutItem->child(pIdx);
-      if (portItem->data(0, Qt::UserRole + 2).toString() == current_device_id_ &&
-          portItem->data(0, Qt::UserRole + 3).toString() == current_port_name_) {
+      if (portItem->data(0, Qt::UserRole + 2).toString() ==
+              current_device_id_ &&
+          portItem->data(0, Qt::UserRole + 3).toString() ==
+              current_port_name_) {
         deviceType = portItem->data(0, Qt::UserRole + 4).toString();
         break;
       }
@@ -1462,7 +1528,8 @@ void MockConfigEditor::onCreateConfigClicked() {
     newBehavior["fixedValue"] = 0.0;
   } else if (deviceType == "da") {
     newBehavior["fixedValue"] = 0.0;
-  } else if (deviceType == "serial" || deviceType == "can" || deviceType == "a429") {
+  } else if (deviceType == "serial" || deviceType == "can" ||
+             deviceType == "a429") {
     newBehavior["responses"] = QJsonArray();
   }
 
@@ -1474,8 +1541,10 @@ void MockConfigEditor::onCreateConfigClicked() {
     QTreeWidgetItem* uutItem = nav_tree_->topLevelItem(uutIdx);
     for (int pIdx = 0; pIdx < uutItem->childCount(); ++pIdx) {
       QTreeWidgetItem* portItem = uutItem->child(pIdx);
-      if (portItem->data(0, Qt::UserRole + 2).toString() == current_device_id_ &&
-          portItem->data(0, Qt::UserRole + 3).toString() == current_port_name_) {
+      if (portItem->data(0, Qt::UserRole + 2).toString() ==
+              current_device_id_ &&
+          portItem->data(0, Qt::UserRole + 3).toString() ==
+              current_port_name_) {
         nav_tree_->setCurrentItem(portItem);
         return;
       }
