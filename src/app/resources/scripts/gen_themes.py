@@ -53,6 +53,11 @@ themes = [
         'displayName': 'Minghuang Bright Yellow',
         'accent': '#FFD700',
     },
+    {
+        'id': 'cyan',
+        'displayName': '青色',
+        'accent': '#008080',
+    },
 ]
 
 for t in themes:

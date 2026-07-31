@@ -48,6 +48,10 @@
         <file>resources/styles/ribbon_hermes_orange.qss</file>
         <file>resources/styles/bright_yellow.qss</file>
         <file>resources/styles/ribbon_bright_yellow.qss</file>
+        <file>resources/themes/cyan.json</file>
+        <file>resources/styles/cyan.qss</file>
+        <file>resources/styles/ribbon_cyan.qss</file>
+        <file>resources/styles/ads_cyan.qss</file>
         <file>resources/themes/indigo.json</file>
         <file>resources/styles/indigo.qss</file>
         <file>resources/styles/ribbon_indigo.qss</file>
