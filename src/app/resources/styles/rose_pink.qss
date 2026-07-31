@@ -2171,3 +2171,279 @@ QToolButton#saverCloseBtn:pressed {
     color: #D4A0B0;
     border: 1px solid #FFD6E6;
 }
+
+/* ===== QSpinBox 主题适配样式 START ===== */
+/* QSpinBox / QDoubleSpinBox 主题适配样式模板
+ * 由 gen_themes.py 读取替换 token 后注入各主题 QSS（幂等）
+ * token: #FFE8F0 #FFF0F5 #FFE9F1 #FFF1F5 #FFD6E6 #4A2030
+ *        #F8C8DC #E890A8 #D4A0B0 232 144 168 dark
+ */
+QSpinBox, QDoubleSpinBox {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #FFE8F0,
+                        stop:1 #FFF0F5);
+    border: 1px solid #FFD6E6;
+    border-radius: 8px;
+    padding: 8px 30px 8px 12px;
+    color: #4A2030;
+    font-size: 13px;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    selection-background-color: #F8C8DC;
+    selection-color: #FFFFFF;
+}
+QSpinBox:hover, QDoubleSpinBox:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #FFE9F1,
+                        stop:1 #FFF1F5);
+    border: 1px solid #E890A8;
+}
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border: 2px solid #E890A8;
+}
+QSpinBox:disabled, QDoubleSpinBox:disabled {
+    background: #FFF0F5;
+    color: #D4A0B0;
+    border: 1px solid #FFD6E6;
+}
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: right top;
+    width: 28px;
+    height: 14px;
+    border: none;
+    border-top-right-radius: 7px;
+    border-left: 1px solid #FFD6E6;
+    background: transparent;
+}
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover {
+    background: rgba(232, 144, 168, 0.2);
+}
+QSpinBox::up-button:pressed, QDoubleSpinBox::up-button:pressed {
+    background: rgba(232, 144, 168, 0.4);
+}
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: right bottom;
+    width: 28px;
+    height: 14px;
+    border: none;
+    border-bottom-right-radius: 7px;
+    border-left: 1px solid #FFD6E6;
+    background: transparent;
+}
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+    background: rgba(232, 144, 168, 0.2);
+}
+QSpinBox::down-button:pressed, QDoubleSpinBox::down-button:pressed {
+    background: rgba(232, 144, 168, 0.4);
+}
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    image: url(:/resources/icons/svg/arrow_up_dark.svg);
+    width: 12px;
+    height: 12px;
+}
+QSpinBox::up-arrow:hover, QDoubleSpinBox::up-arrow:hover {
+    image: url(:/resources/icons/svg/arrow_up_dark.svg);
+}
+QSpinBox::up-arrow:disabled, QDoubleSpinBox::up-arrow:disabled {
+    image: url(:/resources/icons/svg/arrow_up_dark.svg);
+}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+    image: url(:/resources/icons/svg/arrow_down_dark.svg);
+    width: 12px;
+    height: 12px;
+}
+QSpinBox::down-arrow:hover, QDoubleSpinBox::down-arrow:hover {
+    image: url(:/resources/icons/svg/arrow_down_dark.svg);
+}
+QSpinBox::down-arrow:disabled, QDoubleSpinBox::down-arrow:disabled {
+    image: url(:/resources/icons/svg/arrow_down_dark.svg);
+}
+/* 状态样式 */
+QSpinBox[status="success"], QDoubleSpinBox[status="success"] {
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+QSpinBox[status="success"]:hover, QDoubleSpinBox[status="success"]:hover {
+    border: 1px solid rgba(34, 197, 94, 0.6);
+}
+QSpinBox[status="success"]:focus, QDoubleSpinBox[status="success"]:focus {
+    border: 2px solid #22C55E;
+}
+QSpinBox[status="error"], QDoubleSpinBox[status="error"] {
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+QSpinBox[status="error"]:hover, QDoubleSpinBox[status="error"]:hover {
+    border: 1px solid rgba(239, 68, 68, 0.6);
+}
+QSpinBox[status="error"]:focus, QDoubleSpinBox[status="error"]:focus {
+    border: 2px solid #EF4444;
+}
+QSpinBox[status="warning"], QDoubleSpinBox[status="warning"] {
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+QSpinBox[status="warning"]:hover, QDoubleSpinBox[status="warning"]:hover {
+    border: 1px solid rgba(245, 158, 11, 0.6);
+}
+QSpinBox[status="warning"]:focus, QDoubleSpinBox[status="warning"]:focus {
+    border: 2px solid #F59E0B;
+}
+/* 尺寸样式 */
+QSpinBox[size="small"], QDoubleSpinBox[size="small"] {
+    padding: 4px 24px 4px 8px;
+    font-size: 12px;
+    min-height: 28px;
+    border-radius: 6px;
+}
+QSpinBox[size="small"]::up-button, QDoubleSpinBox[size="small"]::up-button {
+    width: 22px;
+    height: 12px;
+    border-top-right-radius: 5px;
+}
+QSpinBox[size="small"]::down-button, QDoubleSpinBox[size="small"]::down-button {
+    width: 22px;
+    height: 12px;
+    border-bottom-right-radius: 5px;
+}
+QSpinBox[size="large"], QDoubleSpinBox[size="large"] {
+    padding: 12px 36px 12px 16px;
+    font-size: 16px;
+    min-height: 48px;
+    border-radius: 10px;
+}
+QSpinBox[size="large"]::up-button, QDoubleSpinBox[size="large"]::up-button {
+    width: 32px;
+    height: 18px;
+    border-top-right-radius: 9px;
+}
+QSpinBox[size="large"]::down-button, QDoubleSpinBox[size="large"]::down-button {
+    width: 32px;
+    height: 18px;
+    border-bottom-right-radius: 9px;
+}
+/* 圆角样式 */
+QSpinBox[rounded="true"], QDoubleSpinBox[rounded="true"] {
+    border-radius: 24px;
+    padding: 10px 36px 10px 16px;
+}
+QSpinBox[rounded="true"]::up-button, QDoubleSpinBox[rounded="true"]::up-button {
+    border-top-right-radius: 24px;
+}
+QSpinBox[rounded="true"]::down-button, QDoubleSpinBox[rounded="true"]::down-button {
+    border-bottom-right-radius: 24px;
+}
+/* 无边框样式 */
+QSpinBox[frameless="true"], QDoubleSpinBox[frameless="true"] {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #FFD6E6;
+    border-radius: 0;
+    padding: 8px 30px 8px 0;
+}
+QSpinBox[frameless="true"]:hover, QDoubleSpinBox[frameless="true"]:hover {
+    border-bottom: 2px solid #E890A8;
+}
+QSpinBox[frameless="true"]:focus, QDoubleSpinBox[frameless="true"]:focus {
+    border-bottom: 2px solid #E890A8;
+}
+QSpinBox[frameless="true"]::up-button, QDoubleSpinBox[frameless="true"]::up-button {
+    border-left: none;
+}
+QSpinBox[frameless="true"]::down-button, QDoubleSpinBox[frameless="true"]::down-button {
+    border-left: none;
+}
+
+/* 设置页数值控件（紧凑） */
+etest--app--SettingsDialog QSpinBox {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #FFE8F0,
+                        stop:1 #FFF0F5);
+    border: 1px solid #FFD6E6;
+    border-radius: 6px;
+    padding: 4px 24px 4px 8px;
+    color: #4A2030;
+    font-size: 12px;
+    selection-background-color: #F8C8DC;
+    selection-color: #FFFFFF;
+}
+etest--app--SettingsDialog QSpinBox:hover {
+    border: 1px solid #E890A8;
+}
+etest--app--SettingsDialog QSpinBox:focus {
+    border: 2px solid #E890A8;
+}
+etest--app--SettingsDialog QSpinBox:disabled {
+    color: #D4A0B0;
+}
+etest--app--SettingsDialog QSpinBox::up-button,
+etest--app--SettingsDialog QSpinBox::down-button {
+    width: 22px;
+    border-left: 1px solid #FFD6E6;
+}
+etest--app--SettingsDialog QSpinBox::up-button:hover,
+etest--app--SettingsDialog QSpinBox::down-button:hover {
+    background: rgba(232, 144, 168, 0.2);
+}
+etest--app--SettingsDialog QSpinBox::up-button:pressed,
+etest--app--SettingsDialog QSpinBox::down-button:pressed {
+    background: rgba(232, 144, 168, 0.4);
+}
+etest--app--SettingsDialog QSpinBox::up-arrow,
+etest--app--SettingsDialog QSpinBox::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+etest--app--SettingsDialog QSpinBox::up-arrow {
+    image: url(:/resources/icons/svg/arrow_up_dark.svg);
+}
+etest--app--SettingsDialog QSpinBox::down-arrow {
+    image: url(:/resources/icons/svg/arrow_down_dark.svg);
+}
+
+/* 步骤详情数值控件（紧凑） */
+StepDetailPanel QDoubleSpinBox {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #FFE8F0,
+                        stop:1 #FFF0F5);
+    border: 1px solid #FFD6E6;
+    border-radius: 6px;
+    padding: 2px 20px 2px 6px;
+    min-height: 20px;
+    color: #4A2030;
+    font-size: 12px;
+    selection-background-color: #F8C8DC;
+    selection-color: #FFFFFF;
+}
+StepDetailPanel QDoubleSpinBox:hover {
+    border: 1px solid #E890A8;
+}
+StepDetailPanel QDoubleSpinBox:focus {
+    border: 2px solid #E890A8;
+}
+StepDetailPanel QDoubleSpinBox:disabled {
+    color: #D4A0B0;
+}
+StepDetailPanel QDoubleSpinBox::up-button,
+StepDetailPanel QDoubleSpinBox::down-button {
+    width: 18px;
+    border-left: 1px solid #FFD6E6;
+}
+StepDetailPanel QDoubleSpinBox::up-button:hover,
+StepDetailPanel QDoubleSpinBox::down-button:hover {
+    background: rgba(232, 144, 168, 0.2);
+}
+StepDetailPanel QDoubleSpinBox::up-button:pressed,
+StepDetailPanel QDoubleSpinBox::down-button:pressed {
+    background: rgba(232, 144, 168, 0.4);
+}
+StepDetailPanel QDoubleSpinBox::up-arrow,
+StepDetailPanel QDoubleSpinBox::down-arrow {
+    width: 9px;
+    height: 9px;
+}
+StepDetailPanel QDoubleSpinBox::up-arrow {
+    image: url(:/resources/icons/svg/arrow_up_dark.svg);
+}
+StepDetailPanel QDoubleSpinBox::down-arrow {
+    image: url(:/resources/icons/svg/arrow_down_dark.svg);
+}
+/* ===== QSpinBox 主题适配样式 END ===== */

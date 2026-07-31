@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-import json, os, re
+import glob
+import json
+import os
+import re
+import sys
 
 themes_dir = 'src/app/resources/themes'
 styles_dir = 'src/app/resources/styles'
@@ -32,6 +36,95 @@ def text_color(hex_color):
     luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
     return '#2A2A2A' if luma > 0.5 else '#D0D0D0'
 
+# ---- QSpinBox/QDoubleSpinBox 主题适配样式注入 ----
+# 参考: qt_ui_prototype/resources/styles/QSpinBox/default.qss
+# 结构照搬（渐变底/圆角/右侧按钮/状态/尺寸/圆角/frameless 变体），
+# 颜色适配各主题语义色。幂等：检测到标记块则先移除再追加。
+MARK_START = '/* ===== QSpinBox 主题适配样式 START ===== */'
+MARK_END = '/* ===== QSpinBox 主题适配样式 END ===== */'
+
+
+def spin_hex_to_rgb(hex_color):
+    hex_color = hex_color.strip().lstrip('#')
+    return (int(hex_color[0:2], 16), int(hex_color[2:4], 16),
+            int(hex_color[4:6], 16))
+
+
+def spin_lighten(hex_color, amount):
+    """Mix hex color with white"""
+    r, g, b = spin_hex_to_rgb(hex_color)
+    r = int(r + (255 - r) * amount)
+    g = int(g + (255 - g) * amount)
+    b = int(b + (255 - b) * amount)
+    return '#{:02X}{:02X}{:02X}'.format(r, g, b)
+
+
+def spin_build_blocks(c, icon):
+    toolbar = c['toolbarBackground']
+    panel = c['panelBackground']
+    border = c['borderColor']
+    text = c['textColor']
+    selection = c['selectionBackground']
+    accent = c['accentColor']
+    disabled = c['disabledTextColor']
+    ar, ag, ab = spin_hex_to_rgb(accent)
+    hover_top = spin_lighten(toolbar, 0.08)
+    hover_bot = spin_lighten(panel, 0.08)
+
+    with open(os.path.join(styles_dir, 'spinbox_template.qss'),
+              encoding='utf-8') as f:
+        template = f.read()
+    return (template
+            .replace('@TOOLBAR@', toolbar)
+            .replace('@PANEL@', panel)
+            .replace('@HOVER_TOP@', hover_top)
+            .replace('@HOVER_BOT@', hover_bot)
+            .replace('@BORDER@', border)
+            .replace('@TEXT@', text)
+            .replace('@SELECTION@', selection)
+            .replace('@ACCENT@', accent)
+            .replace('@DISABLED@', disabled)
+            .replace('@AR@', str(ar))
+            .replace('@AG@', str(ag))
+            .replace('@AB@', str(ab))
+            .replace('@ICON@', icon))
+
+def spin_strip_previous(qss):
+    start = qss.find(MARK_START)
+    end = qss.find(MARK_END)
+    if start == -1 or end == -1:
+        return qss
+    end = qss.find('\n', end)
+    if end == -1:
+        end = len(qss)
+    return qss[:start].rstrip() + '\n' + qss[end:]
+
+
+def inject_spinbox_all():
+    """为所有主题 QSS 注入 QSpinBox/QDoubleSpinBox 主题适配样式"""
+    for json_path in sorted(glob.glob(os.path.join(themes_dir, '*.json'))):
+        theme_id = os.path.basename(json_path)[:-5]
+        qss_path = os.path.join(styles_dir, theme_id + '.qss')
+        if not os.path.exists(qss_path):
+            print('  SPIN SKIP (no qss): {}'.format(theme_id))
+            continue
+        with open(json_path, encoding='utf-8') as f:
+            data = json.load(f)
+        colors = data['colors']
+        icon = 'light' if data.get('isDark', False) else 'dark'
+
+        with open(qss_path, encoding='utf-8') as f:
+            qss = f.read()
+        qss = spin_strip_previous(qss)
+        block = '\n' + MARK_START + '\n' + spin_build_blocks(colors, icon) \
+            + MARK_END + '\n'
+        qss = qss.rstrip() + '\n' + block
+
+        with open(qss_path, 'w', encoding='utf-8') as f:
+            f.write(qss)
+        print('  SPIN: {}'.format(theme_id))
+
+
 themes = [
     {
         'id': 'avocado_green',
@@ -59,6 +152,12 @@ themes = [
         'accent': '#008080',
     },
 ]
+
+# --spinbox 参数：仅注入 QSpinBox 样式，不重新生成主题
+if '--spinbox' in sys.argv:
+    inject_spinbox_all()
+    print('\nAll done!')
+    sys.exit(0)
 
 for t in themes:
     a = t['accent']  # accent color
@@ -341,5 +440,8 @@ SARibbonQuickAccessBar { background-color: transparent; }
     with open(fp, 'w', encoding='utf-8') as f:
         f.write(ads)
     print('  ADS: {}'.format(fp))
+
+# 主题生成后注入 QSpinBox 主题适配样式
+inject_spinbox_all()
 
 print('\nAll done!')

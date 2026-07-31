@@ -63,6 +63,10 @@
         <file>resources/icons/svg/dock_float_dark.svg</file>
         <file>resources/icons/svg/drop_down_arrow_light.svg</file>
         <file>resources/icons/svg/drop_down_arrow_dark.svg</file>
+        <file>resources/icons/svg/arrow_up_dark.svg</file>
+        <file>resources/icons/svg/arrow_up_light.svg</file>
+        <file>resources/icons/svg/arrow_down_dark.svg</file>
+        <file>resources/icons/svg/arrow_down_light.svg</file>
         <file>resources/icons/svg/project_dark.svg</file>
         <file>resources/icons/svg/project_light.svg</file>
         <file>resources/icons/svg/debug_dark.svg</file>
