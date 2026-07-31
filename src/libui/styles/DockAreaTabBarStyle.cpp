@@ -119,7 +119,7 @@ void DockAreaTabBarStyle::paintAllTabs(QPainter* painter) {
       auto path = selectedTabPath(r, pos);
       QColor accent = etest::core_ui::ThemeManager::instance().accentColor();
       painter->save();
-      painter->setPen(QPen(accent, 1));
+      painter->setPen(QPen(accent, kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
       painter->setBrush(selectedBrush(r.toRect()));
       // drawPath 而非 drawPolygon：填充仍按闭合区域，但描边不画底部闭合线
       painter->drawPath(path);
@@ -134,7 +134,7 @@ void DockAreaTabBarStyle::paintAllTabs(QPainter* painter) {
         grad.setColorAt(0.5, accent);
         grad.setColorAt(0.85, accent.darker(115));
         grad.setColorAt(1.0, accent.darker(140));
-        painter->setPen(QPen(QBrush(grad), 1));
+        painter->setPen(QPen(QBrush(grad), kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         painter->setBrush(Qt::NoBrush);
         painter->drawPath(path);
         painter->restore();
@@ -181,7 +181,7 @@ void DockAreaTabBarStyle::paintAllTabs(QPainter* painter) {
         tabs_container_->mapFrom(this, viewport()->geometry().bottomRight());
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
-    painter->setPen(QPen(active_accent, 1));
+    painter->setPen(QPen(active_accent, kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     if (leftX > vpL.x()) {
       painter->drawLine(QLineF(QPointF(leftX, y), QPointF(vpL.x(), y)));
     }

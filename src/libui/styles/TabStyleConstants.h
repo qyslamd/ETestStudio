@@ -11,4 +11,7 @@ inline constexpr QSize kMinTabSize(110, kTabBarHeight);
 inline constexpr qreal kTabTopMargin = 0.0;
 inline constexpr qreal kTabHRatio = 1.0 / 5.0;
 
+// 选中 tab 描边宽度（主色描边 + 暗色渐变外框 + 侧边延伸线共用）
+inline constexpr int kTabBorderWidth = 1;
+
 #endif  // ETEST_UI_TAB_STYLE_CONSTANTS_H_

@@ -116,7 +116,7 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
-    painter->setPen(QPen(accent, 1));
+    painter->setPen(QPen(accent, kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->setBrush(selectedBrush(option->rect));
     // drawPath 而非 drawPolygon：填充仍按闭合区域，但描边不画底部闭合线，
     // 选中 tab 底边与内容区自然衔接
@@ -133,7 +133,7 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
       grad.setColorAt(0.5,  accent);
       grad.setColorAt(0.85, accent.darker(115));
       grad.setColorAt(1.0,  accent.darker(140));
-      painter->setPen(QPen(QBrush(grad), 1));
+      painter->setPen(QPen(QBrush(grad), kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
       painter->setBrush(Qt::NoBrush);
       painter->drawPath(path);
       painter->restore();
@@ -159,7 +159,7 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
       }
       painter->save();
       painter->setRenderHint(QPainter::Antialiasing);
-      painter->setPen(QPen(accent, 1));
+      painter->setPen(QPen(accent, kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
       if (leftX > barRect.left()) {
         painter->drawLine(
             QLineF(QPointF(leftX, y), QPointF(barRect.left(), y)));
