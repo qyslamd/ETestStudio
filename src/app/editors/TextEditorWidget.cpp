@@ -269,7 +269,7 @@ void TextEditorWidget::applyLexer(const QString& suffix) {
   } else if (suffix == "lua") {
     lexer = new QsciLexerLua(this);
   } else if (suffix == "json" || suffix == "etproj" || suffix == "etopo" ||
-             suffix == "eproto" || suffix == "etprog") {
+             suffix == "eproto" || suffix == "etprog" || suffix == "emock") {
     lexer = new QsciLexerJSON(this);
   } else if (suffix == "xml" || suffix == "html" || suffix == "htm" ||
              suffix == "svg" || suffix == "eprotox") {
