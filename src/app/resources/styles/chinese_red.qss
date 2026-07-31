@@ -2447,3 +2447,296 @@ StepDetailPanel QDoubleSpinBox::down-arrow {
     image: url(:/resources/icons/svg/arrow_down_light.svg);
 }
 /* ===== QSpinBox 主题适配样式 END ===== */
+
+/* ===== QComboBox 主题适配样式 START ===== */
+/* QComboBox 主题适配样式模板
+ * 由 gen_themes.py 读取替换 token 后注入各主题 QSS（幂等）
+ * token: #33292B #241F20 #433A3B #353031 #4A3A3C #D4C5C5
+ *        #5D1A1A #C72523 #5A4A4A 199 37 35 light
+ */
+QComboBox {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #33292B,
+                        stop:1 #241F20);
+    border: 1px solid #4A3A3C;
+    border-radius: 8px;
+    padding: 8px 36px 8px 8px;
+    color: #D4C5C5;
+    font-size: 13px;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    selection-background-color: #5D1A1A;
+    selection-color: #FFFFFF;
+    min-height: 20px;
+}
+/* 下拉箭头 */
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 32px;
+    height: 100%;
+    border: none;
+    border-left: 1px solid #4A3A3C;
+    border-top-right-radius: 7px;
+    border-bottom-right-radius: 7px;
+    background: transparent;
+}
+QComboBox::drop-down:hover {
+    background: rgba(199, 37, 35, 0.2);
+}
+QComboBox::drop-down:pressed {
+    background: rgba(199, 37, 35, 0.4);
+}
+QComboBox::drop-down::down-arrow {
+    image: url(:/resources/icons/svg/arrow_down_light.svg);
+    subcontrol-origin: margin;
+    subcontrol-position: right center;
+}
+/* 下拉列表视图 */
+QComboBox QAbstractItemView {
+    background: #241F20;
+    border: 1px solid #4A3A3C;
+    border-radius: 8px;
+    padding: 4px;
+    selection-background-color: #5D1A1A;
+    selection-color: #FFFFFF;
+    outline: none;
+    alternate-background-color: transparent;
+    color: #D4C5C5;
+}
+QComboBox QAbstractItemView::item {
+    padding: 10px 14px;
+    margin: 2px 4px;
+    border-radius: 6px;
+    min-height: 24px;
+    color: #D4C5C5;
+}
+QComboBox QAbstractItemView::item:hover {
+    background: rgba(199, 37, 35, 0.3);
+    color: #D4C5C5;
+}
+QComboBox QAbstractItemView::item:selected {
+    background: rgba(199, 37, 35, 0.6);
+    color: #FFFFFF;
+    border: 1px solid rgba(199, 37, 35, 0.8);
+}
+QComboBox QAbstractItemView::item:alternate {
+    background: transparent;
+}
+/* 悬停 */
+QComboBox:hover {
+    border: 1px solid #C72523;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #433A3B,
+                        stop:1 #353031);
+}
+/* 焦点 */
+QComboBox:focus {
+    border: 2px solid #C72523;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #433A3B,
+                        stop:1 #353031);
+}
+/* 禁用 */
+QComboBox:disabled {
+    background: #241F20;
+    color: #5A4A4A;
+    border: 1px solid #4A3A3C;
+}
+QComboBox::drop-down:disabled {
+    background: #241F20;
+    border-left: 1px solid #4A3A3C;
+}
+QComboBox::down-arrow:disabled {
+    image: url(:/resources/icons/svg/arrow_down_light.svg);
+    opacity: 0.5;
+}
+/* 可编辑状态 */
+QComboBox[editable="true"] {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #33292B,
+                        stop:1 #241F20);
+}
+QComboBox[editable="true"] QLineEdit {
+    background: transparent;
+    border: none;
+    color: #D4C5C5;
+    selection-background-color: #5D1A1A;
+    selection-color: #FFFFFF;
+    padding: 0px;
+}
+QComboBox[editable="true"] QLineEdit:focus {
+    border: none;
+    outline: none;
+}
+/* 状态样式 */
+QComboBox[status="success"] {
+    border: 1px solid rgba(34, 197, 94, 0.6);
+}
+QComboBox[status="success"]:hover {
+    border: 1px solid rgba(34, 197, 94, 0.8);
+}
+QComboBox[status="success"]:focus {
+    border: 2px solid #22C55E;
+}
+QComboBox[status="error"] {
+    border: 1px solid rgba(239, 68, 68, 0.6);
+}
+QComboBox[status="error"]:hover {
+    border: 1px solid rgba(239, 68, 68, 0.8);
+}
+QComboBox[status="error"]:focus {
+    border: 2px solid #EF4444;
+}
+QComboBox[status="warning"] {
+    border: 1px solid rgba(245, 158, 11, 0.6);
+}
+QComboBox[status="warning"]:hover {
+    border: 1px solid rgba(245, 158, 11, 0.8);
+}
+QComboBox[status="warning"]:focus {
+    border: 2px solid #F59E0B;
+}
+/* 尺寸样式 */
+QComboBox[size="small"] {
+    padding: 4px 24px 4px 8px;
+    font-size: 12px;
+    border-radius: 6px;
+    min-height: 16px;
+}
+QComboBox[size="small"]::drop-down {
+    width: 24px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+QComboBox[size="small"]::drop-down::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+QComboBox[size="small"] QAbstractItemView::item {
+    padding: 6px 10px;
+    min-height: 20px;
+    font-size: 12px;
+}
+QComboBox[size="large"] {
+    padding: 10px 32px 10px 16px;
+    font-size: 16px;
+    border-radius: 10px;
+    min-height: 24px;
+}
+QComboBox[size="large"]::drop-down {
+    width: 36px;
+    border-top-right-radius: 9px;
+    border-bottom-right-radius: 9px;
+}
+QComboBox[size="large"]::drop-down::down-arrow {
+    width: 14px;
+    height: 14px;
+}
+QComboBox[size="large"] QAbstractItemView::item {
+    padding: 12px 16px;
+    min-height: 28px;
+    font-size: 16px;
+}
+/* 特殊样式 */
+QComboBox[rounded="true"] {
+    border-radius: 20px;
+    padding: 8px 32px 8px 20px;
+}
+QComboBox[rounded="true"]::drop-down {
+    border-top-right-radius: 19px;
+    border-bottom-right-radius: 19px;
+}
+QComboBox[rounded="true"] QAbstractItemView {
+    border-radius: 12px;
+}
+QComboBox[rounded="true"] QAbstractItemView::item {
+    border-radius: 8px;
+}
+QComboBox[frameless="true"] {
+    border: none;
+    background: #241F20;
+}
+QComboBox[frameless="true"]::drop-down {
+    border-left: none;
+}
+QComboBox[frameless="true"]:hover {
+    background: #353031;
+}
+QComboBox[frameless="true"]:focus {
+    background: #353031;
+}
+
+/* 设置页下拉框（紧凑） */
+etest--app--SettingsDialog QComboBox {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #33292B,
+                        stop:1 #241F20);
+    border: 1px solid #4A3A3C;
+    border-radius: 6px;
+    padding: 4px 28px 4px 8px;
+    color: #D4C5C5;
+    font-size: 12px;
+    selection-background-color: #5D1A1A;
+    selection-color: #FFFFFF;
+    min-height: 16px;
+}
+etest--app--SettingsDialog QComboBox:hover {
+    border: 1px solid #C72523;
+}
+etest--app--SettingsDialog QComboBox:focus {
+    border: 2px solid #C72523;
+}
+etest--app--SettingsDialog QComboBox:disabled {
+    color: #5A4A4A;
+}
+etest--app--SettingsDialog QComboBox::drop-down {
+    width: 24px;
+    border-left: 1px solid #4A3A3C;
+}
+etest--app--SettingsDialog QComboBox::drop-down:hover,
+etest--app--SettingsDialog QComboBox::drop-down:pressed {
+    background: rgba(199, 37, 35, 0.2);
+}
+etest--app--SettingsDialog QComboBox::down-arrow {
+    image: url(:/resources/icons/svg/arrow_down_light.svg);
+    width: 10px;
+    height: 10px;
+}
+
+/* 步骤详情下拉框（紧凑） */
+StepDetailPanel QComboBox {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #33292B,
+                        stop:1 #241F20);
+    border: 1px solid #4A3A3C;
+    border-radius: 6px;
+    padding: 2px 22px 2px 6px;
+    min-height: 20px;
+    color: #D4C5C5;
+    font-size: 12px;
+    selection-background-color: #5D1A1A;
+    selection-color: #FFFFFF;
+}
+StepDetailPanel QComboBox:hover {
+    border: 1px solid #C72523;
+}
+StepDetailPanel QComboBox:focus {
+    border: 2px solid #C72523;
+}
+StepDetailPanel QComboBox:disabled {
+    color: #5A4A4A;
+}
+StepDetailPanel QComboBox::drop-down {
+    width: 20px;
+    border-left: 1px solid #4A3A3C;
+}
+StepDetailPanel QComboBox::drop-down:hover,
+StepDetailPanel QComboBox::drop-down:pressed {
+    background: rgba(199, 37, 35, 0.2);
+}
+StepDetailPanel QComboBox::down-arrow {
+    image: url(:/resources/icons/svg/arrow_down_light.svg);
+    width: 9px;
+    height: 9px;
+}
+/* ===== QComboBox 主题适配样式 END ===== */

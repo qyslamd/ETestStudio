@@ -36,12 +36,14 @@ def text_color(hex_color):
     luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
     return '#2A2A2A' if luma > 0.5 else '#D0D0D0'
 
-# ---- QSpinBox/QDoubleSpinBox 主题适配样式注入 ----
-# 参考: qt_ui_prototype/resources/styles/QSpinBox/default.qss
-# 结构照搬（渐变底/圆角/右侧按钮/状态/尺寸/圆角/frameless 变体），
+# ---- QSpinBox/QComboBox 主题适配样式注入 ----
+# 参考: qt_ui_prototype/resources/styles/QSpinBox 与 QComboBox
+# 结构照搬（渐变底/圆角/右侧按钮/弹出列表/状态/尺寸/圆角/frameless），
 # 颜色适配各主题语义色。幂等：检测到标记块则先移除再追加。
-MARK_START = '/* ===== QSpinBox 主题适配样式 START ===== */'
-MARK_END = '/* ===== QSpinBox 主题适配样式 END ===== */'
+MARK_SPIN_START = '/* ===== QSpinBox 主题适配样式 START ===== */'
+MARK_SPIN_END = '/* ===== QSpinBox 主题适配样式 END ===== */'
+MARK_COMBO_START = '/* ===== QComboBox 主题适配样式 START ===== */'
+MARK_COMBO_END = '/* ===== QComboBox 主题适配样式 END ===== */'
 
 
 def spin_hex_to_rgb(hex_color):
@@ -89,9 +91,9 @@ def spin_build_blocks(c, icon):
             .replace('@AB@', str(ab))
             .replace('@ICON@', icon))
 
-def spin_strip_previous(qss):
-    start = qss.find(MARK_START)
-    end = qss.find(MARK_END)
+def strip_marked(qss, start_mark, end_mark):
+    start = qss.find(start_mark)
+    end = qss.find(end_mark)
     if start == -1 or end == -1:
         return qss
     end = qss.find('\n', end)
@@ -100,13 +102,44 @@ def spin_strip_previous(qss):
     return qss[:start].rstrip() + '\n' + qss[end:]
 
 
-def inject_spinbox_all():
-    """为所有主题 QSS 注入 QSpinBox/QDoubleSpinBox 主题适配样式"""
+def combo_build_blocks(c, icon):
+    toolbar = c['toolbarBackground']
+    panel = c['panelBackground']
+    border = c['borderColor']
+    text = c['textColor']
+    selection = c['selectionBackground']
+    accent = c['accentColor']
+    disabled = c['disabledTextColor']
+    ar, ag, ab = spin_hex_to_rgb(accent)
+    hover_top = spin_lighten(toolbar, 0.08)
+    hover_bot = spin_lighten(panel, 0.08)
+
+    with open(os.path.join(styles_dir, 'combobox_template.qss'),
+              encoding='utf-8') as f:
+        template = f.read()
+    return (template
+            .replace('@TOOLBAR@', toolbar)
+            .replace('@PANEL@', panel)
+            .replace('@HOVER_TOP@', hover_top)
+            .replace('@HOVER_BOT@', hover_bot)
+            .replace('@BORDER@', border)
+            .replace('@TEXT@', text)
+            .replace('@SELECTION@', selection)
+            .replace('@ACCENT@', accent)
+            .replace('@DISABLED@', disabled)
+            .replace('@AR@', str(ar))
+            .replace('@AG@', str(ag))
+            .replace('@AB@', str(ab))
+            .replace('@ICON@', icon))
+
+
+def inject_widget_styles():
+    """为所有主题 QSS 注入 QSpinBox/QComboBox 主题适配样式"""
     for json_path in sorted(glob.glob(os.path.join(themes_dir, '*.json'))):
         theme_id = os.path.basename(json_path)[:-5]
         qss_path = os.path.join(styles_dir, theme_id + '.qss')
         if not os.path.exists(qss_path):
-            print('  SPIN SKIP (no qss): {}'.format(theme_id))
+            print('  SKIP (no qss): {}'.format(theme_id))
             continue
         with open(json_path, encoding='utf-8') as f:
             data = json.load(f)
@@ -115,14 +148,18 @@ def inject_spinbox_all():
 
         with open(qss_path, encoding='utf-8') as f:
             qss = f.read()
-        qss = spin_strip_previous(qss)
-        block = '\n' + MARK_START + '\n' + spin_build_blocks(colors, icon) \
-            + MARK_END + '\n'
-        qss = qss.rstrip() + '\n' + block
+        qss = strip_marked(qss, MARK_SPIN_START, MARK_SPIN_END)
+        qss = strip_marked(qss, MARK_COMBO_START, MARK_COMBO_END)
+
+        spin_block = ('\n' + MARK_SPIN_START + '\n'
+                      + spin_build_blocks(colors, icon) + MARK_SPIN_END + '\n')
+        combo_block = ('\n' + MARK_COMBO_START + '\n'
+                       + combo_build_blocks(colors, icon) + MARK_COMBO_END + '\n')
+        qss = qss.rstrip() + '\n' + spin_block + combo_block
 
         with open(qss_path, 'w', encoding='utf-8') as f:
             f.write(qss)
-        print('  SPIN: {}'.format(theme_id))
+        print('  INJECT: {}'.format(theme_id))
 
 
 themes = [
@@ -153,9 +190,9 @@ themes = [
     },
 ]
 
-# --spinbox 参数：仅注入 QSpinBox 样式，不重新生成主题
-if '--spinbox' in sys.argv:
-    inject_spinbox_all()
+# --widgets 参数：仅注入 QSpinBox/QComboBox 样式，不重新生成主题
+if '--widgets' in sys.argv:
+    inject_widget_styles()
     print('\nAll done!')
     sys.exit(0)
 
@@ -441,7 +478,7 @@ SARibbonQuickAccessBar { background-color: transparent; }
         f.write(ads)
     print('  ADS: {}'.format(fp))
 
-# 主题生成后注入 QSpinBox 主题适配样式
-inject_spinbox_all()
+# 主题生成后注入 QSpinBox/QComboBox 主题适配样式
+inject_widget_styles()
 
 print('\nAll done!')
