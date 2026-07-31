@@ -134,6 +134,7 @@ for t in themes:
     # Color replacements: vscode dark -> light with accent
     # Handle both uppercase and lowercase hex in the source
     def repl(old_upper, new_val):
+        global qss
         qss = qss.replace(old_upper, new_val)
         qss = qss.replace(old_upper.lower(), new_val)
         return qss
@@ -220,6 +221,10 @@ for t in themes:
     # Fix disabled RibbonSearchEdit border
     # (background and border are same color in disabled state)
     qss = qss.replace('border: 1px solid {};'.format(p3), 'border: 1px solid {};'.format(p4))
+
+    # 主 QSS 从 vscode.qss 复制的 QADS 注释同步修正（正则通配，vscode 注释改为 ads_vscode 后仍可命中）
+    qss = re.sub(r'已迁移至 ads_\w+\.qss',
+                 '已迁移至 ads_{}.qss'.format(t['id']), qss)
 
     fp = '{}/{}.qss'.format(styles_dir, t['id'])
     with open(fp, 'w', encoding='utf-8') as f:
@@ -314,5 +319,21 @@ SARibbonQuickAccessBar { background-color: transparent; }
     with open(fp, 'w', encoding='utf-8') as f:
         f.write(ribbon)
     print('  Ribbon: {}'.format(fp))
+
+    # ---- QADS QSS（每主题 dock 样式，亮色模板）----
+    with open('{}/ads_template.qss'.format(styles_dir), 'r', encoding='utf-8') as f:
+        ads = f.read()
+    ads = ads.replace('@WINDOW_BG@', p1)
+    ads = ads.replace('@PANEL_BG@', p2)
+    ads = ads.replace('@HOVER_BG@', p4)
+    ads = ads.replace('@TEXT@', txt)
+    ads = ads.replace('@SECONDARY_TEXT@', sec)
+    ads = ads.replace('@ACCENT@', accent_dk)  # = JSON accentColor，与手写亮色主题的 @ACCENT@ 语义一致
+    ads = ads.replace('@ICON_VARIANT@', 'dark')
+
+    fp = '{}/ads_{}.qss'.format(styles_dir, t['id'])
+    with open(fp, 'w', encoding='utf-8') as f:
+        f.write(ads)
+    print('  ADS: {}'.format(fp))
 
 print('\nAll done!')

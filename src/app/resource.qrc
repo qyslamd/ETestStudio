@@ -11,7 +11,18 @@
         <file>resources/styles/ribbon_vscode.qss</file>
         <file>resources/styles/lime.qss</file>
         <file>resources/styles/ribbon_lime.qss</file>
-        <file>resources/styles/ads_dark.qss</file>
+        <file>resources/styles/ads_vscode.qss</file>
+        <file>resources/styles/ads_klein_blue.qss</file>
+        <file>resources/styles/ads_indigo.qss</file>
+        <file>resources/styles/ads_chinese_red.qss</file>
+        <file>resources/styles/ads_default.qss</file>
+        <file>resources/styles/ads_lime.qss</file>
+        <file>resources/styles/ads_gold.qss</file>
+        <file>resources/styles/ads_rose_pink.qss</file>
+        <file>resources/styles/ads_avocado_green.qss</file>
+        <file>resources/styles/ads_mocha_brown.qss</file>
+        <file>resources/styles/ads_hermes_orange.qss</file>
+        <file>resources/styles/ads_bright_yellow.qss</file>
         <file>resources/themes/default.json</file>
         <file>resources/themes/vscode.json</file>
         <file>resources/themes/chinese_red.json</file>

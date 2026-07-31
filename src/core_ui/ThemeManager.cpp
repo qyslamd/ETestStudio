@@ -275,12 +275,11 @@ void ThemeManager::loadQss(const QString& themeId) {
 
   is_dark_ = detectDarkFromQss(qss);
 
-  if (is_dark_) {
-    QFile adsFile(QStringLiteral(":/resources/styles/ads_dark.qss"));
-    if (adsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      qss += QStringLiteral("\n") + QString::fromUtf8(adsFile.readAll());
-      adsFile.close();
-    }
+  // 每主题 QADS 覆盖（存在时追加到全局，覆盖浮动窗口）
+  QFile adsFile(QStringLiteral(":/resources/styles/ads_%1.qss").arg(themeId));
+  if (adsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    qss += QStringLiteral("\n") + QString::fromUtf8(adsFile.readAll());
+    adsFile.close();
   }
 
   qApp->setStyleSheet(qss);

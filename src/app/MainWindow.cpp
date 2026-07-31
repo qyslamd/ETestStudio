@@ -1402,6 +1402,7 @@ void MainWindow::lazyInit() {
 }
 
 void MainWindow::onThemeChanged(bool isDark) {
+  Q_UNUSED(isDark);  // QADS 覆盖已改为按主题读取，不再依赖 isDark
   // 同步设置对话框样式（QSS 已由 ThemeManager 全局加载到 qApp）
   if (settings_dialog_) {
     settings_dialog_->setStyleSheet(qApp->styleSheet());
@@ -1421,7 +1422,7 @@ void MainWindow::onThemeChanged(bool isDark) {
     }
   }
 
-  // 后设 QADS 暗色样式（覆盖 QADS 内置 widget 级 default.css）
+  // 后设 QADS 样式（default.css 基底 + 每主题覆盖，覆盖 QADS 内置 widget 级 default.css）
   if (dock_manager_) {
     QString adsQss;
     QFile defaultCss(QStringLiteral(":ads/stylesheets/default.css"));
@@ -1429,12 +1430,12 @@ void MainWindow::onThemeChanged(bool isDark) {
       adsQss = QString::fromUtf8(defaultCss.readAll());
       defaultCss.close();
     }
-    if (isDark) {
-      QFile darkCss(QStringLiteral(":/resources/styles/ads_dark.qss"));
-      if (darkCss.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        adsQss += QStringLiteral("\n") + QString::fromUtf8(darkCss.readAll());
-        darkCss.close();
-      }
+    // 每主题 QADS 覆盖（存在才追加）
+    QFile themeAds(QStringLiteral(":/resources/styles/ads_%1.qss")
+                       .arg(ThemeManager::instance().currentTheme()));
+    if (themeAds.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      adsQss += QStringLiteral("\n") + QString::fromUtf8(themeAds.readAll());
+      themeAds.close();
     }
     dock_manager_->setStyleSheet(adsQss);
 

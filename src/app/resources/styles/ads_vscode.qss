@@ -1,0 +1,144 @@
+/*
+ * QADS Dark Theme Override — vscode
+ * 颜色体系与 vscode.qss 保持一致
+ * 同时设置到 qApp（覆盖浮动窗口）和 CDockManager（覆盖内置 default.css）
+ */
+
+/* ==================== 容器 ==================== */
+ads--CDockContainerWidget {
+    background: #1E1E1E;
+}
+
+ads--CDockContainerWidget > QSplitter {
+    padding: 1px 0px 1px 0px;
+}
+
+ads--CDockContainerWidget ads--CDockSplitter::handle {
+    background: #252526;
+}
+
+ads--CDockSplitter {
+    background: #252526;
+}
+
+/* ==================== 停靠区域 ==================== */
+ads--CDockAreaWidget {
+    background: #1E1E1E;
+    border: none;
+}
+
+ads--CDockAreaTitleBar {
+    background: #252526;
+    border-top: 1px solid #1E1E1E;
+    border-bottom: 1px solid #1E1E1E;
+    padding: 0px;
+}
+
+ads--CDockAreaTitleBar QLabel {
+    color: #858585;
+    font-size: 12px;
+    padding: 2px 6px;
+}
+
+ads--CDockAreaTitleBar QToolButton {
+    background-color: transparent;
+    border: none;
+    color: #858585;
+    padding: 2px;
+    margin: 0px;
+}
+
+ads--CDockAreaTitleBar QToolButton:hover {
+    background-color: #505050;
+    color: #CCCCCC;
+}
+
+/* ==================== 停靠部件 ==================== */
+ads--CDockWidget {
+    background: #1E1E1E;
+    border-color: #1E1E1E;
+    border-style: solid;
+    border-width: 1px 0px 0px 0px;
+}
+
+/* ==================== 标签页 ==================== */
+/* 背景由 DockAreaTabBarStyle::paintAllTabs 统一绘制，QSS 仅控制子控件文字颜色 */
+ads--CDockWidgetTab {
+    background: transparent;
+    border: none;
+    padding: 0px 4px;
+}
+
+ads--CDockWidgetTab[activeTab="true"] {
+    background: transparent;
+    border: none;
+}
+
+ads--CDockWidgetTab:hover {
+    background: transparent;
+}
+
+ads--CDockWidgetTab QLabel {
+    color: #858585;
+    font-size: 12px;
+}
+
+ads--CDockWidgetTab[activeTab="true"] QLabel {
+    color: #CCCCCC;
+}
+
+ads--CDockWidgetTab:hover QLabel {
+    color: #CCCCCC;
+}
+
+/* ==================== 标题栏按钮 ==================== */
+ads--CTitleBarButton {
+    padding: 0px 0px;
+}
+
+/* ==================== 滚动区域 ==================== */
+QScrollArea#dockWidgetScrollArea {
+    padding: 0px;
+    border: none;
+}
+
+/* ==================== 标签关闭按钮 ==================== */
+#tabCloseButton {
+    margin-top: 2px;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 2px;
+    qproperty-icon: url(:/resources/icons/svg/close_light.svg);
+    qproperty-iconSize: 14px;
+}
+
+#tabCloseButton:hover {
+    background-color: #505050;
+}
+
+#tabCloseButton:pressed {
+    background-color: #007ACC;
+}
+
+/* ==================== 标签菜单按钮 ==================== */
+#tabsMenuButton::menu-indicator {
+    image: none;
+}
+
+#tabsMenuButton {
+    qproperty-icon: url(:/resources/icons/svg/drop_down_arrow_light.svg);
+    qproperty-iconSize: 16px;
+}
+
+/* ==================== 区域关闭按钮 ==================== */
+#dockAreaCloseButton {
+    qproperty-icon: url(:/resources/icons/svg/close_light.svg);
+    qproperty-iconSize: 16px;
+}
+
+/* ==================== 分离按钮 ==================== */
+#detachGroupButton {
+    qproperty-icon: url(:/ads/images/detach-button.svg);
+    qproperty-iconSize: 16px;
+}

@@ -1,0 +1,145 @@
+/*
+ * QADS Dock 样式模板（亮色）
+ * 由 gen_themes.py 替换 token 生成 ads_<id>.qss
+ * 每个主题的 QADS Dock 样式，设置到 CDockManager（覆盖内置 default.css）+ 全局 qApp（覆盖浮动窗口）
+ * token: @WINDOW_BG@ @PANEL_BG@ @HOVER_BG@ @TEXT@ @SECONDARY_TEXT@ @ACCENT@ @ICON_VARIANT@
+ */
+
+/* ==================== 容器 ==================== */
+ads--CDockContainerWidget {
+    background: @WINDOW_BG@;
+}
+
+ads--CDockContainerWidget > QSplitter {
+    padding: 1px 0px 1px 0px;
+}
+
+ads--CDockContainerWidget ads--CDockSplitter::handle {
+    background: @PANEL_BG@;
+}
+
+ads--CDockSplitter {
+    background: @PANEL_BG@;
+}
+
+/* ==================== 停靠区域 ==================== */
+ads--CDockAreaWidget {
+    background: @WINDOW_BG@;
+    border: none;
+}
+
+ads--CDockAreaTitleBar {
+    background: @PANEL_BG@;
+    border-top: 1px solid @WINDOW_BG@;
+    border-bottom: 1px solid @WINDOW_BG@;
+    padding: 0px;
+}
+
+ads--CDockAreaTitleBar QLabel {
+    color: @SECONDARY_TEXT@;
+    font-size: 12px;
+    padding: 2px 6px;
+}
+
+ads--CDockAreaTitleBar QToolButton {
+    background-color: transparent;
+    border: none;
+    color: @SECONDARY_TEXT@;
+    padding: 2px;
+    margin: 0px;
+}
+
+ads--CDockAreaTitleBar QToolButton:hover {
+    background-color: @HOVER_BG@;
+    color: @TEXT@;
+}
+
+/* ==================== 停靠部件 ==================== */
+ads--CDockWidget {
+    background: @WINDOW_BG@;
+    border-color: @WINDOW_BG@;
+    border-style: solid;
+    border-width: 1px 0px 0px 0px;
+}
+
+/* ==================== 标签页 ==================== */
+/* 背景由 DockAreaTabBarStyle::paintAllTabs 统一绘制，QSS 仅控制子控件文字颜色 */
+ads--CDockWidgetTab {
+    background: transparent;
+    border: none;
+    padding: 0px 4px;
+}
+
+ads--CDockWidgetTab[activeTab="true"] {
+    background: transparent;
+    border: none;
+}
+
+ads--CDockWidgetTab:hover {
+    background: transparent;
+}
+
+ads--CDockWidgetTab QLabel {
+    color: @SECONDARY_TEXT@;
+    font-size: 12px;
+}
+
+ads--CDockWidgetTab[activeTab="true"] QLabel {
+    color: @TEXT@;
+}
+
+ads--CDockWidgetTab:hover QLabel {
+    color: @TEXT@;
+}
+
+/* ==================== 标题栏按钮 ==================== */
+ads--CTitleBarButton {
+    padding: 0px 0px;
+}
+
+/* ==================== 滚动区域 ==================== */
+QScrollArea#dockWidgetScrollArea {
+    padding: 0px;
+    border: none;
+}
+
+/* ==================== 标签关闭按钮 ==================== */
+#tabCloseButton {
+    margin-top: 2px;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 2px;
+    qproperty-icon: url(:/resources/icons/svg/close_@ICON_VARIANT@.svg);
+    qproperty-iconSize: 14px;
+}
+
+#tabCloseButton:hover {
+    background-color: @HOVER_BG@;
+}
+
+#tabCloseButton:pressed {
+    background-color: @ACCENT@;
+}
+
+/* ==================== 标签菜单按钮 ==================== */
+#tabsMenuButton::menu-indicator {
+    image: none;
+}
+
+#tabsMenuButton {
+    qproperty-icon: url(:/resources/icons/svg/drop_down_arrow_@ICON_VARIANT@.svg);
+    qproperty-iconSize: 16px;
+}
+
+/* ==================== 区域关闭按钮 ==================== */
+#dockAreaCloseButton {
+    qproperty-icon: url(:/resources/icons/svg/close_@ICON_VARIANT@.svg);
+    qproperty-iconSize: 16px;
+}
+
+/* ==================== 分离按钮 ==================== */
+#detachGroupButton {
+    qproperty-icon: url(:/ads/images/detach-button.svg);
+    qproperty-iconSize: 16px;
+}

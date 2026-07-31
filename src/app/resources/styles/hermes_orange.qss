@@ -88,7 +88,7 @@ QStatusBar QLabel:hover {
     background-color: rgba(255, 255, 255, 30);
 }
 
-/* ==================== QADS Dock 样式（暗色覆盖）已迁移至 ads_dark.qss ==================== */
+/* ==================== QADS Dock 样式已迁移至 ads_hermes_orange.qss ==================== */
 /* QADS的样式必须设置到CDockManager自身，否则会被QADS内置的default.css覆盖 */
 
 /* 滚动条 */

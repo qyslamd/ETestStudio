@@ -1,12 +1,13 @@
 /*
- * QADS Dark Theme Override
- * 颜色体系与 vscode.qss 保持一致
- * 同时设置到 qApp（覆盖浮动窗口）和 CDockManager（覆盖内置 default.css）
+ * QADS Dock 样式模板（亮色）
+ * 由 gen_themes.py 替换 token 生成 ads_<id>.qss
+ * 每个主题的 QADS Dock 样式，设置到 CDockManager（覆盖内置 default.css）+ 全局 qApp（覆盖浮动窗口）
+ * token: #F6F3F1 #EFE9E6 #D5C6BC #2A2015 #433328 #84644E dark
  */
 
 /* ==================== 容器 ==================== */
 ads--CDockContainerWidget {
-    background: #1E1E1E;
+    background: #F6F3F1;
 }
 
 ads--CDockContainerWidget > QSplitter {
@@ -14,28 +15,28 @@ ads--CDockContainerWidget > QSplitter {
 }
 
 ads--CDockContainerWidget ads--CDockSplitter::handle {
-    background: #252526;
+    background: #EFE9E6;
 }
 
 ads--CDockSplitter {
-    background: #252526;
+    background: #EFE9E6;
 }
 
 /* ==================== 停靠区域 ==================== */
 ads--CDockAreaWidget {
-    background: #1E1E1E;
+    background: #F6F3F1;
     border: none;
 }
 
 ads--CDockAreaTitleBar {
-    background: #252526;
-    border-top: 1px solid #1E1E1E;
-    border-bottom: 1px solid #1E1E1E;
+    background: #EFE9E6;
+    border-top: 1px solid #F6F3F1;
+    border-bottom: 1px solid #F6F3F1;
     padding: 0px;
 }
 
 ads--CDockAreaTitleBar QLabel {
-    color: #858585;
+    color: #433328;
     font-size: 12px;
     padding: 2px 6px;
 }
@@ -43,20 +44,20 @@ ads--CDockAreaTitleBar QLabel {
 ads--CDockAreaTitleBar QToolButton {
     background-color: transparent;
     border: none;
-    color: #858585;
+    color: #433328;
     padding: 2px;
     margin: 0px;
 }
 
 ads--CDockAreaTitleBar QToolButton:hover {
-    background-color: rgba(255, 255, 255, 26);
-    color: #FFFFFF;
+    background-color: #D5C6BC;
+    color: #2A2015;
 }
 
 /* ==================== 停靠部件 ==================== */
 ads--CDockWidget {
-    background: #1E1E1E;
-    border-color: #1E1E1E;
+    background: #F6F3F1;
+    border-color: #F6F3F1;
     border-style: solid;
     border-width: 1px 0px 0px 0px;
 }
@@ -79,16 +80,16 @@ ads--CDockWidgetTab:hover {
 }
 
 ads--CDockWidgetTab QLabel {
-    color: #858585;
+    color: #433328;
     font-size: 12px;
 }
 
 ads--CDockWidgetTab[activeTab="true"] QLabel {
-    color: #CCCCCC;
+    color: #2A2015;
 }
 
 ads--CDockWidgetTab:hover QLabel {
-    color: #CCCCCC;
+    color: #2A2015;
 }
 
 /* ==================== 标题栏按钮 ==================== */
@@ -109,16 +110,16 @@ QScrollArea#dockWidgetScrollArea {
     border: none;
     border-radius: 3px;
     padding: 2px;
-    qproperty-icon: url(:/resources/icons/svg/close_light.svg);
+    qproperty-icon: url(:/resources/icons/svg/close_dark.svg);
     qproperty-iconSize: 14px;
 }
 
 #tabCloseButton:hover {
-    background-color: rgba(255, 255, 255, 31);
+    background-color: #D5C6BC;
 }
 
 #tabCloseButton:pressed {
-    background-color: rgba(255, 255, 255, 51);
+    background-color: #84644E;
 }
 
 /* ==================== 标签菜单按钮 ==================== */
@@ -127,13 +128,13 @@ QScrollArea#dockWidgetScrollArea {
 }
 
 #tabsMenuButton {
-    qproperty-icon: url(:/resources/icons/svg/drop_down_arrow_light.svg);
+    qproperty-icon: url(:/resources/icons/svg/drop_down_arrow_dark.svg);
     qproperty-iconSize: 16px;
 }
 
 /* ==================== 区域关闭按钮 ==================== */
 #dockAreaCloseButton {
-    qproperty-icon: url(:/resources/icons/svg/close_light.svg);
+    qproperty-icon: url(:/resources/icons/svg/close_dark.svg);
     qproperty-iconSize: 16px;
 }
 
