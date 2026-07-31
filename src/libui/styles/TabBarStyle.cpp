@@ -36,13 +36,16 @@ void TabBarStyle::setDarkTheme(bool dark) {
 
 QBrush TabBarStyle::selectedBrush(const QRect& tabRect) const {
   auto& tm = etest::core_ui::ThemeManager::instance();
-  if (!tm.isDarkTheme()) {
-    return QBrush(QColor(0xFF, 0xFF, 0xFF));
+  QColor base = tm.tabSelectedBackground();
+  if (!base.isValid()) {  // 兜底：JSON 缺失键时保持旧行为
+    base = tm.isDarkTheme() ? tm.panelBackground() : QColor(0xFF, 0xFF, 0xFF);
   }
-  QColor base = tm.panelBackground();
+  if (!tm.isDarkTheme()) {
+    return QBrush(base);
+  }
   QLinearGradient grad(0, 0, 0, tabRect.height());
-  grad.setColorAt(0.0, base.lighter(130));
-  grad.setColorAt(0.5, base.lighter(110));
+  grad.setColorAt(0.0, base.lighter(115));
+  grad.setColorAt(0.5, base.lighter(107));
   grad.setColorAt(1.0, base);
   return QBrush(grad);
 }
@@ -58,9 +61,6 @@ QColor TabBarStyle::textColor(bool selected) const {
     return tm.textColor();
   }
   return tm.secondaryTextColor();
-}
-QColor TabBarStyle::borderColor() const {
-  return etest::core_ui::ThemeManager::instance().borderColor();
 }
 
 QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
@@ -112,26 +112,26 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
   QStyle::State state = option->state;
   if (state.testFlag(QStyle::State_Selected)) {
     QPainterPath path = getSelectedShape(option);
+    QColor accent = etest::core_ui::ThemeManager::instance().accentColor();
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
-    painter->setPen(QPen(borderColor(), 1));
+    painter->setPen(QPen(accent, 1));
     painter->setBrush(selectedBrush(option->rect));
     QPolygonF polygon = path.toFillPolygon();
     painter->drawPolygon(polygon);
     painter->restore();
 
-    // dark 下选中 tab 追加渐变外框（从语义色板获取强调色）
+    // dark 下选中 tab 追加渐变外框（主色渐变，端点收敛保证均匀）
     if (dark_) {
       painter->save();
       painter->setRenderHint(QPainter::Antialiasing);
-      QColor accent = etest::core_ui::ThemeManager::instance().accentColor();
       QLinearGradient grad(option->rect.left(), 0, option->rect.right(), 0);
-      grad.setColorAt(0.0,  accent.darker(180));
-      grad.setColorAt(0.15, accent.darker(110));
+      grad.setColorAt(0.0,  accent.darker(140));
+      grad.setColorAt(0.15, accent.darker(115));
       grad.setColorAt(0.5,  accent);
-      grad.setColorAt(0.85, accent.darker(110));
-      grad.setColorAt(1.0,  accent.darker(180));
+      grad.setColorAt(0.85, accent.darker(115));
+      grad.setColorAt(1.0,  accent.darker(140));
       painter->setPen(QPen(QBrush(grad), 1));
       painter->setBrush(Qt::NoBrush);
       painter->drawPath(path);

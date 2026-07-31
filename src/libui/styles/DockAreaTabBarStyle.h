@@ -47,7 +47,6 @@ class DockAreaTabBarStyle : public ads::CDockAreaTabBar {
   QBrush selectedBrush(const QRect& tab_rect) const;
   QColor hoveredColor() const;
   QColor dividerColor() const;
-  QColor borderColor() const;
 
   void onThemeChanged();
   void applyViewportBackground();

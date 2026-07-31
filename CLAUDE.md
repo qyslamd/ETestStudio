@@ -202,7 +202,7 @@ themes = [
 
 ### 手动创建
 
-1. `src/app/resources/themes/<id>.json` — 15 个语义色 + 26 个编辑器色
+1. `src/app/resources/themes/<id>.json` — 16 个语义色 + 26 个编辑器色
 2. `src/app/resources/styles/<id>.qss` — 基于 `vscode.qss`（暗色）或 `default.qss`（亮色）替换颜色
 3. `src/app/resources/styles/ribbon_<id>.qss` — 基于 `theme-dark2.qss`（暗色）或 `theme-office2021-blue.qss`（亮色）替换颜色
 4. `src/app/resources/styles/ads_<id>.qss` — QADS dock 样式，基于 `ads_template.qss`（亮色）或 `ads_vscode.qss`（暗色）替换颜色

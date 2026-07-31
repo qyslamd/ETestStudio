@@ -73,6 +73,7 @@ for t in themes:
         'toolbarBackground': p3,
         'hoverBackground': p4,
         'selectionBackground': a,
+        'tabSelectedBackground': '#FFFFFF',
         'borderColor': p4,
         'textColor': txt,
         'secondaryTextColor': sec,

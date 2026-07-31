@@ -49,7 +49,6 @@ class TabBarStyle : public QProxyStyle {
   QColor hoveredColor() const;
   QColor dividerColor() const;
   QColor textColor(bool selected) const;
-  QColor borderColor() const;
 
  private:
   int min_width_ = kMinTabSize.width();

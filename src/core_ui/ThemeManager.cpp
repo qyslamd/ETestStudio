@@ -54,6 +54,7 @@ bool ThemeManager::loadPaletteFromJson(const QString& path,
       setColor("toolbarBackground", out.toolbarBackground);
       setColor("hoverBackground", out.hoverBackground);
       setColor("selectionBackground", out.selectionBackground);
+      setColor("tabSelectedBackground", out.tabSelectedBackground);
       setColor("borderColor", out.borderColor);
       setColor("textColor", out.textColor);
       setColor("secondaryTextColor", out.secondaryTextColor);
@@ -148,6 +149,7 @@ void ThemeManager::registerBuiltinPalettes() {
     fallback.toolbarBackground = QColor(0xF0, 0xF0, 0xF0);
     fallback.hoverBackground = QColor(0xE0, 0xE0, 0xE0);
     fallback.selectionBackground = QColor(0xCC, 0xE4, 0xF7);
+    fallback.tabSelectedBackground = QColor(0xFF, 0xFF, 0xFF);
     fallback.borderColor = QColor(0xCC, 0xCC, 0xCC);
     fallback.textColor = QColor(0x33, 0x33, 0x33);
     fallback.secondaryTextColor = QColor(0x88, 0x88, 0x88);
@@ -208,6 +210,9 @@ QColor ThemeManager::hoverBackground() const {
 }
 QColor ThemeManager::selectionBackground() const {
   return palette_ ? palette_->selectionBackground : QColor();
+}
+QColor ThemeManager::tabSelectedBackground() const {
+  return palette_ ? palette_->tabSelectedBackground : QColor();
 }
 QColor ThemeManager::borderColor() const {
   return palette_ ? palette_->borderColor : QColor();

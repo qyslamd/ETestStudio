@@ -35,6 +35,7 @@ class ThemeManager : public QObject {
   QColor toolbarBackground() const;
   QColor hoverBackground() const;
   QColor selectionBackground() const;
+  QColor tabSelectedBackground() const;
   QColor borderColor() const;
   QColor textColor() const;
   QColor secondaryTextColor() const;

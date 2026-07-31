@@ -23,6 +23,7 @@ struct ThemePalette {
   QColor toolbarBackground;
   QColor hoverBackground;
   QColor selectionBackground;
+  QColor tabSelectedBackground;
   QColor borderColor;
   QColor textColor;
   QColor secondaryTextColor;

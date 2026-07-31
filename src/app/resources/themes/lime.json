@@ -9,6 +9,7 @@
     "toolbarBackground": "#DCEEDC",
     "hoverBackground": "#C8E6C8",
     "selectionBackground": "#81C784",
+    "tabSelectedBackground": "#FFFFFF",
     "borderColor": "#C8E6C8",
     "textColor": "#1B3A1B",
     "secondaryTextColor": "#558B55",
