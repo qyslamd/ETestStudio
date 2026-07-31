@@ -95,6 +95,11 @@ void DockAreaTabBarStyle::paintEvent(QPaintEvent* event) {
 
 void DockAreaTabBarStyle::paintAllTabs(QPainter* painter) {
   int cnt = count();
+  QRectF active_rect;
+  TabPosition active_pos = TabPosition::OnlyOne;
+  QColor active_accent;
+  bool has_active = false;
+
   for (int i = 0; i < cnt; ++i) {
     auto* tab = this->tab(i);
     if (!tab) {
@@ -134,6 +139,11 @@ void DockAreaTabBarStyle::paintAllTabs(QPainter* painter) {
         painter->drawPath(path);
         painter->restore();
       }
+
+      active_rect = r;
+      active_pos = pos;
+      active_accent = accent;
+      has_active = true;
     } else if (hovered) {
       auto path = hoveredTabPath(r, pos, sel);
       painter->save();
@@ -149,6 +159,36 @@ void DockAreaTabBarStyle::paintAllTabs(QPainter* painter) {
       painter->drawLine(line);
       painter->restore();
     }
+  }
+
+  // 第二遍：选中 tab 两侧斜边底部水平延伸至可见区域左右边缘（保证在最上层）
+  if (has_active && viewport() && tabs_container_) {
+    const qreal y = active_rect.bottom();
+    const qreal per = active_rect.height() * kTabHRatio;
+    qreal leftX = active_rect.left();
+    qreal rightX = active_rect.right();
+    if (active_pos != TabPosition::Beginning &&
+        active_pos != TabPosition::OnlyOne) {
+      leftX -= per;
+    }
+    if (active_pos != TabPosition::End &&
+        active_pos != TabPosition::OnlyOne) {
+      rightX += per;
+    }
+    const QPoint vpL =
+        tabs_container_->mapFrom(this, viewport()->geometry().topLeft());
+    const QPoint vpR =
+        tabs_container_->mapFrom(this, viewport()->geometry().bottomRight());
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(QPen(active_accent, 1));
+    if (leftX > vpL.x()) {
+      painter->drawLine(QLineF(QPointF(leftX, y), QPointF(vpL.x(), y)));
+    }
+    if (rightX < vpR.x()) {
+      painter->drawLine(QLineF(QPointF(rightX, y), QPointF(vpR.x(), y)));
+    }
+    painter->restore();
   }
 }
 

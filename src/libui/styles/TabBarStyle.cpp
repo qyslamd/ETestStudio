@@ -139,6 +139,38 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
       painter->restore();
     }
 
+    // 选中 tab 两侧斜边底部水平延伸至 tab bar 可见区域左右边缘
+    if (w) {
+      const QRect barRect = w->rect();
+      const qreal y = option->rect.bottom();
+      const qreal per = option->rect.height() * kTabHRatio;
+      qreal leftX = option->rect.left();
+      qreal rightX = option->rect.right();
+      auto* tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
+      if (tabOption) {
+        if (tabOption->position != QStyleOptionTab::Beginning &&
+            tabOption->position != QStyleOptionTab::OnlyOneTab) {
+          leftX -= per;
+        }
+        if (tabOption->position != QStyleOptionTab::End &&
+            tabOption->position != QStyleOptionTab::OnlyOneTab) {
+          rightX += per;
+        }
+      }
+      painter->save();
+      painter->setRenderHint(QPainter::Antialiasing);
+      painter->setPen(QPen(accent, 1));
+      if (leftX > barRect.left()) {
+        painter->drawLine(
+            QLineF(QPointF(leftX, y), QPointF(barRect.left(), y)));
+      }
+      if (rightX < barRect.right()) {
+        painter->drawLine(
+            QLineF(QPointF(rightX, y), QPointF(barRect.right(), y)));
+      }
+      painter->restore();
+    }
+
   } else if (state.testFlag(QStyle::State_MouseOver)) {
     auto path = getHoveredShape(option);
 
