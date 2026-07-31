@@ -116,7 +116,8 @@ void DockAreaTabBarStyle::paintAllTabs(QPainter* painter) {
       painter->save();
       painter->setPen(QPen(accent, 1));
       painter->setBrush(selectedBrush(r.toRect()));
-      painter->drawPolygon(path.toFillPolygon());
+      // drawPath 而非 drawPolygon：填充仍按闭合区域，但描边不画底部闭合线
+      painter->drawPath(path);
       painter->restore();
 
       // dark 下选中 tab 追加渐变描边（主色渐变，端点收敛保证均匀）

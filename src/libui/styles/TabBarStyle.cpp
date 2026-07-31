@@ -118,8 +118,9 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(QPen(accent, 1));
     painter->setBrush(selectedBrush(option->rect));
-    QPolygonF polygon = path.toFillPolygon();
-    painter->drawPolygon(polygon);
+    // drawPath 而非 drawPolygon：填充仍按闭合区域，但描边不画底部闭合线，
+    // 选中 tab 底边与内容区自然衔接
+    painter->drawPath(path);
     painter->restore();
 
     // dark 下选中 tab 追加渐变外框（主色渐变，端点收敛保证均匀）
