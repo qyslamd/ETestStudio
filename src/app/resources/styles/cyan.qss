@@ -770,10 +770,7 @@ StepDetailPanel QLabel {
 #stepDetailEmptyLabel {
     color: #003939;
 }
-
-StepDetailPanel QDoubleSpinBox,
-StepDetailPanel QLineEdit,
-StepDetailPanel QComboBox {
+StepDetailPanel QLineEdit {
     background-color: #BFDFDF;
     color: #2A2015;
     border: 1px solid #99CCCC;
@@ -781,31 +778,8 @@ StepDetailPanel QComboBox {
     padding: 2px 4px;
     min-height: 20px;
 }
-
-StepDetailPanel QDoubleSpinBox:focus,
-StepDetailPanel QLineEdit:focus,
-StepDetailPanel QComboBox:focus {
+StepDetailPanel QLineEdit:focus {
     border-color: #007070;
-}
-
-StepDetailPanel QComboBox::drop-down {
-    border: none;
-    width: 20px;
-}
-
-StepDetailPanel QComboBox::down-arrow {
-    image: none;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 5px solid #2A2015;
-    margin-right: 4px;
-}
-
-StepDetailPanel QComboBox QAbstractItemView {
-    background-color: #D8EBEB;
-    color: #2A2015;
-    border: 1px solid #99CCCC;
-    selection-background-color: #008080;
 }
 
 StepDetailPanel QCheckBox {
@@ -1441,51 +1415,6 @@ etest--app--SettingsDialog QLabel {
 QWidget#SettingsButtonBar {
     border-top: 1px solid #EAF4F4;
     background-color: #D8EBEB;
-}
-
-/* 设置页中的数值控件 */
-etest--app--SettingsDialog QSpinBox {
-    background-color: #BFDFDF;
-    color: #2A2015;
-    border: 1px solid #99CCCC;
-    border-radius: 2px;
-    padding: 4px 8px;
-}
-etest--app--SettingsDialog QSpinBox:focus {
-    border-color: #007070;
-}
-etest--app--SettingsDialog QSpinBox::up-button,
-etest--app--SettingsDialog QSpinBox::down-button {
-    background-color: #BFDFDF;
-    border: none;
-    width: 16px;
-}
-etest--app--SettingsDialog QSpinBox::up-arrow,
-etest--app--SettingsDialog QSpinBox::down-arrow {
-    width: 8px;
-    height: 8px;
-}
-
-/* 设置页中的下拉框 */
-etest--app--SettingsDialog QComboBox {
-    background-color: #BFDFDF;
-    color: #2A2015;
-    border: 1px solid #99CCCC;
-    border-radius: 2px;
-    padding: 4px 8px;
-}
-etest--app--SettingsDialog QComboBox:hover {
-    border-color: #007070;
-}
-etest--app--SettingsDialog QComboBox::drop-down {
-    background-color: #BFDFDF;
-    border: none;
-    width: 20px;
-}
-etest--app--SettingsDialog QComboBox::down-arrow {
-    width: 10px;
-    height: 10px;
-    image: url(:/resources/icons/svg/drop_down_arrow_light.svg);
 }
 QComboBox QAbstractItemView {
     background-color: #D8EBEB;
@@ -2351,101 +2280,6 @@ QSpinBox[frameless="true"]::up-button, QDoubleSpinBox[frameless="true"]::up-butt
 QSpinBox[frameless="true"]::down-button, QDoubleSpinBox[frameless="true"]::down-button {
     border-left: none;
 }
-
-/* 设置页数值控件（紧凑） */
-etest--app--SettingsDialog QSpinBox {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 #BFDFDF,
-                        stop:1 #D8EBEB);
-    border: 1px solid #99CCCC;
-    border-radius: 6px;
-    padding: 4px 24px 4px 8px;
-    color: #2A2015;
-    font-size: 12px;
-    selection-background-color: #008080;
-    selection-color: #FFFFFF;
-}
-etest--app--SettingsDialog QSpinBox:hover {
-    border: 1px solid #007070;
-}
-etest--app--SettingsDialog QSpinBox:focus {
-    border: 2px solid #007070;
-}
-etest--app--SettingsDialog QSpinBox:disabled {
-    color: #4C8181;
-}
-etest--app--SettingsDialog QSpinBox::up-button,
-etest--app--SettingsDialog QSpinBox::down-button {
-    width: 22px;
-    border-left: 1px solid #99CCCC;
-}
-etest--app--SettingsDialog QSpinBox::up-button:hover,
-etest--app--SettingsDialog QSpinBox::down-button:hover {
-    background: rgba(0, 112, 112, 0.2);
-}
-etest--app--SettingsDialog QSpinBox::up-button:pressed,
-etest--app--SettingsDialog QSpinBox::down-button:pressed {
-    background: rgba(0, 112, 112, 0.4);
-}
-etest--app--SettingsDialog QSpinBox::up-arrow,
-etest--app--SettingsDialog QSpinBox::down-arrow {
-    width: 10px;
-    height: 10px;
-}
-etest--app--SettingsDialog QSpinBox::up-arrow {
-    image: url(:/resources/icons/svg/arrow_up_dark.svg);
-}
-etest--app--SettingsDialog QSpinBox::down-arrow {
-    image: url(:/resources/icons/svg/arrow_down_dark.svg);
-}
-
-/* 步骤详情数值控件（紧凑） */
-StepDetailPanel QDoubleSpinBox {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 #BFDFDF,
-                        stop:1 #D8EBEB);
-    border: 1px solid #99CCCC;
-    border-radius: 6px;
-    padding: 2px 20px 2px 6px;
-    min-height: 20px;
-    color: #2A2015;
-    font-size: 12px;
-    selection-background-color: #008080;
-    selection-color: #FFFFFF;
-}
-StepDetailPanel QDoubleSpinBox:hover {
-    border: 1px solid #007070;
-}
-StepDetailPanel QDoubleSpinBox:focus {
-    border: 2px solid #007070;
-}
-StepDetailPanel QDoubleSpinBox:disabled {
-    color: #4C8181;
-}
-StepDetailPanel QDoubleSpinBox::up-button,
-StepDetailPanel QDoubleSpinBox::down-button {
-    width: 18px;
-    border-left: 1px solid #99CCCC;
-}
-StepDetailPanel QDoubleSpinBox::up-button:hover,
-StepDetailPanel QDoubleSpinBox::down-button:hover {
-    background: rgba(0, 112, 112, 0.2);
-}
-StepDetailPanel QDoubleSpinBox::up-button:pressed,
-StepDetailPanel QDoubleSpinBox::down-button:pressed {
-    background: rgba(0, 112, 112, 0.4);
-}
-StepDetailPanel QDoubleSpinBox::up-arrow,
-StepDetailPanel QDoubleSpinBox::down-arrow {
-    width: 9px;
-    height: 9px;
-}
-StepDetailPanel QDoubleSpinBox::up-arrow {
-    image: url(:/resources/icons/svg/arrow_up_dark.svg);
-}
-StepDetailPanel QDoubleSpinBox::down-arrow {
-    image: url(:/resources/icons/svg/arrow_down_dark.svg);
-}
 /* ===== QSpinBox 主题适配样式 END ===== */
 
 /* ===== QComboBox 主题适配样式 START ===== */
@@ -2664,79 +2498,5 @@ QComboBox[frameless="true"]:hover {
 }
 QComboBox[frameless="true"]:focus {
     background: #DBECEC;
-}
-
-/* 设置页下拉框（紧凑） */
-etest--app--SettingsDialog QComboBox {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 #BFDFDF,
-                        stop:1 #D8EBEB);
-    border: 1px solid #99CCCC;
-    border-radius: 6px;
-    padding: 4px 28px 4px 8px;
-    color: #2A2015;
-    font-size: 12px;
-    selection-background-color: #008080;
-    selection-color: #FFFFFF;
-    min-height: 16px;
-}
-etest--app--SettingsDialog QComboBox:hover {
-    border: 1px solid #007070;
-}
-etest--app--SettingsDialog QComboBox:focus {
-    border: 2px solid #007070;
-}
-etest--app--SettingsDialog QComboBox:disabled {
-    color: #4C8181;
-}
-etest--app--SettingsDialog QComboBox::drop-down {
-    width: 24px;
-    border-left: 1px solid #99CCCC;
-}
-etest--app--SettingsDialog QComboBox::drop-down:hover,
-etest--app--SettingsDialog QComboBox::drop-down:pressed {
-    background: rgba(0, 112, 112, 0.2);
-}
-etest--app--SettingsDialog QComboBox::down-arrow {
-    image: url(:/resources/icons/svg/arrow_down_dark.svg);
-    width: 10px;
-    height: 10px;
-}
-
-/* 步骤详情下拉框（紧凑） */
-StepDetailPanel QComboBox {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 #BFDFDF,
-                        stop:1 #D8EBEB);
-    border: 1px solid #99CCCC;
-    border-radius: 6px;
-    padding: 2px 22px 2px 6px;
-    min-height: 20px;
-    color: #2A2015;
-    font-size: 12px;
-    selection-background-color: #008080;
-    selection-color: #FFFFFF;
-}
-StepDetailPanel QComboBox:hover {
-    border: 1px solid #007070;
-}
-StepDetailPanel QComboBox:focus {
-    border: 2px solid #007070;
-}
-StepDetailPanel QComboBox:disabled {
-    color: #4C8181;
-}
-StepDetailPanel QComboBox::drop-down {
-    width: 20px;
-    border-left: 1px solid #99CCCC;
-}
-StepDetailPanel QComboBox::drop-down:hover,
-StepDetailPanel QComboBox::drop-down:pressed {
-    background: rgba(0, 112, 112, 0.2);
-}
-StepDetailPanel QComboBox::down-arrow {
-    image: url(:/resources/icons/svg/arrow_down_dark.svg);
-    width: 9px;
-    height: 9px;
 }
 /* ===== QComboBox 主题适配样式 END ===== */
