@@ -65,7 +65,10 @@ void AnimationDialog::showEvent(QShowEvent* event) {
     setGeometry(mainWindow->geometry());
   } else {
     // 找不到主窗口时，可回退到屏幕尺寸（或保持原状）
-    setGeometry(QApplication::primaryScreen()->availableGeometry());
+    if (nativeParentWidget()) {
+      auto* top = nativeParentWidget()->window();
+      setGeometry(top->geometry());
+    }
   }
 #endif
   actShowAnimation();
