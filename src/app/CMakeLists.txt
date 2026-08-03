@@ -122,6 +122,8 @@ add_executable(${TARGET_NAME} WIN32
     visualizers/StateLEDWidget.cpp
     visualizers/DigitalMeterWidget.h
     visualizers/DigitalMeterWidget.cpp
+    visualizers/GaugeVisualizer.h
+    visualizers/GaugeVisualizer.cpp
     visualizers/VisualizerFactory.h
     visualizers/VisualizerFactory.cpp
     SignalTreePanel.h

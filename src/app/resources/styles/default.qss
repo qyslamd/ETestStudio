@@ -993,7 +993,7 @@ etest--app--EtlogViewerWidget {
 }
 
 /* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget {
+#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget {
     background-color: #FFFFFF;
 }
 
@@ -1028,6 +1028,10 @@ etest--app--EtlogViewerWidget {
 
 /* DigitalMeterWidget */
 #MeterTitle {
+    font-size: 12px;
+    font-weight: bold;
+}
+#GaugeTitle {
     font-size: 12px;
     font-weight: bold;
 }

@@ -1923,7 +1923,7 @@ QToolButton#saverCloseBtn:pressed {
 }
 
 /* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget {
+#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget {
     background-color: #0A0015;
 }
 
@@ -1959,6 +1959,11 @@ QToolButton#saverCloseBtn:pressed {
 
 /* DigitalMeterWidget */
 #MeterTitle {
+    font-size: 12px;
+    font-weight: bold;
+    color: #D0C0E0;
+}
+#GaugeTitle {
     font-size: 12px;
     font-weight: bold;
     color: #D0C0E0;

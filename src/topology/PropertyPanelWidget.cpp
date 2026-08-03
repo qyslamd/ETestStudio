@@ -605,10 +605,12 @@ void PropertyPanelWidget::buildConnectionPage() {
                                        QStringLiteral("waveform"));
   monitor_display_mode_combo_->addItem(QStringLiteral("LED"),
                                        QStringLiteral("led"));
-  monitor_display_mode_combo_->addItem(QStringLiteral("仪表"),
+  monitor_display_mode_combo_->addItem(QStringLiteral("数字表"),
                                        QStringLiteral("meter"));
   monitor_display_mode_combo_->addItem(QStringLiteral("帧数据"),
                                        QStringLiteral("frame"));
+  monitor_display_mode_combo_->addItem(QStringLiteral("指针表"),
+                                       QStringLiteral("gauge"));
   connect(monitor_display_mode_combo_, &QComboBox::currentTextChanged,
           this, &PropertyPanelWidget::onMonitorDisplayModeChanged);
   monForm->addRow(QStringLiteral("显示模式"), monitor_display_mode_combo_);

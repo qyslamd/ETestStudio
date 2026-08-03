@@ -84,7 +84,7 @@ struct TopologyConnection {
 struct TopologyMonitor {
   QString name;
   QString connectionId;           // 引用 TopologyConnection.id
-  QString displayMode = QStringLiteral("waveform");  // waveform/led/meter/frame
+  QString displayMode = QStringLiteral("waveform");  // waveform/led/meter/frame/gauge
 };
 
 class TopologyDocument : public QObject {

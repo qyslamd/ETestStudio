@@ -1,6 +1,7 @@
 #include "VisualizerFactory.h"
 
 #include "DigitalMeterWidget.h"
+#include "GaugeVisualizer.h"
 #include "StateLEDWidget.h"
 #include "ValueLabelWidget.h"
 #include "WaveformWidget.h"
@@ -31,6 +32,9 @@ SignalVisualizer* createVisualizerFor(int monitorIndex,
     }
     if (displayMode == QStringLiteral("frame")) {
       return new ValueLabelWidget(title, parent);
+    }
+    if (displayMode == QStringLiteral("gauge")) {
+      return new GaugeVisualizer(title, parent);
     }
     // 未识别的 displayMode 回退到自动推断
   }
