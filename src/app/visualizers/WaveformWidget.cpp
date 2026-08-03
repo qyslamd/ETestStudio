@@ -20,6 +20,7 @@ WaveformWidget::WaveformWidget(const QString& title, QWidget* parent)
   initUi();
 
   title_label_->setText(title);
+  setSubtitle(QString());  // 默认隐藏副标题
 
   // 设置字体
   QFont titleFont = title_label_->font();
@@ -61,15 +62,33 @@ WaveformWidget::WaveformWidget(const QString& title, QWidget* parent)
   });
 }
 
+void WaveformWidget::setTitle(const QString& title) {
+  title_label_->setText(title);
+}
+
+void WaveformWidget::setSubtitle(const QString& subtitle) {
+  if (subtitle.isEmpty()) {
+    subtitle_label_->hide();
+  } else {
+    subtitle_label_->setText(subtitle);
+    subtitle_label_->show();
+  }
+}
+
 void WaveformWidget::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(4, 4, 4, 4);
   layout->setSpacing(2);
 
-  // 标题
+  // 标题（两级：主标题 + 副标题连接描述，决策 14）
   title_label_ = new QLabel(this);
   title_label_->setObjectName(QStringLiteral("WaveformTitle"));
   layout->addWidget(title_label_);
+
+  subtitle_label_ = new QLabel(this);
+  subtitle_label_->setObjectName(QStringLiteral("WaveformSubtitle"));
+  subtitle_label_->setWordWrap(true);
+  layout->addWidget(subtitle_label_);
 
   // QCustomPlot
   custom_plot_ = new QCustomPlot(this);
@@ -86,10 +105,10 @@ void WaveformWidget::initUi() {
 
 void WaveformWidget::onSampleCaptured(
     const etest::engine::MonitorSample& sample) {
-  int idx = findTraceIndex(sample.monitorIndex);
+  int idx = findTraceIndex(sample.connectionId);
   if (idx < 0) {
-    LOG_DEBUG("WAVEFORM", "丢弃数据: mi={} eng={} (traces_={}, 无对应迹线)",
-              sample.monitorIndex, sample.engValue,
+    LOG_DEBUG("WAVEFORM", "丢弃数据: cid={} eng={} (traces_={}, 无对应迹线)",
+              sample.connectionId.toStdString(), sample.engValue,
               traces_.size());
     return;
   }
@@ -147,11 +166,11 @@ void WaveformWidget::clearData() {
 // displayedSignals — 返回当前所有迹线的标识列表
 // ══════════════════════════════════════════════════════════════════════════════
 
-QList<int> WaveformWidget::displayedSignals() const {
-  QList<int> result;
+QList<QString> WaveformWidget::displayedSignals() const {
+  QList<QString> result;
   result.reserve(traces_.size());
   for (int i = 0; i < traces_.size(); ++i) {
-    result.append(traces_[i].monitorIndex);
+    result.append(traces_[i].connectionId);
   }
   return result;
 }
@@ -160,13 +179,14 @@ QList<int> WaveformWidget::displayedSignals() const {
 // addTrace — 添加新迹线
 // ══════════════════════════════════════════════════════════════════════════════
 
-void WaveformWidget::addTrace(int monitorIndex, const QColor& color) {
-  if (findTraceIndex(monitorIndex) >= 0) {
+void WaveformWidget::addTrace(const QString& connectionId,
+                              const QColor& color) {
+  if (findTraceIndex(connectionId) >= 0) {
     return;
   }
 
   Trace trace;
-  trace.monitorIndex = monitorIndex;
+  trace.connectionId = connectionId;
   trace.color = color;
 
   trace.graph = custom_plot_->addGraph();
@@ -182,9 +202,9 @@ void WaveformWidget::addTrace(int monitorIndex, const QColor& color) {
 // removeTrace — 移除迹线
 // ══════════════════════════════════════════════════════════════════════════════
 
-void WaveformWidget::removeTrace(int monitorIndex) {
+void WaveformWidget::removeTrace(const QString& connectionId) {
   for (int i = 0; i < traces_.size(); ++i) {
-    if (traces_[i].monitorIndex == monitorIndex) {
+    if (traces_[i].connectionId == connectionId) {
       custom_plot_->removeGraph(traces_[i].graph);
       traces_.removeAt(i);
       custom_plot_->replot();
@@ -197,9 +217,9 @@ void WaveformWidget::removeTrace(int monitorIndex) {
 // helper
 // ══════════════════════════════════════════════════════════════════════════════
 
-int WaveformWidget::findTraceIndex(int monitorIndex) const {
+int WaveformWidget::findTraceIndex(const QString& connectionId) const {
   for (int i = 0; i < traces_.size(); ++i) {
-    if (traces_[i].monitorIndex == monitorIndex) {
+    if (traces_[i].connectionId == connectionId) {
       return i;
     }
   }

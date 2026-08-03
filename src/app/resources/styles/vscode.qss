@@ -1922,6 +1922,44 @@ QToolButton#saverCloseBtn:pressed {
     border-radius: 2px;
 }
 
+/* 两级标题：二级标题（连接描述）小字灰 */
+#WaveformSubtitle, #LEDSubtitle, #MeterSubtitle, #GaugeSubtitle, #ValueLabelSubtitle {
+    font-size: 10px;
+    color: #808080;
+}
+
+/* 监听器配置对话框（MonitorConfigDialog） */
+#MonitorConfigSearch {
+    padding: 4px 6px;
+    border: 1px solid #3C3C3C;
+    border-radius: 3px;
+}
+#MonitorConfigList {
+    border: 1px solid #3C3C3C;
+    border-radius: 3px;
+    background-color: #252526;
+}
+#MonitorConfigRight {
+    border: 1px solid #3C3C3C;
+    border-radius: 3px;
+    background-color: #1E1E1E;
+}
+#MonitorConfigDelete {
+    padding: 4px 12px;
+}
+#MonitorTypeTile {
+    background-color: #252526;
+    border: 1px solid #3C3C3C;
+    border-radius: 4px;
+}
+#MonitorTypeTile:hover {
+    border-color: #555555;
+}
+#MonitorTypeTile[selected="true"] {
+    border: 2px solid #007ACC;
+    background-color: #1F2E3F;
+}
+
 /* Visualizer 容器背景 */
 #ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget {
     background-color: #1E1E1E;

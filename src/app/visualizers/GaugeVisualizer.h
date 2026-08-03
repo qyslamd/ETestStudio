@@ -111,16 +111,20 @@ class GaugeVisualizer : public SignalVisualizer {
 
   void onSampleCaptured(const etest::engine::MonitorSample& sample) override;
   void clearData() override;
-  QList<int> displayedSignals() const override;
+  QList<QString> displayedSignals() const override;
+
+  void setTitle(const QString& title) override;
+  void setSubtitle(const QString& subtitle) override;
 
  private:
   void initUi();
 
   QString title_;
   QLabel* title_label_ = nullptr;
+  QLabel* subtitle_label_ = nullptr;
   GaugeCanvas* canvas_ = nullptr;
 
-  int monitor_index_ = -1;
+  QString connection_id_;
 };
 
 }  // namespace etest::app

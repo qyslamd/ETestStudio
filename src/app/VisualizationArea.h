@@ -18,19 +18,19 @@ class VisualizationArea : public QGraphicsView {
   explicit VisualizationArea(QWidget* parent = nullptr);
   ~VisualizationArea() override;
 
-  void addVisualizer(int monitorIndex,
+  void addVisualizer(const QString& connectionId,
                      SignalVisualizer* visualizer);
-  void removeVisualizer(int monitorIndex);
+  void removeVisualizer(const QString& connectionId);
 
-  SignalVisualizer* visualizer(int monitorIndex) const;
+  SignalVisualizer* visualizer(const QString& connectionId) const;
 
   void clearAll();
   int visualizerCount() const { return items_.size(); }
 
-  QList<int> activeChannels() const;
+  QList<QString> activeChannels() const;
 
  signals:
-  void visualizerClosed(int monitorIndex);
+  void visualizerClosed(const QString& connectionId);
 
  protected:
   void resizeEvent(QResizeEvent* event) override;
@@ -45,7 +45,7 @@ class VisualizationArea : public QGraphicsView {
   };
 
   QGraphicsScene* scene_ = nullptr;
-  QHash<int, Item> items_;
+  QHash<QString, Item> items_;
 };
 
 }  // namespace etest::app

@@ -227,18 +227,6 @@ void TopologyManagerWidget::addPreviewNodes(QTreeWidgetItem* fileItem,
     }
   }
 
-  // ── Monitors ──
-  QJsonArray monitors = root[QStringLiteral("monitors")].toArray();
-  for (const auto& val : monitors) {
-    QJsonObject mObj = val.toObject();
-    QString name = mObj[QStringLiteral("name")].toString();
-    QString devType = mObj[QStringLiteral("deviceType")].toString();
-    int ch = mObj[QStringLiteral("channelCount")].toInt(1);
-    auto* child = new QTreeWidgetItem(fileItem);
-    child->setText(
-        0, QStringLiteral("监视: %1 (%2, %3CH)").arg(name, devType).arg(ch));
-  }
-
   // ── Connections ──
   QJsonArray conns = root[QStringLiteral("connections")].toArray();
   for (const auto& val : conns) {
@@ -391,7 +379,6 @@ void TopologyManagerWidget::onNewTopology() {
   root[QStringLiteral("products")] = QJsonArray();
   root[QStringLiteral("devices")] = QJsonArray();
   root[QStringLiteral("connections")] = QJsonArray();
-  root[QStringLiteral("monitors")] = QJsonArray();
 
   QFile file(filePath);
   if (!file.open(QIODevice::WriteOnly)) {

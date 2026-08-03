@@ -8,11 +8,12 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QPointer>
+#include <QSet>
 #include <QStackedWidget>
 #include <QWidget>
 #include "ExecutionDashboard.h"
 #include "VisualizationArea.h"
-#include "dialogs/ChannelSelectionDialog.h"
+#include "dialogs/MonitorConfigDialog.h"
 #include "engine/MonitorManager.h"
 #include "visualizers/SignalVisualizer.h"
 #include "visualizers/VisualizerFactory.h"
@@ -467,6 +468,7 @@ void ExecutionPanelController::syncProjectTopologies() {
       return;
     }
     topo_mtime_ = current_mtime;
+    loadProjectMonitors();
     refreshMonitorTree();
     return;
   }
@@ -478,7 +480,7 @@ void ExecutionPanelController::syncProjectTopologies() {
 
   // ── mtime 变了：全量重建 ──
   // clearMonitorState() 仍在 loadTopology 之前调用：loadTopology 有多个早返回路径
-  // （文件损坏、JSON 解析失败等）不会到达 loadFromTopology，此时 monitor 需已是干净状态
+  // （文件损坏、JSON 解析失败等）不会继续；监听器由 loadProjectMonitors 从 .etproj 加载
   engine_->clearTopologyState();
   clearMonitorState();
   bool ok = engine_->loadTopology(topo_path);
@@ -488,7 +490,34 @@ void ExecutionPanelController::syncProjectTopologies() {
     return;
   }
   topo_mtime_ = current_mtime;
+  loadProjectMonitors();
   refreshMonitorTree();
+
+  // ── 决策 13：拓扑重载后自动重订阅 ──
+  // loadProjectMonitors 已清空 subscribers_，此处对仍活跃的可视化组件重新订阅；
+  // 失效监听器（连接已删）移除对应可视化（决策 6：可见可处理，不静默）。
+  auto* visArea = dashboard_ ? dashboard_->visualizationArea() : nullptr;
+  if (visArea) {
+    QSet<QString> invalid;
+    const auto tree = mm->monitorTree();
+    for (const auto& entry : tree) {
+      if (entry.invalid) {
+        invalid.insert(entry.connectionId);
+      }
+    }
+    const QList<QString> channels = visArea->activeChannels();
+    for (const QString& cid : channels) {
+      if (invalid.contains(cid)) {
+        mm->unsubscribe(cid);
+        visArea->removeVisualizer(cid);
+        continue;
+      }
+      SignalVisualizer* vis = visArea->visualizer(cid);
+      if (vis) {
+        subscribeVisualizer(cid, vis);
+      }
+    }
+  }
 }
 
 void ExecutionPanelController::run() {
@@ -933,11 +962,18 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
             [this](NavTarget target) { emit navigateRequested(target); });
   }
 
-  // ── 可视化区右键关闭 → 同步取消勾选信号树 ──
+  // ── 可视化区右键关闭 → 取消订阅 + 同步对话框 checkbox（取消勾选） ──
+  // setChecked 用 QSignalBlocker 不会回触发 checkToggled，故这里必须补 unsubscribe，
+  // 否则订阅回调残留在 subscribers_（审查 🟡B）。
   connect(dashboard_->visualizationArea(), &VisualizationArea::visualizerClosed,
-          this, [this](int monitorIndex) {
-            if (channel_dialog_)
-              channel_dialog_->uncheckMonitor(monitorIndex);
+          this, [this](const QString& connectionId) {
+            if (monitor_manager_) {
+              monitor_manager_->unsubscribe(connectionId);
+            }
+            if (channel_dialog_ && dashboard_) {
+              channel_dialog_->setChecked(
+                  dashboard_->visualizationArea()->activeChannels());
+            }
           });
 
   // ── 如果引擎已就绪，立即加载监听器树 ──
@@ -949,10 +985,11 @@ void ExecutionPanelController::refreshMonitorTree() {
   if (!mm || !channel_dialog_) {
     return;
   }
-  channel_dialog_->setMonitorTree(
-      mm->monitorTree(),
+  channel_dialog_->setConnections(buildConnectionList());
+  channel_dialog_->setMonitors(mm->monitorTree());
+  channel_dialog_->setChecked(
       dashboard_ ? dashboard_->visualizationArea()->activeChannels()
-                 : QList<int>());
+                 : QList<QString>());
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -964,9 +1001,9 @@ void ExecutionPanelController::clearData() {
     return;
   }
   auto* visArea = dashboard_->visualizationArea();
-  QList<int> channels = visArea->activeChannels();
-  for (int mi : channels) {
-    SignalVisualizer* vis = visArea->visualizer(mi);
+  QList<QString> channels = visArea->activeChannels();
+  for (const QString& cid : channels) {
+    SignalVisualizer* vis = visArea->visualizer(cid);
     if (vis) {
       vis->clearData();
     }
@@ -989,12 +1026,12 @@ void ExecutionPanelController::clearData() {
 void ExecutionPanelController::clearProjectState() {
   // 清理 UI
   if (dashboard_) {
-    // 先清可视化组件（clearAll 发射 visualizerClosed → uncheckChannel 回调需
-    // node_map_ 有效）
+    // 先清可视化组件（clearAll 发射 visualizerClosed → setChecked 同步勾选态）
     dashboard_->visualizationArea()->clearAll();
-    // 再清树
-    if (channel_dialog_)
-      channel_dialog_->clearTree();
+  }
+  // 非模态对话框随项目关闭隐藏（决策 18：不常驻）
+  if (channel_dialog_) {
+    channel_dialog_->close();
   }
   // 清理 MonitorManager 结构与运行时数据（项目切换时避免残留）
   clearMonitorState();
@@ -1004,56 +1041,351 @@ void ExecutionPanelController::clearProjectState() {
 
 void ExecutionPanelController::showChannelSelectionDialog() {
   if (!channel_dialog_) {
-    channel_dialog_ = new ChannelSelectionDialog(parent_widget_);
-    connect(channel_dialog_, &ChannelSelectionDialog::checkStateChanged, this,
-            &ExecutionPanelController::onChannelCheckStateChanged);
+    channel_dialog_ = new MonitorConfigDialog(parent_widget_);
+    connect(channel_dialog_, &MonitorConfigDialog::channelSelected, this,
+            &ExecutionPanelController::onChannelSelected);
+    connect(channel_dialog_, &MonitorConfigDialog::visualizerChosen, this,
+            &ExecutionPanelController::onVisualizerChosen);
+    connect(channel_dialog_, &MonitorConfigDialog::checkToggled, this,
+            &ExecutionPanelController::onCheckToggled);
+    connect(channel_dialog_, &MonitorConfigDialog::renameRequested, this,
+            &ExecutionPanelController::onRenameRequested);
+    connect(channel_dialog_, &MonitorConfigDialog::deleteRequested, this,
+            &ExecutionPanelController::onDeleteRequested);
     refreshMonitorTree();
   }
-  channel_dialog_->exec();
+  // 决策 18：非模态，与执行页并存，配置后立即看到可视化区变化
+  channel_dialog_->show();
+  channel_dialog_->raise();
+  channel_dialog_->activateWindow();
 }
 
-void ExecutionPanelController::onChannelCheckStateChanged(int monitorIndex,
-                                                          bool checked) {
-  LOG_INFO("VISUAL", "checkStateChanged monitorIndex={} checked={}",
-           monitorIndex, checked);
-  auto* monitorMgr = monitor_manager_;
-  if (!monitorMgr) {
+void ExecutionPanelController::onChannelSelected(const QString& connectionId) {
+  LOG_DEBUG("VISUAL", "channelSelected connectionId={}",
+            connectionId.toStdString());
+}
+
+void ExecutionPanelController::onVisualizerChosen(
+    const QString& connectionId, const QString& displayMode) {
+  LOG_INFO("VISUAL", "visualizerChosen cid={} mode={}",
+           connectionId.toStdString(), displayMode.toStdString());
+  auto* mm = monitor_manager_;
+  if (!mm || !engine_) {
+    return;
+  }
+  if (connectionId.isEmpty() || displayMode.isEmpty()) {
+    return;
+  }
+
+  // 已有监听器 → 改 displayMode（决策 15：点类型 = 切换）
+  bool existing = false;
+  bool invalid = false;
+  for (const auto& entry : mm->monitorTree()) {
+    if (entry.connectionId == connectionId) {
+      existing = true;
+      invalid = entry.invalid;
+      break;
+    }
+  }
+  if (existing) {
+    if (invalid) {
+      return;  // 失效监听器仅可删除（决策 6/17）
+    }
+    if (mm->setDisplayMode(connectionId, displayMode)) {
+      rebuildVisualizer(connectionId, displayMode);
+      syncProjectMonitorsToFile();
+      refreshMonitorTree();
+    }
+    return;
+  }
+
+  // 无 → 新建（创建即所见），key = connectionId（一连接一监听器，决策 17）
+  QString deviceId;
+  QString devicePort;
+  QString deviceType;
+  if (!resolveConnection(connectionId, &deviceId, &devicePort, &deviceType)) {
+    LOG_WARN("VISUAL", "无法解析连接 {} 的设备信息，忽略创建",
+             connectionId.toStdString());
+    return;
+  }
+  etest::engine::MonitorConfig config;
+  config.connectionId = connectionId;
+  config.name = connectionDescription(connectionId);
+  config.displayMode = displayMode;
+  if (!mm->addMonitor(config, deviceId, devicePort, deviceType)) {
+    LOG_WARN("VISUAL", "addMonitor 失败 cid={} mode={}",
+             connectionId.toStdString(), displayMode.toStdString());
+    return;
+  }
+  createAndShowVisualizer(connectionId, displayMode);
+  syncProjectMonitorsToFile();
+  refreshMonitorTree();
+}
+
+void ExecutionPanelController::onCheckToggled(const QString& connectionId,
+                                              bool checked) {
+  LOG_INFO("VISUAL", "checkToggled connectionId={} checked={}",
+           connectionId.toStdString(), checked);
+  auto* mm = monitor_manager_;
+  if (!mm) {
     return;
   }
   if (checked) {
-    QString mode = monitorMgr->displayMode(monitorIndex);
+    const QString mode = mm->displayMode(connectionId);
     if (mode.isEmpty()) {
-      mode = QStringLiteral("auto");
+      return;  // 未配置监听器的连接不会出现 checkbox，防御性返回
     }
-    auto* vis = createVisualizerFor(monitorIndex, mode, QString(),
-                                    QStringLiteral("Monitor %1").arg(monitorIndex),
-                                    nullptr);
-    if (vis) {
-      LOG_INFO("ENGINE", "创建可视化 monitorIndex={} mode={} type={}",
-               monitorIndex, mode.toStdString(),
-               vis->metaObject()->className());
-      if (auto* wave = qobject_cast<WaveformWidget*>(vis)) {
-        static const QColor kColors[] = {
-            QColor(0, 120, 215),  QColor(229, 57, 53),
-            QColor(67, 160, 71),  QColor(255, 152, 0),
-            QColor(156, 39, 176), QColor(0, 151, 167),
-            QColor(121, 85, 72),  QColor(158, 158, 158)};
-        wave->addTrace(monitorIndex, kColors[monitorIndex % 8]);
-      }
-      QPointer<SignalVisualizer> visGuard(vis);
-      monitorMgr->subscribe(
-          monitorIndex,
-          [visGuard](const etest::engine::MonitorSample& s) {
-            if (visGuard) {
-              visGuard->onSampleCaptured(s);
-            }
-          });
-      dashboard_->visualizationArea()->addVisualizer(monitorIndex, vis);
-    }
+    createAndShowVisualizer(connectionId, mode);
   } else {
-    monitorMgr->unsubscribe(monitorIndex);
-    dashboard_->visualizationArea()->removeVisualizer(monitorIndex);
+    if (dashboard_) {
+      dashboard_->visualizationArea()->removeVisualizer(connectionId);
+    }
+    mm->unsubscribe(connectionId);
   }
+}
+
+void ExecutionPanelController::onRenameRequested(const QString& connectionId,
+                                                 const QString& name) {
+  auto* mm = monitor_manager_;
+  if (!mm) {
+    return;
+  }
+  if (!mm->renameMonitor(connectionId, name)) {
+    return;
+  }
+  // 同步可视化主标题（决策 14 两级标题）
+  if (dashboard_) {
+    SignalVisualizer* vis =
+        dashboard_->visualizationArea()->visualizer(connectionId);
+    if (vis) {
+      vis->setTitle(name);
+    }
+  }
+  syncProjectMonitorsToFile();
+  refreshMonitorTree();
+}
+
+void ExecutionPanelController::onDeleteRequested(const QString& connectionId) {
+  auto* mm = monitor_manager_;
+  if (!mm) {
+    return;
+  }
+  if (!mm->removeMonitor(connectionId)) {
+    return;
+  }
+  if (dashboard_) {
+    dashboard_->visualizationArea()->removeVisualizer(connectionId);
+  }
+  syncProjectMonitorsToFile();
+  refreshMonitorTree();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// createAndShowVisualizer — 创建可视化 + 订阅 + 加入可视化区（创建即所见）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::createAndShowVisualizer(
+    const QString& connectionId, const QString& displayMode) {
+  auto* visArea = dashboard_ ? dashboard_->visualizationArea() : nullptr;
+  if (!visArea || !monitor_manager_) {
+    return;
+  }
+  if (visArea->visualizer(connectionId)) {
+    return;  // 已显示
+  }
+  QString name = connectionDescription(connectionId);
+  for (const auto& entry : monitor_manager_->monitorTree()) {
+    if (entry.connectionId == connectionId) {
+      name = entry.name;
+      break;
+    }
+  }
+  SignalVisualizer* vis =
+      createVisualizerFor(connectionId, displayMode, QString(), name, nullptr);
+  if (!vis) {
+    return;
+  }
+  if (auto* wave = qobject_cast<WaveformWidget*>(vis)) {
+    static const QColor kColors[] = {
+        QColor(0, 120, 215),  QColor(229, 57, 53),
+        QColor(67, 160, 71),  QColor(255, 152, 0),
+        QColor(156, 39, 176), QColor(0, 151, 167),
+        QColor(121, 85, 72),  QColor(158, 158, 158)};
+    wave->addTrace(connectionId, kColors[qHash(connectionId) % 8]);
+  }
+  // 二级标题 = 连接描述（决策 14）
+  vis->setSubtitle(connectionDescription(connectionId));
+  LOG_INFO("ENGINE", "创建可视化 connectionId={} mode={} type={}",
+           connectionId.toStdString(), displayMode.toStdString(),
+           vis->metaObject()->className());
+  subscribeVisualizer(connectionId, vis);
+  visArea->addVisualizer(connectionId, vis);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// rebuildVisualizer — 按新模式重建可视化（先撤旧、再建新）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::rebuildVisualizer(const QString& connectionId,
+                                                 const QString& displayMode) {
+  auto* visArea = dashboard_ ? dashboard_->visualizationArea() : nullptr;
+  if (!visArea) {
+    return;
+  }
+  if (visArea->visualizer(connectionId)) {
+    if (monitor_manager_) {
+      monitor_manager_->unsubscribe(connectionId);
+    }
+    visArea->removeVisualizer(connectionId);
+  }
+  createAndShowVisualizer(connectionId, displayMode);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 连接信息工具（由拓扑 JSON 解析，供对话框列表 / 监听器创建）
+// ══════════════════════════════════════════════════════════════════════════════
+
+QList<QPair<QString, QString>> ExecutionPanelController::buildConnectionList()
+    const {
+  QList<QPair<QString, QString>> result;
+  if (!engine_) {
+    return result;
+  }
+  const QJsonObject& topo = engine_->topologyDoc();
+  const QJsonArray connsArr =
+      topo.value(QStringLiteral("connections")).toArray();
+  for (const auto& cv : connsArr) {
+    const QJsonObject cobj = cv.toObject();
+    const QString cid = cobj.value(QStringLiteral("id")).toString();
+    if (cid.isEmpty()) {
+      continue;
+    }
+    const QString device = cobj.value(QStringLiteral("device")).toString();
+    const QString devicePort =
+        cobj.value(QStringLiteral("devicePort")).toString();
+    const QString uutPort = cobj.value(QStringLiteral("port")).toString();
+    const QString desc = QStringLiteral("%1.%2 ↔ %3")
+                             .arg(device, devicePort, uutPort);
+    result.append(qMakePair(cid, desc));
+  }
+  return result;
+}
+
+bool ExecutionPanelController::resolveConnection(const QString& connectionId,
+                                                 QString* deviceId,
+                                                 QString* devicePort,
+                                                 QString* deviceType) const {
+  if (!engine_ || !deviceId || !devicePort || !deviceType) {
+    return false;
+  }
+  const QJsonObject& topo = engine_->topologyDoc();
+  QString deviceName;
+  const QJsonArray connsArr =
+      topo.value(QStringLiteral("connections")).toArray();
+  for (const auto& cv : connsArr) {
+    const QJsonObject cobj = cv.toObject();
+    if (cobj.value(QStringLiteral("id")).toString() == connectionId) {
+      deviceName = cobj.value(QStringLiteral("device")).toString();
+      *devicePort = cobj.value(QStringLiteral("devicePort")).toString();
+      break;
+    }
+  }
+  if (deviceName.isEmpty()) {
+    return false;
+  }
+  const QJsonArray devicesArr =
+      topo.value(QStringLiteral("devices")).toArray();
+  for (const auto& dv : devicesArr) {
+    const QJsonObject dobj = dv.toObject();
+    if (dobj.value(QStringLiteral("name")).toString() == deviceName) {
+      *deviceId = dobj.value(QStringLiteral("id")).toString();
+      *deviceType = dobj.value(QStringLiteral("deviceType")).toString();
+      return !deviceId->isEmpty();
+    }
+  }
+  return false;
+}
+
+QString ExecutionPanelController::connectionDescription(
+    const QString& connectionId) const {
+  if (!engine_) {
+    return connectionId;
+  }
+  const QJsonObject& topo = engine_->topologyDoc();
+  const QJsonArray connsArr =
+      topo.value(QStringLiteral("connections")).toArray();
+  for (const auto& cv : connsArr) {
+    const QJsonObject cobj = cv.toObject();
+    if (cobj.value(QStringLiteral("id")).toString() == connectionId) {
+      return QStringLiteral("%1.%2 ↔ %3")
+          .arg(cobj.value(QStringLiteral("device")).toString(),
+               cobj.value(QStringLiteral("devicePort")).toString(),
+               cobj.value(QStringLiteral("port")).toString());
+    }
+  }
+  return connectionId;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// syncProjectMonitorsToFile — 当前监听器数组写回 .etproj（决策 5）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::syncProjectMonitorsToFile() {
+  auto* mm = monitor_manager_;
+  if (!mm) {
+    return;
+  }
+  QJsonArray arr;
+  for (const auto& entry : mm->monitorTree()) {
+    QJsonObject obj;
+    obj[QStringLiteral("connectionId")] = entry.connectionId;
+    obj[QStringLiteral("name")] = entry.name;
+    obj[QStringLiteral("displayMode")] = entry.displayMode;
+    arr.append(obj);
+  }
+  const bool ok =
+      etest::core::project::ProjectManager::instance().setMonitors(arr);
+  if (!ok) {
+    LOG_WARN("VISUAL", "写回监听器到 .etproj 失败");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// subscribeVisualizer — 将监听器订阅到某个可视化组件（勾选和拓扑重载重订阅复用）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::subscribeVisualizer(
+    const QString& connectionId, SignalVisualizer* vis) {
+  if (!vis || !monitor_manager_) {
+    return;
+  }
+  QPointer<SignalVisualizer> visGuard(vis);
+  monitor_manager_->subscribe(
+      connectionId,
+      [visGuard](const etest::engine::MonitorSample& s) {
+        if (visGuard) {
+          visGuard->onSampleCaptured(s);
+        }
+      });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// loadProjectMonitors — 从 .etproj 监听器数组 + 引擎拓扑 JSON 重建监听器（幂等）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::loadProjectMonitors() {
+  if (!monitor_manager_ || !engine_) {
+    return;
+  }
+  auto& proj_mgr = etest::core::project::ProjectManager::instance();
+  if (!proj_mgr.isProjectOpen()) {
+    return;
+  }
+  const auto* project = proj_mgr.currentProject();
+  if (!project) {
+    return;
+  }
+  monitor_manager_->loadMonitors(project->monitors(), engine_->topologyDoc());
 }
 
 }  // namespace etest::app

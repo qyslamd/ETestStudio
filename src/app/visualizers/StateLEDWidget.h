@@ -24,19 +24,24 @@ class StateLEDWidget : public SignalVisualizer {
 
   void onSampleCaptured(const etest::engine::MonitorSample& sample) override;
   void clearData() override;
-  QList<int> displayedSignals() const override;
+  QList<QString> displayedSignals() const override;
+
+  void setTitle(const QString& title) override;
+  void setSubtitle(const QString& subtitle) override;
 
  private:
   void initUi();
   void updateLED(bool on);
 
   QString title_;
+  QLabel* title_label_ = nullptr;     // 主标题
+  QLabel* subtitle_label_ = nullptr;  // 副标题（连接描述）
   QLabel* led_label_ = nullptr;       // LED 圆点（用 QLabel 背景圆角模拟）
   QLabel* state_label_ = nullptr;     // "ON" / "OFF"
   QLabel* pulse_label_ = nullptr;     // "脉冲: 123"
   QLabel* ts_label_ = nullptr;        // 最后变化时间
 
-  int monitor_index_ = -1;
+  QString connection_id_;
   bool previous_on_ = false;
   int pulse_count_ = 0;
   QDateTime last_change_ts_;

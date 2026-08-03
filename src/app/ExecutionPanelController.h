@@ -5,6 +5,7 @@
 #include <QHash>
 #include <QList>
 #include <QObject>
+#include <QPair>
 #include <QString>
 #include <QStringList>
 
@@ -18,13 +19,14 @@ class QWidget;
 namespace etest::app {
 
 class AppStatusBarController;
-class ChannelSelectionDialog;
+class MonitorConfigDialog;
 class EditorManager;
 class ExecutionDebugWidget;
 class ExecutionOutputPanel;
 class TestProgramManagerWidget;
 class ExecutionDashboard;
 class ProgramSelectionPopup;
+class SignalVisualizer;
 
 }  // namespace etest::app
 
@@ -114,7 +116,7 @@ class ExecutionPanelController : public QObject {
   // 通道选择 action（供 MainWindow 放入 ribbon）
   QAction* selectChannelsAction() const { return act_select_channels_; }
 
-  /// 弹出通道选择 Modal Dialog
+  /// 弹出监听器配置 Dialog（非模态，决策 18）
   void showChannelSelectionDialog();
 
   // 清空数据按钮（供 MainWindow 放入 ribbon）
@@ -138,8 +140,38 @@ class ExecutionPanelController : public QObject {
   /// 运行前检测未保存文件并提示，返回 true 表示可以继续
   bool checkUnsavedAndPrompt(const QStringList& paths) const;
 
-  /// 通道选择 Dialog 勾选变化 → 创建/移除可视化组件 + 订阅/取消订阅
-  void onChannelCheckStateChanged(int monitorIndex, bool checked);
+  /// 左栏选中某连接（右栏高亮由对话框内部处理，此处仅日志）
+  void onChannelSelected(const QString& connectionId);
+  /// 右栏点类型：已有监听器 → 改 displayMode；无 → 新建（创建即所见）并写回
+  void onVisualizerChosen(const QString& connectionId,
+                          const QString& displayMode);
+  /// checkbox 勾选变化 → 订阅/取消订阅 + 建/撤可视化（不写回，会话内状态）
+  void onCheckToggled(const QString& connectionId, bool checked);
+  /// 双击已配置通道重命名主标题 → 同步可视化标题并写回
+  void onRenameRequested(const QString& connectionId, const QString& name);
+  /// 删除监听器（含失效）→ 撤可视化并写回
+  void onDeleteRequested(const QString& connectionId);
+
+  /// 将监听器订阅到某个可视化组件（勾选和拓扑重载重订阅复用）
+  void subscribeVisualizer(const QString& connectionId,
+                           SignalVisualizer* vis);
+  /// 从 .etproj 监听器数组 + 引擎拓扑 JSON 重建监听器（幂等）
+  void loadProjectMonitors();
+  /// 当前监听器数组写回 .etproj（决策 5：增删改即写回）
+  void syncProjectMonitorsToFile();
+  /// 由拓扑 JSON 构建连接列表（connectionId → device.port ↔ UUT.port 描述）
+  QList<QPair<QString, QString>> buildConnectionList() const;
+  /// 解析连接对应的设备信息（deviceId/devicePort/deviceType），供 addMonitor
+  bool resolveConnection(const QString& connectionId, QString* deviceId,
+                         QString* devicePort, QString* deviceType) const;
+  /// 连接描述（供监听器默认主标题 / 可视化副标题）
+  QString connectionDescription(const QString& connectionId) const;
+  /// 创建可视化 + 订阅 + 加入可视化区（创建即所见；已显示则跳过）
+  void createAndShowVisualizer(const QString& connectionId,
+                               const QString& displayMode);
+  /// 重建可视化：按新模式替换（先撤旧、再建新）
+  void rebuildVisualizer(const QString& connectionId,
+                         const QString& displayMode);
 
   /// 合并多个测试程序为单个 ProgramData，记录各程序的 case 范围
   etest::engine::ProgramData mergePrograms(const QStringList& paths,
@@ -192,8 +224,8 @@ class ExecutionPanelController : public QObject {
   ExecutionDashboard* dashboard_ = nullptr;
   ProgramSelectionPopup* popup_ = nullptr;
 
-  // 通道选择 Dialog（懒创建并复用，见 showChannelSelectionDialog）
-  ChannelSelectionDialog* channel_dialog_ = nullptr;
+  // 监听器配置 Dialog（懒创建并复用，非模态；见 showChannelSelectionDialog）
+  MonitorConfigDialog* channel_dialog_ = nullptr;
 
   // MonitorManager（由 controller 持有，跨引擎重建保持；注入到引擎使用）
   etest::engine::MonitorManager* monitor_manager_ = nullptr;

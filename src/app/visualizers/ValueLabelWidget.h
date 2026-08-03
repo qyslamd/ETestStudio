@@ -23,16 +23,21 @@ class ValueLabelWidget : public SignalVisualizer {
 
   void onSampleCaptured(const etest::engine::MonitorSample& sample) override;
   void clearData() override;
-  QList<int> displayedSignals() const override;
+  QList<QString> displayedSignals() const override;
+
+  void setTitle(const QString& title) override;
+  void setSubtitle(const QString& subtitle) override;
 
  private:
   void initUi();
 
   QString title_;
+  QLabel* title_label_ = nullptr;    // 主标题
+  QLabel* subtitle_label_ = nullptr; // 副标题（连接描述）
   QLabel* value_label_ = nullptr;    // 工程值大字体
   QLabel* raw_label_ = nullptr;      // 原始值
   QLabel* ts_label_ = nullptr;       // 最后采样时间
-  int monitor_index_ = -1;
+  QString connection_id_;
 };
 
 }  // namespace etest::app

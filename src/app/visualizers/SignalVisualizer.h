@@ -31,8 +31,13 @@ class SignalVisualizer : public QWidget {
   // ── 清空所有数据（如运行停止或重新开始） ──
   virtual void clearData() = 0;
 
-  // ── 返回当前展示的信号标识列表（monitorIndex 列表） ──
-  virtual QList<int> displayedSignals() const = 0;
+  // ── 返回当前展示的信号标识列表（connectionId 列表） ──
+  virtual QList<QString> displayedSignals() const = 0;
+
+  // ── 两级标题（决策 14）：主标题 = 监听器名，副标题 = 连接描述 ──
+  // 默认空实现；子类覆盖以更新各自标题标签。
+  virtual void setTitle(const QString& title) { Q_UNUSED(title) }
+  virtual void setSubtitle(const QString& subtitle) { Q_UNUSED(subtitle) }
 };
 
 }  // namespace etest::app

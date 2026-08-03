@@ -13,6 +13,20 @@ namespace etest::app {
 DigitalMeterWidget::DigitalMeterWidget(const QString& title, QWidget* parent)
     : SignalVisualizer(parent), title_(title) {
   initUi();
+  setSubtitle(QString());  // 默认隐藏副标题
+}
+
+void DigitalMeterWidget::setTitle(const QString& title) {
+  title_label_->setText(title);
+}
+
+void DigitalMeterWidget::setSubtitle(const QString& subtitle) {
+  if (subtitle.isEmpty()) {
+    subtitle_label_->hide();
+  } else {
+    subtitle_label_->setText(subtitle);
+    subtitle_label_->show();
+  }
 }
 
 void DigitalMeterWidget::initUi() {
@@ -20,10 +34,15 @@ void DigitalMeterWidget::initUi() {
   layout->setContentsMargins(8, 8, 8, 8);
   layout->setSpacing(2);
 
-  // 标题
+  // 标题（两级：主标题 + 副标题连接描述，决策 14）
   title_label_ = new QLabel(title_, this);
   title_label_->setObjectName(QStringLiteral("MeterTitle"));
   layout->addWidget(title_label_);
+
+  subtitle_label_ = new QLabel(this);
+  subtitle_label_->setObjectName(QStringLiteral("MeterSubtitle"));
+  subtitle_label_->setWordWrap(true);
+  layout->addWidget(subtitle_label_);
 
   // 工程值（大字体）
   value_label_ = new QLabel(QStringLiteral("--"), this);
@@ -64,7 +83,7 @@ void DigitalMeterWidget::initUi() {
 
 void DigitalMeterWidget::onSampleCaptured(
     const etest::engine::MonitorSample& sample) {
-  monitor_index_ = sample.monitorIndex;
+  connection_id_ = sample.connectionId;
   previous_value_ = current_value_;
   current_value_ = sample.engValue;
 
@@ -135,7 +154,7 @@ void DigitalMeterWidget::clearData() {
   raw_label_->setText(QStringLiteral("原始: --"));
   ts_label_->setText(QString());
 
-  monitor_index_ = -1;
+  connection_id_.clear();
   current_value_ = 0.0;
   previous_value_ = 0.0;
   min_value_ = 0.0;
@@ -147,9 +166,9 @@ void DigitalMeterWidget::clearData() {
 // displayedSignals
 // ══════════════════════════════════════════════════════════════════════════════
 
-QList<int> DigitalMeterWidget::displayedSignals() const {
-  if (monitor_index_ >= 0) {
-    return {monitor_index_};
+QList<QString> DigitalMeterWidget::displayedSignals() const {
+  if (!connection_id_.isEmpty()) {
+    return {connection_id_};
   }
   return {};
 }

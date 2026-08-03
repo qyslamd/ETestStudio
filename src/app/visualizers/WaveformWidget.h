@@ -20,17 +20,20 @@ class WaveformWidget : public SignalVisualizer {
 
   void onSampleCaptured(const etest::engine::MonitorSample& sample) override;
   void clearData() override;
-  QList<int> displayedSignals() const override;
+  QList<QString> displayedSignals() const override;
 
-  void addTrace(int monitorIndex, const QColor& color);
-  void removeTrace(int monitorIndex);
+  void setTitle(const QString& title) override;
+  void setSubtitle(const QString& subtitle) override;
+
+  void addTrace(const QString& connectionId, const QColor& color);
+  void removeTrace(const QString& connectionId);
 
   void setTimeWindow(double seconds) { time_window_ = qMax(1.0, seconds); }
   double timeWindow() const { return time_window_; }
 
  private:
   struct Trace {
-    int monitorIndex = -1;
+    QString connectionId;
     QColor color;
     QCPGraph* graph = nullptr;
     QVector<double> keys;
@@ -39,10 +42,11 @@ class WaveformWidget : public SignalVisualizer {
 
   void initUi();
   void applyTheme();
-  int findTraceIndex(int monitorIndex) const;
+  int findTraceIndex(const QString& connectionId) const;
   void updateAxes();
 
   QLabel* title_label_ = nullptr;
+  QLabel* subtitle_label_ = nullptr;
   QCustomPlot* custom_plot_ = nullptr;
   QList<Trace> traces_;
   double time_window_ = 30.0;

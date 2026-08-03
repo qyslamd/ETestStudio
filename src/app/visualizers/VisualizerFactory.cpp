@@ -12,12 +12,12 @@ namespace etest::app {
 // createVisualizerFor
 // ══════════════════════════════════════════════════════════════════════════════
 
-SignalVisualizer* createVisualizerFor(int monitorIndex,
+SignalVisualizer* createVisualizerFor(const QString& connectionId,
                                        const QString& displayMode,
                                        const QString& signalType,
                                        const QString& title,
                                        QWidget* parent) {
-  Q_UNUSED(monitorIndex)
+  Q_UNUSED(connectionId)
 
   // 1. displayMode != "auto" → 按用户配置
   if (displayMode != QStringLiteral("auto")) {

@@ -992,6 +992,41 @@ etest--app--EtlogViewerWidget {
     border-radius: 2px;
 }
 
+/* 两级标题：二级标题（连接描述）小字灰 */
+#WaveformSubtitle, #LEDSubtitle, #MeterSubtitle, #GaugeSubtitle, #ValueLabelSubtitle {
+    font-size: 10px;
+    color: #808080;
+}
+
+/* 监听器配置对话框（MonitorConfigDialog） */
+#MonitorConfigSearch {
+    padding: 4px 6px;
+    border: 1px solid palette(midlight);
+    border-radius: 3px;
+}
+#MonitorConfigList {
+    border: 1px solid palette(midlight);
+    border-radius: 3px;
+}
+#MonitorConfigRight {
+    border: 1px solid palette(midlight);
+    border-radius: 3px;
+}
+#MonitorConfigDelete {
+    padding: 4px 12px;
+}
+#MonitorTypeTile {
+    border: 1px solid palette(midlight);
+    border-radius: 4px;
+}
+#MonitorTypeTile:hover {
+    border-color: palette(dark);
+}
+#MonitorTypeTile[selected="true"] {
+    border: 2px solid palette(highlight);
+    background-color: palette(light);
+}
+
 /* Visualizer 容器背景 */
 #ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget {
     background-color: #FFFFFF;

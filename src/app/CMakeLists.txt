@@ -126,8 +126,6 @@ add_executable(${TARGET_NAME} WIN32
     visualizers/GaugeVisualizer.cpp
     visualizers/VisualizerFactory.h
     visualizers/VisualizerFactory.cpp
-    SignalTreePanel.h
-    SignalTreePanel.cpp
     VisualizationArea.h
     VisualizationArea.cpp
     widgets/TuxSaverOverlay.h
@@ -165,8 +163,8 @@ add_executable(${TARGET_NAME} WIN32
     utils/SignalSyncHelper.cpp
     dialogs/SignalSelectionDialog.h
     dialogs/SignalSelectionDialog.cpp
-    dialogs/ChannelSelectionDialog.h
-    dialogs/ChannelSelectionDialog.cpp
+    dialogs/MonitorConfigDialog.h
+    dialogs/MonitorConfigDialog.cpp
     resource.qrc
 )
 
