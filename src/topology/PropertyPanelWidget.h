@@ -141,16 +141,6 @@ class PropertyPanelWidget : public QWidget {
 
   // M3: 可用 ICD 帧名列表（由上层注入）
   QStringList available_icd_frames_;
-
-  // Monitor section (embedded in connection page)
-  QWidget* monitor_section_ = nullptr;
-  QLineEdit* monitor_name_edit_ = nullptr;
-  QLabel* monitor_connection_label_ = nullptr;
-  QComboBox* monitor_display_mode_combo_ = nullptr;
-  QPushButton* monitor_delete_btn_ = nullptr;
-  int editing_monitor_index_ = -1;
-  void onMonitorDisplayModeChanged();
-  void onMonitorDelete();
 };
 
 }  // namespace etest::topology

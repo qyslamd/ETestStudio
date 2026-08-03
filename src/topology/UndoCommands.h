@@ -126,14 +126,9 @@ class RemoveConnectionCommand : public QUndoCommand {
   void redo() override;
 
  private:
-  struct SavedMonitor {
-    int monitorIndex;
-    TopologyMonitor monitor;
-  };
   TopologyDocument* doc_;
   int index_;
   TopologyConnection conn_;
-  QVector<SavedMonitor> saved_monitors_;
 };
 
 // ── MoveProductCommand ──
@@ -253,35 +248,6 @@ class ResizeItemCommand : public QUndoCommand {
   QSizeF new_size_;
   QPointF old_pos_;
   QPointF new_pos_;
-};
-
-// ── AddMonitorCommand ──
-class AddMonitorCommand : public QUndoCommand {
- public:
-  AddMonitorCommand(TopologyDocument* doc, const TopologyMonitor& monitor,
-                    QUndoCommand* parent = nullptr);
-  void undo() override;
-  void redo() override;
-  int monitorIndex() const { return index_; }
-
- private:
-  TopologyDocument* doc_;
-  TopologyMonitor monitor_;
-  int index_ = -1;
-};
-
-// ── RemoveMonitorCommand ──
-class RemoveMonitorCommand : public QUndoCommand {
- public:
-  RemoveMonitorCommand(TopologyDocument* doc, int monitorIndex,
-                       QUndoCommand* parent = nullptr);
-  void undo() override;
-  void redo() override;
-
- private:
-  TopologyDocument* doc_;
-  int index_;
-  TopologyMonitor monitor_;
 };
 
 // ── RemoveDevicePortCommand ──

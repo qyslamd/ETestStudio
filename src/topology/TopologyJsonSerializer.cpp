@@ -118,18 +118,6 @@ QJsonObject TopologyJsonSerializer::serialize(const TopologyDocument& doc) {
   }
   root["connections"] = connsArr;
 
-  // Monitors
-  QJsonArray monitorsArr;
-  for (int i = 0; i < doc.monitorCount(); ++i) {
-    const auto* m = doc.monitor(i);
-    QJsonObject mObj;
-    mObj["name"] = m->name;
-    mObj["connectionId"] = m->connectionId;
-    mObj["displayMode"] = m->displayMode;
-    monitorsArr.append(mObj);
-  }
-  root["monitors"] = monitorsArr;
-
   return root;
 }
 
@@ -148,8 +136,7 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
 
   const QStringList arrayKeys = {QStringLiteral("products"),
                                  QStringLiteral("devices"),
-                                 QStringLiteral("connections"),
-                                 QStringLiteral("monitors")};
+                                 QStringLiteral("connections")};
   for (const auto& key : arrayKeys) {
     if (!json.contains(key) || !json[key].isArray()) {
       last_error_ = QStringLiteral("字段 %1 不是数组").arg(key);
@@ -272,19 +259,6 @@ bool TopologyJsonSerializer::deserialize(const QJsonObject& json,
     conn.devicePort = cObj["devicePort"].toString();
     conn.style = stringToPathStyle(cObj["style"].toString());
     doc->addConnection(conn);
-  }
-
-  // Monitors
-  QJsonArray monitorsArr = json["monitors"].toArray();
-  for (const auto& mVal : monitorsArr) {
-    QJsonObject mObj = mVal.toObject();
-    TopologyMonitor mon;
-    mon.name = mObj["name"].toString();
-    mon.connectionId = mObj["connectionId"].toString();
-    mon.displayMode = mObj["displayMode"].toString(
-        QStringLiteral("waveform"));
-
-    doc->addMonitor(mon);
   }
 
   return true;

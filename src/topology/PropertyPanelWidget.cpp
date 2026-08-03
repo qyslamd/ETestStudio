@@ -82,7 +82,6 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
   editing_device_index_ = -1;
   editing_device_port_device_ = -1;
   editing_device_port_index_ = -1;
-  editing_monitor_index_ = -1;
 
   if (!item) {
     stack_->setCurrentIndex(PageEmpty);
@@ -265,42 +264,6 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
         conn_style_combo_->findData(static_cast<int>(conn->style())));
     conn_style_combo_->blockSignals(false);
 
-    // ── Monitor section ──
-    const auto* c = doc_->connection(editing_conn_index_);
-    int foundMonIdx = -1;
-    if (c) {
-      for (int mi = 0; mi < doc_->monitorCount(); ++mi) {
-        const auto* m = doc_->monitor(mi);
-        if (m && m->connectionId == c->id) {
-          foundMonIdx = mi;
-          break;
-        }
-      }
-    }
-    if (foundMonIdx >= 0) {
-      editing_monitor_index_ = foundMonIdx;
-      const auto* m = doc_->monitor(foundMonIdx);
-      monitor_name_edit_->blockSignals(true);
-      monitor_name_edit_->setText(m->name);
-      monitor_name_edit_->blockSignals(false);
-
-      QString connInfo = QStringLiteral("%1.%2 → %3.%4")
-                             .arg(c->productName, c->portName,
-                                  c->deviceName, c->devicePort);
-      monitor_connection_label_->setText(connInfo);
-
-      monitor_display_mode_combo_->blockSignals(true);
-      int modeIdx = monitor_display_mode_combo_->findData(m->displayMode);
-      if (modeIdx >= 0)
-        monitor_display_mode_combo_->setCurrentIndex(modeIdx);
-      monitor_display_mode_combo_->blockSignals(false);
-
-      monitor_section_->setVisible(true);
-    } else {
-      editing_monitor_index_ = -1;
-      monitor_section_->setVisible(false);
-    }
-
     stack_->setCurrentIndex(PageConnection);
     return;
   }
@@ -316,7 +279,6 @@ void PropertyPanelWidget::clearPanel() {
   editing_device_index_ = -1;
   editing_device_port_device_ = -1;
   editing_device_port_index_ = -1;
-  editing_monitor_index_ = -1;
   stack_->setCurrentIndex(PageEmpty);
 }
 
@@ -558,73 +520,6 @@ void PropertyPanelWidget::buildConnectionPage() {
           &PropertyPanelWidget::onConnStyleChanged);
   lay->addRow(QStringLiteral("连线样式"), conn_style_combo_);
 
-  // ── Monitor section (hidden when no monitor) ──
-  monitor_section_ = new QWidget(w);
-  monitor_section_->setVisible(false);
-  auto* monLay = new QVBoxLayout(monitor_section_);
-  monLay->setContentsMargins(0, 8, 0, 0);
-
-  auto* sep = new QFrame(monitor_section_);
-  sep->setFrameShape(QFrame::HLine);
-  sep->setFrameShadow(QFrame::Sunken);
-  monLay->addWidget(sep);
-
-  auto* monForm = new QFormLayout();
-
-  monitor_name_edit_ = new QLineEdit(monitor_section_);
-  connect(monitor_name_edit_, &QLineEdit::editingFinished, this, [this]() {
-    auto* mon = doc_->monitor(editing_monitor_index_);
-    if (mon) {
-      QString oldName = mon->name;
-      QString newName = monitor_name_edit_->text();
-      int idx = editing_monitor_index_;
-      auto* cmd = new PropertyCommand(
-          doc_,
-          [doc = doc_, idx, oldName]() {
-            if (auto* m = doc->monitor(idx))
-              m->name = oldName;
-          },
-          [doc = doc_, idx, newName]() {
-            if (auto* m = doc->monitor(idx))
-              m->name = newName;
-          },
-          QStringLiteral("修改监听器名称"));
-      doc_->undoStack()->push(cmd);
-    }
-  });
-  monForm->addRow(QStringLiteral("监听器名称"), monitor_name_edit_);
-
-  // Connection info (read-only, resolved from connectionId)
-  monitor_connection_label_ = new QLabel(QStringLiteral("-"), monitor_section_);
-  monitor_connection_label_->setWordWrap(true);
-  monForm->addRow(QStringLiteral("连线"), monitor_connection_label_);
-
-  // Display mode at monitor level
-  monitor_display_mode_combo_ = new QComboBox(monitor_section_);
-  monitor_display_mode_combo_->addItem(QStringLiteral("波形"),
-                                       QStringLiteral("waveform"));
-  monitor_display_mode_combo_->addItem(QStringLiteral("LED"),
-                                       QStringLiteral("led"));
-  monitor_display_mode_combo_->addItem(QStringLiteral("数字表"),
-                                       QStringLiteral("meter"));
-  monitor_display_mode_combo_->addItem(QStringLiteral("帧数据"),
-                                       QStringLiteral("frame"));
-  monitor_display_mode_combo_->addItem(QStringLiteral("指针表"),
-                                       QStringLiteral("gauge"));
-  connect(monitor_display_mode_combo_, &QComboBox::currentTextChanged,
-          this, &PropertyPanelWidget::onMonitorDisplayModeChanged);
-  monForm->addRow(QStringLiteral("显示模式"), monitor_display_mode_combo_);
-
-  monLay->addLayout(monForm);
-
-  monitor_delete_btn_ = new QPushButton(QStringLiteral("删除监听器"), monitor_section_);
-  monitor_delete_btn_->setObjectName(QStringLiteral("monitorDeleteBtn"));
-  connect(monitor_delete_btn_, &QPushButton::clicked,
-          this, &PropertyPanelWidget::onMonitorDelete);
-  monLay->addWidget(monitor_delete_btn_);
-
-  lay->addRow(monitor_section_);
-
   stack_->addWidget(w);
 }
 
@@ -766,41 +661,6 @@ void PropertyPanelWidget::buildDevicePortPage() {
   stack_->addWidget(w);
 }
 
-
-void PropertyPanelWidget::onMonitorDisplayModeChanged() {
-  if (editing_monitor_index_ < 0)
-    return;
-  auto* mon = doc_->monitor(editing_monitor_index_);
-  if (!mon)
-    return;
-  QString oldMode = mon->displayMode;
-  QString newMode = monitor_display_mode_combo_->currentData().toString();
-  if (oldMode == newMode)
-    return;
-  int idx = editing_monitor_index_;
-  auto* cmd = new PropertyCommand(
-      doc_,
-      [doc = doc_, idx, oldMode]() {
-        if (auto* m = doc->monitor(idx))
-          m->displayMode = oldMode;
-      },
-      [doc = doc_, idx, newMode]() {
-        if (auto* m = doc->monitor(idx))
-          m->displayMode = newMode;
-      },
-      QStringLiteral("修改显示模式"));
-  doc_->undoStack()->push(cmd);
-}
-
-void PropertyPanelWidget::onMonitorDelete() {
-  if (editing_monitor_index_ < 0)
-    return;
-  int idx = editing_monitor_index_;
-  doc_->undoStack()->push(new RemoveMonitorCommand(doc_, idx));
-  editing_monitor_index_ = -1;
-  monitor_section_->setVisible(false);
-  emit documentChanged();
-}
 
 // ── Slots ──────────────────────────────────────────────────────
 

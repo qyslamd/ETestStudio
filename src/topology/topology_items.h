@@ -207,9 +207,6 @@ class ConnectionItem : public QGraphicsPathItem {
   void setConnectionIndex(int idx) { conn_index_ = idx; }
   int connectionIndex() const { return conn_index_; }
 
-  /// 设置该连线上是否有监听器及其索引（供 badge 显示）
-  void setMonitorState(bool hasMonitor, int monitorIndex);
-
  protected:
   void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
 
@@ -221,9 +218,6 @@ class ConnectionItem : public QGraphicsPathItem {
   QPainterPath arrow_path_;
   PathStyle style_ = PathStyle::Bezier;
   int conn_index_ = -1;
-  bool has_monitor_ = false;
-  int monitor_index_ = -1;
-  static constexpr qreal kBadgeRadius = 8.0;
 };
 
 }  // namespace etest::topology

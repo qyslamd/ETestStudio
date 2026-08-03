@@ -133,34 +133,6 @@ void TopologyView::renderLegendCache() {
     p.drawText(QRectF(28, ey, 76, 14), Qt::AlignLeft, devs[i].label);
   }
 
-  // Monitor badge entry
-  {
-    qreal ey = 122;
-    QColor badgeColor = etest::core_ui::ThemeManager::instance().accentColor();
-
-    // Connection line segment
-    p.setPen(QPen(tc.connectionLine, 1.0));
-    p.drawLine(QPointF(8, ey + 7), QPointF(26, ey + 7));
-
-    // Badge circle
-    p.setBrush(badgeColor);
-    p.setPen(QPen(Qt::white, 1.0));
-    p.drawEllipse(QPointF(17, ey + 7), 6, 6);
-
-    // "M" text in badge
-    QFont bf = p.font();
-    bf.setPointSize(6);
-    bf.setBold(true);
-    p.setFont(bf);
-    p.setPen(Qt::white);
-    p.drawText(QRectF(11, ey + 1, 12, 12), Qt::AlignCenter, QStringLiteral("M"));
-    p.setFont(f);
-
-    // Label
-    p.setPen(tc.legendText);
-    p.drawText(QRectF(34, ey, 72, 14), Qt::AlignLeft, QStringLiteral("监听器"));
-  }
-
   p.end();
 }
 
@@ -292,9 +264,6 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
     connect(saveAct, &QAction::triggered, this,
             [this, dev]() { LOG_INFO("TOPOLOGY_UI", "右键保存模板"); emit saveTemplateRequested(dev); });
   } else if (conn) {
-    auto* addMonAct = menu.addAction(QStringLiteral("添加监听器"));
-    connect(addMonAct, &QAction::triggered, this,
-            [this, conn]() { LOG_INFO("TOPOLOGY_UI", "右键添加监听器"); emit addMonitorRequested(conn); });
     auto* delAct = menu.addAction(QStringLiteral("删除连线"));
     connect(delAct, &QAction::triggered, this,
             [this, conn]() { LOG_INFO("TOPOLOGY_UI", "右键删除连线"); emit deleteItemRequested(conn); });

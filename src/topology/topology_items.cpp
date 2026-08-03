@@ -743,22 +743,6 @@ void ConnectionItem::paint(QPainter* painter,
   painter->setPen(Qt::NoPen);
   painter->setBrush(arrowColor);
   painter->drawPath(arrow_path_);
-
-  // ── 监听器 badge ──
-  if (has_monitor_) {
-    QPointF mid = path().pointAtPercent(0.5);
-    QRectF badgeRect(mid.x() - kBadgeRadius, mid.y() - kBadgeRadius,
-                     kBadgeRadius * 2, kBadgeRadius * 2);
-
-    QColor bg = etest::core_ui::ThemeManager::instance().accentColor();
-    painter->setBrush(bg);
-    painter->setPen(QPen(Qt::white, 1.5));
-    painter->drawEllipse(badgeRect);
-
-    auto monitorIcon = etest::core_ui::AppIconProvider::instance().icon(
-        QStringLiteral("monitor"));
-    monitorIcon.paint(painter, badgeRect.toAlignedRect());
-  }
 }
 
 DeviceItem* ConnectionItem::targetDevice() const {
@@ -778,16 +762,7 @@ void ConnectionItem::setStyle(PathStyle s) {
   update();
 }
 
-void ConnectionItem::setMonitorState(bool hasMonitor, int monitorIndex) {
-  has_monitor_ = hasMonitor;
-  monitor_index_ = monitorIndex;
-  prepareGeometryChange();
-  update();
-}
-
 void ConnectionItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
-  // Badge is purely visual — click falls through to select the connection,
-  // which triggers showPropertiesFor → PageConnection with monitor info.
   QGraphicsPathItem::mousePressEvent(event);
 }
 

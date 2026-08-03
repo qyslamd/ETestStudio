@@ -585,29 +585,6 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onAddDevice);
   connect(view_, &TopologyView::addUutPortRequested, this,
           &TopologyEditorWidget::onAddUutPort);
-  connect(view_, &TopologyView::addMonitorRequested, this,
-          [this](ConnectionItem* connItem) {
-    int ci = connItem->connectionIndex();
-    const auto* conn = doc_->connection(ci);
-    if (!conn) return;
-    TopologyMonitor mon;
-    mon.name = QStringLiteral("%1_%2_%3_%4_监听器")
-                   .arg(conn->deviceName, conn->devicePort, conn->portName,
-                        conn->productName);
-    mon.connectionId = conn->id;
-    auto* cmd = new AddMonitorCommand(doc_, mon);
-    // Save index before push — push may trigger scene rebuild which invalidates connItem
-    int savedConnIdx = ci;
-    doc_->undoStack()->push(cmd);
-    // Find connection in the (potentially rebuilt) scene
-    if (auto* newConn = scene_->findConnectionItem(savedConnIdx)) {
-      scene_->clearSelection();
-      newConn->setSelected(true);
-      view_->centerOn(newConn);
-    }
-    LOG_INFO("TOPOLOGY_UI", "添加监听器 [name={} connectionId={}]",
-             mon.name.toStdString(), conn->id.toStdString());
-  });
   connect(view_, &TopologyView::deleteItemRequested, this,
           &TopologyEditorWidget::onDeleteItem);
   connect(view_, &TopologyView::saveTemplateRequested, this,
@@ -653,12 +630,6 @@ void TopologyEditorWidget::initSignals() {
   device_palette_dock_->installEventFilter(this);
   outline_dock_->installEventFilter(this);
   property_dock_->installEventFilter(this);
-  connect(doc_, &TopologyDocument::monitorChanged, this,
-          [this](int) { scene_->updateMonitorBadges(); });
-  connect(doc_, &TopologyDocument::monitorAdded, this,
-          [this](int mi) { scene_->updateMonitorBadges(); });
-  connect(doc_, &TopologyDocument::monitorRemoved, this,
-          [this](int mi) { scene_->updateMonitorBadges(); });
 
   // ── Product port changes: refresh UUT ports ──
   connect(doc_, &TopologyDocument::productPortAdded, this,
@@ -1255,7 +1226,6 @@ void TopologyEditorWidget::onPaste() {
   QJsonObject root = jdoc.object();
   QJsonArray prodsArr = root["products"].toArray();
   QJsonArray devsArr = root["devices"].toArray();
-  QJsonArray monsArr = root["monitors"].toArray();
 
   scene_->clearSelection();
 
@@ -1336,32 +1306,9 @@ void TopologyEditorWidget::onPaste() {
     doc_->undoStack()->push(cmd);
   }
 
-  // Paste monitors
-  for (const auto& val : monsArr) {
-    QJsonObject obj = val.toObject();
-    TopologyMonitor mon;
-    mon.name = obj["name"].toString();
-    mon.connectionId = obj["connectionId"].toString();
-    mon.displayMode = obj["displayMode"].toString(QStringLiteral("waveform"));
-
-    // Generate unique name if conflict
-    if (doc_->findMonitorIndex(mon.name) >= 0) {
-      int suffix = 1;
-      QString base = mon.name;
-      while (doc_->findMonitorIndex(
-                 QStringLiteral("%1_copy%2").arg(base).arg(suffix)) >= 0)
-        ++suffix;
-      mon.name = QStringLiteral("%1_copy%2").arg(base).arg(suffix);
-    }
-
-    auto* cmd = new AddMonitorCommand(doc_, mon);
-    doc_->undoStack()->push(cmd);
-  }
-
-  showStatusMessage(QStringLiteral("已粘贴 %1 个 UUT, %2 个设备, %3 个监听器")
+  showStatusMessage(QStringLiteral("已粘贴 %1 个 UUT, %2 个设备")
                         .arg(prodsArr.size())
-                        .arg(devsArr.size())
-                        .arg(monsArr.size()));
+                        .arg(devsArr.size()));
 }
 
 // ── Outline navigation ───────────────────────────────────────
@@ -1392,26 +1339,6 @@ void TopologyEditorWidget::onOutlineNavigate(int itemType,
       if (dev)
         target = dev->devicePortItem(subIndex);
       break;
-    }
-    case 5: {
-      // Center on the connection this monitor is attached to
-      const auto* mon = doc_->monitor(mainIndex);
-      if (mon) {
-        for (int ci = 0; ci < doc_->connectionCount(); ++ci) {
-          const auto* conn = doc_->connection(ci);
-          if (conn && conn->id == mon->connectionId) {
-            auto* connItem = scene_->findConnectionItem(ci);
-            if (connItem) {
-              scene_->clearSelection();
-              connItem->setSelected(true);
-              view_->centerOn(connItem);
-              property_panel_->showPropertiesFor(connItem);
-            }
-            break;
-          }
-        }
-      }
-      return;
     }
     default:
       return;

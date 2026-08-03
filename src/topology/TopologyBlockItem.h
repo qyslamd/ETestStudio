@@ -52,7 +52,7 @@ class TopologyBlockItem : public QGraphicsItem {
   // Subclass hooks — colors, content, layout
   virtual QColor blockFillColor() const = 0;
   virtual QColor blockBorderColor() const = 0;
-  // Override to change border pen style (e.g. dashed for monitors)
+  // Override to change border pen style
   virtual QPen blockBorderPen(qreal penWidth) const {
     return QPen(blockBorderColor(), penWidth);
   }

@@ -190,34 +190,15 @@ RemoveConnectionCommand::RemoveConnectionCommand(TopologyDocument* doc,
   const auto* c = doc_->connection(connectionIndex);
   if (c) {
     conn_ = *c;
-    // 级联清理：找到所有 connectionId 匹配的 monitor
-    for (int mi = 0; mi < doc_->monitorCount(); ++mi) {
-      const auto* mon = doc_->monitor(mi);
-      if (!mon || mon->connectionId.isEmpty()) continue;
-      if (mon->connectionId == c->id) {
-        saved_monitors_.append({mi, *mon});
-      }
-    }
   }
   setText(QStringLiteral("删除连线"));
 }
 
 void RemoveConnectionCommand::undo() {
   doc_->insertConnection(index_, conn_);
-  for (const auto& sm : saved_monitors_) {
-    doc_->insertMonitor(sm.monitorIndex, sm.monitor);
-  }
 }
 
 void RemoveConnectionCommand::redo() {
-  // 从高 index 到低删除，防索引偏移
-  std::sort(saved_monitors_.begin(), saved_monitors_.end(),
-            [](const SavedMonitor& a, const SavedMonitor& b) {
-              return a.monitorIndex > b.monitorIndex;
-            });
-  for (const auto& sm : saved_monitors_) {
-    doc_->removeMonitor(sm.monitorIndex);
-  }
   doc_->removeConnection(index_);
 }
 
@@ -431,50 +412,6 @@ void ResizeItemCommand::redo() {
       dev->position = new_pos_;
     }
   }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  AddMonitorCommand
-// ═══════════════════════════════════════════════════════════════
-
-AddMonitorCommand::AddMonitorCommand(TopologyDocument* doc,
-                                     const TopologyMonitor& monitor,
-                                     QUndoCommand* parent)
-    : QUndoCommand(parent), doc_(doc), monitor_(monitor) {
-  setText(QStringLiteral("添加监听器"));
-}
-
-void AddMonitorCommand::undo() {
-  if (index_ >= 0) {
-    doc_->removeMonitor(index_);
-  }
-}
-
-void AddMonitorCommand::redo() {
-  index_ = doc_->addMonitor(monitor_);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  RemoveMonitorCommand
-// ═══════════════════════════════════════════════════════════════
-
-RemoveMonitorCommand::RemoveMonitorCommand(TopologyDocument* doc,
-                                           int monitorIndex,
-                                           QUndoCommand* parent)
-    : QUndoCommand(parent), doc_(doc), index_(monitorIndex) {
-  const auto* mon = doc_->monitor(monitorIndex);
-  if (mon) {
-    monitor_ = *mon;
-  }
-  setText(QStringLiteral("删除监听器"));
-}
-
-void RemoveMonitorCommand::undo() {
-  doc_->insertMonitor(index_, monitor_);
-}
-
-void RemoveMonitorCommand::redo() {
-  doc_->removeMonitor(index_);
 }
 
 // ═══════════════════════════════════════════════════════════════

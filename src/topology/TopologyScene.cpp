@@ -38,7 +38,6 @@ void TopologyScene::loadFromDocument() {
   for (int i = 0; i < doc_->connectionCount(); ++i) {
     addConnectionItem(i);
   }
-  updateMonitorBadges();
 }
 
 void TopologyScene::syncPositionsToDocument() {
@@ -117,37 +116,6 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
   item->updatePath();
   connection_items_.append(item);
   return item;
-}
-
-// ── Monitor badge indicators on connections ──────────────────
-
-void TopologyScene::updateMonitorBadges() {
-  // 更新连线上监听器 badge
-  for (auto* connItem : connection_items_) {
-    if (!connItem) continue;
-    int connIdx = connItem->connectionIndex();
-    if (connIdx < 0) {
-      connItem->setMonitorState(false, -1);
-      continue;
-    }
-    const auto* c = doc_->connection(connIdx);
-    if (!c) {
-      connItem->setMonitorState(false, -1);
-      continue;
-    }
-    // 查找该连线对应的监听器
-    bool found = false;
-    int foundMonIdx = -1;
-    for (int mi = 0; mi < doc_->monitorCount(); ++mi) {
-      const auto* mon = doc_->monitor(mi);
-      if (mon && mon->connectionId == c->id) {
-        found = true;
-        foundMonIdx = mi;
-        break;
-      }
-    }
-    connItem->setMonitorState(found, foundMonIdx);
-  }
 }
 
 void TopologyScene::startConnectionDrag(QGraphicsItem* port, QPointF scenePos) {
@@ -331,7 +299,6 @@ void TopologyScene::onItemMoved() {
     if (conn)
       conn->updatePath();
   }
-  updateMonitorBadges();
 }
 
 DeviceItem* TopologyScene::deviceItemAt(QPointF scenePos) const {

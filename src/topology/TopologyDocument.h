@@ -80,13 +80,6 @@ struct TopologyConnection {
   PathStyle style = PathStyle::Bezier;
 };
 
-// Listener / monitor device — attached to a connection
-struct TopologyMonitor {
-  QString name;
-  QString connectionId;           // 引用 TopologyConnection.id
-  QString displayMode = QStringLiteral("waveform");  // waveform/led/meter/frame/gauge
-};
-
 class TopologyDocument : public QObject {
   Q_OBJECT
  public:
@@ -141,15 +134,6 @@ class TopologyDocument : public QObject {
   const TopologyConnection* connection(int index) const;
   int connectionCount() const;
 
-  // Monitor management
-  int addMonitor(const TopologyMonitor& monitor);
-  int insertMonitor(int index, const TopologyMonitor& monitor);
-  void removeMonitor(int index);
-  TopologyMonitor* monitor(int index);
-  const TopologyMonitor* monitor(int index) const;
-  int monitorCount() const;
-  int findMonitorIndex(const QString& name) const;
-
   bool canConnect(const QString& productName,
                   const QString& portName,
                   const QString& deviceName,
@@ -176,9 +160,6 @@ class TopologyDocument : public QObject {
   void devicePortFramesChanged(int deviceIndex, int portIndex);
   void connectionAdded(int index);
   void connectionRemoved(int index);
-  void monitorAdded(int index);
-  void monitorRemoved(int index);
-  void monitorChanged(int index);
   void documentCleared();
 
  private:
@@ -186,7 +167,6 @@ class TopologyDocument : public QObject {
   QVector<TopologyProduct> products_;
   QVector<TopologyDevice> devices_;
   QVector<TopologyConnection> connections_;
-  QVector<TopologyMonitor> monitors_;
 };
 
 }  // namespace etest::topology

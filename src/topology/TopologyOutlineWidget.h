@@ -31,8 +31,8 @@ class TopologyOutlineWidget : public QWidget {
   void onTreeItemClicked(QTreeWidgetItem* item, int column);
 
  private:
-  // Values align with onOutlineNavigate scheme: 0=UUT, 1=Device, 2=Connection, 3=Port, 4=DevicePort, 5=Monitor
-  enum class ItemTag { Category = -1, Uut = 0, Device = 1, Connection = 2, Port = 3, DevicePort = 4, Monitor = 5 };
+  // Values align with onOutlineNavigate scheme: 0=UUT, 1=Device, 2=Connection, 3=Port, 4=DevicePort
+  enum class ItemTag { Category = -1, Uut = 0, Device = 1, Connection = 2, Port = 3, DevicePort = 4 };
 
   static constexpr int kRoleTag = Qt::UserRole + 1;
   static constexpr int kRoleMainIdx = Qt::UserRole + 2;
@@ -43,8 +43,6 @@ class TopologyOutlineWidget : public QWidget {
   void addDeviceItem(int index, TopologyDocument* doc, QTreeWidgetItem* parent);
   void addConnectionItem(int index, TopologyDocument* doc,
                          QTreeWidgetItem* parent);
-  void addMonitorItem(int index, TopologyDocument* doc,
-                      QTreeWidgetItem* parent);
   bool applyFilter(QTreeWidgetItem* item, const QString& filter);
   void saveExpandedState();
   void restoreExpandedState();
