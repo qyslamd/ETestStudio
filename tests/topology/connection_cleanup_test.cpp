@@ -153,64 +153,21 @@ TEST(ConnectionCleanupTest, MultipleInvalidConnections) {
   ASSERT_EQ(result.size(), 2);
 }
 
-TEST(ConnectionCleanupTest, InvalidMonitorConnectionId) {
-  TopologyDocument doc;
-  doc.addProduct(makeProduct(QStringLiteral("UUT_1")));
-  doc.addDevice(makeDevice(QStringLiteral("DEV_1"), QStringLiteral("EPH6272T")));
-
-  // 添加有效连线
-  TopologyConnection conn;
-  conn.productName = QStringLiteral("UUT_1");
-  conn.portName = QStringLiteral("Port_OUT");
-  conn.deviceName = QStringLiteral("DEV_1");
-  conn.devicePort = QStringLiteral("CH01");
-  doc.addConnection(conn);
-
-  // 添加监听器，connectionId 指向已存在的连线（应视为有效）
-  {
-    TopologyMonitor mon;
-    mon.name = QStringLiteral("Mon_Valid");
-    mon.connectionId = conn.id;
-    doc.addMonitor(mon);
-  }
-
-  // 添加监听器，connectionId 为空（应视为无效）
-  {
-    TopologyMonitor mon;
-    mon.name = QStringLiteral("Mon_EmptyId");
-    doc.addMonitor(mon);
-  }
-
-  auto result = ConnectionCleanup::findInvalid(&doc);
-  ASSERT_EQ(result.size(), 1);
-  EXPECT_EQ(result[0].type, InvalidEntry::MonitorTap);
-  ASSERT_EQ(result[0].monIdx, 1);
-}
-
 TEST(ConnectionCleanupTest, SortForRemovalDeletesUnstableIndexesSafely) {
   QVector<InvalidEntry> entries;
-  entries.append({InvalidEntry::MonitorTap, 1, 0, QStringLiteral("tap 1")});
-  entries.append({InvalidEntry::Connection, 2, -1, QStringLiteral("conn 2")});
-  entries.append({InvalidEntry::MonitorTap, 4, 0, QStringLiteral("tap 4")});
-  entries.append({InvalidEntry::Connection, 5, -1, QStringLiteral("conn 5")});
-  entries.append({InvalidEntry::MonitorTap, 3, 1, QStringLiteral("tap 3")});
+  entries.append({InvalidEntry::Connection, 2, QStringLiteral("conn 2")});
+  entries.append({InvalidEntry::Connection, 5, QStringLiteral("conn 5")});
+  entries.append({InvalidEntry::Connection, 1, QStringLiteral("conn 1")});
 
   ConnectionCleanup::sortForRemoval(&entries);
 
-  ASSERT_EQ(entries.size(), 5);
+  ASSERT_EQ(entries.size(), 3);
   EXPECT_EQ(entries[0].type, InvalidEntry::Connection);
   EXPECT_EQ(entries[0].index, 5);
   EXPECT_EQ(entries[1].type, InvalidEntry::Connection);
   EXPECT_EQ(entries[1].index, 2);
-  EXPECT_EQ(entries[2].type, InvalidEntry::MonitorTap);
-  EXPECT_EQ(entries[2].monIdx, 1);
-  EXPECT_EQ(entries[2].index, 3);
-  EXPECT_EQ(entries[3].type, InvalidEntry::MonitorTap);
-  EXPECT_EQ(entries[3].monIdx, 0);
-  EXPECT_EQ(entries[3].index, 4);
-  EXPECT_EQ(entries[4].type, InvalidEntry::MonitorTap);
-  EXPECT_EQ(entries[4].monIdx, 0);
-  EXPECT_EQ(entries[4].index, 1);
+  EXPECT_EQ(entries[2].type, InvalidEntry::Connection);
+  EXPECT_EQ(entries[2].index, 1);
 }
 
 TEST(ConnectionCleanupTest, NullDoc) {

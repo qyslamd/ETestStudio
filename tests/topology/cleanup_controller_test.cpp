@@ -7,15 +7,20 @@ using namespace etest::topology;
 
 TEST(TopologyCleanupControllerTest, CleanupCommandRemovesInvalidConnections) {
   TopologyDocument doc;
-  doc.addConnection({QStringLiteral("P0"), QStringLiteral("P"),
-                     QStringLiteral("D"), QStringLiteral("DP")});
-  doc.addConnection({QStringLiteral("P1"), QStringLiteral("P"),
-                     QStringLiteral("D"), QStringLiteral("DP")});
-  doc.addConnection({QStringLiteral("P2"), QStringLiteral("P"),
-                     QStringLiteral("D"), QStringLiteral("DP")});
+  auto conn = [](const QString& productName) {
+    TopologyConnection c;
+    c.productName = productName;
+    c.portName = QStringLiteral("P");
+    c.deviceName = QStringLiteral("D");
+    c.devicePort = QStringLiteral("DP");
+    return c;
+  };
+  doc.addConnection(conn(QStringLiteral("P0")));
+  doc.addConnection(conn(QStringLiteral("P1")));
+  doc.addConnection(conn(QStringLiteral("P2")));
 
   QVector<InvalidEntry> invalid;
-  invalid.append({InvalidEntry::Connection, 1, -1, QStringLiteral("conn 1")});
+  invalid.append({InvalidEntry::Connection, 1, QStringLiteral("conn 1")});
 
   doc.undoStack()->push(
       TopologyCleanupController::createCleanupCommand(&doc, invalid));
@@ -26,28 +31,4 @@ TEST(TopologyCleanupControllerTest, CleanupCommandRemovesInvalidConnections) {
 
   doc.undoStack()->undo();
   ASSERT_EQ(doc.connectionCount(), 3);
-}
-
-TEST(TopologyCleanupControllerTest, CleanupCommandRemovesMonitorWithInvalidConnectionId) {
-  TopologyDocument doc;
-  doc.addConnection({QStringLiteral("P0"), QStringLiteral("P"),
-                     QStringLiteral("D"), QStringLiteral("DP")});
-
-  TopologyMonitor monitor;
-  monitor.name = QStringLiteral("Monitor");
-  monitor.connectionId = QStringLiteral("non-existent-id");
-  doc.addMonitor(monitor);
-
-  QVector<InvalidEntry> invalid;
-  // MonitorTap entry now flags monitors with invalid connectionId for removal
-  invalid.append({InvalidEntry::MonitorTap, 0, 0, QStringLiteral("invalid connectionId")});
-
-  doc.undoStack()->push(
-      TopologyCleanupController::createCleanupCommand(&doc, invalid));
-
-  // Monitor should be removed
-  ASSERT_EQ(doc.monitorCount(), 0);
-
-  doc.undoStack()->undo();
-  ASSERT_EQ(doc.monitorCount(), 1);
 }

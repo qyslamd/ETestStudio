@@ -194,7 +194,6 @@ TEST(TopologyM2Test, DeserializeMissingIdAutoGenerate) {
   json["version"] = 1;
   json["products"] = QJsonArray();
   json["connections"] = QJsonArray();
-  json["monitors"] = QJsonArray();
 
   QJsonObject devObj;
   devObj["name"] = QStringLiteral("EPH5272");

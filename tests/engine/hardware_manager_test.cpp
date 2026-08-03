@@ -356,7 +356,6 @@ static QJsonObject createTestTopology(const QJsonArray& devices) {
   root["products"] = QJsonArray();
   root["devices"] = devices;
   root["connections"] = QJsonArray();
-  root["monitors"] = QJsonArray();
   return root;
 }
 

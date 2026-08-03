@@ -13,7 +13,6 @@ TEST(JsonSerializerValidationTest, RejectsMissingVersion) {
   json[QStringLiteral("products")] = QJsonArray();
   json[QStringLiteral("devices")] = QJsonArray();
   json[QStringLiteral("connections")] = QJsonArray();
-  json[QStringLiteral("monitors")] = QJsonArray();
 
   EXPECT_FALSE(TopologyJsonSerializer::deserialize(json, &doc));
   EXPECT_FALSE(TopologyJsonSerializer::lastError().isEmpty());
@@ -26,7 +25,6 @@ TEST(JsonSerializerValidationTest, RejectsNonArrayProducts) {
   json[QStringLiteral("products")] = QJsonObject();
   json[QStringLiteral("devices")] = QJsonArray();
   json[QStringLiteral("connections")] = QJsonArray();
-  json[QStringLiteral("monitors")] = QJsonArray();
 
   EXPECT_FALSE(TopologyJsonSerializer::deserialize(json, &doc));
 }
@@ -40,7 +38,6 @@ TEST(JsonSerializerValidationTest, RejectsProductWithoutName) {
   json[QStringLiteral("products")] = QJsonArray{product};
   json[QStringLiteral("devices")] = QJsonArray();
   json[QStringLiteral("connections")] = QJsonArray();
-  json[QStringLiteral("monitors")] = QJsonArray();
 
   EXPECT_FALSE(TopologyJsonSerializer::deserialize(json, &doc));
 }
