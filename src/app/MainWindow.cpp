@@ -2504,8 +2504,6 @@ void MainWindow::setupRibbon() {
     auto* panel_hardware = cat->addPanel(QStringLiteral("硬件"));
     panel_hardware->addLargeAction(check_hardware_action_);
 
-    panel_tools->addSeparator();
-
     auto addToolLauncherAction = [&](QAction*& act, const QString& name,
                                      const QString& exeName,
                                      const QString& iconName) {
