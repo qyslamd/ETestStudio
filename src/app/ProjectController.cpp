@@ -28,32 +28,53 @@ ProjectController::ProjectController(QWidget* parent_widget,
 
 void ProjectController::newProject() {
   LOG_INFO("MAIN_UI", "点击「新建项目」");
-  // 先尝试关闭当前项目
+
+  // 先弹新建对话框，用户取消则不动当前项目
+  etest::app::NewProjectDialog dlg(parent_widget_);
+  if (dlg.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  // 用户已确认新建，再尝试关闭当前项目
   if (!tryCloseCurrentProject()) {
     return;
   }
 
-  etest::app::NewProjectDialog dlg(parent_widget_);
-  if (dlg.exec() == QDialog::Accepted) {
-    auto& project_mgr = etest::core::project::ProjectManager::instance();
-    if (!project_mgr.createProject(dlg.projectName(),
-                                   dlg.projectLocation())) {
-      QMessageBox::warning(
-          parent_widget_, QStringLiteral("新建项目失败"),
-          QStringLiteral("无法创建项目，请检查名称和路径。"));
-    } else {
-      // createProject 会打开项目，通知监听方更新状态
-      emit projectOpened(project_mgr.currentProjectRoot());
-    }
+  auto& project_mgr = etest::core::project::ProjectManager::instance();
+  if (!project_mgr.createProject(dlg.projectName(),
+                                 dlg.projectLocation())) {
+    QMessageBox::warning(
+        parent_widget_, QStringLiteral("新建项目失败"),
+        QStringLiteral("无法创建项目，请检查名称和路径。"));
+  } else {
+    emit projectOpened(project_mgr.currentProjectRoot());
   }
 }
 
 void ProjectController::openProject() {
   LOG_INFO("MAIN_UI", "点击「打开项目」");
-  if (!tryCloseCurrentProject()) {
-    return;
+
+  // 有项目打开时，先确认是否关闭
+  auto& project_mgr = etest::core::project::ProjectManager::instance();
+  if (project_mgr.isProjectOpen()) {
+    QString currentName = project_mgr.currentProject()
+                              ? project_mgr.currentProject()->name()
+                              : QString();
+    int ret = QMessageBox::question(
+        parent_widget_, QStringLiteral("关闭当前项目"),
+        QStringLiteral("当前项目「%1」已打开，是否关闭并打开新项目？")
+            .arg(currentName.isEmpty() ? QStringLiteral("未命名项目")
+                                       : currentName),
+        QMessageBox::Yes | QMessageBox::No);
+    if (ret == QMessageBox::No) {
+      return;
+    }
+    if (!tryCloseCurrentProject()) {
+      return;
+    }
   }
 
+  // 弹文件对话框
   auto& cfg = ConfigManager::instance();
   QString last_path = cfg.get<QString>(CONFIG_RECENT_LAST_OPEN_PATH);
   if (last_path.isEmpty()) {
@@ -65,15 +86,16 @@ void ProjectController::openProject() {
                                    QStringLiteral("打开项目"),
                                    last_path,
                                    QStringLiteral("ETest项目文件 (*.etproj)"));
-  if (!file_path.isEmpty()) {
-    auto& project_mgr = etest::core::project::ProjectManager::instance();
-    if (!project_mgr.openProject(file_path)) {
-      QMessageBox::warning(
-          parent_widget_, QStringLiteral("打开项目失败"),
-          QStringLiteral("无法打开项目文件：%1").arg(file_path));
-    } else {
-      emit projectOpened(file_path);
-    }
+  if (file_path.isEmpty()) {
+    return;
+  }
+
+  if (!project_mgr.openProject(file_path)) {
+    QMessageBox::warning(
+        parent_widget_, QStringLiteral("打开项目失败"),
+        QStringLiteral("无法打开项目文件：%1").arg(file_path));
+  } else {
+    emit projectOpened(file_path);
   }
 }
 
@@ -112,10 +134,30 @@ void ProjectController::closeProject() {
 
 void ProjectController::openRecent(const QString& path) {
   LOG_INFO("MAIN_UI", "打开最近项目: {}", path.toStdString());
+
+  // 有项目打开时，先确认是否关闭
+  auto& project_mgr = etest::core::project::ProjectManager::instance();
+  if (project_mgr.isProjectOpen()) {
+    QString currentName = project_mgr.currentProject()
+                              ? project_mgr.currentProject()->name()
+                              : QString();
+    QString targetName = QFileInfo(path).fileName();
+    int ret = QMessageBox::question(
+        parent_widget_, QStringLiteral("关闭当前项目"),
+        QStringLiteral("当前项目「%1」已打开，是否关闭并打开「%2」？")
+            .arg(currentName.isEmpty() ? QStringLiteral("未命名项目")
+                                       : currentName,
+                 targetName),
+        QMessageBox::Yes | QMessageBox::No);
+    if (ret == QMessageBox::No) {
+      return;
+    }
+  }
+
   if (!tryCloseCurrentProject()) {
     return;
   }
-  auto& project_mgr = etest::core::project::ProjectManager::instance();
+
   if (!project_mgr.openProject(path)) {
     QMessageBox::warning(
         parent_widget_, QStringLiteral("打开项目失败"),

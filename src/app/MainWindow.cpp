@@ -1481,11 +1481,30 @@ QString MainWindow::findProjectFile(const QString& dirPath) {
 
 void MainWindow::openRecentProject(const QString& path) {
   LOG_INFO("MAIN_UI", "打开最近项目 [path={}]", path.toStdString());
+
+  // 有项目打开时，先确认是否关闭
+  auto& pm = etest::core::project::ProjectManager::instance();
+  if (pm.isProjectOpen()) {
+    QString currentName = pm.currentProject()
+                              ? pm.currentProject()->name()
+                              : QString();
+    QString targetName = QFileInfo(path).fileName();
+    int ret = QMessageBox::question(
+        this, QStringLiteral("关闭当前项目"),
+        QStringLiteral("当前项目「%1」已打开，是否关闭并打开「%2」？")
+            .arg(currentName.isEmpty() ? QStringLiteral("未命名项目")
+                                       : currentName,
+                 targetName),
+        QMessageBox::Yes | QMessageBox::No);
+    if (ret == QMessageBox::No) {
+      return;
+    }
+  }
+
   if (!tryCloseCurrentProject()) {
     return;
   }
 
-  auto& pm = etest::core::project::ProjectManager::instance();
   if (pm.openProject(path)) {
     sidebar_->switchPage(PageId::kProjectOverview);
     if (!sidebar_->isContentVisible()) {
