@@ -24,24 +24,16 @@ MonitorManager::~MonitorManager() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// loadFromTopology — 从拓扑 JSON 重建查表和树缓存
+// loadMonitors — 从项目监听器数组 + 拓扑 JSON 重建查表和树缓存（幂等）
 // ═══════════════════════════════════════════════════════════════════
-void MonitorManager::loadFromTopology(const QJsonObject& topologyDoc) {
+// connectionId 为监听器 key（一连接一监听器）；connectionId 在拓扑中不存在
+// 的连接标记 invalid，进 tree_cache_ 但不进 lookup_table_（不订阅不路由）。
+void MonitorManager::loadMonitors(const QJsonArray& monitors,
+                                  const QJsonObject& topologyDoc) {
   clearStructure();
   clearRuntime();
 
-  appendFromTopology(topologyDoc);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// appendFromTopology - 追加拓扑中的 monitors（累积模式）
-// ═══════════════════════════════════════════════════════════════════
-// 不清理已有数据。monitorIndex 按当前 tree_cache_ 大小偏移，
-// 确保多拓扑合并时索引不冲突。
-void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
-  int indexOffset = tree_cache_.size();
-
-  // 建立 deviceName -> deviceId / deviceType 映射
+  // deviceName -> (id, deviceType)
   QHash<QString, QString> nameToId;
   QHash<QString, QString> nameToType;
   QJsonArray devicesArr = topologyDoc.value(QStringLiteral("devices")).toArray();
@@ -55,66 +47,183 @@ void MonitorManager::appendFromTopology(const QJsonObject& topologyDoc) {
     }
   }
 
-  // 建立 connectionId -> (deviceName, devicePort) 映射
+  // connectionId -> (deviceName, devicePort)
   QHash<QString, QPair<QString, QString>> connIdToNamePort;
   QJsonArray connsArr = topologyDoc.value(QStringLiteral("connections")).toArray();
   for (const auto& cv : connsArr) {
     QJsonObject cobj = cv.toObject();
     QString cid = cobj.value(QStringLiteral("id")).toString();
     if (!cid.isEmpty()) {
-      connIdToNamePort.insert(cid,
-          qMakePair(cobj.value(QStringLiteral("device")).toString(),
-                    cobj.value(QStringLiteral("devicePort")).toString()));
+      connIdToNamePort.insert(
+          cid, qMakePair(cobj.value(QStringLiteral("device")).toString(),
+                         cobj.value(QStringLiteral("devicePort")).toString()));
     }
   }
 
-  QJsonArray monitorsArr = topologyDoc.value(QStringLiteral("monitors")).toArray();
-  for (int mi = 0; mi < monitorsArr.size(); ++mi) {
-    QJsonObject mobj = monitorsArr[mi].toObject();
-
-    int globalIndex = indexOffset + mi;
-    MonitorTreeEntry entry;
-    entry.monitorIndex = globalIndex;
-    entry.name = mobj.value(QStringLiteral("name")).toString();
-
-    // 按 connectionId 解析连线端点
+  QSet<QString> seen;
+  for (const auto& mv : monitors) {
+    QJsonObject mobj = mv.toObject();
     QString connectionId = mobj.value(QStringLiteral("connectionId")).toString();
-    // 从 connectionId 派生 tap
+    QString name = mobj.value(QStringLiteral("name")).toString();
+    QString displayMode = mobj.value(QStringLiteral("displayMode")).toString();
+
+    if (seen.contains(connectionId)) {
+      LOG_WARN("MONITOR", "监听器 connectionId={} 重复，跳过（审查 🟡7）",
+               connectionId.toStdString());
+      continue;
+    }
+    seen.insert(connectionId);
+
+    MonitorTreeEntry entry;
+    entry.connectionId = connectionId;
+    entry.name = name;
+    entry.displayMode = displayMode;
+
     auto connIt = connIdToNamePort.constFind(connectionId);
     if (connIt != connIdToNamePort.constEnd()) {
       QString deviceName = connIt.value().first;
       QString devicePort = connIt.value().second;
-      entry.deviceType = nameToType.value(deviceName);
       QString deviceId = nameToId.value(deviceName);
+      entry.deviceType = nameToType.value(deviceName);
 
       MonitorTapInfo info;
-      info.monitorIndex = globalIndex;
+      info.connectionId = connectionId;
       info.deviceId = deviceId;
       info.devicePort = devicePort;
-      info.displayMode = mobj.value(QStringLiteral("displayMode")).toString();
-      auto key = qMakePair(deviceId, devicePort);
-      lookup_table_[key].append(info);
+      info.displayMode = displayMode;
+      lookup_table_[qMakePair(deviceId, devicePort)].append(info);
     } else {
+      entry.invalid = true;
+      invalid_ids_.insert(connectionId);
       LOG_WARN("MONITOR", "监听器 {} 引用不存在的 connectionId={}",
-               entry.name.toStdString(), connectionId.toStdString());
+               name.toStdString(), connectionId.toStdString());
     }
     tree_cache_.append(entry);
   }
 
-  LOG_INFO("MONITOR", "追加 {} 个监听器，累计 {} 个监听器, {} 个 tap 条目",
-           monitorsArr.size(), tree_cache_.size(), lookup_table_.size());
+  LOG_INFO("MONITOR", "加载 {} 个监听器，{} 个 tap 条目，{} 个失效",
+           monitors.size(), lookup_table_.size(), invalid_ids_.size());
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// subscribe / unsubscribe — 通道订阅
+// addMonitor — 单条增量添加（执行页配置监听器时调用）
 // ═══════════════════════════════════════════════════════════════════
-void MonitorManager::subscribe(int monitorIndex,
-                                SampleCallback cb) {
-  subscribers_[monitorIndex] = std::move(cb);
+bool MonitorManager::addMonitor(const MonitorConfig& config,
+                                const QString& deviceId,
+                                const QString& devicePort,
+                                const QString& deviceType) {
+  if (config.connectionId.isEmpty()) {
+    return false;
+  }
+  for (const auto& entry : tree_cache_) {
+    if (entry.connectionId == config.connectionId) {
+      LOG_WARN("MONITOR", "连接 {} 已配置监听器，拒绝重复添加",
+               config.connectionId.toStdString());
+      return false;
+    }
+  }
+
+  MonitorTreeEntry entry;
+  entry.connectionId = config.connectionId;
+  entry.name = config.name;
+  entry.displayMode = config.displayMode;
+  entry.deviceType = deviceType;
+
+  MonitorTapInfo info;
+  info.connectionId = config.connectionId;
+  info.deviceId = deviceId;
+  info.devicePort = devicePort;
+  info.displayMode = config.displayMode;
+  lookup_table_[qMakePair(deviceId, devicePort)].append(info);
+
+  tree_cache_.append(entry);
+  return true;
 }
 
-void MonitorManager::unsubscribe(int monitorIndex) {
-  subscribers_.remove(monitorIndex);
+// ═══════════════════════════════════════════════════════════════════
+// removeMonitor — 按 connectionId 删除监听器
+// ═══════════════════════════════════════════════════════════════════
+bool MonitorManager::removeMonitor(const QString& connectionId) {
+  // 空串 key 仅当确实存在于 tree_cache_ 时允许删除（.etproj 手工损坏可能出现
+  // {"connectionId":""} 的失效监听器，必须可删，审查 🟡3）
+  int removed = 0;
+  for (int i = tree_cache_.size() - 1; i >= 0; --i) {
+    if (tree_cache_[i].connectionId == connectionId) {
+      tree_cache_.removeAt(i);
+      ++removed;
+    }
+  }
+  if (removed == 0) {
+    return false;
+  }
+  for (auto it = lookup_table_.begin(); it != lookup_table_.end(); ++it) {
+    auto& taps = it.value();
+    for (int i = taps.size() - 1; i >= 0; --i) {
+      if (taps[i].connectionId == connectionId) {
+        taps.removeAt(i);
+      }
+    }
+  }
+  subscribers_.remove(connectionId);
+  buffer_.remove(connectionId);
+  invalid_ids_.remove(connectionId);
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// setDisplayMode — 修改监听器展示方式
+// ═══════════════════════════════════════════════════════════════════
+bool MonitorManager::setDisplayMode(const QString& connectionId,
+                                    const QString& displayMode) {
+  if (connectionId.isEmpty()) {
+    return false;
+  }
+  bool found = false;
+  for (auto& entry : tree_cache_) {
+    if (entry.connectionId == connectionId) {
+      entry.displayMode = displayMode;
+      found = true;
+      break;
+    }
+  }
+  for (auto it = lookup_table_.begin(); it != lookup_table_.end(); ++it) {
+    auto& taps = it.value();
+    for (auto& tap : taps) {
+      if (tap.connectionId == connectionId) {
+        tap.displayMode = displayMode;
+      }
+    }
+  }
+  return found;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// renameMonitor — 修改监听器主标题
+// ═══════════════════════════════════════════════════════════════════
+bool MonitorManager::renameMonitor(const QString& connectionId,
+                                   const QString& name) {
+  if (connectionId.isEmpty()) {
+    return false;
+  }
+  for (auto& entry : tree_cache_) {
+    if (entry.connectionId == connectionId) {
+      entry.name = name;
+      return true;
+    }
+  }
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// subscribe / unsubscribe — 通道订阅（按 connectionId）
+// ═══════════════════════════════════════════════════════════════════
+void MonitorManager::subscribe(const QString& connectionId,
+                               SampleCallback cb) {
+  subscribers_[connectionId] = std::move(cb);
+}
+
+void MonitorManager::unsubscribe(const QString& connectionId) {
+  subscribers_.remove(connectionId);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -136,14 +245,14 @@ void MonitorManager::onHardwareOpFinished(const QString& deviceId,
   const QList<MonitorTapInfo>& tapInfos = it.value();
   for (const auto& tapInfo : tapInfos) {
     MonitorSample sample;
-    sample.monitorIndex = tapInfo.monitorIndex;
+    sample.connectionId = tapInfo.connectionId;
     sample.engValue = engValue;
     sample.rawValue = rawValue;
     sample.rawFrame = rawFrame;
     sample.timestamp = QDateTime::currentDateTime();
 
-    // CVT: 按 monitorIndex 覆盖写，只保留最新值
-    buffer_[tapInfo.monitorIndex] = sample;
+    // CVT: 按 connectionId 覆盖写，只保留最新值
+    buffer_[tapInfo.connectionId] = sample;
 
     // history: 追加写，上限保护（全局上限，长时多通道运行会截断旧数据）
     history_buffer_.append(sample);
@@ -191,21 +300,19 @@ void MonitorManager::onFlushTimer() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// monitorTree — 返回监听器树状结构
+// monitorTree — 返回监听器树状结构（含失效标记）
 // ═══════════════════════════════════════════════════════════════════
 QList<MonitorManager::MonitorTreeEntry> MonitorManager::monitorTree() const {
   return tree_cache_;
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// displayMode - 查询某通道 tap 的 displayMode
+// displayMode - 查询某监听器的 displayMode（含失效监听器）
 // ═══════════════════════════════════════════════════════════════════
-QString MonitorManager::displayMode(int monitorIndex) const {
-  for (auto it = lookup_table_.constBegin(); it != lookup_table_.constEnd(); ++it) {
-    for (const auto& info : it.value()) {
-      if (info.monitorIndex == monitorIndex) {
-        return info.displayMode;
-      }
+QString MonitorManager::displayMode(const QString& connectionId) const {
+  for (const auto& entry : tree_cache_) {
+    if (entry.connectionId == connectionId) {
+      return entry.displayMode;
     }
   }
   return QString();
@@ -225,21 +332,21 @@ QString MonitorManager::displayMode(int monitorIndex) const {
 // ]
 // ═══════════════════════════════════════════════════════════════════
 QJsonArray MonitorManager::flushSamples() {
-  // 按 monitorIndex 分组
-  QHash<int, QList<MonitorSample>> grouped;
+  // 按 connectionId 分组
+  QHash<QString, QList<MonitorSample>> grouped;
   for (const auto& sample : history_buffer_) {
-    grouped[sample.monitorIndex].append(sample);
+    grouped[sample.connectionId].append(sample);
   }
 
   QJsonArray monitorsArr;
   for (auto mit = grouped.constBegin(); mit != grouped.constEnd(); ++mit) {
-    int monitorIndex = mit.key();
+    QString connectionId = mit.key();
     const auto& samples = mit.value();
 
     QString name;
     QString deviceType;
     for (const auto& entry : tree_cache_) {
-      if (entry.monitorIndex == monitorIndex) {
+      if (entry.connectionId == connectionId) {
         name = entry.name;
         deviceType = entry.deviceType;
         break;
@@ -295,6 +402,7 @@ void MonitorManager::clearStructure() {
   lookup_table_.clear();
   tree_cache_.clear();
   subscribers_.clear();
+  invalid_ids_.clear();
 }
 
 }  // namespace etest::engine

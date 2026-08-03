@@ -9,7 +9,7 @@
 using namespace etest::engine;
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 辅助：构建一个简单的拓扑 JSON，含 2 个 monitor 和 3 个 tap
+// 辅助：构建一个简单的拓扑 JSON，含 2 个 monitor
 // ══════════════════════════════════════════════════════════════════════════════
 static QJsonObject makeTestTopology() {
     QJsonObject root;
@@ -56,7 +56,7 @@ static QJsonObject makeTestTopology() {
     connsArr.append(conn1);
     root["connections"] = connsArr;
 
-    // monitors（新格式：connectionId + displayMode）
+    // monitors（connectionId + displayMode）
     QJsonArray monitorsArr;
     QJsonObject mon0;
     mon0[QStringLiteral("name")] = QStringLiteral("监听器_AD");
@@ -72,20 +72,28 @@ static QJsonObject makeTestTopology() {
     return root;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Test 1: loadFromTopology 正确创建查表和树缓存
-// ══════════════════════════════════════════════════════════════════════════════
-TEST(MonitorManagerTest, LoadFromTopology) {
-    MonitorManager mgr;
-    QJsonObject topo = makeTestTopology();
-    mgr.loadFromTopology(topo);
+// 便捷：把拓扑里的 monitors 数组 + 拓扑 doc 一起 loadMonitors
+static void loadMonitorsFromTopo(MonitorManager& mgr,
+                                 const QJsonObject& topo) {
+    mgr.loadMonitors(topo.value(QStringLiteral("monitors")).toArray(), topo);
+}
 
-    // verify monitorTree
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 1: loadMonitors 正确创建查表和树缓存（connectionId 作 key）
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(MonitorManagerTest, LoadMonitorsBuildsTreeAndLookup) {
+    MonitorManager mgr;
+    loadMonitorsFromTopo(mgr, makeTestTopology());
+
     auto tree = mgr.monitorTree();
     ASSERT_EQ(tree.size(), 2);
+    EXPECT_EQ(tree[0].connectionId, QStringLiteral("conn-ad"));
     EXPECT_EQ(tree[0].name, QStringLiteral("监听器_AD"));
     EXPECT_EQ(tree[0].deviceType, QStringLiteral("ad"));  // 从 device 派生
+    EXPECT_FALSE(tree[0].invalid);
+    EXPECT_EQ(tree[1].connectionId, QStringLiteral("conn-serial"));
     EXPECT_EQ(tree[1].name, QStringLiteral("监听器_串口"));
+    EXPECT_EQ(tree[1].displayMode, QStringLiteral("meter"));
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -93,7 +101,7 @@ TEST(MonitorManagerTest, LoadFromTopology) {
 // ══════════════════════════════════════════════════════════════════════════════
 TEST(MonitorManagerTest, MatchTapAndBuffer) {
     MonitorManager mgr;
-    mgr.loadFromTopology(makeTestTopology());
+    loadMonitorsFromTopo(mgr, makeTestTopology());
 
     // 发射与 dev-uuid-1 ch0 匹配的信号（AD 卡的 ch0）
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
@@ -117,15 +125,15 @@ TEST(MonitorManagerTest, MatchTapAndBuffer) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Test 3: subscribe 回调在匹配 tap 时被调用
+// Test 3: subscribe 回调在匹配 tap 时被调用（key = connectionId）
 // ══════════════════════════════════════════════════════════════════════════════
 TEST(MonitorManagerTest, SubscribeCallback) {
     MonitorManager mgr;
-    mgr.loadFromTopology(makeTestTopology());
+    loadMonitorsFromTopo(mgr, makeTestTopology());
 
     bool called = false;
     MonitorSample captured;
-    mgr.subscribe(0, [&](const MonitorSample& sample) {
+    mgr.subscribe(QStringLiteral("conn-ad"), [&](const MonitorSample& sample) {
         called = true;
         captured = sample;
     });
@@ -138,7 +146,7 @@ TEST(MonitorManagerTest, SubscribeCallback) {
     EXPECT_TRUE(called);
     EXPECT_DOUBLE_EQ(captured.rawValue, 999.0);
     EXPECT_DOUBLE_EQ(captured.engValue, 12.34);
-    EXPECT_EQ(captured.monitorIndex, 0);
+    EXPECT_EQ(captured.connectionId, QStringLiteral("conn-ad"));
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -146,11 +154,11 @@ TEST(MonitorManagerTest, SubscribeCallback) {
 // ══════════════════════════════════════════════════════════════════════════════
 TEST(MonitorManagerTest, Unsubscribe) {
     MonitorManager mgr;
-    mgr.loadFromTopology(makeTestTopology());
+    loadMonitorsFromTopo(mgr, makeTestTopology());
 
     int callCount = 0;
-    mgr.subscribe(0, [&](const MonitorSample&) { ++callCount; });
-    mgr.unsubscribe(0);
+    mgr.subscribe(QStringLiteral("conn-ad"), [&](const MonitorSample&) { ++callCount; });
+    mgr.unsubscribe(QStringLiteral("conn-ad"));
 
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
                               QStringLiteral("ch0"),
@@ -165,7 +173,7 @@ TEST(MonitorManagerTest, Unsubscribe) {
 // ══════════════════════════════════════════════════════════════════════════════
 TEST(MonitorManagerTest, NoMatchNoCrash) {
     MonitorManager mgr;
-    mgr.loadFromTopology(makeTestTopology());
+    loadMonitorsFromTopo(mgr, makeTestTopology());
 
     // 完全不存在的设备端口
     mgr.onHardwareOpFinished(QStringLiteral("dev-nonexistent"),
@@ -181,7 +189,7 @@ TEST(MonitorManagerTest, NoMatchNoCrash) {
 // ══════════════════════════════════════════════════════════════════════════════
 TEST(MonitorManagerTest, FlushClearsBuffer) {
     MonitorManager mgr;
-    mgr.loadFromTopology(makeTestTopology());
+    loadMonitorsFromTopo(mgr, makeTestTopology());
 
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
                               QStringLiteral("ch0"),
@@ -200,11 +208,11 @@ TEST(MonitorManagerTest, FlushClearsBuffer) {
 // ══════════════════════════════════════════════════════════════════════════════
 TEST(MonitorManagerTest, ClearRuntime) {
     MonitorManager mgr;
-    mgr.loadFromTopology(makeTestTopology());
+    loadMonitorsFromTopo(mgr, makeTestTopology());
 
     // 建立一个订阅（用计数器验证 clearRuntime 后回调仍能触发）
     int callCount = 0;
-    mgr.subscribe(0, [&](const MonitorSample&) { ++callCount; });
+    mgr.subscribe(QStringLiteral("conn-ad"), [&](const MonitorSample&) { ++callCount; });
 
     // 写入 buffer 数据 + 验证订阅在 clearRuntime 前生效
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
@@ -237,7 +245,7 @@ TEST(MonitorManagerTest, ClearRuntime) {
 // ══════════════════════════════════════════════════════════════════════════════
 TEST(MonitorManagerTest, ClearStructure) {
     MonitorManager mgr;
-    mgr.loadFromTopology(makeTestTopology());
+    loadMonitorsFromTopo(mgr, makeTestTopology());
 
     // 写入 buffer 数据
     mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
@@ -245,7 +253,7 @@ TEST(MonitorManagerTest, ClearStructure) {
                               QByteArray(), 100.0, 1.0);
 
     // 建立一个订阅
-    mgr.subscribe(0, [&](const MonitorSample&) {});
+    mgr.subscribe(QStringLiteral("conn-ad"), [&](const MonitorSample&) {});
 
     // 执行
     mgr.clearStructure();
@@ -270,71 +278,127 @@ TEST(MonitorManagerTest, ClearStructure) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Test 9: appendFromTopology 新格式 connectionId + displayMode 路径
+// Test 9: loadMonitors 幂等 —— 重复加载不累积
 // ══════════════════════════════════════════════════════════════════════════════
-TEST(MonitorManagerTest, NewFormatConnectionId) {
-    // 构建新格式拓扑 JSON：connections 带 id，monitors 用 connectionId 引用
-    QJsonObject root;
-
-    // devices（需要一个 AD 设备）
-    QJsonArray devicesArr;
-    QJsonObject dev;
-    dev["id"] = QStringLiteral("ad-device-uuid");
-    dev["name"] = QStringLiteral("AD卡");
-    dev["deviceType"] = QStringLiteral("ad");
-    dev["mock"] = true;
-    QJsonArray portsArr;
-    QJsonObject port;
-    port["name"] = QStringLiteral("ch0");
-    port["boundFrames"] = QJsonArray{QStringLiteral("电压采集")};
-    portsArr.append(port);
-    dev["ports"] = portsArr;
-    devicesArr.append(dev);
-    root["devices"] = devicesArr;
-
-    // connections（带 id）
-    QJsonArray connsArr;
-    QJsonObject conn;
-    conn["id"] = QStringLiteral("conn-ad-001");
-    conn["device"] = QStringLiteral("AD卡");
-    conn["devicePort"] = QStringLiteral("ch0");
-    conn["product"] = QStringLiteral("测试UUT");
-    conn["port"] = QStringLiteral("AD口");
-    connsArr.append(conn);
-    root["connections"] = connsArr;
-
-    // monitors（新格式：connectionId + displayMode）
-    QJsonArray monitorsArr;
-    QJsonObject mon;
-    mon["name"] = QStringLiteral("Monitor-AD");
-    mon["connectionId"] = QStringLiteral("conn-ad-001");
-    mon["displayMode"] = QStringLiteral("waveform");
-    monitorsArr.append(mon);
-    root["monitors"] = monitorsArr;
-
+TEST(MonitorManagerTest, IdempotentReload) {
     MonitorManager mgr;
-    mgr.appendFromTopology(root);
+    QJsonObject topo = makeTestTopology();
+    auto monitors = topo.value(QStringLiteral("monitors")).toArray();
+    mgr.loadMonitors(monitors, topo);
+    mgr.loadMonitors(monitors, topo);  // 幂等：不累积
 
-    // 验证 tree_cache_
+    EXPECT_EQ(mgr.monitorTree().size(), 2);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 10: loadMonitors 单次数组内重复 connectionId 去重（审查 🟡7）
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(MonitorManagerTest, DedupWithinLoadMonitors) {
+    MonitorManager mgr;
+    QJsonObject topo = makeTestTopology();
+    QJsonArray monitors = topo.value(QStringLiteral("monitors")).toArray();
+    // 追加与首项同 connectionId 的重复项
+    QJsonObject dup;
+    dup[QStringLiteral("name")] = QStringLiteral("重复项");
+    dup[QStringLiteral("connectionId")] = QStringLiteral("conn-ad");
+    dup[QStringLiteral("displayMode")] = QStringLiteral("led");
+    monitors.append(dup);
+
+    mgr.loadMonitors(monitors, topo);
+
     auto tree = mgr.monitorTree();
-    ASSERT_EQ(tree.size(), 1);
-    EXPECT_EQ(tree[0].name, QStringLiteral("Monitor-AD"));
-    EXPECT_EQ(tree[0].deviceType, QStringLiteral("ad"));
+    ASSERT_EQ(tree.size(), 2);  // 重复项被跳过，保留首个
+    EXPECT_EQ(tree[0].name, QStringLiteral("监听器_AD"));
+    EXPECT_EQ(mgr.displayMode(QStringLiteral("conn-ad")),
+              QStringLiteral("waveform"));  // 首条 displayMode 生效
+}
 
-    // 验证 displayMode 查找
-    QString mode = mgr.displayMode(0);
-    EXPECT_EQ(mode, QStringLiteral("waveform"));
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 11: connectionId 失效 → 标记 invalid、不进 lookup_table_（不订阅路由）
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(MonitorManagerTest, InvalidConnectionMarked) {
+    MonitorManager mgr;
+    QJsonObject topo = makeTestTopology();
+    QJsonArray monitors = topo.value(QStringLiteral("monitors")).toArray();
+    QJsonObject bad;
+    bad[QStringLiteral("name")] = QStringLiteral("失效监听器");
+    bad[QStringLiteral("connectionId")] = QStringLiteral("conn-gone");
+    bad[QStringLiteral("displayMode")] = QStringLiteral("gauge");
+    monitors.append(bad);
 
-    // 验证数据路由：发射匹配的设备/端口信号应能写入 CVT buffer_
-    mgr.onHardwareOpFinished(QStringLiteral("ad-device-uuid"),
+    mgr.loadMonitors(monitors, topo);
+
+    auto tree = mgr.monitorTree();
+    ASSERT_EQ(tree.size(), 3);
+    EXPECT_FALSE(tree[0].invalid);
+    EXPECT_TRUE(tree[2].invalid);
+    EXPECT_EQ(tree[2].connectionId, QStringLiteral("conn-gone"));
+
+    // 失效监听器的 displayMode 仍可查（供对话框展示类型）
+    EXPECT_EQ(mgr.displayMode(QStringLiteral("conn-gone")),
+              QStringLiteral("gauge"));
+
+    // 失效监听器不参与数据路由
+    mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-1"),
                               QStringLiteral("ch0"),
-                              QByteArray(), 100.0, 5.0);
-
-    // flush 确认收到数据
+                              QByteArray(), 1.0, 1.0);
     QJsonArray result = mgr.flushSamples();
-    ASSERT_EQ(result.size(), 1);
-    QJsonObject monObj = result[0].toObject();
-    QJsonArray samples = monObj[QStringLiteral("samples")].toArray();
-    ASSERT_EQ(samples.size(), 1);
-    EXPECT_DOUBLE_EQ(samples[0].toObject()[QStringLiteral("eng")].toDouble(), 5.0);
+    ASSERT_EQ(result.size(), 1);  // 只有正常监听器有数据
+    EXPECT_EQ(result[0].toObject()[QStringLiteral("name")].toString(),
+              QStringLiteral("监听器_AD"));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 11: addMonitor 单条增量添加 + removeMonitor 删除
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(MonitorManagerTest, AddRemoveMonitor) {
+    MonitorManager mgr;
+    loadMonitorsFromTopo(mgr, makeTestTopology());
+
+    MonitorConfig cfg;
+    cfg.connectionId = QStringLiteral("conn-new");
+    cfg.name = QStringLiteral("新监听器");
+    cfg.displayMode = QStringLiteral("led");
+    ASSERT_TRUE(mgr.addMonitor(cfg, QStringLiteral("dev-uuid-2"),
+                               QStringLiteral("tx"),
+                               QStringLiteral("serial")));
+
+    auto tree = mgr.monitorTree();
+    ASSERT_EQ(tree.size(), 3);
+    EXPECT_EQ(tree[2].name, QStringLiteral("新监听器"));
+    EXPECT_EQ(mgr.displayMode(QStringLiteral("conn-new")), QStringLiteral("led"));
+
+    // 数据路由到新监听器
+    int called = 0;
+    mgr.subscribe(QStringLiteral("conn-new"), [&](const MonitorSample&) { ++called; });
+    mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-2"), QStringLiteral("tx"),
+                             QByteArray(), 1.0, 2.0);
+    mgr.flushNow();
+    EXPECT_EQ(called, 1);
+
+    // 删除后：树减少、订阅撤销、不再路由
+    ASSERT_TRUE(mgr.removeMonitor(QStringLiteral("conn-new")));
+    EXPECT_EQ(mgr.monitorTree().size(), 2);
+    EXPECT_TRUE(mgr.displayMode(QStringLiteral("conn-new")).isEmpty());
+
+    mgr.onHardwareOpFinished(QStringLiteral("dev-uuid-2"), QStringLiteral("tx"),
+                             QByteArray(), 1.0, 2.0);
+    mgr.flushNow();
+    EXPECT_EQ(called, 1);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Test 12: 一连接一监听器 —— 重复 addMonitor 被拒绝
+// ══════════════════════════════════════════════════════════════════════════════
+TEST(MonitorManagerTest, DuplicateAddRejected) {
+    MonitorManager mgr;
+    loadMonitorsFromTopo(mgr, makeTestTopology());
+
+    MonitorConfig cfg;
+    cfg.connectionId = QStringLiteral("conn-ad");  // 已存在
+    cfg.name = QStringLiteral("重复");
+    cfg.displayMode = QStringLiteral("gauge");
+    EXPECT_FALSE(mgr.addMonitor(cfg, QStringLiteral("dev-uuid-1"),
+                                QStringLiteral("ch0"), QStringLiteral("ad")));
+    EXPECT_EQ(mgr.monitorTree().size(), 2);
 }

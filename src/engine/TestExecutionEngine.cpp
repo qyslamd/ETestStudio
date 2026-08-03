@@ -189,12 +189,8 @@ bool TestExecutionEngine::loadTopology(const QString& etopoPath) {
         LOG_INFO("ENGINE", "MockUUT 构建成功 [count={}]", mockCount);
     }
 
-    // ── 加载 monitor 配置（单拓扑覆盖语义） ──
-    // loadFromTopology 内部先 clearStructure + clearRuntime 再 appendFromTopology，
-    // 确保单拓扑下每次加载都是干净的覆盖，无累积残留
-    if (monitor_manager_) {
-        monitor_manager_->loadFromTopology(root);
-    }
+    // 监听器不再从拓扑加载（移出拓扑，存于 .etproj），
+    // 由 ExecutionPanelController 在 loadTopology 成功后以 loadMonitors 注入。
 
     return ok;
 }

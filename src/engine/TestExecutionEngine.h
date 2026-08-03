@@ -47,7 +47,7 @@ public:
     void setProgram(const ProgramData& program);
     void setTopologyDoc(const QJsonObject& topologyDoc);
     bool loadTopology(const QString& etopoPath);
-    /// 清空已累积的拓扑状态（topology_doc_ / 设备 / monitors）
+    /// 清空已累积的拓扑状态（topology_doc_ / 设备）
     /// 在新一轮 run 重新 loadTopology 前调用，避免跨运行残留
     void clearTopologyState();
 
@@ -80,6 +80,8 @@ public:
     // MonitorManager 由外部（ExecutionPanelController）持有，引擎通过指针引用
     void setMonitorManager(MonitorManager* mm) { monitor_manager_ = mm; }
     MonitorManager* monitorManager() const { return monitor_manager_; }
+    // 当前已加载的拓扑 JSON（供 loadMonitors 解析连接 / 配置对话框读端口）
+    const QJsonObject& topologyDoc() const { return topology_doc_; }
 
 signals:
     void engineStarted();
