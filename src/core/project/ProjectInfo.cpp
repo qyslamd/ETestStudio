@@ -28,12 +28,14 @@ QString ProjectInfo::rootPath() const {
 }
 QString ProjectInfo::projectFilePath() const { return project_file_path_; }
 QVariantMap ProjectInfo::settings() const { return settings_; }
+QJsonArray ProjectInfo::monitors() const { return monitors_; }
 
 void ProjectInfo::setVersion(const QString& v) { version_ = v; }
 void ProjectInfo::setName(const QString& n) { name_ = n; }
 void ProjectInfo::setCreateTime(const QDateTime& t) { create_time_ = t; }
 void ProjectInfo::setProjectFilePath(const QString& p) { project_file_path_ = p; }
 void ProjectInfo::setSettings(const QVariantMap& s) { settings_ = s; }
+void ProjectInfo::setMonitors(const QJsonArray& monitors) { monitors_ = monitors; }
 
 QJsonObject ProjectInfo::toJson() const {
   QJsonObject obj;
@@ -41,6 +43,7 @@ QJsonObject ProjectInfo::toJson() const {
   obj["name"] = name_;
   obj["create_time"] = create_time_.toString("yyyy-MM-dd HH:mm:ss");
   obj["settings"] = QJsonObject::fromVariantMap(settings_);
+  obj["monitors"] = monitors_;
 
   return obj;
 }
@@ -58,6 +61,11 @@ bool ProjectInfo::fromJson(const QJsonObject& json) {
   settings_.clear();
   if (json.contains("settings")) {
     settings_ = json["settings"].toObject().toVariantMap();
+  }
+
+  monitors_ = QJsonArray();
+  if (json.contains("monitors")) {
+    monitors_ = json["monitors"].toArray();
   }
 
   // 旧版 .etproj 文件可能包含 root_path / recent_files / topology / protocols

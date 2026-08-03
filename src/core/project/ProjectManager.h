@@ -1,6 +1,7 @@
 #ifndef ETEST_CORE_PROJECT_PROJECTMANAGER_H_
 #define ETEST_CORE_PROJECT_PROJECTMANAGER_H_
 
+#include <QJsonArray>
 #include <QObject>
 #include <functional>
 #include <memory>
@@ -26,6 +27,8 @@ class ProjectManager : public QObject {
   bool openProject(const QString& filePath);
   bool closeProject();
   bool saveProject();
+  // 写回监听器配置（更新当前项目并落盘 .etproj）
+  bool setMonitors(const QJsonArray& monitors);
 
   // 项目状态
   bool isProjectOpen() const;

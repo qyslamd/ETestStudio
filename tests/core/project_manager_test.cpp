@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSignalSpy>
@@ -68,6 +69,45 @@ TEST_F(ProjectInfoTest, ToJsonFromJson) {
   ASSERT_TRUE(restored.fromJson(json));
   EXPECT_EQ(restored.name(), original.name());
   EXPECT_EQ(restored.version(), original.version());
+}
+
+TEST_F(ProjectInfoTest, MonitorsRoundTrip) {
+  ProjectInfo original;
+  original.setName("my_project");
+  original.setProjectFilePath("/home/user/my_project/my_project.etproj");
+
+  QJsonArray monitors;
+  QJsonObject mon;
+  mon["connectionId"] = "8e1d-abc";
+  mon["name"] = "油压监测";
+  mon["displayMode"] = "gauge";
+  monitors.append(mon);
+  original.setMonitors(monitors);
+
+  QJsonObject json = original.toJson();
+  ASSERT_TRUE(json["monitors"].isArray());
+  EXPECT_EQ(json["monitors"].toArray().size(), 1);
+
+  ProjectInfo restored;
+  ASSERT_TRUE(restored.fromJson(json));
+  ASSERT_EQ(restored.monitors().size(), 1);
+  EXPECT_EQ(restored.monitors().at(0).toObject()["connectionId"].toString(),
+            "8e1d-abc");
+  EXPECT_EQ(restored.monitors().at(0).toObject()["displayMode"].toString(),
+            "gauge");
+}
+
+TEST_F(ProjectInfoTest, MonitorsAbsentGivesEmptyArray) {
+  ProjectInfo info;
+  info.setName("x");
+  info.setProjectFilePath("/tmp/x/x.etproj");
+  QJsonObject json = info.toJson();
+  ASSERT_TRUE(json["monitors"].isArray());
+  EXPECT_TRUE(json["monitors"].toArray().isEmpty());
+
+  ProjectInfo restored;
+  ASSERT_TRUE(restored.fromJson(json));
+  EXPECT_TRUE(restored.monitors().isEmpty());
 }
 
 TEST_F(ProjectInfoTest, FromJsonInvalid) {

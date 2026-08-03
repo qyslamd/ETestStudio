@@ -250,6 +250,14 @@ bool ProjectManager::saveProject() {
   return m_impl->current_project->saveToFile();
 }
 
+bool ProjectManager::setMonitors(const QJsonArray& monitors) {
+  if (!isProjectOpen()) {
+    return false;
+  }
+  m_impl->current_project->setMonitors(monitors);
+  return m_impl->current_project->saveToFile();
+}
+
 bool ProjectManager::isProjectOpen() const {
   return m_impl->current_project != nullptr;
 }
