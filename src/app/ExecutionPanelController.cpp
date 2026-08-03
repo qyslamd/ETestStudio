@@ -3,18 +3,16 @@
 #include <QAction>
 
 #include <QDateTime>
-#include <QDialog>
 #include <QDir>
 #include <QFileInfo>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPointer>
 #include <QStackedWidget>
-#include <QVBoxLayout>
 #include <QWidget>
 #include "ExecutionDashboard.h"
-#include "SignalTreePanel.h"
 #include "VisualizationArea.h"
+#include "dialogs/ChannelSelectionDialog.h"
 #include "engine/MonitorManager.h"
 #include "visualizers/SignalVisualizer.h"
 #include "visualizers/VisualizerFactory.h"
@@ -938,8 +936,8 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
   // ── 可视化区右键关闭 → 同步取消勾选信号树 ──
   connect(dashboard_->visualizationArea(), &VisualizationArea::visualizerClosed,
           this, [this](int monitorIndex) {
-            if (signal_tree_)
-              signal_tree_->uncheckMonitor(monitorIndex);
+            if (channel_dialog_)
+              channel_dialog_->uncheckMonitor(monitorIndex);
           });
 
   // ── 如果引擎已就绪，立即加载监听器树 ──
@@ -948,13 +946,13 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
 
 void ExecutionPanelController::refreshMonitorTree() {
   auto* mm = monitor_manager_;
-  if (!mm || !signal_tree_) {
+  if (!mm || !channel_dialog_) {
     return;
   }
-  signal_tree_->setMonitorTree(
-      mm->monitorTree(), dashboard_
-                             ? dashboard_->visualizationArea()->activeChannels()
-                             : QList<int>());
+  channel_dialog_->setMonitorTree(
+      mm->monitorTree(),
+      dashboard_ ? dashboard_->visualizationArea()->activeChannels()
+                 : QList<int>());
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -995,8 +993,8 @@ void ExecutionPanelController::clearProjectState() {
     // node_map_ 有效）
     dashboard_->visualizationArea()->clearAll();
     // 再清树
-    if (signal_tree_)
-      signal_tree_->clearTree();
+    if (channel_dialog_)
+      channel_dialog_->clearTree();
   }
   // 清理 MonitorManager 结构与运行时数据（项目切换时避免残留）
   clearMonitorState();
@@ -1005,65 +1003,57 @@ void ExecutionPanelController::clearProjectState() {
 }
 
 void ExecutionPanelController::showChannelSelectionDialog() {
-  if (!signal_tree_dialog_) {
-    signal_tree_dialog_ = new QDialog(parent_widget_);
-    signal_tree_dialog_->setWindowTitle(QStringLiteral("通道选择"));
-    signal_tree_dialog_->setWindowFlags(signal_tree_dialog_->windowFlags() &
-                                        ~Qt::WindowContextHelpButtonHint);
-    signal_tree_dialog_->resize(380, 480);
-    auto* layout = new QVBoxLayout(signal_tree_dialog_);
-    layout->setContentsMargins(0, 0, 0, 0);
-    // 懒创建 SignalTreePanel，以 dialog 为父控件避免裸奔
-    if (!signal_tree_) {
-      signal_tree_ = new SignalTreePanel(signal_tree_dialog_);
-      refreshMonitorTree();
-      connect(
-          signal_tree_, &SignalTreePanel::checkStateChanged, this,
-          [this](int monitorIndex, bool checked) {
-            // 创建/移除可视化组件 + 订阅/取消订阅（逻辑见 setDashboard）
-            LOG_INFO("VISUAL", "checkStateChanged monitorIndex={} checked={}",
-                     monitorIndex, checked);
-            auto* monitorMgr = monitor_manager_;
-            if (!monitorMgr)
-              return;
-            if (checked) {
-              QString mode = monitorMgr->displayMode(monitorIndex);
-              if (mode.isEmpty())
-                mode = QStringLiteral("auto");
-              auto* vis = createVisualizerFor(
-                  monitorIndex, mode, QString(),
-                  QStringLiteral("Monitor %1").arg(monitorIndex), nullptr);
-              if (vis) {
-                LOG_INFO("ENGINE", "创建可视化 monitorIndex={} mode={} type={}",
-                         monitorIndex, mode.toStdString(),
-                         vis->metaObject()->className());
-                if (auto* wave = qobject_cast<WaveformWidget*>(vis)) {
-                  static const QColor kColors[] = {
-                      QColor(0, 120, 215),  QColor(229, 57, 53),
-                      QColor(67, 160, 71),  QColor(255, 152, 0),
-                      QColor(156, 39, 176), QColor(0, 151, 167),
-                      QColor(121, 85, 72),  QColor(158, 158, 158)};
-                  wave->addTrace(monitorIndex, kColors[monitorIndex % 8]);
-                }
-                QPointer<SignalVisualizer> visGuard(vis);
-                monitorMgr->subscribe(
-                    monitorIndex,
-                    [visGuard](const etest::engine::MonitorSample& s) {
-                      if (visGuard)
-                        visGuard->onSampleCaptured(s);
-                    });
-                dashboard_->visualizationArea()->addVisualizer(monitorIndex,
-                                                               vis);
-              }
-            } else {
-              monitorMgr->unsubscribe(monitorIndex);
-              dashboard_->visualizationArea()->removeVisualizer(monitorIndex);
+  if (!channel_dialog_) {
+    channel_dialog_ = new ChannelSelectionDialog(parent_widget_);
+    connect(channel_dialog_, &ChannelSelectionDialog::checkStateChanged, this,
+            &ExecutionPanelController::onChannelCheckStateChanged);
+    refreshMonitorTree();
+  }
+  channel_dialog_->exec();
+}
+
+void ExecutionPanelController::onChannelCheckStateChanged(int monitorIndex,
+                                                          bool checked) {
+  LOG_INFO("VISUAL", "checkStateChanged monitorIndex={} checked={}",
+           monitorIndex, checked);
+  auto* monitorMgr = monitor_manager_;
+  if (!monitorMgr) {
+    return;
+  }
+  if (checked) {
+    QString mode = monitorMgr->displayMode(monitorIndex);
+    if (mode.isEmpty()) {
+      mode = QStringLiteral("auto");
+    }
+    auto* vis = createVisualizerFor(monitorIndex, mode, QString(),
+                                    QStringLiteral("Monitor %1").arg(monitorIndex),
+                                    nullptr);
+    if (vis) {
+      LOG_INFO("ENGINE", "创建可视化 monitorIndex={} mode={} type={}",
+               monitorIndex, mode.toStdString(),
+               vis->metaObject()->className());
+      if (auto* wave = qobject_cast<WaveformWidget*>(vis)) {
+        static const QColor kColors[] = {
+            QColor(0, 120, 215),  QColor(229, 57, 53),
+            QColor(67, 160, 71),  QColor(255, 152, 0),
+            QColor(156, 39, 176), QColor(0, 151, 167),
+            QColor(121, 85, 72),  QColor(158, 158, 158)};
+        wave->addTrace(monitorIndex, kColors[monitorIndex % 8]);
+      }
+      QPointer<SignalVisualizer> visGuard(vis);
+      monitorMgr->subscribe(
+          monitorIndex,
+          [visGuard](const etest::engine::MonitorSample& s) {
+            if (visGuard) {
+              visGuard->onSampleCaptured(s);
             }
           });
+      dashboard_->visualizationArea()->addVisualizer(monitorIndex, vis);
     }
-    layout->addWidget(signal_tree_);
+  } else {
+    monitorMgr->unsubscribe(monitorIndex);
+    dashboard_->visualizationArea()->removeVisualizer(monitorIndex);
   }
-  signal_tree_dialog_->exec();
 }
 
 }  // namespace etest::app

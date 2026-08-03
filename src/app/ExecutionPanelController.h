@@ -11,7 +11,6 @@
 #include "widgets/ProblemsPanel.h"  // NavTarget 定义（navigateRequested 信号参数）
 
 class QAction;
-class QDialog;
 class QLabel;
 class QStackedWidget;
 class QWidget;
@@ -19,13 +18,13 @@ class QWidget;
 namespace etest::app {
 
 class AppStatusBarController;
+class ChannelSelectionDialog;
 class EditorManager;
 class ExecutionDebugWidget;
 class ExecutionOutputPanel;
 class TestProgramManagerWidget;
 class ExecutionDashboard;
 class ProgramSelectionPopup;
-class SignalTreePanel;
 
 }  // namespace etest::app
 
@@ -139,6 +138,9 @@ class ExecutionPanelController : public QObject {
   /// 运行前检测未保存文件并提示，返回 true 表示可以继续
   bool checkUnsavedAndPrompt(const QStringList& paths) const;
 
+  /// 通道选择 Dialog 勾选变化 → 创建/移除可视化组件 + 订阅/取消订阅
+  void onChannelCheckStateChanged(int monitorIndex, bool checked);
+
   /// 合并多个测试程序为单个 ProgramData，记录各程序的 case 范围
   etest::engine::ProgramData mergePrograms(const QStringList& paths,
                                             const QString& suiteName);
@@ -190,9 +192,8 @@ class ExecutionPanelController : public QObject {
   ExecutionDashboard* dashboard_ = nullptr;
   ProgramSelectionPopup* popup_ = nullptr;
 
-  // SignalTreePanel（供通道选择 Dialog 使用，parent = nullptr，由 Dialog 自动 reparent）
-  SignalTreePanel* signal_tree_ = nullptr;
-  QDialog* signal_tree_dialog_ = nullptr;
+  // 通道选择 Dialog（懒创建并复用，见 showChannelSelectionDialog）
+  ChannelSelectionDialog* channel_dialog_ = nullptr;
 
   // MonitorManager（由 controller 持有，跨引擎重建保持；注入到引擎使用）
   etest::engine::MonitorManager* monitor_manager_ = nullptr;
