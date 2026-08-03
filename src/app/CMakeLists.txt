@@ -165,6 +165,8 @@ add_executable(${TARGET_NAME} WIN32
     utils/SignalSyncHelper.cpp
     dialogs/SignalSelectionDialog.h
     dialogs/SignalSelectionDialog.cpp
+    dialogs/ChannelSelectionDialog.h
+    dialogs/ChannelSelectionDialog.cpp
     resource.qrc
 )
 
