@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QDialog>
-#include <QFrame>
+#include <QGroupBox>
 #include <QHash>
 #include <QList>
 #include <QPair>
@@ -25,15 +25,17 @@ class SignalVisualizer;
 // ══════════════════════════════════════════════════════════════════════════════
 // MonitorTypeTile — 右栏可点击的 visualizer 类型瓦片
 // ══════════════════════════════════════════════════════════════════════════════
-// 包一个真实 visualizer 空态实例；点击事件在瓦片（QFrame）上处理，避免
-// QCustomPlot 等子控件吞掉鼠标事件（瓦片内 visualizer 全部对鼠标透明）。
-// QSS 通过 property selected=true 描边高亮当前连接已配置的类型。
+// 用 QGroupBox 做结构（标题 = 类型名）包一个真实 visualizer 空态实例；点击事件
+// 在瓦片本身上处理，避免 QCustomPlot 等子控件吞掉鼠标事件（瓦片内 visualizer
+// 全部对鼠标透明）。不用 checkable（未勾选会禁用子控件，预览会变灰）；
+// 选中态走 QSS property selected=true 描边。
 // ══════════════════════════════════════════════════════════════════════════════
-class MonitorTypeTile : public QFrame {
+class MonitorTypeTile : public QGroupBox {
   Q_OBJECT
 
  public:
-  explicit MonitorTypeTile(const QString& displayMode, QWidget* parent = nullptr);
+  explicit MonitorTypeTile(const QString& displayMode, const QString& title,
+                           QWidget* parent = nullptr);
 
   QString displayMode() const { return display_mode_; }
   void setSelectedHighlight(bool selected);

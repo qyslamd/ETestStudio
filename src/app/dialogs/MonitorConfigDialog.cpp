@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
+#include <QSplitter>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QStringList>
@@ -39,11 +40,12 @@ const QColor kInvalidColor(140, 140, 140);
 // MonitorTypeTile
 // ══════════════════════════════════════════════════════════════════════════════
 
-MonitorTypeTile::MonitorTypeTile(const QString& displayMode, QWidget* parent)
-    : QFrame(parent), display_mode_(displayMode) {
+MonitorTypeTile::MonitorTypeTile(const QString& displayMode,
+                                 const QString& title, QWidget* parent)
+    : QGroupBox(title, parent), display_mode_(displayMode) {
   setObjectName(QStringLiteral("MonitorTypeTile"));
-  setFrameShape(QFrame::StyledPanel);
   setProperty("selected", false);
+  // 不用 checkable：未勾选会禁用子控件导致预览变灰（用户不接受）。
 }
 
 void MonitorTypeTile::mousePressEvent(QMouseEvent* event) {
@@ -78,49 +80,64 @@ void MonitorConfigDialog::initUi() {
   root->setContentsMargins(8, 8, 8, 8);
   root->setSpacing(6);
 
-  auto* mainRow = new QHBoxLayout();
-  mainRow->setSpacing(8);
+  // ── 左右分栏改为 QSplitter，用户可拖拽调整宽度 ──
+  auto* splitter = new QSplitter(Qt::Horizontal, this);
+  splitter->setObjectName(QStringLiteral("MonitorConfigSplitter"));
+  splitter->setChildrenCollapsible(false);
 
   // ── 左栏：搜索 + 连接列表 ──
-  auto* leftCol = new QVBoxLayout();
+  auto* leftWidget = new QWidget(splitter);
+  auto* leftCol = new QVBoxLayout(leftWidget);
+  leftCol->setContentsMargins(0, 0, 0, 0);
   leftCol->setSpacing(4);
 
-  search_box_ = new QLineEdit(this);
+  search_box_ = new QLineEdit(leftWidget);
   search_box_->setObjectName(QStringLiteral("MonitorConfigSearch"));
   search_box_->setPlaceholderText(QStringLiteral("搜索通道..."));
   search_box_->setClearButtonEnabled(true);
   leftCol->addWidget(search_box_);
 
-  list_view_ = new QListView(this);
+  list_view_ = new QListView(leftWidget);
   list_view_->setObjectName(QStringLiteral("MonitorConfigList"));
   list_view_->setModel(model_);
   list_view_->setEditTriggers(QAbstractItemView::NoEditTriggers);
   leftCol->addWidget(list_view_, 1);
 
-  mainRow->addLayout(leftCol, 1);
+  splitter->addWidget(leftWidget);
 
   // ── 右栏：visualizer 类型瓦片 + 删除按钮 ──
-  auto* rightCol = new QVBoxLayout();
+  auto* rightWidget = new QWidget(splitter);
+  auto* rightCol = new QVBoxLayout(rightWidget);
+  rightCol->setContentsMargins(0, 0, 0, 0);
   rightCol->setSpacing(4);
 
-  auto* scroll = new QScrollArea(this);
+  auto* scroll = new QScrollArea(rightWidget);
   scroll->setObjectName(QStringLiteral("MonitorConfigRight"));
   scroll->setWidgetResizable(true);
+  scroll->setFrameShape(QFrame::NoFrame);  // 去边框
+  // 白底来自 QScrollArea 的 viewport（默认调色板 Window），关闭其与内容容器的
+  // autoFillBackground，让 #MonitorConfigRight 的主题背景透出来
+  scroll->viewport()->setAutoFillBackground(false);
   auto* content = new QWidget(scroll);
+  content->setAutoFillBackground(false);
   tiles_grid_ = new QGridLayout(content);
   tiles_grid_->setContentsMargins(4, 4, 4, 4);
   tiles_grid_->setSpacing(8);
   scroll->setWidget(content);
   rightCol->addWidget(scroll, 1);
 
-  delete_button_ = new QPushButton(QStringLiteral("删除监听器"), this);
+  delete_button_ = new QPushButton(QStringLiteral("删除监听器"), rightWidget);
   delete_button_->setObjectName(QStringLiteral("MonitorConfigDelete"));
   delete_button_->setEnabled(false);
   rightCol->addWidget(delete_button_, 0, Qt::AlignLeft);
 
-  mainRow->addLayout(rightCol, 1);
+  splitter->addWidget(rightWidget);
 
-  root->addLayout(mainRow);
+  splitter->setStretchFactor(0, 1);
+  splitter->setStretchFactor(1, 1);
+  splitter->setSizes({340, 480});
+
+  root->addWidget(splitter);
 
   buildRightPanel();
 
@@ -168,14 +185,24 @@ void MonitorConfigDialog::buildRightPanel() {
                              QStringLiteral("meter"),
                              QStringLiteral("gauge"),
                              QStringLiteral("frame")};
+  const QHash<QString, QString> modeTitles = {
+      {QStringLiteral("waveform"), QStringLiteral("波形")},
+      {QStringLiteral("led"), QStringLiteral("LED")},
+      {QStringLiteral("meter"), QStringLiteral("数字表")},
+      {QStringLiteral("gauge"), QStringLiteral("指针表")},
+      {QStringLiteral("frame"), QStringLiteral("帧数据")}};
   int col = 0;
   int row = 0;
   for (const QString& mode : modes) {
-    auto* tile = new MonitorTypeTile(mode, this);
+    auto* tile = new MonitorTypeTile(mode, modeTitles.value(mode, mode), this);
     tile->setFixedSize(230, 170);
 
     SignalVisualizer* vis = createPreviewVisualizer(mode);
     if (vis) {
+      // 预览实例去掉根背景：改 objectName 使 QSS #XXXWidget 容器背景选择器
+      // 不再命中，再关 autoFillBackground，预览即透明（融入瓦片主题背景）
+      vis->setObjectName(QStringLiteral("PreviewVisualizer"));
+      vis->setAutoFillBackground(false);
       makeTransparentToMouse(vis);
       auto* lay = new QVBoxLayout(tile);
       lay->setContentsMargins(4, 4, 4, 4);
