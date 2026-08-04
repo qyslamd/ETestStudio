@@ -5,10 +5,8 @@
 #include <QContextMenuEvent>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
-#include <QHBoxLayout>
 #include <QMenu>
 
-#include "visualizers/LedIndicator.h"
 #include "visualizers/SignalVisualizer.h"
 
 namespace etest::app {
@@ -17,8 +15,7 @@ namespace etest::app {
 // 构造 / 析构
 // ══════════════════════════════════════════════════════════════════════════════
 
-VisualizationArea::VisualizationArea(QWidget* parent)
-    : QGraphicsView(parent) {
+VisualizationArea::VisualizationArea(QWidget* parent) : QGraphicsView(parent) {
   scene_ = new QGraphicsScene(this);
   setScene(scene_);
 
@@ -33,31 +30,6 @@ VisualizationArea::VisualizationArea(QWidget* parent)
   // 背景透明，由 QSS 统一控制
   setBackgroundBrush(Qt::NoBrush);
 
-  // 临时预览：LED 圆灯组件（0灰/1绿/2红 默认语义色，验收后移除）
-  auto* preview = new QWidget;
-  auto* previewLayout = new QHBoxLayout(preview);
-  previewLayout->setContentsMargins(16, 16, 16, 16);
-  previewLayout->setSpacing(24);
-
-  auto* ledOn = new LedIndicator;
-  ledOn->setFieldName(QStringLiteral("电源开关"));
-  ledOn->setStateText(QStringLiteral("ON"));
-  ledOn->setState(1);
-  previewLayout->addWidget(ledOn);
-
-  auto* ledOff = new LedIndicator;
-  ledOff->setFieldName(QStringLiteral("电源开关"));
-  ledOff->setStateText(QStringLiteral("OFF"));
-  ledOff->setState(0);
-  previewLayout->addWidget(ledOff);
-
-  auto* ledAlarm = new LedIndicator;
-  ledAlarm->setFieldName(QStringLiteral("故障告警"));
-  ledAlarm->setStateText(QStringLiteral("告警"));
-  ledAlarm->setState(2);
-  previewLayout->addWidget(ledAlarm);
-
-  scene_->addWidget(preview);
 }
 
 VisualizationArea::~VisualizationArea() {
@@ -69,7 +41,7 @@ VisualizationArea::~VisualizationArea() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 void VisualizationArea::addVisualizer(const QString& connectionId,
-                                       SignalVisualizer* visualizer) {
+                                      SignalVisualizer* visualizer) {
   if (!visualizer) {
     return;
   }
@@ -103,7 +75,7 @@ void VisualizationArea::removeVisualizer(const QString& connectionId) {
 
   // 从 scene 移除 proxy
   scene_->removeItem(it->proxy);
-  delete it->proxy;   // QGraphicsProxyWidget 会连带删除其 widget
+  delete it->proxy;  // QGraphicsProxyWidget 会连带删除其 widget
   items_.erase(it);
 
   relayout();
@@ -113,7 +85,8 @@ void VisualizationArea::removeVisualizer(const QString& connectionId) {
 // visualizer — 按索引查找
 // ══════════════════════════════════════════════════════════════════════════════
 
-SignalVisualizer* VisualizationArea::visualizer(const QString& connectionId) const {
+SignalVisualizer* VisualizationArea::visualizer(
+    const QString& connectionId) const {
   auto it = items_.constFind(connectionId);
   if (it != items_.constEnd()) {
     return it->widget;
@@ -127,8 +100,9 @@ SignalVisualizer* VisualizationArea::visualizer(const QString& connectionId) con
 
 void VisualizationArea::clearAll() {
   // 先复制一份 key 列表，避免迭代中修改容器
-  // 注意：emit visualizerClosed 会同步触发 removeVisualizer（通过 uncheckChannel 回调链），
-  // 该调用会 delete proxy 并 erase items_。emit 后 it/iter 可能已失效，必须重新查找。
+  // 注意：emit visualizerClosed 会同步触发 removeVisualizer（通过
+  // uncheckChannel 回调链）， 该调用会 delete proxy 并 erase items_。emit 后
+  // it/iter 可能已失效，必须重新查找。
   auto keys = items_.keys();
   for (const QString& key : keys) {
     emit visualizerClosed(key);
@@ -199,8 +173,8 @@ void VisualizationArea::contextMenuEvent(QContextMenuEvent* event) {
   QMenu menu(this);
   QAction* closeAction = menu.addAction(QStringLiteral("关闭可视化"));
   if (menu.exec(event->globalPos()) == closeAction) {
-    // 先移除再发信号：visualizerClosed 槽会按 activeChannels() 同步对话框勾选态，
-    // 若先发信号该通道还在列表里，勾选不会取消（审查 🟡1）。
+    // 先移除再发信号：visualizerClosed 槽会按 activeChannels()
+    // 同步对话框勾选态， 若先发信号该通道还在列表里，勾选不会取消（审查 🟡1）。
     removeVisualizer(foundKey);
     emit visualizerClosed(foundKey);
   }
@@ -225,7 +199,8 @@ void VisualizationArea::relayout() {
     cols = 2;
   } else {
     // ceil(sqrt(n))，上限 5 列
-    cols = qMin(static_cast<int>(std::ceil(std::sqrt(static_cast<double>(n)))), 5);
+    cols =
+        qMin(static_cast<int>(std::ceil(std::sqrt(static_cast<double>(n)))), 5);
   }
 
   int rows = (n + cols - 1) / cols;

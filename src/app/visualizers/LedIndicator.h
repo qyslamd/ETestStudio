@@ -1,16 +1,20 @@
 #pragma once
 
 #include <QColor>
+#include <QDateTime>
 #include <QMap>
 #include <QWidget>
 
 #include "visualizers/SignalVisualizer.h"
 
+class QLabel;
+
 namespace etest::app {
 
-// LED 圆灯可视化组件：按状态值映射语义色（默认 0灰/1绿/2红，可按字段
-// 语义覆盖），带可配置字段名与状态文字。用于展示帧内 1bit 状态字段
-// （开/关、正常/故障、告警等），作为 SignalVisualizer 由监听器驱动。
+// LED 圆灯可视化组件（合并自 StateLEDWidget）：
+// 按状态值映射语义色（默认 0灰/1绿/2红，可按字段语义覆盖），展示帧内
+// 1bit 状态字段（开/关、正常/故障、告警）。两级标题（监听器名 + 连接
+// 描述），带脉冲计数（上升沿）与最后变化时间戳，纯展示无交互。
 class LedIndicator : public SignalVisualizer {
   Q_OBJECT
 
@@ -39,18 +43,31 @@ class LedIndicator : public SignalVisualizer {
   void setTitle(const QString& title) override;
   void setSubtitle(const QString& subtitle) override;
 
- protected:
-  void paintEvent(QPaintEvent* event) override;
-  QSize sizeHint() const override;
-  QSize minimumSizeHint() const override;
-
  private:
+  void initUi();
+  void refreshStateVisual();
+  QColor stateColor() const;
+
   int state_ = 0;
   QMap<int, QColor> color_map_;
   QString field_name_;
   QString state_text_;
   QString connection_id_;
-  int led_size_ = 14;
+  int led_size_ = 32;
+
+  // 状态统计（吸收 StateLEDWidget）：脉冲上升沿 + 最后变化时间
+  bool previous_on_ = false;
+  int pulse_count_ = 0;
+  QDateTime last_change_ts_;
+
+  class LedDot;
+  LedDot* led_dot_ = nullptr;
+  QLabel* title_label_ = nullptr;
+  QLabel* subtitle_label_ = nullptr;
+  QLabel* field_label_ = nullptr;
+  QLabel* state_label_ = nullptr;
+  QLabel* pulse_label_ = nullptr;
+  QLabel* ts_label_ = nullptr;
 };
 
 }  // namespace etest::app

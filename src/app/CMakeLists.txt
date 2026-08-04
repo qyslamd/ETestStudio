@@ -118,8 +118,6 @@ add_executable(${TARGET_NAME} WIN32
     visualizers/ValueLabelWidget.cpp
     visualizers/WaveformWidget.h
     visualizers/WaveformWidget.cpp
-    visualizers/StateLEDWidget.h
-    visualizers/StateLEDWidget.cpp
     visualizers/DigitalMeterWidget.h
     visualizers/DigitalMeterWidget.cpp
     visualizers/GaugeVisualizer.h

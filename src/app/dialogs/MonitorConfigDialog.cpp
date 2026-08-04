@@ -21,7 +21,7 @@
 #include "visualizers/DigitalMeterWidget.h"
 #include "visualizers/GaugeVisualizer.h"
 #include "visualizers/SignalVisualizer.h"
-#include "visualizers/StateLEDWidget.h"
+#include "visualizers/LedIndicator.h"
 #include "visualizers/ValueLabelWidget.h"
 #include "visualizers/WaveformWidget.h"
 
@@ -229,7 +229,9 @@ SignalVisualizer* MonitorConfigDialog::createPreviewVisualizer(
     return new WaveformWidget(QStringLiteral("波形"), this);
   }
   if (displayMode == QStringLiteral("led")) {
-    return new StateLEDWidget(QStringLiteral("LED"), this);
+    auto* led = new LedIndicator(this);
+    led->setTitle(QStringLiteral("LED"));
+    return led;
   }
   if (displayMode == QStringLiteral("meter")) {
     return new DigitalMeterWidget(QStringLiteral("数字表"), this);

@@ -2,7 +2,7 @@
 
 #include "DigitalMeterWidget.h"
 #include "GaugeVisualizer.h"
-#include "StateLEDWidget.h"
+#include "LedIndicator.h"
 #include "ValueLabelWidget.h"
 #include "WaveformWidget.h"
 
@@ -25,7 +25,9 @@ SignalVisualizer* createVisualizerFor(const QString& connectionId,
       return new WaveformWidget(title, parent);
     }
     if (displayMode == QStringLiteral("led")) {
-      return new StateLEDWidget(title, parent);
+      auto* led = new LedIndicator(parent);
+      led->setTitle(title);
+      return led;
     }
     if (displayMode == QStringLiteral("meter")) {
       return new DigitalMeterWidget(title, parent);
