@@ -76,9 +76,7 @@ class SettingsDialog : public QDialog {
 
   QListWidget* list_;
   QStackedWidget* pages_;
-  QPushButton* btn_ok_;
-  QPushButton* btn_cancel_;
-  QPushButton* btn_apply_;
+  QPushButton* btn_close_;
 
   // Maps config key -> control widget for bidirectional sync
   QMap<QString, QSpinBox*> spin_map_;

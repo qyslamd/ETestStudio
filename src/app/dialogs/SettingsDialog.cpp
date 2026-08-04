@@ -82,17 +82,10 @@ void SettingsDialog::initUi() {
   buttonLayout->setContentsMargins(12, 8, 12, 8);
   buttonLayout->addStretch();
 
-  btn_ok_ = new QPushButton(QStringLiteral("确定"), buttonBar);
-  btn_cancel_ = new QPushButton(QStringLiteral("取消"), buttonBar);
-  btn_apply_ = new QPushButton(QStringLiteral("应用"), buttonBar);
+  btn_close_ = new QPushButton(QStringLiteral("关闭"), buttonBar);
+  btn_close_->setFixedWidth(80);
 
-  btn_ok_->setFixedWidth(80);
-  btn_cancel_->setFixedWidth(80);
-  btn_apply_->setFixedWidth(80);
-
-  buttonLayout->addWidget(btn_ok_);
-  buttonLayout->addWidget(btn_cancel_);
-  buttonLayout->addWidget(btn_apply_);
+  buttonLayout->addWidget(btn_close_);
 
   mainLayout->addWidget(buttonBar);
 
@@ -110,10 +103,7 @@ void SettingsDialog::initSignals() {
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
           &SettingsDialog::onConfigChanged);
 
-  connect(btn_ok_, &QPushButton::clicked, this, &QDialog::accept);
-  connect(btn_cancel_, &QPushButton::clicked, this, &QDialog::reject);
-  connect(btn_apply_, &QPushButton::clicked, this,
-          []() { ConfigManager::instance().sync(); });
+  connect(btn_close_, &QPushButton::clicked, this, &QDialog::reject);
 }
 
 // =========================================================================
