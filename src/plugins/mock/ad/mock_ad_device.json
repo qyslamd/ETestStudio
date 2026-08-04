@@ -7,6 +7,8 @@
     "category": "device",
     "device_type": "ad",
     "device_channels": 8,
+    "device_function": "AD",
+    "device_direction": "Input",
     "is_mock": true,
     "dependencies": []
 }

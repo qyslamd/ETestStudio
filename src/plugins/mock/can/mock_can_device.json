@@ -7,6 +7,8 @@
     "category": "device",
     "device_type": "can",
     "device_channels": 2,
+    "device_function": "CAN",
+    "device_direction": "Bidirectional",
     "is_mock": true,
     "dependencies": []
 }

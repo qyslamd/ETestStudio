@@ -7,6 +7,8 @@
     "category": "device",
     "device_type": "a429",
     "device_channels": 2,
+    "device_function": "A429",
+    "device_direction": "Bidirectional",
     "is_mock": true,
     "dependencies": []
 }
