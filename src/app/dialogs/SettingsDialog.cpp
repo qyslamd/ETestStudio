@@ -41,6 +41,8 @@ void SettingsDialog::initUi() {
   list_->setFocusPolicy(Qt::NoFocus);
   list_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+  QListWidgetItem* itemGeneral =
+      new QListWidgetItem(QStringLiteral("通用"), list_);
   QListWidgetItem* itemEditor =
       new QListWidgetItem(QStringLiteral("编辑器"), list_);
   QListWidgetItem* itemTerminal =
@@ -52,21 +54,23 @@ void SettingsDialog::initUi() {
   QListWidgetItem* itemBackup =
       new QListWidgetItem(QStringLiteral("备份"), list_);
 
-  itemEditor->setData(Qt::UserRole, 0);
-  itemTerminal->setData(Qt::UserRole, 1);
-  itemAppearance->setData(Qt::UserRole, 2);
-  itemProject->setData(Qt::UserRole, 3);
-  itemBackup->setData(Qt::UserRole, 4);
+  itemGeneral->setData(Qt::UserRole, 0);
+  itemEditor->setData(Qt::UserRole, 1);
+  itemTerminal->setData(Qt::UserRole, 2);
+  itemAppearance->setData(Qt::UserRole, 3);
+  itemProject->setData(Qt::UserRole, 4);
+  itemBackup->setData(Qt::UserRole, 5);
 
   contentLayout->addWidget(list_);
 
   // === Right: stacked pages ===
   pages_ = new QStackedWidget(this);
-  pages_->addWidget(createEditorPage());      // index 0
-  pages_->addWidget(createTerminalPage());    // index 1
-  pages_->addWidget(createAppearancePage());  // index 2
-  pages_->addWidget(createProjectPage());     // index 3
-  pages_->addWidget(createBackupPage());      // index 4
+  pages_->addWidget(createGeneralPage());   // index 0
+  pages_->addWidget(createEditorPage());     // index 1
+  pages_->addWidget(createTerminalPage());   // index 2
+  pages_->addWidget(createAppearancePage()); // index 3
+  pages_->addWidget(createProjectPage());    // index 4
+  pages_->addWidget(createBackupPage());     // index 5
 
   contentLayout->addWidget(pages_, 1);
   mainLayout->addLayout(contentLayout, 1);
@@ -115,6 +119,115 @@ void SettingsDialog::initSignals() {
 // =========================================================================
 // Page creation
 // =========================================================================
+
+QWidget* SettingsDialog::createGeneralPage() {
+  auto* page = new QWidget(this);
+  auto* layout = new QVBoxLayout(page);
+  layout->setContentsMargins(20, 16, 20, 16);
+  layout->setSpacing(12);
+
+  // --- 日志 card ---
+  auto* cardLog = createSettingsCard(page, QStringLiteral("日志"));
+
+  // 日志级别（int 值存 userData，仿主题下拉写法）
+  {
+    auto* rightLayout = addSettingRow(cardLog, QStringLiteral("日志级别"),
+                                      QStringLiteral("记录到日志文件的最低级别"));
+    auto* combo = new QComboBox();
+    combo->addItem(QStringLiteral("调试"), 0);
+    combo->addItem(QStringLiteral("信息"), 1);
+    combo->addItem(QStringLiteral("警告"), 2);
+    combo->addItem(QStringLiteral("错误"), 3);
+    combo->addItem(QStringLiteral("致命"), 4);
+    combo->setFixedWidth(160);
+
+    int val = ConfigManager::instance().get<int>(CONFIG_LOG_LEVEL,
+                                                 CONFIG_LOG_DEFAULT_LEVEL);
+    int idx = combo->findData(val);
+    if (idx >= 0)
+      combo->setCurrentIndex(idx);
+
+    rightLayout->addWidget(combo);
+
+    combo_map_.insert(QString::fromLatin1(CONFIG_LOG_LEVEL), combo);
+
+    connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [combo]() {
+              ConfigManager::instance().set<int>(CONFIG_LOG_LEVEL,
+                                                 combo->currentData().toInt());
+            });
+  }
+
+  // 单文件大小上限（配置存字节，UI 以 MB 编辑，需手动转换）
+  {
+    auto* rightLayout = addSettingRow(cardLog, QStringLiteral("单文件大小上限"),
+                                      QStringLiteral("单个日志文件的最大体积（MB）"));
+    auto* spin = new QSpinBox();
+    spin->setRange(1, 512);
+    spin->setSingleStep(1);
+    spin->setFixedWidth(100);
+
+    int mb = ConfigManager::instance().get<int>(
+                 CONFIG_LOG_MAX_FILE_SIZE, CONFIG_LOG_DEFAULT_MAX_FILE_SIZE) /
+             1024 / 1024;
+    spin->setValue(mb);
+
+    rightLayout->addWidget(spin);
+
+    connect(spin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            [](int val) {
+              ConfigManager::instance().set<int>(CONFIG_LOG_MAX_FILE_SIZE,
+                                                 val * 1024 * 1024);
+            });
+  }
+
+  addSpinBoxRow(cardLog, QStringLiteral("保留文件份数"),
+                QStringLiteral("循环写满后保留的日志文件个数上限"),
+                CONFIG_LOG_MAX_FILE_COUNT, 1, 100, 1,
+                CONFIG_LOG_DEFAULT_MAX_FILE_COUNT);
+  addSpinBoxRow(cardLog, QStringLiteral("保留天数"),
+                QStringLiteral("超过该天数的日志文件将被清理"),
+                CONFIG_LOG_KEEP_DAYS, 1, 365, 1,
+                CONFIG_LOG_DEFAULT_KEEP_DAYS);
+
+  // --- 默认保存目录 card ---
+  auto* cardPath = createSettingsCard(page, QStringLiteral("默认保存目录"));
+
+  {
+    auto* rightLayout =
+        addSettingRow(cardPath, QStringLiteral("保存目录"),
+                      QStringLiteral("保存文件时默认定位到的目录"));
+    auto* pathEdit = new QLineEdit();
+    pathEdit->setReadOnly(true);
+    pathEdit->setPlaceholderText(QStringLiteral("未设置"));
+    pathEdit->setFixedWidth(260);
+    pathEdit->setText(
+        ConfigManager::instance().get<QString>(CONFIG_DEFAULT_FILE_SAVE_PATH));
+
+    auto* browseBtn = new QPushButton(QStringLiteral("选择目录..."));
+    auto* clearBtn = new QPushButton(QStringLiteral("清除"));
+
+    rightLayout->addWidget(pathEdit);
+    rightLayout->addWidget(browseBtn);
+    rightLayout->addWidget(clearBtn);
+
+    connect(browseBtn, &QPushButton::clicked, this, [pathEdit]() {
+      QString dir = QFileDialog::getExistingDirectory(
+          nullptr, QStringLiteral("选择默认保存目录"));
+      if (!dir.isEmpty()) {
+        pathEdit->setText(dir);
+        ConfigManager::instance().set(CONFIG_DEFAULT_FILE_SAVE_PATH, dir);
+      }
+    });
+    connect(clearBtn, &QPushButton::clicked, this, [pathEdit]() {
+      pathEdit->clear();
+      ConfigManager::instance().set(CONFIG_DEFAULT_FILE_SAVE_PATH, QString());
+    });
+  }
+
+  layout->addStretch();
+  return page;
+}
 
 QWidget* SettingsDialog::createEditorPage() {
   auto* page = new QWidget(this);
@@ -607,7 +720,8 @@ void SettingsDialog::comboBoxToConfig(const QString& key, QComboBox* combo) {
 void SettingsDialog::onConfigChanged(const QString& key) {
   if (key == QString::fromLatin1(CONFIG_APPEARANCE_THEME) ||
       key == QString::fromLatin1(CONFIG_WELCOME_BG_MODE) ||
-      key == QString::fromLatin1(CONFIG_TUXSAVER_MODE)) {
+      key == QString::fromLatin1(CONFIG_TUXSAVER_MODE) ||
+      key == QString::fromLatin1(CONFIG_LOG_LEVEL)) {
     if (combo_map_.contains(key)) {
       auto* combo = combo_map_[key];
       QString val = ConfigManager::instance().get<QString>(key);

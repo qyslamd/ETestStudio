@@ -27,6 +27,7 @@ class SettingsDialog : public QDialog {
   void initSignals();
 
   // Page creation
+  QWidget* createGeneralPage();
   QWidget* createEditorPage();
   QWidget* createTerminalPage();
   QWidget* createAppearancePage();
