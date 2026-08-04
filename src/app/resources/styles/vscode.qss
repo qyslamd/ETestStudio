@@ -444,19 +444,7 @@ QRadioButton::indicator:checked {
     border-color: #007ACC;
 }
 
-/* GroupBox */
-QGroupBox {
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 4px;
-    margin-top: 12px;
-    padding-top: 16px;
-}
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0px 8px;
-}
+/* QGroupBox 样式由 gen_themes.py 注入（删除此处原有块，避免 subcontrol-origin:margin 泄漏） */
 
 /* ToolTip */
 QToolTip {
@@ -2538,6 +2526,12 @@ QScrollArea {
     border: none;
     background: transparent;
 }
+QScrollArea > QWidget > QWidget {
+    background: transparent;
+}
+#ScrollAreaContent {
+    background: transparent;
+}
 /* ===== QScrollArea 主题适配样式 END ===== */
 
 /* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */
@@ -2550,6 +2544,7 @@ QGroupBox {
     color: #CCCCCC;
 }
 QGroupBox::title {
+    subcontrol-origin: padding;
     subcontrol-position: top left;
     left: 12px;
     top: 6px;

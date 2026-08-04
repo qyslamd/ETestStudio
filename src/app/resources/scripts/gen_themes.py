@@ -138,9 +138,17 @@ def combo_build_blocks(c, icon):
 
 
 def scroll_build_blocks():
-    """QScrollArea 通用样式（无色，无需按主题替换）"""
+    """QScrollArea 通用样式（无色，无需按主题替换）：
+    滚动内容容器统一 objectName=ScrollAreaContent，背景透明让主题透出。
+    另加 viewport 透明兜底——只设内容透明的话，背后 viewport 仍可能是白底。"""
     return '''QScrollArea {
     border: none;
+    background: transparent;
+}
+QScrollArea > QWidget > QWidget {
+    background: transparent;
+}
+#ScrollAreaContent {
     background: transparent;
 }
 '''
@@ -166,6 +174,7 @@ def groupbox_build_blocks(c):
     color: ''' + text + ''';
 }
 QGroupBox::title {
+    subcontrol-origin: padding;
     subcontrol-position: top left;
     left: 12px;
     top: 6px;

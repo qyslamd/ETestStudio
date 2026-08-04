@@ -78,7 +78,7 @@ void ProjectStructureWidget::initUi() {
   scroll_area->setObjectName(QStringLiteral("PhScrollArea"));
 
   auto* scroll_content = new QWidget();
-  scroll_content->setObjectName(QStringLiteral("PhScrollContent"));
+  scroll_content->setObjectName(QStringLiteral("ScrollAreaContent"));
   auto* sc_layout = new QVBoxLayout(scroll_content);
   sc_layout->setContentsMargins(12, 8, 12, 8);
   sc_layout->setSpacing(16);

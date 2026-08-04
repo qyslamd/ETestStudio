@@ -119,6 +119,7 @@ void MonitorConfigDialog::initUi() {
   // autoFillBackground，让 #MonitorConfigRight 的主题背景透出来
   scroll->viewport()->setAutoFillBackground(false);
   auto* content = new QWidget(scroll);
+  content->setObjectName(QStringLiteral("ScrollAreaContent"));
   content->setAutoFillBackground(false);
   tiles_grid_ = new QGridLayout(content);
   tiles_grid_->setContentsMargins(4, 4, 4, 4);

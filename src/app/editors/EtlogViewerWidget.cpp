@@ -185,7 +185,7 @@ void EtlogViewerWidget::initUi() {
   detail_scroll_->setWidgetResizable(true);
 
   auto* detail_inner = new QWidget();
-  detail_inner->setObjectName(QStringLiteral("etlogDetailInner"));
+  detail_inner->setObjectName(QStringLiteral("ScrollAreaContent"));
   detail_scroll_->setWidget(detail_inner);
   auto* outer_layout = new QVBoxLayout(detail_inner);
   outer_layout->setContentsMargins(0, 0, 0, 0);

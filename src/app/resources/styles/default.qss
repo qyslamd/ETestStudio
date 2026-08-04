@@ -1595,6 +1595,12 @@ QScrollArea {
     border: none;
     background: transparent;
 }
+QScrollArea > QWidget > QWidget {
+    background: transparent;
+}
+#ScrollAreaContent {
+    background: transparent;
+}
 /* ===== QScrollArea 主题适配样式 END ===== */
 
 /* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */
@@ -1607,6 +1613,7 @@ QGroupBox {
     color: #333333;
 }
 QGroupBox::title {
+    subcontrol-origin: padding;
     subcontrol-position: top left;
     left: 12px;
     top: 6px;

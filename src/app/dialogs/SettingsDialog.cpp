@@ -182,6 +182,7 @@ QWidget* SettingsDialog::createAppearancePage() {
   scrollArea->setFrameShape(QFrame::NoFrame);
 
   auto* scrollContent = new QWidget();
+  scrollContent->setObjectName(QStringLiteral("ScrollAreaContent"));
   scrollArea->setWidget(scrollContent);
   auto* layout = new QVBoxLayout(scrollContent);
   layout->setContentsMargins(20, 16, 20, 16);
