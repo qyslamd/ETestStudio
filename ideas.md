@@ -217,6 +217,24 @@ WisdomDatabase& WisdomDatabase::instance() {
 3. 或者将初始化/清理托管给 `QCoreApplication` 的生命周期（如 `aboutToQuit` 信号中手动清理）
 4. 跨平台代码**必须**在 GCC 和 MSVC 下都测试退出路径--析构顺序是未定义行为，标准不保证一致性
 
+### 遮罩类浮层窗口定位：Wayland 无全局坐标，必须退化为父窗口子覆盖层
+
+**现象**：`AnimationDialog`（登录/关于/新建项目/用户管理对话框的遮罩）在 Windows 正常覆盖主窗口，WSL2 Ubuntu 下遮罩落在屏幕左上角。
+同项目的 `TuxSaverOverlay`（屏保）在 WSL2 下却完全正常。
+
+**原因**：
+- Wayland 协议下，客户端**无法查询自身在屏幕上的全局坐标**，窗口位置由 compositor 管理。`QWidget::geometry()` / `position()` 的位置部分只能返回客户端"认为"的值，通常为 `(0,0)`。
+- `AnimationDialog` 原来是独立顶层 QDialog + `setGeometry(parentWidget()->window()->geometry())`，全局坐标在 Wayland 下拿到的是 `(0,0)`，遮罩就钉在左上角。
+- `TuxSaverOverlay` 正常，是因为它是**普通 QWidget 子覆盖层**，用 `setGeometry(p->rect())`（父窗口本地坐标）定位，从不碰全局坐标——Wayland 下 child widget 本地定位 100% 可靠，且随父窗口移动/缩放自动跟随。
+
+**教训**：**浮层/遮罩窗口的定位不要依赖"顶层窗口 + 全局坐标"，这是 Windows 思维。** Wayland 下独立顶层窗口无法被精确覆盖到另一窗口之上（协议级限制）。可靠路径是让遮罩退化为父窗口的 child widget，用父窗口本地坐标（`parentWidget()->rect()`）定位。
+
+**修复方案**（commit b3c458a）：
+- Linux 分支构造时清掉窗口类型位（`setWindowFlags((windowFlags() & ~Qt::WindowType_Mask) | Qt::Widget)`），退化为子覆盖层
+- `showEvent` 双平台：Windows 用 `parentWidget()->window()->geometry()`（全局坐标可用），Linux 用 `parentWidget()->rect()`（本地坐标）
+- 同步移除不再需要的 `WindowMover` 拖拽机制
+- 注意事项：child QDialog 上 `exec()` 的模态行为（WindowModal 是否完整禁父窗口）未实测；`LoginDialog` 用 `show()` 不受影响，若 exec() 失效需改调用点为 `show()` + 完成信号
+
 ### Linux Debug 比 Windows Debug 快--Debug CRT 与 Qt 编译模式不对称
 
 **现象**：WSL2 Ubuntu 上 `-g` 编译的 Debug 程序比 Windows 本机 Debug 程序流畅很多。
