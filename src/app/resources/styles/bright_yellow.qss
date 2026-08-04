@@ -444,19 +444,7 @@ QRadioButton::indicator:checked {
     border-color: #E0BD00;
 }
 
-/* GroupBox */
-QGroupBox {
-    color: #2A2015;
-    border: 1px solid #FFEF99;
-    border-radius: 4px;
-    margin-top: 12px;
-    padding-top: 16px;
-}
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0px 8px;
-}
+/* QGroupBox 样式由 gen_themes.py 注入（删除此处原有块，避免 subcontrol-origin:margin 泄漏） */
 
 /* ToolTip */
 QToolTip {
@@ -1111,8 +1099,8 @@ etest--app--TerminalPanel QPlainTextEdit {
 
 /* ==================== ProtocolEditorWidget ==================== */
 #protocolToolbar {
-    background-color: #FFF3D0;
-    border-bottom: 1px solid #FFF3D0;
+    background-color: #FFF5BF;
+    border-bottom: 1px solid #FFF5BF;
 }
 #protocolToolbar QToolButton:checked {
     background-color: #FFD700;
@@ -1584,7 +1572,7 @@ QToolButton#aboutOkButton:pressed {
   color: #2A2015;
 }
 #loginUsername, #loginPassword {
-  background: #FFF3D0;
+  background: #FFF5BF;
   border: 1px solid #B7A64C;
   border-radius: 8px;
   padding: 8px 12px;
@@ -1593,7 +1581,7 @@ QToolButton#aboutOkButton:pressed {
 }
 #loginUsername:focus, #loginPassword:focus {
   border-color: #FFD700;
-  background: #FFF3D0;
+  background: #FFF5BF;
 }
 QToolButton#loginButton {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -1659,7 +1647,7 @@ QToolButton#userMgrAddBtn:hover {
   background: #C9AA00;
 }
 #userMgrTable {
-  border: 1px solid #FFF3D0;
+  border: 1px solid #FFEF99;
   border-radius: 8px;
   gridline-color: #333;
   color: #2A2015;
@@ -1922,8 +1910,35 @@ QToolButton#saverCloseBtn:pressed {
     border-radius: 2px;
 }
 
+/* 两级标题：二级标题（连接描述）小字灰 */
+#WaveformSubtitle, #LEDSubtitle, #MeterSubtitle, #GaugeSubtitle, #ValueLabelSubtitle {
+    font-size: 10px;
+    color: #726000;
+}
+
+/* 监听器配置对话框（MonitorConfigDialog） */
+#MonitorConfigSearch {
+    padding: 4px 6px;
+    border: 1px solid #FFEF99;
+    border-radius: 3px;
+}
+#MonitorConfigList {
+    border: 1px solid #FFEF99;
+    border-radius: 3px;
+    background-color: #FFF9D8;
+}
+#MonitorConfigRight {
+    border: 1px solid #FFEF99;
+    border-radius: 3px;
+    background-color: #FFFBEA;
+}
+#MonitorConfigDelete {
+    padding: 4px 12px;
+}
+/* #MonitorTypeTile 样式由 gen_themes.py 注入（QGroupBox 悬浮标题 + accent 胶囊） */
+
 /* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget {
+#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
     background-color: #FFFBEA;
 }
 

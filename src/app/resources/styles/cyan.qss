@@ -444,19 +444,7 @@ QRadioButton::indicator:checked {
     border-color: #007070;
 }
 
-/* GroupBox */
-QGroupBox {
-    color: #2A2015;
-    border: 1px solid #99CCCC;
-    border-radius: 4px;
-    margin-top: 12px;
-    padding-top: 16px;
-}
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0px 8px;
-}
+/* QGroupBox 样式由 gen_themes.py 注入（删除此处原有块，避免 subcontrol-origin:margin 泄漏） */
 
 /* ToolTip */
 QToolTip {
@@ -1922,8 +1910,35 @@ QToolButton#saverCloseBtn:pressed {
     border-radius: 2px;
 }
 
+/* 两级标题：二级标题（连接描述）小字灰 */
+#WaveformSubtitle, #LEDSubtitle, #MeterSubtitle, #GaugeSubtitle, #ValueLabelSubtitle {
+    font-size: 10px;
+    color: #003939;
+}
+
+/* 监听器配置对话框（MonitorConfigDialog） */
+#MonitorConfigSearch {
+    padding: 4px 6px;
+    border: 1px solid #99CCCC;
+    border-radius: 3px;
+}
+#MonitorConfigList {
+    border: 1px solid #99CCCC;
+    border-radius: 3px;
+    background-color: #D8EBEB;
+}
+#MonitorConfigRight {
+    border: 1px solid #99CCCC;
+    border-radius: 3px;
+    background-color: #EAF4F4;
+}
+#MonitorConfigDelete {
+    padding: 4px 12px;
+}
+/* #MonitorTypeTile 样式由 gen_themes.py 注入（QGroupBox 悬浮标题 + accent 胶囊） */
+
 /* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget {
+#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
     background-color: #EAF4F4;
 }
 

@@ -1923,7 +1923,7 @@ QToolButton#saverCloseBtn:pressed {
 }
 
 /* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget {
+#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
     background-color: #FFF5F8;
 }
 
