@@ -12,22 +12,20 @@
 #include <QShowEvent>
 #include <QVariantAnimation>
 
-#include "utils/window_mover.h"
-
 namespace etest::app {
 
 AnimationDialog::AnimationDialog(QWidget* parent) : QDialog(parent) {
   setWindowFlag(Qt::FramelessWindowHint);
   setAttribute(Qt::WA_TranslucentBackground);
+#ifndef Q_OS_WIN
+  // Linux（WSLg/Wayland）下客户端拿不到全局坐标，独立顶层窗口无法覆盖
+  // 到主窗口之上。退化为父窗口的子覆盖层，配合 showEvent 中 parentWidget()
+  // 本地坐标定位（与 TuxSaverOverlay 同模式），跨平台一套逻辑。
+  setWindowFlags((windowFlags() & ~Qt::WindowType_Mask) | Qt::Widget);
+#endif
 }
 
 AnimationDialog::~AnimationDialog() = default;
-
-void AnimationDialog::removeWindowMover() {
-  if (mover_) {
-    mover_->deleteLater();
-  }
-}
 
 void AnimationDialog::setWidget(QWidget* widget) {
   if (widget_) {
@@ -35,7 +33,6 @@ void AnimationDialog::setWidget(QWidget* widget) {
   }
   widget_ = widget;
   widget_->setParent(this);
-  mover_ = new WindowMover(widget_, this);
 
   shadowEffect_ = new QGraphicsDropShadowEffect(widget_);
   shadowEffect_->setColor(QColor(105, 105, 105, 200));
@@ -45,32 +42,17 @@ void AnimationDialog::setWidget(QWidget* widget) {
 }
 
 void AnimationDialog::showEvent(QShowEvent* event) {
-#ifdef Q_OS_WIN
   if (parentWidget()) {
-    auto* top = parentWidget()->window();
-    setGeometry(top->geometry());
-  }
+#ifdef Q_OS_WIN
+    // Win32 可查询全局窗口矩形，遮罩覆盖主窗口真实屏幕位置
+    setGeometry(parentWidget()->window()->geometry());
 #else
-  // 没有父窗口，尝试查找主窗口
-  QWidget* mainWindow = nullptr;
-  for (QWidget* widget : qApp->topLevelWidgets()) {
-    if (widget->isVisible() &&
-        QString::fromLatin1(widget->metaObject()->className()) ==
-            "MainWindow") {
-      mainWindow = widget;
-      break;
-    }
-  }
-  if (mainWindow) {
-    setGeometry(mainWindow->geometry());
-  } else {
-    // 找不到主窗口时，可回退到屏幕尺寸（或保持原状）
-    if (nativeParentWidget()) {
-      auto* top = nativeParentWidget()->window();
-      setGeometry(top->geometry());
-    }
-  }
+    // Wayland 客户端拿不到全局坐标，遮罩已退化为父窗口子覆盖层，
+    // 用本地坐标覆盖父窗口客户区，父窗口移动/缩放时自动跟随
+    setGeometry(parentWidget()->rect());
 #endif
+  }
+  raise();
   actShowAnimation();
 }
 

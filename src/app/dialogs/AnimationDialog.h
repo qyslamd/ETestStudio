@@ -6,7 +6,6 @@
 #include <functional>
 
 class QGraphicsDropShadowEffect;
-class WindowMover;
 
 namespace etest::app {
 
@@ -16,8 +15,6 @@ class AnimationDialog : public QDialog {
  public:
   explicit AnimationDialog(QWidget* parent = nullptr);
   ~AnimationDialog() override;
-
-  void removeWindowMover();
 
  signals:
   void hideAnimationFinished();
@@ -35,7 +32,6 @@ class AnimationDialog : public QDialog {
 
  protected:
   QWidget* widget_ = nullptr;
-  WindowMover* mover_ = nullptr;
   int round_radius_ = 8;
 
   // 动画截图机制

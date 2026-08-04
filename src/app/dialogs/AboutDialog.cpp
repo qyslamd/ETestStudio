@@ -175,7 +175,6 @@ void AboutDialog::initUi() {
   main_layout->addWidget(body);
 
   setWidget(content);
-  removeWindowMover();
 }
 
 }  // namespace etest::app
