@@ -100,9 +100,9 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       // 端口列表 — 保存当前状态供 undo，加载到表格
       uut_dirty_ = false;
       saved_uut_ports_ = prod->ports;
-      const QStringList dirNames = {QStringLiteral("Input"),
-                                    QStringLiteral("Output"),
-                                    QStringLiteral("Bidirectional")};
+      const QStringList dirNames = {QStringLiteral("输入"),
+                                    QStringLiteral("输出"),
+                                    QStringLiteral("双向")};
       uut_port_table_->setUpdatesEnabled(false);
       uut_port_table_->blockSignals(true);
       uut_port_table_->setRowCount(prod->ports.size());
@@ -192,9 +192,9 @@ void PropertyPanelWidget::showPropertiesFor(QGraphicsItem* item) {
       // Load device ports via model (no QComboBox creation)
       device_port_view_->setUpdatesEnabled(false);
       device_port_model_->blockSignals(true);
-      const QStringList dirNames = {QStringLiteral("Input"),
-                                    QStringLiteral("Output"),
-                                    QStringLiteral("Bidirectional")};
+      const QStringList dirNames = {QStringLiteral("输入"),
+                                    QStringLiteral("输出"),
+                                    QStringLiteral("双向")};
       device_port_model_->removeRows(0, device_port_model_->rowCount());
       for (int r = 0; r < d->ports.size(); ++r) {
         device_port_model_->insertRow(r);
@@ -323,8 +323,8 @@ void PropertyPanelWidget::buildUutPage() {
   uut_port_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
   uut_port_table_->setAlternatingRowColors(true);
   // 方向列和功能类型列使用 ComboBoxDelegate
-  QStringList dirItems = {QStringLiteral("Input"), QStringLiteral("Output"),
-                          QStringLiteral("Bidirectional")};
+  QStringList dirItems = {QStringLiteral("输入"), QStringLiteral("输出"),
+                          QStringLiteral("双向")};
   QStringList funcItems;
   for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft)
     funcItems << functionTypeToString(static_cast<FunctionType>(ft));
@@ -366,9 +366,9 @@ void PropertyPanelWidget::buildPortPage() {
   lay->addRow(QStringLiteral("名称"), port_name_edit_);
 
   port_direction_combo_ = new QComboBox(w);
-  port_direction_combo_->addItem(QStringLiteral("Input"));
-  port_direction_combo_->addItem(QStringLiteral("Output"));
-  port_direction_combo_->addItem(QStringLiteral("Bidirectional"));
+  port_direction_combo_->addItem(QStringLiteral("输入"));
+  port_direction_combo_->addItem(QStringLiteral("输出"));
+  port_direction_combo_->addItem(QStringLiteral("双向"));
   connect(port_direction_combo_, &QComboBox::currentTextChanged, this,
           [this](const QString&) { onPortDirectionChanged(); });
   lay->addRow(QStringLiteral("方向"), port_direction_combo_);
@@ -468,8 +468,8 @@ void PropertyPanelWidget::buildDevicePage() {
     for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft)
       funcItems << functionTypeToString(static_cast<FunctionType>(ft));
     direction_delegate_ =
-        new ComboBoxDelegate({QStringLiteral("Input"), QStringLiteral("Output"),
-                              QStringLiteral("Bidirectional")},
+        new ComboBoxDelegate({QStringLiteral("输入"), QStringLiteral("输出"),
+                              QStringLiteral("双向")},
                              this);
     function_delegate_ = new ComboBoxDelegate(funcItems, this);
   }
@@ -601,9 +601,11 @@ void PropertyPanelWidget::buildDevicePortPage() {
   lay->addRow(QStringLiteral("端口名称"), devport_name_edit_);
 
   devport_direction_combo_ = new QComboBox(w);
-  devport_direction_combo_->addItem(QStringLiteral("Input"));
-  devport_direction_combo_->addItem(QStringLiteral("Output"));
-  devport_direction_combo_->addItem(QStringLiteral("Bidirectional"));
+  devport_direction_combo_->addItem(QStringLiteral("输入"));
+  devport_direction_combo_->addItem(QStringLiteral("输出"));
+  devport_direction_combo_->addItem(QStringLiteral("双向"));
+  // 激励设备端口方向由硬件插件元数据确定，只读展示，不允许用户修改
+  devport_direction_combo_->setEnabled(false);
   connect(devport_direction_combo_, &QComboBox::currentTextChanged, this,
           [this](const QString&) { onDevicePortDirectionChanged(); });
   lay->addRow(QStringLiteral("方向"), devport_direction_combo_);
@@ -698,9 +700,9 @@ void PropertyPanelWidget::onUutAddPort() {
   // 场景刷新后，重新加载表格
   prod = doc_->product(editing_uut_index_);
   if (prod) {
-    const QStringList dirNames = {QStringLiteral("Input"),
-                                  QStringLiteral("Output"),
-                                  QStringLiteral("Bidirectional")};
+    const QStringList dirNames = {QStringLiteral("输入"),
+                                  QStringLiteral("输出"),
+                                  QStringLiteral("双向")};
     uut_port_table_->blockSignals(true);
     uut_port_table_->setRowCount(prod->ports.size());
     int r = prod->ports.size() - 1;
@@ -728,9 +730,9 @@ void PropertyPanelWidget::onUutRemovePort() {
   // 场景刷新后，重新加载表格
   prod = doc_->product(editing_uut_index_);
   if (prod) {
-    const QStringList dirNames = {QStringLiteral("Input"),
-                                  QStringLiteral("Output"),
-                                  QStringLiteral("Bidirectional")};
+    const QStringList dirNames = {QStringLiteral("输入"),
+                                  QStringLiteral("输出"),
+                                  QStringLiteral("双向")};
     uut_port_table_->blockSignals(true);
     uut_port_table_->setRowCount(prod->ports.size());
     for (int r = 0; r < prod->ports.size(); ++r) {
@@ -766,9 +768,9 @@ void PropertyPanelWidget::applyUutPorts(int productIndex) {
       port = saved_uut_ports_[r];
     port.name = nameItem->text();
     port.direction =
-        dirItem && dirItem->text() == QStringLiteral("Output")
+        dirItem && dirItem->text() == QStringLiteral("输出")
             ? TopologyPort::Direction::Output
-        : dirItem && dirItem->text() == QStringLiteral("Bidirectional")
+        : dirItem && dirItem->text() == QStringLiteral("双向")
             ? TopologyPort::Direction::Bidirectional
             : TopologyPort::Direction::Input;
     port.functionType = FunctionType::CUSTOM;
@@ -1011,9 +1013,9 @@ void PropertyPanelWidget::applyDevicePorts(int deviceIndex) {
     if (r < saved_device_ports_.size())
       dp = saved_device_ports_[r];
     dp.name = name;
-    dp.direction = dirText == QStringLiteral("Bidirectional")
+    dp.direction = dirText == QStringLiteral("双向")
                        ? TopologyPort::Direction::Bidirectional
-                   : dirText == QStringLiteral("Output")
+                   : dirText == QStringLiteral("输出")
                        ? TopologyPort::Direction::Output
                        : TopologyPort::Direction::Input;
     dp.functionType = FunctionType::CUSTOM;
@@ -1066,7 +1068,7 @@ void PropertyPanelWidget::onAddDevicePortRow() {
   device_port_model_->insertRow(row);
   device_port_model_->setData(device_port_model_->index(row, 0), QString());
   device_port_model_->setData(device_port_model_->index(row, 1),
-                              QStringLiteral("Input"));
+                              QStringLiteral("输入"));
   device_port_model_->setData(device_port_model_->index(row, 2),
                               functionTypeToString(FunctionType::A429));
   device_dirty_ = true;

@@ -67,7 +67,10 @@ void TopologyView::resizeEvent(QResizeEvent* event) {
 }
 
 void TopologyView::renderLegendCache() {
-  const int lw = 110, lh = 148;
+  // 高度 124 = 标题区(20) + 端口方向 3 行(24~72) + 分隔线(76) +
+  // 设备类型 2 行(84~116) + 底部内边距(8)。监听器图例随拓扑移除后
+  // 曾遗留 148 高导致底部空白，此处收缩到内容实际高度。
+  const int lw = 110, lh = 124;
   const auto& tc = topologyColors();
 
   legend_cache_ = QPixmap(lw, lh);
