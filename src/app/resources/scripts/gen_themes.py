@@ -44,6 +44,10 @@ MARK_SPIN_START = '/* ===== QSpinBox 主题适配样式 START ===== */'
 MARK_SPIN_END = '/* ===== QSpinBox 主题适配样式 END ===== */'
 MARK_COMBO_START = '/* ===== QComboBox 主题适配样式 START ===== */'
 MARK_COMBO_END = '/* ===== QComboBox 主题适配样式 END ===== */'
+MARK_SCROLL_START = '/* ===== QScrollArea 主题适配样式 START ===== */'
+MARK_SCROLL_END = '/* ===== QScrollArea 主题适配样式 END ===== */'
+MARK_GROUPBOX_START = '/* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */'
+MARK_GROUPBOX_END = '/* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */'
 
 
 def spin_hex_to_rgb(hex_color):
@@ -133,8 +137,59 @@ def combo_build_blocks(c, icon):
             .replace('@ICON@', icon))
 
 
+def scroll_build_blocks():
+    """QScrollArea 通用样式（无色，无需按主题替换）"""
+    return '''QScrollArea {
+    border: none;
+    background: transparent;
+}
+'''
+
+
+def groupbox_build_blocks(c):
+    """全局 QGroupBox 样式：标题 pill（纯色 accent）+ hover/选中描边。
+    所有 background 用纯色（不用 qlineargradient）：框体 panelBackground
+    （与其它容器一致），标题 accentColor。标题放框内顶部——不能用
+    subcontrol-origin:margin + 负 top，QSS margin 不占真实布局空间，负偏移
+    会把标题画到控件矩形上方被父级裁剪。"""
+    panel = c['panelBackground']
+    border = c['borderColor']
+    accent = c['accentColor']
+    accent_dk = accent_darker(accent, 0.15)
+    text = c['textColor']
+    return ('''QGroupBox {
+    background-color: ''' + panel + ''';
+    border: 1px solid ''' + border + ''';
+    border-radius: 8px;
+    margin-top: 0px;
+    padding: 22px 12px 12px 12px;
+    color: ''' + text + ''';
+}
+QGroupBox::title {
+    subcontrol-position: top left;
+    left: 12px;
+    top: 6px;
+    padding: 2px 8px;
+    background-color: ''' + accent + ''';
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+}
+QGroupBox:hover {
+    border: 1px solid ''' + accent + ''';
+}
+QGroupBox[selected="true"] {
+    border: 2px solid ''' + accent + ''';
+}
+QGroupBox[selected="true"]::title {
+    background-color: ''' + accent_dk + ''';
+}
+''')
+
+
 def inject_widget_styles():
-    """为所有主题 QSS 注入 QSpinBox/QComboBox 主题适配样式"""
+    """为所有主题 QSS 注入 QSpinBox/QComboBox/QScrollArea 主题适配样式"""
     for json_path in sorted(glob.glob(os.path.join(themes_dir, '*.json'))):
         theme_id = os.path.basename(json_path)[:-5]
         qss_path = os.path.join(styles_dir, theme_id + '.qss')
@@ -150,12 +205,19 @@ def inject_widget_styles():
             qss = f.read()
         qss = strip_marked(qss, MARK_SPIN_START, MARK_SPIN_END)
         qss = strip_marked(qss, MARK_COMBO_START, MARK_COMBO_END)
+        qss = strip_marked(qss, MARK_SCROLL_START, MARK_SCROLL_END)
+        qss = strip_marked(qss, MARK_GROUPBOX_START, MARK_GROUPBOX_END)
 
         spin_block = ('\n' + MARK_SPIN_START + '\n'
                       + spin_build_blocks(colors, icon) + MARK_SPIN_END + '\n')
         combo_block = ('\n' + MARK_COMBO_START + '\n'
                        + combo_build_blocks(colors, icon) + MARK_COMBO_END + '\n')
-        qss = qss.rstrip() + '\n' + spin_block + combo_block
+        scroll_block = ('\n' + MARK_SCROLL_START + '\n'
+                        + scroll_build_blocks() + MARK_SCROLL_END + '\n')
+        groupbox_block = ('\n' + MARK_GROUPBOX_START + '\n'
+                          + groupbox_build_blocks(colors) + MARK_GROUPBOX_END + '\n')
+        qss = (qss.rstrip() + '\n' + spin_block + combo_block
+               + scroll_block + groupbox_block)
 
         with open(qss_path, 'w', encoding='utf-8') as f:
             f.write(qss)

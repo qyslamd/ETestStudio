@@ -1015,17 +1015,7 @@ etest--app--EtlogViewerWidget {
 #MonitorConfigDelete {
     padding: 4px 12px;
 }
-#MonitorTypeTile {
-    border: 1px solid palette(midlight);
-    border-radius: 4px;
-}
-#MonitorTypeTile:hover {
-    border-color: palette(dark);
-}
-#MonitorTypeTile[selected="true"] {
-    border: 2px solid palette(highlight);
-    background-color: palette(light);
-}
+/* #MonitorTypeTile 样式由 gen_themes.py 注入（QGroupBox 悬浮标题 + accent 胶囊） */
 
 /* Visualizer 容器背景 */
 #ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget {
@@ -1599,3 +1589,41 @@ QComboBox[frameless="true"]:focus {
     background: #F1F1F1;
 }
 /* ===== QComboBox 主题适配样式 END ===== */
+
+/* ===== QScrollArea 主题适配样式 START ===== */
+QScrollArea {
+    border: none;
+    background: transparent;
+}
+/* ===== QScrollArea 主题适配样式 END ===== */
+
+/* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */
+QGroupBox {
+    background-color: #F0F0F0;
+    border: 1px solid #CCCCCC;
+    border-radius: 8px;
+    margin-top: 0px;
+    padding: 22px 12px 12px 12px;
+    color: #333333;
+}
+QGroupBox::title {
+    subcontrol-position: top left;
+    left: 12px;
+    top: 6px;
+    padding: 2px 8px;
+    background-color: #007ACC;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+}
+QGroupBox:hover {
+    border: 1px solid #007ACC;
+}
+QGroupBox[selected="true"] {
+    border: 2px solid #007ACC;
+}
+QGroupBox[selected="true"]::title {
+    background-color: #0067AD;
+}
+/* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */

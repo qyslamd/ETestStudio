@@ -2505,3 +2505,41 @@ QComboBox[frameless="true"]:focus {
     background: #231B31;
 }
 /* ===== QComboBox 主题适配样式 END ===== */
+
+/* ===== QScrollArea 主题适配样式 START ===== */
+QScrollArea {
+    border: none;
+    background: transparent;
+}
+/* ===== QScrollArea 主题适配样式 END ===== */
+
+/* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */
+QGroupBox {
+    background-color: #100820;
+    border: 1px solid #201540;
+    border-radius: 8px;
+    margin-top: 0px;
+    padding: 22px 12px 12px 12px;
+    color: #D0C0E0;
+}
+QGroupBox::title {
+    subcontrol-position: top left;
+    left: 12px;
+    top: 6px;
+    padding: 2px 8px;
+    background-color: #5A1A9A;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+}
+QGroupBox:hover {
+    border: 1px solid #5A1A9A;
+}
+QGroupBox[selected="true"] {
+    border: 2px solid #5A1A9A;
+}
+QGroupBox[selected="true"]::title {
+    background-color: #4C1682;
+}
+/* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */
