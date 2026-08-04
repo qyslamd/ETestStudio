@@ -1938,36 +1938,34 @@ QToolButton#saverCloseBtn:pressed {
 /* #MonitorTypeTile 样式由 gen_themes.py 注入（QGroupBox 悬浮标题 + accent 胶囊） */
 
 /* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
+#ValueLabelWidget, #MeterWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
     background-color: #FEF3ED;
 }
 
-/* StateLEDWidget */
-#LEDTitle {
+/* LedIndicator（合并自 StateLEDWidget；圆灯由 QPainter 绘制，无需 QSS） */
+#LedTitle {
     font-size: 12px;
     font-weight: bold;
     color: #2A2015;
 }
-#LEDDot {
-    min-width: 20px; max-width: 20px;
-    min-height: 20px; max-height: 20px;
-    border-radius: 10px;
-}
-#LEDDot[ledState="on"] {
-    background-color: #00cc66;
-}
-#LEDDot[ledState="off"] {
-    background-color: #cc3333;
-}
-#LEDStateText {
-    font-size: 14px;
-    font-weight: bold;
-}
-#LEDPulse {
+#LedSubtitle {
     font-size: 11px;
     color: #6D3212;
 }
-#LEDTs {
+#LedField {
+    font-size: 12px;
+    color: #2A2015;
+}
+#LedStateText {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2A2015;
+}
+#LedPulse {
+    font-size: 11px;
+    color: #6D3212;
+}
+#LedTs {
     font-size: 10px;
     color: #6D3212;
 }

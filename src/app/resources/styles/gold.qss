@@ -1923,26 +1923,23 @@ QToolButton#saverCloseBtn:pressed {
 }
 
 /* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #LEDWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
+#ValueLabelWidget, #MeterWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
     background-color: #FFFAF0;
 }
 
-/* StateLEDWidget */
+/* LedIndicator（圆灯由 QPainter 绘制） */
+#LedSubtitle {
+    font-size: 11px;
+    color: #8B7500;
+}
+#LedField {
+    font-size: 12px;
+}
+
 #LEDTitle {
     font-size: 12px;
     font-weight: bold;
     color: #3A2A00;
-}
-#LEDDot {
-    min-width: 20px; max-width: 20px;
-    min-height: 20px; max-height: 20px;
-    border-radius: 10px;
-}
-#LEDDot[ledState="on"] {
-    background-color: #00cc66;
-}
-#LEDDot[ledState="off"] {
-    background-color: #cc3333;
 }
 #LEDStateText {
     font-size: 14px;
