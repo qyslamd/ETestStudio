@@ -172,35 +172,40 @@ void GaugeCanvas::drawColorPie(QPainter* painter) {
     // 增加偏移量使得看起来没有脱节
     const int offset = 3;
 
-    // 起点对齐 value=0（90 + start_angle_），随值域顺时针绿→琥珀→红，
-    // 保证色环覆盖范围与刻度弧一致、顶部无断口
-    const double base = 90.0 + start_angle_;
-
+    // 与参考 draw_gauge_car 一致：锚点 270 - start_angle_（刻度 drawScaleNum
+    // 的 startRad = 360 - start_angle - 90 = 270 - start_angle，两者本就对齐），
+    // 依次递减画绿→琥珀→红，绿在 value=0 端。此前被误改成 90 + start_angle_
+    // 递增，导致红黄绿方向反转。
     painter->setBrush(pie_color_start_);
-    painter->drawPie(rect, base * 16, angleStart * 16);
+    painter->drawPie(rect, (270 - start_angle_ - angleStart) * 16,
+                     angleStart * 16);
 
     painter->setBrush(pie_color_mid_);
-    painter->drawPie(rect, (base + angleStart) * 16 + offset, angleMid * 16);
+    painter->drawPie(rect,
+                     (270 - start_angle_ - angleStart - angleMid) * 16 + offset,
+                     angleMid * 16);
 
     painter->setBrush(pie_color_end_);
     painter->drawPie(rect,
-                     (base + angleStart + angleMid) * 16 + offset * 2,
+                     (270 - start_angle_ - angleStart - angleMid - angleEnd) *
+                             16 +
+                         offset * 2,
                      angleEnd * 16);
   } else if (pie_style_ == PieStyle::Current) {
-    // 当前值圆环：值范围内着起始色，剩余部分着结束色。
-    // 起点同样对齐 value=0（90 + start_angle_），与刻度/指针/三色弧一致。
+    // 当前值圆环：值范围内着起始色，剩余部分着结束色。锚点同参考 270 - start_angle_。
     const double angleAll = 360.0 - start_angle_ - end_angle_;
     const double angleCurrent =
         angleAll * ((current_value_ - min_value_) / (max_value_ - min_value_));
     const double angleOther = angleAll - angleCurrent;
 
-    const double base = 90.0 + start_angle_;
-
     painter->setBrush(pie_color_start_);
-    painter->drawPie(rect, base * 16, angleCurrent * 16);
+    painter->drawPie(rect, (270 - start_angle_ - angleCurrent) * 16,
+                     angleCurrent * 16);
 
     painter->setBrush(pie_color_end_);
-    painter->drawPie(rect, (base + angleCurrent) * 16, angleOther * 16);
+    painter->drawPie(rect,
+                     (270 - start_angle_ - angleCurrent - angleOther) * 16,
+                     angleOther * 16);
   }
 
   painter->restore();
