@@ -126,6 +126,8 @@ add_executable(${TARGET_NAME} WIN32
     visualizers/GaugeVisualizer.cpp
     visualizers/VisualizerFactory.h
     visualizers/VisualizerFactory.cpp
+    visualizers/LedIndicator.h
+    visualizers/LedIndicator.cpp
     VisualizationArea.h
     VisualizationArea.cpp
     widgets/TuxSaverOverlay.h

@@ -5,8 +5,10 @@
 #include <QContextMenuEvent>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
+#include <QHBoxLayout>
 #include <QMenu>
 
+#include "visualizers/LedIndicator.h"
 #include "visualizers/SignalVisualizer.h"
 
 namespace etest::app {
@@ -30,6 +32,32 @@ VisualizationArea::VisualizationArea(QWidget* parent)
 
   // 背景透明，由 QSS 统一控制
   setBackgroundBrush(Qt::NoBrush);
+
+  // 临时预览：LED 圆灯组件（0灰/1绿/2红 默认语义色，验收后移除）
+  auto* preview = new QWidget;
+  auto* previewLayout = new QHBoxLayout(preview);
+  previewLayout->setContentsMargins(16, 16, 16, 16);
+  previewLayout->setSpacing(24);
+
+  auto* ledOn = new LedIndicator;
+  ledOn->setFieldName(QStringLiteral("电源开关"));
+  ledOn->setStateText(QStringLiteral("ON"));
+  ledOn->setState(1);
+  previewLayout->addWidget(ledOn);
+
+  auto* ledOff = new LedIndicator;
+  ledOff->setFieldName(QStringLiteral("电源开关"));
+  ledOff->setStateText(QStringLiteral("OFF"));
+  ledOff->setState(0);
+  previewLayout->addWidget(ledOff);
+
+  auto* ledAlarm = new LedIndicator;
+  ledAlarm->setFieldName(QStringLiteral("故障告警"));
+  ledAlarm->setStateText(QStringLiteral("告警"));
+  ledAlarm->setState(2);
+  previewLayout->addWidget(ledAlarm);
+
+  scene_->addWidget(preview);
 }
 
 VisualizationArea::~VisualizationArea() {
