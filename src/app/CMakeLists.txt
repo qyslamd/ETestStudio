@@ -81,6 +81,8 @@ add_executable(${TARGET_NAME} WIN32
     widgets/BottomContainerWidget.cpp
     widgets/ProblemsPanel.h
     widgets/ProblemsPanel.cpp
+    widgets/ProgramChecklistWidget.h
+    widgets/ProgramChecklistWidget.cpp
     widgets/ProgramSelectionPopup.h
     widgets/ProgramSelectionPopup.cpp
     TerminalPanel.h

@@ -11,12 +11,12 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QKeySequence>
-#include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QRectF>
 #include <QSet>
+#include <QSizePolicy>
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -27,6 +27,7 @@
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "logger/Logger.h"
 #include "visualizers/VisualizerFactory.h"
+#include "widgets/ProgramChecklistWidget.h"
 
 using etest::core_ui::AppIconProvider;
 
@@ -48,8 +49,12 @@ namespace etest::app {
 QJsonObject RunConfig::toJson() const {
   QJsonObject root;
   root[QStringLiteral("version")] = QStringLiteral("1.0");
-  if (!testProgram.isEmpty()) {
-    root[QStringLiteral("testProgram")] = testProgram;
+  if (!programs.isEmpty()) {
+    QJsonArray progArr;
+    for (const QString& p : programs) {
+      progArr.append(p);
+    }
+    root[QStringLiteral("programs")] = progArr;
   }
 
   QJsonArray monitorsArr;
@@ -79,7 +84,15 @@ QJsonObject RunConfig::toJson() const {
 }
 
 bool RunConfig::fromJson(const QJsonObject& obj) {
-  testProgram = obj[QStringLiteral("testProgram")].toString();
+  // 归一化（格式不变量）：programs 去重、丢弃空串
+  programs.clear();
+  const QJsonArray progArr = obj[QStringLiteral("programs")].toArray();
+  for (const auto& v : progArr) {
+    const QString p = v.toString();
+    if (!p.isEmpty() && !programs.contains(p)) {
+      programs.append(p);
+    }
+  }
 
   // 归一化（格式不变量）：monitors 同 connectionId 去重，保留首个
   monitors.clear();
@@ -257,15 +270,17 @@ void RunConfigEditor::reloadToolbarIcons() {
   if (dist_btn_) {
     dist_btn_->setIcon(provider.icon(QStringLiteral("topo_distribute")));
   }
-  if (info_toggle_action_) {
-    info_toggle_action_->setIcon(provider.icon(QStringLiteral("settings")));
+  if (test_program_toggle_action_) {
+    // 图标固定，不随 checked 切换（与三编辑器统一）
+    test_program_toggle_action_->setIcon(
+        provider.icon(QStringLiteral("testprogram")));
   }
 }
 
 bool RunConfigEditor::eventFilter(QObject* obj, QEvent* event) {
   // 用户点 dock 关闭按钮 → 同步取消工具栏 toggle 勾选（与三编辑器统一）
-  if (obj == info_dock_ && event->type() == QEvent::Close) {
-    syncDockCloseAction(info_toggle_action_);
+  if (event->type() == QEvent::Close && obj == test_program_dock_) {
+    syncDockCloseAction(test_program_toggle_action_);
   }
   return QMainWindow::eventFilter(obj, event);
 }
@@ -328,15 +343,6 @@ void RunConfigEditor::initUi() {
   connect(add_monitor_action_, &QAction::triggered, this,
           [this]() { onAddMonitorClicked(); });
 
-  // 信息面板显示/隐藏 toggle（与三编辑器统一：dock 可关，工具栏 toggle 重开）
-  toolbar_->addSeparator();
-  info_toggle_action_ = toolbar_->addAction(QStringLiteral("运行配置"));
-  info_toggle_action_->setIcon(
-      AppIconProvider::instance().icon(QStringLiteral("settings")));
-  info_toggle_action_->setCheckable(true);
-  info_toggle_action_->setChecked(true);
-  info_toggle_action_->setToolTip(QStringLiteral("显示/隐藏信息面板"));
-
   // 排列按钮（QToolButton + QMenu，参考拓扑 TopologyEditorWidget）
   align_btn_ = new QToolButton(this);
   align_btn_->setText(QStringLiteral("排列"));
@@ -381,30 +387,41 @@ void RunConfigEditor::initUi() {
   dist_btn_->setEnabled(false);  // 初始无选中，禁用直到选中 >=2
   toolbar_->addWidget(dist_btn_);
 
-  // 信息区：停靠面板（Left，禁浮动禁关闭，可拖拽改停靠位置）
-  auto* infoWidget = new QWidget(this);
-  auto* infoLayout = new QVBoxLayout(infoWidget);
-  infoLayout->setContentsMargins(8, 8, 8, 8);
-  file_label_ = new QLabel(QStringLiteral("未打开文件"), infoWidget);
-  file_label_->setWordWrap(true);
-  file_label_->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  file_label_->setObjectName(QStringLiteral("runConfigFile"));
-  test_program_label_ =
-      new QLabel(QStringLiteral("测试程序: (未选择)"), infoWidget);
-  test_program_label_->setObjectName(QStringLiteral("runConfigTestProgram"));
-  infoLayout->addWidget(file_label_);
-  infoLayout->addWidget(test_program_label_);
-  infoLayout->addStretch(1);
+  // 弹簧：面板开关右对齐（参考拓扑 TopologyEditorWidget）
+  auto* spacer = new QWidget(toolbar_);
+  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar_->addWidget(spacer);
 
-  info_dock_ = new QDockWidget(QStringLiteral("运行配置"), this);
-  info_dock_->setObjectName(QStringLiteral("runConfigInfoDock"));
-  info_dock_->setWidget(infoWidget);
-  // 与三编辑器统一：AllDockWidgetFeatures（可关可浮可拖），关闭由工具栏 toggle 重开
-  info_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
-  info_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
-      QStringLiteral("运行配置"), info_dock_));
-  info_dock_->installEventFilter(this);
-  addDockWidget(Qt::LeftDockWidgetArea, info_dock_);
+  // 测试程序面板显示/隐藏 toggle（与三编辑器统一：dock 可关，工具栏 toggle 重开）
+  test_program_toggle_action_ = toolbar_->addAction(QStringLiteral("测试程序"));
+  test_program_toggle_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("testprogram")));
+  test_program_toggle_action_->setCheckable(true);
+  test_program_toggle_action_->setChecked(true);
+  test_program_toggle_action_->setToolTip(QStringLiteral("显示/隐藏测试程序面板"));
+
+  // 测试程序多选 dock（Left 停靠，同套 dock 管理）
+  program_list_ = new ProgramChecklistWidget(this);
+  test_program_dock_ = new QDockWidget(QStringLiteral("测试程序"), this);
+  test_program_dock_->setObjectName(QStringLiteral("runConfigProgramDock"));
+  test_program_dock_->setWidget(program_list_);
+  test_program_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
+  test_program_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
+      QStringLiteral("测试程序"), test_program_dock_));
+  test_program_dock_->installEventFilter(this);
+  addDockWidget(Qt::LeftDockWidgetArea, test_program_dock_);
+
+  // 测试程序勾选变化 → 更新 config_.programs + 压快照 + 置脏
+  connect(program_list_, &ProgramChecklistWidget::programsChanged, this,
+          [this]() {
+            const QStringList sel = program_list_->selectedPrograms();
+            if (sel == config_.programs) {
+              return;  // 同值（程序性刷新）不动作
+            }
+            saveSnapshot();
+            config_.programs = sel;
+            markModified();
+          });
 
   // 主视图：可视化区（编辑态，监听器卡片 + 手动布局）
   vis_area_ = new VisualizationArea(this);
@@ -442,18 +459,17 @@ void RunConfigEditor::initUi() {
             }
           });
 
-  // 信息面板可见性与工具栏 toggle 同步（dock 关闭按钮由 eventFilter 拦截）
-  connect(info_toggle_action_, &QAction::toggled, this,
-          [this](bool checked) { info_dock_->setVisible(checked); });
+  // 面板可见性与工具栏 toggle 同步（与 Topology 一致：toggled 直接驱动 dock 显隐）
+  connect(test_program_toggle_action_, &QAction::toggled,
+          test_program_dock_, &QWidget::setVisible);
 }
 
 void RunConfigEditor::refreshUi() {
-  file_label_->setText(file_path_.isEmpty() ? QStringLiteral("未打开文件")
-                                            : file_path_);
-  test_program_label_->setText(QStringLiteral("测试程序: %1")
-                                   .arg(config_.testProgram.isEmpty()
-                                            ? QStringLiteral("(未选择)")
-                                            : config_.testProgram));
+  // 测试程序面板：按项目根刷新列表 + 恢复勾选（与 config_.programs 同步）
+  if (program_list_) {
+    program_list_->setProjectRoot(findProjectRoot());
+    program_list_->setSelectedPrograms(config_.programs);
+  }
 
   // 重建可视化区卡片：按 monitors 创建 preview visualizer，再应用 layout
   const auto oldIds = vis_area_->activeChannels();
@@ -519,45 +535,53 @@ void RunConfigEditor::onAddMonitorClicked() {
   channel_dialog_->activateWindow();
 }
 
-// 从 .erun 所在项目读拓扑连接（向上找含 topology 目录的项目根）
-QList<QPair<QString, QString>> RunConfigEditor::loadConnectionsFromProject()
-    const {
-  QList<QPair<QString, QString>> result;
+// 从 .erun 所在目录向上找含 topology 的项目根
+QString RunConfigEditor::findProjectRoot() const {
   if (file_path_.isEmpty()) {
-    return result;
+    return QString();
   }
   // 先查 .erun 所在目录，再逐级向上；.erun 就在项目根时也能找到 topology
   QDir dir = QFileInfo(file_path_).absoluteDir();
   for (;;) {
     if (dir.exists(QStringLiteral("topology"))) {
-      const QString topoPath =
-          dir.filePath(QStringLiteral("topology/topology.etopo"));
-      QFile file(topoPath);
-      if (file.open(QIODevice::ReadOnly)) {
-        const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-        file.close();
-        if (doc.isObject()) {
-          const QJsonArray conns =
-              doc.object()[QStringLiteral("connections")].toArray();
-          for (const auto& cv : conns) {
-            const QJsonObject co = cv.toObject();
-            const QString cid = co[QStringLiteral("id")].toString();
-            if (cid.isEmpty()) {
-              continue;
-            }
-            const QString desc =
-                QStringLiteral("%1.%2 ↔ %3")
-                    .arg(co[QStringLiteral("device")].toString(),
-                         co[QStringLiteral("devicePort")].toString(),
-                         co[QStringLiteral("port")].toString());
-            result.append(qMakePair(cid, desc));
-          }
-        }
-      }
-      break;
+      return dir.absolutePath();
     }
     if (!dir.cdUp()) {
       break;
+    }
+  }
+  return QString();
+}
+
+// 从 .erun 所在项目读拓扑连接
+QList<QPair<QString, QString>> RunConfigEditor::loadConnectionsFromProject()
+    const {
+  QList<QPair<QString, QString>> result;
+  const QString root = findProjectRoot();
+  if (root.isEmpty()) {
+    return result;
+  }
+  const QString topoPath = root + QStringLiteral("/topology/topology.etopo");
+  QFile file(topoPath);
+  if (file.open(QIODevice::ReadOnly)) {
+    const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    file.close();
+    if (doc.isObject()) {
+      const QJsonArray conns =
+          doc.object()[QStringLiteral("connections")].toArray();
+      for (const auto& cv : conns) {
+        const QJsonObject co = cv.toObject();
+        const QString cid = co[QStringLiteral("id")].toString();
+        if (cid.isEmpty()) {
+          continue;
+        }
+        const QString desc =
+            QStringLiteral("%1.%2 ↔ %3")
+                .arg(co[QStringLiteral("device")].toString(),
+                     co[QStringLiteral("devicePort")].toString(),
+                     co[QStringLiteral("port")].toString());
+        result.append(qMakePair(cid, desc));
+      }
     }
   }
   return result;

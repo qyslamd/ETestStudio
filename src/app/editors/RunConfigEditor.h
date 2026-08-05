@@ -11,13 +11,13 @@
 
 class QAction;
 class QDockWidget;
-class QLabel;
 class QToolBar;
 class QToolButton;
 
 namespace etest::app {
 
 class MonitorConfigDialog;
+class ProgramChecklistWidget;
 class VisualizationArea;
 
 // ── 运行配置数据（.erun 文件） ──
@@ -37,7 +37,7 @@ struct RunConfig {
     double h = 0;
   };
 
-  QString testProgram;  // 相对路径（同项目内）
+  QStringList programs;  // 测试程序（相对项目根路径），与监听/布局正交
   QVector<Monitor> monitors;
   QVector<LayoutItem> layout;
   QJsonObject runParams;  // 预留
@@ -91,6 +91,8 @@ class RunConfigEditor : public QMainWindow, public IEditor {
   void initUi();
   void refreshUi();
   void onAddMonitorClicked();
+  // 从 .erun 所在目录向上找含 topology 的项目根
+  QString findProjectRoot() const;
   QList<QPair<QString, QString>> loadConnectionsFromProject() const;
   void markModified();
   bool loadFromFile(const QString& path);
@@ -113,9 +115,8 @@ class RunConfigEditor : public QMainWindow, public IEditor {
 
   // 主视图：可视化区（编辑态，监听器卡片 + 手动布局）
   QToolBar* toolbar_ = nullptr;
-  QLabel* file_label_ = nullptr;
-  QLabel* test_program_label_ = nullptr;
-  QDockWidget* info_dock_ = nullptr;  // 左侧"运行配置"信息面板（可关可拖，toggle 重开）
+  QDockWidget* test_program_dock_ = nullptr;  // 测试程序多选面板（可关可拖，toggle 重开）
+  ProgramChecklistWidget* program_list_ = nullptr;
   VisualizationArea* vis_area_ = nullptr;
   MonitorConfigDialog* channel_dialog_ = nullptr;  // 复用 page1 通道选择对话框
   QToolButton* align_btn_ = nullptr;   // 排列（选中≥2 才启用）
@@ -127,7 +128,7 @@ class RunConfigEditor : public QMainWindow, public IEditor {
   QAction* new_action_ = nullptr;
   QAction* save_action_ = nullptr;
   QAction* add_monitor_action_ = nullptr;
-  QAction* info_toggle_action_ = nullptr;  // 显示/隐藏信息面板
+  QAction* test_program_toggle_action_ = nullptr;  // 显示/隐藏测试程序面板
 };
 
 }  // namespace etest::app
