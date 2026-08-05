@@ -20,6 +20,7 @@
 #include "editors/EtlogViewerWidget.h"
 #include "editors/TextEditorWidget.h"
 #include "editors/MockConfigEditor.h"
+#include "editors/RunConfigEditor.h"
 #include "TestProgramEditorWidget.h"
 #include "SignalRegistry.h"
 #include "dialogs/IcdSignalSelection.h"
@@ -117,6 +118,29 @@ void EditorManager::registerEditorTypes() {
         mc->setIcdRepository(mgr->icdRepository());
         QObject::connect(
             mc, &MockConfigEditor::modificationChanged, mgr,
+            [editor, dock, mgr](bool modified) {
+              dock->setWindowTitle(
+                  (modified ? QStringLiteral("* ") : QString())
+                      .append(editor->displayName()));
+              emit mgr->unsavedChangesChanged();
+              emit mgr->modificationChanged(modified);
+            });
+      });
+
+  // 运行配置编辑器（.erun，纯新增骨架）
+  EditorFactoryRegistry::registerExtension("erun", "runconfig");
+  EditorFactoryRegistry::registerFactory(
+      "runconfig",
+      [](const QString& id, QWidget* parent) {
+        return new RunConfigEditor(id, parent);
+      },
+      [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
+        auto* rc = qobject_cast<RunConfigEditor*>(editor->widget());
+        if (!rc) {
+          return;
+        }
+        QObject::connect(
+            rc, &RunConfigEditor::modificationChanged, mgr,
             [editor, dock, mgr](bool modified) {
               dock->setWindowTitle(
                   (modified ? QStringLiteral("* ") : QString())
@@ -824,6 +848,8 @@ void EditorManager::onFileRenamed(const QString& oldPath,
     topoEditor->openFile(newPath);
   } else if (auto* tpEditor = dynamic_cast<TestProgramEditorWidget*>(editor)) {
     tpEditor->openFile(newPath);
+  } else if (auto* runEditor = dynamic_cast<RunConfigEditor*>(editor)) {
+    runEditor->openFile(newPath);
   }
 
   editors_.remove(oldPath);

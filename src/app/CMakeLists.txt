@@ -63,6 +63,8 @@ add_executable(${TARGET_NAME} WIN32
     editors/EtlogViewerWidget.cpp
     editors/MockConfigEditor.h
     editors/MockConfigEditor.cpp
+    editors/RunConfigEditor.h
+    editors/RunConfigEditor.cpp
     EditorManager.h
     EditorManager.cpp
     editors/EditorFactory.h
@@ -126,6 +128,8 @@ add_executable(${TARGET_NAME} WIN32
     visualizers/VisualizerFactory.cpp
     visualizers/LedIndicator.h
     visualizers/LedIndicator.cpp
+    visualizers/VisualizerProxy.h
+    visualizers/VisualizerProxy.cpp
     VisualizationArea.h
     VisualizationArea.cpp
     widgets/TuxSaverOverlay.h

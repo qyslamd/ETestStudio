@@ -170,7 +170,7 @@ void MonitorConfigDialog::initUi() {
           });
   connect(delete_button_, &QPushButton::clicked, this, [this]() {
     // 按"选中项确有监听器"判断（不能用 isEmpty 守卫：空 connectionId 的失效
-    // 监听器也必须能删，审查 🟡A）
+    // 监听器也必须能删）
     if (monitorOf(selected_connection_id_) != nullptr) {
       emit deleteRequested(selected_connection_id_);
     }
@@ -398,6 +398,8 @@ void MonitorConfigDialog::onRowSelected(const QModelIndex& index) {
     return;
   }
   selected_connection_id_ = item->data(Qt::UserRole).toString();
+  LOG_INFO("VISUAL", "onRowSelected selected={}",
+           selected_connection_id_.toStdString());
   updateTileHighlights();
   emit channelSelected(selected_connection_id_);
 }
@@ -414,8 +416,12 @@ void MonitorConfigDialog::onItemCheckToggled(QStandardItem* item) {
 }
 
 void MonitorConfigDialog::onTileClicked(const QString& displayMode) {
+  LOG_INFO("VISUAL", "onTileClicked mode={} selected={}",
+           displayMode.toStdString(),
+           selected_connection_id_.toStdString());
   if (selected_connection_id_.isEmpty()) {
-    LOG_DEBUG("VISUAL", "未选中连接，忽略瓦片点击 mode={}", displayMode.toStdString());
+    LOG_INFO("VISUAL", "未选中连接，忽略瓦片点击 mode={}",
+             displayMode.toStdString());
     return;
   }
   const auto* entry = monitorOf(selected_connection_id_);
@@ -522,7 +528,7 @@ void MonitorConfigDialog::updateTileHighlights() {
 }
 
 void MonitorConfigDialog::updateTilesEnabled() {
-  // 无拓扑/无连接时禁用右栏类型瓦片（审查 🟡6）
+  // 无拓扑/无连接时禁用右栏类型瓦片
   const bool enabled = !conn_map_.isEmpty();
   for (auto it = tiles_.constBegin(); it != tiles_.constEnd(); ++it) {
     it.value()->setEnabled(enabled);

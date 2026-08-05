@@ -964,7 +964,7 @@ void ExecutionPanelController::setDashboard(ExecutionDashboard* dashboard) {
 
   // ── 可视化区右键关闭 → 取消订阅 + 同步对话框 checkbox（取消勾选） ──
   // setChecked 用 QSignalBlocker 不会回触发 checkToggled，故这里必须补 unsubscribe，
-  // 否则订阅回调残留在 subscribers_（审查 🟡B）。
+  // 否则订阅回调残留在 subscribers_。
   connect(dashboard_->visualizationArea(), &VisualizationArea::visualizerClosed,
           this, [this](const QString& connectionId) {
             if (monitor_manager_) {
