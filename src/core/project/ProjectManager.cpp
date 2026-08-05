@@ -250,11 +250,13 @@ bool ProjectManager::saveProject() {
   return m_impl->current_project->saveToFile();
 }
 
-bool ProjectManager::setMonitors(const QJsonArray& monitors) {
+bool ProjectManager::setSetting(const QString& key, const QVariant& value) {
   if (!isProjectOpen()) {
     return false;
   }
-  m_impl->current_project->setMonitors(monitors);
+  QVariantMap settings = m_impl->current_project->settings();
+  settings.insert(key, value);
+  m_impl->current_project->setSettings(settings);
   return m_impl->current_project->saveToFile();
 }
 

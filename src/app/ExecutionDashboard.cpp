@@ -40,6 +40,9 @@ void ExecutionDashboard::initUi() {
   // 此处不可覆盖，否则 QSS 选择器失配（曾导致可视化区在暗色主题下不显示 #252526 背景）。
   // 通道选择树（SignalTreePanel）已迁至 ribbon「通道选择」Modal Dialog。
   vis_area_ = new VisualizationArea(main_splitter_);
+  // 运行态「手动 + 只读」：按 .erun.layout 忠实还原编辑器布局，禁拖拽/resize（4.5）
+  vis_area_->setManualLayout(true);
+  vis_area_->setInteractive(false);
 
   debug_widget_ = new ExecutionDebugWidget(main_splitter_);
 

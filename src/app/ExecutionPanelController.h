@@ -9,6 +9,7 @@
 #include <QString>
 #include <QStringList>
 
+#include "editors/RunConfig.h"       // 当前运行配置（.erun）数据模型
 #include "widgets/ProblemsPanel.h"  // NavTarget 定义（navigateRequested 信号参数）
 
 class QAction;
@@ -25,7 +26,6 @@ class ExecutionDebugWidget;
 class ExecutionOutputPanel;
 class TestProgramManagerWidget;
 class ExecutionDashboard;
-class ProgramSelectionPopup;
 class SignalVisualizer;
 
 }  // namespace etest::app
@@ -53,8 +53,9 @@ class ExecutionPanelController : public QObject {
                                     QObject* parent = nullptr);
 
   // 两步初始化：Constructor 只创建 QAction，postInit 补全依赖
-  // 注：test_program_mgr 参数已废弃（阶段二迁移至 popup），保留参数位仅作过渡，
-  // 后续可一并清理签名。problems_panel/bottom_container 已于阶段三移除。
+  // 注：test_program_mgr 参数已废弃（程序选择已收敛到 .erun.programs），
+  // 保留参数位仅作过渡，后续可一并清理签名。
+  // problems_panel/bottom_container 已于阶段三移除。
   void postInit(ExecutionOutputPanel* output_panel,
                 etest::core::SignalRegistry* signal_registry,
                 std::shared_ptr<icd::Repository> icd_repository,
@@ -77,8 +78,6 @@ class ExecutionPanelController : public QObject {
   void stop();
   void verify();
   void runAll();
-  /// 仅更新 run/runAll 的 enable 状态（不重算 verify）
-  void updateRunControls();
 
   // 状态
   void syncControlStates();
@@ -102,6 +101,9 @@ class ExecutionPanelController : public QObject {
   // MonitorManager 访问器（由 controller 持有，跨引擎重建保持）
   etest::engine::MonitorManager* monitorManager() const { return monitor_manager_; }
 
+  // 当前运行配置含程序数（MainWindow ribbon 提示用）
+  int runProgramCount() const { return run_config_.programs.size(); }
+
   // Ribbon 动作（供 MainWindow setupRibbon 获取）
   QAction* runAction() const { return act_run_; }
   QAction* pauseAction() const { return act_pause_; }
@@ -109,9 +111,6 @@ class ExecutionPanelController : public QObject {
   QAction* verifyAction() const { return act_verify_; }
   QAction* runAllAction() const { return act_run_all_; }
   QLabel* ribbonStatsLabel() const { return label_ribbon_stats_; }
-
-  // 程序选择 popup（供 MainWindow 放入 ribbon）
-  ProgramSelectionPopup* programPopup() const { return popup_; }
 
   // 通道选择 action（供 MainWindow 放入 ribbon）
   QAction* selectChannelsAction() const { return act_select_channels_; }
@@ -141,24 +140,33 @@ class ExecutionPanelController : public QObject {
   bool checkUnsavedAndPrompt(const QStringList& paths) const;
 
   /// 左栏选中某连接（右栏高亮由对话框内部处理，此处仅日志）
-  void onChannelSelected(const QString& connectionId);
+  // 已废弃（D1-g）：MonitorConfigDialog 交互槽注释，配置收敛到运行编辑器（4.9）
+  // void onChannelSelected(const QString& connectionId);
   /// 右栏点类型：已有监听器 → 改 displayMode；无 → 新建（创建即所见）并写回
-  void onVisualizerChosen(const QString& connectionId,
-                          const QString& displayMode);
+  // void onVisualizerChosen(const QString& connectionId,
+  //                         const QString& displayMode);
   /// checkbox 勾选变化 → 订阅/取消订阅 + 建/撤可视化（不写回，会话内状态）
-  void onCheckToggled(const QString& connectionId, bool checked);
+  // void onCheckToggled(const QString& connectionId, bool checked);
   /// 双击已配置通道重命名主标题 → 同步可视化标题并写回
-  void onRenameRequested(const QString& connectionId, const QString& name);
+  // void onRenameRequested(const QString& connectionId, const QString& name);
   /// 删除监听器（含失效）→ 撤可视化并写回
-  void onDeleteRequested(const QString& connectionId);
+  // void onDeleteRequested(const QString& connectionId);
 
   /// 将监听器订阅到某个可视化组件（勾选和拓扑重载重订阅复用）
   void subscribeVisualizer(const QString& connectionId,
                            SignalVisualizer* vis);
-  /// 从 .etproj 监听器数组 + 引擎拓扑 JSON 重建监听器（幂等）
+  /// 从 .erun 监听器数组 + 引擎拓扑 JSON 重建监听器（幂等；运行态只读）
   void loadProjectMonitors();
-  /// 当前监听器数组写回 .etproj（决策 5：增删改即写回）
-  void syncProjectMonitorsToFile();
+  /// 当前运行配置（.erun）加载 + mtime 检测级联刷新（4.2/4.4）
+  void loadCurrentRunConfig();
+  /// .erun.programs 相对项目根路径 → 绝对路径（消费前转换，4.6）
+  QStringList resolveRunPrograms() const;
+  /// 扫描 cases/*.etprog 全部测试程序（runAll 用，绝对路径）
+  QStringList scanAllTestPrograms() const;
+  /// 按 .erun 重建运行态可视化区（跳过 invalid，应用 layout，4.5）
+  void rebuildVisualizers();
+  // 已废弃（D1-g）：运行态不再写监听器，写回收敛到运行编辑器
+  // void syncProjectMonitorsToFile();
   /// 由拓扑 JSON 构建连接列表（connectionId → device.port ↔ UUT.port 描述）
   QList<QPair<QString, QString>> buildConnectionList() const;
   /// 解析连接对应的设备信息（deviceId/devicePort/deviceType），供 addMonitor
@@ -222,13 +230,17 @@ class ExecutionPanelController : public QObject {
   AppStatusBarController* status_bar_ctrl_ = nullptr;
   QStackedWidget* central_stack_ = nullptr;
   ExecutionDashboard* dashboard_ = nullptr;
-  ProgramSelectionPopup* popup_ = nullptr;
 
   // 监听器配置 Dialog（懒创建并复用，非模态；见 showChannelSelectionDialog）
   MonitorConfigDialog* channel_dialog_ = nullptr;
 
   // MonitorManager（由 controller 持有，跨引擎重建保持；注入到引擎使用）
   etest::engine::MonitorManager* monitor_manager_ = nullptr;
+
+  // 当前运行配置（.erun）与 mtime 快照（mtime 检测级联刷新，仿 topo_mtime_）
+  RunConfig run_config_;
+  QString run_config_file_;
+  QDateTime run_config_mtime_;
 };
 
 }  // namespace etest::app

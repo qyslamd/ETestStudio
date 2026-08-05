@@ -25,9 +25,13 @@ class VisualizationArea : public QGraphicsView {
 
   SignalVisualizer* visualizer(const QString& connectionId) const;
 
-  // 编辑/展示两态：编辑态可拖拽/resize/排列，展示态只读并保持自动网格
+  // 编辑模式（便捷入口）：布局手动 + 交互可编辑（组合下面两个开关）
   void setEditMode(bool edit);
-  bool editMode() const { return edit_mode_; }
+  // 布局模式：true 手动摆放（不自动重排，供 .erun.layout 应用）；false 自动网格
+  void setManualLayout(bool manual);
+  // 交互开关：true 可拖拽/resize/选中；false 只读（禁拖拽/resize/手柄）
+  void setInteractive(bool interactive);
+  bool editMode() const { return interactive_; }
 
   // 布局收集/应用（scene 坐标，供编辑态读写卡片位置/大小）
   struct VisualizerGeometry {
@@ -73,8 +77,9 @@ class VisualizationArea : public QGraphicsView {
 
   QGraphicsScene* scene_ = nullptr;
   QHash<QString, Item> items_;
-  bool edit_mode_ = false;  // 默认展示态（保持现有自动网格行为）
-  bool panning_ = false;    // 中键平移中
+  bool manual_layout_ = false;  // 默认自动网格（展示态）
+  bool interactive_ = false;    // 默认只读（展示态）
+  bool panning_ = false;        // 中键平移中
   QPoint last_pan_point_;
 };
 

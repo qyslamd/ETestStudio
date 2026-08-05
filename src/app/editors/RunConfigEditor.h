@@ -8,6 +8,7 @@
 #include <QVector>
 
 #include "IEditor.h"
+#include "RunConfig.h"
 
 class QAction;
 class QDockWidget;
@@ -19,32 +20,6 @@ namespace etest::app {
 class MonitorConfigDialog;
 class ProgramChecklistWidget;
 class VisualizationArea;
-
-// ── 运行配置数据（.erun 文件） ──
-// 运行编辑器产出：选择测试程序 + 监听器配置 + 布局 + 运行参数（预留）。
-// 纯数据模型，与 UI 解耦，便于独立运行程序消费。
-struct RunConfig {
-  struct Monitor {
-    QString connectionId;
-    QString displayMode;
-    QString name;
-  };
-  struct LayoutItem {
-    QString connectionId;
-    double x = 0;
-    double y = 0;
-    double w = 0;
-    double h = 0;
-  };
-
-  QStringList programs;  // 测试程序（相对项目根路径），与监听/布局正交
-  QVector<Monitor> monitors;
-  QVector<LayoutItem> layout;
-  QJsonObject runParams;  // 预留
-
-  QJsonObject toJson() const;
-  bool fromJson(const QJsonObject& obj);
-};
 
 // RunConfigEditor -- 运行编辑器（独立编辑器，编辑态 page0）
 // 编辑 .erun 运行配置。纯新增骨架：IEditor 接口 + .erun 序列化/反序列化
@@ -91,6 +66,8 @@ class RunConfigEditor : public QMainWindow, public IEditor {
   void initUi();
   void refreshUi();
   void onAddMonitorClicked();
+  // 保存到当前项目 run/ 下时，将 .erun 设为当前运行配置（写 .etproj settings）
+  void syncRunConfigRef(const QString& path);
   // 从 .erun 所在目录向上找含 topology 的项目根
   QString findProjectRoot() const;
   QList<QPair<QString, QString>> loadConnectionsFromProject() const;

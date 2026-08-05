@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QPointer>
+#include <QRectF>
 #include <QSet>
 #include <QStackedWidget>
 #include <QWidget>
@@ -38,7 +39,6 @@
 #include "test_program/TestProgramEditorWidget.h"
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
-#include "widgets/ProgramSelectionPopup.h"
 
 using namespace etest::core::config;
 using etest::core_ui::AppIconProvider;
@@ -110,9 +110,6 @@ ExecutionPanelController::ExecutionPanelController(QWidget* parent_widget,
   act_clear_data_->setEnabled(false);
   connect(act_clear_data_, &QAction::triggered, this,
           &ExecutionPanelController::clearData);
-  popup_ = new ProgramSelectionPopup(parent_widget_);
-  connect(popup_, &ProgramSelectionPopup::selectionChanged, this,
-          &ExecutionPanelController::updateRunControls);
 
   act_select_channels_ =
       new QAction(AppIconProvider::instance().icon(QStringLiteral("monitor")),
@@ -277,13 +274,6 @@ void ExecutionPanelController::connectEngineSignals() {
 }
 
 void ExecutionPanelController::syncControlStates() {
-  // 刷新 popup 程序列表，确保状态检查时列表已填充
-  // refreshList() 保留已有选中状态（selected_），不会丢失用户选择
-  if (popup_ &&
-      etest::core::project::ProjectManager::instance().isProjectOpen()) {
-    popup_->refreshList();
-  }
-
   if (!engine_) {
     act_run_->setEnabled(checkCanRun());
     act_run_all_->setEnabled(checkCanRunAll());
@@ -293,7 +283,6 @@ void ExecutionPanelController::syncControlStates() {
     act_clear_data_->setEnabled(false);
     bool projectOpen =
         etest::core::project::ProjectManager::instance().isProjectOpen();
-    popup_->setEnabled(projectOpen);
     act_select_channels_->setEnabled(projectOpen);
     return;
   }
@@ -307,7 +296,6 @@ void ExecutionPanelController::syncControlStates() {
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(checkCanVerify());
       act_clear_data_->setEnabled(true);
-      popup_->setEnabled(true);
       act_select_channels_->setEnabled(true);
       break;
     case etest::engine::EngineState::Running:
@@ -320,7 +308,6 @@ void ExecutionPanelController::syncControlStates() {
       act_stop_->setEnabled(true);
       act_verify_->setEnabled(false);
       act_clear_data_->setEnabled(false);
-      popup_->setEnabled(false);
       act_select_channels_->setEnabled(false);
       break;
     case etest::engine::EngineState::Paused:
@@ -333,7 +320,6 @@ void ExecutionPanelController::syncControlStates() {
       act_stop_->setEnabled(true);
       act_verify_->setEnabled(false);
       act_clear_data_->setEnabled(false);
-      popup_->setEnabled(false);
       act_select_channels_->setEnabled(false);
       break;
     case etest::engine::EngineState::Error:
@@ -343,7 +329,6 @@ void ExecutionPanelController::syncControlStates() {
       act_stop_->setEnabled(false);
       act_verify_->setEnabled(checkCanVerify());
       act_clear_data_->setEnabled(true);
-      popup_->setEnabled(true);
       act_select_channels_->setEnabled(true);
       break;
   }
@@ -365,7 +350,8 @@ bool ExecutionPanelController::checkCanRunAll() const {
               debug_widget_ ? debug_widget_->canRun() : false);
     return false;
   }
-  bool has = popup_ && popup_->hasAnyProgram();
+  // 对齐 runAll 语义：扫描 cases/ 是否有测试程序（目录 IO 轻量）
+  bool has = !scanAllTestPrograms().isEmpty();
   LOG_DEBUG("ENABLE", "checkCanRunAll={}", has);
   return has;
 }
@@ -380,22 +366,13 @@ bool ExecutionPanelController::checkCanRun() const {
               debug_widget_ ? debug_widget_->canRun() : false);
     return false;
   }
-  bool sel = popup_ && !popup_->selectedPaths().isEmpty();
+  bool sel = !run_config_.programs.isEmpty();
   LOG_DEBUG("ENABLE", "checkCanRun={}", sel);
   return sel;
 }
 
-void ExecutionPanelController::updateRunControls() {
-  if (engine_ && (engine_->state() == etest::engine::EngineState::Running ||
-                  engine_->state() == etest::engine::EngineState::Paused)) {
-    // 引擎运行时 run/runAll 始终禁用，不检查预条件
-    return;
-  }
-  act_run_->setEnabled(checkCanRun());
-  act_run_all_->setEnabled(checkCanRunAll());
-  // popup 从空到有数据时 verify 状态可能变化，一并刷新
-  act_verify_->setEnabled(checkCanVerify());
-}
+// updateRunControls — 已删除（D1）：触发源 popup 已移除，职责并入
+// loadCurrentRunConfig 级联刷新调用的 syncControlStates()（含 checkCanRun 等）。
 
 // 清空 MonitorManager
 // 的结构（lookup_table_/tree_cache_/subscribers_）与运行时数据（buffer_）。
@@ -413,6 +390,9 @@ void ExecutionPanelController::syncProjectTopologies() {
   if (!engine_) {
     return;
   }
+
+  // .erun 重载（mtime 检测）+ 级联刷新（4.2/4.4），先于监听器重建就绪
+  loadCurrentRunConfig();
 
   auto& proj_mgr = etest::core::project::ProjectManager::instance();
   if (!proj_mgr.isProjectOpen()) {
@@ -470,6 +450,7 @@ void ExecutionPanelController::syncProjectTopologies() {
     topo_mtime_ = current_mtime;
     loadProjectMonitors();
     refreshMonitorTree();
+    rebuildVisualizers();  // 项目打开首次按 .erun 建卡 + 应用 layout（4.5）
     return;
   }
 
@@ -492,6 +473,7 @@ void ExecutionPanelController::syncProjectTopologies() {
   topo_mtime_ = current_mtime;
   loadProjectMonitors();
   refreshMonitorTree();
+  rebuildVisualizers();  // 拓扑变化后按 .erun 重建可视化区（4.5）
 
   // ── 决策 13：拓扑重载后自动重订阅 ──
   // loadProjectMonitors 已清空 subscribers_，此处对仍活跃的可视化组件重新订阅；
@@ -520,18 +502,45 @@ void ExecutionPanelController::syncProjectTopologies() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// resolveRunPrograms — .erun.programs 相对项目根路径 → 绝对路径（消费前转换）
+// ══════════════════════════════════════════════════════════════════════════════
+
+QStringList ExecutionPanelController::resolveRunPrograms() const {
+  QStringList out;
+  const QString root = etest::core::project::ProjectManager::instance()
+                           .currentProjectRoot();
+  if (root.isEmpty()) {
+    return out;  // 项目未打开，防御性提前返回（QDir("") 会相对 cwd 拼路径）
+  }
+  for (const QString& p : run_config_.programs) {
+    out.append(QDir(root).absoluteFilePath(p));
+  }
+  return out;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// scanAllTestPrograms — 扫描 cases/*.etprog 全部测试程序（runAll 用，绝对路径）
+// ══════════════════════════════════════════════════════════════════════════════
+
+QStringList ExecutionPanelController::scanAllTestPrograms() const {
+  const auto* project = etest::core::project::ProjectManager::instance()
+                            .currentProject();
+  if (!project) {
+    return {};
+  }
+  return project->scanDirectory(QStringLiteral("cases"),
+                                QStringLiteral("etprog"));
+}
+
 void ExecutionPanelController::run() {
   LOG_INFO("MAIN_UI", "点击「运行」");
 
-  if (!popup_) {
-    return;
-  }
-
-  // 1. 从 popup 获取选中目标
-  QStringList paths = popup_->selectedPaths();
+  // 1. 从当前运行配置（.erun.programs）取测试程序（相对路径转绝对）
+  QStringList paths = resolveRunPrograms();
   if (paths.isEmpty()) {
     QMessageBox::information(parent_widget_, QStringLiteral("运行"),
-                             QStringLiteral("请先选择要运行的测试程序"));
+                             QStringLiteral("请先在运行编辑器配置要运行的测试程序"));
     return;
   }
 
@@ -719,19 +728,13 @@ void ExecutionPanelController::verify() {
     warnings++;
   }
 
-  // 5. 测试程序可用（方案 A：选中非空校验选中，空则校验全集）
+  // 5. 测试程序可用（当前运行配置 .erun.programs）
   bool has_program = false;
-  if (popup_) {
-    QStringList targets = popup_->selectedPaths();
-    if (targets.isEmpty()) {
-      targets = popup_->allPaths();
-    }
-    for (const auto& p : targets) {
-      auto data = loadTestProgram(p);
-      if (!data.cases.isEmpty()) {
-        has_program = true;
-        break;
-      }
+  for (const auto& p : resolveRunPrograms()) {
+    auto data = loadTestProgram(p);
+    if (!data.cases.isEmpty()) {
+      has_program = true;
+      break;
     }
   }
   if (!has_program) {
@@ -769,10 +772,6 @@ void ExecutionPanelController::verify() {
 void ExecutionPanelController::runAll() {
   LOG_INFO("MAIN_UI", "点击「运行全部」");
 
-  if (!popup_) {
-    return;
-  }
-
   // 1. 前提检查
   if (debug_widget_ && !debug_widget_->canRun()) {
     QMessageBox::warning(parent_widget_, QStringLiteral("运行全部"),
@@ -780,9 +779,8 @@ void ExecutionPanelController::runAll() {
     return;
   }
 
-  // 2. 从 popup 获取全集（内部扫描 cases/*.etprog）
-  popup_->refreshList();
-  QStringList all_paths = popup_->allPaths();
+  // 2. 扫描 cases/*.etprog 全部测试程序（与 .erun 选配正交）
+  QStringList all_paths = scanAllTestPrograms();
   if (all_paths.isEmpty()) {
     QMessageBox::information(parent_widget_, QStringLiteral("运行全部"),
                              QStringLiteral("项目中没有测试程序"));
@@ -1037,21 +1035,26 @@ void ExecutionPanelController::clearProjectState() {
   clearMonitorState();
   // 清理 mtime 缓存
   topo_mtime_ = QDateTime();
+  // 重置运行配置快照（重开项目重新首载 .erun）
+  run_config_ = RunConfig();
+  run_config_file_.clear();
+  run_config_mtime_ = QDateTime();
 }
 
 void ExecutionPanelController::showChannelSelectionDialog() {
   if (!channel_dialog_) {
     channel_dialog_ = new MonitorConfigDialog(parent_widget_);
-    connect(channel_dialog_, &MonitorConfigDialog::channelSelected, this,
-            &ExecutionPanelController::onChannelSelected);
-    connect(channel_dialog_, &MonitorConfigDialog::visualizerChosen, this,
-            &ExecutionPanelController::onVisualizerChosen);
-    connect(channel_dialog_, &MonitorConfigDialog::checkToggled, this,
-            &ExecutionPanelController::onCheckToggled);
-    connect(channel_dialog_, &MonitorConfigDialog::renameRequested, this,
-            &ExecutionPanelController::onRenameRequested);
-    connect(channel_dialog_, &MonitorConfigDialog::deleteRequested, this,
-            &ExecutionPanelController::onDeleteRequested);
+    // D1-g：交互槽已注释（配置收敛到运行编辑器，4.9），对话框仅作 UI 壳展示
+    // connect(channel_dialog_, &MonitorConfigDialog::channelSelected, this,
+    //         &ExecutionPanelController::onChannelSelected);
+    // connect(channel_dialog_, &MonitorConfigDialog::visualizerChosen, this,
+    //         &ExecutionPanelController::onVisualizerChosen);
+    // connect(channel_dialog_, &MonitorConfigDialog::checkToggled, this,
+    //         &ExecutionPanelController::onCheckToggled);
+    // connect(channel_dialog_, &MonitorConfigDialog::renameRequested, this,
+    //         &ExecutionPanelController::onRenameRequested);
+    // connect(channel_dialog_, &MonitorConfigDialog::deleteRequested, this,
+    //         &ExecutionPanelController::onDeleteRequested);
     refreshMonitorTree();
   }
   // 决策 18：非模态，与执行页并存，配置后立即看到可视化区变化
@@ -1060,125 +1063,123 @@ void ExecutionPanelController::showChannelSelectionDialog() {
   channel_dialog_->activateWindow();
 }
 
-void ExecutionPanelController::onChannelSelected(const QString& connectionId) {
-  LOG_DEBUG("VISUAL", "channelSelected connectionId={}",
-            connectionId.toStdString());
-}
-
-void ExecutionPanelController::onVisualizerChosen(
-    const QString& connectionId, const QString& displayMode) {
-  LOG_INFO("VISUAL", "visualizerChosen cid={} mode={}",
-           connectionId.toStdString(), displayMode.toStdString());
-  auto* mm = monitor_manager_;
-  if (!mm || !engine_) {
-    return;
-  }
-  if (connectionId.isEmpty() || displayMode.isEmpty()) {
-    return;
-  }
-
-  // 已有监听器 → 改 displayMode（决策 15：点类型 = 切换）
-  bool existing = false;
-  bool invalid = false;
-  for (const auto& entry : mm->monitorTree()) {
-    if (entry.connectionId == connectionId) {
-      existing = true;
-      invalid = entry.invalid;
-      break;
-    }
-  }
-  if (existing) {
-    if (invalid) {
-      return;  // 失效监听器仅可删除（决策 6/17）
-    }
-    if (mm->setDisplayMode(connectionId, displayMode)) {
-      rebuildVisualizer(connectionId, displayMode);
-      syncProjectMonitorsToFile();
-      refreshMonitorTree();
-    }
-    return;
-  }
-
-  // 无 → 新建（创建即所见），key = connectionId（一连接一监听器，决策 17）
-  QString deviceId;
-  QString devicePort;
-  QString deviceType;
-  if (!resolveConnection(connectionId, &deviceId, &devicePort, &deviceType)) {
-    LOG_WARN("VISUAL", "无法解析连接 {} 的设备信息，忽略创建",
-             connectionId.toStdString());
-    return;
-  }
-  etest::engine::MonitorConfig config;
-  config.connectionId = connectionId;
-  config.name = connectionDescription(connectionId);
-  config.displayMode = displayMode;
-  if (!mm->addMonitor(config, deviceId, devicePort, deviceType)) {
-    LOG_WARN("VISUAL", "addMonitor 失败 cid={} mode={}",
-             connectionId.toStdString(), displayMode.toStdString());
-    return;
-  }
-  createAndShowVisualizer(connectionId, displayMode);
-  syncProjectMonitorsToFile();
-  refreshMonitorTree();
-}
-
-void ExecutionPanelController::onCheckToggled(const QString& connectionId,
-                                              bool checked) {
-  LOG_INFO("VISUAL", "checkToggled connectionId={} checked={}",
-           connectionId.toStdString(), checked);
-  auto* mm = monitor_manager_;
-  if (!mm) {
-    return;
-  }
-  if (checked) {
-    const QString mode = mm->displayMode(connectionId);
-    if (mode.isEmpty()) {
-      return;  // 未配置监听器的连接不会出现 checkbox，防御性返回
-    }
-    createAndShowVisualizer(connectionId, mode);
-  } else {
-    if (dashboard_) {
-      dashboard_->visualizationArea()->removeVisualizer(connectionId);
-    }
-    mm->unsubscribe(connectionId);
-  }
-}
-
-void ExecutionPanelController::onRenameRequested(const QString& connectionId,
-                                                 const QString& name) {
-  auto* mm = monitor_manager_;
-  if (!mm) {
-    return;
-  }
-  if (!mm->renameMonitor(connectionId, name)) {
-    return;
-  }
-  // 同步可视化主标题（决策 14 两级标题）
-  if (dashboard_) {
-    SignalVisualizer* vis =
-        dashboard_->visualizationArea()->visualizer(connectionId);
-    if (vis) {
-      vis->setTitle(name);
-    }
-  }
-  syncProjectMonitorsToFile();
-  refreshMonitorTree();
-}
-
-void ExecutionPanelController::onDeleteRequested(const QString& connectionId) {
-  auto* mm = monitor_manager_;
-  if (!mm) {
-    return;
-  }
-  if (!mm->removeMonitor(connectionId)) {
-    return;
-  }
-  if (dashboard_) {
-    dashboard_->visualizationArea()->removeVisualizer(connectionId);
-  }
-  syncProjectMonitorsToFile();
-  refreshMonitorTree();
-}
+// ── 已废弃（D1-g）──
+// MonitorConfigDialog 交互槽：监听器配置收敛到运行编辑器（4.9），运行态只读展示。
+// 完整移除随对话框迁移到运行编辑器（QDockWidget 呈现）时进行。
+// void ExecutionPanelController::onChannelSelected(const QString& connectionId) {
+//   LOG_DEBUG("VISUAL", "channelSelected connectionId={}",
+//             connectionId.toStdString());
+// }
+//
+// void ExecutionPanelController::onVisualizerChosen(
+//     const QString& connectionId, const QString& displayMode) {
+//   LOG_INFO("VISUAL", "visualizerChosen cid={} mode={}",
+//            connectionId.toStdString(), displayMode.toStdString());
+//   auto* mm = monitor_manager_;
+//   if (!mm || !engine_) {
+//     return;
+//   }
+//   if (connectionId.isEmpty() || displayMode.isEmpty()) {
+//     return;
+//   }
+//   bool existing = false;
+//   bool invalid = false;
+//   for (const auto& entry : mm->monitorTree()) {
+//     if (entry.connectionId == connectionId) {
+//       existing = true;
+//       invalid = entry.invalid;
+//       break;
+//     }
+//   }
+//   if (existing) {
+//     if (invalid) {
+//       return;  // 失效监听器仅可删除（决策 6/17）
+//     }
+//     if (mm->setDisplayMode(connectionId, displayMode)) {
+//       rebuildVisualizer(connectionId, displayMode);
+//       syncProjectMonitorsToFile();
+//       refreshMonitorTree();
+//     }
+//     return;
+//   }
+//   QString deviceId;
+//   QString devicePort;
+//   QString deviceType;
+//   if (!resolveConnection(connectionId, &deviceId, &devicePort, &deviceType)) {
+//     LOG_WARN("VISUAL", "无法解析连接 {} 的设备信息，忽略创建",
+//              connectionId.toStdString());
+//     return;
+//   }
+//   etest::engine::MonitorConfig config;
+//   config.connectionId = connectionId;
+//   config.name = connectionDescription(connectionId);
+//   config.displayMode = displayMode;
+//   if (!mm->addMonitor(config, deviceId, devicePort, deviceType)) {
+//     LOG_WARN("VISUAL", "addMonitor 失败 cid={} mode={}",
+//              connectionId.toStdString(), displayMode.toStdString());
+//     return;
+//   }
+//   createAndShowVisualizer(connectionId, displayMode);
+//   syncProjectMonitorsToFile();
+//   refreshMonitorTree();
+// }
+//
+// void ExecutionPanelController::onCheckToggled(const QString& connectionId,
+//                                               bool checked) {
+//   LOG_INFO("VISUAL", "checkToggled connectionId={} checked={}",
+//            connectionId.toStdString(), checked);
+//   auto* mm = monitor_manager_;
+//   if (!mm) {
+//     return;
+//   }
+//   if (checked) {
+//     const QString mode = mm->displayMode(connectionId);
+//     if (mode.isEmpty()) {
+//       return;  // 未配置监听器的连接不会出现 checkbox，防御性返回
+//     }
+//     createAndShowVisualizer(connectionId, mode);
+//   } else {
+//     if (dashboard_) {
+//       dashboard_->visualizationArea()->removeVisualizer(connectionId);
+//     }
+//     mm->unsubscribe(connectionId);
+//   }
+// }
+//
+// void ExecutionPanelController::onRenameRequested(const QString& connectionId,
+//                                                  const QString& name) {
+//   auto* mm = monitor_manager_;
+//   if (!mm) {
+//     return;
+//   }
+//   if (!mm->renameMonitor(connectionId, name)) {
+//     return;
+//   }
+//   if (dashboard_) {
+//     SignalVisualizer* vis =
+//         dashboard_->visualizationArea()->visualizer(connectionId);
+//     if (vis) {
+//       vis->setTitle(name);
+//     }
+//   }
+//   syncProjectMonitorsToFile();
+//   refreshMonitorTree();
+// }
+//
+// void ExecutionPanelController::onDeleteRequested(const QString& connectionId) {
+//   auto* mm = monitor_manager_;
+//   if (!mm) {
+//     return;
+//   }
+//   if (!mm->removeMonitor(connectionId)) {
+//     return;
+//   }
+//   if (dashboard_) {
+//     dashboard_->visualizationArea()->removeVisualizer(connectionId);
+//   }
+//   syncProjectMonitorsToFile();
+//   refreshMonitorTree();
+// }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // createAndShowVisualizer — 创建可视化 + 订阅 + 加入可视化区（创建即所见）
@@ -1220,6 +1221,55 @@ void ExecutionPanelController::createAndShowVisualizer(
            vis->metaObject()->className());
   subscribeVisualizer(connectionId, vis);
   visArea->addVisualizer(connectionId, vis);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// rebuildVisualizers — 按 .erun 重建运行态可视化区（跳过 invalid，应用 layout）
+// ══════════════════════════════════════════════════════════════════════════════
+
+void ExecutionPanelController::rebuildVisualizers() {
+  auto* visArea = dashboard_ ? dashboard_->visualizationArea() : nullptr;
+  if (!visArea || !monitor_manager_) {
+    return;
+  }
+  // 清理现有卡片
+  for (const QString& id : visArea->activeChannels()) {
+    visArea->removeVisualizer(id);
+  }
+  // 失效监听器（连接已删）不建卡，仅在对话框「失效监听器」分组可见
+  const auto tree = monitor_manager_->monitorTree();
+  QSet<QString> invalid;
+  for (const auto& entry : tree) {
+    if (entry.invalid) {
+      invalid.insert(entry.connectionId);
+    }
+  }
+  // 建卡 + 应用 layout（无 layout 项递增默认位置兜底，防异常 .erun）
+  int fallback = 0;
+  for (const auto& m : run_config_.monitors) {
+    if (invalid.contains(m.connectionId)) {
+      continue;
+    }
+    if (visArea->visualizer(m.connectionId)) {
+      continue;
+    }
+    createAndShowVisualizer(m.connectionId, m.displayMode);
+    bool hasLayout = false;
+    for (const auto& l : run_config_.layout) {
+      if (l.connectionId == m.connectionId) {
+        visArea->setVisualizerGeometry(
+            m.connectionId, QRectF(l.x, l.y, l.w, l.h));
+        hasLayout = true;
+        break;
+      }
+    }
+    if (!hasLayout) {
+      visArea->setVisualizerGeometry(
+          m.connectionId,
+          QRectF(20.0 + fallback * 40, 20.0 + fallback * 40, 320, 200));
+      ++fallback;
+    }
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1327,28 +1377,104 @@ QString ExecutionPanelController::connectionDescription(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// syncProjectMonitorsToFile — 当前监听器数组写回 .etproj（决策 5）
 // ══════════════════════════════════════════════════════════════════════════════
+// loadCurrentRunConfig — 当前运行配置（.erun）加载 + mtime 检测级联刷新
+// ══════════════════════════════════════════════════════════════════════════════
+// 解析当前运行配置：settings.runConfigFile → 对应 .erun；缺失 → run/ 下第一个；
+// 均无 → 空配置。首次调用仅建快照不级联（首载走 syncProjectTopologies 树空分支）；
+// 之后路径/mtime 变化才级联刷新（运行中不打扰）。
 
-void ExecutionPanelController::syncProjectMonitorsToFile() {
-  auto* mm = monitor_manager_;
-  if (!mm) {
+void ExecutionPanelController::loadCurrentRunConfig() {
+  auto& proj_mgr = etest::core::project::ProjectManager::instance();
+  if (!proj_mgr.isProjectOpen()) {
     return;
   }
-  QJsonArray arr;
-  for (const auto& entry : mm->monitorTree()) {
-    QJsonObject obj;
-    obj[QStringLiteral("connectionId")] = entry.connectionId;
-    obj[QStringLiteral("name")] = entry.name;
-    obj[QStringLiteral("displayMode")] = entry.displayMode;
-    arr.append(obj);
+  const auto* project = proj_mgr.currentProject();
+  if (!project) {
+    return;
   }
-  const bool ok =
-      etest::core::project::ProjectManager::instance().setMonitors(arr);
-  if (!ok) {
-    LOG_WARN("VISUAL", "写回监听器到 .etproj 失败");
+
+  const QString root = project->rootPath();
+  // 1. settings.runConfigFile 指向的 .erun（相对项目根）
+  QString file = project->settings().value(QStringLiteral("runConfigFile"))
+                     .toString();
+  if (!file.isEmpty()) {
+    file = QDir(root).filePath(file);
   }
+  // 2. 缺失/为空 → run/ 下第一个 .erun
+  if (file.isEmpty() || !QFileInfo::exists(file)) {
+    const QDir runDir(root + QStringLiteral("/run"));
+    const QStringList files =
+        runDir.entryList({QStringLiteral("*.erun")}, QDir::Files, QDir::Name);
+    if (!files.isEmpty()) {
+      file = runDir.absoluteFilePath(files.first());
+    }
+  }
+  // 3. 均无 → 空配置。保留 run_config_file_ 快照，使后续 .erun 出现时走
+  //    mtime 级联刷新；清监听器结构与可视化区，移除 .erun 删除后的残留
+  if (file.isEmpty()) {
+    run_config_ = RunConfig();
+    run_config_mtime_ = QDateTime();
+    if (!run_config_file_.isEmpty()) {
+      clearMonitorState();
+      rebuildVisualizers();
+    }
+    return;
+  }
+
+  const QDateTime mtime = QFileInfo(file).lastModified();
+  // 首次调用：仅建快照，不级联（避免 loadTopology 前提前 loadProjectMonitors）
+  if (run_config_file_.isEmpty()) {
+    run_config_file_ = file;
+    run_config_mtime_ = mtime;
+    if (!RunConfig::loadFromFile(file, &run_config_)) {
+      run_config_ = RunConfig();
+    }
+    return;
+  }
+  // 路径与 mtime 均未变 → 跳过
+  if (run_config_file_ == file && run_config_mtime_ == mtime) {
+    return;
+  }
+  // 运行中不打扰（级联刷新会重建监听器/可视化）
+  if (engine_ && engine_->state() != etest::engine::EngineState::Idle) {
+    return;
+  }
+  // .erun 内容变化 → 重载 + 级联刷新（监听器结构 + 可视化区 + 按钮门控）
+  run_config_file_ = file;
+  run_config_mtime_ = mtime;
+  if (!RunConfig::loadFromFile(file, &run_config_)) {
+    run_config_ = RunConfig();
+  }
+  loadProjectMonitors();
+  refreshMonitorTree();
+  rebuildVisualizers();
+  syncControlStates();  // .erun 变化 → 刷新 run/runAll 按钮 enable 态
 }
+
+// ── 已废弃（D1-g）──
+// syncProjectMonitorsToFile — 运行态不再写监听器（写回收敛到运行编辑器 .erun）。
+// 槽已注释、无调用者；完整移除随对话框迁移（4.9）。
+// ══════════════════════════════════════════════════════════════════════════════
+// void ExecutionPanelController::syncProjectMonitorsToFile() {
+//   auto* mm = monitor_manager_;
+//   if (!mm) {
+//     return;
+//   }
+//   QJsonArray arr;
+//   for (const auto& entry : mm->monitorTree()) {
+//     QJsonObject obj;
+//     obj[QStringLiteral("connectionId")] = entry.connectionId;
+//     obj[QStringLiteral("name")] = entry.name;
+//     obj[QStringLiteral("displayMode")] = entry.displayMode;
+//     arr.append(obj);
+//   }
+//   const bool ok =
+//       etest::core::project::ProjectManager::instance().setMonitors(arr);
+//   if (!ok) {
+//     LOG_WARN("VISUAL", "写回监听器到 .etproj 失败");
+//   }
+// }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // subscribeVisualizer — 将监听器订阅到某个可视化组件（勾选和拓扑重载重订阅复用）
@@ -1370,22 +1496,23 @@ void ExecutionPanelController::subscribeVisualizer(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// loadProjectMonitors — 从 .etproj 监听器数组 + 引擎拓扑 JSON 重建监听器（幂等）
+// loadProjectMonitors — 从 .erun 监听器数组 + 引擎拓扑 JSON 重建监听器（幂等）
 // ══════════════════════════════════════════════════════════════════════════════
+// D1：数据源从 .etproj 迁到 .erun，监听器由运行编辑器写入，运行态只读。
 
 void ExecutionPanelController::loadProjectMonitors() {
   if (!monitor_manager_ || !engine_) {
     return;
   }
-  auto& proj_mgr = etest::core::project::ProjectManager::instance();
-  if (!proj_mgr.isProjectOpen()) {
-    return;
+  QJsonArray monitorsArr;
+  for (const auto& m : run_config_.monitors) {
+    QJsonObject mo;
+    mo[QStringLiteral("connectionId")] = m.connectionId;
+    mo[QStringLiteral("displayMode")] = m.displayMode;
+    mo[QStringLiteral("name")] = m.name;
+    monitorsArr.append(mo);
   }
-  const auto* project = proj_mgr.currentProject();
-  if (!project) {
-    return;
-  }
-  monitor_manager_->loadMonitors(project->monitors(), engine_->topologyDoc());
+  monitor_manager_->loadMonitors(monitorsArr, engine_->topologyDoc());
 }
 
 }  // namespace etest::app

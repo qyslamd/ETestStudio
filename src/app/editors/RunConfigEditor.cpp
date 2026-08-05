@@ -26,6 +26,7 @@
 #include "dialogs/MonitorConfigDialog.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "logger/Logger.h"
+#include "project/ProjectManager.h"
 #include "visualizers/VisualizerFactory.h"
 #include "widgets/ProgramChecklistWidget.h"
 
@@ -41,101 +42,6 @@ void syncDockCloseAction(QAction* action) {
 }  // namespace
 
 namespace etest::app {
-
-// ══════════════════════════════════════════════════════════════════════════════
-// RunConfig — .erun 数据模型
-// ══════════════════════════════════════════════════════════════════════════════
-
-QJsonObject RunConfig::toJson() const {
-  QJsonObject root;
-  root[QStringLiteral("version")] = QStringLiteral("1.0");
-  if (!programs.isEmpty()) {
-    QJsonArray progArr;
-    for (const QString& p : programs) {
-      progArr.append(p);
-    }
-    root[QStringLiteral("programs")] = progArr;
-  }
-
-  QJsonArray monitorsArr;
-  for (const auto& m : monitors) {
-    QJsonObject mo;
-    mo[QStringLiteral("connectionId")] = m.connectionId;
-    mo[QStringLiteral("displayMode")] = m.displayMode;
-    mo[QStringLiteral("name")] = m.name;
-    monitorsArr.append(mo);
-  }
-  root[QStringLiteral("monitors")] = monitorsArr;
-
-  QJsonArray layoutArr;
-  for (const auto& l : layout) {
-    QJsonObject lo;
-    lo[QStringLiteral("connectionId")] = l.connectionId;
-    lo[QStringLiteral("x")] = l.x;
-    lo[QStringLiteral("y")] = l.y;
-    lo[QStringLiteral("w")] = l.w;
-    lo[QStringLiteral("h")] = l.h;
-    layoutArr.append(lo);
-  }
-  root[QStringLiteral("layout")] = layoutArr;
-
-  root[QStringLiteral("runParams")] = runParams;
-  return root;
-}
-
-bool RunConfig::fromJson(const QJsonObject& obj) {
-  // 归一化（格式不变量）：programs 去重、丢弃空串
-  programs.clear();
-  const QJsonArray progArr = obj[QStringLiteral("programs")].toArray();
-  for (const auto& v : progArr) {
-    const QString p = v.toString();
-    if (!p.isEmpty() && !programs.contains(p)) {
-      programs.append(p);
-    }
-  }
-
-  // 归一化（格式不变量）：monitors 同 connectionId 去重，保留首个
-  monitors.clear();
-  const QJsonArray monitorsArr = obj[QStringLiteral("monitors")].toArray();
-  QSet<QString> seenMonitors;
-  for (const auto& v : monitorsArr) {
-    const QJsonObject mo = v.toObject();
-    const QString cid = mo[QStringLiteral("connectionId")].toString();
-    if (cid.isEmpty() || seenMonitors.contains(cid)) {
-      continue;
-    }
-    seenMonitors.insert(cid);
-    Monitor m;
-    m.connectionId = cid;
-    m.displayMode = mo[QStringLiteral("displayMode")].toString();
-    m.name = mo[QStringLiteral("name")].toString();
-    monitors.append(m);
-  }
-
-  // 归一化：layout 丢弃无对应 monitor 的项 + 同 connectionId 去重（保留首个）
-  layout.clear();
-  const QJsonArray layoutArr = obj[QStringLiteral("layout")].toArray();
-  QSet<QString> seenLayout;
-  for (const auto& v : layoutArr) {
-    const QJsonObject lo = v.toObject();
-    const QString cid = lo[QStringLiteral("connectionId")].toString();
-    if (cid.isEmpty() || !seenMonitors.contains(cid) ||
-        seenLayout.contains(cid)) {
-      continue;
-    }
-    seenLayout.insert(cid);
-    LayoutItem l;
-    l.connectionId = cid;
-    l.x = lo[QStringLiteral("x")].toDouble();
-    l.y = lo[QStringLiteral("y")].toDouble();
-    l.w = lo[QStringLiteral("w")].toDouble();
-    l.h = lo[QStringLiteral("h")].toDouble();
-    layout.append(l);
-  }
-
-  runParams = obj[QStringLiteral("runParams")].toObject();
-  return true;
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // RunConfigEditor
@@ -193,11 +99,33 @@ bool RunConfigEditor::save() {
     file_path_ = path;
   }
   if (saveToFile(path)) {
+    // 保存到当前项目 run/ 下 → 设为当前运行配置（.etproj settings.runConfigFile）
+    syncRunConfigRef(path);
     modified_ = false;
     emit modificationChanged(false);
     return true;
   }
   return false;
+}
+
+// 将 .erun 设为当前运行配置：保存路径落在当前项目 run/ 下时写 settings
+void RunConfigEditor::syncRunConfigRef(const QString& path) {
+  auto& proj_mgr = etest::core::project::ProjectManager::instance();
+  if (!proj_mgr.isProjectOpen()) {
+    return;
+  }
+  const QString root = proj_mgr.currentProjectRoot();
+  if (root.isEmpty()) {
+    return;
+  }
+  // 统一用相对路径判断是否在项目内：QDir::separator 与 absoluteFilePath 在
+  // Windows 上分隔符不一致，startsWith 前缀判断不可靠
+  const QString abs = QFileInfo(path).absoluteFilePath();
+  const QString rel = QDir(root).relativeFilePath(abs);
+  if (rel.startsWith(QLatin1String("../"))) {
+    return;  // 不在当前项目内（脱离项目打开的 .erun 不写）
+  }
+  proj_mgr.setSetting(QStringLiteral("runConfigFile"), rel);
 }
 
 bool RunConfigEditor::saveAs(const QString& path) {
@@ -595,22 +523,8 @@ void RunConfigEditor::markModified() {
 }
 
 bool RunConfigEditor::loadFromFile(const QString& path) {
-  QFile file(path);
-  if (!file.open(QIODevice::ReadOnly)) {
-    return false;
-  }
-  const QByteArray data = file.readAll();
-  file.close();
-
-  QJsonParseError error;
-  const QJsonDocument doc = QJsonDocument::fromJson(data, &error);
-  if (error.error != QJsonParseError::NoError || !doc.isObject()) {
-    LOG_WARN("RUNCONFIG", "解析 .erun 失败: {} ({})", path.toStdString(),
-             error.errorString().toStdString());
-    return false;
-  }
   config_ = RunConfig();
-  if (!config_.fromJson(doc.object())) {
+  if (!RunConfig::loadFromFile(path, &config_)) {
     return false;
   }
   modified_ = false;
@@ -618,14 +532,7 @@ bool RunConfigEditor::loadFromFile(const QString& path) {
 }
 
 bool RunConfigEditor::saveToFile(const QString& path) {
-  QFile file(path);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    return false;
-  }
-  const QJsonDocument doc(config_.toJson());
-  file.write(doc.toJson(QJsonDocument::Indented));
-  file.close();
-  return true;
+  return RunConfig::saveToFile(path, config_);
 }
 
 // ── 撤销/重做（快照式，仿 ProtocolEditorWidget） ──

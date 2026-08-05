@@ -25,7 +25,6 @@ class ProjectInfo {
   QString rootPath() const;
   QString projectFilePath() const;
   QVariantMap settings() const;
-  QJsonArray monitors() const;
 
   // Setters
   void setVersion(const QString& v);
@@ -33,7 +32,6 @@ class ProjectInfo {
   void setCreateTime(const QDateTime& t);
   void setProjectFilePath(const QString& p);
   void setSettings(const QVariantMap& s);
-  void setMonitors(const QJsonArray& monitors);
 
   // 序列化
   QJsonObject toJson() const;
@@ -65,7 +63,6 @@ class ProjectInfo {
   QDateTime create_time_;
   QString project_file_path_;
   QVariantMap settings_;
-  QJsonArray monitors_;
 };
 
 }  // namespace project

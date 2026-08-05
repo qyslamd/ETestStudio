@@ -96,7 +96,6 @@
 #include "widgets/MessageService.h"
 #include "widgets/LoadingOverlay.h"
 #include "widgets/LogOutputPanel.h"
-#include "widgets/ProgramSelectionPopup.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -1755,13 +1754,12 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   // 同步 ribbon 按钮 enable 状态
   execution_controller_->syncControlStates();
 
-  // 消息中心：程序扫描完成
+  // 消息中心：当前运行配置程序数提示
   {
-    int progCount =
-        execution_controller_->programPopup()->allPaths().size();
+    int progCount = execution_controller_->runProgramCount();
     if (progCount > 0) {
       MessageService::instance().postHint(
-          QStringLiteral("发现 %1 个测试程序").arg(progCount),
+          QStringLiteral("当前运行配置含 %1 个测试程序").arg(progCount),
           QStringLiteral("查看"),
           [this]() { navigateTo(0, PageId::kTestProgram); });
     }
@@ -2404,10 +2402,9 @@ void MainWindow::setupRibbon() {
     category_exec_->setObjectName(QStringLiteral("CategoryExec"));
     auto* cat = category_exec_;
 
-    // 运行配置 Panel（程序选择 popup + 通道选择 + 验证，由
-    // ExecutionPanelController 管理）
+    // 运行配置 Panel（通道选择 + 验证，由 ExecutionPanelController 管理；
+    // 程序选择已收敛到运行编辑器 .erun.programs，popup 移除）
     auto* panel_select = cat->addPanel(QStringLiteral("运行配置"));
-    panel_select->addSmallWidget(execution_controller_->programPopup());
     panel_select->addSmallAction(execution_controller_->selectChannelsAction());
     connect(execution_controller_->selectChannelsAction(), &QAction::triggered,
             this,

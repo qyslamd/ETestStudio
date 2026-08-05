@@ -63,6 +63,8 @@ add_executable(${TARGET_NAME} WIN32
     editors/EtlogViewerWidget.cpp
     editors/MockConfigEditor.h
     editors/MockConfigEditor.cpp
+    editors/RunConfig.h
+    editors/RunConfig.cpp
     editors/RunConfigEditor.h
     editors/RunConfigEditor.cpp
     EditorManager.h
@@ -83,8 +85,6 @@ add_executable(${TARGET_NAME} WIN32
     widgets/ProblemsPanel.cpp
     widgets/ProgramChecklistWidget.h
     widgets/ProgramChecklistWidget.cpp
-    widgets/ProgramSelectionPopup.h
-    widgets/ProgramSelectionPopup.cpp
     TerminalPanel.h
     TerminalPanel.cpp
     dialogs/SettingsDialog.h

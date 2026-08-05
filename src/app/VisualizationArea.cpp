@@ -58,11 +58,11 @@ void VisualizationArea::addVisualizer(const QString& connectionId,
     return;
   }
 
-  // 创建 VisualizerProxy 包裹 widget（编辑态可拖拽/resize）
+  // 创建 VisualizerProxy 包裹 widget（交互开关决定可拖拽/resize）
   auto* proxy = new VisualizerProxy;
   proxy->setWidget(visualizer);
   proxy->setCacheMode(QGraphicsItem::NoCache);
-  proxy->setEditMode(edit_mode_);
+  proxy->setEditMode(interactive_);
   // 用户拖拽/resize 结束 → 汇总为 layoutChanged，供宿主置脏
   connect(proxy, &VisualizerProxy::geometryEdited, this,
           &VisualizationArea::layoutChanged);
@@ -73,7 +73,7 @@ void VisualizationArea::addVisualizer(const QString& connectionId,
   item.widget = visualizer;
   items_.insert(connectionId, item);
 
-  if (!edit_mode_) {
+  if (!manual_layout_) {
     relayout();
   }
 }
@@ -93,8 +93,8 @@ void VisualizationArea::removeVisualizer(const QString& connectionId) {
   delete it->proxy;  // QGraphicsProxyWidget 会连带删除其 widget
   items_.erase(it);
 
-  // 编辑态手动布局，删除单卡不重排其余
-  if (!edit_mode_) {
+  // 手动布局模式，删除单卡不重排其余
+  if (!manual_layout_) {
     relayout();
   }
 }
@@ -112,19 +112,33 @@ SignalVisualizer* VisualizationArea::visualizer(
   return nullptr;
 }
 
-// 编辑/展示两态切换：编辑态可拖拽/resize/排列，展示态只读并恢复自动网格
+// 编辑模式（便捷入口）：布局手动 + 交互可编辑
 void VisualizationArea::setEditMode(bool edit) {
-  if (edit_mode_ == edit) {
+  setManualLayout(edit);
+  setInteractive(edit);
+}
+
+// 布局模式：手动 → 不自动重排（应用 .erun.layout）；自动网格 → 恢复 relayout
+void VisualizationArea::setManualLayout(bool manual) {
+  if (manual_layout_ == manual) {
     return;
   }
-  edit_mode_ = edit;
+  manual_layout_ = manual;
+  if (!manual_layout_) {
+    relayout();  // 切回自动网格
+  }
+}
+
+// 交互开关：遍历 proxy 设只读/可编辑（禁拖拽/resize/选中）
+void VisualizationArea::setInteractive(bool interactive) {
+  if (interactive_ == interactive) {
+    return;
+  }
+  interactive_ = interactive;
   for (auto it = items_.constBegin(); it != items_.constEnd(); ++it) {
     if (auto* vp = qgraphicsitem_cast<VisualizerProxy*>(it->proxy)) {
-      vp->setEditMode(edit);
+      vp->setEditMode(interactive);
     }
-  }
-  if (!edit_mode_) {
-    relayout();  // 切回展示态恢复自动网格
   }
 }
 
@@ -298,8 +312,8 @@ QList<QString> VisualizationArea::activeChannels() const {
 
 void VisualizationArea::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
-  // 编辑态手动布局，不随窗口尺寸重排
-  if (!edit_mode_) {
+  // 手动布局模式，不随窗口尺寸重排
+  if (!manual_layout_) {
     relayout();
   }
 }

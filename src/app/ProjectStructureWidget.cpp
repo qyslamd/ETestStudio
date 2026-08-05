@@ -1,5 +1,6 @@
 #include "ProjectStructureWidget.h"
 
+#include "project/ProjectManager.h"
 #include "widgets/ProjectTreeDelegate.h"
 
 #include <QApplication>
@@ -512,6 +513,9 @@ QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
       {QStringLiteral("config"), QStringLiteral("配置"),
        QStringLiteral("config/"), QStringLiteral("file_json"),
        QStringLiteral("json"), QStringLiteral("新建配置文件")},
+      {QStringLiteral("run"), QStringLiteral("运行"),
+       QStringLiteral("run/"), QStringLiteral("run"),
+       QStringLiteral("erun"), QStringLiteral("新建运行配置")},
       {QStringLiteral("backup"), QStringLiteral("备份"),
        QStringLiteral("backup/"), QStringLiteral("file_generic"), QString(),
        QString()},
@@ -868,13 +872,22 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
     auto* openInFmAction = menu.addAction(QStringLiteral("在文件系统中打开"));
     auto* openTextAction = menu.addAction(QStringLiteral("用文本编辑器打开"));
 
+    // .erun 文件追加「设为当前运行配置」（写 .etproj settings.runConfigFile）
+    QString relPath = item->data(RelativePathRole).toString();
+    QAction* setAsRunAction = nullptr;
+    if (relPath.endsWith(QStringLiteral(".erun"))) {
+      menu.addSeparator();
+      setAsRunAction = menu.addAction(QStringLiteral("设为当前运行配置"));
+    }
+
     QAction* chosen = menu.exec(tree_view_->viewport()->mapToGlobal(pos));
 
     if (chosen == openAction) {
-      QString relPath = item->data(RelativePathRole).toString();
       emit fileOpenRequested(absolutePath(relPath));
+    } else if (setAsRunAction && chosen == setAsRunAction) {
+      etest::core::project::ProjectManager::instance().setSetting(
+          QStringLiteral("runConfigFile"), relPath);
     } else if (chosen == renameAction) {
-      QString relPath = item->data(RelativePathRole).toString();
       if (relPath.isEmpty()) {
         return;
       }

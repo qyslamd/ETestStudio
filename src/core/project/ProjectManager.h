@@ -3,6 +3,7 @@
 
 #include <QJsonArray>
 #include <QObject>
+#include <QVariant>
 #include <functional>
 #include <memory>
 
@@ -27,8 +28,8 @@ class ProjectManager : public QObject {
   bool openProject(const QString& filePath);
   bool closeProject();
   bool saveProject();
-  // 写回监听器配置（更新当前项目并落盘 .etproj）
-  bool setMonitors(const QJsonArray& monitors);
+  // 更新当前项目 settings 单键并落盘 .etproj（如 runConfigFile 运行配置引用）
+  bool setSetting(const QString& key, const QVariant& value);
 
   // 项目状态
   bool isProjectOpen() const;
