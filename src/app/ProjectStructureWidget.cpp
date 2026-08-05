@@ -819,6 +819,24 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
             refreshAction) {
           refreshHardwareDevices();
         }
+      } else if (catId == QLatin1String("report")) {
+        // 测试报告目录：添加"清除所有"菜单项
+        auto* clearAllAction = menu.addAction(
+            AppIconProvider::instance().icon(QStringLiteral("delete")),
+            QStringLiteral("清除所有"));
+        clearAllAction->setData(QVariant::fromValue(true));  // 标记为危险操作
+        menu.addSeparator();
+        auto* openInFmAction =
+            menu.addAction(QStringLiteral("在文件系统中打开"));
+
+        QAction* chosen = menu.exec(tree_view_->viewport()->mapToGlobal(pos));
+        if (chosen == clearAllAction) {
+          clearAllEtlogFiles(catId);
+        } else if (chosen == openInFmAction) {
+          QString dirPath = categoryDirPath(catId);
+          QDesktopServices::openUrl(QUrl::fromLocalFile(
+              QDir(project_path_).absoluteFilePath(dirPath)));
+        }
       } else {
         auto* openInFmAction =
             menu.addAction(QStringLiteral("在文件系统中打开"));
@@ -1305,6 +1323,107 @@ QString ProjectStructureWidget::categoryDirPath(
     }
   }
   return QString();
+}
+
+void ProjectStructureWidget::clearAllEtlogFiles(const QString& categoryId) {
+  QString dirPath = categoryDirPath(categoryId);
+  if (dirPath.isEmpty())
+    return;
+
+  QDir dir(QDir(project_path_).absoluteFilePath(dirPath));
+  if (!dir.exists())
+    return;
+
+  QStringList etlogFiles = dir.entryList(
+      QStringList() << QStringLiteral("*.etlog"), QDir::Files, QDir::Time);
+
+  if (etlogFiles.isEmpty())
+    return;
+
+  QString msg = QStringLiteral("确定要删除 %1 个 .etlog 文件吗？\n\n此操作不可撤销。")
+                    .arg(etlogFiles.size());
+  auto ret = QMessageBox::question(this, QStringLiteral("确认清除"), msg,
+                                   QMessageBox::Yes | QMessageBox::No,
+                                   QMessageBox::No);
+  if (ret != QMessageBox::Yes)
+    return;
+
+  int deletedCount = 0;
+  for (const QString& fileName : etlogFiles) {
+    if (dir.remove(fileName)) {
+      deletedCount++;
+    }
+  }
+
+  if (deletedCount > 0) {
+    refreshCategory(dir.absolutePath());
+    refreshOtherCategory();
+    emit fileDeleted(dir.absolutePath());
+    LOG_INFO("PROJECT_UI", "已删除 {} 个 .etlog 文件", deletedCount);
+  }
+}
+
+void ProjectStructureWidget::refreshOtherCategory() {
+  if (project_path_.isEmpty() || !root_item_)
+    return;
+
+  // 找到 otherItem
+  QStandardItem* otherItem = nullptr;
+  for (int i = 0; i < root_item_->rowCount(); ++i) {
+    auto* child = root_item_->child(i);
+    if (child->data(CategoryIdRole).toString() == QLatin1String("other")) {
+      otherItem = child;
+      break;
+    }
+  }
+  if (!otherItem)
+    return;
+
+  otherItem->removeRows(0, otherItem->rowCount());
+
+  // 重新扫描非标准目录的文件
+  QDir projectDir(project_path_);
+  QStringList skipPrefixes;
+  for (const auto& cat : defaultCategories()) {
+    QString absDir = QDir(project_path_).absoluteFilePath(cat.dirPath);
+    skipPrefixes.append(absDir.toLower() + QStringLiteral("/"));
+  }
+  skipPrefixes.append(
+      projectDir.absoluteFilePath(QStringLiteral("hardware/")).toLower() +
+      QStringLiteral("/"));
+
+  int otherCount = 0;
+  QDirIterator it(project_path_, QDir::Files | QDir::NoDotAndDotDot,
+                  QDirIterator::Subdirectories);
+  while (it.hasNext()) {
+    it.next();
+    QString absPath = it.filePath();
+    bool inStandardDir = false;
+    for (const auto& prefix : skipPrefixes) {
+      if (absPath.toLower().startsWith(prefix)) {
+        inStandardDir = true;
+        break;
+      }
+    }
+    if (inStandardDir)
+      continue;
+
+    QFileInfo fi = it.fileInfo();
+    QString relPath = projectDir.relativeFilePath(fi.absoluteFilePath());
+    otherItem->appendRow(createFileItem(fi.fileName(), relPath));
+    ++otherCount;
+  }
+
+  QString otherText = QStringLiteral("其他文件 (") +
+                      QString::number(otherCount) + QStringLiteral(")");
+  if (otherCount == 0) {
+    otherItem->setForeground(QColor(0xbb, 0xbb, 0xbb));
+  } else {
+    otherItem->setForeground(QBrush());
+  }
+  otherItem->setText(otherText);
+
+  emit fileListChanged();
 }
 
 // ── 硬件节点 ──

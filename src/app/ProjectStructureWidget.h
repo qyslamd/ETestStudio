@@ -142,6 +142,8 @@ class ProjectStructureWidget : public QWidget {
                               const QString& dirPath);
   QString absolutePath(const QString& relativePath) const;
   QString categoryDirPath(const QString& categoryId) const;
+  void clearAllEtlogFiles(const QString& categoryId);
+  void refreshOtherCategory();
 
   // 硬件节点管理
   void refreshHardwareDevices();
