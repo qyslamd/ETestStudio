@@ -37,7 +37,6 @@
 #include <functional>
 #include "logger/Logger.h"
 
-
 #include "AppIconProvider.h"
 #include "ConfigManager.h"
 #include "TestProgramData.h"
@@ -193,6 +192,7 @@ void ProjectStructureWidget::initUi() {
   recent_files_view_ = new QListView();
   recent_files_view_->setFrameShape(QFrame::NoFrame);
   recent_files_view_->setMouseTracking(true);
+  recent_files_view_->setContextMenuPolicy(Qt::CustomContextMenu);
   recent_files_model_ = new QStandardItemModel(this);
   recent_files_view_->setModel(recent_files_model_);
   auto* rf_delegate = new OpenFileDelegate(this);
@@ -376,35 +376,45 @@ void ProjectStructureWidget::initSignals() {
               if (!path.isEmpty())
                 emit projectOpenRequested(path);
             });
-    connect(
-        recent_projects_view_, &QListView::customContextMenuRequested, this,
-        [this](const QPoint& pos) {
-          QModelIndex index = recent_projects_view_->indexAt(pos);
-          if (!index.isValid())
-            return;
-          QString path = index.data(FilePathRole).toString();
-          if (path.isEmpty())
-            return;
+    connect(recent_projects_view_, &QListView::customContextMenuRequested, this,
+            [this](const QPoint& pos) {
+              QModelIndex index = recent_projects_view_->indexAt(pos);
+              if (!index.isValid())
+                return;
+              QString path = index.data(FilePathRole).toString();
+              if (path.isEmpty())
+                return;
 
-          QMenu menu(recent_projects_view_);
-          menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
-          auto* copyPathAction = menu.addAction(QStringLiteral("复制路径"));
-          menu.addSeparator();
-          auto* removeAction = menu.addAction(QStringLiteral("从列表中移除"));
-          QAction* chosen =
-              menu.exec(recent_projects_view_->viewport()->mapToGlobal(pos));
-          if (chosen == copyPathAction) {
-            QApplication::clipboard()->setText(path);
-          } else if (chosen == removeAction) {
-            auto& cfg = etest::core::config::ConfigManager::instance();
-            QStringList recentList = cfg.get<QStringList>(
-                etest::core::config::CONFIG_RECENT_PROJECT_LIST);
-            recentList.removeAll(path);
-            cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST,
-                    recentList);
-            refreshRecentProjects();
-          }
-        });
+              QMenu menu(recent_projects_view_);
+              menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+              auto* openAction = menu.addAction(QStringLiteral("打开"));
+              auto* copyPathAction =
+                  menu.addAction(QStringLiteral("复制路径"));
+              auto* openDirAction =
+                  menu.addAction(QStringLiteral("打开所在目录"));
+              menu.addSeparator();
+              auto* removeAction =
+                  menu.addAction(QStringLiteral("从列表中移除"));
+              QAction* chosen = menu.exec(
+                  recent_projects_view_->viewport()->mapToGlobal(pos));
+              if (chosen == openAction) {
+                emit projectOpenRequested(path);
+              } else if (chosen == copyPathAction) {
+                QApplication::clipboard()->setText(path);
+              } else if (chosen == openDirAction) {
+                QDesktopServices::openUrl(QUrl::fromLocalFile(
+                    QFileInfo(path).absolutePath()));
+              } else if (chosen == removeAction) {
+                auto& cfg =
+                    etest::core::config::ConfigManager::instance();
+                QStringList list = cfg.get<QStringList>(
+                    etest::core::config::CONFIG_RECENT_PROJECT_LIST);
+                list.removeAll(path);
+                cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST,
+                        list);
+                refreshRecentProjects();
+              }
+            });
   }
 
   // ── 最近文件列表 ──
@@ -428,11 +438,31 @@ void ProjectStructureWidget::initSignals() {
 
               QMenu menu(recent_files_view_);
               menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+              auto* openAction = menu.addAction(QStringLiteral("打开"));
+              auto* copyPathAction =
+                  menu.addAction(QStringLiteral("复制路径"));
+              auto* openDirAction =
+                  menu.addAction(QStringLiteral("打开所在目录"));
+              menu.addSeparator();
               auto* removeAction =
-                  menu.addAction(QStringLiteral("从最近文件中移除"));
-              if (menu.exec(recent_files_view_->viewport()->mapToGlobal(pos)) ==
-                  removeAction) {
-                removeRecentFileFromConfig(path);
+                  menu.addAction(QStringLiteral("从列表中移除"));
+              QAction* chosen = menu.exec(
+                  recent_files_view_->viewport()->mapToGlobal(pos));
+              if (chosen == openAction) {
+                emit recentFileOpenRequested(path);
+              } else if (chosen == copyPathAction) {
+                QApplication::clipboard()->setText(path);
+              } else if (chosen == openDirAction) {
+                QDesktopServices::openUrl(QUrl::fromLocalFile(
+                    QFileInfo(path).absolutePath()));
+              } else if (chosen == removeAction) {
+                auto& cfg =
+                    etest::core::config::ConfigManager::instance();
+                QStringList list = cfg.get<QStringList>(
+                    etest::core::config::CONFIG_RECENT_FILE_LIST);
+                list.removeAll(path);
+                cfg.set(etest::core::config::CONFIG_RECENT_FILE_LIST,
+                        list);
                 refreshRecentFiles();
               }
             });
@@ -513,9 +543,9 @@ QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
       {QStringLiteral("config"), QStringLiteral("配置"),
        QStringLiteral("config/"), QStringLiteral("file_json"),
        QStringLiteral("json"), QStringLiteral("新建配置文件")},
-      {QStringLiteral("run"), QStringLiteral("运行"),
-       QStringLiteral("run/"), QStringLiteral("run"),
-       QStringLiteral("erun"), QStringLiteral("新建运行配置")},
+      {QStringLiteral("run"), QStringLiteral("运行"), QStringLiteral("run/"),
+       QStringLiteral("run"), QStringLiteral("erun"),
+       QStringLiteral("新建运行配置")},
       {QStringLiteral("backup"), QStringLiteral("备份"),
        QStringLiteral("backup/"), QStringLiteral("file_generic"), QString(),
        QString()},
@@ -1353,8 +1383,9 @@ void ProjectStructureWidget::clearAllEtlogFiles(const QString& categoryId) {
   if (etlogFiles.isEmpty())
     return;
 
-  QString msg = QStringLiteral("确定要删除 %1 个 .etlog 文件吗？\n\n此操作不可撤销。")
-                    .arg(etlogFiles.size());
+  QString msg =
+      QStringLiteral("确定要删除 %1 个 .etlog 文件吗？\n\n此操作不可撤销。")
+          .arg(etlogFiles.size());
   auto ret = QMessageBox::question(this, QStringLiteral("确认清除"), msg,
                                    QMessageBox::Yes | QMessageBox::No,
                                    QMessageBox::No);
