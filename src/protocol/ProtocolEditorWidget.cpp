@@ -102,8 +102,29 @@ void ProtocolEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded) {
     menuBar()->hide();
+    // embedded 模式禁止浮动，仅保留关闭和拖拽
+    for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
+      dock->setFeatures(QDockWidget::DockWidgetClosable |
+                        QDockWidget::DockWidgetMovable);
+      if (auto* titleBar = dock->titleBarWidget()) {
+        if (auto* floatBtn = titleBar->findChild<QToolButton*>(
+                QStringLiteral("dockFloatButton"))) {
+          floatBtn->setVisible(false);
+        }
+      }
+    }
   } else {
     menuBar()->show();
+    // 恢复完整功能
+    for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
+      dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+      if (auto* titleBar = dock->titleBarWidget()) {
+        if (auto* floatBtn = titleBar->findChild<QToolButton*>(
+                QStringLiteral("dockFloatButton"))) {
+          floatBtn->setVisible(true);
+        }
+      }
+    }
   }
 }
 

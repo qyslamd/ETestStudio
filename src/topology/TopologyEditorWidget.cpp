@@ -99,8 +99,27 @@ void TopologyEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded) {
     menuBar()->hide();
+    for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
+      dock->setFeatures(QDockWidget::DockWidgetClosable |
+                        QDockWidget::DockWidgetMovable);
+      if (auto* titleBar = dock->titleBarWidget()) {
+        if (auto* floatBtn = titleBar->findChild<QToolButton*>(
+                QStringLiteral("dockFloatButton"))) {
+          floatBtn->setVisible(false);
+        }
+      }
+    }
   } else {
     menuBar()->show();
+    for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
+      dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+      if (auto* titleBar = dock->titleBarWidget()) {
+        if (auto* floatBtn = titleBar->findChild<QToolButton*>(
+                QStringLiteral("dockFloatButton"))) {
+          floatBtn->setVisible(true);
+        }
+      }
+    }
   }
 }
 
