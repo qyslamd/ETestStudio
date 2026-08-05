@@ -17,6 +17,10 @@ class QLabel;
 class QStackedWidget;
 class QWidget;
 
+namespace etest::visualizer {
+class SignalVisualizer;
+}  // namespace etest::visualizer
+
 namespace etest::app {
 
 class AppStatusBarController;
@@ -26,7 +30,6 @@ class ExecutionDebugWidget;
 class ExecutionOutputPanel;
 class TestProgramManagerWidget;
 class ExecutionDashboard;
-class SignalVisualizer;
 
 }  // namespace etest::app
 
@@ -154,7 +157,7 @@ class ExecutionPanelController : public QObject {
 
   /// 将监听器订阅到某个可视化组件（勾选和拓扑重载重订阅复用）
   void subscribeVisualizer(const QString& connectionId,
-                           SignalVisualizer* vis);
+                           etest::visualizer::SignalVisualizer* vis);
   /// 从 .erun 监听器数组 + 引擎拓扑 JSON 重建监听器（幂等；运行态只读）
   void loadProjectMonitors();
   /// 当前运行配置（.erun）加载 + mtime 检测级联刷新（4.2/4.4）

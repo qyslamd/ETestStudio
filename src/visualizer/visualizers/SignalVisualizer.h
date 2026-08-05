@@ -1,5 +1,4 @@
-#ifndef ETEST_APP_VISUALIZERS_SIGNAL_VISUALIZER_H_
-#define ETEST_APP_VISUALIZERS_SIGNAL_VISUALIZER_H_
+#pragma once
 
 #include <QPair>
 #include <QWidget>
@@ -8,7 +7,7 @@ namespace etest::engine {
 struct MonitorSample;
 }  // namespace etest::engine
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SignalVisualizer — 信号可视化组件抽象基类
@@ -40,6 +39,5 @@ class SignalVisualizer : public QWidget {
   virtual void setSubtitle(const QString& subtitle) { Q_UNUSED(subtitle) }
 };
 
-}  // namespace etest::app
+}  // namespace etest::visualizer
 
-#endif  // ETEST_APP_VISUALIZERS_SIGNAL_VISUALIZER_H_

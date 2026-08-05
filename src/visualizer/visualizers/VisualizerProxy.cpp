@@ -14,7 +14,7 @@ const QColor kHandleColor(0x2E, 0x9E, 0xDF, 220);
 const QColor kHandleBorder(0xFF, 0xFF, 0xFF, 200);
 }  // namespace
 
-namespace etest::app {
+namespace etest::visualizer {
 
 VisualizerProxy::VisualizerProxy(QGraphicsItem* parent)
     : QGraphicsProxyWidget(parent) {
@@ -307,4 +307,4 @@ void VisualizerProxy::doResize(const QPointF& delta) {
   }
 }
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

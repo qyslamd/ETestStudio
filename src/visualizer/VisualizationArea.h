@@ -8,7 +8,7 @@
 class QGraphicsScene;
 class QGraphicsProxyWidget;
 
-namespace etest::app {
+namespace etest::visualizer {
 
 class SignalVisualizer;
 
@@ -83,4 +83,4 @@ class VisualizationArea : public QGraphicsView {
   QPoint last_pan_point_;
 };
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

@@ -18,9 +18,11 @@ class QPushButton;
 class QStandardItem;
 class QStandardItemModel;
 
-namespace etest::app {
-
+namespace etest::visualizer {
 class SignalVisualizer;
+}  // namespace etest::visualizer
+
+namespace etest::app {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MonitorTypeTile — 右栏可点击的 visualizer 类型瓦片
@@ -92,7 +94,8 @@ class MonitorConfigDialog : public QDialog {
   void updateTileHighlights();
   void updateTilesEnabled();
   void addSeparatorRow(const QString& text);
-  SignalVisualizer* createPreviewVisualizer(const QString& displayMode);
+  etest::visualizer::SignalVisualizer* createPreviewVisualizer(
+      const QString& displayMode);
   void makeTransparentToMouse(QWidget* widget);
 
   void onFilterChanged(const QString& text);

@@ -1,5 +1,4 @@
-#ifndef ETEST_APP_VISUALIZERS_WAVEFORM_WIDGET_H_
-#define ETEST_APP_VISUALIZERS_WAVEFORM_WIDGET_H_
+#pragma once
 
 #include <QColor>
 #include <QLabel>
@@ -10,7 +9,7 @@
 class QCustomPlot;
 class QCPGraph;
 
-namespace etest::app {
+namespace etest::visualizer {
 
 class WaveformWidget : public SignalVisualizer {
   Q_OBJECT
@@ -54,6 +53,5 @@ class WaveformWidget : public SignalVisualizer {
   static constexpr int kMaxPoints = 10000;
 };
 
-}  // namespace etest::app
+}  // namespace etest::visualizer
 
-#endif  // ETEST_APP_VISUALIZERS_WAVEFORM_WIDGET_H_

@@ -2,7 +2,7 @@
 
 #include <QVBoxLayout>
 
-namespace etest::app {
+namespace etest::visualizer {
 
 ValueLabelWidget::ValueLabelWidget(const QString& title, QWidget* parent)
     : SignalVisualizer(parent), title_(title) {
@@ -95,4 +95,4 @@ QList<QString> ValueLabelWidget::displayedSignals() const {
   return {};
 }
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

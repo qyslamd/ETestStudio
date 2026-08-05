@@ -15,11 +15,14 @@ class QDockWidget;
 class QToolBar;
 class QToolButton;
 
+namespace etest::visualizer {
+class VisualizationArea;
+}  // namespace etest::visualizer
+
 namespace etest::app {
 
 class MonitorConfigDialog;
 class ProgramChecklistWidget;
-class VisualizationArea;
 
 // RunConfigEditor -- 运行编辑器（独立编辑器，编辑态 page0）
 // 编辑 .erun 运行配置。纯新增骨架：IEditor 接口 + .erun 序列化/反序列化
@@ -94,7 +97,7 @@ class RunConfigEditor : public QMainWindow, public IEditor {
   QToolBar* toolbar_ = nullptr;
   QDockWidget* test_program_dock_ = nullptr;  // 测试程序多选面板（可关可拖，toggle 重开）
   ProgramChecklistWidget* program_list_ = nullptr;
-  VisualizationArea* vis_area_ = nullptr;
+  etest::visualizer::VisualizationArea* vis_area_ = nullptr;
   MonitorConfigDialog* channel_dialog_ = nullptr;  // 复用 page1 通道选择对话框
   QToolButton* align_btn_ = nullptr;   // 排列（选中≥2 才启用）
   QToolButton* dist_btn_ = nullptr;    // 分布

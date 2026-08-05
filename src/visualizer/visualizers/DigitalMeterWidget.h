@@ -1,25 +1,24 @@
-#ifndef ETEST_APP_VISUALIZERS_VALUE_LABEL_WIDGET_H_
-#define ETEST_APP_VISUALIZERS_VALUE_LABEL_WIDGET_H_
+#pragma once
 
 #include <QLabel>
 #include <QPair>
 
 #include "SignalVisualizer.h"
-#include "engine/MonitorManager.h"  // MonitorSample
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ValueLabelWidget — 通用 fallback 可视化组件
+// DigitalMeterWidget — 数值型信号大数字表
 // ══════════════════════════════════════════════════════════════════════════════
-// 以标签形式展示工程值和原始值。适合 CAN/A429/未识别信号类型。
-// 作为所有已识别信号类型的兜底方案。
+// 显示名称 + 大字体工程值 + 趋势箭头 + 原始值 + 最小/最大值。
+// 适合 CAN/A429 数值信号展示。
+// 所有样式通过 QSS #objectName 控制。
 // ══════════════════════════════════════════════════════════════════════════════
-class ValueLabelWidget : public SignalVisualizer {
+class DigitalMeterWidget : public SignalVisualizer {
   Q_OBJECT
 
  public:
-  explicit ValueLabelWidget(const QString& title, QWidget* parent = nullptr);
+  explicit DigitalMeterWidget(const QString& title, QWidget* parent = nullptr);
 
   void onSampleCaptured(const etest::engine::MonitorSample& sample) override;
   void clearData() override;
@@ -30,16 +29,26 @@ class ValueLabelWidget : public SignalVisualizer {
 
  private:
   void initUi();
+  void updateDisplay();
 
   QString title_;
-  QLabel* title_label_ = nullptr;    // 主标题
-  QLabel* subtitle_label_ = nullptr; // 副标题（连接描述）
-  QLabel* value_label_ = nullptr;    // 工程值大字体
-  QLabel* raw_label_ = nullptr;      // 原始值
-  QLabel* ts_label_ = nullptr;       // 最后采样时间
+  QLabel* title_label_ = nullptr;
+  QLabel* subtitle_label_ = nullptr;
+  QLabel* value_label_ = nullptr;     // 大字体工程值
+  QLabel* trend_label_ = nullptr;     // 趋势箭头 ↑ ↓ →
+  QLabel* range_label_ = nullptr;     // "min: 0.00  max: 100.00"
+  QLabel* raw_label_ = nullptr;       // 原始值
+  QLabel* ts_label_ = nullptr;        // 时间戳
+
   QString connection_id_;
+  double current_value_ = 0.0;
+  double min_value_ = 0.0;
+  double max_value_ = 0.0;
+  double previous_value_ = 0.0;
+  bool has_data_ = false;
+
+  static constexpr double kEpsilon = 1e-9;
 };
 
-}  // namespace etest::app
+}  // namespace etest::visualizer
 
-#endif  // ETEST_APP_VISUALIZERS_VALUE_LABEL_WIDGET_H_

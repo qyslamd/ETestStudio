@@ -116,24 +116,6 @@ add_executable(${TARGET_NAME} WIN32
     widgets/PaintedClockWidget.cpp
     widgets/EyeWidget.h
     widgets/EyeWidget.cpp
-    visualizers/SignalVisualizer.h
-    visualizers/SignalVisualizer.cpp
-    visualizers/ValueLabelWidget.h
-    visualizers/ValueLabelWidget.cpp
-    visualizers/WaveformWidget.h
-    visualizers/WaveformWidget.cpp
-    visualizers/DigitalMeterWidget.h
-    visualizers/DigitalMeterWidget.cpp
-    visualizers/GaugeVisualizer.h
-    visualizers/GaugeVisualizer.cpp
-    visualizers/VisualizerFactory.h
-    visualizers/VisualizerFactory.cpp
-    visualizers/LedIndicator.h
-    visualizers/LedIndicator.cpp
-    visualizers/VisualizerProxy.h
-    visualizers/VisualizerProxy.cpp
-    VisualizationArea.h
-    VisualizationArea.cpp
     widgets/TuxSaverOverlay.h
     widgets/TuxSaverOverlay.cpp
     widgets/SaverWidgetBase.h
@@ -222,6 +204,7 @@ target_link_libraries(${TARGET_NAME}
     etest_ui
     icd_utility
     etest_engine
+    etest_visualizer
     # 已配置第三方依赖
     spdlog::spdlog
     hpdf

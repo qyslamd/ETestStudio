@@ -22,12 +22,12 @@
 #include <QVBoxLayout>
 
 #include "AppIconProvider.h"
-#include "VisualizationArea.h"
 #include "dialogs/MonitorConfigDialog.h"
+#include "visualizer/VisualizationArea.h"
+#include "visualizer/visualizers/VisualizerFactory.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "logger/Logger.h"
 #include "project/ProjectManager.h"
-#include "visualizers/VisualizerFactory.h"
 #include "widgets/ProgramChecklistWidget.h"
 
 using etest::core_ui::AppIconProvider;
@@ -40,6 +40,9 @@ void syncDockCloseAction(QAction* action) {
   action->blockSignals(false);
 }
 }  // namespace
+
+// 可视化区下沉共享层（etest_visualizer）类型
+using etest::visualizer::VisualizationArea;
 
 namespace etest::app {
 
@@ -407,7 +410,8 @@ void RunConfigEditor::refreshUi() {
   for (const auto& m : config_.monitors) {
     // parent 传 nullptr：visualizer 须为 top-level 才能被 VisualizerProxy
     // setWidget 嵌入（传 this 会被警告 "cannot embed widget"）
-    auto* vis = createVisualizerFor(m.connectionId, m.displayMode, QString(),
+    auto* vis = etest::visualizer::createVisualizerFor(
+        m.connectionId, m.displayMode, QString(),
                                     m.name, nullptr);
     vis_area_->addVisualizer(m.connectionId, vis);
   }

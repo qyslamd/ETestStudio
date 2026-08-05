@@ -13,12 +13,12 @@
 #include <QStackedWidget>
 #include <QWidget>
 #include "ExecutionDashboard.h"
-#include "VisualizationArea.h"
 #include "dialogs/MonitorConfigDialog.h"
 #include "engine/MonitorManager.h"
-#include "visualizers/SignalVisualizer.h"
-#include "visualizers/VisualizerFactory.h"
-#include "visualizers/WaveformWidget.h"
+#include "visualizer/VisualizationArea.h"
+#include "visualizer/visualizers/SignalVisualizer.h"
+#include "visualizer/visualizers/VisualizerFactory.h"
+#include "visualizer/visualizers/WaveformWidget.h"
 
 #include "AppIconProvider.h"
 #include "AppStatusBarController.h"
@@ -42,6 +42,11 @@
 
 using namespace etest::core::config;
 using etest::core_ui::AppIconProvider;
+// 可视化区下沉共享层（etest_visualizer）类型
+using etest::visualizer::SignalVisualizer;
+using etest::visualizer::VisualizationArea;
+using etest::visualizer::WaveformWidget;
+using etest::visualizer::createVisualizerFor;
 
 namespace etest::app {
 

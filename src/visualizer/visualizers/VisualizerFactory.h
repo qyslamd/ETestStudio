@@ -1,10 +1,9 @@
-#ifndef ETEST_APP_VISUALIZERS_VISUALIZER_FACTORY_H_
-#define ETEST_APP_VISUALIZERS_VISUALIZER_FACTORY_H_
+#pragma once
 
 #include <QString>
 #include <QWidget>
 
-namespace etest::app {
+namespace etest::visualizer {
 
 class SignalVisualizer;
 
@@ -29,6 +28,5 @@ SignalVisualizer* createVisualizerFor(const QString& connectionId,
                                        const QString& title,
                                        QWidget* parent = nullptr);
 
-}  // namespace etest::app
+}  // namespace etest::visualizer
 
-#endif  // ETEST_APP_VISUALIZERS_VISUALIZER_FACTORY_H_

@@ -6,7 +6,7 @@
 #include "ValueLabelWidget.h"
 #include "WaveformWidget.h"
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // createVisualizerFor
@@ -56,4 +56,4 @@ SignalVisualizer* createVisualizerFor(const QString& connectionId,
   return new ValueLabelWidget(title, parent);
 }
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

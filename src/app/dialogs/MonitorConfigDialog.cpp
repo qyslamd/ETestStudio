@@ -18,12 +18,19 @@
 #include <QVBoxLayout>
 
 #include "logger/Logger.h"
-#include "visualizers/DigitalMeterWidget.h"
-#include "visualizers/GaugeVisualizer.h"
-#include "visualizers/SignalVisualizer.h"
-#include "visualizers/LedIndicator.h"
-#include "visualizers/ValueLabelWidget.h"
-#include "visualizers/WaveformWidget.h"
+#include "visualizer/visualizers/DigitalMeterWidget.h"
+#include "visualizer/visualizers/GaugeVisualizer.h"
+#include "visualizer/visualizers/LedIndicator.h"
+#include "visualizer/visualizers/SignalVisualizer.h"
+#include "visualizer/visualizers/ValueLabelWidget.h"
+#include "visualizer/visualizers/WaveformWidget.h"
+
+using etest::visualizer::DigitalMeterWidget;
+using etest::visualizer::GaugeVisualizer;
+using etest::visualizer::LedIndicator;
+using etest::visualizer::SignalVisualizer;
+using etest::visualizer::ValueLabelWidget;
+using etest::visualizer::WaveformWidget;
 
 namespace etest::app {
 

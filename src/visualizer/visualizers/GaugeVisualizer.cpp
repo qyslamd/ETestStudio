@@ -9,10 +9,10 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-#include "ThemeManager.h"
+#include "core_ui/ThemeManager.h"
 #include "engine/MonitorManager.h"
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // GaugeCanvas
@@ -463,4 +463,4 @@ QList<QString> GaugeVisualizer::displayedSignals() const {
   return {};
 }
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

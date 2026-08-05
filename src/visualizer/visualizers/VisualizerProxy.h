@@ -5,7 +5,7 @@
 #include <QSizeF>
 #include <QVariant>
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // VisualizerProxy — 包裹 visualizer 卡片的 QGraphicsProxyWidget 子类。
 // 内嵌拓扑 TopologyBlockItem 的移动 + 8 方向 resize 手柄逻辑，供可视化区
@@ -72,4 +72,4 @@ class VisualizerProxy : public QGraphicsProxyWidget {
   static constexpr qreal kHandleMargin = 6.0;  // boundingRect 外扩边距，包住手柄
 };
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

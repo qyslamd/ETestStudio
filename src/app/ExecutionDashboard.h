@@ -6,10 +6,13 @@
 class QSplitter;
 class QTabWidget;
 
+namespace etest::visualizer {
+class VisualizationArea;
+}  // namespace etest::visualizer
+
 namespace etest::app {
 
 class ExecutionDebugWidget;
-class VisualizationArea;
 class ExecutionOutputPanel;
 class ProblemsPanel;
 
@@ -27,7 +30,9 @@ class ExecutionDashboard : public QWidget {
   explicit ExecutionDashboard(QWidget* parent = nullptr);
 
   ExecutionDebugWidget* debugWidget() const { return debug_widget_; }
-  VisualizationArea* visualizationArea() const { return vis_area_; }
+  etest::visualizer::VisualizationArea* visualizationArea() const {
+    return vis_area_;
+  }
   ExecutionOutputPanel* outputPanel() const { return output_panel_; }
   /// 底部「问题」tab 的 ProblemsPanel（内部创建并持有）
   ProblemsPanel* problemsPanel() const { return problems_panel_; }
@@ -46,7 +51,7 @@ class ExecutionDashboard : public QWidget {
   void initUi();
 
   ExecutionDebugWidget* debug_widget_ = nullptr;
-  VisualizationArea* vis_area_ = nullptr;
+  etest::visualizer::VisualizationArea* vis_area_ = nullptr;
   ExecutionOutputPanel* output_panel_ = nullptr;
   ProblemsPanel* problems_panel_ = nullptr;
   QSplitter* main_splitter_ = nullptr;

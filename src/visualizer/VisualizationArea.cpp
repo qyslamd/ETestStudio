@@ -14,7 +14,7 @@
 #include "visualizers/SignalVisualizer.h"
 #include "visualizers/VisualizerProxy.h"
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 构造 / 析构
@@ -472,4 +472,4 @@ void VisualizationArea::relayout() {
   }
 }
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

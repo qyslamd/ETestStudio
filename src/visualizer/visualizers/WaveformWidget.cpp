@@ -9,7 +9,7 @@
 #include "engine/MonitorManager.h"
 #include "logger/Logger.h"
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 构造
@@ -260,4 +260,4 @@ void WaveformWidget::applyTheme() {
   custom_plot_->replot();
 }
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

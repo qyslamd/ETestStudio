@@ -10,7 +10,7 @@ class QLabel;
 class QPainter;
 class QPaintEvent;
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // GaugeCanvas — 模拟仪表盘自绘子画布
@@ -127,4 +127,4 @@ class GaugeVisualizer : public SignalVisualizer {
   QString connection_id_;
 };
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

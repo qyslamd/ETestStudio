@@ -9,7 +9,7 @@
 
 #include "engine/MonitorManager.h"
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LedDot — 内部自绘 LED 圆灯（多态语义色，QPainter 立体圆）
@@ -232,4 +232,4 @@ void LedIndicator::setSubtitle(const QString& subtitle) {
   }
 }
 
-}  // namespace etest::app
+}  // namespace etest::visualizer

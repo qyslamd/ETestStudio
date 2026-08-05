@@ -4,7 +4,7 @@
 
 #include "engine/MonitorManager.h"
 
-namespace etest::app {
+namespace etest::visualizer {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 构造
@@ -173,4 +173,4 @@ QList<QString> DigitalMeterWidget::displayedSignals() const {
   return {};
 }
 
-}  // namespace etest::app
+}  // namespace etest::visualizer
