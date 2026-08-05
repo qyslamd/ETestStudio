@@ -1,13 +1,16 @@
 #pragma once
 
+#include <QByteArray>
 #include <QJsonObject>
+#include <QMainWindow>
 #include <QString>
 #include <QStringList>
 #include <QVector>
-#include <QWidget>
 
 #include "IEditor.h"
 
+class QAction;
+class QDockWidget;
 class QLabel;
 class QToolBar;
 class QToolButton;
@@ -47,7 +50,7 @@ struct RunConfig {
 // 编辑 .erun 运行配置。纯新增骨架：IEditor 接口 + .erun 序列化/反序列化
 // + 基础数据展示。可视化区手动布局（VisualizerProxy/resize）后续作为
 // 主视图增强接入，不破坏现有 ExecutionDashboard。
-class RunConfigEditor : public QWidget, public IEditor {
+class RunConfigEditor : public QMainWindow, public IEditor {
   Q_OBJECT
 
  public:
@@ -72,8 +75,17 @@ class RunConfigEditor : public QWidget, public IEditor {
 
   const RunConfig& config() const { return config_; }
 
+  // 嵌入 IDE 模式：隐藏 QMainWindow 菜单栏（独立运行时显示）
+  void setEmbeddedMode(bool embedded);
+  // 主题切换时重载工具栏图标（AppIconProvider 按主题变体取图）
+  void reloadToolbarIcons();
+
  signals:
   void modificationChanged(bool modified);
+
+ protected:
+  // 拦截 dock 关闭按钮，同步工具栏 toggle 勾选态（与三编辑器统一）
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
  private:
   void initUi();
@@ -84,18 +96,38 @@ class RunConfigEditor : public QWidget, public IEditor {
   bool loadFromFile(const QString& path);
   bool saveToFile(const QString& path);
 
+  // ── 撤销/重做（快照式，仿 ProtocolEditorWidget） ──
+  void saveSnapshot();
+  void restoreSnapshot(const QByteArray& data);
+  void collectLayout();
+  void updateUndoRedoActions();
+
+  static constexpr int kMaxSnapshots = 32;
+  QVector<QByteArray> snapshots_;
+  int snapshot_index_ = -1;
+
   QString file_path_;
   bool modified_ = false;
+  bool embedded_ = false;
   RunConfig config_;
 
   // 主视图：可视化区（编辑态，监听器卡片 + 手动布局）
   QToolBar* toolbar_ = nullptr;
   QLabel* file_label_ = nullptr;
   QLabel* test_program_label_ = nullptr;
+  QDockWidget* info_dock_ = nullptr;  // 左侧"运行配置"信息面板（可关可拖，toggle 重开）
   VisualizationArea* vis_area_ = nullptr;
   MonitorConfigDialog* channel_dialog_ = nullptr;  // 复用 page1 通道选择对话框
   QToolButton* align_btn_ = nullptr;   // 排列（选中≥2 才启用）
   QToolButton* dist_btn_ = nullptr;    // 分布
+
+  // 工具栏 actions（存成员供 reloadToolbarIcons 重设图标）
+  QAction* undo_action_ = nullptr;
+  QAction* redo_action_ = nullptr;
+  QAction* new_action_ = nullptr;
+  QAction* save_action_ = nullptr;
+  QAction* add_monitor_action_ = nullptr;
+  QAction* info_toggle_action_ = nullptr;  // 显示/隐藏信息面板
 };
 
 }  // namespace etest::app

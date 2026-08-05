@@ -132,7 +132,9 @@ void EditorManager::registerEditorTypes() {
   EditorFactoryRegistry::registerFactory(
       "runconfig",
       [](const QString& id, QWidget* parent) {
-        return new RunConfigEditor(id, parent);
+        auto* editor = new RunConfigEditor(id, parent);
+        editor->setEmbeddedMode(true);
+        return editor;
       },
       [](IEditor* editor, ads::CDockWidget* dock, EditorManager* mgr) {
         auto* rc = qobject_cast<RunConfigEditor*>(editor->widget());
