@@ -259,6 +259,7 @@ void ProtocolEditorWidget::undo() {
   --snapshot_index_;
   restoreSnapshot(snapshots_[snapshot_index_]);
   setModified(snapshot_index_ != 0);
+  emit undoStateChanged();
 }
 void ProtocolEditorWidget::redo() {
   if (!canRedo())
@@ -266,6 +267,7 @@ void ProtocolEditorWidget::redo() {
   ++snapshot_index_;
   restoreSnapshot(snapshots_[snapshot_index_]);
   setModified(snapshot_index_ != 0);
+  emit undoStateChanged();
 }
 
 void ProtocolEditorWidget::setReadOnly(bool readOnly) {
@@ -1106,8 +1108,9 @@ void ProtocolEditorWidget::initSignals() {
     redo();
     updateToolbar();
   });
-  // Update undo/redo enabled state after each edit
-  connect(this, &ProtocolEditorWidget::modificationChanged, this, [this]() {
+  // 撤销/重做可用性变化（undo/redo/saveSnapshot 无条件发射，不受
+  // setModified 的 modified_ != modified 守卫门控）→ 刷新自身 toolbar
+  connect(this, &ProtocolEditorWidget::undoStateChanged, this, [this]() {
     undo_action_->setEnabled(canUndo());
     redo_action_->setEnabled(canRedo());
   });
@@ -1385,6 +1388,9 @@ void ProtocolEditorWidget::clearAll() {
   config_path_.clear();
   file_entries_.clear();
   frame_file_map_.clear();
+
+  // 快照重置后 canUndo/canRedo 归零，通知撤销状态变化
+  emit undoStateChanged();
 }
 
 // ── Snapshot (undo/redo) ──────────────────────────────────────
@@ -1428,6 +1434,10 @@ void ProtocolEditorWidget::saveSnapshot() {
     snapshot_frame_ids_.removeFirst();
     --snapshot_index_;
   }
+
+  // 快照截断/追加后 canUndo/canRedo 可能变化，无条件通知
+  // （setModified 有 modified_ != modified 守卫，脏态间 undo 不触发 modificationChanged）
+  emit undoStateChanged();
 }
 
 void ProtocolEditorWidget::restoreSnapshot(const QByteArray& data) {

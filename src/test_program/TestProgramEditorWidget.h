@@ -75,6 +75,7 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);
   void programSaved(const QString& path);
+  void undoStateChanged();
 
  protected:
   bool eventFilter(QObject* obj, QEvent* event) override;

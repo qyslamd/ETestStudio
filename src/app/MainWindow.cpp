@@ -759,12 +759,12 @@ void MainWindow::initSignalsLate() {
         close_file_action_->setEnabled(hasEditor);
         close_all_files_action_->setEnabled(hasEditor);
 
-        bool isModified = hasEditor && editor->isModified();
-        save_action_->setEnabled(isModified);
+        // 保存/撤销/重做使能状态统一从当前编辑器读取；实时变化由
+        // EditorManager 的 modificationChanged/undoStateChanged 中继驱动
+        syncEditorActions();
 
         // 断开之前编辑器的所有信号连接
         QObject::disconnect(current_editor_selection_connection_);
-        QObject::disconnect(current_editor_state_connection_);
 
         if (hasEditor) {
           status_bar_ctrl_->setMessage(editor->filePath());
@@ -789,38 +789,11 @@ void MainWindow::initSignalsLate() {
                           edit_cut_action_->setEnabled(hasSelection);
                           edit_copy_action_->setEnabled(hasSelection);
                         });
-
-            current_editor_state_connection_ =
-                connect(textEditor, &TextEditorWidget::editorStateChanged, this,
-                        [this, editor]() {
-                          if (running_locked_)
-                            return;
-                          edit_undo_action_->setEnabled(editor->canUndo());
-                          edit_redo_action_->setEnabled(editor->canRedo());
-                        });
-
-            edit_undo_action_->setEnabled(editor->canUndo());
-            edit_redo_action_->setEnabled(editor->canRedo());
-          } else if (auto* topoEditor =
-                         dynamic_cast<etest::topology::TopologyEditorWidget*>(
-                             editor)) {
-            auto* stack = topoEditor->document()->undoStack();
-            current_editor_state_connection_ = connect(
-                stack, &QUndoStack::indexChanged, this, [this, editor]() {
-                  if (running_locked_)
-                    return;
-                  edit_undo_action_->setEnabled(editor->canUndo());
-                  edit_redo_action_->setEnabled(editor->canRedo());
-                });
-            edit_undo_action_->setEnabled(editor->canUndo());
-            edit_redo_action_->setEnabled(editor->canRedo());
           } else {
             status_bar_ctrl_->setCursorPos(1, 1);
             status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
             status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
             status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
-            edit_undo_action_->setEnabled(false);
-            edit_redo_action_->setEnabled(false);
           }
         } else {
           status_bar_ctrl_->setMessage(QStringLiteral("就绪"));
@@ -830,8 +803,6 @@ void MainWindow::initSignalsLate() {
           status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
           edit_cut_action_->setEnabled(false);
           edit_copy_action_->setEnabled(false);
-          edit_undo_action_->setEnabled(false);
-          edit_redo_action_->setEnabled(false);
           edit_find_action_->setEnabled(false);
           edit_replace_action_->setEnabled(false);
           edit_go_to_line_action_->setEnabled(false);
@@ -856,8 +827,26 @@ void MainWindow::initSignalsLate() {
             save_all_action_->setEnabled(editor_manager_->hasUnsavedChanges());
           });
 
+  // 中继：仅当状态变化属于当前编辑器时驱动对应 action（后台编辑器不干扰）
   connect(editor_manager_, &EditorManager::modificationChanged, this,
-          [this](bool modified) { save_action_->setEnabled(modified); });
+          [this](IEditor* editor, bool modified) {
+            if (running_locked_) {
+              return;
+            }
+            if (editor == editor_manager_->currentEditor()) {
+              save_action_->setEnabled(modified);
+            }
+          });
+  connect(editor_manager_, &EditorManager::undoStateChanged, this,
+          [this](IEditor* editor) {
+            if (running_locked_) {
+              return;
+            }
+            if (editor == editor_manager_->currentEditor()) {
+              edit_undo_action_->setEnabled(editor->canUndo());
+              edit_redo_action_->setEnabled(editor->canRedo());
+            }
+          });
 
   connect(
       editor_manager_, &EditorManager::fileOpened, this,
@@ -894,11 +883,7 @@ void MainWindow::initSignalsLate() {
     }
   }
 
-  bool isModified = hasEditor && current_editor->isModified();
-  save_action_->setEnabled(isModified);
-
-  edit_undo_action_->setEnabled(hasEditor);
-  edit_redo_action_->setEnabled(hasEditor);
+  syncEditorActions();
   edit_cut_action_->setEnabled(hasSelection);
   edit_copy_action_->setEnabled(hasSelection);
   edit_paste_action_->setEnabled(hasEditor);
@@ -1159,7 +1144,7 @@ void MainWindow::lazyInit() {
   // 创建 ProjectController 和 EditorPanelController（依赖 editor_manager_）
   project_controller_ = new ProjectController(this, editor_manager_, this);
   editor_controller_ =
-      new EditorPanelController(editor_manager_, status_bar_ctrl_, this);
+      new EditorPanelController(editor_manager_, this);
 
   // 连接 project_controller_ 信号 → MainWindow 槽
   connect(project_controller_, &ProjectController::fileRequested, this,
@@ -2796,6 +2781,18 @@ void MainWindow::navigateTo(int page, const QString& sidebarId) {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// syncEditorActions — 保存/撤销/重做按当前编辑器真实状态同步
+// ══════════════════════════════════════════════════════════════════════════════
+
+void MainWindow::syncEditorActions() {
+  IEditor* editor =
+      editor_manager_ ? editor_manager_->currentEditor() : nullptr;
+  save_action_->setEnabled(editor != nullptr && editor->isModified());
+  edit_undo_action_->setEnabled(editor != nullptr && editor->canUndo());
+  edit_redo_action_->setEnabled(editor != nullptr && editor->canRedo());
+}
+
 void MainWindow::disableEditActions() {
   save_action_->setEnabled(false);
   save_as_action_->setEnabled(false);
@@ -2824,7 +2821,8 @@ void MainWindow::enableEditActions() {
   // 文件操作（有编辑器时 enable）
   bool hasEditors =
       editor_manager_ && editor_manager_->currentEditor() != nullptr;
-  save_action_->setEnabled(hasEditors);
+  // 保存/撤销/重做按当前编辑器真实状态恢复（运行态粗粒度置灰后需精确重读）
+  syncEditorActions();
   save_as_action_->setEnabled(hasEditors);
   save_all_action_->setEnabled(hasEditors &&
                                editor_manager_->allEditors().size() > 1);
@@ -2832,9 +2830,7 @@ void MainWindow::enableEditActions() {
   close_all_files_action_->setEnabled(hasEditors &&
                                       editor_manager_->allEditors().size() > 1);
 
-  // 编辑操作（有编辑器时 enable，后续由 EditorManager 精细控制）
-  edit_undo_action_->setEnabled(hasEditors);
-  edit_redo_action_->setEnabled(hasEditors);
+  // 编辑操作（有编辑器时 enable，cut/copy 精确态由 Qsci selectionChanged 修正）
   edit_cut_action_->setEnabled(hasEditors);
   edit_copy_action_->setEnabled(hasEditors);
   edit_paste_action_->setEnabled(hasEditors);

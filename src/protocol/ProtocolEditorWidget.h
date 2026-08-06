@@ -85,6 +85,7 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
  signals:
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);
+  void undoStateChanged();
 
  private:
   void showLoadingOverlay();

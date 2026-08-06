@@ -120,7 +120,7 @@ class TextEditorWidget : public QWidget, public IEditor {
 
  signals:
   void modificationChanged(bool modified);
-  void editorStateChanged();
+  void undoStateChanged();
 
  private slots:
   void onConfigChanged(const QString& key);

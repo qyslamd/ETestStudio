@@ -1226,6 +1226,7 @@ void TestProgramEditorWidget::updateActions() {
                                     row < table->rowCount() - 1);
     }
   }
+  emit undoStateChanged();
 }
 
 void TestProgramEditorWidget::reloadToolbarIcons() {

@@ -5,7 +5,6 @@
 #include <QMessageBox>
 #include <QPushButton>
 
-#include "AppStatusBarController.h"
 #include "EditorManager.h"
 #include "api/IEditor.h"
 #include "editors/TextEditorWidget.h"
@@ -14,11 +13,8 @@
 namespace etest::app {
 
 EditorPanelController::EditorPanelController(EditorManager* editor_mgr,
-                                             AppStatusBarController* status_bar_ctrl,
                                              QObject* parent)
-    : QObject(parent),
-      editor_mgr_(editor_mgr),
-      status_bar_ctrl_(status_bar_ctrl) {}
+    : QObject(parent), editor_mgr_(editor_mgr) {}
 
 void EditorPanelController::saveCurrent() {
   LOG_INFO("MAIN_UI", "点击「保存」");
@@ -215,57 +211,6 @@ void EditorPanelController::goToLine() {
   if (ok) {
     textEditor->editor()->setCursorPosition(lineNumber - 1, 0);
     textEditor->editor()->ensureLineVisible(lineNumber - 1);
-  }
-}
-
-void EditorPanelController::connectCurrentEditor() {
-  disconnectCurrentEditor();
-
-  auto* editor = editor_mgr_->currentEditor();
-  if (!editor)
-    return;
-
-  if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-    QsciScintilla* sci_editor = textEditor->editor();
-
-    int line, col;
-    sci_editor->getCursorPosition(&line, &col);
-    status_bar_ctrl_->setCursorPos(line + 1, col + 1);
-    status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
-    status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
-    status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
-
-    sel_connection_ =
-        connect(sci_editor, &QsciScintilla::cursorPositionChanged,
-                this, [this](int, int) { updateEditorStatus(); });
-
-    state_connection_ =
-        connect(textEditor, &TextEditorWidget::editorStateChanged,
-                this, [this]() { updateEditorStatus(); });
-
-  } else {
-    status_bar_ctrl_->setCursorPos(1, 1);
-    status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
-    status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
-    status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
-  }
-}
-
-void EditorPanelController::disconnectCurrentEditor() {
-  QObject::disconnect(sel_connection_);
-  QObject::disconnect(state_connection_);
-}
-
-void EditorPanelController::updateEditorStatus() {
-  auto* editor = editor_mgr_->currentEditor();
-  if (!editor)
-    return;
-
-  if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-    QsciScintilla* sci_editor = textEditor->editor();
-    int line, col;
-    sci_editor->getCursorPosition(&line, &col);
-    status_bar_ctrl_->setCursorPos(line + 1, col + 1);
   }
 }
 

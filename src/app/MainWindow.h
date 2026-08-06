@@ -128,6 +128,7 @@ class MainWindow : public SARibbonMainWindow {
   void onGoToLine();
 
   // 运行态/编辑态 Action 管理
+  void syncEditorActions();
   void disableEditActions();
   void enableEditActions();
   void toggleSidebar();
@@ -243,10 +244,8 @@ class MainWindow : public SARibbonMainWindow {
   QAction* tool_testprogram_action_ = nullptr;
   QAction* check_hardware_action_ = nullptr;
 
-  // 当前编辑器的信号连接
-  QMetaObject::Connection current_editor_modification_connection_;
+  // 当前编辑器 Qsci 选区变化的信号连接（驱动 cut/copy）
   QMetaObject::Connection current_editor_selection_connection_;
-  QMetaObject::Connection current_editor_state_connection_;
 
   bool first_show_ = true;
 

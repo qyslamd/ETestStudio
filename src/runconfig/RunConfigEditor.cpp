@@ -795,6 +795,7 @@ void RunConfigEditor::updateUndoRedoActions() {
   if (redo_action_) {
     redo_action_->setEnabled(canRedo());
   }
+  emit undoStateChanged();
 }
 
 }  // namespace etest::runconfig

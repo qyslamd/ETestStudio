@@ -62,6 +62,7 @@ class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
 
  signals:
   void modificationChanged(bool modified);
+  void undoStateChanged();
 
  protected:
   // 拦截 dock 关闭按钮，同步工具栏 toggle 勾选态（与三编辑器统一）

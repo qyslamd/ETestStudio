@@ -70,7 +70,8 @@ class EditorManager : public QObject {
   void fileClosed(const QString& filePath);
   void currentEditorChanged(IEditor* editor);
   void unsavedChangesChanged();
-  void modificationChanged(bool modified);
+  void modificationChanged(IEditor* editor, bool modified);
+  void undoStateChanged(IEditor* editor);
 
  private slots:
   void onDockWidgetActivated(ads::CDockWidget* dock);

@@ -704,6 +704,11 @@ void TopologyEditorWidget::initSignals() {
           &QAction::setEnabled);
   connect(undoStack, &QUndoStack::canRedoChanged, redo_action_,
           &QAction::setEnabled);
+  // 统一撤销状态通知：canUndo/canRedo 可用性变化转发到中继信号
+  connect(undoStack, &QUndoStack::canUndoChanged, this,
+          [this]() { emit undoStateChanged(); });
+  connect(undoStack, &QUndoStack::canRedoChanged, this,
+          [this]() { emit undoStateChanged(); });
   connect(undoStack, &QUndoStack::cleanChanged, this,
           [this](bool clean) { emit modificationChanged(!clean); });
 

@@ -64,6 +64,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   void editorTitleChanged(const QString& title);
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);
+  void undoStateChanged();
 
  private slots:
   void onAddUut(const QPointF& scenePos = QPointF());

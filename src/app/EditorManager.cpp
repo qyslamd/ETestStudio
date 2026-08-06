@@ -125,7 +125,7 @@ void EditorManager::registerEditorTypes() {
                   (modified ? QStringLiteral("* ") : QString())
                       .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
-              emit mgr->modificationChanged(modified);
+              emit mgr->modificationChanged(editor, modified);
             });
       });
 
@@ -143,6 +143,10 @@ void EditorManager::registerEditorTypes() {
         if (!rc) {
           return;
         }
+        QObject::connect(rc, &RunConfigEditor::undoStateChanged, mgr,
+                         [editor, mgr]() {
+                           emit mgr->undoStateChanged(editor);
+                         });
         QObject::connect(
             rc, &RunConfigEditor::modificationChanged, mgr,
             [editor, dock, mgr](bool modified) {
@@ -150,7 +154,7 @@ void EditorManager::registerEditorTypes() {
                   (modified ? QStringLiteral("* ") : QString())
                       .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
-              emit mgr->modificationChanged(modified);
+              emit mgr->modificationChanged(editor, modified);
             });
       });
 
@@ -163,13 +167,17 @@ void EditorManager::registerEditorTypes() {
         auto* te = qobject_cast<TextEditorWidget*>(editor->widget());
         if (!te)
           return;
+        QObject::connect(te, &TextEditorWidget::undoStateChanged, mgr,
+                         [editor, mgr]() {
+                           emit mgr->undoStateChanged(editor);
+                         });
         QObject::connect(
             te, &TextEditorWidget::modificationChanged, mgr,
             [editor, dock, mgr](bool modified) {
               dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
                                        .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
-              emit mgr->modificationChanged(modified);
+              emit mgr->modificationChanged(editor, modified);
             });
       });
 
@@ -186,12 +194,15 @@ void EditorManager::registerEditorTypes() {
         if (!te)
           return;
         QObject::connect(
+            te, &etest::topology::TopologyEditorWidget::undoStateChanged, mgr,
+            [editor, mgr]() { emit mgr->undoStateChanged(editor); });
+        QObject::connect(
             te, &etest::topology::TopologyEditorWidget::modificationChanged,
             mgr, [editor, dock, mgr](bool modified) {
               dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
                                        .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
-              emit mgr->modificationChanged(modified);
+              emit mgr->modificationChanged(editor, modified);
             });
         QObject::connect(
             te, &etest::topology::TopologyEditorWidget::editorIdChanged, mgr,
@@ -311,12 +322,15 @@ void EditorManager::registerEditorTypes() {
         if (!pe)
           return;
         QObject::connect(
+            pe, &etest::protocol::ProtocolEditorWidget::undoStateChanged, mgr,
+            [editor, mgr]() { emit mgr->undoStateChanged(editor); });
+        QObject::connect(
             pe, &etest::protocol::ProtocolEditorWidget::modificationChanged,
             mgr, [editor, dock, mgr](bool modified) {
               dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
                                        .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
-              emit mgr->modificationChanged(modified);
+              emit mgr->modificationChanged(editor, modified);
             });
         QObject::connect(
             pe, &etest::protocol::ProtocolEditorWidget::editorIdChanged, mgr,
@@ -352,13 +366,17 @@ void EditorManager::registerEditorTypes() {
           te->setRegistry(mgr->signalRegistry());
           LOG_DEBUG("UUID", "testprogram binder: IcdSignalSelection injected");
         }
+        QObject::connect(te, &TestProgramEditorWidget::undoStateChanged, mgr,
+                         [editor, mgr]() {
+                           emit mgr->undoStateChanged(editor);
+                         });
         QObject::connect(
             te, &TestProgramEditorWidget::modificationChanged, mgr,
             [editor, dock, mgr](bool modified) {
               dock->setWindowTitle((modified ? QStringLiteral("* ") : QString())
                                        .append(editor->displayName()));
               emit mgr->unsavedChangesChanged();
-              emit mgr->modificationChanged(modified);
+              emit mgr->modificationChanged(editor, modified);
             });
         QObject::connect(te, &TestProgramEditorWidget::editorIdChanged, mgr,
                          [editor, mgr](const QString&, const QString& newId) {

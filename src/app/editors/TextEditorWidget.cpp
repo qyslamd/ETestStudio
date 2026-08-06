@@ -52,8 +52,9 @@ TextEditorWidget::TextEditorWidget(const QString& filePath, QWidget* parent)
     }
   });
 
-  connect(editor_, &QsciScintilla::textChanged, this,
-          &TextEditorWidget::editorStateChanged);
+  connect(editor_, &QsciScintilla::textChanged, this, [this]() {
+    emit undoStateChanged();
+  });
 }
 
 // ── IEditor interface ──────────────────────────────────────────
