@@ -119,8 +119,8 @@ add_executable(${TARGET_NAME} WIN32
     widgets/WisdomWidget.cpp
     widgets/WisdomDatabase.h
     widgets/WisdomDatabase.cpp
-    widgets/LoadingOverlay.h
-    widgets/LoadingOverlay.cpp
+    widgets/StartupSplashWidget.h
+    widgets/StartupSplashWidget.cpp
     widgets/RecentProjectCard.h
     widgets/RecentProjectCard.cpp
     widgets/OpenFileDelegate.h

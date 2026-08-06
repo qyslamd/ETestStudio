@@ -1,0 +1,40 @@
+/* Startup Splash 专属样式（固定中性配色）
+ * Splash 显示于 ThemeManager 加载之前，无法使用主题 QSS，
+ * 故独立一份固定配色，与主题系统解耦。 */
+
+#StartupSplashContent {
+    background-color: #2B2B2B;
+    border: 1px solid #454545;
+    border-radius: 12px;
+}
+
+#StartupSplashLogo {
+    background: transparent;
+}
+
+#StartupSplashTitle {
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: bold;
+    background: transparent;
+}
+
+#StartupSplashStatus {
+    color: #CCCCCC;
+    font-size: 13px;
+    background: transparent;
+}
+
+#StartupSplashProgressBar {
+    background-color: #454545;
+    border: none;
+    border-radius: 4px;
+    height: 16px;
+    color: #CCCCCC;
+    font-size: 11px;
+}
+
+#StartupSplashProgressBar::chunk {
+    background-color: #0A84FF;
+    border-radius: 4px;
+}

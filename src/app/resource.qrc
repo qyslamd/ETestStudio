@@ -6,6 +6,7 @@
         <file>resources/icons/svg/switch_on.svg</file>
         <file>resources/styles/default.qss</file>
         <file>resources/styles/ribbon_default.qss</file>
+        <file>resources/styles/startup.qss</file>
         <file>resources/styles/vscode.qss</file>
         <file>resources/styles/chinese_red.qss</file>
         <file>resources/styles/ribbon_chinese_red.qss</file>

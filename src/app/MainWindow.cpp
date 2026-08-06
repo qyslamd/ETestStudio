@@ -94,7 +94,7 @@
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/HintButton.h"
 #include "widgets/MessageService.h"
-#include "widgets/LoadingOverlay.h"
+#include "widgets/StartupSplashWidget.h"
 #include "widgets/LogOutputPanel.h"
 
 using namespace etest::core::config;
@@ -107,10 +107,11 @@ namespace etest::app {
 using etest::core_ui::AppIconProvider;
 using etest::core_ui::ThemeManager;
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(QWidget* parent, StartupSplashWidget* splash)
     : SARibbonMainWindow(parent),
       status_bar_ctrl_(new AppStatusBarController(this)),
-      execution_controller_(new ExecutionPanelController(this, this)) {
+      execution_controller_(new ExecutionPanelController(this, this)),
+      splash_widget_(splash) {
   initUi();
   initSignalsEarly();
   // 安排懒加载（窗口 show() 之后执行）
@@ -169,8 +170,13 @@ void MainWindow::initUi() {
   setMinimumSize(900, 600);
   setWindowIcon(QIcon(":/resources/icons/app_icon.ico"));
 
+  // 启动 Splash 进度上报（splash_widget_ 由构造注入，构造期立即生效）。
+  // 构造期只上报不 processEvents，进度在构造完成后统一刷新
+  reportSplashProgress(QStringLiteral("构建功能区"), 35);
   setupRibbon();
+  reportSplashProgress(QStringLiteral("构建状态栏"), 45);
   createStatusBar();
+  reportSplashProgress(QStringLiteral("构建中央界面"), 48);
 
   // ==================== 中央堆叠容器（编辑态/运行态） ====================
   central_stack_ = new QStackedWidget(this);
@@ -191,6 +197,8 @@ void MainWindow::initUi() {
   h_splitter_ = new QSplitter(Qt::Horizontal, page_editor_widget_);
   h_splitter_->setChildrenCollapsible(true);
   page0_layout->addWidget(h_splitter_, 1);
+
+  reportSplashProgress(QStringLiteral("构建中央界面"), 50);
 
   // ===== 侧边栏 =====
   sidebar_ = new SidebarWidget(h_splitter_);
@@ -215,6 +223,7 @@ void MainWindow::initUi() {
                                    true);
   dock_manager_ = new ads::CDockManager(editor_area);
   editor_area_layout->addWidget(dock_manager_, 1);
+  reportSplashProgress(QStringLiteral("构建停靠系统"), 54);
 
   // 中央欢迎页（直接创建，消除白色占位闪烁）
   welcome_widget_ = new WelcomeWidget(editor_area);
@@ -229,6 +238,7 @@ void MainWindow::initUi() {
   if (centralDockArea) {
     setupDockTitleBarButtons(centralDockArea);
   }
+  reportSplashProgress(QStringLiteral("构建欢迎页"), 58);
 
   v_splitter_->addWidget(editor_area);
 
@@ -272,8 +282,17 @@ void MainWindow::initUi() {
             }
           });
 
+  reportSplashProgress(QStringLiteral("恢复窗口状态"), 60);
+
   // 恢复窗口状态
   restoreWindowState();
+}
+
+void MainWindow::reportSplashProgress(const QString& text, int percent) {
+  if (splash_widget_) {
+    splash_widget_->setStatusText(text);
+    splash_widget_->setProgress(percent);
+  }
 }
 
 void MainWindow::initSignalsEarly() {
@@ -1060,23 +1079,11 @@ void MainWindow::lazyInit() {
   QElapsedTimer total_timer;
   total_timer.start();
 
-  // 1. 创建 LoadingOverlay 盖住内容区，启动脉冲
-  // 注意：parent = this (MainWindow)，手动定位到 v_splitter_ 区域
-  // 若 parent 为 v_splitter_，QSplitter 会将其作为 splitter child
-  // 布局，覆盖层不会浮在内容区之上
+  // 1. 注册活动栏按钮 + 侧边栏页面 + 立即恢复页面选中状态
+  // （三者合一，避免 addPage 自动选中第一页后又切换的闪烁）
   QElapsedTimer step_timer;
   step_timer.start();
-  loading_overlay_ = new LoadingOverlay(this);
-  loading_overlay_->setGeometry(
-      QRect(central_stack_->mapTo(this, QPoint(0, 0)), central_stack_->size()));
-  central_stack_->installEventFilter(loading_overlay_);
-  loading_overlay_->startWithTimeout(10000);
-  QCoreApplication::processEvents();  // 立即渲染覆盖层
-  LOG_INFO("LAZY", "  [1/12] LoadingOverlay: {} ms", step_timer.elapsed());
-
-  // 2. 注册活动栏按钮 + 侧边栏页面 + 立即恢复页面选中状态
-  // （三者合一，避免 addPage 自动选中第一页后又切换的闪烁）
-  step_timer.restart();
+  reportSplashProgress(QStringLiteral("注册侧边栏页面"), 60);
   {
     activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
                            QStringLiteral("project"));
@@ -1126,10 +1133,11 @@ void MainWindow::lazyInit() {
       activity_bar_->clearActivePage();
     }
   }
-  LOG_INFO("LAZY", "  [2/12] 活动栏+侧边栏+恢复: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [1/7] 活动栏+侧边栏+恢复: {} ms", step_timer.elapsed());
+  reportSplashProgress(QStringLiteral("注册侧边栏页面"), 65);
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 3. 创建底部面板（显隐/尺寸在 lazyInit 末尾由 restoreLazyState 恢复）
+  // 2. 创建底部面板（显隐/尺寸在 lazyInit 末尾由 restoreLazyState 恢复）
   // 注：page0 不再创建 ProblemsPanel，验证结果统一在 page1
   // 底部「问题」tab（阶段三）
   step_timer.restart();
@@ -1140,10 +1148,11 @@ void MainWindow::lazyInit() {
                               QStringLiteral("tab_output"));
   bottom_container_->addPanel(QStringLiteral("终端"), terminal_panel_,
                               QStringLiteral("tab_terminal"));
-  LOG_INFO("LAZY", "  [3/12] 底部面板: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [2/7] 底部面板: {} ms", step_timer.elapsed());
+  reportSplashProgress(QStringLiteral("创建底部面板"), 68);
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 4. 创建 EditorManager
+  // 3. 创建 EditorManager
   step_timer.restart();
   editor_manager_ = new EditorManager(dock_manager_, this);
 
@@ -1272,22 +1281,25 @@ void MainWindow::lazyInit() {
             }
           });
 
-  LOG_INFO("LAZY", "  [4/12] EditorManager: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [3/7] EditorManager: {} ms", step_timer.elapsed());
+  reportSplashProgress(QStringLiteral("创建编辑器管理器"), 72);
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 5. 连接跨组件信号（此时所有子控件已就绪）
+  // 4. 连接跨组件信号（此时所有子控件已就绪）
   // （WelcomeWidget 已在 initUi 中提前创建，避免白色占位闪烁）
   step_timer.restart();
   initSignalsLate();
-  LOG_INFO("LAZY", "  [6/12] initSignalsLate: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [4/7] initSignalsLate: {} ms", step_timer.elapsed());
+  reportSplashProgress(QStringLiteral("连接组件信号"), 75);
 
-  // 7. 初始化认证服务
+  // 5. 初始化认证服务
   step_timer.restart();
   AuthService::instance();
   updateWindowTitle();
-  LOG_INFO("LAZY", "  [7/12] AuthService: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [5/7] AuthService: {} ms", step_timer.elapsed());
+  reportSplashProgress(QStringLiteral("初始化认证服务"), 77);
 
-  // 8. 加载插件并刷新硬件树
+  // 6. 加载插件并刷新硬件树
   step_timer.restart();
   {
     auto& pluginMgr = etest::core::plugin::PluginManager::instance();
@@ -1296,10 +1308,11 @@ void MainWindow::lazyInit() {
     pluginMgr.loadAll();
     sidebar_->hardwareTree()->refreshTree();
   }
-  LOG_INFO("LAZY", "  [8/12] 插件+硬件: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [6/7] 插件+硬件: {} ms", step_timer.elapsed());
+  reportSplashProgress(QStringLiteral("加载硬件插件"), 85);
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  // 9. 硬件插件加载完成消息
+  // 硬件插件加载完成消息（无独立进度步）
   {
     int pluginCount =
         etest::core::plugin::PluginManager::instance().loadedPlugins().size();
@@ -1308,83 +1321,24 @@ void MainWindow::lazyInit() {
         QStringLiteral("查看"), [this]() { navigateTo(0, PageId::kHardware); });
   }
 
-  // 10. 恢复底部面板状态（逐面板可见性 + 容器显隐）
-  step_timer.restart();
-  {
-    auto& cfg = ConfigManager::instance();
-    // 恢复水平 splitter（布局已就绪）
-    QByteArray hState = cfg.get<QByteArray>(CONFIG_WINDOW_H_SPLITTER_STATE);
-    if (!hState.isEmpty()) {
-      h_splitter_->restoreState(hState);
-    }
-    // 辅助侧边栏：从恢复后的 h_splitter 尺寸推断可见性
-    auto hSizes = h_splitter_->sizes();
-    bool auxVisible = hSizes.size() >= 3 && hSizes[2] > 0;
-    if (auxVisible) {
-      aux_sidebar_width_ = hSizes[2];
-      aux_sidebar_widget_->show();
-    } else {
-      aux_sidebar_widget_->hide();
-    }
-    if (view_aux_sidebar_action_) {
-      view_aux_sidebar_action_->setChecked(auxVisible);
-    }
-
-    // 恢复垂直 splitter
-    QByteArray vState = cfg.get<QByteArray>(CONFIG_WINDOW_V_SPLITTER_STATE);
-    if (!vState.isEmpty()) {
-      v_splitter_->restoreState(vState);
-    }
-    bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
-    bool outVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_LOG_VISIBLE, true);
-    bool termVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE, true);
-
-    int outIdx = bottom_container_->indexOf(log_panel_);
-    int termIdx = bottom_container_->indexOf(terminal_panel_);
-    if (outIdx >= 0)
-      bottom_container_->setPanelVisible(outIdx, outVis);
-    if (termIdx >= 0)
-      bottom_container_->setPanelVisible(termIdx, termVis);
-
-    view_output_action_->setChecked(outVis);
-    view_terminal_action_->setChecked(termVis);
-
-    bool anyVisible = outVis || termVis;
-    if (anyVisible) {
-      bottom_container_->show();
-      auto vSizes = v_splitter_->sizes();
-      if (vSizes.size() >= 2) {
-        int total = vSizes[0] + vSizes[1];
-        int targetBottom = qMin(bottom_container_height_, total);
-        vSizes[0] = total - targetBottom;
-        vSizes[1] = targetBottom;
-        v_splitter_->setSizes(vSizes);
-      }
-    } else {
-      bottom_container_->hide();
-    }
-  }
-  LOG_INFO("LAZY", "  [10/12] 恢复底部面板: {} ms", step_timer.elapsed());
+  // 7. 恢复 splitter 布局与底部面板状态。
+  // 注：不能在隐藏窗口上执行 restoreState（因子部件未布局而失效），
+  // 统一延后到 revealAfterSplash() 的 show() 之后由 restoreLazyLayout() 处理
+  reportSplashProgress(QStringLiteral("恢复界面布局"), 90);
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-  // 11. 延迟移除覆盖层 — 给脉冲动画留出显示时间
-  step_timer.restart();
-  connect(loading_overlay_, &LoadingOverlay::finished, this, [this]() {
-    loading_overlay_ = nullptr;
-    LOG_INFO("MAIN", "懒加载覆盖层已关闭");
-  });
-  // 延迟 1.5 秒让用户看到脉冲动画后再淡出
-  QTimer::singleShot(1500, loading_overlay_, &LoadingOverlay::finish);
-  LOG_INFO("LAZY", "  [11/12] 调度覆盖层移除: {} ms", step_timer.elapsed());
 
   LOG_INFO("LAZY", "[总计] 懒加载核心步骤: {} ms", total_timer.elapsed());
 
-  // 12. Tux 屏保（委托给 TuxSaverController）
+  // 8. Tux 屏保（委托给 TuxSaverController）— 计入 splash 等待
   step_timer.restart();
   tux_controller_ = new TuxSaverController(this, this);
   tux_controller_->start();
   qApp->installEventFilter(new ScreenSaverWatcher(tux_controller_, this));
-  LOG_INFO("LAZY", "  [12/12] Tux 屏保: {} ms", step_timer.elapsed());
+  LOG_INFO("LAZY", "  [7/7] Tux 屏保: {} ms", step_timer.elapsed());
+  reportSplashProgress(QStringLiteral("初始化屏幕保护"), 97);
+
+  // 懒加载全部完成 → reveal 主窗口，随后隐藏 Splash
+  revealAfterSplash();
 
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
           [this](const QString& key) {
@@ -2003,11 +1957,6 @@ etest::engine::ProgramData convertProgram(
 
 void MainWindow::resizeEvent(QResizeEvent* event) {
   SARibbonMainWindow::resizeEvent(event);
-  if (loading_overlay_ && loading_overlay_->isVisible()) {
-    loading_overlay_->setGeometry(QRect(
-        central_stack_->mapTo(this, QPoint(0, 0)), central_stack_->size()));
-    loading_overlay_->raise();
-  }
 }
 
 void MainWindow::showEvent(QShowEvent* event) {
@@ -2676,9 +2625,10 @@ void MainWindow::restoreWindowState() {
     move(x, y);
   }
 
-  if (cfg.get<bool>(CONFIG_WINDOW_MAXIMIZED, CONFIG_WINDOW_DEFAULT_MAXIMIZED)) {
-    showMaximized();
-  }
+  // 最大化延后到 lazyInit 末尾 revealAfterSplash() 执行——
+  // 构造期 showMaximized() 会直接弹出主窗口，破坏"全程隐藏 + Splash 覆盖"
+  maximize_on_reveal_ =
+      cfg.get<bool>(CONFIG_WINDOW_MAXIMIZED, CONFIG_WINDOW_DEFAULT_MAXIMIZED);
 
   // 侧边栏显隐 — 使用显式配置（比 splitter 尺寸推断更可靠）
   bool sidebarVisible = cfg.get<bool>(CONFIG_SIDEBAR_VISIBLE, true);
@@ -2695,6 +2645,80 @@ void MainWindow::restoreWindowState() {
 
   // 注：侧边栏活动页、底部面板状态在 lazyInit 完成后恢复（部件尚不存在）
   // 水平 splitter 和辅助侧边栏也在 lazyInit 中恢复（布局就绪后）
+}
+
+void MainWindow::revealAfterSplash() {
+  // 先显示主窗口（在置顶 splash 底下），再恢复布局，最后隐藏 splash——
+  // splitter restoreState 必须在窗口显示后执行（否则子部件未布局而失效），
+  // 期间 splash 仍遮住主窗口，恢复无闪烁
+  if (maximize_on_reveal_) {
+    showMaximized();
+  } else {
+    show();
+  }
+  restoreLazyLayout();
+
+  reportSplashProgress(QStringLiteral("完成"), 100);
+  if (splash_widget_) {
+    splash_widget_->finish();
+  }
+  raise();
+  activateWindow();
+}
+
+void MainWindow::restoreLazyLayout() {
+  auto& cfg = ConfigManager::instance();
+  // 恢复水平 splitter（窗口已显示，restoreState 生效）
+  QByteArray hState = cfg.get<QByteArray>(CONFIG_WINDOW_H_SPLITTER_STATE);
+  if (!hState.isEmpty()) {
+    h_splitter_->restoreState(hState);
+  }
+  // 辅助侧边栏：从恢复后的 h_splitter 尺寸推断可见性
+  auto hSizes = h_splitter_->sizes();
+  bool auxVisible = hSizes.size() >= 3 && hSizes[2] > 0;
+  if (auxVisible) {
+    aux_sidebar_width_ = hSizes[2];
+    aux_sidebar_widget_->show();
+  } else {
+    aux_sidebar_widget_->hide();
+  }
+  if (view_aux_sidebar_action_) {
+    view_aux_sidebar_action_->setChecked(auxVisible);
+  }
+
+  // 恢复垂直 splitter（CDockManager 所在区域与底部面板）
+  QByteArray vState = cfg.get<QByteArray>(CONFIG_WINDOW_V_SPLITTER_STATE);
+  if (!vState.isEmpty()) {
+    v_splitter_->restoreState(vState);
+  }
+  bottom_container_height_ = cfg.get<int>(CONFIG_BOTTOM_PANEL_HEIGHT, 200);
+  bool outVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_LOG_VISIBLE, true);
+  bool termVis = cfg.get<bool>(CONFIG_BOTTOM_PANEL_TERMINAL_VISIBLE, true);
+
+  int outIdx = bottom_container_->indexOf(log_panel_);
+  int termIdx = bottom_container_->indexOf(terminal_panel_);
+  if (outIdx >= 0)
+    bottom_container_->setPanelVisible(outIdx, outVis);
+  if (termIdx >= 0)
+    bottom_container_->setPanelVisible(termIdx, termVis);
+
+  view_output_action_->setChecked(outVis);
+  view_terminal_action_->setChecked(termVis);
+
+  bool anyVisible = outVis || termVis;
+  if (anyVisible) {
+    bottom_container_->show();
+    auto vSizes = v_splitter_->sizes();
+    if (vSizes.size() >= 2) {
+      int total = vSizes[0] + vSizes[1];
+      int targetBottom = qMin(bottom_container_height_, total);
+      vSizes[0] = total - targetBottom;
+      vSizes[1] = targetBottom;
+      v_splitter_->setSizes(vSizes);
+    }
+  } else {
+    bottom_container_->hide();
+  }
 }
 
 void MainWindow::setupDockTitleBarButtons(ads::CDockAreaWidget* area) {

@@ -34,7 +34,7 @@ class BottomContainerWidget;
 class EditorManager;
 class HintButton;
 class WelcomeWidget;
-class LoadingOverlay;
+class StartupSplashWidget;
 class TestProgramManagerWidget;
 class AppStatusBarController;
 class TuxSaverController;
@@ -56,11 +56,20 @@ class MainWindow : public SARibbonMainWindow {
   Q_OBJECT
 
  public:
-  explicit MainWindow(QWidget* parent = nullptr);
+  // splash 为 main() 栈对象注入（非父子关系），构造期内即可上报进度
+  explicit MainWindow(QWidget* parent = nullptr,
+                      StartupSplashWidget* splash = nullptr);
   ~MainWindow() override;
 
   /// 切换页面（page 0=编辑态, 1=执行仪表盘），可指定侧边栏页
   void navigateTo(int page, const QString& sidebarId = {});
+
+  // lazyInit 全部完成后显示主窗口（按保存的最大化状态），随后隐藏 Splash
+  void revealAfterSplash();
+
+  // 恢复 splitter 布局与底部面板状态。必须在窗口 show() 之后调用——
+  // 隐藏窗口上 QSplitter::restoreState/setSizes 因子部件未布局而失效
+  void restoreLazyLayout();
 
  protected:
   void resizeEvent(QResizeEvent* event) override;
@@ -73,6 +82,9 @@ class MainWindow : public SARibbonMainWindow {
   void initSignalsLate();
   void lazyInit();
   void onThemeChanged(bool isDark);
+
+  // 启动 Splash 进度上报（splash_widget_ 可空；构造期调用立即生效）
+  void reportSplashProgress(const QString& text, int percent);
 
   void saveWindowState();
   void restoreWindowState();
@@ -213,8 +225,10 @@ class MainWindow : public SARibbonMainWindow {
   // Tux 屏保（委托给 TuxSaverController）
   TuxSaverController* tux_controller_ = nullptr;
 
-  // 懒加载覆盖层
-  LoadingOverlay* loading_overlay_ = nullptr;
+  // 启动 Splash（main() 局部对象注入，非父子关系）
+  StartupSplashWidget* splash_widget_ = nullptr;
+  // 用户保存过最大化状态 → reveal 时 showMaximized()
+  bool maximize_on_reveal_ = false;
 
   // 登录认证
   QMenu* login_menu_ = nullptr;
