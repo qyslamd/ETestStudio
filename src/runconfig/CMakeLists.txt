@@ -1,7 +1,7 @@
 #=======================================
 # 运行编辑器模块（etest_runconfig）
 # 运行配置编辑器：RunConfig 数据模型（.erun）+ RunConfigEditor 主体
-# + 3 个私有控件（测试程序清单/调色板/属性面板）+ 可视化组件
+# + 3 个私有控件（测试程序清单/可视化组件面板/属性面板）+ 可视化组件
 # （VisualizationArea 画布 + visualizers/ 信号可视化）。命名空间 etest::runconfig。
 # 依赖 etest_visualizer 已并入本模块；etest_ui（DockTitleBar）、
 # etest_core（ProjectManager/Logger）、etest_core_ui（AppIconProvider）、

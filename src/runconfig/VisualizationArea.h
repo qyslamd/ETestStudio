@@ -59,7 +59,7 @@ class VisualizationArea : public QGraphicsView {
   void visualizerRemoved(const QString& id);
   // 布局被改动（用户拖拽/resize、排列/分布），供宿主置脏
   void layoutChanged();
-  // 拖放：调色板 visualizer 拖入 → 宿主建卡（displayMode + 场景坐标）
+  // 拖放：可视化组件 visualizer 拖入 → 宿主建卡（displayMode + 场景坐标）
   void visualizerDropped(const QString& displayMode, const QPointF& scenePos);
 
  protected:
@@ -70,7 +70,7 @@ class VisualizationArea : public QGraphicsView {
   void mousePressEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
-  // 拖放接收（调色板 visualizer 拖入，mime = application/x-etest-visualizer）
+  // 拖放接收（可视化组件 visualizer 拖入，mime = application/x-etest-visualizer）
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dragMoveEvent(QDragMoveEvent* event) override;
   void dragLeaveEvent(QDragLeaveEvent* event) override;

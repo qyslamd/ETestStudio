@@ -22,7 +22,7 @@
 #include "visualizers/VisualizerProxy.h"
 
 namespace {
-// 调色板 visualizer 拖放的 mime 类型（payload = displayMode 字符串）
+// 可视化组件 visualizer 拖放的 mime 类型（payload = displayMode 字符串）
 const char kVisualizerMime[] = "application/x-etest-visualizer";
 }  // namespace
 
@@ -49,7 +49,7 @@ VisualizationArea::VisualizationArea(QWidget* parent) : QGraphicsView(parent) {
   // 背景透明，由 QSS 统一控制
   setBackgroundBrush(Qt::NoBrush);
 
-  // 拖放接收（调色板 visualizer 拖入）
+  // 拖放接收（可视化组件 visualizer 拖入）
   setAcceptDrops(true);
   drop_preview_ = new QGraphicsRectItem(0, 0, 320, 200);
   drop_preview_->setBrush(QColor(255, 255, 255, 40));  // 半透明占位
@@ -494,7 +494,7 @@ void VisualizationArea::relayout() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 拖放接收 — 调色板 visualizer 拖入（mime = application/x-etest-visualizer）
+// 拖放接收 — 可视化组件 visualizer 拖入（mime = application/x-etest-visualizer）
 // 半透明预览占位随鼠标；drop 时发 visualizerDropped，宿主建卡
 // ══════════════════════════════════════════════════════════════════════════════
 

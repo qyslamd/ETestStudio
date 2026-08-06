@@ -6,7 +6,7 @@ class QStandardItemModel;
 
 namespace etest::runconfig {
 
-// VisualizerPaletteWidget — 监听器配置调色板（拖放源）
+// VisualizerPaletteWidget — 可视化组件选择面板（拖放源）
 // QListView 列 5 种 visualizer（ListMode 列表 / IconMode 网格可切），
 // item 存 displayMode（UserRole）+ 真实渲染缩略图；拖出时 mime 携带
 // displayMode（application/x-etest-visualizer），由可视化区 drop 接收。

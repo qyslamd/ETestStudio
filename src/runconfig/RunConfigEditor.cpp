@@ -378,17 +378,17 @@ void RunConfigEditor::initUi() {
   test_program_dock_->installEventFilter(this);
   addDockWidget(Qt::LeftDockWidgetArea, test_program_dock_);
 
-  // 调色板 dock（visualizer 拖放源，左侧测试程序下方）
+  // 可视化组件 dock（visualizer 拖放源，左侧测试程序下方）
   palette_widget_ = new VisualizerPaletteWidget(this);
-  palette_dock_ = new QDockWidget(QStringLiteral("调色板"), this);
+  palette_dock_ = new QDockWidget(QStringLiteral("可视化组件"), this);
   palette_dock_->setObjectName(QStringLiteral("runConfigPaletteDock"));
   palette_dock_->setWidget(palette_widget_);
   palette_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
   palette_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
-      QStringLiteral("调色板"), palette_dock_));
+      QStringLiteral("可视化组件"), palette_dock_));
   palette_dock_->installEventFilter(this);
   addDockWidget(Qt::LeftDockWidgetArea, palette_dock_);
-  palette_toggle_action_ = toolbar_->addAction(QStringLiteral("调色板"));
+  palette_toggle_action_ = toolbar_->addAction(QStringLiteral("可视化组件"));
   palette_toggle_action_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("monitor")));
   palette_toggle_action_->setCheckable(true);
@@ -437,7 +437,7 @@ void RunConfigEditor::initUi() {
     markModified();
   });
 
-  // 拖放：调色板 visualizer 拖入 → 新建未绑定卡片
+  // 拖放：可视化组件 visualizer 拖入 → 新建未绑定卡片
   connect(vis_area_, &VisualizationArea::visualizerDropped, this,
           [this](const QString& displayMode, const QPointF& pos) {
             addMonitorFromDrop(displayMode, pos);

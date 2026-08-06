@@ -70,7 +70,7 @@ class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
  private:
   void initUi();
   void refreshUi();
-  // 拖放：调色板 visualizer 拖入 → 新建未绑定卡片（UUID/displayMode/sizeHint/位置）
+  // 拖放：可视化组件 visualizer 拖入 → 新建未绑定卡片（UUID/displayMode/sizeHint/位置）
   void addMonitorFromDrop(const QString& displayMode, const QPointF& scenePos);
   // 删除卡片（右键 visualizerRemoved / 属性面板按钮双入口收敛）
   void removeMonitorById(const QString& id);
@@ -106,7 +106,7 @@ class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
   QToolBar* toolbar_ = nullptr;
   QDockWidget* test_program_dock_ = nullptr;  // 测试程序多选面板（可关可拖，toggle 重开）
   ProgramChecklistWidget* program_list_ = nullptr;
-  QDockWidget* palette_dock_ = nullptr;       // 调色板（visualizer 拖放源）
+  QDockWidget* palette_dock_ = nullptr;       // 可视化组件（visualizer 拖放源）
   VisualizerPaletteWidget* palette_widget_ = nullptr;
   QDockWidget* property_dock_ = nullptr;      // 属性面板（选中卡片加载）
   MonitorPropertyWidget* property_widget_ = nullptr;
@@ -120,7 +120,7 @@ class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
   QAction* new_action_ = nullptr;
   QAction* save_action_ = nullptr;
   QAction* test_program_toggle_action_ = nullptr;  // 显示/隐藏测试程序面板
-  QAction* palette_toggle_action_ = nullptr;       // 显示/隐藏调色板 dock
+  QAction* palette_toggle_action_ = nullptr;       // 显示/隐藏可视化组件 dock
   QAction* property_toggle_action_ = nullptr;      // 显示/隐藏属性面板 dock
 };
 
