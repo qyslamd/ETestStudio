@@ -63,10 +63,6 @@ add_executable(${TARGET_NAME} WIN32
     editors/EtlogViewerWidget.cpp
     editors/MockConfigEditor.h
     editors/MockConfigEditor.cpp
-    editors/RunConfig.h
-    editors/RunConfig.cpp
-    editors/RunConfigEditor.h
-    editors/RunConfigEditor.cpp
     EditorManager.h
     EditorManager.cpp
     editors/EditorFactory.h
@@ -83,12 +79,6 @@ add_executable(${TARGET_NAME} WIN32
     widgets/BottomContainerWidget.cpp
     widgets/ProblemsPanel.h
     widgets/ProblemsPanel.cpp
-    widgets/ProgramChecklistWidget.h
-    widgets/ProgramChecklistWidget.cpp
-    widgets/VisualizerPaletteWidget.h
-    widgets/VisualizerPaletteWidget.cpp
-    widgets/MonitorPropertyWidget.h
-    widgets/MonitorPropertyWidget.cpp
     TerminalPanel.h
     TerminalPanel.cpp
     dialogs/SettingsDialog.h
@@ -207,6 +197,7 @@ target_link_libraries(${TARGET_NAME}
     icd_utility
     etest_engine
     etest_visualizer
+    etest_runconfig
     # 已配置第三方依赖
     spdlog::spdlog
     hpdf

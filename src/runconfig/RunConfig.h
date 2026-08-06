@@ -5,7 +5,7 @@
 #include <QStringList>
 #include <QVector>
 
-namespace etest::app {
+namespace etest::runconfig {
 
 // ── 运行配置数据（.erun 文件） ──
 // 运行编辑器产出：选择测试程序 + 监听器配置 + 运行参数（预留）。
@@ -35,4 +35,4 @@ struct RunConfig {
   static bool saveToFile(const QString& path, const RunConfig& config);
 };
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

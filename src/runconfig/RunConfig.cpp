@@ -8,7 +8,7 @@
 
 #include "logger/Logger.h"
 
-namespace etest::app {
+namespace etest::runconfig {
 
 QJsonObject RunConfig::toJson() const {
   QJsonObject root;
@@ -127,4 +127,4 @@ bool RunConfig::saveToFile(const QString& path, const RunConfig& config) {
   return true;
 }
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

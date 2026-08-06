@@ -7,7 +7,7 @@ class QCheckBox;
 class QListView;
 class QStandardItemModel;
 
-namespace etest::app {
+namespace etest::runconfig {
 
 // ProgramChecklistWidget — 测试程序多选清单
 // 顶部"全选"QCheckBox（tristate：全勾/半勾/全不勾）+ QListView（checkable item），
@@ -41,4 +41,4 @@ class ProgramChecklistWidget : public QWidget {
   bool updating_ = false;  // 程序性刷新中，抑制 programsChanged
 };
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

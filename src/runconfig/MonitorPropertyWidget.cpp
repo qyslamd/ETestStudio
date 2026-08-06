@@ -11,7 +11,7 @@
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
-namespace etest::app {
+namespace etest::runconfig {
 
 namespace {
 const int kConnectionIdRole = Qt::UserRole + 1;
@@ -166,4 +166,4 @@ void MonitorPropertyWidget::rebuildConnectionList(
   }
 }
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

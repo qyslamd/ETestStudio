@@ -9,7 +9,7 @@
 #include <QString>
 #include <QStringList>
 
-#include "editors/RunConfig.h"       // 当前运行配置（.erun）数据模型
+#include "runconfig/RunConfig.h"    // 当前运行配置（.erun）数据模型
 #include "widgets/ProblemsPanel.h"  // NavTarget 定义（navigateRequested 信号参数）
 
 class QAction;
@@ -47,6 +47,8 @@ class Repository;
 }  // namespace icd
 
 namespace etest::app {
+
+using etest::runconfig::RunConfig;
 
 class ExecutionPanelController : public QObject {
   Q_OBJECT

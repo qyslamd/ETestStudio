@@ -20,7 +20,7 @@
 #include "editors/EtlogViewerWidget.h"
 #include "editors/TextEditorWidget.h"
 #include "editors/MockConfigEditor.h"
-#include "editors/RunConfigEditor.h"
+#include "runconfig/RunConfigEditor.h"
 #include "TestProgramEditorWidget.h"
 #include "SignalRegistry.h"
 #include "dialogs/IcdSignalSelection.h"
@@ -38,6 +38,8 @@
 using namespace etest::core::logger;
 
 namespace etest::app {
+
+using etest::runconfig::RunConfigEditor;
 
 EditorManager::EditorManager(ads::CDockManager* dockManager, QObject* parent)
     : QObject(parent), dock_manager_(dockManager) {

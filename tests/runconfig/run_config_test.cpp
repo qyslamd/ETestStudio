@@ -2,9 +2,9 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
-#include "editors/RunConfig.h"
+#include "RunConfig.h"
 
-using namespace etest::app;
+using namespace etest::runconfig;
 
 TEST(RunConfigTest, RoundTripBoundAndUnbound) {
   RunConfig cfg;

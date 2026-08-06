@@ -20,7 +20,7 @@ namespace etest::visualizer {
 class VisualizationArea;
 }  // namespace etest::visualizer
 
-namespace etest::app {
+namespace etest::runconfig {
 
 class MonitorPropertyWidget;
 class ProgramChecklistWidget;
@@ -30,7 +30,7 @@ class VisualizerPaletteWidget;
 // 编辑 .erun 运行配置。纯新增骨架：IEditor 接口 + .erun 序列化/反序列化
 // + 基础数据展示。可视化区手动布局（VisualizerProxy/resize）后续作为
 // 主视图增强接入，不破坏现有 ExecutionDashboard。
-class RunConfigEditor : public QMainWindow, public IEditor {
+class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
   Q_OBJECT
 
  public:
@@ -124,4 +124,4 @@ class RunConfigEditor : public QMainWindow, public IEditor {
   QAction* property_toggle_action_ = nullptr;      // 显示/隐藏属性面板 dock
 };
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

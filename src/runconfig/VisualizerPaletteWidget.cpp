@@ -11,7 +11,7 @@
 #include "visualizer/visualizers/SignalVisualizer.h"
 #include "visualizer/visualizers/VisualizerFactory.h"
 
-namespace etest::app {
+namespace etest::runconfig {
 
 namespace {
 // 与 VisualizationArea 拖放 mime 一致（payload = displayMode 字符串）
@@ -82,4 +82,4 @@ void VisualizerPaletteWidget::startDrag(Qt::DropActions supportedActions) {
   drag->exec(supportedActions);
 }
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

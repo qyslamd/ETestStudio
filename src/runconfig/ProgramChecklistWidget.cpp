@@ -8,7 +8,7 @@
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
-namespace etest::app {
+namespace etest::runconfig {
 
 namespace {
 constexpr int kProgramRole = Qt::UserRole + 1;  // item 存的相对项目根路径
@@ -124,4 +124,4 @@ void ProgramChecklistWidget::updateSelectAllState() {
   select_all_->blockSignals(false);
 }
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

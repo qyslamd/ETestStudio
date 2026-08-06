@@ -4,7 +4,7 @@
 #include <QSet>
 #include <QWidget>
 
-#include "editors/RunConfig.h"
+#include "RunConfig.h"
 
 class QComboBox;
 class QLineEdit;
@@ -12,7 +12,7 @@ class QListView;
 class QPushButton;
 class QStandardItemModel;
 
-namespace etest::app {
+namespace etest::runconfig {
 
 // MonitorPropertyWidget — 监听器属性面板（dock 内嵌，QScrollArea 包裹）
 // 选中场景卡片后加载其属性：名称、类型（displayMode）切换、绑定连线
@@ -55,4 +55,4 @@ class MonitorPropertyWidget : public QWidget {
   QSet<QString> bound_;                   // 已绑定连接集合缓存
 };
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

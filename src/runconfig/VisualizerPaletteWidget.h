@@ -4,7 +4,7 @@
 
 class QStandardItemModel;
 
-namespace etest::app {
+namespace etest::runconfig {
 
 // VisualizerPaletteWidget — 监听器配置调色板（拖放源）
 // QListView 列 5 种 visualizer（ListMode 列表 / IconMode 网格可切），
@@ -26,4 +26,4 @@ class VisualizerPaletteWidget : public QListView {
   QStandardItemModel* model_ = nullptr;
 };
 
-}  // namespace etest::app
+}  // namespace etest::runconfig

@@ -30,9 +30,9 @@
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "logger/Logger.h"
 #include "project/ProjectManager.h"
-#include "widgets/MonitorPropertyWidget.h"
-#include "widgets/ProgramChecklistWidget.h"
-#include "widgets/VisualizerPaletteWidget.h"
+#include "MonitorPropertyWidget.h"
+#include "ProgramChecklistWidget.h"
+#include "VisualizerPaletteWidget.h"
 
 using etest::core_ui::AppIconProvider;
 
@@ -49,7 +49,7 @@ void syncDockCloseAction(QAction* action) {
 using etest::visualizer::VisualizationArea;
 using etest::visualizer::VisualizerProxy;
 
-namespace etest::app {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // RunConfigEditor
@@ -801,4 +801,4 @@ void RunConfigEditor::updateUndoRedoActions() {
   }
 }
 
-}  // namespace etest::app
+}  // namespace etest::runconfig
