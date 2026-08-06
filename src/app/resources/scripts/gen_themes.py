@@ -46,8 +46,8 @@ MARK_COMBO_START = '/* ===== QComboBox 主题适配样式 START ===== */'
 MARK_COMBO_END = '/* ===== QComboBox 主题适配样式 END ===== */'
 MARK_SCROLL_START = '/* ===== QScrollArea 主题适配样式 START ===== */'
 MARK_SCROLL_END = '/* ===== QScrollArea 主题适配样式 END ===== */'
-MARK_GROUPBOX_START = '/* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */'
-MARK_GROUPBOX_END = '/* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */'
+MARK_GROUPBOX_START = '/* ===== QGroupBox 主题适配样式 START ===== */'
+MARK_GROUPBOX_END = '/* ===== QGroupBox 主题适配样式 END ===== */'
 MARK_SUBTITLE_START = '/* ===== visualizer 副标题状态配色 START ===== */'
 MARK_SUBTITLE_END = '/* ===== visualizer 副标题状态配色 END ===== */'
 
@@ -157,16 +157,15 @@ QScrollArea > QWidget > QWidget {
 
 
 def groupbox_build_blocks(c):
-    """全局 QGroupBox 样式：标题 pill（纯色 accent）+ hover/选中描边。
-    所有 background 用纯色（不用 qlineargradient）：框体 panelBackground
-    （与其它容器一致），标题 accentColor。标题放框内顶部——不能用
-    subcontrol-origin:margin + 负 top，QSS margin 不占真实布局空间，负偏移
-    会把标题画到控件矩形上方被父级裁剪。"""
+    """全局 QGroupBox 样式：无背景标题 + hover/选中描边。
+    标题不做 pill（纯色 accent 底 + 白字与按钮视觉一致，会误读为可点击；
+    且静态分组标题无交互语义），改用次级文字色弱化。分组关系由框体
+    border + hover/selected accent 描边承载，标题无需再上色。"""
     panel = c['panelBackground']
     border = c['borderColor']
     accent = c['accentColor']
-    accent_dk = accent_darker(accent, 0.15)
     text = c['textColor']
+    secondary = c['secondaryTextColor']
     return ('''QGroupBox {
     background-color: ''' + panel + ''';
     border: 1px solid ''' + border + ''';
@@ -179,11 +178,9 @@ QGroupBox::title {
     subcontrol-origin: padding;
     subcontrol-position: top left;
     left: 12px;
-    top: 6px;
-    padding: 2px 8px;
-    background-color: ''' + accent + ''';
-    border-radius: 4px;
-    color: #FFFFFF;
+    top: 8px;
+    padding: 0 4px;
+    color: ''' + secondary + ''';
     font-size: 12px;
     font-weight: 700;
 }
@@ -192,9 +189,6 @@ QGroupBox:hover {
 }
 QGroupBox[selected="true"] {
     border: 2px solid ''' + accent + ''';
-}
-QGroupBox[selected="true"]::title {
-    background-color: ''' + accent_dk + ''';
 }
 ''')
 

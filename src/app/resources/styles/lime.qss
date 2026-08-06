@@ -2083,6 +2083,14 @@ QToolButton#saverCloseBtn:pressed {
     border: 1px solid #C8E6C8;
 }
 
+
+#WaveformSubtitle[state="warning"], #MeterSubtitle[state="warning"], #GaugeSubtitle[state="warning"], #ValueLabelSubtitle[state="warning"], #LedSubtitle[state="warning"] {
+  color: #D56224;
+}
+#WaveformSubtitle[state="deleted"], #MeterSubtitle[state="deleted"], #GaugeSubtitle[state="deleted"], #ValueLabelSubtitle[state="deleted"], #LedSubtitle[state="deleted"] {
+  color: #D56224;
+}
+
 /* ===== QSpinBox 主题适配样式 START ===== */
 /* QSpinBox / QDoubleSpinBox 主题适配样式模板
  * 由 gen_themes.py 读取替换 token 后注入各主题 QSS（幂等）
@@ -2496,7 +2504,7 @@ QScrollArea > QWidget > QWidget {
 }
 /* ===== QScrollArea 主题适配样式 END ===== */
 
-/* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */
+/* ===== QGroupBox 主题适配样式 START ===== */
 QGroupBox {
     background-color: #E8F5E8;
     border: 1px solid #C8E6C8;
@@ -2509,11 +2517,9 @@ QGroupBox::title {
     subcontrol-origin: padding;
     subcontrol-position: top left;
     left: 12px;
-    top: 6px;
-    padding: 2px 8px;
-    background-color: #00CC00;
-    border-radius: 4px;
-    color: #FFFFFF;
+    top: 8px;
+    padding: 0 4px;
+    color: #558B55;
     font-size: 12px;
     font-weight: 700;
 }
@@ -2523,10 +2529,9 @@ QGroupBox:hover {
 QGroupBox[selected="true"] {
     border: 2px solid #00CC00;
 }
-QGroupBox[selected="true"]::title {
-    background-color: #00AD00;
-}
-/* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */
+/* ===== QGroupBox 主题适配样式 END ===== */
+
+/* ===== visualizer 副标题状态配色 START ===== */
 
 #WaveformSubtitle[state="warning"], #MeterSubtitle[state="warning"], #GaugeSubtitle[state="warning"], #ValueLabelSubtitle[state="warning"], #LedSubtitle[state="warning"] {
   color: #D56224;
@@ -2534,3 +2539,4 @@ QGroupBox[selected="true"]::title {
 #WaveformSubtitle[state="deleted"], #MeterSubtitle[state="deleted"], #GaugeSubtitle[state="deleted"], #ValueLabelSubtitle[state="deleted"], #LedSubtitle[state="deleted"] {
   color: #D56224;
 }
+/* ===== visualizer 副标题状态配色 END ===== */

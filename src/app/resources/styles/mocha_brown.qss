@@ -2081,6 +2081,11 @@ QToolButton#saverCloseBtn:pressed {
     border: 1px solid #D5C6BC;
 }
 
+/* Visualizer 容器背景 */
+#ValueLabelWidget, #MeterWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
+    background-color: #F6F3F1;
+}
+
 /* ===== QSpinBox 主题适配样式 START ===== */
 /* QSpinBox / QDoubleSpinBox 主题适配样式模板
  * 由 gen_themes.py 读取替换 token 后注入各主题 QSS（幂等）
@@ -2494,7 +2499,7 @@ QScrollArea > QWidget > QWidget {
 }
 /* ===== QScrollArea 主题适配样式 END ===== */
 
-/* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */
+/* ===== QGroupBox 主题适配样式 START ===== */
 QGroupBox {
     background-color: #EFE9E6;
     border: 1px solid #D5C6BC;
@@ -2507,11 +2512,9 @@ QGroupBox::title {
     subcontrol-origin: padding;
     subcontrol-position: top left;
     left: 12px;
-    top: 6px;
-    padding: 2px 8px;
-    background-color: #84644E;
-    border-radius: 4px;
-    color: #FFFFFF;
+    top: 8px;
+    padding: 0 4px;
+    color: #433328;
     font-size: 12px;
     font-weight: 700;
 }
@@ -2521,11 +2524,14 @@ QGroupBox:hover {
 QGroupBox[selected="true"] {
     border: 2px solid #84644E;
 }
-QGroupBox[selected="true"]::title {
-    background-color: #705542;
+/* ===== QGroupBox 主题适配样式 END ===== */
+
+/* ===== visualizer 副标题状态配色 START ===== */
+
+#WaveformSubtitle[state="warning"], #MeterSubtitle[state="warning"], #GaugeSubtitle[state="warning"], #ValueLabelSubtitle[state="warning"], #LedSubtitle[state="warning"] {
+  color: #D56224;
 }
-/* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */
-/* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
-    background-color: #F6F3F1;
+#WaveformSubtitle[state="deleted"], #MeterSubtitle[state="deleted"], #GaugeSubtitle[state="deleted"], #ValueLabelSubtitle[state="deleted"], #LedSubtitle[state="deleted"] {
+  color: #D56224;
 }
+/* ===== visualizer 副标题状态配色 END ===== */
