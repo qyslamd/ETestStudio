@@ -15,6 +15,7 @@
 #include <QFileSystemWatcher>
 #include <QFrame>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -84,16 +85,10 @@ void ProjectStructureWidget::initUi() {
   sc_layout->setSpacing(16);
 
   // ── 卡片 1：快速操作 ──
-  auto* card1 = new QFrame(scroll_content);
-  card1->setObjectName(QStringLiteral("PhCard"));
+  auto* card1 = new QGroupBox(QStringLiteral("没有打开的项目"), scroll_content);
   auto* c1_layout = new QVBoxLayout(card1);
   c1_layout->setContentsMargins(9, 9, 9, 9);
   c1_layout->setSpacing(6);
-
-  auto* ph_title = new QLabel(QStringLiteral("没有打开的项目"), card1);
-  ph_title->setObjectName(QStringLiteral("PhTitle"));
-  ph_title->setAlignment(Qt::AlignCenter);
-  c1_layout->addWidget(ph_title);
 
   auto* ph_desc =
       new QLabel(QStringLiteral("创建或打开一个项目来管理测试资产\n"
@@ -155,15 +150,10 @@ void ProjectStructureWidget::initUi() {
   sc_layout->addWidget(card1);
 
   // ── 卡片 3：最近项目 ──
-  auto* card3 = new QFrame(scroll_content);
-  card3->setObjectName(QStringLiteral("PhCard"));
+  auto* card3 = new QGroupBox(QStringLiteral("最近项目"), scroll_content);
   auto* c3_layout = new QVBoxLayout(card3);
   c3_layout->setContentsMargins(9, 9, 9, 9);
   c3_layout->setSpacing(6);
-
-  auto* recent_proj_label = new QLabel(QStringLiteral("最近项目"), card3);
-  recent_proj_label->setObjectName(QStringLiteral("PhSectionLabel"));
-  c3_layout->addWidget(recent_proj_label);
 
   recent_projects_view_ = new QListView();
   recent_projects_view_->setFrameShape(QFrame::NoFrame);
@@ -179,15 +169,10 @@ void ProjectStructureWidget::initUi() {
   sc_layout->addWidget(card3);
 
   // ── 卡片 4：最近文件 ──
-  auto* card4 = new QFrame(scroll_content);
-  card4->setObjectName(QStringLiteral("PhCard"));
+  auto* card4 = new QGroupBox(QStringLiteral("最近文件"), scroll_content);
   auto* c4_layout = new QVBoxLayout(card4);
   c4_layout->setContentsMargins(9, 9, 9, 9);
   c4_layout->setSpacing(6);
-
-  auto* recent_file_label = new QLabel(QStringLiteral("最近文件"), card4);
-  recent_file_label->setObjectName(QStringLiteral("PhSectionLabel"));
-  c4_layout->addWidget(recent_file_label);
 
   recent_files_view_ = new QListView();
   recent_files_view_->setFrameShape(QFrame::NoFrame);

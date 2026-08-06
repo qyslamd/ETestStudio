@@ -17,6 +17,7 @@
 #include "widgets/ProjectTreeDelegate.h"
 
 class QFileSystemWatcher;
+class QGroupBox;
 class QLabel;
 class QListView;
 class QMenu;
