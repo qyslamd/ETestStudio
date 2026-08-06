@@ -1737,17 +1737,6 @@ QWidget#PhScrollContent {
     background-color: transparent;
 }
 
-/* Section headers (项目管理/最近项目) */
-QLabel#PhSectionLabel {
-    color: #433328;
-    font-size: 10px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 4px 0;
-    background: transparent;
-}
-
 /* Project action buttons (新建项目/打开项目) */
 QToolButton#PhProjectBtn {
     background-color: #E4DBD5;
@@ -1779,15 +1768,6 @@ QFrame#PhSeparator {
     max-height: 1px;
 }
 
-/* Placeholder page round-corner cards */
-QFrame#PhCard {
-    background-color: #E4DBD5;
-    border: 1px solid #D5C6BC;
-    border-radius: 8px;
-}
-QFrame#PhCard:hover {
-    border-color: #84644E;
-}
 QToolButton#PhQuickBtn {
     background-color: #E4DBD5;
     color: #2A2015;
