@@ -9,7 +9,7 @@
 class QCustomPlot;
 class QCPGraph;
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 class WaveformWidget : public SignalVisualizer {
   Q_OBJECT
@@ -55,5 +55,5 @@ class WaveformWidget : public SignalVisualizer {
   static constexpr int kMaxPoints = 10000;
 };
 
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
 

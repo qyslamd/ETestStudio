@@ -7,7 +7,7 @@ namespace etest::engine {
 struct MonitorSample;
 }  // namespace etest::engine
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SignalVisualizer — 信号可视化组件抽象基类
@@ -41,5 +41,5 @@ class SignalVisualizer : public QWidget {
   virtual void setSubtitleState(const QString& state) { Q_UNUSED(state) }
 };
 
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
 

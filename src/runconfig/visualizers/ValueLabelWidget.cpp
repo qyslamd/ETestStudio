@@ -4,7 +4,7 @@
 
 #include <QVBoxLayout>
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 ValueLabelWidget::ValueLabelWidget(const QString& title, QWidget* parent)
     : SignalVisualizer(parent), title_(title) {
@@ -105,4 +105,4 @@ void ValueLabelWidget::setSubtitleState(const QString& state) {
 }
 
 QSize ValueLabelWidget::sizeHint() const { return QSize(240, 120); }
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig

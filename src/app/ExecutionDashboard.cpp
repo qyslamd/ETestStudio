@@ -6,12 +6,12 @@
 #include <QVBoxLayout>
 
 #include "ExecutionDebugWidget.h"
-#include "visualizer/VisualizationArea.h"
+#include "runconfig/VisualizationArea.h"
 #include "libui/styles/TabBarStyle.h"
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/ProblemsPanel.h"
 
-using etest::visualizer::VisualizationArea;
+using etest::runconfig::VisualizationArea;
 
 namespace etest::app {
 

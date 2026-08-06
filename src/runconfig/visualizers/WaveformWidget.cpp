@@ -11,7 +11,7 @@
 #include "engine/MonitorManager.h"
 #include "logger/Logger.h"
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 构造
@@ -270,4 +270,4 @@ void WaveformWidget::setSubtitleState(const QString& state) {
 }
 
 QSize WaveformWidget::sizeHint() const { return QSize(320, 200); }
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig

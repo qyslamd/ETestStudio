@@ -16,9 +16,9 @@ class QDockWidget;
 class QToolBar;
 class QToolButton;
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 class VisualizationArea;
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
 
 namespace etest::runconfig {
 
@@ -110,7 +110,7 @@ class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
   VisualizerPaletteWidget* palette_widget_ = nullptr;
   QDockWidget* property_dock_ = nullptr;      // 属性面板（选中卡片加载）
   MonitorPropertyWidget* property_widget_ = nullptr;
-  etest::visualizer::VisualizationArea* vis_area_ = nullptr;
+  etest::runconfig::VisualizationArea* vis_area_ = nullptr;
   QToolButton* align_btn_ = nullptr;   // 排列（选中≥2 才启用）
   QToolButton* dist_btn_ = nullptr;    // 分布
 

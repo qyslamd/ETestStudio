@@ -10,7 +10,7 @@ class QGraphicsRectItem;
 class QGraphicsScene;
 class QGraphicsProxyWidget;
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 class SignalVisualizer;
 
@@ -93,4 +93,4 @@ class VisualizationArea : public QGraphicsView {
   QGraphicsRectItem* drop_preview_ = nullptr;  // 拖放半透明预览占位（虚线框）
 };
 
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig

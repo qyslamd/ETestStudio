@@ -11,7 +11,7 @@
 
 #include "engine/MonitorManager.h"
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LedDot — 内部自绘 LED 圆灯（多态语义色，QPainter 立体圆）
@@ -242,4 +242,4 @@ void LedIndicator::setSubtitleState(const QString& state) {
 }
 
 QSize LedIndicator::sizeHint() const { return QSize(120, 120); }
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig

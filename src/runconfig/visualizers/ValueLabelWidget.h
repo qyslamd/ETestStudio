@@ -6,7 +6,7 @@
 #include "SignalVisualizer.h"
 #include "engine/MonitorManager.h"  // MonitorSample
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ValueLabelWidget — 通用 fallback 可视化组件
@@ -41,5 +41,5 @@ class ValueLabelWidget : public SignalVisualizer {
   QString connection_id_;
 };
 
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
 

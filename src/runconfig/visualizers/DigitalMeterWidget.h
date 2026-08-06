@@ -5,7 +5,7 @@
 
 #include "SignalVisualizer.h"
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DigitalMeterWidget — 数值型信号大数字表
@@ -52,5 +52,5 @@ class DigitalMeterWidget : public SignalVisualizer {
   static constexpr double kEpsilon = 1e-9;
 };
 
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
 

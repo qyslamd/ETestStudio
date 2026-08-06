@@ -23,10 +23,10 @@
 #include <QVBoxLayout>
 
 #include "AppIconProvider.h"
-#include "visualizer/VisualizationArea.h"
-#include "visualizer/visualizers/SignalVisualizer.h"
-#include "visualizer/visualizers/VisualizerFactory.h"
-#include "visualizer/visualizers/VisualizerProxy.h"
+#include "VisualizationArea.h"
+#include "visualizers/SignalVisualizer.h"
+#include "visualizers/VisualizerFactory.h"
+#include "visualizers/VisualizerProxy.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "logger/Logger.h"
 #include "project/ProjectManager.h"
@@ -44,10 +44,6 @@ void syncDockCloseAction(QAction* action) {
   action->blockSignals(false);
 }
 }  // namespace
-
-// 可视化区下沉共享层（etest_visualizer）类型
-using etest::visualizer::VisualizationArea;
-using etest::visualizer::VisualizerProxy;
 
 namespace etest::runconfig {
 
@@ -536,7 +532,7 @@ void RunConfigEditor::refreshUi() {
   for (const auto& m : config_.monitors) {
     // parent 传 nullptr：visualizer 须为 top-level 才能被 VisualizerProxy
     // setWidget 嵌入（传 this 会被警告 "cannot embed widget"）
-    auto* vis = etest::visualizer::createVisualizerFor(
+    auto* vis = etest::runconfig::createVisualizerFor(
         m.connectionId, m.displayMode, QString(), m.name, nullptr);
     if (!vis) {
       continue;
@@ -585,7 +581,7 @@ void RunConfigEditor::addMonitorFromDrop(const QString& displayMode,
   m.displayMode = displayMode;
   // 默认尺寸按 visualizer sizeHint（决策 19）
   QSize size(320, 200);
-  auto* probe = etest::visualizer::createVisualizerFor(
+  auto* probe = etest::runconfig::createVisualizerFor(
       QString(), displayMode, QString(), QString(), nullptr);
   if (probe) {
     size = probe->sizeHint();

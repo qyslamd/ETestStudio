@@ -14,7 +14,7 @@
 #include "core_ui/ThemeManager.h"
 #include "engine/MonitorManager.h"
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // GaugeCanvas
@@ -473,4 +473,4 @@ void GaugeVisualizer::setSubtitleState(const QString& state) {
 }
 
 QSize GaugeVisualizer::sizeHint() const { return QSize(120, 120); }
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig

@@ -26,7 +26,7 @@ namespace {
 const char kVisualizerMime[] = "application/x-etest-visualizer";
 }  // namespace
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 构造 / 析构
@@ -546,4 +546,4 @@ void VisualizationArea::dropEvent(QDropEvent* event) {
   emit visualizerDropped(displayMode, mapToScene(event->pos()));
 }
 
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig

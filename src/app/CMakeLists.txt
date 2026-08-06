@@ -196,7 +196,6 @@ target_link_libraries(${TARGET_NAME}
     etest_ui
     icd_utility
     etest_engine
-    etest_visualizer
     etest_runconfig
     # 已配置第三方依赖
     spdlog::spdlog

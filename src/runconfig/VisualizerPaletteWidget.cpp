@@ -8,8 +8,8 @@
 #include <QStandardItem>
 #include <QStandardItemModel>
 
-#include "visualizer/visualizers/SignalVisualizer.h"
-#include "visualizer/visualizers/VisualizerFactory.h"
+#include "visualizers/SignalVisualizer.h"
+#include "visualizers/VisualizerFactory.h"
 
 namespace etest::runconfig {
 
@@ -22,7 +22,7 @@ const char* const kDisplayNames[] = {"波形", "LED", "数字表", "指针表", 
 
 // 渲染 visualizer 真实空态实例为缩略图（决策：缩略图/真实渲染图）
 QPixmap renderThumbnail(const QString& displayMode, const QSize& size) {
-  auto* vis = etest::visualizer::createVisualizerFor(
+  auto* vis = etest::runconfig::createVisualizerFor(
       QString(), displayMode, QString(), QString(), nullptr);
   if (!vis) {
     return QPixmap();

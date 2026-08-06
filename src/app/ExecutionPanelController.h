@@ -17,9 +17,9 @@ class QLabel;
 class QStackedWidget;
 class QWidget;
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 class SignalVisualizer;
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
 
 namespace etest::app {
 
@@ -151,7 +151,7 @@ class ExecutionPanelController : public QObject {
 
   /// 将监听器订阅到某个可视化组件（勾选和拓扑重载重订阅复用）
   void subscribeVisualizer(const QString& connectionId,
-                           etest::visualizer::SignalVisualizer* vis);
+                           etest::runconfig::SignalVisualizer* vis);
   /// 从 .erun 监听器数组 + 引擎拓扑 JSON 重建监听器（幂等；运行态只读）
   void loadProjectMonitors();
   /// 运行态建卡（按 Monitor）：绑定订阅+trace；未绑定/连接已删除警示不订阅

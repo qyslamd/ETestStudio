@@ -6,9 +6,9 @@
 class QSplitter;
 class QTabWidget;
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 class VisualizationArea;
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
 
 namespace etest::app {
 
@@ -30,7 +30,7 @@ class ExecutionDashboard : public QWidget {
   explicit ExecutionDashboard(QWidget* parent = nullptr);
 
   ExecutionDebugWidget* debugWidget() const { return debug_widget_; }
-  etest::visualizer::VisualizationArea* visualizationArea() const {
+  etest::runconfig::VisualizationArea* visualizationArea() const {
     return vis_area_;
   }
   ExecutionOutputPanel* outputPanel() const { return output_panel_; }
@@ -51,7 +51,7 @@ class ExecutionDashboard : public QWidget {
   void initUi();
 
   ExecutionDebugWidget* debug_widget_ = nullptr;
-  etest::visualizer::VisualizationArea* vis_area_ = nullptr;
+  etest::runconfig::VisualizationArea* vis_area_ = nullptr;
   ExecutionOutputPanel* output_panel_ = nullptr;
   ProblemsPanel* problems_panel_ = nullptr;
   QSplitter* main_splitter_ = nullptr;

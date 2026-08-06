@@ -5,11 +5,11 @@
 #include <QMap>
 #include <QWidget>
 
-#include "visualizers/SignalVisualizer.h"
+#include "SignalVisualizer.h"
 
 class QLabel;
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // LED 圆灯可视化组件（合并自 StateLEDWidget）：
 // 按状态值映射语义色（默认 0灰/1绿/2红，可按字段语义覆盖），展示帧内
@@ -72,4 +72,4 @@ class LedIndicator : public SignalVisualizer {
   QLabel* ts_label_ = nullptr;
 };
 
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig

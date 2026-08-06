@@ -3,7 +3,7 @@
 #include <QString>
 #include <QWidget>
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 class SignalVisualizer;
 
@@ -28,5 +28,5 @@ SignalVisualizer* createVisualizerFor(const QString& connectionId,
                                        const QString& title,
                                        QWidget* parent = nullptr);
 
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
 

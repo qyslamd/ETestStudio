@@ -6,7 +6,7 @@
 
 #include "engine/MonitorManager.h"
 
-namespace etest::visualizer {
+namespace etest::runconfig {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 构造
@@ -183,4 +183,4 @@ void DigitalMeterWidget::setSubtitleState(const QString& state) {
 }
 
 QSize DigitalMeterWidget::sizeHint() const { return QSize(200, 120); }
-}  // namespace etest::visualizer
+}  // namespace etest::runconfig
