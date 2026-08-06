@@ -19,7 +19,6 @@ SARibbonBar{
   color: #D0D0E0;
 }
 
-
 /*SARibbonButtonGroupWidget,SARibbonSystemButtonBar和RightButtonGroup都是使用此控件，pannel里面的按钮组也是使用此控件*/
 SARibbonButtonGroupWidget{
   background-color: transparent;
@@ -129,7 +128,6 @@ SARibbonPanelOptionButton:hover {
   background-color:#202050;
 }
 
-
 /*SARibbonApplicationButton*/
 SARibbonApplicationButton{
   color:#D0D0E0;
@@ -216,13 +214,11 @@ SARibbonToolButton:hover {
     background-color: #202050;
 }
 
-
 SARibbonGalleryButton{
   background-color:#0F0F24;
   border: 1px solid #202050;
   color: #D0D0E0;
 }
-
 
 /*SARibbonMenu*/
 SARibbonMenu {
@@ -271,7 +267,6 @@ SARibbonGalleryGroup::item:hover {
   background-color: #202050;
   border: 1px solid transparent;
 }
-
 
 /*RibbonGalleryViewport*/
 
@@ -332,9 +327,6 @@ SARibbonPanel > QComboBox::down-arrow {
   image: url(:/SARibbon/image/resource/ArrowDown.png);
 }
 
-
-
-
 /*SARibbonCategoryScrollButton*/
 SARibbonCategoryScrollButton {
   border: 1px solid #003FD0;
@@ -385,7 +377,6 @@ SARibbonSystemToolButton#SAMaximizeWindowButton:hover {
 SARibbonSystemToolButton#SAMaximizeWindowButton:checked {
     background-image: url(:/SARibbon/image/resource/Titlebar_Normal_Hover.svg) center;
 }
-
 
 /*Close*/
 SARibbonSystemToolButton#SACloseWindowButton {

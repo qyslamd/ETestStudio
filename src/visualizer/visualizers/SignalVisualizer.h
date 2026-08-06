@@ -37,6 +37,8 @@ class SignalVisualizer : public QWidget {
   // 默认空实现；子类覆盖以更新各自标题标签。
   virtual void setTitle(const QString& title) { Q_UNUSED(title) }
   virtual void setSubtitle(const QString& subtitle) { Q_UNUSED(subtitle) }
+  // 副标题状态（QSS [state=] 属性选择器配色：normal / warning / deleted）
+  virtual void setSubtitleState(const QString& state) { Q_UNUSED(state) }
 };
 
 }  // namespace etest::visualizer

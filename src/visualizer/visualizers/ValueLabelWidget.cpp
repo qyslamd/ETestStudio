@@ -1,5 +1,7 @@
 #include "ValueLabelWidget.h"
 
+#include <QStyle>
+
 #include <QVBoxLayout>
 
 namespace etest::visualizer {
@@ -95,4 +97,12 @@ QList<QString> ValueLabelWidget::displayedSignals() const {
   return {};
 }
 
+
+void ValueLabelWidget::setSubtitleState(const QString& state) {
+  subtitle_label_->setProperty("state", state);
+  subtitle_label_->style()->unpolish(subtitle_label_);
+  subtitle_label_->style()->polish(subtitle_label_);
+}
+
+QSize ValueLabelWidget::sizeHint() const { return QSize(240, 120); }
 }  // namespace etest::visualizer

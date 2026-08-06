@@ -19,16 +19,20 @@
 #include <QSizePolicy>
 #include <QToolBar>
 #include <QToolButton>
+#include <QUuid>
 #include <QVBoxLayout>
 
 #include "AppIconProvider.h"
-#include "dialogs/MonitorConfigDialog.h"
 #include "visualizer/VisualizationArea.h"
+#include "visualizer/visualizers/SignalVisualizer.h"
 #include "visualizer/visualizers/VisualizerFactory.h"
+#include "visualizer/visualizers/VisualizerProxy.h"
 #include "libui/dock_title_bar/DockTitleBar.h"
 #include "logger/Logger.h"
 #include "project/ProjectManager.h"
+#include "widgets/MonitorPropertyWidget.h"
 #include "widgets/ProgramChecklistWidget.h"
+#include "widgets/VisualizerPaletteWidget.h"
 
 using etest::core_ui::AppIconProvider;
 
@@ -43,6 +47,7 @@ void syncDockCloseAction(QAction* action) {
 
 // 可视化区下沉共享层（etest_visualizer）类型
 using etest::visualizer::VisualizationArea;
+using etest::visualizer::VisualizerProxy;
 
 namespace etest::app {
 
@@ -56,12 +61,18 @@ RunConfigEditor::RunConfigEditor(const QString& id, QWidget* parent)
 }
 
 RunConfigEditor::~RunConfigEditor() {
-  // Qt 析构顺序：先删 children 后断开连接。toolbar（含排列/分布按钮）先于
-  // vis_area_ 析构，而 scene 清空（clearAll → removeItem）会触发
-  // selectionChanged；若连接仍活着，lambda 会访问已释放的按钮。此处显式断开。
+  // Qt 析构顺序：先删 children 后断开连接，而成员（config_/snapshots_）先于
+  // ~QObject 销毁。children 析构期间若触发访问成员的槽：
+  //   1) vis_area_ 析构 clearAll() → selectionChanged → 访问 toolbar 按钮（已删）
+  //   2) vis_area_ 析构 clearAll() → visualizerRemoved → removeMonitorById
+  //      访问 config_/snapshots_（成员已销毁）
+  // 均在 children 析构前显式断开。
   if (vis_area_ && vis_area_->scene()) {
     disconnect(vis_area_->scene(), &QGraphicsScene::selectionChanged, this,
                nullptr);
+  }
+  if (vis_area_) {
+    disconnect(vis_area_, &VisualizationArea::visualizerRemoved, this, nullptr);
   }
 }
 
@@ -110,6 +121,23 @@ bool RunConfigEditor::save() {
       return false;
     }
     file_path_ = path;
+  }
+  // 未绑定卡软提醒（决策 32 / 终审 🔵11：非阻塞，统计未绑定数可继续保存）
+  int unbound = 0;
+  for (const auto& m : config_.monitors) {
+    if (m.connectionId.isEmpty()) {
+      ++unbound;
+    }
+  }
+  if (unbound > 0) {
+    // 非阻塞软提醒（决策 32：不硬拦，可继续保存）
+    auto* box = new QMessageBox(
+        QMessageBox::Information, QStringLiteral("保存运行配置"),
+        QStringLiteral("有 %1 个监听器未绑定连线，运行态将显示为未绑定。")
+            .arg(unbound),
+        QMessageBox::Ok, this);
+    box->setAttribute(Qt::WA_DeleteOnClose);
+    box->show();
   }
   if (saveToFile(path)) {
     // 保存到当前项目 run/ 下 → 设为当前运行配置（.etproj settings.runConfigFile）
@@ -202,9 +230,6 @@ void RunConfigEditor::reloadToolbarIcons() {
   if (save_action_) {
     save_action_->setIcon(provider.icon(QStringLiteral("file_save")));
   }
-  if (add_monitor_action_) {
-    add_monitor_action_->setIcon(provider.icon(QStringLiteral("monitor")));
-  }
   if (align_btn_) {
     align_btn_->setIcon(provider.icon(QStringLiteral("topo_align")));
   }
@@ -216,12 +241,24 @@ void RunConfigEditor::reloadToolbarIcons() {
     test_program_toggle_action_->setIcon(
         provider.icon(QStringLiteral("testprogram")));
   }
+  if (palette_toggle_action_) {
+    palette_toggle_action_->setIcon(provider.icon(QStringLiteral("monitor")));
+  }
+  if (property_toggle_action_) {
+    property_toggle_action_->setIcon(provider.icon(QStringLiteral("file_json")));
+  }
 }
 
 bool RunConfigEditor::eventFilter(QObject* obj, QEvent* event) {
   // 用户点 dock 关闭按钮 → 同步取消工具栏 toggle 勾选（与三编辑器统一）
-  if (event->type() == QEvent::Close && obj == test_program_dock_) {
-    syncDockCloseAction(test_program_toggle_action_);
+  if (event->type() == QEvent::Close) {
+    if (obj == test_program_dock_) {
+      syncDockCloseAction(test_program_toggle_action_);
+    } else if (obj == palette_dock_) {
+      syncDockCloseAction(palette_toggle_action_);
+    } else if (obj == property_dock_) {
+      syncDockCloseAction(property_toggle_action_);
+    }
   }
   return QMainWindow::eventFilter(obj, event);
 }
@@ -277,13 +314,6 @@ void RunConfigEditor::initUi() {
       AppIconProvider::instance().icon(QStringLiteral("file_save")));
   save_action_->setToolTip(QStringLiteral("保存运行配置 (.erun)"));
   connect(save_action_, &QAction::triggered, this, [this]() { save(); });
-  add_monitor_action_ = toolbar_->addAction(QStringLiteral("添加监听器"));
-  add_monitor_action_->setIcon(
-      AppIconProvider::instance().icon(QStringLiteral("monitor")));
-  add_monitor_action_->setToolTip(QStringLiteral("添加一个监听器卡片"));
-  connect(add_monitor_action_, &QAction::triggered, this,
-          [this]() { onAddMonitorClicked(); });
-
   // 排列按钮（QToolButton + QMenu，参考拓扑 TopologyEditorWidget）
   align_btn_ = new QToolButton(this);
   align_btn_->setText(QStringLiteral("排列"));
@@ -352,6 +382,42 @@ void RunConfigEditor::initUi() {
   test_program_dock_->installEventFilter(this);
   addDockWidget(Qt::LeftDockWidgetArea, test_program_dock_);
 
+  // 调色板 dock（visualizer 拖放源，左侧测试程序下方）
+  palette_widget_ = new VisualizerPaletteWidget(this);
+  palette_dock_ = new QDockWidget(QStringLiteral("调色板"), this);
+  palette_dock_->setObjectName(QStringLiteral("runConfigPaletteDock"));
+  palette_dock_->setWidget(palette_widget_);
+  palette_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
+  palette_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
+      QStringLiteral("调色板"), palette_dock_));
+  palette_dock_->installEventFilter(this);
+  addDockWidget(Qt::LeftDockWidgetArea, palette_dock_);
+  palette_toggle_action_ = toolbar_->addAction(QStringLiteral("调色板"));
+  palette_toggle_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("monitor")));
+  palette_toggle_action_->setCheckable(true);
+  palette_toggle_action_->setChecked(true);
+  connect(palette_toggle_action_, &QAction::toggled, palette_dock_,
+          &QWidget::setVisible);
+
+  // 属性面板 dock（选中卡片加载，右侧）
+  property_widget_ = new MonitorPropertyWidget(this);
+  property_dock_ = new QDockWidget(QStringLiteral("属性"), this);
+  property_dock_->setObjectName(QStringLiteral("runConfigPropertyDock"));
+  property_dock_->setWidget(property_widget_);
+  property_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
+  property_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
+      QStringLiteral("属性"), property_dock_));
+  property_dock_->installEventFilter(this);
+  addDockWidget(Qt::RightDockWidgetArea, property_dock_);
+  property_toggle_action_ = toolbar_->addAction(QStringLiteral("属性"));
+  property_toggle_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("file_json")));
+  property_toggle_action_->setCheckable(true);
+  property_toggle_action_->setChecked(true);
+  connect(property_toggle_action_, &QAction::toggled, property_dock_,
+          &QWidget::setVisible);
+
   // 测试程序勾选变化 → 更新 config_.programs + 压快照 + 置脏
   connect(program_list_, &ProgramChecklistWidget::programsChanged, this,
           [this]() {
@@ -375,20 +441,67 @@ void RunConfigEditor::initUi() {
     markModified();
   });
 
-  // 右键"关闭可视化"（编辑态删除卡片）同步清理 config_.monitors
-  connect(vis_area_, &VisualizationArea::visualizerClosed, this,
-          [this](const QString& cid) {
-            for (int i = 0; i < config_.monitors.size(); ++i) {
-              if (config_.monitors[i].connectionId == cid) {
-                saveSnapshot();  // 删除前压快照
-                config_.monitors.removeAt(i);
+  // 拖放：调色板 visualizer 拖入 → 新建未绑定卡片
+  connect(vis_area_, &VisualizationArea::visualizerDropped, this,
+          [this](const QString& displayMode, const QPointF& pos) {
+            addMonitorFromDrop(displayMode, pos);
+          });
+
+  // 属性面板信号 → 更新 config_ + 快照 + 置脏 + 刷新卡片
+  connect(property_widget_, &MonitorPropertyWidget::nameChanged, this,
+          [this](const QString& id, const QString& name) {
+            for (auto& m : config_.monitors) {
+              if (m.id == id) {
+                saveSnapshot();
+                m.name = name;
+                if (auto* vis = vis_area_->visualizer(id)) {
+                  vis->setTitle(name);
+                }
                 markModified();
                 return;
               }
             }
           });
+  connect(property_widget_, &MonitorPropertyWidget::connectionBound, this,
+          [this](const QString& id, const QString& cid) {
+            for (auto& m : config_.monitors) {
+              if (m.id == id) {
+                if (m.connectionId == cid) {
+                  return;
+                }
+                saveSnapshot();
+                m.connectionId = cid;
+                markModified();
+                refreshUi();  // 重建卡片（副标题更新 + 绑定状态）
+                selectMonitorCard(id);  // 重建后保持选中（🔵3）
+                return;
+              }
+            }
+          });
+  connect(property_widget_, &MonitorPropertyWidget::typeChanged, this,
+          [this](const QString& id, const QString& mode) {
+            for (auto& m : config_.monitors) {
+              if (m.id == id) {
+                if (m.displayMode == mode) {
+                  return;
+                }
+                saveSnapshot();
+                m.displayMode = mode;
+                markModified();
+                refreshUi();  // 单卡重建（保留 id/连接/几何/名称）
+                selectMonitorCard(id);  // 重建后保持选中（🔵3）
+                return;
+              }
+            }
+          });
+  connect(property_widget_, &MonitorPropertyWidget::deleteRequested, this,
+          [this](const QString& id) { removeMonitorById(id); });
 
-  // 排列/分布门控：选中 ≥2 张卡片才启用
+  // 右键"关闭可视化"（编辑态删除卡片）→ 收敛到 removeMonitorById
+  connect(vis_area_, &VisualizationArea::visualizerRemoved, this,
+          &RunConfigEditor::removeMonitorById);
+
+  // 排列/分布门控：选中 ≥2 张卡片才启用；单卡选中 → 属性面板加载
   connect(vis_area_->scene(), &QGraphicsScene::selectionChanged, this,
           [this]() {
             const bool enabled = vis_area_->selectedVisualizerCount() >= 2;
@@ -398,6 +511,7 @@ void RunConfigEditor::initUi() {
             if (dist_btn_) {
               dist_btn_->setEnabled(enabled);
             }
+            refreshPropertyPanel();
           });
 
   // 面板可见性与工具栏 toggle 同步（与 Topology 一致：toggled 直接驱动 dock 显隐）
@@ -412,69 +526,139 @@ void RunConfigEditor::refreshUi() {
     program_list_->setSelectedPrograms(config_.programs);
   }
 
-  // 重建可视化区卡片：按 monitors 创建 preview visualizer，再应用 layout
-  const auto oldIds = vis_area_->activeChannels();
+  // 重建可视化区卡片：按 config_.monitors（key=id），应用 Monitor 内嵌几何
+  const auto conns = loadConnectionsFromProject();
+  const auto oldIds = vis_area_->monitorIds();
   for (const auto& id : oldIds) {
     vis_area_->removeVisualizer(id);
   }
+  int fallback = 0;
   for (const auto& m : config_.monitors) {
     // parent 传 nullptr：visualizer 须为 top-level 才能被 VisualizerProxy
     // setWidget 嵌入（传 this 会被警告 "cannot embed widget"）
     auto* vis = etest::visualizer::createVisualizerFor(
-        m.connectionId, m.displayMode, QString(),
-                                    m.name, nullptr);
-    vis_area_->addVisualizer(m.connectionId, vis);
-  }
-  for (const auto& l : config_.layout) {
-    vis_area_->setVisualizerGeometry(l.connectionId,
-                                     QRectF(l.x, l.y, l.w, l.h));
-  }
-  // 无 layout 项的新监听器：递增默认位置，避免重叠
-  int fallback = 0;
-  for (const auto& m : config_.monitors) {
-    bool hasLayout = false;
-    for (const auto& l : config_.layout) {
-      if (l.connectionId == m.connectionId) {
-        hasLayout = true;
-        break;
+        m.connectionId, m.displayMode, QString(), m.name, nullptr);
+    if (!vis) {
+      continue;
+    }
+    // 二级标题：未绑定 → 警示「未绑定到连线」；绑定 → 连接描述；
+    // 非空但拓扑无此连接 → 警示「连接已删除」（决策 24）
+    if (m.connectionId.isEmpty()) {
+      vis->setSubtitle(QStringLiteral("未绑定到连线"));
+      vis->setSubtitleState(QStringLiteral("warning"));
+    } else {
+      QString desc;
+      for (const auto& c : conns) {
+        if (c.first == m.connectionId) {
+          desc = c.second;
+          break;
+        }
+      }
+      if (desc.isEmpty()) {
+        vis->setSubtitle(QStringLiteral("连接已删除"));
+        vis->setSubtitleState(QStringLiteral("deleted"));
+      } else {
+        vis->setSubtitle(desc);
+        vis->setSubtitleState(QStringLiteral("normal"));
       }
     }
-    if (!hasLayout) {
+    vis_area_->addVisualizer(m.id, vis);
+    // 全零几何兜底（旧 .erun / 手改文件）：sizeHint 默认尺寸 + 递增位置
+    if (m.w == 0 && m.h == 0) {
+      const QSize size = vis->sizeHint();
       vis_area_->setVisualizerGeometry(
-          m.connectionId,
-          QRectF(20.0 + fallback * 40, 20.0 + fallback * 40, 320, 200));
+          m.id, QRectF(20.0 + fallback * 40, 20.0 + fallback * 40,
+                       size.width(), size.height()));
       ++fallback;
+    } else {
+      vis_area_->setVisualizerGeometry(m.id, QRectF(m.x, m.y, m.w, m.h));
+    }
+  }
+  refreshPropertyPanel();
+}
+
+void RunConfigEditor::addMonitorFromDrop(const QString& displayMode,
+                                         const QPointF& scenePos) {
+  saveSnapshot();  // 添加前压快照
+  RunConfig::Monitor m;
+  m.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  m.displayMode = displayMode;
+  // 默认尺寸按 visualizer sizeHint（决策 19）
+  QSize size(320, 200);
+  auto* probe = etest::visualizer::createVisualizerFor(
+      QString(), displayMode, QString(), QString(), nullptr);
+  if (probe) {
+    size = probe->sizeHint();
+    delete probe;
+  }
+  m.x = scenePos.x();
+  m.y = scenePos.y();
+  m.w = size.width();
+  m.h = size.height();
+  config_.monitors.append(m);
+  markModified();
+  refreshUi();
+}
+
+void RunConfigEditor::removeMonitorById(const QString& id) {
+  for (int i = 0; i < config_.monitors.size(); ++i) {
+    if (config_.monitors[i].id == id) {
+      saveSnapshot();  // 删除前压快照
+      config_.monitors.removeAt(i);
+      markModified();
+      refreshUi();
+      return;
     }
   }
 }
 
-void RunConfigEditor::onAddMonitorClicked() {
-  // 复用 page1 的通道选择对话框：从连接列表选 + 点 visualizer 类型即添加
-  if (!channel_dialog_) {
-    channel_dialog_ = new MonitorConfigDialog(this);
-    connect(channel_dialog_, &MonitorConfigDialog::visualizerChosen, this,
-            [this](const QString& cid, const QString& mode) {
-              LOG_INFO("RUNCONFIG", "visualizerChosen cid={} mode={}",
-                       cid.toStdString(), mode.toStdString());
-              for (const auto& m : config_.monitors) {
-                if (m.connectionId == cid) {
-                  return;  // 已存在，忽略
-                }
-              }
-              saveSnapshot();  // 添加前压快照
-              RunConfig::Monitor m;
-              m.connectionId = cid;
-              m.displayMode = mode;
-              m.name = cid;
-              config_.monitors.append(m);
-              markModified();
-              refreshUi();
-            });
+void RunConfigEditor::refreshPropertyPanel() {
+  if (!property_widget_ || !vis_area_) {
+    return;
   }
-  channel_dialog_->setConnections(loadConnectionsFromProject());
-  channel_dialog_->show();
-  channel_dialog_->raise();
-  channel_dialog_->activateWindow();
+  // 单卡选中 → 加载属性；无/多选 → 清空
+  RunConfig::Monitor* monitor = nullptr;
+  const auto selected = vis_area_->scene()->selectedItems();
+  for (auto* item : selected) {
+    if (auto* vp = qgraphicsitem_cast<VisualizerProxy*>(item)) {
+      const QString id = vp->monitorId();
+      for (auto& m : config_.monitors) {
+        if (m.id == id) {
+          monitor = &m;
+          break;
+        }
+      }
+      break;  // 只处理第一个选中
+    }
+  }
+  if (!monitor) {
+    property_widget_->clear();
+    return;
+  }
+  // 其他卡片已绑定的连接 → 属性面板禁用（一连接一监听器）
+  QSet<QString> bound;
+  for (const auto& m : config_.monitors) {
+    if (!m.connectionId.isEmpty() && m.id != monitor->id) {
+      bound.insert(m.connectionId);
+    }
+  }
+  property_widget_->setMonitor(*monitor, loadConnectionsFromProject(), bound);
+}
+
+void RunConfigEditor::selectMonitorCard(const QString& id) {
+  if (!vis_area_) {
+    return;
+  }
+  const auto items = vis_area_->scene()->items();
+  for (auto* item : items) {
+    if (auto* vp = qgraphicsitem_cast<VisualizerProxy*>(item)) {
+      if (vp->monitorId() == id) {
+        vis_area_->scene()->clearSelection();
+        vp->setSelected(true);
+        return;
+      }
+    }
+  }
 }
 
 // 从 .erun 所在目录向上找含 topology 的项目根
@@ -552,16 +736,18 @@ bool RunConfigEditor::saveToFile(const QString& path) {
 // ── 撤销/重做（快照式，仿 ProtocolEditorWidget） ──
 
 void RunConfigEditor::collectLayout() {
-  config_.layout.clear();
+  // 布局几何写回 config_.monitors（Monitor 自包含 x/y/w/h，废弃独立 layout 数组）
   const auto geoms = vis_area_->visualizerGeometries();
   for (const auto& g : geoms) {
-    RunConfig::LayoutItem l;
-    l.connectionId = g.connectionId;
-    l.x = g.rect.x();
-    l.y = g.rect.y();
-    l.w = g.rect.width();
-    l.h = g.rect.height();
-    config_.layout.append(l);
+    for (auto& m : config_.monitors) {
+      if (m.id == g.id) {
+        m.x = g.rect.x();
+        m.y = g.rect.y();
+        m.w = g.rect.width();
+        m.h = g.rect.height();
+        break;
+      }
+    }
   }
 }
 

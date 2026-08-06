@@ -1,5 +1,7 @@
 #include "LedIndicator.h"
 
+#include <QStyle>
+
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPainter>
@@ -232,4 +234,12 @@ void LedIndicator::setSubtitle(const QString& subtitle) {
   }
 }
 
+
+void LedIndicator::setSubtitleState(const QString& state) {
+  subtitle_label_->setProperty("state", state);
+  subtitle_label_->style()->unpolish(subtitle_label_);
+  subtitle_label_->style()->polish(subtitle_label_);
+}
+
+QSize LedIndicator::sizeHint() const { return QSize(120, 120); }
 }  // namespace etest::visualizer

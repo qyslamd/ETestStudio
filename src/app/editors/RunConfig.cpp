@@ -4,6 +4,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QSet>
+#include <QUuid>
 
 #include "logger/Logger.h"
 
@@ -11,7 +12,7 @@ namespace etest::app {
 
 QJsonObject RunConfig::toJson() const {
   QJsonObject root;
-  root[QStringLiteral("version")] = QStringLiteral("1.0");
+  root[QStringLiteral("version")] = QStringLiteral("2.0");
   if (!programs.isEmpty()) {
     QJsonArray progArr;
     for (const QString& p : programs) {
@@ -23,31 +24,26 @@ QJsonObject RunConfig::toJson() const {
   QJsonArray monitorsArr;
   for (const auto& m : monitors) {
     QJsonObject mo;
-    mo[QStringLiteral("connectionId")] = m.connectionId;
+    mo[QStringLiteral("id")] = m.id;
+    if (!m.connectionId.isEmpty()) {
+      mo[QStringLiteral("connectionId")] = m.connectionId;
+    }
     mo[QStringLiteral("displayMode")] = m.displayMode;
     mo[QStringLiteral("name")] = m.name;
+    mo[QStringLiteral("x")] = m.x;
+    mo[QStringLiteral("y")] = m.y;
+    mo[QStringLiteral("w")] = m.w;
+    mo[QStringLiteral("h")] = m.h;
     monitorsArr.append(mo);
   }
   root[QStringLiteral("monitors")] = monitorsArr;
-
-  QJsonArray layoutArr;
-  for (const auto& l : layout) {
-    QJsonObject lo;
-    lo[QStringLiteral("connectionId")] = l.connectionId;
-    lo[QStringLiteral("x")] = l.x;
-    lo[QStringLiteral("y")] = l.y;
-    lo[QStringLiteral("w")] = l.w;
-    lo[QStringLiteral("h")] = l.h;
-    layoutArr.append(lo);
-  }
-  root[QStringLiteral("layout")] = layoutArr;
 
   root[QStringLiteral("runParams")] = runParams;
   return root;
 }
 
 bool RunConfig::fromJson(const QJsonObject& obj) {
-  // 归一化（格式不变量）：programs 去重、丢弃空串
+  // 归一化（格式不变量 2.0）：programs 去重、丢弃空串
   programs.clear();
   const QJsonArray progArr = obj[QStringLiteral("programs")].toArray();
   for (const auto& v : progArr) {
@@ -57,43 +53,41 @@ bool RunConfig::fromJson(const QJsonObject& obj) {
     }
   }
 
-  // 归一化（格式不变量）：monitors 同 connectionId 去重，保留首个
+  // 归一化（格式不变量 2.0）：双去重——
+  //   seenIds：卡片身份去重（id 唯一，无 id 兜底生成 UUID）
+  //   seenConnectionIds：仅非空 connectionId 去重（保留首个，一连接一监听器）
+  // 空 connectionId = 未绑定，合法保留（不进 connectionId 去重集）。
   monitors.clear();
   const QJsonArray monitorsArr = obj[QStringLiteral("monitors")].toArray();
-  QSet<QString> seenMonitors;
+  QSet<QString> seenIds;
+  QSet<QString> seenConnectionIds;
   for (const auto& v : monitorsArr) {
     const QJsonObject mo = v.toObject();
-    const QString cid = mo[QStringLiteral("connectionId")].toString();
-    if (cid.isEmpty() || seenMonitors.contains(cid)) {
+    QString id = mo[QStringLiteral("id")].toString();
+    if (id.isEmpty()) {
+      id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    }
+    if (seenIds.contains(id)) {
       continue;
     }
-    seenMonitors.insert(cid);
+    seenIds.insert(id);
+    const QString cid = mo[QStringLiteral("connectionId")].toString();
+    if (!cid.isEmpty()) {
+      if (seenConnectionIds.contains(cid)) {
+        continue;
+      }
+      seenConnectionIds.insert(cid);
+    }
     Monitor m;
+    m.id = id;
     m.connectionId = cid;
     m.displayMode = mo[QStringLiteral("displayMode")].toString();
     m.name = mo[QStringLiteral("name")].toString();
+    m.x = mo[QStringLiteral("x")].toDouble();
+    m.y = mo[QStringLiteral("y")].toDouble();
+    m.w = mo[QStringLiteral("w")].toDouble();
+    m.h = mo[QStringLiteral("h")].toDouble();
     monitors.append(m);
-  }
-
-  // 归一化：layout 丢弃无对应 monitor 的项 + 同 connectionId 去重（保留首个）
-  layout.clear();
-  const QJsonArray layoutArr = obj[QStringLiteral("layout")].toArray();
-  QSet<QString> seenLayout;
-  for (const auto& v : layoutArr) {
-    const QJsonObject lo = v.toObject();
-    const QString cid = lo[QStringLiteral("connectionId")].toString();
-    if (cid.isEmpty() || !seenMonitors.contains(cid) ||
-        seenLayout.contains(cid)) {
-      continue;
-    }
-    seenLayout.insert(cid);
-    LayoutItem l;
-    l.connectionId = cid;
-    l.x = lo[QStringLiteral("x")].toDouble();
-    l.y = lo[QStringLiteral("y")].toDouble();
-    l.w = lo[QStringLiteral("w")].toDouble();
-    l.h = lo[QStringLiteral("h")].toDouble();
-    layout.append(l);
   }
 
   runParams = obj[QStringLiteral("runParams")].toObject();

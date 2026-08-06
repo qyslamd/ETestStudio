@@ -3,6 +3,7 @@
 #include <QByteArray>
 #include <QJsonObject>
 #include <QMainWindow>
+#include <QPointF>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -21,8 +22,9 @@ class VisualizationArea;
 
 namespace etest::app {
 
-class MonitorConfigDialog;
+class MonitorPropertyWidget;
 class ProgramChecklistWidget;
+class VisualizerPaletteWidget;
 
 // RunConfigEditor -- 运行编辑器（独立编辑器，编辑态 page0）
 // 编辑 .erun 运行配置。纯新增骨架：IEditor 接口 + .erun 序列化/反序列化
@@ -68,7 +70,14 @@ class RunConfigEditor : public QMainWindow, public IEditor {
  private:
   void initUi();
   void refreshUi();
-  void onAddMonitorClicked();
+  // 拖放：调色板 visualizer 拖入 → 新建未绑定卡片（UUID/displayMode/sizeHint/位置）
+  void addMonitorFromDrop(const QString& displayMode, const QPointF& scenePos);
+  // 删除卡片（右键 visualizerRemoved / 属性面板按钮双入口收敛）
+  void removeMonitorById(const QString& id);
+  // 场景选中变化 → 属性面板加载 / 清空
+  void refreshPropertyPanel();
+  // 重建后重新选中卡片（绑定/切类型后保持属性面板焦点）
+  void selectMonitorCard(const QString& id);
   // 保存到当前项目 run/ 下时，将 .erun 设为当前运行配置（写 .etproj settings）
   void syncRunConfigRef(const QString& path);
   // 从 .erun 所在目录向上找含 topology 的项目根
@@ -97,8 +106,11 @@ class RunConfigEditor : public QMainWindow, public IEditor {
   QToolBar* toolbar_ = nullptr;
   QDockWidget* test_program_dock_ = nullptr;  // 测试程序多选面板（可关可拖，toggle 重开）
   ProgramChecklistWidget* program_list_ = nullptr;
+  QDockWidget* palette_dock_ = nullptr;       // 调色板（visualizer 拖放源）
+  VisualizerPaletteWidget* palette_widget_ = nullptr;
+  QDockWidget* property_dock_ = nullptr;      // 属性面板（选中卡片加载）
+  MonitorPropertyWidget* property_widget_ = nullptr;
   etest::visualizer::VisualizationArea* vis_area_ = nullptr;
-  MonitorConfigDialog* channel_dialog_ = nullptr;  // 复用 page1 通道选择对话框
   QToolButton* align_btn_ = nullptr;   // 排列（选中≥2 才启用）
   QToolButton* dist_btn_ = nullptr;    // 分布
 
@@ -107,8 +119,9 @@ class RunConfigEditor : public QMainWindow, public IEditor {
   QAction* redo_action_ = nullptr;
   QAction* new_action_ = nullptr;
   QAction* save_action_ = nullptr;
-  QAction* add_monitor_action_ = nullptr;
   QAction* test_program_toggle_action_ = nullptr;  // 显示/隐藏测试程序面板
+  QAction* palette_toggle_action_ = nullptr;       // 显示/隐藏调色板 dock
+  QAction* property_toggle_action_ = nullptr;      // 显示/隐藏属性面板 dock
 };
 
 }  // namespace etest::app

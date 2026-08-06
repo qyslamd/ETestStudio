@@ -48,6 +48,8 @@ MARK_SCROLL_START = '/* ===== QScrollArea 主题适配样式 START ===== */'
 MARK_SCROLL_END = '/* ===== QScrollArea 主题适配样式 END ===== */'
 MARK_GROUPBOX_START = '/* ===== MonitorTypeTile QGroupBox 主题适配样式 START ===== */'
 MARK_GROUPBOX_END = '/* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */'
+MARK_SUBTITLE_START = '/* ===== visualizer 副标题状态配色 START ===== */'
+MARK_SUBTITLE_END = '/* ===== visualizer 副标题状态配色 END ===== */'
 
 
 def spin_hex_to_rgb(hex_color):
@@ -197,6 +199,17 @@ QGroupBox[selected="true"]::title {
 ''')
 
 
+def subtitle_build_blocks(colors):
+    """visualizer 副标题 [state=] 警示色（未绑定 / 连接已删除），读 colors['warning']"""
+    warn = colors.get('warning', '#D56224')
+    sel_warning = ('#WaveformSubtitle[state="warning"], #MeterSubtitle[state="warning"], '
+                   '#GaugeSubtitle[state="warning"], #ValueLabelSubtitle[state="warning"], '
+                   '#LedSubtitle[state="warning"]')
+    sel_deleted = sel_warning.replace('"warning"', '"deleted"')
+    return ('\n' + sel_warning + ' {\n  color: ' + warn + ';\n}\n'
+            + sel_deleted + ' {\n  color: ' + warn + ';\n}\n')
+
+
 def inject_widget_styles():
     """为所有主题 QSS 注入 QSpinBox/QComboBox/QScrollArea 主题适配样式"""
     for json_path in sorted(glob.glob(os.path.join(themes_dir, '*.json'))):
@@ -216,6 +229,7 @@ def inject_widget_styles():
         qss = strip_marked(qss, MARK_COMBO_START, MARK_COMBO_END)
         qss = strip_marked(qss, MARK_SCROLL_START, MARK_SCROLL_END)
         qss = strip_marked(qss, MARK_GROUPBOX_START, MARK_GROUPBOX_END)
+        qss = strip_marked(qss, MARK_SUBTITLE_START, MARK_SUBTITLE_END)
 
         spin_block = ('\n' + MARK_SPIN_START + '\n'
                       + spin_build_blocks(colors, icon) + MARK_SPIN_END + '\n')
@@ -225,8 +239,10 @@ def inject_widget_styles():
                         + scroll_build_blocks() + MARK_SCROLL_END + '\n')
         groupbox_block = ('\n' + MARK_GROUPBOX_START + '\n'
                           + groupbox_build_blocks(colors) + MARK_GROUPBOX_END + '\n')
+        subtitle_block = ('\n' + MARK_SUBTITLE_START + '\n'
+                          + subtitle_build_blocks(colors) + MARK_SUBTITLE_END + '\n')
         qss = (qss.rstrip() + '\n' + spin_block + combo_block
-               + scroll_block + groupbox_block)
+               + scroll_block + groupbox_block + subtitle_block)
 
         with open(qss_path, 'w', encoding='utf-8') as f:
             f.write(qss)

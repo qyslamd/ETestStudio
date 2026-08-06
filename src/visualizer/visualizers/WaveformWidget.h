@@ -23,6 +23,8 @@ class WaveformWidget : public SignalVisualizer {
 
   void setTitle(const QString& title) override;
   void setSubtitle(const QString& subtitle) override;
+  void setSubtitleState(const QString& state) override;
+  QSize sizeHint() const override;
 
   void addTrace(const QString& connectionId, const QColor& color);
   void removeTrace(const QString& connectionId);

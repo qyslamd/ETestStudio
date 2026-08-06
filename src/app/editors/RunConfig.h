@@ -8,17 +8,16 @@
 namespace etest::app {
 
 // ── 运行配置数据（.erun 文件） ──
-// 运行编辑器产出：选择测试程序 + 监听器配置 + 布局 + 运行参数（预留）。
+// 运行编辑器产出：选择测试程序 + 监听器配置 + 运行参数（预留）。
+// Monitor 自包含卡片全部状态（id 关联 / 绑定连线 / 类型 / 名称 / 几何）。
 // 纯数据模型，与 UI 解耦，便于运行态 / 独立运行程序消费。
 struct RunConfig {
   struct Monitor {
-    QString connectionId;
+    QString id;            // 卡片实例 UUID（进场景分配，layout 关联 key）
+    QString connectionId;  // 绑定连线，空 = 未绑定
     QString displayMode;
     QString name;
-  };
-  struct LayoutItem {
-    QString connectionId;
-    double x = 0;
+    double x = 0;  // 几何并入 Monitor（废弃独立 layout 数组）
     double y = 0;
     double w = 0;
     double h = 0;
@@ -26,7 +25,6 @@ struct RunConfig {
 
   QStringList programs;  // 测试程序（相对项目根路径），与监听/布局正交
   QVector<Monitor> monitors;
-  QVector<LayoutItem> layout;
   QJsonObject runParams;  // 预留
 
   QJsonObject toJson() const;

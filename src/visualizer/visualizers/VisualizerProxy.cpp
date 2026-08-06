@@ -252,8 +252,10 @@ void VisualizerProxy::doResize(const QPointF& delta) {
   const QSizeF s = widget()->size();
   const qreal oldW = s.width();
   const qreal oldH = s.height();
-  const qreal minW = qMax<qreal>(200.0, widget()->minimumSizeHint().width());
-  const qreal minH = qMax<qreal>(120.0, widget()->minimumSizeHint().height());
+  // 下限调低以容纳小卡片（led/gauge sizeHint 120×120）；大组件由
+  // minimumSizeHint 兜底取大者
+  const qreal minW = qMax<qreal>(120.0, widget()->minimumSizeHint().width());
+  const qreal minH = qMax<qreal>(90.0, widget()->minimumSizeHint().height());
   qreal newW = oldW;
   qreal newH = oldH;
   QPointF newPos = pos();

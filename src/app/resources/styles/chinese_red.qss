@@ -2547,3 +2547,10 @@ QGroupBox[selected="true"]::title {
     background-color: #A91F1D;
 }
 /* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */
+
+#WaveformSubtitle[state="warning"], #MeterSubtitle[state="warning"], #GaugeSubtitle[state="warning"], #ValueLabelSubtitle[state="warning"], #LedSubtitle[state="warning"] {
+  color: #E0BD00;
+}
+#WaveformSubtitle[state="deleted"], #MeterSubtitle[state="deleted"], #GaugeSubtitle[state="deleted"], #ValueLabelSubtitle[state="deleted"], #LedSubtitle[state="deleted"] {
+  color: #E0BD00;
+}

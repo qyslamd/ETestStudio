@@ -1,5 +1,7 @@
 #include "WaveformWidget.h"
 
+#include <QStyle>
+
 #include <QFont>
 #include <QVBoxLayout>
 
@@ -260,4 +262,12 @@ void WaveformWidget::applyTheme() {
   custom_plot_->replot();
 }
 
+
+void WaveformWidget::setSubtitleState(const QString& state) {
+  subtitle_label_->setProperty("state", state);
+  subtitle_label_->style()->unpolish(subtitle_label_);
+  subtitle_label_->style()->polish(subtitle_label_);
+}
+
+QSize WaveformWidget::sizeHint() const { return QSize(320, 200); }
 }  // namespace etest::visualizer

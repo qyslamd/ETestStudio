@@ -2405,10 +2405,6 @@ void MainWindow::setupRibbon() {
     // 运行配置 Panel（通道选择 + 验证，由 ExecutionPanelController 管理；
     // 程序选择已收敛到运行编辑器 .erun.programs，popup 移除）
     auto* panel_select = cat->addPanel(QStringLiteral("运行配置"));
-    panel_select->addSmallAction(execution_controller_->selectChannelsAction());
-    connect(execution_controller_->selectChannelsAction(), &QAction::triggered,
-            this,
-            [this]() { execution_controller_->showChannelSelectionDialog(); });
     execution_controller_->verifyAction()->setIcon(
         AppIconProvider::instance().icon(QStringLiteral("verify")));
     panel_select->addLargeAction(execution_controller_->verifyAction());

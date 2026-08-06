@@ -2,9 +2,11 @@
 
 #include <QGraphicsView>
 #include <QHash>
+#include <QPointF>
 #include <QRectF>
 #include <QVector>
 
+class QGraphicsRectItem;
 class QGraphicsScene;
 class QGraphicsProxyWidget;
 
@@ -19,11 +21,11 @@ class VisualizationArea : public QGraphicsView {
   explicit VisualizationArea(QWidget* parent = nullptr);
   ~VisualizationArea() override;
 
-  void addVisualizer(const QString& connectionId,
+  void addVisualizer(const QString& id,
                      SignalVisualizer* visualizer);
-  void removeVisualizer(const QString& connectionId);
+  void removeVisualizer(const QString& id);
 
-  SignalVisualizer* visualizer(const QString& connectionId) const;
+  SignalVisualizer* visualizer(const QString& id) const;
 
   // 编辑模式（便捷入口）：布局手动 + 交互可编辑（组合下面两个开关）
   void setEditMode(bool edit);
@@ -35,11 +37,11 @@ class VisualizationArea : public QGraphicsView {
 
   // 布局收集/应用（scene 坐标，供编辑态读写卡片位置/大小）
   struct VisualizerGeometry {
-    QString connectionId;
+    QString id;
     QRectF rect;
   };
   QVector<VisualizerGeometry> visualizerGeometries() const;
-  void setVisualizerGeometry(const QString& connectionId, const QRectF& rect);
+  void setVisualizerGeometry(const QString& id, const QRectF& rect);
 
   // 排列/分布（编辑态，操作选中卡片，移植拓扑 doAlign/doDistribute）
   enum class AlignType { Left, HCenter, Right, Top, VCenter, Bottom };
@@ -51,12 +53,14 @@ class VisualizationArea : public QGraphicsView {
   void clearAll();
   int visualizerCount() const { return items_.size(); }
 
-  QList<QString> activeChannels() const;
+  QList<QString> monitorIds() const;
 
  signals:
-  void visualizerClosed(const QString& connectionId);
+  void visualizerRemoved(const QString& id);
   // 布局被改动（用户拖拽/resize、排列/分布），供宿主置脏
   void layoutChanged();
+  // 拖放：调色板 visualizer 拖入 → 宿主建卡（displayMode + 场景坐标）
+  void visualizerDropped(const QString& displayMode, const QPointF& scenePos);
 
  protected:
   void resizeEvent(QResizeEvent* event) override;
@@ -66,6 +70,11 @@ class VisualizationArea : public QGraphicsView {
   void mousePressEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
+  // 拖放接收（调色板 visualizer 拖入，mime = application/x-etest-visualizer）
+  void dragEnterEvent(QDragEnterEvent* event) override;
+  void dragMoveEvent(QDragMoveEvent* event) override;
+  void dragLeaveEvent(QDragLeaveEvent* event) override;
+  void dropEvent(QDropEvent* event) override;
 
  private:
   void relayout();
@@ -81,6 +90,7 @@ class VisualizationArea : public QGraphicsView {
   bool interactive_ = false;    // 默认只读（展示态）
   bool panning_ = false;        // 中键平移中
   QPoint last_pan_point_;
+  QGraphicsRectItem* drop_preview_ = nullptr;  // 拖放半透明预览占位（虚线框）
 };
 
 }  // namespace etest::visualizer

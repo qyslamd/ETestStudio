@@ -115,6 +115,8 @@ class GaugeVisualizer : public SignalVisualizer {
 
   void setTitle(const QString& title) override;
   void setSubtitle(const QString& subtitle) override;
+  void setSubtitleState(const QString& state) override;
+  QSize sizeHint() const override;
 
  private:
   void initUi();

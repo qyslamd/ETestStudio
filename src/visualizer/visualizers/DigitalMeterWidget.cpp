@@ -1,5 +1,7 @@
 #include "DigitalMeterWidget.h"
 
+#include <QStyle>
+
 #include <QVBoxLayout>
 
 #include "engine/MonitorManager.h"
@@ -173,4 +175,12 @@ QList<QString> DigitalMeterWidget::displayedSignals() const {
   return {};
 }
 
+
+void DigitalMeterWidget::setSubtitleState(const QString& state) {
+  subtitle_label_->setProperty("state", state);
+  subtitle_label_->style()->unpolish(subtitle_label_);
+  subtitle_label_->style()->polish(subtitle_label_);
+}
+
+QSize DigitalMeterWidget::sizeHint() const { return QSize(200, 120); }
 }  // namespace etest::visualizer

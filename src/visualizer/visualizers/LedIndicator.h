@@ -42,6 +42,8 @@ class LedIndicator : public SignalVisualizer {
   QList<QString> displayedSignals() const override;
   void setTitle(const QString& title) override;
   void setSubtitle(const QString& subtitle) override;
+  void setSubtitleState(const QString& state) override;
+  QSize sizeHint() const override;
 
  private:
   void initUi();

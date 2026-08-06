@@ -4,15 +4,27 @@
 #include <cmath>
 
 #include <QContextMenuEvent>
+#include <QDragEnterEvent>
+#include <QDragLeaveEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
 #include <QGraphicsProxyWidget>
+#include <QGraphicsRectItem>
 #include <QGraphicsScene>
 #include <QMenu>
+#include <QMimeData>
 #include <QMouseEvent>
+#include <QPen>
 #include <QScrollBar>
 #include <QWheelEvent>
 
 #include "visualizers/SignalVisualizer.h"
 #include "visualizers/VisualizerProxy.h"
+
+namespace {
+// 调色板 visualizer 拖放的 mime 类型（payload = displayMode 字符串）
+const char kVisualizerMime[] = "application/x-etest-visualizer";
+}  // namespace
 
 namespace etest::visualizer {
 
@@ -37,6 +49,14 @@ VisualizationArea::VisualizationArea(QWidget* parent) : QGraphicsView(parent) {
   // 背景透明，由 QSS 统一控制
   setBackgroundBrush(Qt::NoBrush);
 
+  // 拖放接收（调色板 visualizer 拖入）
+  setAcceptDrops(true);
+  drop_preview_ = new QGraphicsRectItem(0, 0, 320, 200);
+  drop_preview_->setBrush(QColor(255, 255, 255, 40));  // 半透明占位
+  drop_preview_->setPen(QPen(Qt::DashLine));
+  drop_preview_->setZValue(1000);
+  drop_preview_->setVisible(false);
+  scene_->addItem(drop_preview_);
 }
 
 VisualizationArea::~VisualizationArea() {
@@ -47,14 +67,14 @@ VisualizationArea::~VisualizationArea() {
 // addVisualizer — 添加可视化组件到网格
 // ══════════════════════════════════════════════════════════════════════════════
 
-void VisualizationArea::addVisualizer(const QString& connectionId,
+void VisualizationArea::addVisualizer(const QString& id,
                                       SignalVisualizer* visualizer) {
   if (!visualizer) {
     return;
   }
 
   // 已存在则不重复添加
-  if (items_.contains(connectionId)) {
+  if (items_.contains(id)) {
     return;
   }
 
@@ -63,6 +83,7 @@ void VisualizationArea::addVisualizer(const QString& connectionId,
   proxy->setWidget(visualizer);
   proxy->setCacheMode(QGraphicsItem::NoCache);
   proxy->setEditMode(interactive_);
+  proxy->setMonitorId(id);  // key 语义：卡片关联 monitor.id
   // 用户拖拽/resize 结束 → 汇总为 layoutChanged，供宿主置脏
   connect(proxy, &VisualizerProxy::geometryEdited, this,
           &VisualizationArea::layoutChanged);
@@ -71,7 +92,7 @@ void VisualizationArea::addVisualizer(const QString& connectionId,
   Item item;
   item.proxy = proxy;
   item.widget = visualizer;
-  items_.insert(connectionId, item);
+  items_.insert(id, item);
 
   if (!manual_layout_) {
     relayout();
@@ -82,8 +103,8 @@ void VisualizationArea::addVisualizer(const QString& connectionId,
 // removeVisualizer — 移除某个可视化组件
 // ══════════════════════════════════════════════════════════════════════════════
 
-void VisualizationArea::removeVisualizer(const QString& connectionId) {
-  auto it = items_.find(connectionId);
+void VisualizationArea::removeVisualizer(const QString& id) {
+  auto it = items_.find(id);
   if (it == items_.end()) {
     return;
   }
@@ -104,8 +125,8 @@ void VisualizationArea::removeVisualizer(const QString& connectionId) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 SignalVisualizer* VisualizationArea::visualizer(
-    const QString& connectionId) const {
-  auto it = items_.constFind(connectionId);
+    const QString& id) const {
+  auto it = items_.constFind(id);
   if (it != items_.constEnd()) {
     return it->widget;
   }
@@ -148,7 +169,7 @@ VisualizationArea::visualizerGeometries() const {
   QVector<VisualizerGeometry> result;
   for (auto it = items_.constBegin(); it != items_.constEnd(); ++it) {
     VisualizerGeometry g;
-    g.connectionId = it.key();
+    g.id = it.key();
     g.rect = QRectF(it->proxy->pos(), it->proxy->widget()->size());
     result.append(g);
   }
@@ -156,9 +177,9 @@ VisualizationArea::visualizerGeometries() const {
 }
 
 // 布局应用：按 scene 坐标设置卡片位置/大小
-void VisualizationArea::setVisualizerGeometry(const QString& connectionId,
+void VisualizationArea::setVisualizerGeometry(const QString& id,
                                                const QRectF& rect) {
-  auto it = items_.find(connectionId);
+  auto it = items_.find(id);
   if (it == items_.end()) {
     return;
   }
@@ -282,12 +303,12 @@ void VisualizationArea::distributeVisualizers(DistributeType type) {
 
 void VisualizationArea::clearAll() {
   // 先复制一份 key 列表，避免迭代中修改容器
-  // 注意：emit visualizerClosed 会同步触发 removeVisualizer（通过
+  // 注意：emit visualizerRemoved 会同步触发 removeVisualizer（通过
   // uncheckChannel 回调链）， 该调用会 delete proxy 并 erase items_。emit 后
   // it/iter 可能已失效，必须重新查找。
   auto keys = items_.keys();
   for (const QString& key : keys) {
-    emit visualizerClosed(key);
+    emit visualizerRemoved(key);
 
     // emit 后该条目可能已被 removeVisualizer 删除，重新查找确认
     auto it = items_.find(key);
@@ -300,9 +321,9 @@ void VisualizationArea::clearAll() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// activeChannels — 当前活跃通道列表（供 syncProjectTopologies 恢复订阅使用）
+// monitorIds — 当前活跃通道列表（供 syncProjectTopologies 恢复订阅使用）
 // ══════════════════════════════════════════════════════════════════════════════
-QList<QString> VisualizationArea::activeChannels() const {
+QList<QString> VisualizationArea::monitorIds() const {
   return items_.keys();
 }
 
@@ -402,10 +423,10 @@ void VisualizationArea::contextMenuEvent(QContextMenuEvent* event) {
   QMenu menu(this);
   QAction* closeAction = menu.addAction(QStringLiteral("关闭可视化"));
   if (menu.exec(event->globalPos()) == closeAction) {
-    // 先移除再发信号：visualizerClosed 槽会按 activeChannels()
+    // 先移除再发信号：visualizerRemoved 槽会按 monitorIds()
     // 同步对话框勾选态，若先发信号该通道还在列表里，勾选不会取消。
     removeVisualizer(foundKey);
-    emit visualizerClosed(foundKey);
+    emit visualizerRemoved(foundKey);
   }
 }
 
@@ -470,6 +491,59 @@ void VisualizationArea::relayout() {
     it->proxy->resize(widgetW, widgetH);
     it->proxy->setMinimumSize(40, 30);
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 拖放接收 — 调色板 visualizer 拖入（mime = application/x-etest-visualizer）
+// 半透明预览占位随鼠标；drop 时发 visualizerDropped，宿主建卡
+// ══════════════════════════════════════════════════════════════════════════════
+
+void VisualizationArea::dragEnterEvent(QDragEnterEvent* event) {
+  if (event->mimeData()->hasFormat(QString::fromLatin1(kVisualizerMime))) {
+    event->acceptProposedAction();
+    if (drop_preview_) {
+      drop_preview_->setVisible(true);
+    }
+  } else {
+    event->ignore();
+  }
+}
+
+void VisualizationArea::dragMoveEvent(QDragMoveEvent* event) {
+  if (!event->mimeData()->hasFormat(QString::fromLatin1(kVisualizerMime))) {
+    event->ignore();
+    return;
+  }
+  event->acceptProposedAction();
+  if (drop_preview_) {
+    // 预览占位左上角对齐鼠标（场景坐标）
+    drop_preview_->setPos(mapToScene(event->pos()));
+  }
+}
+
+void VisualizationArea::dragLeaveEvent(QDragLeaveEvent* event) {
+  if (drop_preview_) {
+    drop_preview_->setVisible(false);
+  }
+  event->accept();
+}
+
+void VisualizationArea::dropEvent(QDropEvent* event) {
+  if (drop_preview_) {
+    drop_preview_->setVisible(false);
+  }
+  if (!event->mimeData()->hasFormat(QString::fromLatin1(kVisualizerMime))) {
+    event->ignore();
+    return;
+  }
+  const QString displayMode = QString::fromUtf8(
+      event->mimeData()->data(QString::fromLatin1(kVisualizerMime)));
+  if (displayMode.isEmpty()) {
+    event->ignore();
+    return;
+  }
+  event->acceptProposedAction();
+  emit visualizerDropped(displayMode, mapToScene(event->pos()));
 }
 
 }  // namespace etest::visualizer

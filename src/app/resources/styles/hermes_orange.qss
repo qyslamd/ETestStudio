@@ -1911,36 +1911,18 @@ QToolButton#saverCloseBtn:pressed {
 }
 
 /* 两级标题：二级标题（连接描述）小字灰 */
-#WaveformSubtitle, #LEDSubtitle, #MeterSubtitle, #GaugeSubtitle, #ValueLabelSubtitle {
+#WaveformSubtitle, #LedSubtitle, #MeterSubtitle, #GaugeSubtitle, #ValueLabelSubtitle {
     font-size: 10px;
     color: #6D3212;
 }
+#WaveformSubtitle[state="warning"], #MeterSubtitle[state="warning"], #GaugeSubtitle[state="warning"], #ValueLabelSubtitle[state="warning"], #LedSubtitle[state="warning"] {
+  color: #C72523;
+}
+#WaveformSubtitle[state="deleted"], #MeterSubtitle[state="deleted"], #GaugeSubtitle[state="deleted"], #ValueLabelSubtitle[state="deleted"], #LedSubtitle[state="deleted"] {
+  color: #C72523;
+}
 
 /* 监听器配置对话框（MonitorConfigDialog） */
-#MonitorConfigSearch {
-    padding: 4px 6px;
-    border: 1px solid #FAC5A9;
-    border-radius: 3px;
-}
-#MonitorConfigList {
-    border: 1px solid #FAC5A9;
-    border-radius: 3px;
-    background-color: #FDE9DF;
-}
-#MonitorConfigRight {
-    border: 1px solid #FAC5A9;
-    border-radius: 3px;
-    background-color: #FEF3ED;
-}
-#MonitorConfigDelete {
-    padding: 4px 12px;
-}
-/* #MonitorTypeTile 样式由 gen_themes.py 注入（QGroupBox 悬浮标题 + accent 胶囊） */
-
-/* Visualizer 容器背景 */
-#ValueLabelWidget, #MeterWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
-    background-color: #FEF3ED;
-}
 
 /* LedIndicator（合并自 StateLEDWidget；圆灯由 QPainter 绘制，无需 QSS） */
 #LedTitle {
@@ -2563,3 +2545,7 @@ QGroupBox[selected="true"]::title {
     background-color: #B5531E;
 }
 /* ===== MonitorTypeTile QGroupBox 主题适配样式 END ===== */
+/* Visualizer 容器背景 */
+#ValueLabelWidget, #MeterWidget, #WaveformWidget, #GaugeWidget, #LedIndicator {
+    background-color: #FEF3ED;
+}

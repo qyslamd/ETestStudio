@@ -1,5 +1,7 @@
 #include "GaugeVisualizer.h"
 
+#include <QStyle>
+
 #include <QFont>
 #include <QPainter>
 #include <QPolygon>
@@ -463,4 +465,12 @@ QList<QString> GaugeVisualizer::displayedSignals() const {
   return {};
 }
 
+
+void GaugeVisualizer::setSubtitleState(const QString& state) {
+  subtitle_label_->setProperty("state", state);
+  subtitle_label_->style()->unpolish(subtitle_label_);
+  subtitle_label_->style()->polish(subtitle_label_);
+}
+
+QSize GaugeVisualizer::sizeHint() const { return QSize(120, 120); }
 }  // namespace etest::visualizer

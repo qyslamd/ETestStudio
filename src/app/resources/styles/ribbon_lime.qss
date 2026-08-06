@@ -128,9 +128,6 @@ SARibbonPanelOptionButton:hover {
   border: 0px;
 }
 
-
-
-
 /*SARibbonCategoryScrollButton*/
 
 SARibbonCategoryScrollButton {
@@ -149,7 +146,6 @@ SARibbonCategoryScrollButton[arrowType="4"] {
 SARibbonCategoryScrollButton:hover {
   background-color: #C8E6C8;/*{CategoryScrollButton.BKColor:hover}*/
 }
-
 
 /*SARibbonStackedWidget*/
 SARibbonStackedWidget {
@@ -202,7 +198,6 @@ SARibbonTabBar {
   background-color: transparent;
 }
 
-
 SARibbonTabBar::tab {
   color: #1B3A1B;/* {Tab.Color} */
   border: none;
@@ -231,7 +226,6 @@ SARibbonTabBar::tab:hover:!selected {
   border-bottom: 4px solid #B8DDB8;
   color: #1B3A1B;/* {Tab.Color:hover:!selected} */
 }
-
 
 /*SARibbonToolButton*/
 /* 
@@ -272,7 +266,6 @@ SARibbonToolButton:checked:hover {
   color: #1B3A1B;/* {ToolButton.Color:checked} */
   background-color: #C8E6C8;/* {ToolButton.BKColor:checked} */
 }
-
 
 SARibbonGalleryButton {
   border: 1px solid #E0F0E0;/*{GalleryButton.BorderColor}*/
@@ -342,7 +335,6 @@ SARibbonMenu::item:hover {
 SARibbonMenu::icon {
   margin-left: 1px;
 }
-
 
 /*Panel下QLineEdit的特化*/
 SARibbonPanel > QLineEdit {
@@ -432,7 +424,6 @@ SARibbonSystemToolButton#SAMaximizeWindowButton:hover {
 SARibbonSystemToolButton#SAMaximizeWindowButton:checked {
     background-image: url(:/SARibbon/image/resource/Titlebar_Normal.svg) center;
 }
-
 
 /*Close*/
 SARibbonSystemToolButton#SACloseWindowButton {

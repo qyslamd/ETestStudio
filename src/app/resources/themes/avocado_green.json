@@ -19,7 +19,8 @@
     "clockFaceBackground": "#EDEFE6",
     "clockHandColor": "#2A2015",
     "clockSecondaryColor": "#3E4528",
-    "clockAccentColor": "#8A9A5B"
+    "clockAccentColor": "#8A9A5B",
+    "warning": "#E0BD00"
   },
   "editorColors": {
     "editor/theme/paper": "#F5F6F1",

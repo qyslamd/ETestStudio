@@ -25,6 +25,10 @@ class VisualizerProxy : public QGraphicsProxyWidget {
   void setEditMode(bool edit);
   bool editMode() const { return edit_mode_; }
 
+  // 卡片关联的 monitor.id（VisualizationArea 以 id 为 items_ key，宿主反查用）
+  void setMonitorId(const QString& id) { monitor_id_ = id; }
+  QString monitorId() const { return monitor_id_; }
+
   // 实际 widget 矩形（scene 坐标，不含 resize 手柄外扩边距）
   QRectF visualRect() const;
 
@@ -62,6 +66,7 @@ class VisualizerProxy : public QGraphicsProxyWidget {
   void doResize(const QPointF& delta);
 
   bool edit_mode_ = true;
+  QString monitor_id_;        // 关联的 monitor.id（addVisualizer 内设置）
   bool drag_active_ = false;  // 拖动会话中（press 起 / release 止）
   bool moved_ = false;        // 本会话内发生过移动
   bool resized_ = false;      // 本会话内发生过 resize

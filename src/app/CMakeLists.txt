@@ -85,6 +85,10 @@ add_executable(${TARGET_NAME} WIN32
     widgets/ProblemsPanel.cpp
     widgets/ProgramChecklistWidget.h
     widgets/ProgramChecklistWidget.cpp
+    widgets/VisualizerPaletteWidget.h
+    widgets/VisualizerPaletteWidget.cpp
+    widgets/MonitorPropertyWidget.h
+    widgets/MonitorPropertyWidget.cpp
     TerminalPanel.h
     TerminalPanel.cpp
     dialogs/SettingsDialog.h
@@ -151,8 +155,6 @@ add_executable(${TARGET_NAME} WIN32
     utils/SignalSyncHelper.cpp
     dialogs/SignalSelectionDialog.h
     dialogs/SignalSelectionDialog.cpp
-    dialogs/MonitorConfigDialog.h
-    dialogs/MonitorConfigDialog.cpp
     resource.qrc
 )
 
