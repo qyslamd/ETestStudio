@@ -33,7 +33,7 @@ class RunConfigEditor : public QMainWindow, public IEditor {
 
  public:
   explicit RunConfigEditor(const QString& id, QWidget* parent = nullptr);
-  ~RunConfigEditor() override = default;
+  ~RunConfigEditor() override;
 
   // ── IEditor ──
   QString displayName() const override;

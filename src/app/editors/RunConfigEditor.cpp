@@ -55,6 +55,16 @@ RunConfigEditor::RunConfigEditor(const QString& id, QWidget* parent)
   initUi();
 }
 
+RunConfigEditor::~RunConfigEditor() {
+  // Qt 析构顺序：先删 children 后断开连接。toolbar（含排列/分布按钮）先于
+  // vis_area_ 析构，而 scene 清空（clearAll → removeItem）会触发
+  // selectionChanged；若连接仍活着，lambda 会访问已释放的按钮。此处显式断开。
+  if (vis_area_ && vis_area_->scene()) {
+    disconnect(vis_area_->scene(), &QGraphicsScene::selectionChanged, this,
+               nullptr);
+  }
+}
+
 // ── IEditor ──
 
 QString RunConfigEditor::displayName() const {
