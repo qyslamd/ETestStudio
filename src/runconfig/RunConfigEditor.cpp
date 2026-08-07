@@ -198,6 +198,10 @@ void RunConfigEditor::openFile(const QString& filePath) {
   file_path_ = filePath;
   loadFromFile(file_path_);
   refreshUi();
+  // 压基线快照：首次修改后 canUndo() 才能为 true（对齐 TestProgram/Protocol）
+  snapshots_.clear();
+  snapshot_index_ = -1;
+  saveSnapshot();
 }
 
 // ── 嵌入模式 / 主题图标 ──
