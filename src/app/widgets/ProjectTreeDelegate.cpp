@@ -63,13 +63,13 @@ void ProjectTreeDelegate::paint(QPainter* painter,
   QStyledItemDelegate::paint(painter, opt, index);
 
   if (is_latest) {
-    drawBadge(painter, option, tr("最新"), QColor(76, 175, 80));
+    drawBadge(painter, option, QStringLiteral("最新"), QColor(76, 175, 80));
   } else if (is_effective_topo) {
-    drawBadge(painter, option, tr("生效"), QColor(33, 150, 243));
+    drawBadge(painter, option, QStringLiteral("生效"), QColor(33, 150, 243));
   } else if (is_icd_config) {
-    drawBadge(painter, option, tr("协议"), QColor(255, 152, 0));
+    drawBadge(painter, option, QStringLiteral("协议"), QColor(255, 152, 0));
   } else if (is_mock_config) {
-    drawBadge(painter, option, tr("响应"), QColor(156, 39, 176));
+    drawBadge(painter, option, QStringLiteral("响应"), QColor(156, 39, 176));
   }
 }
 
@@ -116,20 +116,33 @@ bool ProjectTreeDelegate::editorEvent(QEvent* event, QAbstractItemModel* model,
         break;
       }
       RootButton btn = hitTestRootButton(option, me->pos());
+      if (btn == RootButton::None) {
+        break;
+      }
+      // 双击序列含两次 MouseButtonRelease，同一按钮在时间窗内只触发一次
+      if (btn == last_trigger_btn_ &&
+          me->timestamp() - last_trigger_ts_ <
+              QApplication::doubleClickInterval()) {
+        return true;
+      }
+      last_trigger_btn_ = btn;
+      last_trigger_ts_ = me->timestamp();
       if (btn == RootButton::Refresh) {
         emit refreshRequested();
       } else if (btn == RootButton::ShowAll) {
         show_all_ = !show_all_;
         emit showAllToggled(show_all_);
       } else if (btn == RootButton::SyncDoc) {
-        emit syncRequested();
+        sync_doc_enabled_ = !sync_doc_enabled_;
+        emit syncDocEnabledChanged(sync_doc_enabled_);
+        emit syncRequested();  // 立即定位当前编辑文件一次
       }
-      break;
+      // 命中按钮后消费事件，跳过基类对点击的进一步处理
+      return true;
     }
     default:
       break;
   }
-  // 参照 reference：始终 return 基类
   return QStyledItemDelegate::editorEvent(event, model, option, index);
 }
 
@@ -140,9 +153,9 @@ bool ProjectTreeDelegate::helpEvent(QHelpEvent* event,
   if (index.data(kNodeTypeRole).toString() == QStringLiteral("root")) {
     RootButton btn = hitTestRootButton(option, event->pos());
     if (btn != RootButton::None) {
-      QStringList tips = {tr("定位当前编辑文件"),   // SyncDoc=0
-                          tr("显示/隐藏其他文件"),   // ShowAll=1
-                          tr("刷新项目树")};         // Refresh=2
+      QStringList tips = {QStringLiteral("定位当前编辑文件"),  // SyncDoc=0
+                          QStringLiteral("显示/隐藏其他文件"),  // ShowAll=1
+                          QStringLiteral("刷新项目树")};        // Refresh=2
       QToolTip::showText(event->globalPos(),
                          tips[static_cast<int>(btn)]);
       return true;
@@ -196,7 +209,13 @@ void ProjectTreeDelegate::drawRootButtons(QPainter* painter,
   painter->save();
   painter->setRenderHint(QPainter::Antialiasing);
 
+  // 仅当鼠标悬停在根行时绘制 hover 高亮，避免移开后残留
+  bool item_hovered = (option.state & QStyle::State_MouseOver);
+
   auto isHovered = [&](RootButton btn) -> bool {
+    if (!item_hovered) {
+      return false;
+    }
     switch (btn) {
       case RootButton::Refresh:
         return index.data(kRefreshHoverRole).toBool();
@@ -215,6 +234,15 @@ void ProjectTreeDelegate::drawRootButtons(QPainter* painter,
     RootButton btn = buttons[i];
     QRect rect = rootButtonRect(option, btn);
 
+    bool checked = (btn == RootButton::SyncDoc && sync_doc_enabled_);
+    if (checked) {
+      // checked 常驻背景
+      painter->setPen(Qt::NoPen);
+      QColor bg = option.palette.color(QPalette::Highlight);
+      bg.setAlpha(70);
+      painter->setBrush(bg);
+      painter->drawRoundedRect(rect.adjusted(-2, -2, 2, 2), 4, 4);
+    }
     if (isHovered(btn)) {
       painter->setPen(Qt::NoPen);
       QColor bg = option.palette.color(QPalette::Highlight);
@@ -233,7 +261,9 @@ void ProjectTreeDelegate::drawRootButtons(QPainter* painter,
                               : QStringLiteral("eye_closed");
         break;
       case RootButton::SyncDoc:
-        icon_name = QStringLiteral("sync");
+        // checked（钉住自动跟随）用 pin，unchecked 用 unpin
+        icon_name = sync_doc_enabled_ ? QStringLiteral("pin")
+                                      : QStringLiteral("unpin");
         break;
       default:
         break;

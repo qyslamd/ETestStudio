@@ -3,6 +3,7 @@
 
 #include <QMap>
 #include <QObject>
+#include <QSet>
 #include <QString>
 
 #include "DockManager.h"
@@ -78,10 +79,17 @@ class EditorManager : public QObject {
   void updateDockTitle(IEditor* editor, ads::CDockWidget* dock);
 
  private:
+  // 连接 dock area 的 tab 切换信号（currentChanged），tab 点击/raise 时可靠触发。
+  // QADS 的 focusedDockWidgetChanged 依赖 FocusHighlighting 配置且 focusChanged
+  // 兜底在 tab 点击时因 parent 链无 CDockWidget 而失效，故显式补连。
+  void connectDockArea(ads::CDockAreaWidget* area);
+
   ads::CDockManager* dock_manager_;
   QMap<QString, ads::CDockWidget*> dock_widgets_;
   QMap<QString, IEditor*> editors_;
   QString current_file_path_;
+  // 已连接的 dock area，避免重复 connect
+  QSet<ads::CDockAreaWidget*> connected_areas_;
 
   // M5: ICD 上下文（供编辑器注入）
   etest::core::SignalRegistry* registry_ = nullptr;

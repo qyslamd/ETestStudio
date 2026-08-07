@@ -837,7 +837,7 @@ void MainWindow::initSignalsLate() {
         if (running_locked_)
           disableEditActions();
 
-        // 同步项目树：定位当前激活编辑器对应的文件节点
+        // 同步项目树：自动跟随开启时定位当前激活编辑器对应的文件节点
         if (hasEditor) {
           QString project_root = projectMgr.currentProjectRoot();
           if (!project_root.isEmpty()) {
@@ -845,10 +845,18 @@ void MainWindow::initSignalsLate() {
                 QDir(project_root).relativeFilePath(editor->filePath());
             auto* psw = qobject_cast<ProjectStructureWidget*>(
                 sidebar_->pageById(PageId::kProjectOverview));
-            if (psw) {
+            LOG_DEBUG("PROJECT_UI",
+                      "currentEditorChanged: 同步项目树 file={} syncDoc={} psw={}",
+                      rel_path.toStdString(),
+                      psw ? psw->isSyncDocEnabled() : false, psw ? 1 : 0);
+            if (psw && psw->isSyncDocEnabled()) {
               psw->locateFileByPath(rel_path);
             }
+          } else {
+            LOG_INFO("PROJECT_UI", "currentEditorChanged: 项目根为空，跳过同步");
           }
+        } else {
+          LOG_INFO("PROJECT_UI", "currentEditorChanged: 无活动编辑器");
         }
       });
 

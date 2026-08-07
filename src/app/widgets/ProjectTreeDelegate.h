@@ -26,10 +26,14 @@ class ProjectTreeDelegate : public QStyledItemDelegate {
   void refreshRequested();
   void showAllToggled(bool showAll);
   void syncRequested();
+  // SyncDoc 自动跟随开关变化（checked = 编辑器切换时自动定位）
+  void syncDocEnabledChanged(bool enabled);
 
  public:
   bool isShowAll() const { return show_all_; }
   void resetShowAll(bool showAll) { show_all_ = showAll; }
+  bool isSyncDocEnabled() const { return sync_doc_enabled_; }
+  void setSyncDocEnabled(bool enabled) { sync_doc_enabled_ = enabled; }
 
  private:
   void drawBadge(QPainter* painter, const QStyleOptionViewItem& option,
@@ -50,6 +54,10 @@ class ProjectTreeDelegate : public QStyledItemDelegate {
   static constexpr int kSyncDocHoverRole = Qt::UserRole + 12;
 
   bool show_all_ = true;
+  bool sync_doc_enabled_ = false;
+  // 防双击：记录上次触发的按钮及时间戳，仅同一按钮在时间窗内被抑制
+  RootButton last_trigger_btn_ = RootButton::None;
+  qint64 last_trigger_ts_ = 0;
 };
 
 }  // namespace etest::app

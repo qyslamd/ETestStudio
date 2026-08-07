@@ -65,6 +65,27 @@ EditorManager::EditorManager(ads::CDockManager* dockManager, QObject* parent)
               w = w->parentWidget();
             }
           });
+
+  // 关键补充：QADS 的 tab 点击切换活动编辑器时，焦点落在 CDockWidgetTab 上，
+  // 其 parent 链（DockAreaTabBar->DockAreaTitleBar->DockAreaWidget）中没有
+  // CDockWidget，focusedDockWidgetChanged 也依赖 FocusHighlighting 配置，因此
+  // 上面的两条链路在 tab 点击时都收不到。CDockAreaWidget::currentChanged 才是
+  // tab 点击/raise 时可靠触发的信号，这里统一监听所有 dock area。
+  connect(dock_manager_, &ads::CDockManager::dockAreaCreated, this,
+          [this](ads::CDockAreaWidget* area) { connectDockArea(area); });
+  const auto docks = dock_manager_->dockWidgetsMap();
+  for (auto it = docks.constBegin(); it != docks.constEnd(); ++it) {
+    connectDockArea(it.value()->dockAreaWidget());
+  }
+}
+
+void EditorManager::connectDockArea(ads::CDockAreaWidget* area) {
+  if (!area || connected_areas_.contains(area))
+    return;
+  connected_areas_.insert(area);
+  connect(area, &ads::CDockAreaWidget::currentChanged, this, [this, area](int) {
+    onDockWidgetActivated(area->currentDockWidget());
+  });
 }
 
 void EditorManager::registerEditorTypes() {
@@ -782,8 +803,10 @@ void EditorManager::updateEditorId(IEditor* editor, const QString& newId) {
 }
 
 void EditorManager::onDockWidgetActivated(ads::CDockWidget* dock) {
-  if (!dock)
+  if (!dock) {
+    LOG_DEBUG("EDITOR", "onDockWidgetActivated: dock为空");
     return;
+  }
 
   QString editorId;
   for (auto it = dock_widgets_.constBegin(); it != dock_widgets_.constEnd();
@@ -794,9 +817,21 @@ void EditorManager::onDockWidgetActivated(ads::CDockWidget* dock) {
     }
   }
 
-  if (editorId.isEmpty() || editorId == current_file_path_)
+  if (editorId.isEmpty()) {
+    LOG_DEBUG("EDITOR",
+              "onDockWidgetActivated: 未在dock_widgets_中匹配到编辑器 dock={}",
+              dock->objectName().toStdString());
     return;
+  }
+  if (editorId == current_file_path_) {
+    LOG_DEBUG("EDITOR", "onDockWidgetActivated: 已是当前文件，跳过 id={}",
+              QFileInfo(editorId).fileName().toStdString());
+    return;
+  }
 
+  LOG_DEBUG("EDITOR", "onDockWidgetActivated: 活动编辑器切换 {} -> {}",
+            QFileInfo(current_file_path_).fileName().toStdString(),
+            QFileInfo(editorId).fileName().toStdString());
   current_file_path_ = editorId;
   auto* editor = editors_.value(editorId, nullptr);
   emit currentEditorChanged(editor);

@@ -94,6 +94,8 @@ class ProjectStructureWidget : public QWidget {
 
   // 根节点同步请求 — 由 delegate 同步按钮触发
   void syncCurrentEditorRequested();
+  // 根节点自动跟随开关变化（delegate 转发）
+  void syncDocEnabledChanged(bool enabled);
 
   public:
   void refreshRecentProjects();
@@ -110,6 +112,8 @@ class ProjectStructureWidget : public QWidget {
   bool locateFileByPath(const QString& relativePath);
   /// 清除树选中状态
   void clearTreeSelection();
+  /// 自动跟随开关是否开启（编辑器切换时自动定位当前文件）
+  bool isSyncDocEnabled() const;
 
  private slots:
   void onCustomContextMenu(const QPoint& pos);

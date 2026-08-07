@@ -341,8 +341,7 @@ void ProjectStructureWidget::initSignals() {
             }
             for (int i = 0; i < root_item_->rowCount(); ++i) {
               auto* child = root_item_->child(i);
-              if (child &&
-                  child->data(CategoryIdRole).toString() == "other") {
+              if (child && child->data(CategoryIdRole).toString() == "other") {
                 tree_view_->setRowHidden(i, root_item_->index(), !showAll);
                 break;
               }
@@ -352,6 +351,8 @@ void ProjectStructureWidget::initSignals() {
     LOG_INFO("PROJECT_UI", "点击根节点「同步文档」按钮");
     emit syncCurrentEditorRequested();
   });
+  connect(tree_delegate_, &ProjectTreeDelegate::syncDocEnabledChanged, this,
+          &ProjectStructureWidget::syncDocEnabledChanged);
 
   // ── 已打开文件列表 ──
   connect(open_files_view_, &QListView::clicked, this,
@@ -392,45 +393,41 @@ void ProjectStructureWidget::initSignals() {
               if (!path.isEmpty())
                 emit projectOpenRequested(path);
             });
-    connect(recent_projects_view_, &QListView::customContextMenuRequested, this,
-            [this](const QPoint& pos) {
-              QModelIndex index = recent_projects_view_->indexAt(pos);
-              if (!index.isValid())
-                return;
-              QString path = index.data(FilePathRole).toString();
-              if (path.isEmpty())
-                return;
+    connect(
+        recent_projects_view_, &QListView::customContextMenuRequested, this,
+        [this](const QPoint& pos) {
+          QModelIndex index = recent_projects_view_->indexAt(pos);
+          if (!index.isValid())
+            return;
+          QString path = index.data(FilePathRole).toString();
+          if (path.isEmpty())
+            return;
 
-              QMenu menu(recent_projects_view_);
-              menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
-              auto* openAction = menu.addAction(QStringLiteral("打开"));
-              auto* copyPathAction =
-                  menu.addAction(QStringLiteral("复制路径"));
-              auto* openDirAction =
-                  menu.addAction(QStringLiteral("打开所在目录"));
-              menu.addSeparator();
-              auto* removeAction =
-                  menu.addAction(QStringLiteral("从列表中移除"));
-              QAction* chosen = menu.exec(
-                  recent_projects_view_->viewport()->mapToGlobal(pos));
-              if (chosen == openAction) {
-                emit projectOpenRequested(path);
-              } else if (chosen == copyPathAction) {
-                QApplication::clipboard()->setText(path);
-              } else if (chosen == openDirAction) {
-                QDesktopServices::openUrl(QUrl::fromLocalFile(
-                    QFileInfo(path).absolutePath()));
-              } else if (chosen == removeAction) {
-                auto& cfg =
-                    etest::core::config::ConfigManager::instance();
-                QStringList list = cfg.get<QStringList>(
-                    etest::core::config::CONFIG_RECENT_PROJECT_LIST);
-                list.removeAll(path);
-                cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST,
-                        list);
-                refreshRecentProjects();
-              }
-            });
+          QMenu menu(recent_projects_view_);
+          menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+          auto* openAction = menu.addAction(QStringLiteral("打开"));
+          auto* copyPathAction = menu.addAction(QStringLiteral("复制路径"));
+          auto* openDirAction = menu.addAction(QStringLiteral("打开所在目录"));
+          menu.addSeparator();
+          auto* removeAction = menu.addAction(QStringLiteral("从列表中移除"));
+          QAction* chosen =
+              menu.exec(recent_projects_view_->viewport()->mapToGlobal(pos));
+          if (chosen == openAction) {
+            emit projectOpenRequested(path);
+          } else if (chosen == copyPathAction) {
+            QApplication::clipboard()->setText(path);
+          } else if (chosen == openDirAction) {
+            QDesktopServices::openUrl(
+                QUrl::fromLocalFile(QFileInfo(path).absolutePath()));
+          } else if (chosen == removeAction) {
+            auto& cfg = etest::core::config::ConfigManager::instance();
+            QStringList list = cfg.get<QStringList>(
+                etest::core::config::CONFIG_RECENT_PROJECT_LIST);
+            list.removeAll(path);
+            cfg.set(etest::core::config::CONFIG_RECENT_PROJECT_LIST, list);
+            refreshRecentProjects();
+          }
+        });
   }
 
   // ── 最近文件列表 ──
@@ -443,45 +440,41 @@ void ProjectStructureWidget::initSignals() {
               if (!path.isEmpty())
                 emit recentFileOpenRequested(path);
             });
-    connect(recent_files_view_, &QListView::customContextMenuRequested, this,
-            [this](const QPoint& pos) {
-              QModelIndex index = recent_files_view_->indexAt(pos);
-              if (!index.isValid())
-                return;
-              QString path = index.data(FilePathRole).toString();
-              if (path.isEmpty())
-                return;
+    connect(
+        recent_files_view_, &QListView::customContextMenuRequested, this,
+        [this](const QPoint& pos) {
+          QModelIndex index = recent_files_view_->indexAt(pos);
+          if (!index.isValid())
+            return;
+          QString path = index.data(FilePathRole).toString();
+          if (path.isEmpty())
+            return;
 
-              QMenu menu(recent_files_view_);
-              menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
-              auto* openAction = menu.addAction(QStringLiteral("打开"));
-              auto* copyPathAction =
-                  menu.addAction(QStringLiteral("复制路径"));
-              auto* openDirAction =
-                  menu.addAction(QStringLiteral("打开所在目录"));
-              menu.addSeparator();
-              auto* removeAction =
-                  menu.addAction(QStringLiteral("从列表中移除"));
-              QAction* chosen = menu.exec(
-                  recent_files_view_->viewport()->mapToGlobal(pos));
-              if (chosen == openAction) {
-                emit recentFileOpenRequested(path);
-              } else if (chosen == copyPathAction) {
-                QApplication::clipboard()->setText(path);
-              } else if (chosen == openDirAction) {
-                QDesktopServices::openUrl(QUrl::fromLocalFile(
-                    QFileInfo(path).absolutePath()));
-              } else if (chosen == removeAction) {
-                auto& cfg =
-                    etest::core::config::ConfigManager::instance();
-                QStringList list = cfg.get<QStringList>(
-                    etest::core::config::CONFIG_RECENT_FILE_LIST);
-                list.removeAll(path);
-                cfg.set(etest::core::config::CONFIG_RECENT_FILE_LIST,
-                        list);
-                refreshRecentFiles();
-              }
-            });
+          QMenu menu(recent_files_view_);
+          menu.setObjectName(QStringLiteral("PhRecentContextMenu"));
+          auto* openAction = menu.addAction(QStringLiteral("打开"));
+          auto* copyPathAction = menu.addAction(QStringLiteral("复制路径"));
+          auto* openDirAction = menu.addAction(QStringLiteral("打开所在目录"));
+          menu.addSeparator();
+          auto* removeAction = menu.addAction(QStringLiteral("从列表中移除"));
+          QAction* chosen =
+              menu.exec(recent_files_view_->viewport()->mapToGlobal(pos));
+          if (chosen == openAction) {
+            emit recentFileOpenRequested(path);
+          } else if (chosen == copyPathAction) {
+            QApplication::clipboard()->setText(path);
+          } else if (chosen == openDirAction) {
+            QDesktopServices::openUrl(
+                QUrl::fromLocalFile(QFileInfo(path).absolutePath()));
+          } else if (chosen == removeAction) {
+            auto& cfg = etest::core::config::ConfigManager::instance();
+            QStringList list = cfg.get<QStringList>(
+                etest::core::config::CONFIG_RECENT_FILE_LIST);
+            list.removeAll(path);
+            cfg.set(etest::core::config::CONFIG_RECENT_FILE_LIST, list);
+            refreshRecentFiles();
+          }
+        });
   }
 
   // 最近项目/文件变更时刷新
@@ -527,6 +520,10 @@ void ProjectStructureWidget::clearProjectPath() {
 
   model_->clear();
   root_item_ = nullptr;
+
+  // 项目关闭后重置显示全部状态，避免新项目树与按钮图标不一致
+  tree_delegate_->resetShowAll(true);
+  // 注意：SyncDoc 自动跟随状态有意跨项目保留（用户偏好），不做重置
 
   clearOpenFiles();
 
@@ -1800,15 +1797,18 @@ bool ProjectStructureWidget::locateFile(const QString& fileName) {
   return false;
 }
 
-bool ProjectStructureWidget::locateFileByPath(
-    const QString& relativePath) {
+bool ProjectStructureWidget::locateFileByPath(const QString& relativePath) {
   if (!root_item_ || project_path_.isEmpty()) {
+    LOG_DEBUG("PROJECT_UI", "locateFileByPath: 项目树未就绪 root={} proj={}",
+              root_item_ ? 1 : 0, project_path_.toStdString());
     return false;
   }
   QModelIndex start_index = model_->index(0, 0);
   QModelIndexList matches =
       model_->match(start_index, RelativePathRole, relativePath, -1,
                     Qt::MatchExactly | Qt::MatchRecursive);
+  LOG_DEBUG("PROJECT_UI", "locateFileByPath: 查找 rel={} 命中数={}",
+            relativePath.toStdString(), matches.size());
   for (const auto& idx : matches) {
     if (idx.data(NodeTypeRole).toString() == QStringLiteral("file")) {
       tree_view_->expand(idx.parent());
@@ -1822,6 +1822,10 @@ bool ProjectStructureWidget::locateFileByPath(
 
 void ProjectStructureWidget::clearTreeSelection() {
   tree_view_->clearSelection();
+}
+
+bool ProjectStructureWidget::isSyncDocEnabled() const {
+  return tree_delegate_->isSyncDocEnabled();
 }
 
 }  // namespace etest::app
