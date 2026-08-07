@@ -232,6 +232,7 @@ void ProjectStructureWidget::initUi() {
   tree_view_->setSelectionMode(QAbstractItemView::SingleSelection);
   tree_view_->setIndentation(16);
   tree_view_->setIconSize(QSize(16, 16));
+  tree_view_->setMouseTracking(true);
 
   tree_delegate_ = new ProjectTreeDelegate(this);
   tree_view_->setItemDelegate(tree_delegate_);
@@ -321,6 +322,36 @@ void ProjectStructureWidget::initSignals() {
           &ProjectStructureWidget::onItemDoubleClicked);
   connect(model_, &QStandardItemModel::itemChanged, this,
           &ProjectStructureWidget::onItemChanged);
+
+  // ── 根节点操作按钮（delegate 信号）──
+  connect(tree_delegate_, &ProjectTreeDelegate::refreshRequested, this,
+          [this]() {
+            LOG_INFO("PROJECT_UI", "点击根节点「刷新」按钮");
+            model_->clear();
+            root_item_ = nullptr;
+            tree_delegate_->resetShowAll(true);
+            buildTree();
+          });
+  connect(tree_delegate_, &ProjectTreeDelegate::showAllToggled, this,
+          [this](bool showAll) {
+            LOG_INFO("PROJECT_UI", "点击根节点「显示全部」按钮 showAll={}",
+                     showAll);
+            if (!root_item_) {
+              return;
+            }
+            for (int i = 0; i < root_item_->rowCount(); ++i) {
+              auto* child = root_item_->child(i);
+              if (child &&
+                  child->data(CategoryIdRole).toString() == "other") {
+                tree_view_->setRowHidden(i, root_item_->index(), !showAll);
+                break;
+              }
+            }
+          });
+  connect(tree_delegate_, &ProjectTreeDelegate::syncRequested, this, [this]() {
+    LOG_INFO("PROJECT_UI", "点击根节点「同步文档」按钮");
+    emit syncCurrentEditorRequested();
+  });
 
   // ── 已打开文件列表 ──
   connect(open_files_view_, &QListView::clicked, this,
@@ -1757,6 +1788,26 @@ bool ProjectStructureWidget::locateFile(const QString& fileName) {
   QModelIndex startIndex = model_->index(0, 0);
   QModelIndexList matches =
       model_->match(startIndex, Qt::DisplayRole, fileName, -1,
+                    Qt::MatchExactly | Qt::MatchRecursive);
+  for (const auto& idx : matches) {
+    if (idx.data(NodeTypeRole).toString() == QStringLiteral("file")) {
+      tree_view_->expand(idx.parent());
+      tree_view_->setCurrentIndex(idx);
+      tree_view_->scrollTo(idx, QAbstractItemView::EnsureVisible);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ProjectStructureWidget::locateFileByPath(
+    const QString& relativePath) {
+  if (!root_item_ || project_path_.isEmpty()) {
+    return false;
+  }
+  QModelIndex start_index = model_->index(0, 0);
+  QModelIndexList matches =
+      model_->match(start_index, RelativePathRole, relativePath, -1,
                     Qt::MatchExactly | Qt::MatchRecursive);
   for (const auto& idx : matches) {
     if (idx.data(NodeTypeRole).toString() == QStringLiteral("file")) {

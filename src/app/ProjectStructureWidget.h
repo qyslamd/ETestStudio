@@ -1,5 +1,4 @@
-#ifndef ETEST_APP_PROJECT_STRUCTURE_WIDGET_H_
-#define ETEST_APP_PROJECT_STRUCTURE_WIDGET_H_
+#pragma once
 
 #include <QMap>
 #include <QSet>
@@ -93,6 +92,9 @@ class ProjectStructureWidget : public QWidget {
   void hardwareDeviceNavigateRequested(const QString& deviceType,
                                        const QString& pluginId);
 
+  // 根节点同步请求 — 由 delegate 同步按钮触发
+  void syncCurrentEditorRequested();
+
   public:
   void refreshRecentProjects();
   void refreshRecentFiles();
@@ -104,6 +106,8 @@ class ProjectStructureWidget : public QWidget {
   QStringList allFileNames() const;
   /// 按文件名精确定位项目树节点（选中 + 展开 + 滚动）
   bool locateFile(const QString& fileName);
+  /// 按相对路径精确定位项目树节点（避免同名文件误中）
+  bool locateFileByPath(const QString& relativePath);
   /// 清除树选中状态
   void clearTreeSelection();
 
@@ -194,5 +198,3 @@ class ProjectStructureWidget : public QWidget {
 };
 
 }  // namespace etest::app
-
-#endif  // ETEST_APP_PROJECT_STRUCTURE_WIDGET_H_

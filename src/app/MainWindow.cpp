@@ -587,6 +587,25 @@ void MainWindow::initSignalsLate() {
     // 右键关闭已打开文件
     connect(psWidget, &ProjectStructureWidget::openFileCloseRequested, this,
             [this](const QString& path) { editor_manager_->closeFile(path); });
+    // 根节点同步按钮 → 定位当前激活编辑器文件
+    connect(psWidget, &ProjectStructureWidget::syncCurrentEditorRequested, this,
+            [this, &projectMgr]() {
+              QString file_path = editor_manager_->currentFilePath();
+              if (file_path.isEmpty()) {
+                return;
+              }
+              auto* psw = qobject_cast<ProjectStructureWidget*>(
+                  sidebar_->pageById(PageId::kProjectOverview));
+              if (!psw) {
+                return;
+              }
+              QString project_root = projectMgr.currentProjectRoot();
+              if (project_root.isEmpty()) {
+                return;
+              }
+              QString rel_path = QDir(project_root).relativeFilePath(file_path);
+              psw->locateFileByPath(rel_path);
+            });
     // 点击最近文件 → 项目检测 + 打开
     connect(
         psWidget, &ProjectStructureWidget::recentFileOpenRequested, this,
@@ -751,7 +770,7 @@ void MainWindow::initSignalsLate() {
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
   connect(
       editor_manager_, &EditorManager::currentEditorChanged, this,
-      [this](IEditor* editor) {
+      [this, &projectMgr](IEditor* editor) {
         bool hasEditor = (editor != nullptr);
         bool hasSelection = false;
 
@@ -817,6 +836,20 @@ void MainWindow::initSignalsLate() {
         edit_go_to_line_action_->setEnabled(hasEditor);
         if (running_locked_)
           disableEditActions();
+
+        // 同步项目树：定位当前激活编辑器对应的文件节点
+        if (hasEditor) {
+          QString project_root = projectMgr.currentProjectRoot();
+          if (!project_root.isEmpty()) {
+            QString rel_path =
+                QDir(project_root).relativeFilePath(editor->filePath());
+            auto* psw = qobject_cast<ProjectStructureWidget*>(
+                sidebar_->pageById(PageId::kProjectOverview));
+            if (psw) {
+              psw->locateFileByPath(rel_path);
+            }
+          }
+        }
       });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
