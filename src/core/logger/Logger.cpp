@@ -137,6 +137,23 @@ void Logger::init() {
   spdlog::flush_every(std::chrono::seconds(1));
 
   s_initialized = true;
+
+  // 预注册常用模块 logger。懒创建在项目打开/高峰期首次实例化时偶发不稳定
+  // （logger 静默丢弃全部输出），提前在单线程初始化阶段一次建好可消除该问题。
+  static const char* kPreRegisterModules[] = {
+      "BACKUP", "CODEC", "CRASH", "EDITOR", "ENABLE", "ENGINE",
+      "EXCEPTION", "GIT", "HARDWARE", "LAZY", "LOGGER", "MAIN",
+      "MAIN_UI", "MOCK_AD", "MOCK_CAN", "MOCK_CFG", "MOCK_DA",
+      "MOCK_SERIAL", "MONITOR", "PAGE", "PLUGIN", "PROJECT",
+      "PROJECT_UI", "RUNCONFIG", "SEARCH", "SIGNAL", "TESTPROG_UI",
+      "TIME", "TOPOLOGY_UI", "TP", "UUID", "VISUAL", "WAVEFORM"};
+  {
+    QMutexLocker locker(&s_mutex);
+    for (const char* name : kPreRegisterModules) {
+      getOrCreateModuleLogger(name);
+    }
+  }
+
   LOG_INFO("LOGGER", "日志系统初始化完成，当前日志级别: {}",
            ConfigManager::instance().get<int>(CONFIG_LOG_LEVEL));
 }
