@@ -131,7 +131,8 @@ etest (主程序)
 9. 使用spdlog编写日志的时候，**尽可能**使用我封装好的Logger类及其宏定义
 10. 禁止使用`powershell`编写脚本，使用 `pwsh` 语法来编写脚本，若`pwsh`脚本不行，请使用 `python`脚本。
 11. 改动完成代码，编译无误之后，**禁止**直接提交代码！除非是使用git worktree方式。
-12. git提交规则：
+12. 严禁中代码中使用QObject::tr("")或者在QObject的派生类中使用 tr("")中文。
+13. git提交规则：
    - 能使用中文的描述必须使用中文
    - 当你生成 git commit 信息时：
    - 使用 Co-Authored-By 信息（如果需要）：Co-Authored-By: claude code 助手 <zhouyohu@163.com>
