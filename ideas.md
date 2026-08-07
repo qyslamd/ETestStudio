@@ -260,6 +260,30 @@ UI 响应、文件操作均有明显差距，实际逻辑相同。
 4. 这个差异不影响逻辑正确性，只影响交互体验--适合在需要高频 UI 调试（布局、动画
    调参）时临时切到 Linux 环境
 
+### QADS tab 切换的可靠信号：CDockAreaWidget::currentChanged
+
+**现象**：点击 dock 的 tab 切换活动编辑器时，`focusedDockWidgetChanged` 和
+`focusChanged`（上溯 parent 链找 CDockWidget）都收不到，依赖 tab 切换的功能
+（如「定位当前文件」）完全失效。
+
+**原因**：
+- QADS 的 `CDockManager::focusedDockWidgetChanged` 依赖 `FocusHighlighting`
+  配置，未开启时不触发
+- 点击 tab 时焦点落在 `CDockWidgetTab` 上，其 parent 链
+  （`DockAreaTabBar -> DockAreaTitleBar -> CDockAreaWidget`）中没有
+  `CDockWidget`，基于 parent 链上溯的方案必然失效
+
+**教训**：检测 dock 内 tab 切换，用 `CDockAreaWidget::currentChanged(int)`
+（tab 点击和 `dock->raise()` 都会触发），不要依赖 `focusedDockWidgetChanged`
+或 focus 事件。
+
+**修复方案**：
+- 监听 `CDockManager::dockAreaCreated` 连接每个新建 area 的 `currentChanged`，
+  同时遍历 `dockWidgetsMap()` 补连构造前已存在的 area
+- 用 `QSet<ads::CDockAreaWidget*>` 去重，避免两条路径重复 connect 导致回调触发两次
+- 回调里用 `area->currentDockWidget()` 拿当前 dock 再匹配编辑器，匹配到且非当前
+  文件时更新 `current_file_path_` 并 `emit currentEditorChanged`
+
 ---
 
 ## 五、开发模型选型参考
