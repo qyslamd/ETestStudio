@@ -129,8 +129,10 @@ add_executable(${TARGET_NAME} WIN32
     widgets/ProjectTreeDelegate.cpp
     dialogs/AnimationDialog.h
     dialogs/AnimationDialog.cpp
-    dialogs/NewProjectDialog.h
-    dialogs/NewProjectDialog.cpp
+    dialogs/BaseWizardDialog.h
+    dialogs/BaseWizardDialog.cpp
+    dialogs/NewProjectWizard.h
+    dialogs/NewProjectWizard.cpp
     dialogs/AboutDialog.h
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h
@@ -139,8 +141,10 @@ add_executable(${TARGET_NAME} WIN32
     dialogs/UserManagerDialog.cpp
     utils/window_mover.h
     utils/window_mover.cpp
-    utils/eph_qt_switch_button.h
-    utils/eph_qt_switch_button.cpp
+    utils/switch_button.h
+    utils/switch_button.cpp
+    utils/WizardStepBar.h
+    utils/WizardStepBar.cpp
     utils/SignalSyncHelper.h
     utils/SignalSyncHelper.cpp
     dialogs/SignalSelectionDialog.h

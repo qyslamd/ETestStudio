@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新建测试程序向导 · ETest Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* ============================================================
+           CSS Variables — Fluent Design 色彩系统
+           ============================================================ */
+        :root {
+            --bg-canvas: #f0f2f5;
+            --bg-card: rgba(255, 255, 255, 0.72);
+            --bg-card-hover: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.48);
+            --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.18);
+            --text-primary: #1a1a1a;
+            --text-secondary: #5a5a6e;
+            --text-muted: #8c8ca8;
+            --accent: #0078d4;
+            --accent-light: #e6f1fc;
+            --accent-hover: #106ebe;
+            --danger: #d13438;
+            --success: #107c10;
+            --warning: #b8860b;
+            --radius-card: 20px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.2, 0, 0, 1);
+            --font: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-canvas: #1a1a24;
+                --bg-card: rgba(32, 32, 44, 0.78);
+                --bg-card-hover: rgba(42, 42, 58, 0.92);
+                --glass-border: rgba(255, 255, 255, 0.08);
+                --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.6);
+                --text-primary: #e8e8f0;
+                --text-secondary: #a8a8c0;
+                --text-muted: #6a6a84;
+                --accent: #4aa8ff;
+                --accent-light: rgba(74, 168, 255, 0.12);
+                --accent-hover: #6abaff;
+            }
+        }
+
+        /* ============================================================
+           Reset & Base
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-canvas);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: 0;
+            transition: background var(--transition);
+        }
+
+        /* ============================================================
+           Wizard Container
+           ============================================================ */
+        .wizard {
+            max-width: 960px;
+            width: 100%;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-radius: var(--radius-card);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 32px 36px 28px;
+            transition: background var(--transition), border-color var(--transition);
+        }
+
+        /* ============================================================
+           Header
+           ============================================================ */
+        .wizard-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .wizard-header .icon {
+            width: 44px;
+            height: 44px;
+            background: var(--accent-light);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 22px;
+            flex-shrink: 0;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .wizard-header .title-group h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            margin: 0 0 2px;
+        }
+
+        .wizard-header .title-group p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* ============================================================
+           Steps Indicator
+           ============================================================ */
+        .steps-indicator {
+            display: flex;
+            gap: 0;
+            margin-bottom: 32px;
+            padding: 0 4px;
+            position: relative;
+        }
+
+        .steps-indicator .step {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: default;
+            position: relative;
+            padding: 6px 0;
+            transition: color var(--transition);
+        }
+
+        .steps-indicator .step::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: #d0d0dd;
+            margin-left: 12px;
+            transition: background var(--transition);
+        }
+        .steps-indicator .step:last-child::after {
+            display: none;
+        }
+
+        .steps-indicator .step .circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            background: #e8e8f0;
+            color: #6a6a84;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+
+        .steps-indicator .step.active {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.active .circle {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.28);
+        }
+        .steps-indicator .step.active::after {
+            background: var(--accent);
+        }
+
+        .steps-indicator .step.completed {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.completed .circle {
+            background: var(--success);
+            color: #fff;
+        }
+        .steps-indicator .step.completed::after {
+            background: var(--success);
+        }
+
+        /* ============================================================
+           Panels Container
+           ============================================================ */
+        .panels {
+            position: relative;
+            min-height: 380px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeSlide 0.3s ease forwards;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================================
+           Panel 1 — 模板选择
+           ============================================================ */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .template-card {
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 18px 16px 16px;
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .template-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .template-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.08);
+        }
+
+        .template-card .icon-big {
+            font-size: 28px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .template-card h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+        }
+
+        .template-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .template-card .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+
+        /* ============================================================
+           Panel 2 — 程序信息
+           ============================================================ */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .form-group .hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-left: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: var(--font);
+            background: rgba(255, 255, 255, 0.6);
+            border: 1.5px solid #d0d0dd;
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            transition: all var(--transition);
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.12);
+            background: #fff;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 56px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        /* ============================================================
+           Panel 3 — 用例与步骤定义
+           ============================================================ */
+        .case-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+        }
+
+        .case-tab {
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: var(--font);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .case-tab:hover {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .case-tab.active {
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .case-tab .close-tab {
+            margin-left: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        .case-tab .close-tab:hover {
+            color: var(--danger);
+        }
+
+        .case-tab .add-tab {
+            color: var(--accent);
+            font-weight: 400;
+        }
+
+        .step-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .step-toolbar .info-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .step-toolbar .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 5px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .btn-sm:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-sm-danger {
+            background: rgba(209, 52, 56, 0.10);
+            color: var(--danger);
+        }
+
+        .btn-sm-danger:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-sm-success {
+            background: rgba(16, 124, 16, 0.10);
+            color: var(--success);
+        }
+
+        .btn-sm-success:hover {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .step-table-wrap {
+            border-radius: var(--radius-sm);
+            overflow: auto;
+            border: 1px solid var(--glass-border);
+            max-height: 300px;
+        }
+
+        .step-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .step-table th {
+            background: rgba(0, 0, 0, 0.03);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .step-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        .step-table tr:hover td {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .step-table .step-cmd {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 11px;
+            letter-spacing: 0.02em;
+        }
+
+        .step-cmd-set { background: #d4edda; color: #155724; }
+        .step-cmd-check { background: #cce5ff; color: #004085; }
+        .step-cmd-verify { background: #fff3cd; color: #856404; }
+        .step-cmd-wait { background: #f8d7da; color: #721c24; }
+        .step-cmd-delay { background: #e2e3e5; color: #383d41; }
+        .step-cmd-loop { background: #d1ecf1; color: #0c5460; }
+        .step-cmd-while { background: #d6d8db; color: #1b1e21; }
+        .step-cmd-if { background: #f5c6cb; color: #721c24; }
+
+        .step-table .sub-step-row td {
+            padding-left: 40px;
+            background: rgba(0, 0, 0, 0.02);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .step-table .sub-step-row .step-cmd {
+            font-size: 10px;
+        }
+
+        .step-table .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all var(--transition);
+        }
+
+        .step-table .btn-icon:hover {
+            background: rgba(0, 0, 0, 0.06);
+            color: var(--text-primary);
+        }
+
+        .step-table .btn-icon.danger:hover {
+            background: rgba(209, 52, 56, 0.12);
+            color: var(--danger);
+        }
+
+        .step-table .sub-indicator {
+            display: inline-block;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            padding: 0 8px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+
+        .empty-steps {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* ============================================================
+           Panel 4 — 摘要
+           ============================================================ */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 32px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-sm);
+            padding: 20px 24px;
+            margin-top: 4px;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-item .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .summary-item .value {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        .summary-item .value .tag {
+            display: inline-block;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 0 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+        }
+
+        .summary-item .value .cmd-tag {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin: 1px 3px 1px 0;
+        }
+
+        /* ============================================================
+           Modal — 添加步骤
+           ============================================================ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-radius: var(--radius-card);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 28px 32px 24px;
+            max-width: 520px;
+            width: 100%;
+            animation: fadeSlide 0.25s ease forwards;
+        }
+
+        .modal-box h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .modal-box .sub {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 18px;
+        }
+
+        .modal-box .form-group {
+            margin-bottom: 14px;
+        }
+
+        .modal-box .form-row {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .modal-box .btn-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .modal-box .btn-row .btn {
+            padding: 8px 24px;
+        }
+
+        /* ============================================================
+           Footer
+           ============================================================ */
+        .wizard-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            padding-top: 20px;
+        }
+
+        .wizard-footer .left {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 22px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 6px 20px rgba(0, 120, 212, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(16, 124, 16, 0.2);
+        }
+
+        .btn-success:hover {
+            background: #0a6e0a;
+            box-shadow: 0 6px 20px rgba(16, 124, 16, 0.28);
+            transform: translateY(-1px);
+        }
+
+        /* ============================================================
+           Responsive
+           ============================================================ */
+        @media (max-width: 820px) {
+            .wizard {
+                padding: 20px 18px;
+            }
+            .template-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-box {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+            .steps-indicator .step .label {
+                display: none;
+            }
+            .step-table-wrap {
+                max-height: 200px;
+            }
+            .wizard-footer {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .modal-box .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wizard" role="dialog" aria-labelledby="wizard-title">
+        <!-- ===== Header ===== -->
+        <div class="wizard-header">
+            <div class="icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="title-group">
+                <h2 id="wizard-title">新建测试程序</h2>
+                <p>定义测试逻辑：用例、步骤与控制流</p>
+            </div>
+        </div>
+
+        <!-- ===== Steps ===== -->
+        <div class="steps-indicator" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="4">
+            <div class="step active" data-step="1">
+                <span class="circle">1</span>
+                <span class="label">模板</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="circle">2</span>
+                <span class="label">程序信息</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="circle">3</span>
+                <span class="label">用例与步骤</span>
+            </div>
+            <div class="step" data-step="4">
+                <span class="circle">4</span>
+                <span class="label">完成</span>
+            </div>
+        </div>
+
+        <!-- ===== Panels ===== -->
+        <div class="panels">
+
+            <!-- ========== Panel 1: 模板选择 ========== -->
+            <div class="panel active" data-panel="1">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;">
+                    选择测试程序模板，快速生成典型测试场景的步骤骨架。
+                </p>
+                <div class="template-grid">
+                    <div class="template-card selected" data-template="empty">
+                        <span class="icon-big"><i class="fas fa-file-alt"></i></span>
+                        <h4>空程序</h4>
+                        <p>从零开始编写测试步骤</p>
+                        <span class="badge">推荐</span>
+                    </div>
+                    <div class="template-card" data-template="basic">
+                        <span class="icon-big"><i class="fas fa-bolt"></i></span>
+                        <h4>基础信号测试</h4>
+                        <p>SET → WAIT → VERIFY 标准流程</p>
+                    </div>
+                    <div class="template-card" data-template="loop">
+                        <span class="icon-big"><i class="fas fa-sync-alt"></i></span>
+                        <h4>循环控制测试</h4>
+                        <p>包含 LOOP 循环与条件判断</p>
+                    </div>
+                    <div class="template-card" data-template="composite">
+                        <span class="icon-big"><i class="fas fa-layer-group"></i></span>
+                        <h4>复合场景测试</h4>
+                        <p>多用例 + IF/WHILE 分支</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== Panel 2: 程序信息 ========== -->
+            <div class="panel" data-panel="2">
+                <div class="form-group">
+                    <label for="progName">程序名称 <span class="hint">· 建议使用英文标识</span></label>
+                    <input type="text" id="progName" placeholder="例如：EngineControlTest" value="PowerSupply_Test" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="progVersion">版本</label>
+                        <input type="text" id="progVersion" value="1.0.0" />
+                    </div>
+                    <div class="form-group">
+                        <label for="progAuthor">作者</label>
+                        <input type="text" id="progAuthor" placeholder="姓名或工号" value="研发团队" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="progDesc">程序描述 <span class="hint">· 说明测试目的</span></label>
+                    <textarea id="progDesc" rows="2" placeholder="简要描述该测试程序的功能与目标">电源模块综合自动化测试，验证输出电压与保护功能</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="progPrecond">前置条件 <span class="hint">· 可选</span></label>
+                    <input type="text" id="progPrecond" placeholder="例如：硬件已上电、拓扑已加载" value="硬件已就绪，拓扑文件已加载" />
+                </div>
+            </div>
+
+            <!-- ========== Panel 3: 用例与步骤 ========== -->
+            <div class="panel" data-panel="3">
+                <div class="case-tabs" id="caseTabs">
+                    <!-- JS 动态渲染 -->
+                </div>
+
+                <div class="step-toolbar">
+                    <span class="info-text"><i class="fas fa-list-ol"></i> 当前用例步骤</span>
+                    <div class="btn-group">
+                        <button class="btn-sm" id="btnAddStep"><i class="fas fa-plus"></i> 添加步骤</button>
+                        <button class="btn-sm btn-sm-danger" id="btnClearSteps"><i class="fas fa-trash-alt"></i> 清空</button>
+                    </div>
+                </div>
+
+                <div class="step-table-wrap">
+                    <table class="step-table" id="stepTable">
+                        <thead>
+                            <tr>
+                                <th style="width:6%;">#</th>
+                                <th style="width:16%;">命令</th>
+                                <th style="width:22%;">目标信号</th>
+                                <th style="width:20%;">值 / 条件</th>
+                                <th style="width:12%;">容差</th>
+                                <th style="width:12%;">超时(ms)</th>
+                                <th style="width:12%;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stepBody">
+                            <!-- JS 动态渲染 -->
+                        </tbody>
+                    </table>
+                    <div id="emptyStepPlaceholder" class="empty-steps">
+                        <i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+                        暂无步骤，点击「添加步骤」开始定义测试逻辑。
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== Panel 4: 摘要 ========== -->
+            <div class="panel" data-panel="4">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">
+                    确认测试程序配置，点击「创建程序」即可生成 `.etprog` 文件。
+                </p>
+                <div class="summary-grid" id="summaryGrid">
+                    <div class="summary-item">
+                        <span class="label">程序模板</span>
+                        <span class="value" id="sumTemplate">空程序</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">程序名称</span>
+                        <span class="value" id="sumName">PowerSupply_Test</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">用例数</span>
+                        <span class="value" id="sumCases">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">总步骤数</span>
+                        <span class="value" id="sumSteps">0</span>
+                    </div>
+                    <div class="summary-item" style="grid-column:1/3;">
+                        <span class="label">步骤概览</span>
+                        <span class="value" id="sumStepPreview" style="font-weight:400;font-size:14px;color:var(--text-secondary);">（暂无步骤）</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== Footer ===== -->
+        <div class="wizard-footer">
+            <div class="left">
+                <button class="btn" id="btnPrev" disabled>
+                    <i class="fas fa-chevron-left"></i> 上一步
+                </button>
+            </div>
+            <div>
+                <button class="btn" id="btnCancel">取消</button>
+                <button class="btn btn-primary" id="btnNext">
+                    下一步 <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-success" id="btnCreate" style="display:none;">
+                    <i class="fas fa-check"></i> 创建程序
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Modal: 添加步骤 ===== -->
+    <div class="modal-overlay" id="stepModal">
+        <div class="modal-box">
+            <h3><i class="fas fa-plus-circle" style="color:var(--accent);margin-right:8px;"></i>添加测试步骤</h3>
+            <p class="sub">选择命令类型并填写参数</p>
+
+            <div class="form-group">
+                <label for="modalCmd">命令类型</label>
+                <select id="modalCmd">
+                    <option value="SET">SET — 设置信号值</option>
+                    <option value="CHECK">CHECK — 检查信号值（同步）</option>
+                    <option value="VERIFY">VERIFY — 验证信号值（超时等待）</option>
+                    <option value="WAIT">WAIT — 等待条件满足</option>
+                    <option value="DELAY">DELAY — 延时等待</option>
+                    <option value="LOOP">LOOP — 固定次数循环</option>
+                    <option value="WHILE">WHILE — 条件循环</option>
+                    <option value="IF">IF — 条件分支</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="modalTarget">目标信号</label>
+                <input type="text" id="modalTarget" placeholder="信号 UUID 或名称" value="电压输出" />
+            </div>
+
+            <div class="form-row" id="modalValueRow">
+                <div class="form-group">
+                    <label for="modalValue">值</label>
+                    <input type="text" id="modalValue" placeholder="例如：5.0" value="5.0" />
+                </div>
+                <div class="form-group">
+                    <label for="modalTolerance">容差</label>
+                    <input type="text" id="modalTolerance" placeholder="例如：0.1" value="0.05" />
+                </div>
+            </div>
+
+            <div class="form-row" id="modalExtraRow">
+                <div class="form-group">
+                    <label for="modalTimeout">超时 (ms)</label>
+                    <input type="text" id="modalTimeout" placeholder="默认 30000" value="5000" />
+                </div>
+                <div class="form-group">
+                    <label for="modalCondition">条件运算符</label>
+                    <select id="modalCondition">
+                        <option value=">=">≥ (大于等于)</option>
+                        <option value="<=">≤ (小于等于)</option>
+                        <option value=">">&gt; (大于)</option>
+                        <option value="<">&lt; (小于)</option>
+                        <option value="==" selected>== (等于)</option>
+                        <option value="!=">!= (不等于)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" id="modalLoopRow" style="display:none;">
+                <label for="modalLoopCount">循环次数 / 最大迭代</label>
+                <input type="text" id="modalLoopCount" placeholder="例如：10" value="5" />
+            </div>
+
+            <div class="btn-row">
+                <button class="btn" id="modalCancel">取消</button>
+                <button class="btn btn-primary" id="modalConfirm"><i class="fas fa-check"></i> 添加步骤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  DOM 引用
+            // ============================================================
+            const steps = document.querySelectorAll('.step');
+            const panels = document.querySelectorAll('.panel');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            const btnCreate = document.getElementById('btnCreate');
+            const btnCancel = document.getElementById('btnCancel');
+
+            // Panel 1
+            const templateCards = document.querySelectorAll('.template-card');
+
+            // Panel 2
+            const inputName = document.getElementById('progName');
+            const inputVersion = document.getElementById('progVersion');
+            const inputAuthor = document.getElementById('progAuthor');
+            const inputDesc = document.getElementById('progDesc');
+            const inputPrecond = document.getElementById('progPrecond');
+
+            // Panel 3
+            const caseTabsEl = document.getElementById('caseTabs');
+            const stepBody = document.getElementById('stepBody');
+            const emptyPlaceholder = document.getElementById('emptyStepPlaceholder');
+            const btnAddStep = document.getElementById('btnAddStep');
+            const btnClearSteps = document.getElementById('btnClearSteps');
+
+            // Panel 4
+            const sumTemplate = document.getElementById('sumTemplate');
+            const sumName = document.getElementById('sumName');
+            const sumCases = document.getElementById('sumCases');
+            const sumSteps = document.getElementById('sumSteps');
+            const sumStepPreview = document.getElementById('sumStepPreview');
+
+            // Modal
+            const modal = document.getElementById('stepModal');
+            const modalCmd = document.getElementById('modalCmd');
+            const modalTarget = document.getElementById('modalTarget');
+            const modalValue = document.getElementById('modalValue');
+            const modalTolerance = document.getElementById('modalTolerance');
+            const modalTimeout = document.getElementById('modalTimeout');
+            const modalCondition = document.getElementById('modalCondition');
+            const modalLoopCount = document.getElementById('modalLoopCount');
+            const modalValueRow = document.getElementById('modalValueRow');
+            const modalExtraRow = document.getElementById('modalExtraRow');
+            const modalLoopRow = document.getElementById('modalLoopRow');
+            const modalConfirm = document.getElementById('modalConfirm');
+            const modalCancel = document.getElementById('modalCancel');
+
+            // ============================================================
+            //  状态
+            // ============================================================
+            let currentStep = 1;
+            let selectedTemplate = 'empty';
+            const templateLabels = {
+                empty: '空程序',
+                basic: '基础信号测试',
+                loop: '循环控制测试',
+                composite: '复合场景测试'
+            };
+
+            // 测试用例数据
+            let testCases = [];
+            let currentCaseIndex = 0;
+            let stepIdCounter = 0;
+
+            // 预设信号列表（Mock）
+            const signalOptions = ['电压输出', '电流输出', '温度', '转速', '压力', '阀门开度', '状态标志'];
+
+            // ============================================================
+            //  模板定义
+            // ============================================================
+            const templates = {
+                empty: {
+                    cases: [
+                        { name: '默认用例', steps: [] }
+                    ]
+                },
+                basic: {
+                    cases: [{
+                        name: '信号测试',
+                        steps: [
+                            { id: ++stepIdCounter, cmd: 'SET', target: '电压输出', value: '5.0', tolerance: '0',
+                                timeout: '0' },
+                            { id: ++stepIdCounter, cmd: 'WAIT', target: '电压输出', value: '5.0', tolerance: '0',
+                                timeout: '5000', condition: '==' },
+                            { id: ++stepIdCounter, cmd: 'VERIFY', target: '电压输出', value: '5.0', tolerance: '0.05',
+                                timeout: '30000' }
+                        ]
+                    }]
+                },
+                loop: {
+                    cases: [{
+                        name: '循环测试',
+                        steps: [
+                            { id: ++stepIdCounter, cmd: 'LOOP', target: '', value: '5', tolerance: '0',
+                                timeout: '0', loopCount: '5' },
+                            { id: ++stepIdCounter, cmd: 'SET', target: '电压输出', value: '3.3', tolerance: '0',
+                                timeout: '0', parent: true },
+                            { id: ++stepIdCounter, cmd: 'DELAY', target: '', value: '100', tolerance: '0',
+                                timeout: '0', parent: true },
+                            { id: ++stepIdCounter, cmd: 'VERIFY', target: '电压输出', value: '3.3', tolerance: '0.05',
+                                timeout: '30000', parent: true },
+                            { id: ++stepIdCounter, cmd: 'END_LOOP', target: '', value: '', tolerance: '0',
+                                timeout: '0' }
+                        ]
+                    }]
+                },
+                composite: {
+                    cases: [{
+                            name: '初始化',
+                            steps: [
+                                { id: ++stepIdCounter, cmd: 'SET', target: '电压输出', value: '0.0', tolerance: '0',
+                                    timeout: '0' },
+                                { id: ++stepIdCounter, cmd: 'SET', target: '电流输出', value: '0.0', tolerance: '0',
+                                    timeout: '0' }
+                            ]
+                        },
+                        {
+                            name: '主测试',
+                            steps: [
+                                { id: ++stepIdCounter, cmd: 'SET', target: '电压输出', value: '5.0', tolerance: '0',
+                                    timeout: '0' },
+                                { id: ++stepIdCounter, cmd: 'VERIFY', target: '电压输出', value: '5.0', tolerance: '0.05',
+                                    timeout: '30000' },
+                                { id: ++stepIdCounter, cmd: 'IF', target: '电压输出', value: '5.0', tolerance: '0',
+                                    timeout: '0', condition: '>=' },
+                                { id: ++stepIdCounter, cmd: 'SET', target: '状态标志', value: '1', tolerance: '0',
+                                    timeout: '0', parent: true },
+                                { id: ++stepIdCounter, cmd: 'ELSE', target: '', value: '', tolerance: '0',
+                                    timeout: '0' },
+                                { id: ++stepIdCounter, cmd: 'SET', target: '状态标志', value: '0', tolerance: '0',
+                                    timeout: '0', parent: true },
+                                { id: ++stepIdCounter, cmd: 'END_IF', target: '', value: '', tolerance: '0',
+                                    timeout: '0' }
+                            ]
+                        }
+                    ]
+                }
+            };
+
+            // ============================================================
+            //  核心函数
+            // ============================================================
+
+            function getCmdLabel(cmd) {
+                const map = {
+                    'SET': 'SET',
+                    'CHECK': 'CHECK',
+                    'VERIFY': 'VERIFY',
+                    'WAIT': 'WAIT',
+                    'DELAY': 'DELAY',
+                    'LOOP': 'LOOP',
+                    'WHILE': 'WHILE',
+                    'IF': 'IF',
+                    'ELSE': 'ELSE',
+                    'END_LOOP': 'END',
+                    'END_IF': 'END',
+                    'END_WHILE': 'END'
+                };
+                return map[cmd] || cmd;
+            }
+
+            function getCmdClass(cmd) {
+                const map = {
+                    'SET': 'step-cmd-set',
+                    'CHECK': 'step-cmd-check',
+                    'VERIFY': 'step-cmd-verify',
+                    'WAIT': 'step-cmd-wait',
+                    'DELAY': 'step-cmd-delay',
+                    'LOOP': 'step-cmd-loop',
+                    'WHILE': 'step-cmd-while',
+                    'IF': 'step-cmd-if',
+                    'ELSE': 'step-cmd-wait',
+                    'END_LOOP': 'step-cmd-delay',
+                    'END_IF': 'step-cmd-delay',
+                    'END_WHILE': 'step-cmd-delay'
+                };
+                return map[cmd] || 'step-cmd-delay';
+            }
+
+            function isControlFlow(cmd) {
+                return ['LOOP', 'WHILE', 'IF', 'ELSE', 'END_LOOP', 'END_IF', 'END_WHILE'].includes(cmd);
+            }
+
+            function isFlowStarter(cmd) {
+                return ['LOOP', 'WHILE', 'IF'].includes(cmd);
+            }
+
+            function isFlowEnder(cmd) {
+                return ['END_LOOP', 'END_IF', 'END_WHILE'].includes(cmd);
+            }
+
+            function renderCases() {
+                let html = '';
+                testCases.forEach((tc, idx) => {
+                    const active = idx === currentCaseIndex ? 'active' : '';
+                    const label = tc.name || `用例 ${idx + 1}`;
+                    html += `
+                        <button class="case-tab ${active}" data-idx="${idx}">
+                            ${label}
+                            ${testCases.length > 1 ? `<span class="close-tab" data-idx="${idx}">&times;</span>` : ''}
+                        </button>
+                    `;
+                });
+                // 添加按钮
+                html += `<button class="case-tab add-tab" id="btnAddCase"><i class="fas fa-plus"></i> 添加用例</button>`;
+                caseTabsEl.innerHTML = html;
+
+                // 绑定事件
+                caseTabsEl.querySelectorAll('.case-tab:not(.add-tab)').forEach(el => {
+                    el.addEventListener('click', function(e) {
+                        if (e.target.classList.contains('close-tab')) return;
+                        const idx = parseInt(this.dataset.idx);
+                        switchCase(idx);
+                    });
+                });
+                caseTabsEl.querySelectorAll('.close-tab').forEach(el => {
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const idx = parseInt(this.dataset.idx);
+                        removeCase(idx);
+                    });
+                });
+                const addBtn = document.getElementById('btnAddCase');
+                if (addBtn) addBtn.addEventListener('click', addCase);
+            }
+
+            function renderSteps() {
+                const tc = testCases[currentCaseIndex];
+                if (!tc || tc.steps.length === 0) {
+                    stepBody.innerHTML = '';
+                    emptyPlaceholder.style.display = 'block';
+                    return;
+                }
+                emptyPlaceholder.style.display = 'none';
+                let html = '';
+                let depth = 0;
+                tc.steps.forEach((step, idx) => {
+                    const isSub = step.parent || false;
+                    const cmdLabel = getCmdLabel(step.cmd);
+                    const cmdClass = getCmdClass(step.cmd);
+                    const targetDisplay = step.target || '—';
+                    const valueDisplay = step.value || '';
+                    const toleranceDisplay = step.tolerance || '';
+                    const timeoutDisplay = step.timeout || '';
+                    const isFlow = isControlFlow(step.cmd);
+                    const isStarter = isFlowStarter(step.cmd);
+                    const isEnder = isFlowEnder(step.cmd);
+
+                    if (isStarter) depth++;
+                    const rowClass = isSub ? 'sub-step-row' : '';
+                    const prefix = isSub ? '↳ ' : '';
+
+                    html += `
+                        <tr class="${rowClass}">
+                            <td style="color:var(--text-muted);">${idx + 1}</td>
+                            <td><span class="step-cmd ${cmdClass}">${cmdLabel}</span></td>
+                            <td>${prefix}${targetDisplay}</td>
+                            <td>${valueDisplay}</td>
+                            <td>${toleranceDisplay}</td>
+                            <td>${timeoutDisplay}</td>
+                            <td>
+                                ${!isEnder ? `
+                                <button class="btn-icon" data-idx="${idx}" data-action="edit" title="编辑"><i class="fas fa-pen"></i></button>
+                                ` : ''}
+                                <button class="btn-icon" data-idx="${idx}" data-action="moveup" title="上移"><i class="fas fa-chevron-up"></i></button>
+                                <button class="btn-icon" data-idx="${idx}" data-action="movedown" title="下移"><i class="fas fa-chevron-down"></i></button>
+                                <button class="btn-icon danger" data-idx="${idx}" data-action="delete" title="删除"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    if (isEnder) depth--;
+                });
+                stepBody.innerHTML = html;
+
+                // 绑定操作事件
+                stepBody.querySelectorAll('[data-action]').forEach(el => {
+                    el.addEventListener('click', function() {
+                        const idx = parseInt(this.dataset.idx);
+                        const action = this.dataset.action;
+                        handleStepAction(idx, action);
+                    });
+                });
+
+                updateStepCount();
+                updateSummary();
+            }
+
+            function switchCase(idx) {
+                if (idx < 0 || idx >= testCases.length) return;
+                currentCaseIndex = idx;
+                renderCases();
+                renderSteps();
+                updateSummary();
+            }
+
+            function addCase() {
+                const name = `用例 ${testCases.length + 1}`;
+                testCases.push({ name: name, steps: [] });
+                currentCaseIndex = testCases.length - 1;
+                renderCases();
+                renderSteps();
+                updateSummary();
+            }
+
+            function removeCase(idx) {
+                if (testCases.length <= 1) {
+                    alert('至少保留一个用例。');
+                    return;
+                }
+                if (!confirm(`确定要删除用例「${testCases[idx].name}」吗？`)) return;
+                testCases.splice(idx, 1);
+                if (currentCaseIndex >= testCases.length) currentCaseIndex = testCases.length - 1;
+                renderCases();
+                renderSteps();
+                updateSummary();
+            }
+
+            function addStep(stepData) {
+                const tc = testCases[currentCaseIndex];
+                if (!tc) return;
+                // 如果是控制流起始，自动添加对应的 END
+                const step = { id: ++stepIdCounter, ...stepData };
+                tc.steps.push(step);
+
+                // 自动补 END
+                if (step.cmd === 'LOOP') {
+                    tc.steps.push({ id: ++stepIdCounter, cmd: 'END_LOOP', target: '', value: '', tolerance: '',
+                    timeout: '' });
+                } else if (step.cmd === 'WHILE') {
+                    tc.steps.push({ id: ++stepIdCounter, cmd: 'END_WHILE', target: '', value: '', tolerance: '',
+                    timeout: '' });
+                } else if (step.cmd === 'IF') {
+                    tc.steps.push({ id: ++stepIdCounter, cmd: 'END_IF', target: '', value: '', tolerance: '',
+                    timeout: '' });
+                }
+                renderSteps();
+                updateSummary();
+            }
+
+            function removeStep(idx) {
+                const tc = testCases[currentCaseIndex];
+                if (!tc || idx < 0 || idx >= tc.steps.length) return;
+                const step = tc.steps[idx];
+                // 如果是控制流起始，删除对应的 END
+                if (isFlowStarter(step.cmd)) {
+                    let endIdx = -1;
+                    let depth = 0;
+                    for (let i = idx + 1; i < tc.steps.length; i++) {
+                        if (isFlowStarter(tc.steps[i].cmd)) depth++;
+                        if (isFlowEnder(tc.steps[i].cmd)) {
+                            if (depth === 0) { endIdx = i; break; }
+                            depth--;
+                        }
+                    }
+                    if (endIdx !== -1) {
+                        tc.steps.splice(endIdx, 1);
+                        if (endIdx < idx) idx--;
+                    }
+                }
+                tc.steps.splice(idx, 1);
+                renderSteps();
+                updateSummary();
+            }
+
+            function moveStep(idx, direction) {
+                const tc = testCases[currentCaseIndex];
+                if (!tc) return;
+                const newIdx = idx + direction;
+                if (newIdx < 0 || newIdx >= tc.steps.length) return;
+                // 不能移动控制流配对的 END
+                const step = tc.steps[idx];
+                if (isFlowEnder(step.cmd)) {
+                    // 检查是否与前面的起始配对
+                    let startIdx = -1;
+                    let depth = 0;
+                    for (let i = idx - 1; i >= 0; i--) {
+                        if (isFlowEnder(tc.steps[i].cmd)) depth++;
+                        if (isFlowStarter(tc.steps[i].cmd)) {
+                            if (depth === 0) { startIdx = i; break; }
+                            depth--;
+                        }
+                    }
+                    if (startIdx !== -1 && Math.abs(idx - startIdx) <= 1) {
+                        alert('不能移动配对的 END 语句。');
+                        return;
+                    }
+                }
+                // 交换
+                [tc.steps[idx], tc.steps[newIdx]] = [tc.steps[newIdx], tc.steps[idx]];
+                renderSteps();
+                updateSummary();
+            }
+
+            function handleStepAction(idx, action) {
+                switch (action) {
+                    case 'delete':
+                        if (confirm('确定要删除此步骤吗？')) removeStep(idx);
+                        break;
+                    case 'moveup':
+                        moveStep(idx, -1);
+                        break;
+                    case 'movedown':
+                        moveStep(idx, 1);
+                        break;
+                    case 'edit':
+                        editStep(idx);
+                        break;
+                }
+            }
+
+            function editStep(idx) {
+                const tc = testCases[currentCaseIndex];
+                if (!tc || idx < 0 || idx >= tc.steps.length) return;
+                const step = tc.steps[idx];
+                if (isFlowEnder(step.cmd)) {
+                    alert('END 语句不可编辑，请编辑对应的起始语句。');
+                    return;
+                }
+                // 填充模态框
+                modalCmd.value = step.cmd;
+                modalTarget.value = step.target || '';
+                modalValue.value = step.value || '';
+                modalTolerance.value = step.tolerance || '';
+                modalTimeout.value = step.timeout || '';
+                modalCondition.value = step.condition || '==';
+                modalLoopCount.value = step.loopCount || '5';
+                updateModalFields(step.cmd);
+
+                // 标记编辑模式
+                modal.dataset.editIdx = idx;
+                modalConfirm.textContent = '更新步骤';
+                modal.open = true;
+                modal.classList.add('open');
+            }
+
+            function updateModalFields(cmd) {
+                const showValue = !['LOOP', 'WHILE', 'IF', 'ELSE', 'END_LOOP', 'END_IF', 'END_WHILE'].includes(cmd);
+                const showTolerance = ['SET', 'CHECK', 'VERIFY'].includes(cmd);
+                const showCondition = ['WAIT', 'WHILE', 'IF'].includes(cmd);
+                const showTimeout = ['WAIT', 'VERIFY', 'WHILE'].includes(cmd);
+                const showLoop = ['LOOP', 'WHILE'].includes(cmd);
+
+                modalValueRow.style.display = showValue ? 'grid' : 'none';
+                document.querySelector('#modalValueRow .form-group:last-child').style.display = showTolerance ? 'block' :
+                'none';
+                modalExtraRow.style.display = (showCondition || showTimeout) ? 'grid' : 'none';
+                document.querySelector('#modalExtraRow .form-group:first-child').style.display = showTimeout ? 'block' :
+                'none';
+                document.querySelector('#modalExtraRow .form-group:last-child').style.display = showCondition ? 'block' :
+                'none';
+                modalLoopRow.style.display = showLoop ? 'block' : 'none';
+            }
+
+            // ============================================================
+            //  加载模板
+            // ============================================================
+
+            function loadTemplate(tpl) {
+                const data = templates[tpl] || templates.empty;
+                testCases = JSON.parse(JSON.stringify(data.cases));
+                // 重置 stepIdCounter
+                let maxId = 0;
+                testCases.forEach(tc => {
+                    tc.steps.forEach(s => { if (s.id > maxId) maxId = s.id; });
+                });
+                stepIdCounter = maxId;
+                currentCaseIndex = 0;
+                renderCases();
+                renderSteps();
+                updateSummary();
+            }
+
+            // ============================================================
+            //  辅助函数
+            // ============================================================
+
+            function updateStepCount() {
+                const tc = testCases[currentCaseIndex];
+                const count = tc ? tc.steps.length : 0;
+                // 更新 case tab 计数可以稍后做
+            }
+
+            function updateSummary() {
+                const templateLabel = templateLabels[selectedTemplate] || '空程序';
+                sumTemplate.textContent = templateLabel;
+                sumName.textContent = inputName.value.trim() || '（未命名）';
+                sumCases.textContent = String(testCases.length);
+
+                let totalSteps = 0;
+                let previewParts = [];
+                testCases.forEach(tc => {
+                    totalSteps += tc.steps.length;
+                    const nonEnd = tc.steps.filter(s => !isFlowEnder(s.cmd));
+                    if (nonEnd.length > 0) {
+                        const cmds = nonEnd.slice(0, 4).map(s => s.cmd).join(' → ');
+                        previewParts.push(`${tc.name}: ${cmds}${nonEnd.length > 4 ? ' …' : ''}`);
+                    } else {
+                        previewParts.push(`${tc.name}: （空）`);
+                    }
+                });
+                sumSteps.textContent = String(totalSteps);
+                sumStepPreview.textContent = previewParts.join(' | ') || '（无步骤）';
+            }
+
+            function updateStepIndicator() {
+                steps.forEach((el, idx) => {
+                    const num = idx + 1;
+                    el.classList.remove('active', 'completed');
+                    if (num < currentStep) el.classList.add('completed');
+                    else if (num === currentStep) el.classList.add('active');
+                });
+                const progress = document.querySelector('.steps-indicator');
+                if (progress) progress.setAttribute('aria-valuenow', String(currentStep));
+            }
+
+            function showPanel(index) {
+                panels.forEach((p, i) => {
+                    p.classList.toggle('active', i === index - 1);
+                });
+            }
+
+            function updateButtons() {
+                const isFirst = currentStep === 1;
+                const isLast = currentStep === 4;
+                btnPrev.disabled = isFirst;
+                btnNext.style.display = isLast ? 'none' : 'inline-flex';
+                btnCreate.style.display = isLast ? 'inline-flex' : 'none';
+            }
+
+            function goToStep(step) {
+                if (step < 1 || step > 4) return;
+                currentStep = step;
+                updateStepIndicator();
+                showPanel(step);
+                updateButtons();
+                document.querySelector('.wizard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // ============================================================
+            //  事件绑定
+            // ============================================================
+
+            // ---- 模板 ----
+            templateCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    templateCards.forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTemplate = this.dataset.template;
+                    loadTemplate(selectedTemplate);
+                });
+            });
+
+            // ---- 表单输入 ----
+            [inputName, inputVersion, inputAuthor, inputDesc, inputPrecond].forEach(el => {
+                el.addEventListener('input', updateSummary);
+            });
+
+            // ---- 步骤操作 ----
+            btnAddStep.addEventListener('click', function() {
+                // 重置模态框
+                modalCmd.value = 'SET';
+                modalTarget.value = '';
+                modalValue.value = '1.0';
+                modalTolerance.value = '0';
+                modalTimeout.value = '5000';
+                modalCondition.value = '==';
+                modalLoopCount.value = '5';
+                modalConfirm.textContent = '添加步骤';
+                delete modal.dataset.editIdx;
+                updateModalFields('SET');
+                modal.classList.add('open');
+            });
+
+            btnClearSteps.addEventListener('click', function() {
+                const tc = testCases[currentCaseIndex];
+                if (!tc || tc.steps.length === 0) return;
+                if (confirm('确定要清空当前用例的所有步骤吗？')) {
+                    tc.steps = [];
+                    renderSteps();
+                    updateSummary();
+                }
+            });
+
+            // ---- Modal ----
+            modalCmd.addEventListener('change', function() {
+                updateModalFields(this.value);
+            });
+
+            modalCancel.addEventListener('click', function() {
+                modal.classList.remove('open');
+            });
+
+            modalConfirm.addEventListener('click', function() {
+                const cmd = modalCmd.value;
+                const target = modalTarget.value.trim();
+                const value = modalValue.value.trim();
+                const tolerance = modalTolerance.value.trim();
+                const timeout = modalTimeout.value.trim();
+                const condition = modalCondition.value;
+                const loopCount = modalLoopCount.value.trim();
+
+                if (['SET', 'CHECK', 'VERIFY'].includes(cmd) && !target) {
+                    alert('请输入目标信号。');
+                    return;
+                }
+
+                const stepData = {
+                    cmd: cmd,
+                    target: target,
+                    value: value || '0',
+                    tolerance: tolerance || '0',
+                    timeout: timeout || '0',
+                    condition: condition,
+                    loopCount: loopCount || '1',
+                    parent: false
+                };
+
+                const editIdx = modal.dataset.editIdx;
+                if (editIdx !== undefined) {
+                    // 编辑模式
+                    const tc = testCases[currentCaseIndex];
+                    if (tc && tc.steps[editIdx]) {
+                        // 保留 id 和 parent 状态
+                        const oldStep = tc.steps[editIdx];
+                        stepData.id = oldStep.id;
+                        stepData.parent = oldStep.parent || false;
+                        tc.steps[editIdx] = stepData;
+                        renderSteps();
+                        updateSummary();
+                        modal.classList.remove('open');
+                        return;
+                    }
+                }
+
+                // 添加模式
+                addStep(stepData);
+                modal.classList.remove('open');
+            });
+
+            // 点击外部关闭模态框
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) modal.classList.remove('open');
+            });
+
+            // ---- 导航 ----
+            btnNext.addEventListener('click', function() {
+                if (currentStep === 4) return;
+                if (currentStep === 2) {
+                    const name = inputName.value.trim();
+                    if (!name) {
+                        inputName.focus();
+                        inputName.style.borderColor = '#d13438';
+                        inputName.style.boxShadow = '0 0 0 4px rgba(209,52,56,0.12)';
+                        setTimeout(() => {
+                            inputName.style.borderColor = '';
+                            inputName.style.boxShadow = '';
+                        }, 1200);
+                        return;
+                    }
+                }
+                if (currentStep === 3) {
+                    const tc = testCases[currentCaseIndex];
+                    if (tc && tc.steps.length === 0) {
+                        if (!confirm('当前用例没有任何步骤，确定要继续吗？')) return;
+                    }
+                    updateSummary();
+                }
+                goToStep(currentStep + 1);
+            });
+
+            btnPrev.addEventListener('click', function() {
+                if (currentStep === 1) return;
+                goToStep(currentStep - 1);
+            });
+
+            btnCancel.addEventListener('click', function() {
+                if (confirm('确定要取消创建测试程序吗？')) {
+                    alert('向导已取消。');
+                }
+            });
+
+            btnCreate.addEventListener('click', function() {
+                const result = {
+                    template: selectedTemplate,
+                    program: {
+                        name: inputName.value.trim() || '未命名程序',
+                        version: inputVersion.value.trim() || '1.0.0',
+                        author: inputAuthor.value.trim() || '',
+                        description: inputDesc.value.trim() || '',
+                        precondition: inputPrecond.value.trim() || ''
+                    },
+                    cases: testCases.map(tc => ({
+                        name: tc.name,
+                        steps: tc.steps.map(s => ({
+                            cmd: s.cmd,
+                            target: s.target || '',
+                            value: s.value || '',
+                            tolerance: s.tolerance || '',
+                            timeout: s.timeout || '',
+                            condition: s.condition || '',
+                            loopCount: s.loopCount || '',
+                            parent: s.parent || false
+                        }))
+                    }))
+                };
+
+                console.log('🧪 创建测试程序配置：', result);
+                btnCreate.disabled = true;
+                btnCreate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+
+                setTimeout(() => {
+                    const totalSteps = result.cases.reduce((sum, c) => sum + c.steps.length, 0);
+                    alert(`✅ 测试程序 "${result.program.name}" 创建成功！\n包含 ${result.cases.length} 个用例，${totalSteps} 个步骤。`);
+                    btnCreate.disabled = false;
+                    btnCreate.innerHTML = '<i class="fas fa-check"></i> 创建程序';
+                }, 1000);
+            });
+
+            // ---- 键盘 ----
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (modal.classList.contains('open')) {
+                        modalConfirm.click();
+                        return;
+                    }
+                    if (currentStep === 4) btnCreate.click();
+                    else btnNext.click();
+                    e.preventDefault();
+                }
+                if (e.key === 'Escape') {
+                    if (modal.classList.contains('open')) { modal.classList.remove('open'); return; }
+                    btnCancel.click();
+                    e.preventDefault();
+                }
+                if (e.key === 'ArrowLeft' && currentStep > 1) { btnPrev.click();
+                    e.preventDefault(); }
+                if (e.key === 'ArrowRight' && currentStep < 4) { btnNext.click();
+                    e.preventDefault(); }
+            });
+
+            // ============================================================
+            //  初始化
+            // ============================================================
+            loadTemplate('empty');
+            document.querySelector('.template-card[data-template="empty"]')?.classList.add('selected');
+            goToStep(1);
+
+            // 初始更新摘要
+            updateSummary();
+
+            // 默认填充模态框的示例值
+            updateModalFields('SET');
+
+        })();
+    </script>
+
+</body>
+</html>

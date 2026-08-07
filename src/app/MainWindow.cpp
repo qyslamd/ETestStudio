@@ -75,7 +75,6 @@
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "dialogs/NewProjectDialog.h"
 #include "dialogs/SettingsDialog.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"

@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新建协议向导 · ETest Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* ============================================================
+           CSS Variables — Fluent Design 色彩系统
+           ============================================================ */
+        :root {
+            --bg-canvas: #f0f2f5;
+            --bg-card: rgba(255, 255, 255, 0.72);
+            --bg-card-hover: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.48);
+            --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.18);
+            --text-primary: #1a1a1a;
+            --text-secondary: #5a5a6e;
+            --text-muted: #8c8ca8;
+            --accent: #0078d4;
+            --accent-light: #e6f1fc;
+            --accent-hover: #106ebe;
+            --danger: #d13438;
+            --success: #107c10;
+            --radius-card: 20px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.2, 0, 0, 1);
+            --font: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-canvas: #1a1a24;
+                --bg-card: rgba(32, 32, 44, 0.78);
+                --bg-card-hover: rgba(42, 42, 58, 0.92);
+                --glass-border: rgba(255, 255, 255, 0.08);
+                --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.6);
+                --text-primary: #e8e8f0;
+                --text-secondary: #a8a8c0;
+                --text-muted: #6a6a84;
+                --accent: #4aa8ff;
+                --accent-light: rgba(74, 168, 255, 0.12);
+                --accent-hover: #6abaff;
+                --danger: #f1707a;
+                --bg-card: rgba(32, 32, 44, 0.82);
+            }
+        }
+
+        /* ============================================================
+           Reset & Base
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-canvas);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: 0;
+            transition: background var(--transition);
+        }
+
+        /* ============================================================
+           Wizard Container
+           ============================================================ */
+        .wizard {
+            max-width: 900px;
+            width: 100%;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-radius: var(--radius-card);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 32px 36px 28px;
+            transition: background var(--transition), border-color var(--transition);
+        }
+
+        /* ============================================================
+           Header
+           ============================================================ */
+        .wizard-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .wizard-header .icon {
+            width: 44px;
+            height: 44px;
+            background: var(--accent-light);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 22px;
+            flex-shrink: 0;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .wizard-header .title-group h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            margin: 0 0 2px;
+        }
+
+        .wizard-header .title-group p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* ============================================================
+           Steps Indicator
+           ============================================================ */
+        .steps-indicator {
+            display: flex;
+            gap: 0;
+            margin-bottom: 32px;
+            padding: 0 4px;
+            position: relative;
+        }
+
+        .steps-indicator .step {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: default;
+            position: relative;
+            padding: 6px 0;
+            transition: color var(--transition);
+        }
+
+        .steps-indicator .step::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: #d0d0dd;
+            margin-left: 12px;
+            transition: background var(--transition);
+        }
+        .steps-indicator .step:last-child::after {
+            display: none;
+        }
+
+        .steps-indicator .step .circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            background: #e8e8f0;
+            color: #6a6a84;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+
+        .steps-indicator .step.active {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.active .circle {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.28);
+        }
+        .steps-indicator .step.active::after {
+            background: var(--accent);
+        }
+
+        .steps-indicator .step.completed {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.completed .circle {
+            background: var(--success);
+            color: #fff;
+        }
+        .steps-indicator .step.completed::after {
+            background: var(--success);
+        }
+
+        /* ============================================================
+           Panels Container
+           ============================================================ */
+        .panels {
+            position: relative;
+            min-height: 320px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeSlide 0.3s ease forwards;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================================
+           Panel 1 — 协议模板
+           ============================================================ */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .template-card {
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 18px 16px 16px;
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .template-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .template-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.08);
+        }
+
+        .template-card .icon-big {
+            font-size: 28px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .template-card h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+        }
+
+        .template-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .template-card .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+
+        /* ============================================================
+           Panel 2 — 基本信息
+           ============================================================ */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .form-group .hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-left: 6px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: var(--font);
+            background: rgba(255, 255, 255, 0.6);
+            border: 1.5px solid #d0d0dd;
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            transition: all var(--transition);
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.12);
+            background: #fff;
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 18px;
+        }
+
+        /* ============================================================
+           Panel 3 — 字段定义
+           ============================================================ */
+        .field-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .field-toolbar .info-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .btn-add-field {
+            padding: 6px 16px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font);
+        }
+
+        .btn-add-field:hover {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+        }
+
+        .field-table-wrap {
+            border-radius: var(--radius-sm);
+            overflow: auto;
+            border: 1px solid var(--glass-border);
+            max-height: 240px;
+        }
+
+        .field-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .field-table th {
+            background: rgba(0, 0, 0, 0.03);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .field-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            color: var(--text-primary);
+        }
+
+        .field-table tr:hover td {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .field-table input,
+        .field-table select {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 13px;
+            font-family: var(--font);
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: var(--text-primary);
+            transition: all var(--transition);
+            outline: none;
+        }
+
+        .field-table input:hover,
+        .field-table select:hover {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: #d0d0dd;
+        }
+
+        .field-table input:focus,
+        .field-table select:focus {
+            background: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.08);
+        }
+
+        .field-table .btn-del {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 15px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all var(--transition);
+        }
+
+        .field-table .btn-del:hover {
+            background: rgba(209, 52, 56, 0.12);
+            color: var(--danger);
+        }
+
+        .empty-fields {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* ============================================================
+           Panel 4 — 摘要
+           ============================================================ */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 32px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-sm);
+            padding: 20px 24px;
+            margin-top: 4px;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-item .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .summary-item .value {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        .summary-item .value .field-tag {
+            display: inline-block;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 0 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+        }
+
+        /* ============================================================
+           Footer
+           ============================================================ */
+        .wizard-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            padding-top: 20px;
+        }
+
+        .wizard-footer .left {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 22px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 6px 20px rgba(0, 120, 212, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(16, 124, 16, 0.2);
+        }
+
+        .btn-success:hover {
+            background: #0a6e0a;
+            box-shadow: 0 6px 20px rgba(16, 124, 16, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .btn-icon {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .btn-icon i {
+            margin-right: 6px;
+        }
+
+        /* ============================================================
+           Responsive
+           ============================================================ */
+        @media (max-width: 800px) {
+            .wizard {
+                padding: 20px 18px;
+            }
+            .template-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr 1fr;
+            }
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .steps-indicator .step .label {
+                display: none;
+            }
+            .field-table-wrap {
+                max-height: 180px;
+            }
+            .wizard-footer {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wizard" role="dialog" aria-labelledby="wizard-title">
+        <!-- ===== Header ===== -->
+        <div class="wizard-header">
+            <div class="icon">
+                <i class="fas fa-code-branch"></i>
+            </div>
+            <div class="title-group">
+                <h2 id="wizard-title">新建协议定义</h2>
+                <p>创建 ICD 帧结构，定义信号字段与编码规则</p>
+            </div>
+        </div>
+
+        <!-- ===== Steps ===== -->
+        <div class="steps-indicator" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="4">
+            <div class="step active" data-step="1">
+                <span class="circle">1</span>
+                <span class="label">模板</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="circle">2</span>
+                <span class="label">帧属性</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="circle">3</span>
+                <span class="label">字段定义</span>
+            </div>
+            <div class="step" data-step="4">
+                <span class="circle">4</span>
+                <span class="label">完成</span>
+            </div>
+        </div>
+
+        <!-- ===== Panels ===== -->
+        <div class="panels">
+
+            <!-- Panel 1: 模板选择 -->
+            <div class="panel active" data-panel="1">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;">
+                    选择协议模板，系统将自动生成帧结构和字段配置示例。
+                </p>
+                <div class="template-grid">
+                    <div class="template-card selected" data-template="custom">
+                        <span class="icon-big"><i class="fas fa-pen-fancy"></i></span>
+                        <h4>自定义空协议</h4>
+                        <p>手动添加帧头和字段，自由定义</p>
+                        <span class="badge">推荐</span>
+                    </div>
+                    <div class="template-card" data-template="a429">
+                        <span class="icon-big"><i class="fas fa-plane"></i></span>
+                        <h4>ARINC 429</h4>
+                        <p>航空总线标准协议，含 Label/SDI/Data/SSM</p>
+                    </div>
+                    <div class="template-card" data-template="can">
+                        <span class="icon-big"><i class="fas fa-car"></i></span>
+                        <h4>CAN 2.0B</h4>
+                        <p>标准数据帧，含 ID、DLC 和数据场</p>
+                    </div>
+                    <div class="template-card" data-template="1553">
+                        <span class="icon-big"><i class="fas fa-satellite"></i></span>
+                        <h4>MIL-STD-1553B</h4>
+                        <p>命令/状态字 + 数据块结构</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 2: 帧属性 -->
+            <div class="panel" data-panel="2">
+                <div class="form-group">
+                    <label for="frameName">帧名称 <span class="hint">· 建议使用英文标识</span></label>
+                    <input type="text" id="frameName" placeholder="例如：A429_EngineStatus" value="CAN_EngineData" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="frameId">帧 ID</label>
+                        <input type="text" id="frameId" placeholder="例如：0x100" value="0x200" />
+                    </div>
+                    <div class="form-group">
+                        <label for="frameType">帧类型</label>
+                        <select id="frameType">
+                            <option value="data" selected>数据帧 (Data)</option>
+                            <option value="cmd">命令帧 (Command)</option>
+                            <option value="data_cmd">数据/命令混合</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="byteOrder">字节序</label>
+                        <select id="byteOrder">
+                            <option value="little" selected>小端 (Little Endian)</option>
+                            <option value="big">大端 (Big Endian)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="frameDesc">帧描述 <span class="hint">· 可选</span></label>
+                    <input type="text" id="frameDesc" placeholder="简要说明该帧的用途" value="发动机转速与温度数据帧" />
+                </div>
+            </div>
+
+            <!-- Panel 3: 字段定义 -->
+            <div class="panel" data-panel="3">
+                <div class="field-toolbar">
+                    <span class="info-text"><i class="fas fa-list-ul"></i> 定义帧内的信号字段</span>
+                    <button class="btn-add-field" id="btnAddField">
+                        <i class="fas fa-plus"></i> 添加字段
+                    </button>
+                </div>
+                <div class="field-table-wrap">
+                    <table class="field-table" id="fieldTable">
+                        <thead>
+                            <tr>
+                                <th style="width:22%;">字段名称</th>
+                                <th style="width:12%;">位偏移</th>
+                                <th style="width:12%;">位宽</th>
+                                <th style="width:18%;">数据类型</th>
+                                <th style="width:14%;">系数</th>
+                                <th style="width:14%;">单位</th>
+                                <th style="width:8%;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fieldBody">
+                            <!-- JS 会动态渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyFieldPlaceholder" class="empty-fields">
+                    <i class="fas fa-inbox" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
+                    暂无字段，点击「添加字段」开始定义信号。
+                </div>
+            </div>
+
+            <!-- Panel 4: 摘要确认 -->
+            <div class="panel" data-panel="4">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">
+                    确认协议配置，点击「创建协议」即可生成 `.eproto` 文件。
+                </p>
+                <div class="summary-grid" id="summaryGrid">
+                    <div class="summary-item">
+                        <span class="label">协议模板</span>
+                        <span class="value" id="sumTemplate">自定义空协议</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">帧名称</span>
+                        <span class="value" id="sumName">CAN_EngineData</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">帧 ID</span>
+                        <span class="value" id="sumId">0x200</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">字节序</span>
+                        <span class="value" id="sumOrder">小端</span>
+                    </div>
+                    <div class="summary-item" style="grid-column:1/3;">
+                        <span class="label">描述</span>
+                        <span class="value" id="sumDesc">发动机转速与温度数据帧</span>
+                    </div>
+                    <div class="summary-item" style="grid-column:1/3;">
+                        <span class="label">包含字段</span>
+                        <span class="value" id="sumFields"><span style="color:var(--text-muted);">（暂无字段）</span></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== Footer ===== -->
+        <div class="wizard-footer">
+            <div class="left">
+                <button class="btn" id="btnPrev" disabled>
+                    <i class="fas fa-chevron-left"></i> 上一步
+                </button>
+            </div>
+            <div>
+                <button class="btn" id="btnCancel">取消</button>
+                <button class="btn btn-primary" id="btnNext">
+                    下一步 <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-success" id="btnCreate" style="display:none;">
+                    <i class="fas fa-check"></i> 创建协议
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  DOM 引用
+            // ============================================================
+            const steps = document.querySelectorAll('.step');
+            const panels = document.querySelectorAll('.panel');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            const btnCreate = document.getElementById('btnCreate');
+            const btnCancel = document.getElementById('btnCancel');
+
+            // Panel 1
+            const templateCards = document.querySelectorAll('.template-card');
+            // Panel 2
+            const inputName = document.getElementById('frameName');
+            const inputId = document.getElementById('frameId');
+            const inputType = document.getElementById('frameType');
+            const inputOrder = document.getElementById('byteOrder');
+            const inputDesc = document.getElementById('frameDesc');
+            // Panel 3
+            const fieldBody = document.getElementById('fieldBody');
+            const emptyPlaceholder = document.getElementById('emptyFieldPlaceholder');
+            const btnAddField = document.getElementById('btnAddField');
+            // Panel 4
+            const sumTemplate = document.getElementById('sumTemplate');
+            const sumName = document.getElementById('sumName');
+            const sumId = document.getElementById('sumId');
+            const sumOrder = document.getElementById('sumOrder');
+            const sumDesc = document.getElementById('sumDesc');
+            const sumFields = document.getElementById('sumFields');
+
+            // ============================================================
+            //  状态
+            // ============================================================
+            let currentStep = 1;
+            let selectedTemplate = 'custom';
+            const templateLabels = {
+                custom: '自定义空协议',
+                a429: 'ARINC 429',
+                can: 'CAN 2.0B',
+                '1553': 'MIL-STD-1553B'
+            };
+            let fields = [];
+
+            // ============================================================
+            //  字段管理
+            // ============================================================
+            const defaultFields = {
+                custom: [
+                    { name: '帧头', offset: 0, width: 8, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: '长度', offset: 8, width: 8, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: '数据载荷', offset: 16, width: 16, type: 'uint16', scale: '1.0', unit: '' }
+                ],
+                a429: [
+                    { name: 'Label', offset: 0, width: 8, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'SDI', offset: 8, width: 2, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'Data', offset: 10, width: 18, type: 'uint32', scale: '1.0', unit: '' },
+                    { name: 'SSM', offset: 28, width: 2, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'Parity', offset: 30, width: 1, type: 'uint8', scale: '1.0', unit: '' }
+                ],
+                can: [
+                    { name: 'ID', offset: 0, width: 11, type: 'uint16', scale: '1.0', unit: '' },
+                    { name: 'RTR', offset: 11, width: 1, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'IDE', offset: 12, width: 1, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'DLC', offset: 13, width: 4, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'Data0', offset: 16, width: 8, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'Data1', offset: 24, width: 8, type: 'uint8', scale: '1.0', unit: '' }
+                ],
+                '1553': [
+                    { name: 'Sync', offset: 0, width: 3, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'RT Address', offset: 3, width: 5, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'T/R', offset: 8, width: 1, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'Subaddress', offset: 9, width: 5, type: 'uint8', scale: '1.0', unit: '' },
+                    { name: 'Data', offset: 14, width: 16, type: 'uint16', scale: '1.0', unit: '' },
+                    { name: 'Parity', offset: 30, width: 1, type: 'uint8', scale: '1.0', unit: '' }
+                ]
+            };
+
+            function renderFields() {
+                fieldBody.innerHTML = '';
+                if (fields.length === 0) {
+                    emptyPlaceholder.style.display = 'block';
+                    return;
+                }
+                emptyPlaceholder.style.display = 'none';
+                fields.forEach((field, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><input type="text" class="f-name" value="${field.name}" placeholder="信号名称" /></td>
+                        <td><input type="number" class="f-offset" value="${field.offset}" min="0" step="1" /></td>
+                        <td><input type="number" class="f-width" value="${field.width}" min="1" step="1" /></td>
+                        <td>
+                            <select class="f-type">
+                                <option value="uint8" ${field.type === 'uint8' ? 'selected' : ''}>uint8</option>
+                                <option value="int8" ${field.type === 'int8' ? 'selected' : ''}>int8</option>
+                                <option value="uint16" ${field.type === 'uint16' ? 'selected' : ''}>uint16</option>
+                                <option value="int16" ${field.type === 'int16' ? 'selected' : ''}>int16</option>
+                                <option value="uint32" ${field.type === 'uint32' ? 'selected' : ''}>uint32</option>
+                                <option value="int32" ${field.type === 'int32' ? 'selected' : ''}>int32</option>
+                                <option value="float" ${field.type === 'float' ? 'selected' : ''}>float</option>
+                                <option value="double" ${field.type === 'double' ? 'selected' : ''}>double</option>
+                            </select>
+                        </td>
+                        <td><input type="text" class="f-scale" value="${field.scale}" placeholder="1.0" /></td>
+                        <td><input type="text" class="f-unit" value="${field.unit}" placeholder="V, rpm, ℃" /></td>
+                        <td><button class="btn-del" data-index="${index}"><i class="fas fa-trash-alt"></i></button></td>
+                    `;
+                    fieldBody.appendChild(tr);
+                });
+
+                // 绑定删除事件
+                document.querySelectorAll('.btn-del').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const idx = parseInt(this.dataset.index);
+                        fields.splice(idx, 1);
+                        renderFields();
+                        updateSummary();
+                    });
+                });
+
+                // 绑定输入变更事件（实时更新摘要）
+                document.querySelectorAll('.f-name, .f-offset, .f-width, .f-type, .f-scale, .f-unit').forEach(el => {
+                    el.addEventListener('input', function() {
+                        const row = this.closest('tr');
+                        const idx = Array.from(fieldBody.children).indexOf(row);
+                        if (idx === -1) return;
+                        fields[idx].name = row.querySelector('.f-name').value || '未命名';
+                        fields[idx].offset = parseInt(row.querySelector('.f-offset').value) || 0;
+                        fields[idx].width = parseInt(row.querySelector('.f-width').value) || 1;
+                        fields[idx].type = row.querySelector('.f-type').value;
+                        fields[idx].scale = row.querySelector('.f-scale').value || '1.0';
+                        fields[idx].unit = row.querySelector('.f-unit').value || '';
+                        updateSummary();
+                    });
+                });
+                updateSummary();
+            }
+
+            function loadTemplate(templateId) {
+                const preset = defaultFields[templateId] || defaultFields.custom;
+                fields = JSON.parse(JSON.stringify(preset));
+                renderFields();
+            }
+
+            // ============================================================
+            //  辅助函数
+            // ============================================================
+            function updateStepIndicator() {
+                steps.forEach((el, idx) => {
+                    const num = idx + 1;
+                    el.classList.remove('active', 'completed');
+                    if (num < currentStep) el.classList.add('completed');
+                    else if (num === currentStep) el.classList.add('active');
+                });
+                const progress = document.querySelector('.steps-indicator');
+                if (progress) progress.setAttribute('aria-valuenow', String(currentStep));
+            }
+
+            function showPanel(index) {
+                panels.forEach((p, i) => {
+                    p.classList.toggle('active', i === index - 1);
+                });
+            }
+
+            function updateButtons() {
+                const isFirst = currentStep === 1;
+                const isLast = currentStep === 4;
+                btnPrev.disabled = isFirst;
+                btnNext.style.display = isLast ? 'none' : 'inline-flex';
+                btnCreate.style.display = isLast ? 'inline-flex' : 'none';
+            }
+
+            function goToStep(step) {
+                if (step < 1 || step > 4) return;
+                currentStep = step;
+                updateStepIndicator();
+                showPanel(step);
+                updateButtons();
+                document.querySelector('.wizard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            function getTypeLabel(type) {
+                const map = { 'uint8': 'U8', 'int8': 'I8', 'uint16': 'U16', 'int16': 'I16', 'uint32': 'U32', 'int32': 'I32',
+                    'float': 'F32', 'double': 'F64' };
+                return map[type] || type;
+            }
+
+            function updateSummary() {
+                const templateLabel = templateLabels[selectedTemplate] || '自定义空协议';
+                sumTemplate.textContent = templateLabel;
+                sumName.textContent = inputName.value.trim() || '（未命名）';
+                sumId.textContent = inputId.value.trim() || '（未设置）';
+                const orderMap = { 'little': '小端', 'big': '大端' };
+                sumOrder.textContent = orderMap[inputOrder.value] || '小端';
+                sumDesc.textContent = inputDesc.value.trim() || '（无描述）';
+
+                if (fields.length === 0) {
+                    sumFields.innerHTML = '<span style="color:var(--text-muted);">（暂无字段）</span>';
+                    return;
+                }
+                let html = '';
+                fields.forEach(f => {
+                    const name = f.name || '未命名';
+                    const info = `${getTypeLabel(f.type)} | B${f.offset}`;
+                    html += `<span class="field-tag">${name} (${info})</span>`;
+                });
+                sumFields.innerHTML = html;
+            }
+
+            // ============================================================
+            //  事件绑定
+            // ============================================================
+
+            // ---- 模板卡片 ----
+            templateCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    templateCards.forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTemplate = this.dataset.template;
+                    loadTemplate(selectedTemplate);
+                    updateSummary();
+                });
+            });
+
+            // ---- 表单输入 ----
+            [inputName, inputId, inputType, inputOrder, inputDesc].forEach(el => {
+                el.addEventListener('input', updateSummary);
+            });
+
+            // ---- 添加字段 ----
+            btnAddField.addEventListener('click', function() {
+                fields.push({ name: `Field_${fields.length + 1}`, offset: 0, width: 8, type: 'uint8', scale: '1.0',
+                    unit: '' });
+                renderFields();
+                // 滚动到底部
+                const wrap = document.querySelector('.field-table-wrap');
+                if (wrap) wrap.scrollTop = wrap.scrollHeight;
+                updateSummary();
+            });
+
+            // ---- 导航 ----
+            btnNext.addEventListener('click', function() {
+                if (currentStep === 4) return;
+                if (currentStep === 2) {
+                    const name = inputName.value.trim();
+                    if (!name) {
+                        inputName.focus();
+                        inputName.style.borderColor = '#d13438';
+                        inputName.style.boxShadow = '0 0 0 4px rgba(209,52,56,0.12)';
+                        setTimeout(() => {
+                            inputName.style.borderColor = '';
+                            inputName.style.boxShadow = '';
+                        }, 1200);
+                        return;
+                    }
+                }
+                // 第3步：至少要有一个字段才能进入第4步（非强制，但友好提示）
+                if (currentStep === 3 && fields.length === 0) {
+                    if (!confirm('当前未定义任何字段，确定要继续吗？')) {
+                        return;
+                    }
+                }
+                if (currentStep === 3) {
+                    updateSummary();
+                }
+                goToStep(currentStep + 1);
+            });
+
+            btnPrev.addEventListener('click', function() {
+                if (currentStep === 1) return;
+                goToStep(currentStep - 1);
+            });
+
+            btnCancel.addEventListener('click', function() {
+                if (confirm('确定要取消创建协议吗？')) {
+                    alert('向导已取消。');
+                }
+            });
+
+            btnCreate.addEventListener('click', function() {
+                // 收集数据
+                const name = inputName.value.trim() || '未命名协议';
+                const id = inputId.value.trim() || '0x00';
+                const type = inputType.value;
+                const order = inputOrder.value;
+                const desc = inputDesc.value.trim() || '（无描述）';
+
+                // 收集最新字段数据（从DOM反序列化，确保准确）
+                const rows = fieldBody.querySelectorAll('tr');
+                const finalFields = [];
+                rows.forEach(row => {
+                    const nameInput = row.querySelector('.f-name');
+                    const offsetInput = row.querySelector('.f-offset');
+                    const widthInput = row.querySelector('.f-width');
+                    const typeSelect = row.querySelector('.f-type');
+                    const scaleInput = row.querySelector('.f-scale');
+                    const unitInput = row.querySelector('.f-unit');
+                    if (nameInput) {
+                        finalFields.push({
+                            name: nameInput.value || '未命名',
+                            offset: parseInt(offsetInput.value) || 0,
+                            width: parseInt(widthInput.value) || 1,
+                            type: typeSelect.value,
+                            scale: scaleInput.value || '1.0',
+                            unit: unitInput.value || ''
+                        });
+                    }
+                });
+
+                const result = {
+                    template: selectedTemplate,
+                    frame: {
+                        name,
+                        id,
+                        type,
+                        byteOrder: order,
+                        description: desc
+                    },
+                    fields: finalFields
+                };
+
+                console.log('📄 创建协议配置：', result);
+                btnCreate.disabled = true;
+                btnCreate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+
+                setTimeout(() => {
+                    alert(`✅ 协议 "${name}" 创建成功！\n包含 ${finalFields.length} 个信号字段。`);
+                    btnCreate.disabled = false;
+                    btnCreate.innerHTML = '<i class="fas fa-check"></i> 创建协议';
+                }, 1000);
+            });
+
+            // ---- 键盘 ----
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (currentStep === 4) btnCreate.click();
+                    else btnNext.click();
+                    e.preventDefault();
+                }
+                if (e.key === 'Escape') { btnCancel.click();
+                    e.preventDefault(); }
+                if (e.key === 'ArrowLeft' && currentStep > 1) { btnPrev.click();
+                    e.preventDefault(); }
+                if (e.key === 'ArrowRight' && currentStep < 4) { btnNext.click();
+                    e.preventDefault(); }
+            });
+
+            // ============================================================
+            //  初始化
+            // ============================================================
+            // 默认加载自定义模板
+            loadTemplate('custom');
+            // 默认选中自定义卡片
+            document.querySelector('.template-card[data-template="custom"]')?.classList.add('selected');
+            updateSummary();
+            goToStep(1);
+
+        })();
+    </script>
+
+</body>
+</html>

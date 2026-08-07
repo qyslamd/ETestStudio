@@ -1049,14 +1049,6 @@ etest--app--BottomContainerWidget QHeaderView::section {
     padding: 4px;
 }
 
-/* ==================== NewProjectDialog ==================== */
-QLabel#previewLabel {
-    color: gray;
-}
-QLabel#errorLabel {
-    color: red;
-}
-
 /* ==================== EtlogViewerWidget ==================== */
 etest--app--EtlogViewerWidget {
     background-color: #0A0015;
@@ -1227,13 +1219,6 @@ GitWidget QLabel#gitTitleLabel {
     font-weight: bold;
     font-size: 11px;
     background: transparent;
-}
-
-/* ==================== NewProjectDialog ==================== */
-#dlg_contentWidget {
-    background-color: #100820;
-    border: 1px solid #201540;
-    border-radius: 8px;
 }
 
 /* ==================== 欢迎页 ==================== */
@@ -2540,3 +2525,166 @@ QGroupBox[selected="true"] {
   color: #E0BD00;
 }
 /* ===== visualizer 副标题状态配色 END ===== */
+
+/* ===== NewProjectWizard 向导 (自动生成, 勿手改) START ===== */
+#wizardCard {
+  background-color: rgba(32, 32, 44, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 20px;
+}
+
+#wizardHeaderIcon {
+  background-color: rgba(90, 26, 154, 0.16);
+  border-radius: 14px;
+}
+#wizardHeaderTitle {
+  color: #D0C0E0;
+  font-size: 20px;
+  font-weight: 600;
+}
+#wizardHeaderSubtitle {
+  color: #8060A0;
+  font-size: 14px;
+}
+
+#templateIntro, #summaryIntro {
+  color: #8060A0;
+  font-size: 14px;
+}
+
+#templateCard {
+  background-color: rgba(42, 42, 58, 0.85);
+  border: 2px solid transparent;
+  border-radius: 10px;
+}
+#templateCard:hover {
+  background-color: rgba(52, 52, 70, 0.92);
+}
+#templateCard:checked {
+  background-color: rgba(90, 26, 154, 0.16);
+  border: 2px solid #5A1A9A;
+}
+#templateCardTitle {
+  color: #D0C0E0;
+  font-size: 15px;
+  font-weight: 600;
+}
+#templateCardDesc {
+  color: #8060A0;
+  font-size: 13px;
+}
+#templateCardBadge {
+  background-color: rgba(90, 26, 154, 0.16);
+  color: #5A1A9A;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+}
+
+#fieldLabel {
+  color: #D0C0E0;
+  font-size: 13px;
+  font-weight: 500;
+}
+#fieldHint {
+  color: #504070;
+  font-size: 12px;
+}
+QLineEdit#projectNameEdit,
+QLineEdit#projectLocationEdit,
+QLineEdit#projectVersionEdit,
+QLineEdit#projectDescEdit {
+  background-color: #3A3A44;
+  border: 1.5px solid #4A4A58;
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #D0C0E0;
+  selection-background-color: #5A1A9A;
+}
+QLineEdit#projectNameEdit:focus,
+QLineEdit#projectLocationEdit:focus,
+QLineEdit#projectVersionEdit:focus,
+QLineEdit#projectDescEdit:focus {
+  border-color: #5A1A9A;
+  background-color: #454550;
+}
+QLineEdit#projectNameEdit[error="true"] {
+  border: 1.5px solid #D13438;
+}
+
+#configGroup {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+#configGroupTitle {
+  color: #D0C0E0;
+  font-size: 14px;
+  font-weight: 500;
+}
+#configGroupDesc {
+  color: #8060A0;
+  font-size: 13px;
+}
+
+#summaryGrid {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+#summaryLabel {
+  color: #504070;
+  font-size: 12px;
+  font-weight: 500;
+}
+#summaryValue {
+  color: #D0C0E0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+#wizardBackBtn, #wizardCancelBtn {
+  background-color: transparent;
+  color: #8060A0;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 500;
+}
+#wizardBackBtn:hover, #wizardCancelBtn:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+#wizardBackBtn:disabled {
+  color: #504070;
+  background-color: transparent;
+}
+
+#wizardNextBtn {
+  background-color: #5A1A9A;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 500;
+}
+#wizardNextBtn:hover {
+  background-color: #4F1788;
+}
+#wizardNextBtn:disabled {
+  background-color: #5A1A9A;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+#wizardCreateBtn {
+  background-color: #3FB950;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 500;
+}
+#wizardCreateBtn:hover {
+  background-color: #2EA043;
+}
+/* ===== NewProjectWizard 向导 (自动生成, 勿手改) END ===== */

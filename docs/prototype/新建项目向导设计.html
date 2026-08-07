@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新建项目向导 · ETest Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* ============================================================
+           CSS Variables — Fluent Design 色彩系统
+           ============================================================ */
+        :root {
+            --bg-canvas: #f0f2f5;
+            --bg-card: rgba(255, 255, 255, 0.72);
+            --bg-card-hover: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.48);
+            --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.18);
+            --text-primary: #1a1a1a;
+            --text-secondary: #5a5a6e;
+            --text-muted: #8c8ca8;
+            --accent: #0078d4;
+            --accent-light: #e6f1fc;
+            --accent-hover: #106ebe;
+            --success: #107c10;
+            --radius-card: 20px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.2, 0, 0, 1);
+            --font: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        /* dark 模式支持（跟随系统） */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-canvas: #1a1a24;
+                --bg-card: rgba(32, 32, 44, 0.78);
+                --bg-card-hover: rgba(42, 42, 58, 0.92);
+                --glass-border: rgba(255, 255, 255, 0.08);
+                --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.6);
+                --text-primary: #e8e8f0;
+                --text-secondary: #a8a8c0;
+                --text-muted: #6a6a84;
+                --accent: #4aa8ff;
+                --accent-light: rgba(74, 168, 255, 0.12);
+                --accent-hover: #6abaff;
+            }
+        }
+
+        /* ============================================================
+           Reset & Base
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-canvas);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: 0;
+            transition: background var(--transition);
+        }
+
+        /* ============================================================
+           Wizard Container — 毛玻璃卡片
+           ============================================================ */
+        .wizard {
+            max-width: 820px;
+            width: 100%;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-radius: var(--radius-card);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 32px 36px 28px;
+            transition: background var(--transition), border-color var(--transition);
+        }
+
+        /* ============================================================
+           Header
+           ============================================================ */
+        .wizard-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .wizard-header .icon {
+            width: 44px;
+            height: 44px;
+            background: var(--accent-light);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 22px;
+            flex-shrink: 0;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .wizard-header .title-group h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            margin: 0 0 2px;
+        }
+
+        .wizard-header .title-group p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* ============================================================
+           Steps Indicator — Fluent 风格步骤条
+           ============================================================ */
+        .steps-indicator {
+            display: flex;
+            gap: 0;
+            margin-bottom: 32px;
+            padding: 0 4px;
+            position: relative;
+        }
+
+        .steps-indicator .step {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: default;
+            position: relative;
+            padding: 6px 0;
+            transition: color var(--transition);
+        }
+
+        /* 连线（伪元素） */
+        .steps-indicator .step::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: #d0d0dd;
+            margin-left: 12px;
+            transition: background var(--transition);
+        }
+        .steps-indicator .step:last-child::after {
+            display: none;
+        }
+
+        .steps-indicator .step .circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            background: #e8e8f0;
+            color: #6a6a84;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+
+        /* 状态：active */
+        .steps-indicator .step.active {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.active .circle {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.28);
+        }
+        .steps-indicator .step.active::after {
+            background: var(--accent);
+        }
+
+        /* 状态：completed */
+        .steps-indicator .step.completed {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.completed .circle {
+            background: var(--success);
+            color: #fff;
+        }
+        .steps-indicator .step.completed::after {
+            background: var(--success);
+        }
+
+        /* ============================================================
+           Panels Container
+           ============================================================ */
+        .panels {
+            position: relative;
+            min-height: 340px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeSlide 0.3s ease forwards;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================================
+           Panel 1 — 模板选择
+           ============================================================ */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .template-card {
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 18px 16px 16px;
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .template-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .template-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.08);
+        }
+
+        .template-card .icon-big {
+            font-size: 28px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .template-card h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+        }
+
+        .template-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .template-card .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+
+        /* ============================================================
+           Panel 2 — 项目信息
+           ============================================================ */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .form-group .hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-left: 6px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: var(--font);
+            background: rgba(255, 255, 255, 0.6);
+            border: 1.5px solid #d0d0dd;
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            transition: all var(--transition);
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.12);
+            background: #fff;
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        /* ============================================================
+           Panel 3 — 高级配置
+           ============================================================ */
+        .config-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .config-group:last-child {
+            border-bottom: none;
+        }
+
+        .config-group .info h4 {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 0 0 2px;
+        }
+
+        .config-group .info p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Toggle Switch — Fluent 风格 */
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #d0d0dd;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background var(--transition);
+            flex-shrink: 0;
+        }
+
+        .toggle.active {
+            background: var(--accent);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            transition: transform var(--transition);
+        }
+
+        .toggle.active::after {
+            transform: translateX(20px);
+        }
+
+        /* ============================================================
+           Panel 4 — 摘要确认
+           ============================================================ */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 32px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-sm);
+            padding: 20px 24px;
+            margin-top: 4px;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-item .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .summary-item .value {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        /* ============================================================
+           Footer — 按钮栏
+           ============================================================ */
+        .wizard-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            padding-top: 20px;
+        }
+
+        .wizard-footer .left {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 22px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 6px 20px rgba(0, 120, 212, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(16, 124, 16, 0.2);
+        }
+
+        .btn-success:hover {
+            background: #0a6e0a;
+            box-shadow: 0 6px 20px rgba(16, 124, 16, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .btn-icon {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .btn-icon i {
+            margin-right: 6px;
+        }
+
+        /* ============================================================
+           Responsive
+           ============================================================ */
+        @media (max-width: 700px) {
+            .wizard {
+                padding: 20px 18px;
+            }
+
+            .template-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .steps-indicator .step .label {
+                display: none;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .wizard-footer {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .wizard-footer .left {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .steps-indicator .step .circle {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wizard" role="dialog" aria-labelledby="wizard-title">
+        <!-- ===== Header ===== -->
+        <div class="wizard-header">
+            <div class="icon">
+                <i class="fas fa-folder-plus"></i>
+            </div>
+            <div class="title-group">
+                <h2 id="wizard-title">新建测试项目</h2>
+                <p>配置您的自动化测试工程，向导将帮您快速起步</p>
+            </div>
+        </div>
+
+        <!-- ===== Steps Indicator ===== -->
+        <div class="steps-indicator" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="4">
+            <div class="step active" data-step="1">
+                <span class="circle">1</span>
+                <span class="label">模板</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="circle">2</span>
+                <span class="label">信息</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="circle">3</span>
+                <span class="label">配置</span>
+            </div>
+            <div class="step" data-step="4">
+                <span class="circle">4</span>
+                <span class="label">完成</span>
+            </div>
+        </div>
+
+        <!-- ===== Panels ===== -->
+        <div class="panels">
+
+            <!-- Panel 1: 模板选择 -->
+            <div class="panel active" data-panel="1">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;">
+                    选择一个项目模板作为起点，您也可以稍后调整。
+                </p>
+                <div class="template-grid">
+                    <div class="template-card selected" data-template="empty">
+                        <span class="icon-big"><i class="fas fa-file"></i></span>
+                        <h4>空项目</h4>
+                        <p>手动配置拓扑、协议和用例，完全自定义</p>
+                        <span class="badge">推荐</span>
+                    </div>
+                    <div class="template-card" data-template="demo">
+                        <span class="icon-big"><i class="fas fa-microchip"></i></span>
+                        <h4>Mock 演示</h4>
+                        <p>包含模拟设备、示例协议和演示用例</p>
+                        <span class="badge">快速体验</span>
+                    </div>
+                    <div class="template-card" data-template="industrial">
+                        <span class="icon-big"><i class="fas fa-industry"></i></span>
+                        <h4>工业控制</h4>
+                        <p>预设 PLC、Modbus、CAN 总线测试套件</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 2: 项目信息 -->
+            <div class="panel" data-panel="2">
+                <div class="form-group">
+                    <label for="projectName">项目名称 <span class="hint">· 建议使用英文或拼音</span></label>
+                    <input type="text" id="projectName" placeholder="例如：PowerSupplyTest" value="FlightControl_Test" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="projectLocation">位置</label>
+                        <input type="text" id="projectLocation" value="C:\Users\admin\ETestProjects\" />
+                    </div>
+                    <div class="form-group">
+                        <label for="projectVersion">版本</label>
+                        <input type="text" id="projectVersion" value="1.0.0" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="projectDesc">描述 <span class="hint">· 可选</span></label>
+                    <input type="text" id="projectDesc" placeholder="简要说明该测试项目的用途" value="飞控系统综合自动化测试" />
+                </div>
+            </div>
+
+            <!-- Panel 3: 高级配置 -->
+            <div class="panel" data-panel="3">
+                <div class="config-group">
+                    <div class="info">
+                        <h4>自动创建 ICD 协议模板</h4>
+                        <p>生成一份示例 ICD 帧定义文件，方便快速上手</p>
+                    </div>
+                    <div class="toggle active" data-toggle="icd"></div>
+                </div>
+                <div class="config-group">
+                    <div class="info">
+                        <h4>启用 Mock 设备模拟</h4>
+                        <p>在无真实硬件时使用虚拟设备进行调试</p>
+                    </div>
+                    <div class="toggle active" data-toggle="mock"></div>
+                </div>
+                <div class="config-group">
+                    <div class="info">
+                        <h4>初始化 Git 仓库</h4>
+                        <p>自动初始化本地 Git 并生成 .gitignore</p>
+                    </div>
+                    <div class="toggle" data-toggle="git"></div>
+                </div>
+                <div class="config-group">
+                    <div class="info">
+                        <h4>生成示例测试用例</h4>
+                        <p>创建一组基础测试步骤示例，帮助理解框架</p>
+                    </div>
+                    <div class="toggle active" data-toggle="samples"></div>
+                </div>
+            </div>
+
+            <!-- Panel 4: 摘要确认 -->
+            <div class="panel" data-panel="4">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">
+                    请确认以下信息，点击「创建项目」即可完成。
+                </p>
+                <div class="summary-grid" id="summaryGrid">
+                    <div class="summary-item">
+                        <span class="label">模板</span>
+                        <span class="value" id="sumTemplate">空项目</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">项目名称</span>
+                        <span class="value" id="sumName">FlightControl_Test</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">位置</span>
+                        <span class="value" id="sumLocation">C:\Users\admin\ETestProjects\</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">版本</span>
+                        <span class="value" id="sumVersion">1.0.0</span>
+                    </div>
+                    <div class="summary-item" style="grid-column:1/3;">
+                        <span class="label">描述</span>
+                        <span class="value" id="sumDesc">飞控系统综合自动化测试</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== Footer ===== -->
+        <div class="wizard-footer">
+            <div class="left">
+                <button class="btn" id="btnPrev" disabled>
+                    <i class="fas fa-chevron-left"></i> 上一步
+                </button>
+            </div>
+            <div>
+                <button class="btn" id="btnCancel">取消</button>
+                <button class="btn btn-primary" id="btnNext">
+                    下一步 <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-success" id="btnCreate" style="display:none;">
+                    <i class="fas fa-check"></i> 创建项目
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  DOM 引用
+            // ============================================================
+            const steps = document.querySelectorAll('.step');
+            const panels = document.querySelectorAll('.panel');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            const btnCreate = document.getElementById('btnCreate');
+            const btnCancel = document.getElementById('btnCancel');
+
+            // Panel 1: 模板卡片
+            const templateCards = document.querySelectorAll('.template-card');
+            // Panel 2: 表单
+            const inputName = document.getElementById('projectName');
+            const inputLocation = document.getElementById('projectLocation');
+            const inputVersion = document.getElementById('projectVersion');
+            const inputDesc = document.getElementById('projectDesc');
+            // Panel 3: Toggle
+            const toggles = document.querySelectorAll('.toggle');
+            // Panel 4: 摘要
+            const sumTemplate = document.getElementById('sumTemplate');
+            const sumName = document.getElementById('sumName');
+            const sumLocation = document.getElementById('sumLocation');
+            const sumVersion = document.getElementById('sumVersion');
+            const sumDesc = document.getElementById('sumDesc');
+
+            // ============================================================
+            //  状态
+            // ============================================================
+            let currentStep = 1; // 1-4
+            let selectedTemplate = 'empty';
+            const templateLabels = {
+                empty: '空项目',
+                demo: 'Mock 演示',
+                industrial: '工业控制'
+            };
+
+            // ============================================================
+            //  辅助函数
+            // ============================================================
+            function updateStepIndicator() {
+                steps.forEach((el, idx) => {
+                    const num = idx + 1;
+                    el.classList.remove('active', 'completed');
+                    if (num < currentStep) el.classList.add('completed');
+                    else if (num === currentStep) el.classList.add('active');
+                });
+                // 更新 aria-valuenow
+                const progress = document.querySelector('.steps-indicator');
+                if (progress) progress.setAttribute('aria-valuenow', String(currentStep));
+            }
+
+            function showPanel(index) {
+                panels.forEach((p, i) => {
+                    p.classList.toggle('active', i === index - 1);
+                });
+            }
+
+            function updateButtons() {
+                const isFirst = currentStep === 1;
+                const isLast = currentStep === 4;
+
+                btnPrev.disabled = isFirst;
+                btnNext.style.display = isLast ? 'none' : 'inline-flex';
+                btnCreate.style.display = isLast ? 'inline-flex' : 'none';
+
+                // 下一步按钮文字
+                if (!isLast) {
+                    btnNext.innerHTML = '下一步 <i class="fas fa-chevron-right"></i>';
+                }
+            }
+
+            function goToStep(step) {
+                if (step < 1 || step > 4) return;
+                currentStep = step;
+                updateStepIndicator();
+                showPanel(step);
+                updateButtons();
+                // 滚动到顶部（移动端友好）
+                document.querySelector('.wizard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // ============================================================
+            //  收集摘要数据
+            // ============================================================
+            function updateSummary() {
+                const templateLabel = templateLabels[selectedTemplate] || '空项目';
+                sumTemplate.textContent = templateLabel;
+                sumName.textContent = inputName.value.trim() || '（未命名）';
+                sumLocation.textContent = inputLocation.value.trim() || '（未设置）';
+                sumVersion.textContent = inputVersion.value.trim() || '1.0.0';
+                sumDesc.textContent = inputDesc.value.trim() || '（无描述）';
+            }
+
+            // ============================================================
+            //  事件绑定
+            // ============================================================
+
+            // ---- 模板卡片点击 ----
+            templateCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    templateCards.forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTemplate = this.dataset.template;
+                    // 实时更新摘要
+                    updateSummary();
+                });
+            });
+
+            // ---- 表单输入变化时更新摘要 ----
+            [inputName, inputLocation, inputVersion, inputDesc].forEach(el => {
+                el.addEventListener('input', updateSummary);
+            });
+
+            // ---- Toggle 开关 ----
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                });
+            });
+
+            // ---- 下一步 ----
+            btnNext.addEventListener('click', function() {
+                if (currentStep === 4) return;
+                // 第2步校验：项目名称不能为空
+                if (currentStep === 2) {
+                    const name = inputName.value.trim();
+                    if (!name) {
+                        inputName.focus();
+                        inputName.style.borderColor = '#d13438';
+                        inputName.style.boxShadow = '0 0 0 4px rgba(209,52,56,0.12)';
+                        setTimeout(() => {
+                            inputName.style.borderColor = '';
+                            inputName.style.boxShadow = '';
+                        }, 1200);
+                        return;
+                    }
+                }
+                // 进入第4步时更新摘要
+                if (currentStep === 3) {
+                    updateSummary();
+                }
+                goToStep(currentStep + 1);
+            });
+
+            // ---- 上一步 ----
+            btnPrev.addEventListener('click', function() {
+                if (currentStep === 1) return;
+                goToStep(currentStep - 1);
+            });
+
+            // ---- 取消 ----
+            btnCancel.addEventListener('click', function() {
+                if (confirm('确定要取消创建项目吗？已填写的内容将丢失。')) {
+                    // 这里可以关闭向导或重置
+                    alert('向导已取消。');
+                }
+            });
+
+            // ---- 创建项目 ----
+            btnCreate.addEventListener('click', function() {
+                // 收集所有配置
+                const templateLabel = templateLabels[selectedTemplate] || '空项目';
+                const name = inputName.value.trim() || '未命名项目';
+                const location = inputLocation.value.trim() || '（未设置）';
+                const version = inputVersion.value.trim() || '1.0.0';
+                const desc = inputDesc.value.trim() || '（无描述）';
+
+                // 读取开关状态
+                const icdOn = document.querySelector('[data-toggle="icd"]')?.classList.contains('active') || false;
+                const mockOn = document.querySelector('[data-toggle="mock"]')?.classList.contains('active') || false;
+                const gitOn = document.querySelector('[data-toggle="git"]')?.classList.contains('active') || false;
+                const samplesOn = document.querySelector('[data-toggle="samples"]')?.classList.contains('active') || false;
+
+                // 构建结果对象
+                const result = {
+                    template: selectedTemplate,
+                    templateLabel,
+                    name,
+                    location,
+                    version,
+                    description: desc,
+                    options: { icd: icdOn, mock: mockOn, git: gitOn, samples: samplesOn }
+                };
+
+                console.log('🚀 创建项目配置：', result);
+
+                // 模拟创建过程
+                btnCreate.disabled = true;
+                btnCreate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 创建中...';
+
+                setTimeout(() => {
+                    alert(`✅ 项目 "${name}" 创建成功！\n位置：${location}${name}\n模板：${templateLabel}`);
+                    btnCreate.disabled = false;
+                    btnCreate.innerHTML = '<i class="fas fa-check"></i> 创建项目';
+                    // 可重置向导或跳转
+                }, 1200);
+            });
+
+            // ---- 键盘支持 ----
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (currentStep === 4) {
+                        btnCreate.click();
+                    } else {
+                        btnNext.click();
+                    }
+                    e.preventDefault();
+                }
+                if (e.key === 'Escape') {
+                    btnCancel.click();
+                    e.preventDefault();
+                }
+                if (e.key === 'ArrowLeft' && currentStep > 1) {
+                    btnPrev.click();
+                    e.preventDefault();
+                }
+                if (e.key === 'ArrowRight' && currentStep < 4) {
+                    btnNext.click();
+                    e.preventDefault();
+                }
+            });
+
+            // ============================================================
+            //  初始化
+            // ============================================================
+            // 默认选中空项目
+            document.querySelector('.template-card[data-template="empty"]')?.classList.add('selected');
+            selectedTemplate = 'empty';
+            updateSummary();
+            goToStep(1);
+
+        })();
+    </script>
+
+</body>
+</html>

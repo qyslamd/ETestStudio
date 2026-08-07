@@ -1049,14 +1049,6 @@ etest--app--BottomContainerWidget QHeaderView::section {
     padding: 4px;
 }
 
-/* ==================== NewProjectDialog ==================== */
-QLabel#previewLabel {
-    color: gray;
-}
-QLabel#errorLabel {
-    color: red;
-}
-
 /* ==================== EtlogViewerWidget ==================== */
 etest--app--EtlogViewerWidget {
     background-color: #FFF5F8;
@@ -1227,13 +1219,6 @@ GitWidget QLabel#gitTitleLabel {
     font-weight: bold;
     font-size: 11px;
     background: transparent;
-}
-
-/* ==================== NewProjectDialog ==================== */
-#dlg_contentWidget {
-    background-color: #FFF0F5;
-    border: 1px solid #FFE0EA;
-    border-radius: 8px;
 }
 
 /* ==================== 欢迎页 ==================== */
@@ -2540,3 +2525,166 @@ QGroupBox[selected="true"] {
   color: #C72523;
 }
 /* ===== visualizer 副标题状态配色 END ===== */
+
+/* ===== NewProjectWizard 向导 (自动生成, 勿手改) START ===== */
+#wizardCard {
+  background-color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 20px;
+}
+
+#wizardHeaderIcon {
+  background-color: #FCEFF3;
+  border-radius: 14px;
+}
+#wizardHeaderTitle {
+  color: #4A2030;
+  font-size: 20px;
+  font-weight: 600;
+}
+#wizardHeaderSubtitle {
+  color: #B0607A;
+  font-size: 14px;
+}
+
+#templateIntro, #summaryIntro {
+  color: #B0607A;
+  font-size: 14px;
+}
+
+#templateCard {
+  background-color: rgba(255, 255, 255, 0.70);
+  border: 2px solid transparent;
+  border-radius: 10px;
+}
+#templateCard:hover {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+#templateCard:checked {
+  background-color: #FCEFF3;
+  border: 2px solid #E890A8;
+}
+#templateCardTitle {
+  color: #4A2030;
+  font-size: 15px;
+  font-weight: 600;
+}
+#templateCardDesc {
+  color: #B0607A;
+  font-size: 13px;
+}
+#templateCardBadge {
+  background-color: #FCEFF3;
+  color: #E890A8;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+}
+
+#fieldLabel {
+  color: #4A2030;
+  font-size: 13px;
+  font-weight: 500;
+}
+#fieldHint {
+  color: #D4A0B0;
+  font-size: 12px;
+}
+QLineEdit#projectNameEdit,
+QLineEdit#projectLocationEdit,
+QLineEdit#projectVersionEdit,
+QLineEdit#projectDescEdit {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid #D0D0DD;
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #4A2030;
+  selection-background-color: #E890A8;
+}
+QLineEdit#projectNameEdit:focus,
+QLineEdit#projectLocationEdit:focus,
+QLineEdit#projectVersionEdit:focus,
+QLineEdit#projectDescEdit:focus {
+  border-color: #E890A8;
+  background-color: #FFFFFF;
+}
+QLineEdit#projectNameEdit[error="true"] {
+  border: 1.5px solid #D13438;
+}
+
+#configGroup {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+#configGroupTitle {
+  color: #4A2030;
+  font-size: 14px;
+  font-weight: 500;
+}
+#configGroupDesc {
+  color: #B0607A;
+  font-size: 13px;
+}
+
+#summaryGrid {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+}
+#summaryLabel {
+  color: #D4A0B0;
+  font-size: 12px;
+  font-weight: 500;
+}
+#summaryValue {
+  color: #4A2030;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+#wizardBackBtn, #wizardCancelBtn {
+  background-color: transparent;
+  color: #B0607A;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 500;
+}
+#wizardBackBtn:hover, #wizardCancelBtn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+#wizardBackBtn:disabled {
+  color: #D4A0B0;
+  background-color: transparent;
+}
+
+#wizardNextBtn {
+  background-color: #E890A8;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 500;
+}
+#wizardNextBtn:hover {
+  background-color: #CC7F94;
+}
+#wizardNextBtn:disabled {
+  background-color: #E890A8;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+#wizardCreateBtn {
+  background-color: #107C10;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 500;
+}
+#wizardCreateBtn:hover {
+  background-color: #0A6E0A;
+}
+/* ===== NewProjectWizard 向导 (自动生成, 勿手改) END ===== */

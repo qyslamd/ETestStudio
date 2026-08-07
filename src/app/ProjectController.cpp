@@ -11,7 +11,7 @@
 #include "editors/EditorFactory.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "dialogs/NewProjectDialog.h"
+#include "dialogs/NewProjectWizard.h"
 #include "logger/Logger.h"
 #include "project/ProjectManager.h"
 
@@ -30,12 +30,20 @@ void ProjectController::newProject() {
   LOG_INFO("MAIN_UI", "点击「新建项目」");
 
   // 先弹新建对话框，用户取消则不动当前项目
-  etest::app::NewProjectDialog dlg(parent_widget_);
+  etest::app::NewProjectWizard dlg(parent_widget_);
   if (dlg.exec() != QDialog::Accepted) {
     return;
   }
 
-  // 用户已确认新建，再尝试关闭当前项目
+  // 用户已确认新建，记录向导收集的参数（V1 仅消费名称与位置）
+  LOG_INFO("MAIN_UI", "新建项目向导确认: 模板={}, 名称={}, 版本={}, 描述={}, "
+                      "ICD模板={}, Mock模拟={}, Git={}, 示例用例={}",
+           dlg.templateId().toStdString(), dlg.projectName().toStdString(),
+           dlg.projectVersion().toStdString(),
+           dlg.projectDescription().toStdString(), dlg.createIcdTemplate(),
+           dlg.enableMockDevice(), dlg.initGitRepo(), dlg.generateSampleTests());
+
+  // 再尝试关闭当前项目
   if (!tryCloseCurrentProject()) {
     return;
   }

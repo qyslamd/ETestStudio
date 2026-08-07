@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新建拓扑向导 · ETest Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* ============================================================
+           CSS Variables — Fluent Design 色彩系统
+           ============================================================ */
+        :root {
+            --bg-canvas: #f0f2f5;
+            --bg-card: rgba(255, 255, 255, 0.72);
+            --bg-card-hover: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.48);
+            --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.18);
+            --text-primary: #1a1a1a;
+            --text-secondary: #5a5a6e;
+            --text-muted: #8c8ca8;
+            --accent: #0078d4;
+            --accent-light: #e6f1fc;
+            --accent-hover: #106ebe;
+            --danger: #d13438;
+            --success: #107c10;
+            --warning: #b8860b;
+            --radius-card: 20px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.2, 0, 0, 1);
+            --font: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-canvas: #1a1a24;
+                --bg-card: rgba(32, 32, 44, 0.78);
+                --bg-card-hover: rgba(42, 42, 58, 0.92);
+                --glass-border: rgba(255, 255, 255, 0.08);
+                --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.6);
+                --text-primary: #e8e8f0;
+                --text-secondary: #a8a8c0;
+                --text-muted: #6a6a84;
+                --accent: #4aa8ff;
+                --accent-light: rgba(74, 168, 255, 0.12);
+                --accent-hover: #6abaff;
+            }
+        }
+
+        /* ============================================================
+           Reset & Base
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-canvas);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: 0;
+            transition: background var(--transition);
+        }
+
+        /* ============================================================
+           Wizard Container
+           ============================================================ */
+        .wizard {
+            max-width: 960px;
+            width: 100%;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-radius: var(--radius-card);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 32px 36px 28px;
+            transition: background var(--transition), border-color var(--transition);
+        }
+
+        /* ============================================================
+           Header
+           ============================================================ */
+        .wizard-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .wizard-header .icon {
+            width: 44px;
+            height: 44px;
+            background: var(--accent-light);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 22px;
+            flex-shrink: 0;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .wizard-header .title-group h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            margin: 0 0 2px;
+        }
+
+        .wizard-header .title-group p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* ============================================================
+           Steps Indicator
+           ============================================================ */
+        .steps-indicator {
+            display: flex;
+            gap: 0;
+            margin-bottom: 32px;
+            padding: 0 4px;
+            position: relative;
+        }
+
+        .steps-indicator .step {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: default;
+            position: relative;
+            padding: 6px 0;
+            transition: color var(--transition);
+        }
+
+        .steps-indicator .step::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: #d0d0dd;
+            margin-left: 12px;
+            transition: background var(--transition);
+        }
+        .steps-indicator .step:last-child::after {
+            display: none;
+        }
+
+        .steps-indicator .step .circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            background: #e8e8f0;
+            color: #6a6a84;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+
+        .steps-indicator .step.active {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.active .circle {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.28);
+        }
+        .steps-indicator .step.active::after {
+            background: var(--accent);
+        }
+
+        .steps-indicator .step.completed {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.completed .circle {
+            background: var(--success);
+            color: #fff;
+        }
+        .steps-indicator .step.completed::after {
+            background: var(--success);
+        }
+
+        /* ============================================================
+           Panels Container
+           ============================================================ */
+        .panels {
+            position: relative;
+            min-height: 340px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeSlide 0.3s ease forwards;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================================
+           Panel 1 — 拓扑模板
+           ============================================================ */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .template-card {
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 18px 16px 16px;
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .template-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .template-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.08);
+        }
+
+        .template-card .icon-big {
+            font-size: 28px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .template-card h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+        }
+
+        .template-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .template-card .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+
+        /* ============================================================
+           Panel 2 — 设备与 UUT
+           ============================================================ */
+        .topo-workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .device-pool,
+        .uut-pool {
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            border: 1px solid var(--glass-border);
+            min-height: 180px;
+        }
+
+        .device-pool .pool-header,
+        .uut-pool .pool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .device-pool .pool-header h4,
+        .uut-pool .pool-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .device-pool .pool-header .count,
+        .uut-pool .pool-header .count {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+
+        .device-list,
+        .uut-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .device-item,
+        .uut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--glass-border);
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: all var(--transition);
+        }
+
+        .device-item:hover,
+        .uut-item:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent);
+        }
+
+        .device-item .name,
+        .uut-item .name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .device-item .name i,
+        .uut-item .name i {
+            color: var(--accent);
+            width: 18px;
+        }
+
+        .device-item .actions,
+        .uut-item .actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .device-item .actions button,
+        .uut-item .actions button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all var(--transition);
+        }
+
+        .device-item .actions button:hover,
+        .uut-item .actions button:hover {
+            background: rgba(209, 52, 56, 0.12);
+            color: var(--danger);
+        }
+
+        .device-item .ports-tag,
+        .uut-item .ports-tag {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-canvas);
+            padding: 0 8px;
+            border-radius: 10px;
+        }
+
+        .btn-sm {
+            padding: 4px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .btn-sm:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-sm-danger {
+            background: rgba(209, 52, 56, 0.10);
+            color: var(--danger);
+        }
+
+        .btn-sm-danger:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .empty-hint {
+            color: var(--text-muted);
+            font-size: 13px;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        /* ============================================================
+           Panel 3 — 连线定义
+           ============================================================ */
+        .connection-area {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .connection-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 12px;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.02);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--glass-border);
+        }
+
+        .connection-row .from,
+        .connection-row .to {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .connection-row .from label,
+        .connection-row .to label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .connection-row select {
+            padding: 6px 10px;
+            font-size: 13px;
+            font-family: var(--font);
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            outline: none;
+            transition: all var(--transition);
+        }
+
+        .connection-row select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.08);
+        }
+
+        .connection-row .arrow {
+            color: var(--accent);
+            font-size: 20px;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .connection-row .del-conn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all var(--transition);
+            flex-shrink: 0;
+        }
+
+        .connection-row .del-conn:hover {
+            background: rgba(209, 52, 56, 0.12);
+            color: var(--danger);
+        }
+
+        .btn-add-conn {
+            padding: 8px 20px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font);
+            width: fit-content;
+        }
+
+        .btn-add-conn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-style: solid;
+        }
+
+        /* ============================================================
+           Panel 4 — 摘要
+           ============================================================ */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 32px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-sm);
+            padding: 20px 24px;
+            margin-top: 4px;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-item .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .summary-item .value {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        .summary-item .value .tag {
+            display: inline-block;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 0 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+        }
+
+        /* ============================================================
+           Footer
+           ============================================================ */
+        .wizard-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            padding-top: 20px;
+        }
+
+        .wizard-footer .left {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 22px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 6px 20px rgba(0, 120, 212, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(16, 124, 16, 0.2);
+        }
+
+        .btn-success:hover {
+            background: #0a6e0a;
+            box-shadow: 0 6px 20px rgba(16, 124, 16, 0.28);
+            transform: translateY(-1px);
+        }
+
+        /* ============================================================
+           Responsive
+           ============================================================ */
+        @media (max-width: 820px) {
+            .wizard {
+                padding: 20px 18px;
+            }
+            .template-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .topo-workspace {
+                grid-template-columns: 1fr;
+            }
+            .connection-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .connection-row .arrow {
+                transform: rotate(90deg);
+                padding: 4px 0;
+            }
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+            .steps-indicator .step .label {
+                display: none;
+            }
+            .wizard-footer {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wizard" role="dialog" aria-labelledby="wizard-title">
+        <!-- ===== Header ===== -->
+        <div class="wizard-header">
+            <div class="icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="title-group">
+                <h2 id="wizard-title">新建拓扑文件</h2>
+                <p>定义测试系统的硬件拓扑结构：设备、UUT 与信号连线</p>
+            </div>
+        </div>
+
+        <!-- ===== Steps ===== -->
+        <div class="steps-indicator" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="4">
+            <div class="step active" data-step="1">
+                <span class="circle">1</span>
+                <span class="label">模板</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="circle">2</span>
+                <span class="label">设备 &amp; UUT</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="circle">3</span>
+                <span class="label">连线</span>
+            </div>
+            <div class="step" data-step="4">
+                <span class="circle">4</span>
+                <span class="label">完成</span>
+            </div>
+        </div>
+
+        <!-- ===== Panels ===== -->
+        <div class="panels">
+
+            <!-- ========== Panel 1: 模板选择 ========== -->
+            <div class="panel active" data-panel="1">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;">
+                    选择拓扑模板，快速搭建测试系统的硬件连接骨架。
+                </p>
+                <div class="template-grid">
+                    <div class="template-card selected" data-template="empty">
+                        <span class="icon-big"><i class="fas fa-cubes"></i></span>
+                        <h4>空拓扑</h4>
+                        <p>从零开始添加设备和 UUT</p>
+                        <span class="badge">推荐</span>
+                    </div>
+                    <div class="template-card" data-template="single">
+                        <span class="icon-big"><i class="fas fa-microchip"></i></span>
+                        <h4>单设备 + UUT</h4>
+                        <p>一个测试设备连接一个被测对象</p>
+                    </div>
+                    <div class="template-card" data-template="multi">
+                        <span class="icon-big"><i class="fas fa-server"></i></span>
+                        <h4>多设备混合</h4>
+                        <p>AD/DA/CAN/串口 多种设备混合拓扑</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== Panel 2: 设备与 UUT ========== -->
+            <div class="panel" data-panel="2">
+                <div class="topo-workspace">
+                    <!-- 左侧：设备池 -->
+                    <div class="device-pool">
+                        <div class="pool-header">
+                            <h4><i class="fas fa-server" style="color:var(--accent);margin-right:6px;"></i>测试设备</h4>
+                            <span class="count" id="deviceCount">0</span>
+                        </div>
+                        <div class="device-list" id="deviceList">
+                            <div class="empty-hint">
+                                <i class="fas fa-plus-circle" style="display:block;font-size:24px;margin-bottom:6px;"></i>
+                                点击下方按钮添加设备
+                            </div>
+                        </div>
+                        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn-sm" id="btnAddDevice"><i class="fas fa-plus"></i> 添加设备</button>
+                            <button class="btn-sm btn-sm-danger" id="btnClearDevices"><i class="fas fa-trash-alt"></i> 清空</button>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：UUT 池 -->
+                    <div class="uut-pool">
+                        <div class="pool-header">
+                            <h4><i class="fas fa-cube" style="color:var(--warning);margin-right:6px;"></i>被测对象 (UUT)</h4>
+                            <span class="count" id="uutCount">0</span>
+                        </div>
+                        <div class="uut-list" id="uutList">
+                            <div class="empty-hint">
+                                <i class="fas fa-plus-circle" style="display:block;font-size:24px;margin-bottom:6px;"></i>
+                                点击下方按钮添加 UUT
+                            </div>
+                        </div>
+                        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn-sm" id="btnAddUut"><i class="fas fa-plus"></i> 添加 UUT</button>
+                            <button class="btn-sm btn-sm-danger" id="btnClearUuts"><i class="fas fa-trash-alt"></i> 清空</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== Panel 3: 连线定义 ========== -->
+            <div class="panel" data-panel="3">
+                <div class="connection-area">
+                    <div id="connectionList">
+                        <div class="empty-hint">
+                            <i class="fas fa-plug" style="display:block;font-size:24px;margin-bottom:6px;"></i>
+                            暂无连线，点击下方按钮定义设备与 UUT 之间的连接
+                        </div>
+                    </div>
+                    <button class="btn-add-conn" id="btnAddConnection">
+                        <i class="fas fa-plus"></i> 添加连线
+                    </button>
+                    <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+                        <i class="fas fa-info-circle"></i> 每条连线表示一个设备端口与一个 UUT 端口的物理连接
+                    </p>
+                </div>
+            </div>
+
+            <!-- ========== Panel 4: 摘要 ========== -->
+            <div class="panel" data-panel="4">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">
+                    确认拓扑配置，点击「创建拓扑」即可生成 `.etopo` 文件。
+                </p>
+                <div class="summary-grid" id="summaryGrid">
+                    <div class="summary-item">
+                        <span class="label">拓扑模板</span>
+                        <span class="value" id="sumTemplate">空拓扑</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">设备数量</span>
+                        <span class="value" id="sumDevices">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">UUT 数量</span>
+                        <span class="value" id="sumUuts">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">连线数量</span>
+                        <span class="value" id="sumConnections">0</span>
+                    </div>
+                    <div class="summary-item" style="grid-column:1/3;">
+                        <span class="label">拓扑结构</span>
+                        <span class="value" id="sumTopoDesc" style="font-weight:400;font-size:14px;color:var(--text-secondary);">（暂无设备）</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== Footer ===== -->
+        <div class="wizard-footer">
+            <div class="left">
+                <button class="btn" id="btnPrev" disabled>
+                    <i class="fas fa-chevron-left"></i> 上一步
+                </button>
+            </div>
+            <div>
+                <button class="btn" id="btnCancel">取消</button>
+                <button class="btn btn-primary" id="btnNext">
+                    下一步 <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-success" id="btnCreate" style="display:none;">
+                    <i class="fas fa-check"></i> 创建拓扑
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  DOM 引用
+            // ============================================================
+            const steps = document.querySelectorAll('.step');
+            const panels = document.querySelectorAll('.panel');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            const btnCreate = document.getElementById('btnCreate');
+            const btnCancel = document.getElementById('btnCancel');
+
+            // Panel 1
+            const templateCards = document.querySelectorAll('.template-card');
+            // Panel 2
+            const deviceListEl = document.getElementById('deviceList');
+            const uutListEl = document.getElementById('uutList');
+            const deviceCountEl = document.getElementById('deviceCount');
+            const uutCountEl = document.getElementById('uutCount');
+            const btnAddDevice = document.getElementById('btnAddDevice');
+            const btnAddUut = document.getElementById('btnAddUut');
+            const btnClearDevices = document.getElementById('btnClearDevices');
+            const btnClearUuts = document.getElementById('btnClearUuts');
+            // Panel 3
+            const connectionListEl = document.getElementById('connectionList');
+            const btnAddConnection = document.getElementById('btnAddConnection');
+            // Panel 4
+            const sumTemplate = document.getElementById('sumTemplate');
+            const sumDevices = document.getElementById('sumDevices');
+            const sumUuts = document.getElementById('sumUuts');
+            const sumConnections = document.getElementById('sumConnections');
+            const sumTopoDesc = document.getElementById('sumTopoDesc');
+
+            // ============================================================
+            //  状态
+            // ============================================================
+            let currentStep = 1;
+            let selectedTemplate = 'empty';
+            const templateLabels = {
+                empty: '空拓扑',
+                single: '单设备 + UUT',
+                multi: '多设备混合'
+            };
+
+            // 设备与 UUT 数据
+            let devices = [];
+            let uuts = [];
+            let connections = [];
+            let deviceIdCounter = 0;
+            let uutIdCounter = 0;
+
+            // 默认设备模板
+            const deviceTemplates = [
+                { name: 'PXI-CAN卡', type: 'can', ports: ['ch0', 'ch1', 'ch2'] },
+                { name: 'PXI-A429卡', type: 'a429', ports: ['ch0', 'ch1'] },
+                { name: 'PXI-AD采集卡', type: 'ad', ports: ['ch0', 'ch1', 'ch2', 'ch3'] },
+                { name: 'PXI-串口卡', type: 'serial', ports: ['COM1', 'COM2'] },
+                { name: 'PXI-DA输出卡', type: 'da', ports: ['ch0', 'ch1'] }
+            ];
+
+            // ============================================================
+            //  渲染函数
+            // ============================================================
+
+            function renderDevices() {
+                if (devices.length === 0) {
+                    deviceListEl.innerHTML = `
+                        <div class="empty-hint">
+                            <i class="fas fa-plus-circle" style="display:block;font-size:24px;margin-bottom:6px;"></i>
+                            点击下方按钮添加设备
+                        </div>
+                    `;
+                    deviceCountEl.textContent = '0';
+                    return;
+                }
+                let html = '';
+                devices.forEach((d, idx) => {
+                    const portsStr = d.ports.join(', ');
+                    html += `
+                        <div class="device-item">
+                            <span class="name">
+                                <i class="fas fa-microchip"></i>
+                                ${d.name}
+                                <span class="ports-tag">${d.type} · ${d.ports.length}端口</span>
+                            </span>
+                            <span class="actions">
+                                <button class="btn-sm" style="padding:2px 8px;font-size:11px;" onclick="window.addDevicePort(${idx})">
+                                    <i class="fas fa-plus"></i> 端口
+                                </button>
+                                <button class="btn-sm-danger" style="padding:2px 8px;font-size:11px;" onclick="window.removeDevice(${idx})">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </span>
+                        </div>
+                    `;
+                });
+                deviceListEl.innerHTML = html;
+                deviceCountEl.textContent = String(devices.length);
+            }
+
+            function renderUuts() {
+                if (uuts.length === 0) {
+                    uutListEl.innerHTML = `
+                        <div class="empty-hint">
+                            <i class="fas fa-plus-circle" style="display:block;font-size:24px;margin-bottom:6px;"></i>
+                            点击下方按钮添加 UUT
+                        </div>
+                    `;
+                    uutCountEl.textContent = '0';
+                    return;
+                }
+                let html = '';
+                uuts.forEach((u, idx) => {
+                    const portsStr = u.ports.join(', ');
+                    html += `
+                        <div class="uut-item">
+                            <span class="name">
+                                <i class="fas fa-cube"></i>
+                                ${u.name}
+                                <span class="ports-tag">${u.ports.length}端口</span>
+                            </span>
+                            <span class="actions">
+                                <button class="btn-sm" style="padding:2px 8px;font-size:11px;" onclick="window.addUutPort(${idx})">
+                                    <i class="fas fa-plus"></i> 端口
+                                </button>
+                                <button class="btn-sm-danger" style="padding:2px 8px;font-size:11px;" onclick="window.removeUut(${idx})">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </span>
+                        </div>
+                    `;
+                });
+                uutListEl.innerHTML = html;
+                uutCountEl.textContent = String(uuts.length);
+            }
+
+            function renderConnections() {
+                if (connections.length === 0) {
+                    connectionListEl.innerHTML = `
+                        <div class="empty-hint">
+                            <i class="fas fa-plug" style="display:block;font-size:24px;margin-bottom:6px;"></i>
+                            暂无连线，点击下方按钮定义设备与 UUT 之间的连接
+                        </div>
+                    `;
+                    return;
+                }
+                let html = '';
+                connections.forEach((conn, idx) => {
+                    const device = devices.find(d => d.id === conn.deviceId);
+                    const uut = uuts.find(u => u.id === conn.uutId);
+                    const devName = device ? device.name : '（已删除）';
+                    const uutName = uut ? uut.name : '（已删除）';
+                    html += `
+                        <div class="connection-row">
+                            <div class="from">
+                                <label><i class="fas fa-microchip"></i> 设备</label>
+                                <span style="font-weight:500;color:var(--text-primary);">${devName} · ${conn.devicePort}</span>
+                            </div>
+                            <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                            <div class="to">
+                                <label><i class="fas fa-cube"></i> UUT</label>
+                                <span style="font-weight:500;color:var(--text-primary);">${uutName} · ${conn.uutPort}</span>
+                            </div>
+                            <button class="del-conn" onclick="window.removeConnection(${idx})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                connectionListEl.innerHTML = html;
+            }
+
+            function renderAll() {
+                renderDevices();
+                renderUuts();
+                renderConnections();
+                updateSummary();
+            }
+
+            // ============================================================
+            //  数据操作（暴露到全局供 onclick 调用）
+            // ============================================================
+
+            window.addDevice = function(template) {
+                const tpl = template || deviceTemplates[Math.floor(Math.random() * deviceTemplates.length)];
+                const id = ++deviceIdCounter;
+                const name = `${tpl.name}_${id}`;
+                devices.push({
+                    id: id,
+                    name: name,
+                    type: tpl.type,
+                    ports: [...tpl.ports]
+                });
+                renderAll();
+            };
+
+            window.removeDevice = function(idx) {
+                const dev = devices[idx];
+                if (!dev) return;
+                // 删除关联连线
+                connections = connections.filter(c => c.deviceId !== dev.id);
+                devices.splice(idx, 1);
+                renderAll();
+            };
+
+            window.addDevicePort = function(idx) {
+                const dev = devices[idx];
+                if (!dev) return;
+                const portName = `p${dev.ports.length}`;
+                dev.ports.push(portName);
+                renderAll();
+            };
+
+            window.addUut = function() {
+                const id = ++uutIdCounter;
+                const name = `UUT_${id}`;
+                uuts.push({
+                    id: id,
+                    name: name,
+                    ports: ['p0']
+                });
+                renderAll();
+            };
+
+            window.removeUut = function(idx) {
+                const u = uuts[idx];
+                if (!u) return;
+                connections = connections.filter(c => c.uutId !== u.id);
+                uuts.splice(idx, 1);
+                renderAll();
+            };
+
+            window.addUutPort = function(idx) {
+                const u = uuts[idx];
+                if (!u) return;
+                const portName = `p${u.ports.length}`;
+                u.ports.push(portName);
+                renderAll();
+            };
+
+            window.addConnection = function() {
+                const availableDevices = devices.filter(d => d.ports.length > 0);
+                const availableUuts = uuts.filter(u => u.ports.length > 0);
+                if (availableDevices.length === 0 || availableUuts.length === 0) {
+                    alert('需要至少一个有端口的设备和有端口的 UUT 才能创建连线。');
+                    return;
+                }
+                // 随机选一个设备和 UUT
+                const dev = availableDevices[Math.floor(Math.random() * availableDevices.length)];
+                const uut = availableUuts[Math.floor(Math.random() * availableUuts.length)];
+                const devPort = dev.ports[Math.floor(Math.random() * dev.ports.length)];
+                const uutPort = uut.ports[Math.floor(Math.random() * uut.ports.length)];
+                // 检查是否已存在相同连线
+                const exists = connections.some(c =>
+                    c.deviceId === dev.id && c.devicePort === devPort &&
+                    c.uutId === uut.id && c.uutPort === uutPort
+                );
+                if (exists) {
+                    alert('该连线已存在，请尝试其他组合。');
+                    return;
+                }
+                connections.push({
+                    deviceId: dev.id,
+                    devicePort: devPort,
+                    uutId: uut.id,
+                    uutPort: uutPort
+                });
+                renderAll();
+            };
+
+            window.removeConnection = function(idx) {
+                connections.splice(idx, 1);
+                renderAll();
+            };
+
+            // ============================================================
+            //  加载模板
+            // ============================================================
+
+            function loadTemplate(tpl) {
+                // 清空所有数据
+                devices = [];
+                uuts = [];
+                connections = [];
+                deviceIdCounter = 0;
+                uutIdCounter = 0;
+
+                if (tpl === 'single') {
+                    // 添加一个设备和一个 UUT
+                    const devTpl = deviceTemplates.find(d => d.type === 'can') || deviceTemplates[0];
+                    devices.push({
+                        id: ++deviceIdCounter,
+                        name: `${devTpl.name}_1`,
+                        type: devTpl.type,
+                        ports: [...devTpl.ports]
+                    });
+                    uuts.push({
+                        id: ++uutIdCounter,
+                        name: 'UUT_1',
+                        ports: ['p0', 'p1']
+                    });
+                    // 自动建一条连线
+                    if (devices[0].ports.length > 0 && uuts[0].ports.length > 0) {
+                        connections.push({
+                            deviceId: devices[0].id,
+                            devicePort: devices[0].ports[0],
+                            uutId: uuts[0].id,
+                            uutPort: uuts[0].ports[0]
+                        });
+                    }
+                } else if (tpl === 'multi') {
+                    // 添加 3 个不同设备
+                    const types = ['can', 'ad', 'serial'];
+                    types.forEach((type, i) => {
+                        const t = deviceTemplates.find(d => d.type === type) || deviceTemplates[0];
+                        devices.push({
+                            id: ++deviceIdCounter,
+                            name: `${t.name}_${i+1}`,
+                            type: t.type,
+                            ports: [...t.ports]
+                        });
+                    });
+                    // 添加 2 个 UUT
+                    uuts.push({ id: ++uutIdCounter, name: '飞控#1', ports: ['CAN', 'AD', 'IO'] });
+                    uuts.push({ id: ++uutIdCounter, name: '飞控#2', ports: ['CAN', 'AD'] });
+                    // 自动建几条连线
+                    if (devices.length >= 2 && uuts.length >= 2) {
+                        connections.push({
+                            deviceId: devices[0].id,
+                            devicePort: devices[0].ports[0] || 'ch0',
+                            uutId: uuts[0].id,
+                            uutPort: uuts[0].ports[0] || 'p0'
+                        });
+                        connections.push({
+                            deviceId: devices[1].id,
+                            devicePort: devices[1].ports[0] || 'ch0',
+                            uutId: uuts[0].id,
+                            uutPort: uuts[0].ports[1] || 'p1'
+                        });
+                        connections.push({
+                            deviceId: devices[2].id,
+                            devicePort: devices[2].ports[0] || 'ch0',
+                            uutId: uuts[1].id,
+                            uutPort: uuts[1].ports[0] || 'p0'
+                        });
+                    }
+                }
+                renderAll();
+            }
+
+            // ============================================================
+            //  辅助函数
+            // ============================================================
+
+            function updateStepIndicator() {
+                steps.forEach((el, idx) => {
+                    const num = idx + 1;
+                    el.classList.remove('active', 'completed');
+                    if (num < currentStep) el.classList.add('completed');
+                    else if (num === currentStep) el.classList.add('active');
+                });
+                const progress = document.querySelector('.steps-indicator');
+                if (progress) progress.setAttribute('aria-valuenow', String(currentStep));
+            }
+
+            function showPanel(index) {
+                panels.forEach((p, i) => {
+                    p.classList.toggle('active', i === index - 1);
+                });
+            }
+
+            function updateButtons() {
+                const isFirst = currentStep === 1;
+                const isLast = currentStep === 4;
+                btnPrev.disabled = isFirst;
+                btnNext.style.display = isLast ? 'none' : 'inline-flex';
+                btnCreate.style.display = isLast ? 'inline-flex' : 'none';
+            }
+
+            function goToStep(step) {
+                if (step < 1 || step > 4) return;
+                currentStep = step;
+                updateStepIndicator();
+                showPanel(step);
+                updateButtons();
+                document.querySelector('.wizard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            function updateSummary() {
+                const templateLabel = templateLabels[selectedTemplate] || '空拓扑';
+                sumTemplate.textContent = templateLabel;
+                sumDevices.textContent = String(devices.length);
+                sumUuts.textContent = String(uuts.length);
+                sumConnections.textContent = String(connections.length);
+
+                if (devices.length === 0) {
+                    sumTopoDesc.textContent = '（暂无设备）';
+                    return;
+                }
+                const devNames = devices.map(d => `${d.name}(${d.ports.length}p)`).join('; ');
+                const uutNames = uuts.map(u => `${u.name}(${u.ports.length}p)`).join('; ');
+                sumTopoDesc.textContent = `设备: ${devNames} | UUT: ${uutNames} | 连线: ${connections.length}条`;
+            }
+
+            // ============================================================
+            //  事件绑定
+            // ============================================================
+
+            // ---- 模板卡片 ----
+            templateCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    templateCards.forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTemplate = this.dataset.template;
+                    loadTemplate(selectedTemplate);
+                    updateSummary();
+                });
+            });
+
+            // ---- 按钮事件 ----
+            btnAddDevice.addEventListener('click', function() {
+                const tpl = deviceTemplates[Math.floor(Math.random() * deviceTemplates.length)];
+                window.addDevice(tpl);
+                // 滚动到设备列表底部
+                const container = document.querySelector('.device-pool');
+                if (container) container.scrollTop = container.scrollHeight;
+            });
+
+            btnAddUut.addEventListener('click', function() {
+                window.addUut();
+                const container = document.querySelector('.uut-pool');
+                if (container) container.scrollTop = container.scrollHeight;
+            });
+
+            btnClearDevices.addEventListener('click', function() {
+                if (devices.length === 0) return;
+                if (confirm('确定要清空所有设备吗？关联的连线也会被删除。')) {
+                    devices = [];
+                    connections = connections.filter(c => uuts.some(u => u.id === c.uutId));
+                    renderAll();
+                }
+            });
+
+            btnClearUuts.addEventListener('click', function() {
+                if (uuts.length === 0) return;
+                if (confirm('确定要清空所有 UUT 吗？关联的连线也会被删除。')) {
+                    uuts = [];
+                    connections = connections.filter(c => devices.some(d => d.id === c.deviceId));
+                    renderAll();
+                }
+            });
+
+            btnAddConnection.addEventListener('click', function() {
+                window.addConnection();
+            });
+
+            // ---- 导航 ----
+            btnNext.addEventListener('click', function() {
+                if (currentStep === 4) return;
+                // 第2步：至少有一个设备和一个 UUT
+                if (currentStep === 2) {
+                    if (devices.length === 0 || uuts.length === 0) {
+                        alert('请至少添加一个测试设备和一个被测对象（UUT）。');
+                        return;
+                    }
+                }
+                // 第3步：至少有一条连线
+                if (currentStep === 3 && connections.length === 0) {
+                    if (!confirm('当前未定义任何连线，确定要继续吗？')) {
+                        return;
+                    }
+                }
+                if (currentStep === 3) {
+                    updateSummary();
+                }
+                goToStep(currentStep + 1);
+            });
+
+            btnPrev.addEventListener('click', function() {
+                if (currentStep === 1) return;
+                goToStep(currentStep - 1);
+            });
+
+            btnCancel.addEventListener('click', function() {
+                if (confirm('确定要取消创建拓扑吗？')) {
+                    alert('向导已取消。');
+                }
+            });
+
+            btnCreate.addEventListener('click', function() {
+                const result = {
+                    template: selectedTemplate,
+                    devices: devices.map(d => ({
+                        id: d.id,
+                        name: d.name,
+                        type: d.type,
+                        ports: d.ports
+                    })),
+                    uuts: uuts.map(u => ({
+                        id: u.id,
+                        name: u.name,
+                        ports: u.ports
+                    })),
+                    connections: connections
+                };
+
+                console.log('🔗 创建拓扑配置：', result);
+                btnCreate.disabled = true;
+                btnCreate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+
+                setTimeout(() => {
+                    alert(`✅ 拓扑文件创建成功！\n包含 ${devices.length} 个设备，${uuts.length} 个 UUT，${connections.length} 条连线。`);
+                    btnCreate.disabled = false;
+                    btnCreate.innerHTML = '<i class="fas fa-check"></i> 创建拓扑';
+                }, 1000);
+            });
+
+            // ---- 键盘 ----
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (currentStep === 4) btnCreate.click();
+                    else btnNext.click();
+                    e.preventDefault();
+                }
+                if (e.key === 'Escape') { btnCancel.click();
+                    e.preventDefault(); }
+                if (e.key === 'ArrowLeft' && currentStep > 1) { btnPrev.click();
+                    e.preventDefault(); }
+                if (e.key === 'ArrowRight' && currentStep < 4) { btnNext.click();
+                    e.preventDefault(); }
+            });
+
+            // ============================================================
+            //  初始化
+            // ============================================================
+            loadTemplate('empty');
+            document.querySelector('.template-card[data-template="empty"]')?.classList.add('selected');
+            updateSummary();
+            goToStep(1);
+
+        })();
+    </script>
+
+</body>
+</html>
