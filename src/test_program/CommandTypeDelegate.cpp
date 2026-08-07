@@ -9,7 +9,8 @@ CommandTypeDelegate::CommandTypeDelegate(Mode mode, QObject* parent)
   if (mode == Full) {
     items_ << QStringLiteral("SET") << QStringLiteral("VERIFY")
            << QStringLiteral("WAIT") << QStringLiteral("DELAY")
-           << QStringLiteral("ACTION") << QStringLiteral("LOG");
+           << QStringLiteral("CHECK") << QStringLiteral("ACTION")
+           << QStringLiteral("LOG");
     if (etest::app::kControlFlowEnabled) {
       items_ << QStringLiteral("LOOP") << QStringLiteral("WHILE")
              << QStringLiteral("IF");
@@ -21,7 +22,8 @@ CommandTypeDelegate::CommandTypeDelegate(Mode mode, QObject* parent)
     // FlatOnly — 排除控制流命令
     items_ << QStringLiteral("SET") << QStringLiteral("VERIFY")
            << QStringLiteral("WAIT") << QStringLiteral("DELAY")
-           << QStringLiteral("ACTION") << QStringLiteral("LOG")
+           << QStringLiteral("CHECK") << QStringLiteral("ACTION")
+           << QStringLiteral("LOG")
            << QStringLiteral("INJECT_FAULT") << QStringLiteral("CLEAR_FAULT")
            << QStringLiteral("PHOTO") << QStringLiteral("RECORD");
   }

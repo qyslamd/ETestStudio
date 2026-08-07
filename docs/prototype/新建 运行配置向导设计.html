@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新建运行配置 · ETest Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* ============================================================
+           CSS Variables — Fluent Design
+           ============================================================ */
+        :root {
+            --bg-canvas: #f0f2f5;
+            --bg-card: rgba(255, 255, 255, 0.72);
+            --bg-card-hover: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.48);
+            --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.18);
+            --text-primary: #1a1a1a;
+            --text-secondary: #5a5a6e;
+            --text-muted: #8c8ca8;
+            --accent: #0078d4;
+            --accent-light: #e6f1fc;
+            --accent-hover: #106ebe;
+            --danger: #d13438;
+            --success: #107c10;
+            --radius-card: 20px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.2, 0, 0, 1);
+            --font: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-canvas: #1a1a24;
+                --bg-card: rgba(32, 32, 44, 0.78);
+                --bg-card-hover: rgba(42, 42, 58, 0.92);
+                --glass-border: rgba(255, 255, 255, 0.08);
+                --glass-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.6);
+                --text-primary: #e8e8f0;
+                --text-secondary: #a8a8c0;
+                --text-muted: #6a6a84;
+                --accent: #4aa8ff;
+                --accent-light: rgba(74, 168, 255, 0.12);
+                --accent-hover: #6abaff;
+                --danger: #f1707a;
+                --bg-card: rgba(32, 32, 44, 0.82);
+            }
+        }
+
+        /* ============================================================
+           Reset & Base
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-canvas);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: 0;
+            transition: background var(--transition);
+        }
+
+        /* ============================================================
+           Wizard Container
+           ============================================================ */
+        .wizard {
+            max-width: 960px;
+            width: 100%;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-radius: var(--radius-card);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 32px 36px 28px;
+            transition: background var(--transition), border-color var(--transition);
+        }
+
+        /* ============================================================
+           Header
+           ============================================================ */
+        .wizard-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .wizard-header .icon {
+            width: 44px;
+            height: 44px;
+            background: var(--accent-light);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 22px;
+            flex-shrink: 0;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .wizard-header .title-group h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            margin: 0 0 2px;
+        }
+
+        .wizard-header .title-group p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* ============================================================
+           Steps Indicator
+           ============================================================ */
+        .steps-indicator {
+            display: flex;
+            gap: 0;
+            margin-bottom: 32px;
+            padding: 0 4px;
+            position: relative;
+        }
+
+        .steps-indicator .step {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: default;
+            position: relative;
+            padding: 6px 0;
+            transition: color var(--transition);
+        }
+
+        .steps-indicator .step::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: #d0d0dd;
+            margin-left: 12px;
+            transition: background var(--transition);
+        }
+        .steps-indicator .step:last-child::after {
+            display: none;
+        }
+
+        .steps-indicator .step .circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            background: #e8e8f0;
+            color: #6a6a84;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+
+        .steps-indicator .step.active {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.active .circle {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.28);
+        }
+        .steps-indicator .step.active::after {
+            background: var(--accent);
+        }
+
+        .steps-indicator .step.completed {
+            color: var(--text-primary);
+        }
+        .steps-indicator .step.completed .circle {
+            background: var(--success);
+            color: #fff;
+        }
+        .steps-indicator .step.completed::after {
+            background: var(--success);
+        }
+
+        /* ============================================================
+           Panels
+           ============================================================ */
+        .panels {
+            position: relative;
+            min-height: 340px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeSlide 0.3s ease forwards;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================================
+           Panel 1 — 选择测试程序
+           ============================================================ */
+        .prog-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 6px 0 12px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .prog-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            transition: all var(--transition);
+            cursor: pointer;
+        }
+
+        .prog-item:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent);
+        }
+
+        .prog-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .prog-item .info {
+            flex: 1;
+        }
+
+        .prog-item .info .name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .prog-item .info .path {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+
+        .prog-item .badge {
+            font-size: 11px;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+
+        .select-all-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 0;
+            margin-bottom: 6px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .select-all-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .select-all-row label {
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        /* ============================================================
+           Panel 2 — 监听器配置
+           ============================================================ */
+        .monitor-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 6px 0 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .monitor-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            transition: all var(--transition);
+        }
+
+        .monitor-card .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .monitor-card .header .title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .monitor-card .header .remove-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all var(--transition);
+        }
+
+        .monitor-card .header .remove-btn:hover {
+            background: rgba(209, 52, 56, 0.12);
+            color: var(--danger);
+        }
+
+        .monitor-card .fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.5fr;
+            gap: 12px;
+        }
+
+        .monitor-card .fields .field {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .monitor-card .fields .field label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .monitor-card .fields .field input,
+        .monitor-card .fields .field select {
+            padding: 6px 10px;
+            font-size: 13px;
+            font-family: var(--font);
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            outline: none;
+            transition: all var(--transition);
+        }
+
+        .monitor-card .fields .field input:focus,
+        .monitor-card .fields .field select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.08);
+            background: #fff;
+        }
+
+        .monitor-card .fields .field select option:disabled {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .btn-add-monitor {
+            padding: 8px 20px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font);
+            width: fit-content;
+        }
+
+        .btn-add-monitor:hover {
+            background: var(--accent);
+            color: #fff;
+            border-style: solid;
+        }
+
+        /* ============================================================
+           Panel 3 — 运行参数
+           ============================================================ */
+        .param-group {
+            margin-bottom: 16px;
+        }
+
+        .param-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .param-group input,
+        .param-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: var(--font);
+            background: rgba(255, 255, 255, 0.6);
+            border: 1.5px solid #d0d0dd;
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            transition: all var(--transition);
+            outline: none;
+        }
+
+        .param-group input:focus,
+        .param-group textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.12);
+            background: #fff;
+        }
+
+        .param-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .param-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        /* ============================================================
+           Panel 4 — 摘要
+           ============================================================ */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 32px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-sm);
+            padding: 20px 24px;
+            margin-top: 4px;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-item .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .summary-item .value {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        .summary-item .value .tag {
+            display: inline-block;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 0 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+        }
+
+        .summary-item .value .monitor-tag {
+            display: inline-block;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================================
+           Footer
+           ============================================================ */
+        .wizard-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            padding-top: 20px;
+        }
+
+        .wizard-footer .left {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 22px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 6px 20px rgba(0, 120, 212, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(16, 124, 16, 0.2);
+        }
+
+        .btn-success:hover {
+            background: #0a6e0a;
+            box-shadow: 0 6px 20px rgba(16, 124, 16, 0.28);
+            transform: translateY(-1px);
+        }
+
+        /* ============================================================
+           Responsive
+           ============================================================ */
+        @media (max-width: 820px) {
+            .wizard {
+                padding: 20px 18px;
+            }
+            .monitor-card .fields {
+                grid-template-columns: 1fr;
+            }
+            .param-row {
+                grid-template-columns: 1fr;
+            }
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .steps-indicator .step .label {
+                display: none;
+            }
+            .wizard-footer {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .prog-list {
+                max-height: 180px;
+            }
+            .monitor-list {
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wizard" role="dialog" aria-labelledby="wizard-title">
+        <!-- ===== Header ===== -->
+        <div class="wizard-header">
+            <div class="icon">
+                <i class="fas fa-sliders-h"></i>
+            </div>
+            <div class="title-group">
+                <h2 id="wizard-title">新建运行配置</h2>
+                <p>选择测试程序，配置监听器卡片与运行参数</p>
+            </div>
+        </div>
+
+        <!-- ===== Steps ===== -->
+        <div class="steps-indicator" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="4">
+            <div class="step active" data-step="1">
+                <span class="circle">1</span>
+                <span class="label">测试程序</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="circle">2</span>
+                <span class="label">监听器配置</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="circle">3</span>
+                <span class="label">运行参数</span>
+            </div>
+            <div class="step" data-step="4">
+                <span class="circle">4</span>
+                <span class="label">完成</span>
+            </div>
+        </div>
+
+        <!-- ===== Panels ===== -->
+        <div class="panels">
+
+            <!-- ========== Panel 1: 选择测试程序 ========== -->
+            <div class="panel active" data-panel="1">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">
+                    选择要执行的测试程序（从项目 cases/ 目录中勾选）
+                </p>
+                <div class="select-all-row">
+                    <input type="checkbox" id="selectAllProg" />
+                    <label for="selectAllProg">全选</label>
+                    <span style="flex:1;"></span>
+                    <span style="font-size:12px;color:var(--text-muted);" id="progCount">已选 0 个</span>
+                </div>
+                <div class="prog-list" id="progList">
+                    <!-- 动态渲染 -->
+                </div>
+            </div>
+
+            <!-- ========== Panel 2: 监听器配置 ========== -->
+            <div class="panel" data-panel="2">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">
+                    添加监听器卡片，每个卡片绑定一个拓扑连接，并选择可视化类型。
+                </p>
+                <div class="monitor-list" id="monitorList">
+                    <!-- 动态渲染 -->
+                </div>
+                <button class="btn-add-monitor" id="btnAddMonitor">
+                    <i class="fas fa-plus"></i> 添加监听器
+                </button>
+            </div>
+
+            <!-- ========== Panel 3: 运行参数 ========== -->
+            <div class="panel" data-panel="3">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">
+                    设置运行参数（可选），将作为 JSON 对象保存在配置中。
+                </p>
+                <div class="param-row">
+                    <div class="param-group">
+                        <label for="paramLoop">循环次数</label>
+                        <input type="text" id="paramLoop" placeholder="例如：1" value="1" />
+                    </div>
+                    <div class="param-group">
+                        <label for="paramTimeout">超时 (ms)</label>
+                        <input type="text" id="paramTimeout" placeholder="例如：30000" value="30000" />
+                    </div>
+                </div>
+                <div class="param-group">
+                    <label for="paramExtra">额外参数 (JSON)</label>
+                    <textarea id="paramExtra" placeholder='{"mode":"auto", "verbose":true}'>{}</textarea>
+                </div>
+            </div>
+
+            <!-- ========== Panel 4: 摘要 ========== -->
+            <div class="panel" data-panel="4">
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">
+                    确认运行配置，点击「创建配置」即可生成 `.erun` 文件。
+                </p>
+                <div class="summary-grid" id="summaryGrid">
+                    <div class="summary-item">
+                        <span class="label">测试程序</span>
+                        <span class="value" id="sumPrograms">（未选择）</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">监听器数量</span>
+                        <span class="value" id="sumMonitorCount">0</span>
+                    </div>
+                    <div class="summary-item" style="grid-column:1/3;">
+                        <span class="label">监听器详情</span>
+                        <span class="value" id="sumMonitors" style="font-weight:400;font-size:14px;color:var(--text-secondary);">（无）</span>
+                    </div>
+                    <div class="summary-item" style="grid-column:1/3;">
+                        <span class="label">运行参数</span>
+                        <span class="value" id="sumParams" style="font-weight:400;font-size:14px;color:var(--text-secondary);">（默认）</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== Footer ===== -->
+        <div class="wizard-footer">
+            <div class="left">
+                <button class="btn" id="btnPrev" disabled>
+                    <i class="fas fa-chevron-left"></i> 上一步
+                </button>
+            </div>
+            <div>
+                <button class="btn" id="btnCancel">取消</button>
+                <button class="btn btn-primary" id="btnNext">
+                    下一步 <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-success" id="btnCreate" style="display:none;">
+                    <i class="fas fa-check"></i> 创建配置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  模拟数据
+            // ============================================================
+            // 测试程序列表（相对项目根路径 cases/）
+            const availablePrograms = [
+                { name: 'EngineControl.etprog', path: 'cases/EngineControl.etprog' },
+                { name: 'PowerSupply_Test.etprog', path: 'cases/PowerSupply_Test.etprog' },
+                { name: 'Communication_Test.etprog', path: 'cases/Communication_Test.etprog' },
+                { name: 'Sensor_Calibration.etprog', path: 'cases/Sensor_Calibration.etprog' },
+                { name: 'Safety_Check.etprog', path: 'cases/Safety_Check.etprog' },
+            ];
+
+            // 拓扑连接列表（从 topology 读取）
+            const availableConnections = [
+                { id: 'conn_001', description: 'PXI-CAN卡.ch0 ↔ 飞控.CAN' },
+                { id: 'conn_002', description: 'PXI-A429卡.ch0 ↔ 飞控.A429' },
+                { id: 'conn_003', description: 'PXI-AD采集卡.ch0 ↔ 传感器.AD1' },
+                { id: 'conn_004', description: 'PXI-串口卡.COM1 ↔ 电源控制器.COM' },
+                { id: 'conn_005', description: 'PXI-DA输出卡.ch0 ↔ 执行器.DA1' },
+            ];
+
+            // 显示类型
+            const displayModes = [
+                { value: 'waveform', label: '波形' },
+                { value: 'led', label: 'LED' },
+                { value: 'meter', label: '数字表' },
+                { value: 'gauge', label: '指针表' },
+                { value: 'frame', label: '帧数据' },
+            ];
+
+            // ============================================================
+            //  DOM 引用
+            // ============================================================
+            const steps = document.querySelectorAll('.step');
+            const panels = document.querySelectorAll('.panel');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            const btnCreate = document.getElementById('btnCreate');
+            const btnCancel = document.getElementById('btnCancel');
+
+            // Panel 1
+            const progList = document.getElementById('progList');
+            const selectAllProg = document.getElementById('selectAllProg');
+            const progCount = document.getElementById('progCount');
+
+            // Panel 2
+            const monitorList = document.getElementById('monitorList');
+            const btnAddMonitor = document.getElementById('btnAddMonitor');
+
+            // Panel 3
+            const paramLoop = document.getElementById('paramLoop');
+            const paramTimeout = document.getElementById('paramTimeout');
+            const paramExtra = document.getElementById('paramExtra');
+
+            // Panel 4
+            const sumPrograms = document.getElementById('sumPrograms');
+            const sumMonitorCount = document.getElementById('sumMonitorCount');
+            const sumMonitors = document.getElementById('sumMonitors');
+            const sumParams = document.getElementById('sumParams');
+
+            // ============================================================
+            //  状态
+            // ============================================================
+            let currentStep = 1;
+            // 选中的测试程序 (相对路径)
+            let selectedPrograms = [];
+            // 监听器列表：每个对象 { id, name, displayMode, connectionId }
+            let monitors = [];
+            let monitorIdCounter = 0;
+
+            // 已绑定的连接ID集合（用于禁用选项）
+            function getBoundConnectionIds() {
+                return new Set(monitors.map(m => m.connectionId).filter(id => id !== ''));
+            }
+
+            // ============================================================
+            //  渲染函数
+            // ============================================================
+
+            // 渲染测试程序列表
+            function renderPrograms() {
+                let html = '';
+                availablePrograms.forEach(p => {
+                    const checked = selectedPrograms.includes(p.path) ? 'checked' : '';
+                    html += `
+                        <div class="prog-item" data-path="${p.path}">
+                            <input type="checkbox" ${checked} />
+                            <div class="info">
+                                <span class="name">${p.name}</span>
+                                <span class="path">${p.path}</span>
+                            </div>
+                            <span class="badge">测试程序</span>
+                        </div>
+                    `;
+                });
+                progList.innerHTML = html;
+
+                // 绑定点击事件（整行点击切换复选框）
+                progList.querySelectorAll('.prog-item').forEach(item => {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    item.addEventListener('click', function(e) {
+                        if (e.target.tagName === 'INPUT') return;
+                        cb.checked = !cb.checked;
+                        cb.dispatchEvent(new Event('change'));
+                    });
+                    cb.addEventListener('change', function() {
+                        const path = item.dataset.path;
+                        if (this.checked) {
+                            if (!selectedPrograms.includes(path)) selectedPrograms.push(path);
+                        } else {
+                            selectedPrograms = selectedPrograms.filter(p => p !== path);
+                        }
+                        updateProgCount();
+                        updateSelectAllState();
+                        updateSummary();
+                    });
+                });
+
+                updateSelectAllState();
+                updateProgCount();
+            }
+
+            function updateSelectAllState() {
+                const allChecked = availablePrograms.every(p => selectedPrograms.includes(p.path));
+                const someChecked = availablePrograms.some(p => selectedPrograms.includes(p.path));
+                selectAllProg.checked = allChecked;
+                selectAllProg.indeterminate = !allChecked && someChecked;
+            }
+
+            function updateProgCount() {
+                progCount.textContent = `已选 ${selectedPrograms.length} 个`;
+            }
+
+            // 全选/取消全选
+            selectAllProg.addEventListener('change', function() {
+                const checked = this.checked;
+                const items = progList.querySelectorAll('.prog-item');
+                items.forEach(item => {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    cb.checked = checked;
+                    const path = item.dataset.path;
+                    if (checked) {
+                        if (!selectedPrograms.includes(path)) selectedPrograms.push(path);
+                    } else {
+                        selectedPrograms = selectedPrograms.filter(p => p !== path);
+                    }
+                });
+                updateProgCount();
+                updateSelectAllState();
+                updateSummary();
+            });
+
+            // 渲染监听器列表
+            function renderMonitors() {
+                if (monitors.length === 0) {
+                    monitorList.innerHTML = `
+                        <div style="text-align:center;padding:30px 0;color:var(--text-muted);font-size:14px;">
+                            <i class="fas fa-inbox" style="display:block;font-size:24px;margin-bottom:8px;"></i>
+                            暂无监听器，点击「添加监听器」创建卡片。
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                const bound = getBoundConnectionIds();
+                monitors.forEach((mon, idx) => {
+                    const connOptions = availableConnections.map(c => {
+                        const disabled = (c.id !== mon.connectionId && bound.has(c.id)) ? 'disabled' : '';
+                        const selected = (c.id === mon.connectionId) ? 'selected' : '';
+                        return `<option value="${c.id}" ${selected} ${disabled}>${c.description}</option>`;
+                    }).join('');
+
+                    const modeOptions = displayModes.map(m => {
+                        const selected = (m.value === mon.displayMode) ? 'selected' : '';
+                        return `<option value="${m.value}" ${selected}>${m.label}</option>`;
+                    }).join('');
+
+                    html += `
+                        <div class="monitor-card" data-index="${idx}">
+                            <div class="header">
+                                <span class="title">监听器 ${idx+1}</span>
+                                <button class="remove-btn" data-index="${idx}" title="删除"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                            <div class="fields">
+                                <div class="field">
+                                    <label>名称</label>
+                                    <input type="text" class="mon-name" value="${mon.name}" placeholder="监听器名称" />
+                                </div>
+                                <div class="field">
+                                    <label>显示类型</label>
+                                    <select class="mon-mode">${modeOptions}</select>
+                                </div>
+                                <div class="field">
+                                    <label>绑定连线</label>
+                                    <select class="mon-conn">${connOptions}</select>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                monitorList.innerHTML = html;
+
+                // 绑定删除事件
+                monitorList.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const idx = parseInt(this.dataset.index);
+                        monitors.splice(idx, 1);
+                        renderMonitors();
+                        updateSummary();
+                    });
+                });
+
+                // 绑定输入事件（实时更新数据）
+                monitorList.querySelectorAll('.monitor-card').forEach((card, idx) => {
+                    const nameInput = card.querySelector('.mon-name');
+                    const modeSelect = card.querySelector('.mon-mode');
+                    const connSelect = card.querySelector('.mon-conn');
+
+                    nameInput.addEventListener('input', function() {
+                        monitors[idx].name = this.value || `监听器 ${idx+1}`;
+                        updateSummary();
+                    });
+                    modeSelect.addEventListener('change', function() {
+                        monitors[idx].displayMode = this.value;
+                        updateSummary();
+                    });
+                    connSelect.addEventListener('change', function() {
+                        monitors[idx].connectionId = this.value;
+                        // 重新渲染以更新其他下拉框的禁用状态（一连接一绑定）
+                        renderMonitors();
+                        updateSummary();
+                    });
+                });
+            }
+
+            // 添加监听器
+            function addMonitor() {
+                const id = ++monitorIdCounter;
+                // 默认选择一个未绑定的连接
+                const bound = getBoundConnectionIds();
+                let defaultConn = '';
+                for (const c of availableConnections) {
+                    if (!bound.has(c.id)) {
+                        defaultConn = c.id;
+                        break;
+                    }
+                }
+                monitors.push({
+                    id: String(id),
+                    name: `监听器 ${monitors.length + 1}`,
+                    displayMode: 'waveform',
+                    connectionId: defaultConn,
+                });
+                renderMonitors();
+                updateSummary();
+            }
+
+            // ============================================================
+            //  摘要更新
+            // ============================================================
+            function updateSummary() {
+                // 程序
+                if (selectedPrograms.length === 0) {
+                    sumPrograms.textContent = '（未选择）';
+                } else {
+                    const names = selectedPrograms.map(p => p.replace('cases/', ''));
+                    sumPrograms.textContent = names.join('、');
+                }
+
+                // 监听器数量
+                sumMonitorCount.textContent = String(monitors.length);
+
+                // 监听器详情
+                if (monitors.length === 0) {
+                    sumMonitors.textContent = '（无）';
+                } else {
+                    const descs = monitors.map((m, i) => {
+                        const modeLabel = displayModes.find(d => d.value === m.displayMode)?.label || m.displayMode;
+                        const connDesc = availableConnections.find(c => c.id === m.connectionId)?.description || '未绑定';
+                        return `#${i+1} ${m.name} [${modeLabel}] → ${connDesc}`;
+                    });
+                    sumMonitors.textContent = descs.join(' | ');
+                }
+
+                // 运行参数
+                const loop = paramLoop.value.trim() || '1';
+                const timeout = paramTimeout.value.trim() || '30000';
+                const extra = paramExtra.value.trim() || '{}';
+                sumParams.textContent = `循环: ${loop}, 超时: ${timeout}ms, 额外: ${extra}`;
+            }
+
+            // ============================================================
+            //  步骤导航
+            // ============================================================
+            function updateStepIndicator() {
+                steps.forEach((el, idx) => {
+                    const num = idx + 1;
+                    el.classList.remove('active', 'completed');
+                    if (num < currentStep) el.classList.add('completed');
+                    else if (num === currentStep) el.classList.add('active');
+                });
+                const progress = document.querySelector('.steps-indicator');
+                if (progress) progress.setAttribute('aria-valuenow', String(currentStep));
+            }
+
+            function showPanel(index) {
+                panels.forEach((p, i) => {
+                    p.classList.toggle('active', i === index - 1);
+                });
+            }
+
+            function updateButtons() {
+                const isFirst = currentStep === 1;
+                const isLast = currentStep === 4;
+                btnPrev.disabled = isFirst;
+                btnNext.style.display = isLast ? 'none' : 'inline-flex';
+                btnCreate.style.display = isLast ? 'inline-flex' : 'none';
+            }
+
+            function goToStep(step) {
+                if (step < 1 || step > 4) return;
+                currentStep = step;
+                updateStepIndicator();
+                showPanel(step);
+                updateButtons();
+                document.querySelector('.wizard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // ============================================================
+            //  事件绑定
+            // ============================================================
+
+            // ---- 添加监听器 ----
+            btnAddMonitor.addEventListener('click', addMonitor);
+
+            // ---- 导航 ----
+            btnNext.addEventListener('click', function() {
+                if (currentStep === 4) return;
+                // 第1步校验：至少选一个程序
+                if (currentStep === 1 && selectedPrograms.length === 0) {
+                    alert('请至少选择一个测试程序。');
+                    return;
+                }
+                // 第2步校验：至少一个监听器（非强制，但建议）
+                if (currentStep === 2 && monitors.length === 0) {
+                    if (!confirm('当前未添加任何监听器，确定要继续吗？')) {
+                        return;
+                    }
+                }
+                if (currentStep === 3) {
+                    updateSummary();
+                }
+                goToStep(currentStep + 1);
+            });
+
+            btnPrev.addEventListener('click', function() {
+                if (currentStep === 1) return;
+                goToStep(currentStep - 1);
+            });
+
+            btnCancel.addEventListener('click', function() {
+                if (confirm('确定要取消创建运行配置吗？')) {
+                    alert('向导已取消。');
+                }
+            });
+
+            // ---- 创建 ----
+            btnCreate.addEventListener('click', function() {
+                // 收集最终数据
+                const programs = selectedPrograms.slice();
+                const monitorData = monitors.map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    displayMode: m.displayMode,
+                    connectionId: m.connectionId,
+                    x: 0, y: 0, w: 320, h: 200 // 默认几何，实际由编辑器调整
+                }));
+                const runParams = {
+                    loop: parseInt(paramLoop.value) || 1,
+                    timeout: parseInt(paramTimeout.value) || 30000,
+                    extra: (() => {
+                        try { return JSON.parse(paramExtra.value); } catch (e) { return {}; }
+                    })()
+                };
+
+                const result = {
+                    version: '2.0',
+                    programs: programs,
+                    monitors: monitorData,
+                    runParams: runParams
+                };
+
+                console.log('🚀 创建运行配置：', result);
+                btnCreate.disabled = true;
+                btnCreate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+
+                setTimeout(() => {
+                    alert(`✅ 运行配置创建成功！\n包含 ${programs.length} 个程序，${monitorData.length} 个监听器。`);
+                    btnCreate.disabled = false;
+                    btnCreate.innerHTML = '<i class="fas fa-check"></i> 创建配置';
+                }, 1000);
+            });
+
+            // ---- 键盘快捷键 ----
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (currentStep === 4) btnCreate.click();
+                    else btnNext.click();
+                    e.preventDefault();
+                }
+                if (e.key === 'Escape') { btnCancel.click();
+                    e.preventDefault(); }
+                if (e.key === 'ArrowLeft' && currentStep > 1) { btnPrev.click();
+                    e.preventDefault(); }
+                if (e.key === 'ArrowRight' && currentStep < 4) { btnNext.click();
+                    e.preventDefault(); }
+            });
+
+            // ============================================================
+            //  初始化
+            // ============================================================
+            // 默认选中第一个程序
+            selectedPrograms = availablePrograms.map(p => p.path).slice(0, 1);
+            renderPrograms();
+            // 默认添加一个监听器
+            addMonitor();
+            // 更新摘要并显示第一步
+            updateSummary();
+            goToStep(1);
+
+            // 表单变化更新摘要
+            paramLoop.addEventListener('input', updateSummary);
+            paramTimeout.addEventListener('input', updateSummary);
+            paramExtra.addEventListener('input', updateSummary);
+
+        })();
+    </script>
+
+</body>
+</html>

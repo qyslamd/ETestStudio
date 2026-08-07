@@ -2688,3 +2688,219 @@ QLineEdit#projectNameEdit[error="true"] {
   background-color: #2EA043;
 }
 /* ===== NewProjectWizard 向导 (自动生成, 勿手改) END ===== */
+/* ===== TestProgramWizard 向导 (自动生成, 勿手改) START ===== */
+#tpWizardCard {
+  background-color: rgba(32, 32, 44, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 20px;
+}
+
+#tpInfoIntro {
+  color: #9A8585;
+  font-size: 14px;
+}
+
+QLineEdit#progNameEdit,
+QLineEdit#progVersionEdit,
+QLineEdit#progAuthorEdit {
+  background-color: #3A3A44;
+  border: 1.5px solid #4A4A58;
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #D4C5C5;
+  selection-background-color: #C72523;
+}
+QLineEdit#progNameEdit:focus,
+QLineEdit#progVersionEdit:focus,
+QLineEdit#progAuthorEdit:focus {
+  border-color: #C72523;
+  background-color: #454550;
+}
+QTextEdit#progDescEdit,
+QTextEdit#progPrecondEdit {
+  background-color: #3A3A44;
+  border: 1.5px solid #4A4A58;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #D4C5C5;
+  selection-background-color: #C72523;
+}
+QTextEdit#progDescEdit:focus,
+QTextEdit#progPrecondEdit:focus {
+  border-color: #C72523;
+  background-color: #454550;
+}
+QLineEdit#progNameEdit[error="true"],
+QLineEdit#progVersionEdit[error="true"],
+QLineEdit#progAuthorEdit[error="true"] {
+  border: 1.5px solid #D13438;
+}
+QTextEdit#progDescEdit[error="true"],
+QTextEdit#progPrecondEdit[error="true"] {
+  border: 1.5px solid #D13438;
+}
+
+#tpFieldLabel {
+  color: #D4C5C5;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#casesTabWidget::pane {
+  border: none;
+  background: transparent;
+}
+#casesTabWidget QTabBar::tab {
+  background-color: rgba(42, 42, 58, 0.85);
+  color: #9A8585;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 14px;
+  margin: 2px;
+  font-size: 13px;
+}
+#casesTabWidget QTabBar::tab:hover {
+  background-color: rgba(52, 52, 70, 0.92);
+}
+#casesTabWidget QTabBar::tab:selected {
+  background-color: rgba(199, 37, 35, 0.16);
+  color: #C72523;
+  border: 1px solid #C72523;
+  font-weight: 600;
+}
+#casesTabWidget QTabBar::close-button {
+  image: url(:/resources/icons/svg/close_light.svg);
+  subcontrol-position: right;
+  width: 14px;
+  height: 14px;
+}
+#casesTabWidget QTabBar::close-button:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+}
+#addCaseBtn {
+  background-color: transparent;
+  color: #C72523;
+  border: 1px dashed #C72523;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+#addCaseBtn:hover {
+  background-color: rgba(199, 37, 35, 0.16);
+}
+
+#stepToolbarBtn {
+  background-color: transparent;
+  color: #9A8585;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+#stepToolbarBtn:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+#stepTable {
+  background-color: transparent;
+  border: none;
+  gridline-color: transparent;
+  color: #D4C5C5;
+  selection-background-color: rgba(199, 37, 35, 0.16);
+}
+#stepTable::item {
+  padding: 8px 6px;
+}
+#stepTable QHeaderView::section {
+  background-color: transparent;
+  color: #5A4A4A;
+  font-weight: 500;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px 8px;
+}
+#stepTable QTableCornerButton::section {
+  background-color: transparent;
+  border: none;
+}
+
+#stepModal {
+  background-color: rgba(32, 32, 44, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+}
+#stepModalTitle {
+  color: #D4C5C5;
+  font-size: 16px;
+  font-weight: 600;
+}
+#stepModal QLabel {
+  color: #D4C5C5;
+  font-size: 13px;
+}
+#stepModal QLineEdit, #stepModal QComboBox {
+  background-color: #3A3A44;
+  border: 1.5px solid #4A4A58;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #D4C5C5;
+  selection-background-color: #C72523;
+}
+#stepModal QLineEdit:focus, #stepModal QComboBox:focus {
+  border-color: #C72523;
+  background-color: #454550;
+}
+#stepModal QComboBox::drop-down {
+  border: none;
+  width: 22px;
+}
+#stepModal QCheckBox {
+  color: #D4C5C5;
+  font-size: 13px;
+  spacing: 6px;
+}
+#stepModal QCheckBox::indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #4A4A58;
+  background-color: #3A3A44;
+}
+#stepModal QCheckBox::indicator:checked {
+  background-color: #C72523;
+  border-color: #C72523;
+}
+
+#stepConfirmBtn {
+  background-color: #C72523;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 500;
+}
+#stepConfirmBtn:hover {
+  background-color: #AF211F;
+}
+#stepCancelBtn {
+  background-color: transparent;
+  color: #9A8585;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 22px;
+  font-size: 14px;
+}
+#stepCancelBtn:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+#summaryStepPreview {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #9A8585;
+  font-size: 13px;
+}
+/* ===== TestProgramWizard 向导 (自动生成, 勿手改) END ===== */

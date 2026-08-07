@@ -124,6 +124,10 @@ void BaseWizardDialog::setHeader(const QString& iconName, const QString& title,
   header_subtitle_label_->show();
 }
 
+void BaseWizardDialog::setCreateButtonText(const QString& text) {
+  create_btn_->setText(text);
+}
+
 void BaseWizardDialog::animatePageChange(int fromIndex, int toIndex) {
   if (fromIndex == toIndex ||
       page_transition_animation_->state() == QAbstractAnimation::Running) {
@@ -233,7 +237,12 @@ void BaseWizardDialog::initUi() {
 void BaseWizardDialog::initSignals() {
   connect(back_btn_, &QPushButton::clicked, this, &BaseWizardDialog::back);
   connect(next_btn_, &QPushButton::clicked, this, &BaseWizardDialog::next);
-  connect(create_btn_, &QPushButton::clicked, this, &QDialog::accept);
+  // 创建前先过 onCreateValidate（子类校验），返回 false 则不 accept
+  connect(create_btn_, &QPushButton::clicked, this, [this]() {
+    if (onCreateValidate()) {
+      accept();
+    }
+  });
   connect(cancel_btn_, &QPushButton::clicked, this,
           &BaseWizardDialog::confirmCancel);
 

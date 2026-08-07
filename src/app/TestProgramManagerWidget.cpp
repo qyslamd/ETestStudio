@@ -13,12 +13,36 @@
 #include <QVBoxLayout>
 
 #include "TestProgramData.h"
+#include "dialogs/TestProgramWizard.h"
 #include "project/ProjectManager.h"
 #include "logger/Logger.h"
 
 namespace etest::app {
 
 using namespace etest::core::project;
+
+namespace {
+
+// 嵌套步骤数（含子步骤 / ELSE 分支），用于创建日志
+int countStepTree(const QVector<TestStepData>& steps) {
+  int count = 0;
+  for (const TestStepData& s : steps) {
+    ++count;
+    count += countStepTree(s.subSteps);
+    count += countStepTree(s.elseSubSteps);
+  }
+  return count;
+}
+
+int countNestedSteps(const QVector<TestCaseData>& cases) {
+  int count = 0;
+  for (const TestCaseData& tc : cases) {
+    count += countStepTree(tc.steps);
+  }
+  return count;
+}
+
+}  // namespace
 
 TestProgramManagerWidget::TestProgramManagerWidget(QWidget* parent)
     : QWidget(parent) {
@@ -188,46 +212,45 @@ void TestProgramManagerWidget::onNewTestProgram() {
                              QStringLiteral("请先打开项目"));
     return;
   }
-
-  QString rootPath = pm.currentProjectRoot();
-  if (rootPath.isEmpty())
+  const QString rootPath = pm.currentProjectRoot();
+  if (rootPath.isEmpty()) {
     return;
+  }
 
-  bool ok;
-  QString name = QInputDialog::getText(
-      this, QStringLiteral("新建测试用例"),
-      QStringLiteral("文件名称（不含扩展名）:"), QLineEdit::Normal,
-      QStringLiteral("new_test_program"), &ok);
-  if (!ok || name.trimmed().isEmpty())
+  TestProgramWizard wizard(this);
+  if (wizard.exec() != QDialog::Accepted) {
     return;
+  }
+  TestProgramData suite = wizard.resultProgram();
 
-  name = name.trimmed();
-  QString fileName = name + QStringLiteral(".etprog");
-  QString dirPath = QDir(rootPath).absoluteFilePath(QStringLiteral("cases"));
+  const QString dirPath =
+      QDir(rootPath).absoluteFilePath(QStringLiteral("cases"));
   QDir casesDir(dirPath);
   if (!casesDir.exists()) {
-    casesDir.mkpath(".");
+    casesDir.mkpath(QStringLiteral("."));
   }
-  QString filePath = casesDir.absoluteFilePath(fileName);
+  const QString filePath =
+      casesDir.absoluteFilePath(suite.name + QStringLiteral(".etprog"));
 
+  // 兜底守卫（信息页预检之外的二次校验）
   if (QFile::exists(filePath)) {
     QMessageBox::warning(this, QStringLiteral("新建失败"),
                          QStringLiteral("文件已存在：%1").arg(filePath));
     return;
   }
-
-  // 创建空的 .tcase 文件
-  TestProgramData suite;
-  suite.name = name;
   if (!saveTestProgram(filePath, suite)) {
     QMessageBox::warning(this, QStringLiteral("新建失败"),
                          QStringLiteral("无法创建文件：%1").arg(filePath));
     return;
   }
 
+  LOG_INFO("PROJECT_UI",
+           "新建测试程序成功 [template={}] [name={}] [version={}] [author={}] "
+           "[cases={}] [steps={}]",
+           wizard.templateId().toStdString(), suite.name.toStdString(),
+           suite.version.toStdString(), suite.author.toStdString(),
+           suite.cases.size(), countNestedSteps(suite.cases));
   refreshList();
-
-  // 打开新建的文件
   emit openFileRequested(filePath);
 }
 

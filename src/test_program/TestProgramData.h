@@ -79,6 +79,8 @@ struct TestProgramData {
   QString name;
   QString description;
   QString version = "1.1";
+  QString author;       // 程序作者（新建向导写入；编辑器暂不回写，见已知限制）
+  QString precondition;  // 前置条件
   QVector<TestStepData> setup;     // 前置步骤
   QVector<TestStepData> teardown;  // 后置步骤
   QVector<TestCaseData> cases;

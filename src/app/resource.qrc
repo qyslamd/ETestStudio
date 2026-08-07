@@ -295,6 +295,12 @@
         <file>resources/icons/svg/testprog_move_down_dark.svg</file>
         <file>resources/icons/svg/testprog_move_down_light.svg</file>
         <file>resources/icons/svg/testprog_delete_all_dark.svg</file>
+        <file>resources/icons/svg/bolt_dark.svg</file>
+        <file>resources/icons/svg/bolt_light.svg</file>
+        <file>resources/icons/svg/layer_group_dark.svg</file>
+        <file>resources/icons/svg/layer_group_light.svg</file>
+        <file>resources/icons/svg/pencil_dark.svg</file>
+        <file>resources/icons/svg/pencil_light.svg</file>
         <file>resources/icons/svg/testprog_tab_init_dark.svg</file>
         <file>resources/icons/svg/testprog_tab_init_light.svg</file>
         <file>resources/icons/svg/testprog_tab_cleanup_dark.svg</file>

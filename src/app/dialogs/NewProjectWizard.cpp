@@ -7,14 +7,12 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QPainter>
 #include <QStyle>
-#include <QStyleOptionButton>
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include "AppIconProvider.h"
 #include "ThemeManager.h"
+#include "WizardTemplateCard.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "utils/switch_button.h"
@@ -24,57 +22,6 @@ using namespace etest::core::config;
 namespace etest::app {
 
 // ── Page 1: 模板选择 ──
-
-// 模板卡片（文件内私有）：QAbstractButton 派生，自带 checked/clicked，选中态由
-// QSS `#templateCard:checked` 驱动；配合 QButtonGroup 实现互斥选择。
-class WizardTemplateCard : public QAbstractButton {
- public:
-  WizardTemplateCard(const QString& iconName, const QString& title,
-                     const QString& desc, const QString& badge, QWidget* parent)
-      : QAbstractButton(parent) {
-    setCursor(Qt::PointingHandCursor);
-    setCheckable(true);
-    setObjectName(QStringLiteral("templateCard"));
-
-    auto* lay = new QVBoxLayout(this);
-    lay->setContentsMargins(16, 16, 16, 14);
-    lay->setSpacing(6);
-
-    auto* icon = new QLabel(this);
-    icon->setObjectName(QStringLiteral("templateCardIcon"));
-    icon->setPixmap(
-        core_ui::AppIconProvider::instance().icon(iconName).pixmap(28, 28));
-    lay->addWidget(icon);
-
-    auto* titleLabel = new QLabel(title, this);
-    titleLabel->setObjectName(QStringLiteral("templateCardTitle"));
-    lay->addWidget(titleLabel);
-
-    auto* descLabel = new QLabel(desc, this);
-    descLabel->setObjectName(QStringLiteral("templateCardDesc"));
-    descLabel->setWordWrap(true);
-    lay->addWidget(descLabel);
-
-    if (!badge.isEmpty()) {
-      auto* badgeLabel = new QLabel(badge, this);
-      badgeLabel->setObjectName(QStringLiteral("templateCardBadge"));
-      lay->addWidget(badgeLabel);
-    }
-    lay->addStretch();
-  }
-
- protected:
-  // 委托给 style 绘制，让 QSS 的 background/border/圆角及 :hover/:checked 生效
-  void paintEvent(QPaintEvent*) override {
-    QStyleOptionButton opt;
-    opt.initFrom(this);
-    if (isChecked()) {
-      opt.state |= QStyle::State_On;
-    }
-    QPainter p(this);
-    style()->drawControl(QStyle::CE_PushButton, &opt, &p, this);
-  }
-};
 
 class NewProjectWizard::TemplatePage : public WizardPage {
  public:

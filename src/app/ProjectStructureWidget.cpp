@@ -42,6 +42,7 @@
 #include "ConfigManager.h"
 #include "TestProgramData.h"
 #include "config/ConfigDefs.h"
+#include "dialogs/TestProgramWizard.h"
 
 namespace etest::app {
 
@@ -1049,15 +1050,39 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
   QString fullDir = QDir(project_path_).absoluteFilePath(targetDir);
   QDir().mkpath(fullDir);
 
-  QString fileName =
-      newFileBaseName(baseName, fullDir) +
-      (extension.isEmpty() ? QString() : QStringLiteral(".") + extension);
-  QString fullPath = QDir(fullDir).absoluteFilePath(fileName);
-
+  QString fileName;
+  QString fullPath;
   bool created = false;
+  // 向导创建的文件名已由信息页确定，跳过结尾的行内重命名（避免文件名与
+  // .etprog 内部 suite.name 不一致）
+  bool skipRename = false;
+
   if (extension == QStringLiteral("etprog")) {
-    created = saveDefaultTestProgram(fullPath);
+    // 测试程序文件走完整向导（模板/信息/用例与步骤/完成），名称由向导决定
+    TestProgramWizard wizard(this);
+    if (wizard.exec() != QDialog::Accepted) {
+      return;
+    }
+    TestProgramData suite = wizard.resultProgram();
+    fileName = suite.name + QStringLiteral(".etprog");
+    fullPath = QDir(fullDir).absoluteFilePath(fileName);
+    // 兜底守卫（向导信息页已预检，此处二次校验）
+    if (QFile::exists(fullPath)) {
+      QMessageBox::warning(this, QStringLiteral("新建失败"),
+                           QStringLiteral("文件已存在：%1").arg(fullPath));
+      return;
+    }
+    created = saveTestProgram(fullPath, suite);
+    skipRename = true;
+    LOG_INFO("PROJECT_UI", "向导新建测试程序 [name={}] [version={}] [author={}]",
+             suite.name.toStdString(), suite.version.toStdString(),
+             suite.author.toStdString());
   } else {
+    fileName =
+        newFileBaseName(baseName, fullDir) +
+        (extension.isEmpty() ? QString() : QStringLiteral(".") + extension);
+    fullPath = QDir(fullDir).absoluteFilePath(fileName);
+
     QFile file(fullPath);
     created = file.open(QIODevice::WriteOnly);
     if (created) {
@@ -1111,13 +1136,15 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
                      QString::number(fileCount) + QStringLiteral(")"));
   }
 
-  // 选中并进入重命名模式
+  // 选中并进入重命名模式（向导创建的文件名已定，跳过行内重命名）
   if (newItem) {
     QModelIndex newIndex = newItem->index();
     tree_view_->setCurrentIndex(newIndex);
     tree_view_->scrollTo(newIndex);
-    rename_old_path_ = fullPath;
-    tree_view_->edit(newIndex);
+    if (!skipRename) {
+      rename_old_path_ = fullPath;
+      tree_view_->edit(newIndex);
+    }
   }
 }
 

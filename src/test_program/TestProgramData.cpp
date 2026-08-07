@@ -207,6 +207,13 @@ QJsonObject testProgramToJson(const TestProgramData& suite) {
   obj["version"] = suite.version;
   obj["name"] = suite.name;
   obj["description"] = suite.description;
+  // author/precondition 非空才写，向后兼容旧文件
+  if (!suite.author.isEmpty()) {
+    obj["author"] = suite.author;
+  }
+  if (!suite.precondition.isEmpty()) {
+    obj["precondition"] = suite.precondition;
+  }
 
   // setup
   QJsonArray setupArr;
@@ -237,6 +244,8 @@ TestProgramData testProgramFromJson(const QJsonObject& obj) {
   suite.version = obj["version"].toString("1.0");
   suite.name = obj["name"].toString();
   suite.description = obj["description"].toString();
+  suite.author = obj["author"].toString();
+  suite.precondition = obj["precondition"].toString();
 
   const auto setupArr = obj["setup"].toArray();
   for (const auto& v : setupArr) {

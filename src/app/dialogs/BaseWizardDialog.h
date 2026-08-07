@@ -59,6 +59,9 @@ class BaseWizardDialog : public AnimationDialog {
   void setHeader(const QString& iconName, const QString& title,
                  const QString& subtitle);
 
+  /// 设置创建按钮文案（默认「创建项目」）
+  void setCreateButtonText(const QString& text);
+
  signals:
   /// 当前页切换后发出（index 为新页索引）
   void currentPageChanged(int index);
@@ -73,6 +76,9 @@ class BaseWizardDialog : public AnimationDialog {
   void closeEvent(QCloseEvent* event) override;
   /// 取消二次确认；子类可覆写定制文案
   virtual void confirmCancel();
+  /// 点击创建按钮（末页）时、accept 之前调用；返回 false 则阻止关闭。
+  /// create_btn_ 直连 accept() 会绕过末页校验，子类在此做创建前校验。
+  virtual bool onCreateValidate() { return true; }
 
  private:
   /// 淡入上滑转场：旧页原地淡出，新页自下方 8px 上滑淡入

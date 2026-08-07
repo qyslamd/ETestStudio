@@ -133,6 +133,12 @@ add_executable(${TARGET_NAME} WIN32
     dialogs/BaseWizardDialog.cpp
     dialogs/NewProjectWizard.h
     dialogs/NewProjectWizard.cpp
+    dialogs/WizardTemplateCard.h
+    dialogs/WizardTemplateCard.cpp
+    dialogs/StepEditDialog.h
+    dialogs/StepEditDialog.cpp
+    dialogs/TestProgramWizard.h
+    dialogs/TestProgramWizard.cpp
     dialogs/AboutDialog.h
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h
