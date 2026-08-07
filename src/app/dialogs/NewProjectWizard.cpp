@@ -33,9 +33,12 @@ class NewProjectWizard::TemplatePage : public WizardPage {
  private:
   void initUi();
   void initSignals();
-  WizardTemplateCard* addCard(QButtonGroup* group, QHBoxLayout* layout,
-                              const QString& templateId, const QString& iconName,
-                              const QString& title, const QString& desc,
+  WizardTemplateCard* addCard(QButtonGroup* group,
+                              QHBoxLayout* layout,
+                              const QString& templateId,
+                              const QString& iconName,
+                              const QString& title,
+                              const QString& desc,
                               const QString& badge);
 
   QButtonGroup* group_ = nullptr;
@@ -65,11 +68,11 @@ void NewProjectWizard::TemplatePage::initUi() {
   layout->addLayout(grid);
 
   // 默认选中「空项目」
-  auto* empty = addCard(group_, grid, QStringLiteral("empty"),
-                        QStringLiteral("file_generic"),
-                        QStringLiteral("空项目"),
-                        QStringLiteral("手动配置拓扑、协议和用例，完全自定义"),
-                        QStringLiteral("推荐"));
+  auto* empty =
+      addCard(group_, grid, QStringLiteral("empty"),
+              QStringLiteral("file_generic"), QStringLiteral("空项目"),
+              QStringLiteral("手动配置拓扑、协议和用例，完全自定义"),
+              QStringLiteral("推荐"));
   addCard(group_, grid, QStringLiteral("demo"), QStringLiteral("microchip"),
           QStringLiteral("Mock 演示"),
           QStringLiteral("包含模拟设备、示例协议和演示用例"),
@@ -97,8 +100,12 @@ QString NewProjectWizard::TemplatePage::selectedTemplateId() const {
 }
 
 WizardTemplateCard* NewProjectWizard::TemplatePage::addCard(
-    QButtonGroup* group, QHBoxLayout* layout, const QString& templateId,
-    const QString& iconName, const QString& title, const QString& desc,
+    QButtonGroup* group,
+    QHBoxLayout* layout,
+    const QString& templateId,
+    const QString& iconName,
+    const QString& title,
+    const QString& desc,
     const QString& badge) {
   auto* card = new WizardTemplateCard(iconName, title, desc, badge, this);
   card->setProperty("templateId", templateId);
@@ -321,8 +328,11 @@ class NewProjectWizard::AdvancedConfigPage : public WizardPage {
  private:
   void initUi();
   void initSignals();
-  void addToggle(QVBoxLayout* layout, const QString& title, const QString& desc,
-                 bool checked, SwitchButton** outSwitch);
+  void addToggle(QVBoxLayout* layout,
+                 const QString& title,
+                 const QString& desc,
+                 bool checked,
+                 SwitchButton** outSwitch);
   void applyThemeBrushes();
 
   QList<SwitchButton*> toggles_;
@@ -343,7 +353,8 @@ void NewProjectWizard::AdvancedConfigPage::initUi() {
             QStringLiteral("生成一份示例 ICD 帧定义文件，方便快速上手"), true,
             nullptr);
   addToggle(layout, QStringLiteral("启用 Mock 设备模拟"),
-            QStringLiteral("在无真实硬件时使用虚拟设备进行调试"), true, nullptr);
+            QStringLiteral("在无真实硬件时使用虚拟设备进行调试"), true,
+            nullptr);
   addToggle(layout, QStringLiteral("初始化 Git 仓库"),
             QStringLiteral("自动初始化本地 Git 并生成 .gitignore"), false,
             nullptr);
@@ -378,9 +389,11 @@ bool NewProjectWizard::AdvancedConfigPage::generateSampleTests() const {
   return toggles_.value(3) ? toggles_.at(3)->isChecked() : true;
 }
 
-void NewProjectWizard::AdvancedConfigPage::addToggle(
-    QVBoxLayout* layout, const QString& title, const QString& desc,
-    bool checked, SwitchButton** outSwitch) {
+void NewProjectWizard::AdvancedConfigPage::addToggle(QVBoxLayout* layout,
+                                                     const QString& title,
+                                                     const QString& desc,
+                                                     bool checked,
+                                                     SwitchButton** outSwitch) {
   auto* group = new QWidget(this);
   group->setObjectName(QStringLiteral("configGroup"));
 
@@ -428,15 +441,21 @@ class NewProjectWizard::SummaryPage : public WizardPage {
  public:
   explicit SummaryPage(QWidget* parent = nullptr);
 
-  void setSummary(const QString& templateLabel, const QString& name,
-                  const QString& location, const QString& version,
+  void setSummary(const QString& templateLabel,
+                  const QString& name,
+                  const QString& location,
+                  const QString& version,
                   const QString& desc);
   QString stepLabel() const override { return QStringLiteral("完成"); }
 
  private:
   void initUi();
-  QLabel* addItem(QGridLayout* grid, int row, int col, const QString& label,
-                  const QString& value, int colspan = 1);
+  QLabel* addItem(QGridLayout* grid,
+                  int row,
+                  int col,
+                  const QString& label,
+                  const QString& value,
+                  int colspan = 1);
 
   QLabel* template_value_ = nullptr;
   QLabel* name_value_ = nullptr;
@@ -470,8 +489,7 @@ void NewProjectWizard::SummaryPage::initUi() {
 
   template_value_ = addItem(grid, 0, 0, QStringLiteral("模板"), QString());
   name_value_ = addItem(grid, 0, 1, QStringLiteral("项目名称"), QString());
-  location_value_ =
-      addItem(grid, 1, 0, QStringLiteral("位置"), QString());
+  location_value_ = addItem(grid, 1, 0, QStringLiteral("位置"), QString());
   version_value_ = addItem(grid, 1, 1, QStringLiteral("版本"), QString());
   desc_value_ = addItem(grid, 2, 0, QStringLiteral("描述"), QString(), 2);
 
@@ -486,14 +504,17 @@ void NewProjectWizard::SummaryPage::setSummary(const QString& templateLabel,
                                                const QString& desc) {
   template_value_->setText(templateLabel);
   name_value_->setText(name.isEmpty() ? QStringLiteral("（未命名）") : name);
-  location_value_->setText(
-      location.isEmpty() ? QStringLiteral("（未设置）") : location);
-  version_value_->setText(version.isEmpty() ? QStringLiteral("1.0.0") : version);
+  location_value_->setText(location.isEmpty() ? QStringLiteral("（未设置）")
+                                              : location);
+  version_value_->setText(version.isEmpty() ? QStringLiteral("1.0.0")
+                                            : version);
   desc_value_->setText(desc.isEmpty() ? QStringLiteral("（无描述）") : desc);
 }
 
-QLabel* NewProjectWizard::SummaryPage::addItem(QGridLayout* grid, int row,
-                                               int col, const QString& label,
+QLabel* NewProjectWizard::SummaryPage::addItem(QGridLayout* grid,
+                                               int row,
+                                               int col,
+                                               const QString& label,
                                                const QString& value,
                                                int colspan) {
   auto* item = new QWidget(this);
@@ -527,8 +548,7 @@ QString templateLabel(const QString& templateId) {
 }
 }  // namespace
 
-NewProjectWizard::NewProjectWizard(QWidget* parent)
-    : BaseWizardDialog(parent) {
+NewProjectWizard::NewProjectWizard(QWidget* parent) : BaseWizardDialog(parent) {
   initUi();
   initSignals();
 }
@@ -592,12 +612,11 @@ void NewProjectWizard::initSignals() {
   connect(info_page_, &WizardPage::completeChanged, this,
           &NewProjectWizard::updateSummary);
   // 进入完成页时兜底再刷新一次，保证摘要与最终输入一致
-  connect(this, &BaseWizardDialog::currentPageChanged, this,
-          [this](int index) {
-            if (index == pageCount() - 1) {
-              updateSummary();
-            }
-          });
+  connect(this, &BaseWizardDialog::currentPageChanged, this, [this](int index) {
+    if (index == pageCount() - 1) {
+      updateSummary();
+    }
+  });
 }
 
 void NewProjectWizard::updateSummary() {
