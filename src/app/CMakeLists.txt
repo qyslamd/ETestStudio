@@ -141,6 +141,8 @@ add_executable(${TARGET_NAME} WIN32
     dialogs/TestProgramWizard.cpp
     dialogs/ProtocolFileWizard.h
     dialogs/ProtocolFileWizard.cpp
+    dialogs/TopologyFileWizard.h
+    dialogs/TopologyFileWizard.cpp
     dialogs/AboutDialog.h
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h

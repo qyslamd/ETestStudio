@@ -50,6 +50,9 @@
 #include "config/ConfigDefs.h"
 #include "dialogs/ProtocolFileWizard.h"
 #include "dialogs/TestProgramWizard.h"
+#include "dialogs/TopologyFileWizard.h"
+#include "topology/TopologyDocument.h"
+#include "topology/TopologyJsonSerializer.h"
 
 namespace etest::app {
 
@@ -1115,6 +1118,36 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
     skipRename = true;
     LOG_INFO("PROJECT_UI", "向导新建协议文件 [name={}] [frameId={}]",
              fileName.toStdString(), frameId);
+  } else if (extension == QStringLiteral("etopo")) {
+    // 拓扑文件走完整向导（模板/设备&UUT/连线/完成），名称由向导决定
+    TopologyFileWizard wizard(this);
+    if (wizard.exec() != QDialog::Accepted) {
+      return;
+    }
+    const QString name = wizard.topologyName();
+    fileName = name + QStringLiteral(".etopo");
+    fullPath = QDir(fullDir).absoluteFilePath(fileName);
+    // 兜底守卫（向导第 1 页已校验名称，此处二次校验）
+    if (QFile::exists(fullPath)) {
+      QMessageBox::warning(this, QStringLiteral("新建失败"),
+                           QStringLiteral("文件已存在：%1").arg(fullPath));
+      return;
+    }
+    etest::topology::TopologyDocument* doc = wizard.resultDocument();
+    const QJsonObject root =
+        etest::topology::TopologyJsonSerializer::serialize(*doc);
+    QFile file(fullPath);
+    if (!file.open(QIODevice::WriteOnly)) {
+      QMessageBox::warning(this, QStringLiteral("新建失败"),
+                           QStringLiteral("写入拓扑文件失败：%1").arg(fullPath));
+      return;
+    }
+    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    file.close();
+    created = true;
+    skipRename = true;
+    LOG_INFO("PROJECT_UI", "向导新建拓扑文件 [name={}]",
+             fileName.toStdString());
   } else {
     fileName =
         newFileBaseName(baseName, fullDir) +
