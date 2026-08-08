@@ -63,45 +63,8 @@ scripts/build_ninja.sh -t debug -c
   - 非 `etest` 命名空间的模块（如 `icd` 工具库）保持其自有风格 `namespace icd {}`，但命名空间内部不再嵌套二级命名空间
 
 ## 代码架构
-项目采用分层、模块化架构设计，`src/` 下每个子目录对应一个独立的 CMake 构建目标：
-
-### 核心层（Core Layer）
-| 模块           | 目录        | 说明                                                                                                                       |
-| -------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **etest_core** | `src/core/` | 基础服务与核心功能：配置管理（ConfigManager）、日志（spdlog）、插件框架（PluginManager）、项目管理、崩溃处理、通用工具函数 |
-| **etest_api**  | `src/api/`  | 纯头文件接口库（IEditor 等），无链接依赖                                                                                   |
-
-### 业务模块层（Business Module Layer）
-| 模块               | 目录            | 说明                                                              |
-| ------------------ | --------------- | ----------------------------------------------------------------- |
-| **etest_topology** | `src/topology/` | 拓扑编辑器（ETest 核心功能），实现场景/视图/项/撤销/序列化/导出等 |
-| **etest_protocol** | `src/protocol/` | ICD协议编辑器，实现节点树/位图视图/属性面板                       |
-
-### 共享 UI 层（Shared UI Layer）
-| 模块         | 目录         | 说明                                                                                         |
-| ------------ | ------------ | -------------------------------------------------------------------------------------------- |
-| **etest_ui** | `src/libui/` | 跨模块共享的 UI 组件库（如 DockTitleBar 自定义标题栏），被 topology、protocol 及独立产品共用 |
-
-### 工具库层（Utility Layer）
-| 模块               | 目录               | 说明                                       |
-| ------------------ | ------------------ | ------------------------------------------ |
-| **etest_tuxsaver** | `src/tuxsaver/`    | 屏保动画模块，独立静态库                   |
-| **icd_utility**    | `src/icd_utility/` | ICD 数据格式工具库（纯 C++17，无 Qt 依赖） |
-
-### 应用层（Application Layer）
-| 模块      | 目录       | 说明                                                                                                                                   |
-| --------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **etest** | `src/app/` | 主程序可执行文件，集成所有模块。基于 Qt-Advanced-Docking-System 实现停靠界面布局，包含编辑器管理、欢迎页、终端、输出面板、各类对话框等 |
-
-### 模组依赖关系
-```
-etest (主程序)
-├── etest_topology ─┬── etest_ui ─── etest_core
-├── etest_protocol ─┤              └── Qt5::Widgets
-├── etest_tuxsaver  └── etest_api (header-only)
-├── icd_utility
-└── Qt5 / 第三方库 (QScintilla, SARibbon, QXlsx, libharu, QADS...)
-```
+项目采用分层、模块化架构设计，`src/` 下每个子目录对应一个独立的 CMake 构建目标。
+模块划分与依赖关系可直接从 `src/` 目录结构及各子目录 `CMakeLists.txt` 中看出，此处不再赘述。
 
 ## 附属工具约束
 
@@ -185,44 +148,9 @@ etest (主程序)
 ## 调试和定位问题
 1. 该项目是一个Qt的GUI程序。大模型Agent工具无法运行查看运行后的状态，唯一的手段就是通过增加日志。我是用了spdlog封装了 `LOG_INFO`、`LOG_DEBUG`等，必要的时候添加上日志！
 
-## 新增主题（JSON 驱动）
-
-主题数据全在 JSON 中定义。两处 QADS 加载点（`MainWindow::onThemeChanged` / `ThemeManager::loadQss`）已按主题 ID 推导 `ads_<id>.qss` 路径，**新增主题无需改 C++**。
-
-### 快速生成（推荐）
-
-使用 `src/app/resources/scripts/gen_themes.py` 批量生成，只需在脚本中填写主题 ID、显示名和主色值：
-
-```python
-themes = [
-    { 'id': 'my_theme', 'displayName': '我的主题 My Theme', 'accent': '#FF6600' },
-]
-```
-
-运行后自动生成 JSON + QSS + Ribbon QSS + ads QSS 四个文件（脚本同时修复 QSS 中的 QADS 注释指向，并注入 QSpinBox/QComboBox 主题适配样式）。
-
-### 手动创建
-
-1. `src/app/resources/themes/<id>.json` — 16 个语义色 + 26 个编辑器色
-2. `src/app/resources/styles/<id>.qss` — 基于 `vscode.qss`（暗色）或 `default.qss`（亮色）替换颜色
-3. `src/app/resources/styles/ribbon_<id>.qss` — 基于 `theme-dark2.qss`（暗色）或 `theme-office2021-blue.qss`（亮色）替换颜色
-4. `src/app/resources/styles/ads_<id>.qss` — QADS dock 样式，基于 `ads_template.qss`（亮色）或 `ads_vscode.qss`（暗色）替换颜色
-5. 亮色 ribbon QSS 必须补 `SARibbonButtonGroupWidget > QToolButton` + `SARibbonQuickAccessBar` 块（见 `ribbon_lime.qss` 头部），暗色不需要
-6. 用 Python 批量替换颜色时，旧值和新值都要带 `#` 前缀避双井号
-7. `src/app/resource.qrc` 注册 4 个文件（JSON/QSS/ribbon QSS/ads QSS）
-8. 亮色 ads QSS 引用 `_dark` 图标变体、暗色引用 `_light`（与 `AppIconProvider` 规则一致）
-9. dock 标签(tab) 的选中/形状配色由 `DockAreaTabBarStyle` 程序化绘制，不受 ads QSS 控制
-10. 运行 `python src/app/resources/scripts/gen_themes.py --widgets` 注入 QSpinBox/QComboBox 主题适配样式（基于 `styles/spinbox_template.qss` / `combobox_template.qss` 模板，幂等；快速生成已自动注入，无需重复）
+## 新增主题
+主题数据全在 JSON 中定义，两处 QADS 加载点（`MainWindow::onThemeChanged` / `ThemeManager::loadQss`）已按主题 ID 推导 `ads_<id>.qss` 路径，**新增主题无需改 C++**。
+完整操作手册见 `src/app/resources/scripts/CLAUDE.md`（仅在该目录工作时加载）。
 
 ## 第三方依赖
-项目集成了以下第三方库，均已在CMake中配置为静态编译：
-- Qt 5.15.2（Windows，msvc2019_64）/ Qt 5.12.x（Linux，系统包），组件：Core、Gui、Widgets、PrintSupport、Test、Xml、Svg、Network、Concurrent、Sql。Qt使用官方编译的二进制发布包，默认是共享库
-- Qt-Advanced-Docking-System 3.8.3（高级停靠系统）
-- QXlsx 1.5.0（Excel读写）
-- zlib 1.3.2（压缩库）
-- libpng 1.6.43（PNG图像处理）
-- spdlog 1.17.0（日志库）
-- googletest 1.17.0（单元测试框架）
-- lua 5.4.4（脚本语言支持）
-- libharu 2.4.6（PDF生成）
-- QScintilla 2.11.3（高级文本编辑器组件）
+第三方库清单与版本见顶层 `CMakeLists.txt` 及各模块的 `CMakeLists.txt`（`find_package` / 静态编译配置），此处不再赘述。
