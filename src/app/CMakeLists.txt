@@ -139,6 +139,8 @@ add_executable(${TARGET_NAME} WIN32
     dialogs/StepEditDialog.cpp
     dialogs/TestProgramWizard.h
     dialogs/TestProgramWizard.cpp
+    dialogs/ProtocolFileWizard.h
+    dialogs/ProtocolFileWizard.cpp
     dialogs/AboutDialog.h
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h

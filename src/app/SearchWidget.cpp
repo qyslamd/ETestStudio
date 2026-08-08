@@ -408,7 +408,7 @@ void SearchWidget::clearResults() {
 
 QString SearchWidget::fileIconName(const QString& suffix) const {
   QString s = suffix.toLower();
-  if (s == QStringLiteral("eproto")) {
+  if (s == QStringLiteral("eproto") || s == QStringLiteral("eprotox")) {
     return QStringLiteral("file_eproto");
   } else if (s == QStringLiteral("etopo")) {
     return QStringLiteral("file_etopo");

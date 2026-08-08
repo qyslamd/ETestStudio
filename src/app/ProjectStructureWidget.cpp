@@ -36,12 +36,19 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <functional>
+#include <memory>
+#include <utility>
 #include "logger/Logger.h"
+#include "format/xml_serializer.hpp"
+#include "utils/FileUtil.h"
+
+#include <icd/repository.hpp>
 
 #include "AppIconProvider.h"
 #include "ConfigManager.h"
 #include "TestProgramData.h"
 #include "config/ConfigDefs.h"
+#include "dialogs/ProtocolFileWizard.h"
 #include "dialogs/TestProgramWizard.h"
 
 namespace etest::app {
@@ -541,7 +548,7 @@ QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
   return {
       {QStringLiteral("protocol"), QStringLiteral("协议"),
        QStringLiteral("protocol/"), QStringLiteral("protocol"),
-       QStringLiteral("eproto"), QStringLiteral("新建协议文件")},
+       QStringLiteral("eprotox"), QStringLiteral("新建协议文件")},
       {QStringLiteral("topology"), QStringLiteral("拓扑"),
        QStringLiteral("topology/"), QStringLiteral("topo_tap"),
        QStringLiteral("etopo"), QStringLiteral("新建拓扑文件")},
@@ -1077,6 +1084,37 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
     LOG_INFO("PROJECT_UI", "向导新建测试程序 [name={}] [version={}] [author={}]",
              suite.name.toStdString(), suite.version.toStdString(),
              suite.author.toStdString());
+  } else if (extension == QStringLiteral("eprotox")) {
+    // 协议文件走完整向导（模板/帧属性/字段/完成），名称由向导决定
+    ProtocolFileWizard wizard(this);
+    if (wizard.exec() != QDialog::Accepted) {
+      return;
+    }
+    icd::Frame frame = wizard.resultFrame();
+    const int frameId = frame.id();
+    fileName = QString::fromStdString(std::string(frame.name())) +
+               QStringLiteral(".eprotox");
+    fullPath = QDir(fullDir).absoluteFilePath(fileName);
+    // 兜底守卫（向导信息页已预检，此处二次校验）
+    if (QFile::exists(fullPath)) {
+      QMessageBox::warning(this, QStringLiteral("新建失败"),
+                           QStringLiteral("文件已存在：%1").arg(fullPath));
+      return;
+    }
+    icd::Repository repo;
+    repo.add_frame(std::make_unique<icd::Frame>(std::move(frame)));
+    auto result = icd::format::serialize_xml_repository(
+        etest::core::utils::toFsPath(fullPath), repo);
+    if (!result) {
+      QMessageBox::warning(
+          this, QStringLiteral("新建失败"),
+          QStringLiteral("写入协议文件失败：%1").arg(fullPath));
+      return;
+    }
+    created = true;
+    skipRename = true;
+    LOG_INFO("PROJECT_UI", "向导新建协议文件 [name={}] [frameId={}]",
+             fileName.toStdString(), frameId);
   } else {
     fileName =
         newFileBaseName(baseName, fullDir) +
@@ -1345,7 +1383,8 @@ QStandardItem* ProjectStructureWidget::createFileItem(
   QFileInfo fi(fileName);
   QString suffix = fi.suffix().toLower();
   QString iconName;
-  if (suffix == QStringLiteral("eproto")) {
+  if (suffix == QStringLiteral("eproto") ||
+      suffix == QStringLiteral("eprotox")) {
     iconName = QStringLiteral("file_eproto");
   } else if (suffix == QStringLiteral("etopo")) {
     iconName = QStringLiteral("file_etopo");

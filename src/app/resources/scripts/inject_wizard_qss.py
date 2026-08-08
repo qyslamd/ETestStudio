@@ -8,6 +8,7 @@
 支持多个块，各块以独立的 START/END 标记为界，互不干扰：
 - NewProjectWizard 向导（新建项目向导）
 - TestProgramWizard 向导（新建测试程序文件向导）
+- ProtocolFileWizard 向导（新建协议文件向导）
 
 用法:
     python src/app/resources/scripts/inject_wizard_qss.py
@@ -27,6 +28,8 @@ NEW_PROJECT_START = "/* ===== NewProjectWizard 向导 (自动生成, 勿手改) 
 NEW_PROJECT_END = "/* ===== NewProjectWizard 向导 (自动生成, 勿手改) END ===== */"
 TEST_PROGRAM_START = "/* ===== TestProgramWizard 向导 (自动生成, 勿手改) START ===== */"
 TEST_PROGRAM_END = "/* ===== TestProgramWizard 向导 (自动生成, 勿手改) END ===== */"
+PROTOCOL_FILE_START = "/* ===== ProtocolFileWizard 向导 (自动生成, 勿手改) START ===== */"
+PROTOCOL_FILE_END = "/* ===== ProtocolFileWizard 向导 (自动生成, 勿手改) END ===== */"
 
 DARK_CARD_BG = "rgba(32, 32, 44, 0.78)"
 DARK_CARD_BORDER = "rgba(255, 255, 255, 0.10)"
@@ -568,6 +571,198 @@ def build_test_program_block(theme):
     return "\n".join(lines) + "\n"
 
 
+def build_protocol_file_block(theme):
+    ctx = theme_context(theme)
+    accent = ctx["accent"]
+    accent_hover = ctx["accent_hover"]
+    accent_light = ctx["accent_light"]
+    text = ctx["text"]
+    secondary = ctx["secondary"]
+    disabled = ctx["disabled"]
+    card_bg = ctx["card_bg"]
+    card_border = ctx["card_border"]
+    ghost_hover = ctx["ghost_hover"]
+    grid_bg = ctx["grid_bg"]
+    sep = ctx["sep"]
+    input_bg = ctx["input_bg"]
+    input_bg_focus = ctx["input_bg_focus"]
+    input_border = ctx["input_border"]
+
+    line_names = ["frameNameEdit", "frameIdEdit"]
+    line_edits = ",\n".join("QLineEdit#%s" % n for n in line_names)
+    line_edits_focus = ",\n".join("QLineEdit#%s:focus" % n for n in line_names)
+    line_edits_error = ",\n".join("QLineEdit#%s[error=\"true\"]" % n
+                                  for n in line_names)
+    combo_names = ["frameTypeCombo", "byteOrderCombo"]
+    combos = ",\n".join("QComboBox#%s" % n for n in combo_names)
+    combos_focus = ",\n".join("QComboBox#%s:focus" % n for n in combo_names)
+
+    lines = [
+        PROTOCOL_FILE_START,
+        "#protoWizardCard {",
+        "  background-color: %s;" % card_bg,
+        "  border: 1px solid %s;" % card_border,
+        "  border-radius: 20px;",
+        "}",
+        "",
+        "#protoInfoIntro, #fieldIntro {",
+        "  color: %s;" % secondary,
+        "  font-size: 14px;",
+        "}",
+        "#protoFieldLabel {",
+        "  color: %s;" % text,
+        "  font-size: 13px;",
+        "  font-weight: 500;",
+        "}",
+        "",
+        # 帧属性输入框（QLineEdit / QComboBox / QTextEdit 各自选择器）
+        line_edits + " {",
+        "  background-color: %s;" % input_bg,
+        "  border: 1.5px solid %s;" % input_border,
+        "  border-radius: 10px;",
+        "  padding: 9px 12px;",
+        "  color: %s;" % text,
+        "  selection-background-color: %s;" % accent,
+        "}",
+        line_edits_focus + " {",
+        "  border-color: %s;" % accent,
+        "  background-color: %s;" % input_bg_focus,
+        "}",
+        line_edits_error + " {",
+        "  border: 1.5px solid #D13438;",
+        "}",
+        combos + " {",
+        "  background-color: %s;" % input_bg,
+        "  border: 1.5px solid %s;" % input_border,
+        "  border-radius: 10px;",
+        "  padding: 8px 12px;",
+        "  color: %s;" % text,
+        "  selection-background-color: %s;" % accent,
+        "}",
+        combos_focus + " {",
+        "  border-color: %s;" % accent,
+        "  background-color: %s;" % input_bg_focus,
+        "}",
+        "QComboBox#frameTypeCombo::drop-down,"
+        " QComboBox#byteOrderCombo::drop-down {",
+        "  border: none;",
+        "  width: 22px;",
+        "}",
+        "QTextEdit#frameDescEdit {",
+        "  background-color: %s;" % input_bg,
+        "  border: 1.5px solid %s;" % input_border,
+        "  border-radius: 10px;",
+        "  padding: 8px 10px;",
+        "  color: %s;" % text,
+        "  selection-background-color: %s;" % accent,
+        "}",
+        "QTextEdit#frameDescEdit:focus {",
+        "  border-color: %s;" % accent,
+        "  background-color: %s;" % input_bg_focus,
+        "}",
+        "",
+        # 字段表
+        "#fieldTable {",
+        "  background-color: transparent;",
+        "  border: none;",
+        "  gridline-color: transparent;",
+        "  color: %s;" % text,
+        "  selection-background-color: %s;" % accent_light,
+        "}",
+        "#fieldTable::item {",
+        "  padding: 4px 2px;",
+        "}",
+        "#fieldTable QHeaderView::section {",
+        "  background-color: transparent;",
+        "  color: %s;" % disabled,
+        "  font-weight: 500;",
+        "  border: none;",
+        "  border-bottom: 1px solid %s;" % sep,
+        "  padding: 6px 8px;",
+        "}",
+        "#fieldTable QTableCornerButton::section {",
+        "  background-color: transparent;",
+        "  border: none;",
+        "}",
+        "#fieldTable QLineEdit, #fieldTable QSpinBox {",
+        "  background-color: transparent;",
+        "  border: none;",
+        "  border-bottom: 1.5px solid transparent;",
+        "  border-radius: 4px;",
+        "  padding: 4px 6px;",
+        "  color: %s;" % text,
+        "  selection-background-color: %s;" % accent,
+        "}",
+        "#fieldTable QLineEdit:hover, #fieldTable QSpinBox:hover {",
+        "  background-color: %s;" % ghost_hover,
+        "}",
+        "#fieldTable QLineEdit:focus, #fieldTable QSpinBox:focus {",
+        "  background-color: %s;" % input_bg_focus,
+        "  border-bottom: 1.5px solid %s;" % accent,
+        "}",
+        "#fieldTable QLineEdit[error=\"true\"] {",
+        "  border-bottom: 1.5px solid #D13438;",
+        "}",
+        "#fieldTable QComboBox {",
+        "  background-color: transparent;",
+        "  border: none;",
+        "  border-radius: 4px;",
+        "  padding: 4px 6px;",
+        "  color: %s;" % text,
+        "}",
+        "#fieldTable QComboBox:hover {",
+        "  background-color: %s;" % ghost_hover,
+        "}",
+        "#fieldTable QComboBox::drop-down {",
+        "  border: none;",
+        "  width: 18px;",
+        "}",
+        "#fieldTable QSpinBox::up-button, #fieldTable QSpinBox::down-button {",
+        "  width: 14px;",
+        "}",
+        "#fieldDelBtn {",
+        "  background-color: transparent;",
+        "  border: none;",
+        "  border-radius: 6px;",
+        "  padding: 4px;",
+        "}",
+        "#fieldDelBtn:hover {",
+        "  background-color: %s;" % ghost_hover,
+        "}",
+        "",
+        "#addFieldBtn {",
+        "  background-color: %s;" % accent_light,
+        "  color: %s;" % accent,
+        "  border: 1px solid %s;" % accent,
+        "  border-radius: 8px;",
+        "  padding: 5px 14px;",
+        "  font-size: 13px;",
+        "  font-weight: 500;",
+        "}",
+        "#addFieldBtn:hover {",
+        "  background-color: %s;" % accent,
+        "  color: #FFFFFF;",
+        "}",
+        "",
+        "#emptyFieldPlaceholder {",
+        "  color: %s;" % disabled,
+        "  font-size: 13px;",
+        "}",
+        "",
+        # 摘要字段 tag
+        "#fieldTag {",
+        "  background-color: %s;" % accent_light,
+        "  color: %s;" % accent,
+        "  border-radius: 8px;",
+        "  font-size: 11px;",
+        "  font-weight: 500;",
+        "  padding: 2px 8px;",
+        "}",
+        PROTOCOL_FILE_END,
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def upsert(path, block, start, end):
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -599,6 +794,7 @@ def main():
     blocks = [
         (NEW_PROJECT_START, NEW_PROJECT_END, build_new_project_block),
         (TEST_PROGRAM_START, TEST_PROGRAM_END, build_test_program_block),
+        (PROTOCOL_FILE_START, PROTOCOL_FILE_END, build_protocol_file_block),
     ]
 
     updated = 0

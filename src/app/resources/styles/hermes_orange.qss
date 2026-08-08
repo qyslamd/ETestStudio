@@ -2899,3 +2899,165 @@ QTextEdit#progPrecondEdit[error="true"] {
   font-size: 13px;
 }
 /* ===== TestProgramWizard 向导 (自动生成, 勿手改) END ===== */
+/* ===== ProtocolFileWizard 向导 (自动生成, 勿手改) START ===== */
+#protoWizardCard {
+  background-color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 20px;
+}
+
+#protoInfoIntro, #fieldIntro {
+  color: #6D3212;
+  font-size: 14px;
+}
+#protoFieldLabel {
+  color: #2A2015;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+QLineEdit#frameNameEdit,
+QLineEdit#frameIdEdit {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid #D0D0DD;
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #2A2015;
+  selection-background-color: #D56224;
+}
+QLineEdit#frameNameEdit:focus,
+QLineEdit#frameIdEdit:focus {
+  border-color: #D56224;
+  background-color: #FFFFFF;
+}
+QLineEdit#frameNameEdit[error="true"],
+QLineEdit#frameIdEdit[error="true"] {
+  border: 1.5px solid #D13438;
+}
+QComboBox#frameTypeCombo,
+QComboBox#byteOrderCombo {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid #D0D0DD;
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: #2A2015;
+  selection-background-color: #D56224;
+}
+QComboBox#frameTypeCombo:focus,
+QComboBox#byteOrderCombo:focus {
+  border-color: #D56224;
+  background-color: #FFFFFF;
+}
+QComboBox#frameTypeCombo::drop-down, QComboBox#byteOrderCombo::drop-down {
+  border: none;
+  width: 22px;
+}
+QTextEdit#frameDescEdit {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid #D0D0DD;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #2A2015;
+  selection-background-color: #D56224;
+}
+QTextEdit#frameDescEdit:focus {
+  border-color: #D56224;
+  background-color: #FFFFFF;
+}
+
+#fieldTable {
+  background-color: transparent;
+  border: none;
+  gridline-color: transparent;
+  color: #2A2015;
+  selection-background-color: #F9E9E0;
+}
+#fieldTable::item {
+  padding: 4px 2px;
+}
+#fieldTable QHeaderView::section {
+  background-color: transparent;
+  color: #B27B5E;
+  font-weight: 500;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 6px 8px;
+}
+#fieldTable QTableCornerButton::section {
+  background-color: transparent;
+  border: none;
+}
+#fieldTable QLineEdit, #fieldTable QSpinBox {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: #2A2015;
+  selection-background-color: #D56224;
+}
+#fieldTable QLineEdit:hover, #fieldTable QSpinBox:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+#fieldTable QLineEdit:focus, #fieldTable QSpinBox:focus {
+  background-color: #FFFFFF;
+  border-bottom: 1.5px solid #D56224;
+}
+#fieldTable QLineEdit[error="true"] {
+  border-bottom: 1.5px solid #D13438;
+}
+#fieldTable QComboBox {
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: #2A2015;
+}
+#fieldTable QComboBox:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+#fieldTable QComboBox::drop-down {
+  border: none;
+  width: 18px;
+}
+#fieldTable QSpinBox::up-button, #fieldTable QSpinBox::down-button {
+  width: 14px;
+}
+#fieldDelBtn {
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 4px;
+}
+#fieldDelBtn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+#addFieldBtn {
+  background-color: #F9E9E0;
+  color: #D56224;
+  border: 1px solid #D56224;
+  border-radius: 8px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+#addFieldBtn:hover {
+  background-color: #D56224;
+  color: #FFFFFF;
+}
+
+#emptyFieldPlaceholder {
+  color: #B27B5E;
+  font-size: 13px;
+}
+
+#fieldTag {
+  background-color: #F9E9E0;
+  color: #D56224;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+}
+/* ===== ProtocolFileWizard 向导 (自动生成, 勿手改) END ===== */

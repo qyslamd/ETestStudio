@@ -301,6 +301,16 @@
         <file>resources/icons/svg/layer_group_light.svg</file>
         <file>resources/icons/svg/pencil_dark.svg</file>
         <file>resources/icons/svg/pencil_light.svg</file>
+        <file>resources/icons/svg/plane_dark.svg</file>
+        <file>resources/icons/svg/plane_light.svg</file>
+        <file>resources/icons/svg/car_dark.svg</file>
+        <file>resources/icons/svg/car_light.svg</file>
+        <file>resources/icons/svg/satellite_dark.svg</file>
+        <file>resources/icons/svg/satellite_light.svg</file>
+        <file>resources/icons/svg/plus_dark.svg</file>
+        <file>resources/icons/svg/plus_light.svg</file>
+        <file>resources/icons/svg/trash_dark.svg</file>
+        <file>resources/icons/svg/trash_light.svg</file>
         <file>resources/icons/svg/testprog_tab_init_dark.svg</file>
         <file>resources/icons/svg/testprog_tab_init_light.svg</file>
         <file>resources/icons/svg/testprog_tab_cleanup_dark.svg</file>
