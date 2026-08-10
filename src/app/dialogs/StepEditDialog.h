@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AnimationDialog.h"
+#include "OverlayDialog.h"
 
 #include <QString>
 
@@ -28,7 +28,7 @@ struct StepEditResult {
 // 添加/编辑测试步骤模态框（对象名 stepModal）。字段可见性按命令类型联动（复刻
 // HTML updateModalFields）；处于控制流块体内时禁用 LOOP/WHILE/IF 命令项（叶子
 // 命令含 CHECK 仍可用）。Enter=确认、Esc=取消。
-class StepEditDialog : public AnimationDialog {
+class StepEditDialog : public OverlayDialog {
   Q_OBJECT
 
  public:

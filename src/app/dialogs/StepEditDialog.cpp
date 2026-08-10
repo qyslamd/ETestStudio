@@ -69,7 +69,7 @@ QWidget* makeFieldRow(QWidget* parent, const QString& labelText,
 }
 }  // namespace
 
-StepEditDialog::StepEditDialog(QWidget* parent) : AnimationDialog(parent) {
+StepEditDialog::StepEditDialog(QWidget* parent) : OverlayDialog(parent) {
   initUi();
   initSignals();
 }
@@ -319,7 +319,7 @@ void StepEditDialog::keyPressEvent(QKeyEvent* event) {
     event->accept();
     return;
   }
-  AnimationDialog::keyPressEvent(event);
+  OverlayDialog::keyPressEvent(event);
 }
 
 }  // namespace etest::app

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dialogs/AnimationDialog.h"
+#include "dialogs/OverlayDialog.h"
 
 class QLabel;
 class QLineEdit;
@@ -10,7 +10,7 @@ class QKeyEvent;
 
 namespace etest::app {
 
-class LoginDialog : public AnimationDialog {
+class LoginDialog : public OverlayDialog {
   Q_OBJECT
 
  public:

@@ -17,7 +17,7 @@ using etest::core::auth::AuthService;
 using etest::core::auth::User;
 using namespace etest::core::config;
 
-LoginDialog::LoginDialog(QWidget* parent) : AnimationDialog(parent) {
+LoginDialog::LoginDialog(QWidget* parent) : OverlayDialog(parent) {
   round_radius_ = 12;
   initUi();
   initSignals();
@@ -144,7 +144,7 @@ void LoginDialog::keyReleaseEvent(QKeyEvent* event) {
       event->key() == Qt::Key_Enter) {
     onLoginClicked();
   }
-  AnimationDialog::keyReleaseEvent(event);
+  OverlayDialog::keyReleaseEvent(event);
 }
 
 void LoginDialog::onLoginClicked() {

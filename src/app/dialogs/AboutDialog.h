@@ -1,14 +1,14 @@
 #ifndef ETEST_APP_DIALOGS_ABOUTDIALOG_H_
 #define ETEST_APP_DIALOGS_ABOUTDIALOG_H_
 
-#include "AnimationDialog.h"
+#include "OverlayDialog.h"
 
 class QLabel;
 class QToolButton;
 
 namespace etest::app {
 
-class AboutDialog : public AnimationDialog {
+class AboutDialog : public OverlayDialog {
   Q_OBJECT
 
  public:

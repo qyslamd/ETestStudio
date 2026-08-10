@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dialogs/AnimationDialog.h"
+#include "dialogs/OverlayDialog.h"
 
 #include <QPixmap>
 
@@ -37,9 +37,9 @@ class WizardPage : public QWidget {
   void completeChanged();
 };
 
-// 通用向导容器：QDialog + QStackedWidget 自绘，继承 AnimationDialog 复用
-// 阴影/圆角/飞入动画。Fluent 风格布局：页头 + 步骤条 + 淡入上滑转场 + 页脚。
-class BaseWizardDialog : public AnimationDialog {
+// 通用向导容器：QDialog + QStackedWidget 自绘，继承 OverlayDialog 复用
+// 阴影/圆角/遮罩。Fluent 风格布局：页头 + 步骤条 + 淡入上滑转场 + 页脚。
+class BaseWizardDialog : public OverlayDialog {
   Q_OBJECT
 
  public:

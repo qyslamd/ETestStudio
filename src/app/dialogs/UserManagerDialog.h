@@ -1,14 +1,14 @@
 #pragma once
 
 #include "auth/AuthTypes.h"
-#include "dialogs/AnimationDialog.h"
+#include "dialogs/OverlayDialog.h"
 
 class QTableWidget;
 class QLabel;
 
 namespace etest::app {
 
-class UserManagerDialog : public AnimationDialog {
+class UserManagerDialog : public OverlayDialog {
   Q_OBJECT
 
  public:

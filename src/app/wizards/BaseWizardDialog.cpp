@@ -58,7 +58,7 @@ class BaseWizardDialog::PageTransitionOverlay : public QWidget {
   qreal progress_ = 0.0;
 };
 
-BaseWizardDialog::BaseWizardDialog(QWidget* parent) : AnimationDialog(parent) {
+BaseWizardDialog::BaseWizardDialog(QWidget* parent) : OverlayDialog(parent) {
   initUi();
   initSignals();
 }
@@ -303,7 +303,7 @@ void BaseWizardDialog::keyPressEvent(QKeyEvent* event) {
     default:
       break;
   }
-  AnimationDialog::keyPressEvent(event);
+  OverlayDialog::keyPressEvent(event);
 }
 
 // Enter 在按下的瞬间常被焦点控件（如 QLineEdit）消费，按下默认按钮的机制
@@ -322,7 +322,7 @@ void BaseWizardDialog::keyReleaseEvent(QKeyEvent* event) {
       return;
     }
   }
-  AnimationDialog::keyReleaseEvent(event);
+  OverlayDialog::keyReleaseEvent(event);
 }
 
 void BaseWizardDialog::closeEvent(QCloseEvent* event) {

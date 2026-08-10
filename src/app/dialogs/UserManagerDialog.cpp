@@ -18,7 +18,7 @@ namespace etest::app {
 using namespace etest::core::auth;
 
 UserManagerDialog::UserManagerDialog(QWidget* parent)
-    : AnimationDialog(parent) {
+    : OverlayDialog(parent) {
   round_radius_ = 12;
   initUi();
   initSignals();

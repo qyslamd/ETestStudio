@@ -12,7 +12,7 @@
 
 namespace etest::app {
 
-AboutDialog::AboutDialog(QWidget* parent) : AnimationDialog(parent) {
+AboutDialog::AboutDialog(QWidget* parent) : OverlayDialog(parent) {
   initUi();
 }
 

@@ -131,8 +131,8 @@ add_executable(${TARGET_NAME} WIN32
     widgets/OpenFileDelegate.cpp
     widgets/ProjectTreeDelegate.h
     widgets/ProjectTreeDelegate.cpp
-    dialogs/AnimationDialog.h
-    dialogs/AnimationDialog.cpp
+    dialogs/OverlayDialog.h
+    dialogs/OverlayDialog.cpp
     wizards/BaseWizardDialog.h
     wizards/BaseWizardDialog.cpp
     wizards/NewProjectWizard.h
