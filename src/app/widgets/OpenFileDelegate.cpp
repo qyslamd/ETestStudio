@@ -37,19 +37,15 @@ void OpenFileDelegate::paint(QPainter* painter,
 
   QRect itemRect = option.rect;
   bool itemHovered = (option.state & QStyle::State_MouseOver);
-  bool itemSelected = (option.state & QStyle::State_Selected);
-
-  // ── Item hover background ──
-  if (itemHovered && !itemSelected) {
-    QColor bgColor = option.palette.color(QPalette::Base);
-    bool isDark = bgColor.lightness() < 128;
-    QColor hoverColor = isDark ? QColor(255, 255, 255, 26)
-                               : QColor(0, 0, 0, 16);
-    painter->fillRect(itemRect, hoverColor);
-  }
 
   // ── Text area ──
+  // 列表项带图标（model setIcon）时文本左移避开 decoration 区。
+  // 必须读 initStyleOption 后的 opt：option.features 恒为 0（HasDecoration 由
+  // initStyleOption 填充，见 OpenFileDelegate::paint 上方 opt = option）。
   int leftMargin = 8;
+  if (opt.features & QStyleOptionViewItem::HasDecoration) {
+    leftMargin += opt.decorationSize.width() + 6;
+  }
   int rightMargin = 4;
   int textRight = itemRect.right() - rightMargin;
   if (itemHovered && close_button_visible_) {

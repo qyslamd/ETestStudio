@@ -700,50 +700,43 @@ QWidget#PhScrollContent {
     background-color: transparent;
 }
 
-QToolButton#PhProjectBtn {
+/* 空态提示卡（btn_grid 移除后简化） */
+QFrame#PhEmptyCard {
     background-color: #FFFFFF;
-    color: #333333;
-    border: 1px solid #D0D0D0;
-    border-radius: 4px;
-    padding: 0 8px;
-    font-size: 12px;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
 }
-QToolButton#PhProjectBtn:hover {
-    background-color: #F0F0F0;
-    border-color: #0078D4;
-}
-QToolButton#PhProjectBtn:pressed {
-    background-color: #E0E0E0;
-}
-
-QLabel#PhTitle {
-    font-size: 14px;
+QLabel#PhEmptyTitle {
+    font-size: 13px;
     font-weight: 600;
-    color: #888888;
+    color: #333333;
 }
-QLabel#PhDesc {
+QLabel#PhEmptyDesc {
     font-size: 12px;
-    color: #AAAAAA;
-}
-QFrame#PhSeparator {
-    color: #3C3C3C;
-    max-height: 1px;
+    color: #8A8A8A;
 }
 
-QToolButton#PhQuickBtn {
-    background-color: #FFFFFF;
-    color: #333333;
-    border: 1px solid #D0D0D0;
-    border-radius: 4px;
-    padding: 0 8px;
-    font-size: 12px;
+/* 分区标题（最近项目/最近文件） */
+QLabel#PhSectionLabel {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6E6E6E;
 }
-QToolButton#PhQuickBtn:hover {
-    background-color: #F0F0F0;
-    border-color: #0078D4;
+
+/* Fluent 紧凑列表行（最近项目/最近文件/已打开 共用） */
+QListView#PhRecentList {
+    background-color: transparent;
+    border: none;
 }
-QToolButton#PhQuickBtn:pressed {
-    background-color: #E0E0E0;
+QListView#PhRecentList::item {
+    padding: 5px 8px;
+    border-radius: 6px;
+}
+QListView#PhRecentList::item:hover {
+    background-color: #EAEAEA;
+}
+QListView#PhRecentList::item:selected {
+    background-color: rgba(0, 103, 192, 0.10);
 }
 
 /* ==================== QDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */

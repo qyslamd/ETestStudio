@@ -535,11 +535,8 @@ void MainWindow::initSignals() {
     connect(psWidget, &ProjectStructureWidget::fileRenamed, editor_manager_,
             &EditorManager::onFileRenamed);
 
-    // 占位页：项目操作
-    connect(psWidget, &ProjectStructureWidget::newProjectRequested, this,
-            &MainWindow::onNewProject);
-    connect(psWidget, &ProjectStructureWidget::openProjectRequested, this,
-            &MainWindow::onOpenProject);
+    // 占位页：项目操作（btn_grid 移除后 newProjectRequested/openProjectRequested
+    // 无发射源，连接删除；入口在 Ribbon 文件菜单与 WelcomeV2）
     connect(psWidget, &ProjectStructureWidget::projectOpenRequested, this,
             &MainWindow::openRecentProject);
     // 最近项目变更时刷新占位页

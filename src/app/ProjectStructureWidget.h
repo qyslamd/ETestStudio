@@ -16,14 +16,12 @@
 #include "widgets/ProjectTreeDelegate.h"
 
 class QFileSystemWatcher;
-class QGroupBox;
 class QLabel;
 class QListView;
 class QMenu;
 class QStandardItemModel;
 class QPoint;
 class QToolButton;
-class QPushButton;
 class QScrollArea;
 class QSplitter;
 class QToolButton;
@@ -131,7 +129,6 @@ class ProjectStructureWidget : public QWidget {
   void onDirectoryChanged(const QString& path);
 
   // 文件操作
-  void createStandaloneFile(const QString& extension, const QString& baseName);
   void deleteSelectedFile();
   void copyFilePath();
   void copyRelativePath();
@@ -172,12 +169,13 @@ class ProjectStructureWidget : public QWidget {
   QStandardItemModel* model_;
   QWidget* page_default_ = nullptr;
 
+  // 最近项目/最近文件分节（分区标题 + 列表，空时整节隐藏）
+  QWidget* recent_projects_section_ = nullptr;
+  QWidget* recent_files_section_ = nullptr;
   QListView* recent_projects_view_ = nullptr;
   QStandardItemModel* recent_projects_model_ = nullptr;
   QListView* recent_files_view_ = nullptr;
   QStandardItemModel* recent_files_model_ = nullptr;
-  QPushButton* new_proj_btn_ = nullptr;
-  QPushButton* open_proj_btn_ = nullptr;
   QFileSystemWatcher* file_watcher_ = nullptr;
   QTimer* debounce_timer_ = nullptr;
 

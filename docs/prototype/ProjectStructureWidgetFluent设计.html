@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProjectStructureWidget FluentUI 改造原型</title>
+<style>
+  :root {
+    --bg: #F3F3F3;
+    --card: #FFFFFF;
+    --border: rgba(0,0,0,0.06);
+    --ink: #242424;
+    --ink-2: #6E6E6E;
+    --ink-3: #9B9B9B;
+    --accent: #0067C0;
+    --accent-soft: rgba(0,103,192,0.10);
+    --hover: #EAEAEA;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    background: #E9E9E9;
+    color: var(--ink);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .page-sub { color: var(--ink-2); font-size: 13px; margin-top: 4px; }
+  .toolbar {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; width: fit-content;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .seg-btn {
+    border: 1px solid var(--border); background: var(--card);
+    padding: 6px 16px; border-radius: 6px; font-size: 13px;
+    cursor: pointer; color: var(--ink);
+  }
+  .seg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .stage { display: flex; gap: 24px; align-items: flex-start; }
+
+  .sidebar {
+    width: 284px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .side-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px; border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600;
+  }
+  .side-body { padding: 10px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── 空态提示卡（原 card1：btn_grid 移除后简化） ── */
+  .empty-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    text-align: center;
+  }
+  .empty-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty-icon svg { width: 22px; height: 22px; stroke: var(--accent); }
+  .empty-title { font-size: 13.5px; font-weight: 600; }
+  .empty-desc { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+
+  /* ── 分区标题 ── */
+  .section-label {
+    font-size: 11px; font-weight: 600; color: var(--ink-2);
+    letter-spacing: 0.02em;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 6px;
+  }
+  .section-label::after { content:""; flex:1; height:1px; background: var(--border); }
+
+  /* ── Fluent 紧凑列表行（图标 + 文本一行内排，hover/选中圆角条） ── */
+  .list { display: flex; flex-direction: column; gap: 2px; }
+  .item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 9px; border-radius: 6px;
+    cursor: pointer; transition: background .12s;
+  }
+  .item:hover { background: var(--hover); }
+  .item.selected { background: var(--accent-soft); }
+  .item-icon {
+    width: 16px; height: 16px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink-3);
+  }
+  .item-icon svg { width: 15px; height: 15px; }
+  .item-text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+  .item-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-path { font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-time { margin-left: auto; font-size: 11px; color: var(--ink-3); flex: none; }
+
+  /* ── 树 ── */
+  .tree-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 6px; display: flex; flex-direction: column;
+  }
+  .tree-row {
+    display: flex; align-items: center; gap: 7px;
+    padding: 5px 8px; border-radius: 6px; font-size: 13px;
+  }
+  .tree-row:hover { background: var(--hover); }
+  .tree-row.root { font-weight: 600; }
+  .tree-row .icon { width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); }
+  .indent { padding-left: 24px; }
+  .badge { margin-left: auto; font-size: 11px; color: var(--ink-3); }
+
+  .notes { max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+  .note {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; font-size: 12.5px; line-height: 1.6;
+    color: var(--ink);
+  }
+  .note b { color: var(--accent); }
+  .note .strike { color: var(--ink-3); text-decoration: line-through; }
+
+  .icon-folder, .icon-file { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="page-title">ProjectStructureWidget — FluentUI 改造原型</div>
+    <div class="page-sub">侧边栏「项目概述」页 · 无项目占位页与有项目树页 · 宽度 284px · 紧凑列表行形态</div>
+  </div>
+
+  <div class="toolbar">
+    <span style="font-size:13px;color:var(--ink-2)">预览：</span>
+    <button class="seg-btn active" id="btn-mode0" onclick="show(0)">模式 0 · 无项目</button>
+    <button class="seg-btn" id="btn-mode1" onclick="show(1)">模式 1 · 有项目</button>
+  </div>
+
+  <!-- 模式 0 -->
+  <div class="stage" id="stage0">
+    <div class="sidebar">
+      <div class="side-head">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0067C0" stroke-width="1.8">
+          <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        项目概述
+      </div>
+      <div class="side-body">
+        <div class="empty-card">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+              <path d="M12 11v4M10 13h4"/>
+            </svg>
+          </div>
+          <div class="empty-title">没有打开任何项目</div>
+          <div class="empty-desc">通过「新建项目」或欢迎页开始</div>
+        </div>
+
+        <div class="section-label">最近项目</div>
+        <div class="list">
+          <div class="item">
+            <span class="item-icon"><svg class="icon-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+            <div class="item-text">
+              <div class="item-name">ETest 综合测试台</div>
+              <div class="item-path">D:\workspace\etest-harness</div>
+            </div>
+            <div class="item-time">昨天</div>
+          </div>
+          <div class="item">
+            <span class="item-icon"><svg class="icon-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+            <div class="item-text">
+              <div class="item-name">板卡自动化验证</div>
+              <div class="item-path">D:\tests\board-auto</div>
+            </div>
+            <div class="item-time">8-06</div>
+          </div>
+        </div>
+
+        <div class="section-label">最近文件</div>
+        <div class="list">
+          <div class="item">
+            <span class="item-icon"><svg class="icon-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></span>
+            <div class="item-text">
+              <div class="item-name">topology_main.etopo</div>
+              <div class="item-path">D:\workspace\etest-harness\topo</div>
+            </div>
+          </div>
+          <div class="item">
+            <span class="item-icon"><svg class="icon-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></span>
+            <div class="item-text">
+              <div class="item-name">icd_bus.eprotox</div>
+              <div class="item-path">D:\workspace\etest-harness\icd</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note">
+        <b>改动 1 · 移除快捷按钮网格。</b>原 card1 内 3×2 的
+        <span class="strike">新建项目 / 打开项目 / 4 个快速新建文件 (btn_grid)</span>
+        全部移除。入口已由 Ribbon 文件菜单与 WelcomeV2 承载。
+      </div>
+      <div class="note">
+        <b>改动 2 · card1 简化为空态提示。</b>居中图标 + 「没有打开任何项目」+ 副文案。
+      </div>
+      <div class="note">
+        <b>改动 3 · 紧凑列表行。</b>最近项目/文件为 Fluent 紧凑列表行：图标 + 名称 + 路径
+        一行内排，无卡片间隙；hover 浅灰圆角条、选中 accent 色（Win11 侧边栏惯例）。
+      </div>
+      <div class="note">
+        分区标题带细分隔线；行高 ~32px，贴合窄侧边栏，信息密度高于卡片堆叠。
+      </div>
+    </div>
+  </div>
+
+  <!-- 模式 1 -->
+  <div class="stage" id="stage1" style="display:none">
+    <div class="sidebar">
+      <div class="side-head">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0067C0" stroke-width="1.8">
+          <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        项目概述
+      </div>
+      <div class="side-body">
+        <div class="tree-card">
+          <div class="tree-row root">
+            <span class="icon"><svg class="icon-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+            etest-harness
+            <span class="badge">同步开</span>
+          </div>
+          <div class="tree-row"><span class="icon"><svg class="icon-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> topology</div>
+          <div class="tree-row indent"><span class="icon"><svg class="icon-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></span> topology_main.etopo</div>
+          <div class="tree-row"><span class="icon"><svg class="icon-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> icd</div>
+          <div class="tree-row indent"><span class="icon"><svg class="icon-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></span> icd_bus.eprotox</div>
+          <div class="tree-row"><span class="icon"><svg class="icon-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> program</div>
+          <div class="tree-row indent"><span class="icon"><svg class="icon-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></span> smoke.etprog</div>
+        </div>
+
+        <div class="section-label">已打开 (2)</div>
+        <div class="list">
+          <div class="item selected">
+            <span class="item-icon"><svg class="icon-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></span>
+            <div class="item-text">
+              <div class="item-name">topology_main.etopo</div>
+              <div class="item-path">D:\workspace\etest-harness\topo</div>
+            </div>
+          </div>
+          <div class="item">
+            <span class="item-icon"><svg class="icon-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></span>
+            <div class="item-text">
+              <div class="item-name">smoke.etprog</div>
+              <div class="item-path">D:\workspace\etest-harness\program</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note">
+        <b>模式 1（有项目）。</b>项目树与「已打开」容器统一 Fluent：树行与列表行共用
+        hover/选中圆角条。树的交互（右键、双击、根节点操作按钮）不变。
+      </div>
+      <div class="note">
+        本次改造以<b>视觉与容器</b>为主；delegate 逻辑、右键菜单、拖拽均不涉及。
+        列表 hover 由 QSS 对称提供（default + vscode），避免双重高亮。
+      </div>
+    </div>
+  </div>
+
+<script>
+  function show(m) {
+    document.getElementById('stage0').style.display = m === 0 ? 'flex' : 'none';
+    document.getElementById('stage1').style.display = m === 1 ? 'flex' : 'none';
+    document.getElementById('btn-mode0').className = 'seg-btn' + (m === 0 ? ' active' : '');
+    document.getElementById('btn-mode1').className = 'seg-btn' + (m === 1 ? ' active' : '');
+  }
+</script>
+</body>
+</html>
