@@ -416,8 +416,115 @@ QToolButton#userMgrCloseBtn:hover {
 }
 
 /* ==================== WelcomeWidget ==================== */
-QWidget#WelcomeWidget {
+QWidget#WelcomeV1Widget {
     background-color: #F5F5F5;
+}
+
+/* ==================== Welcome V2 双栏启动页 ==================== */
+QWidget#welcomeV2 {
+    background-color: #F5F5F5;
+}
+QFrame#welcomeCard {
+    background-color: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+}
+QLabel#welcomeBrandIcon {
+    background-color: rgba(0, 120, 212, 0.12);
+    border-radius: 10px;
+}
+QLabel#welcomeBrandTitle {
+    color: #333333;
+    font-size: 20px;
+    font-weight: 600;
+}
+QLabel#welcomeBrandSub {
+    color: #888888;
+    font-size: 13px;
+}
+QLabel#welcomeVersion {
+    color: #888888;
+    font-size: 12px;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+QLabel#welcomeSectionTitle {
+    color: #8C8CA8;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+QPushButton#welcomePrimaryBtn {
+    background-color: #0078D4;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+QPushButton#welcomePrimaryBtn:hover {
+    background-color: #106EBE;
+}
+QPushButton#welcomeSecondaryBtn {
+    background-color: rgba(0, 120, 212, 0.12);
+    color: #0078D4;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+QPushButton#welcomeSecondaryBtn:hover {
+    background-color: #0078D4;
+    color: #FFFFFF;
+}
+QLabel#welcomeRecentEmpty {
+    color: #8C8CA8;
+    font-size: 13px;
+    border: 1px dashed #D0D0D0;
+    border-radius: 8px;
+    padding: 18px 0;
+}
+QPushButton#welcomeQuickBtn {
+    background-color: #FFFFFF;
+    border: 1px solid #D0D0D0;
+    border-radius: 10px;
+    padding: 14px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333333;
+}
+QPushButton#welcomeQuickBtn:hover {
+    border-color: #0078D4;
+    background-color: rgba(0, 120, 212, 0.10);
+}
+QLabel#welcomeGuideNum {
+    background-color: rgba(0, 120, 212, 0.12);
+    color: #0078D4;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+QLabel#welcomeGuideText {
+    color: #666666;
+    font-size: 13px;
+}
+QLabel#welcomeTip {
+    color: #8C8CA8;
+    font-size: 12px;
+}
+QToolButton#welcomeTipBtn {
+    color: #888888;
+    border: none;
+    background: transparent;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+QToolButton#welcomeTipBtn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #0078D4;
 }
 
 /* --- Action Tiles (新建/打开项目, 1x1) --- */

@@ -1,4 +1,4 @@
-#include "WelcomeWidget.h"
+#include "WelcomeV1Widget.h"
 
 #include <QApplication>
 #include <QDataStream>
@@ -23,9 +23,9 @@
 #include "core_ui/AppIconProvider.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "grid/grid_global_def.hpp"
-#include "grid/grid_layout.h"
-#include "grid/grid_tile.h"
+#include "welcome/v1/grid/grid_global_def.hpp"
+#include "welcome/v1/grid/grid_layout.h"
+#include "welcome/v1/grid/grid_tile.h"
 #include "project/ProjectManager.h"
 #include "version.h"
 #include "widgets/EyeWidget.h"
@@ -40,14 +40,14 @@ using etest::core_ui::ThemeManager;
 using namespace core::config;
 using namespace core::project;
 
-WelcomeWidget::WelcomeWidget(QWidget* parent) : QWidget(parent) {
+WelcomeV1Widget::WelcomeV1Widget(QWidget* parent) : QWidget(parent) {
   initUi();
   initSignals();
   loadBackground();
   showRandomTip();
 }
 
-void WelcomeWidget::paintEvent(QPaintEvent*) {
+void WelcomeV1Widget::paintEvent(QPaintEvent*) {
   QPainter p(this);
   // 背景图不需要平滑缩放——SmoothPixmapTransform 对全屏大图非常昂贵 (~20ms)
   // p.setRenderHint(QPainter::SmoothPixmapTransform);
@@ -116,8 +116,8 @@ void WelcomeWidget::paintEvent(QPaintEvent*) {
   }
 }
 
-void WelcomeWidget::initUi() {
-  setObjectName("WelcomeWidget");
+void WelcomeV1Widget::initUi() {
+  setObjectName("WelcomeV1Widget");
   setAcceptDrops(true);
 
   tips_ << QStringLiteral("按 Ctrl+N 快速新建项目")
@@ -236,7 +236,7 @@ void WelcomeWidget::initUi() {
   }
   tip_tile_->setNameText(QString());  // 隐藏底部 label
   connect(tip_tile_, &grid::GridTile::clicked, this,
-          &WelcomeWidget::showRandomTip);
+          &WelcomeV1Widget::showRandomTip);
   grid_layout_->addWidget(tip_tile_);
 
   // === Tile 4: EyeWidget + Logo (2x2) ===
@@ -323,7 +323,7 @@ void WelcomeWidget::initUi() {
   rebuildRecentTiles();
 }
 
-void WelcomeWidget::initSignals() {
+void WelcomeV1Widget::initSignals() {
   // 右键菜单：从列表中移除
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
           [this](const QString& key) {
@@ -335,7 +335,7 @@ void WelcomeWidget::initSignals() {
           });
 }
 
-void WelcomeWidget::rebuildRecentTiles() {
+void WelcomeV1Widget::rebuildRecentTiles() {
   // 移除旧的最近项目磁贴
   for (auto tile : recent_tiles_) {
     grid_layout_->removeWidget(tile);
@@ -370,7 +370,7 @@ void WelcomeWidget::rebuildRecentTiles() {
     tile->setCursor(Qt::PointingHandCursor);
 
     connect(card, &RecentProjectCard::openRequested, this,
-            &WelcomeWidget::projectOpenRequested);
+            &WelcomeV1Widget::projectOpenRequested);
     connect(card, &RecentProjectCard::removeRequested, this, [this](const QString& p) {
       QStringList recentList = ConfigManager::instance().get<QStringList>(
           CONFIG_RECENT_PROJECT_LIST);
@@ -384,16 +384,16 @@ void WelcomeWidget::rebuildRecentTiles() {
   }
 }
 
-void WelcomeWidget::refreshRecentProjects() {
+void WelcomeV1Widget::refreshRecentProjects() {
   rebuildRecentTiles();
 }
 
-void WelcomeWidget::showEvent(QShowEvent* event) {
+void WelcomeV1Widget::showEvent(QShowEvent* event) {
   QWidget::showEvent(event);
   // Qt 在 widget 变为可见时会自动调度重绘，无需显式调用 update()
 }
 
-void WelcomeWidget::loadBackground() {
+void WelcomeV1Widget::loadBackground() {
   auto& cm = ConfigManager::instance();
   bg_dir_path_ = cm.get<QString>(CONFIG_WELCOME_BG_DIR);
   bg_image_path_ = cm.get<QString>(CONFIG_WELCOME_BG_IMAGE);
@@ -422,7 +422,7 @@ void WelcomeWidget::loadBackground() {
   update();
 }
 
-void WelcomeWidget::showRandomTip() {
+void WelcomeV1Widget::showRandomTip() {
   LOG_INFO("PROJECT_UI", "点击每日提示");
   if (tips_.isEmpty())
     return;
@@ -435,33 +435,33 @@ void WelcomeWidget::showRandomTip() {
 
 // ==================== 网格叠加层配置 ====================
 
-void WelcomeWidget::setGridOverlayVisible(bool visible) {
+void WelcomeV1Widget::setGridOverlayVisible(bool visible) {
   draw_grid_overlay_ = visible;
   update();
 }
-bool WelcomeWidget::gridOverlayVisible() const {
+bool WelcomeV1Widget::gridOverlayVisible() const {
   return draw_grid_overlay_;
 }
-void WelcomeWidget::setGridColor(const QColor& c) {
+void WelcomeV1Widget::setGridColor(const QColor& c) {
   grid_color_ = c;
   if (draw_grid_overlay_)
     update();
 }
-void WelcomeWidget::setOccupiedGridColor(const QColor& c) {
+void WelcomeV1Widget::setOccupiedGridColor(const QColor& c) {
   occupied_grid_color_ = c;
   if (draw_grid_overlay_)
     update();
 }
-void WelcomeWidget::setDragPreviewStyle(DragPreviewStyle style) {
+void WelcomeV1Widget::setDragPreviewStyle(DragPreviewStyle style) {
   drag_preview_style_ = style;
 }
-WelcomeWidget::DragPreviewStyle WelcomeWidget::dragPreviewStyle() const {
+WelcomeV1Widget::DragPreviewStyle WelcomeV1Widget::dragPreviewStyle() const {
   return drag_preview_style_;
 }
 
 // ==================== 拖拽重排 ====================
 
-grid::GridTile* WelcomeWidget::getTileUnderMouse(QWidget* child) const {
+grid::GridTile* WelcomeV1Widget::getTileUnderMouse(QWidget* child) const {
   if (!child)
     return nullptr;
   auto widget = child->parentWidget();
@@ -473,12 +473,12 @@ grid::GridTile* WelcomeWidget::getTileUnderMouse(QWidget* child) const {
   return getTileUnderMouse(widget);
 }
 
-void WelcomeWidget::mousePressEvent(QMouseEvent* event) {
+void WelcomeV1Widget::mousePressEvent(QMouseEvent* event) {
   drag_start_pos_ = event->pos();
   QWidget::mousePressEvent(event);
 }
 
-void WelcomeWidget::mouseMoveEvent(QMouseEvent* event) {
+void WelcomeV1Widget::mouseMoveEvent(QMouseEvent* event) {
   if (!enable_drag_edit_) {
     QWidget::mouseMoveEvent(event);
     return;
@@ -521,7 +521,7 @@ void WelcomeWidget::mouseMoveEvent(QMouseEvent* event) {
   drag->deleteLater();
 }
 
-void WelcomeWidget::dragEnterEvent(QDragEnterEvent* event) {
+void WelcomeV1Widget::dragEnterEvent(QDragEnterEvent* event) {
   if (event->mimeData()->hasFormat(grid::MimeType)) {
     if (event->source() == this) {
       event->setDropAction(Qt::MoveAction);
@@ -534,7 +534,7 @@ void WelcomeWidget::dragEnterEvent(QDragEnterEvent* event) {
   }
 }
 
-void WelcomeWidget::dragMoveEvent(QDragMoveEvent* event) {
+void WelcomeV1Widget::dragMoveEvent(QDragMoveEvent* event) {
   if (!event->mimeData()->hasFormat(grid::MimeType)) {
     event->ignore();
     return;
@@ -558,7 +558,7 @@ void WelcomeWidget::dragMoveEvent(QDragMoveEvent* event) {
   event->accept();
 }
 
-void WelcomeWidget::dropEvent(QDropEvent* event) {
+void WelcomeV1Widget::dropEvent(QDropEvent* event) {
   if (!event->mimeData()->hasFormat(grid::MimeType)) {
     event->ignore();
     return;

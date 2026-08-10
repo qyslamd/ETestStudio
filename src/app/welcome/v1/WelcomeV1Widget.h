@@ -1,5 +1,4 @@
-#ifndef ETEST_APP_WELCOME_WIDGET_H_
-#define ETEST_APP_WELCOME_WIDGET_H_
+#pragma once
 
 #include <QLabel>
 #include <QPixmap>
@@ -15,13 +14,13 @@ class GridTile;
 
 namespace etest::app {
 
-class WelcomeWidget : public QWidget {
+class WelcomeV1Widget : public QWidget {
   Q_OBJECT
 
  public:
   enum DragPreviewStyle { None = 0, Grid, ShadowImg, PureColor };
 
-  explicit WelcomeWidget(QWidget* parent = nullptr);
+  explicit WelcomeV1Widget(QWidget* parent = nullptr);
 
   void refreshRecentProjects();
   void loadBackground();
@@ -93,5 +92,3 @@ class WelcomeWidget : public QWidget {
 };
 
 }  // namespace etest::app
-
-#endif  // ETEST_APP_WELCOME_WIDGET_H_

@@ -108,6 +108,10 @@ constexpr const char* CONFIG_WELCOME_BG_IMAGE = "welcome/background_image";
 constexpr const char* CONFIG_WELCOME_BG_DIR = "welcome/background_dir";
 constexpr const char* CONFIG_WELCOME_BG_MODE = "welcome/background_mode";
 
+// 欢迎页版本（v1 旧网格仪表盘 / v2 新启动页）
+constexpr const char* CONFIG_WELCOME_VERSION = "welcome/version";
+constexpr const char* CONFIG_WELCOME_DEFAULT_VERSION = "v2";
+
 // 屏保配置
 constexpr const char* CONFIG_TUXSAVER_ENABLED = "tuxsaver/enabled";
 constexpr const char* CONFIG_TUXSAVER_MODE = "tuxsaver/mode";

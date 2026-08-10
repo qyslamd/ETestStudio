@@ -70,7 +70,7 @@
 #include "ThemeManager.h"
 #include "TopologyManagerWidget.h"
 #include "TuxSaverController.h"
-#include "WelcomeWidget.h"
+#include "welcome/WelcomeWidget.h"
 #include "api/IEditor.h"
 #include "auth/AuthService.h"
 #include "backup/BackupManager.h"
@@ -758,6 +758,10 @@ void MainWindow::initSignalsLate() {
           &MainWindow::onOpenProject);
   connect(welcome_widget_, &WelcomeWidget::projectOpenRequested, this,
           &MainWindow::openRecentProject);
+  connect(welcome_widget_, &WelcomeWidget::createFileRequested, this,
+          &MainWindow::onQuickCreateFile);
+  connect(welcome_widget_, &WelcomeWidget::settingsRequested, this,
+          &MainWindow::openSettingsDialog);
 
   // 项目打开后刷新欢迎页的最近项目列表
   connect(&projectMgr,
@@ -1576,6 +1580,33 @@ void MainWindow::onNewFile() {
                                            wizard.selectedBaseName());
 }
 
+void MainWindow::onQuickCreateFile(const QString& categoryId,
+                                   const QString& extension,
+                                   const QString& baseName) {
+  if (!etest::core::project::ProjectManager::instance().isProjectOpen()) {
+    QMessageBox::information(this, QStringLiteral("快速新建"),
+                             QStringLiteral("请先新建或打开项目，再创建文件。"));
+    return;
+  }
+  if (!project_structure_widget_) {
+    return;
+  }
+  project_structure_widget_->createNewFile(categoryId, extension, baseName);
+}
+
+void MainWindow::openSettingsDialog() {
+  if (!settings_dialog_) {
+    settings_dialog_ = new SettingsDialog(this);
+    settings_dialog_->setStyleSheet(qApp->styleSheet());
+    connect(settings_dialog_, &QDialog::finished, this,
+            [this]() { activity_bar_->setSettingsActive(false); });
+  }
+  activity_bar_->setSettingsActive(true);
+  settings_dialog_->show();
+  settings_dialog_->raise();
+  settings_dialog_->activateWindow();
+}
+
 void MainWindow::onProjectOpened(const QString& projectPath) {
   LOG_INFO("MAIN_UI", "项目已打开 [path={}]", projectPath.toStdString());
   close_project_action_->setEnabled(true);
@@ -2211,16 +2242,7 @@ void MainWindow::setupRibbon() {
     qab->addAction(settings_action);
     connect(settings_action, &QAction::triggered, this, [this]() {
       LOG_INFO("MAIN_UI", "点击 QAB 设置");
-      if (!settings_dialog_) {
-        settings_dialog_ = new SettingsDialog(this);
-        settings_dialog_->setStyleSheet(qApp->styleSheet());
-        connect(settings_dialog_, &QDialog::finished, this,
-                [this]() { activity_bar_->setSettingsActive(false); });
-      }
-      activity_bar_->setSettingsActive(true);
-      settings_dialog_->show();
-      settings_dialog_->raise();
-      settings_dialog_->activateWindow();
+      openSettingsDialog();
     });
   }
   // ── QAB 文件搜索框 ──

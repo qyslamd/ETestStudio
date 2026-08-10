@@ -33,6 +33,8 @@ class ConfigManager::Impl {
     m_defaultValues[CONFIG_WINDOW_Y] = CONFIG_WINDOW_DEFAULT_Y;
     m_defaultValues[CONFIG_WINDOW_MAXIMIZED] = CONFIG_WINDOW_DEFAULT_MAXIMIZED;
 
+    m_defaultValues[CONFIG_WELCOME_VERSION] = CONFIG_WELCOME_DEFAULT_VERSION;
+
     m_defaultValues[CONFIG_RECENT_PROJECT_LIST] = QStringList();
     m_defaultValues[CONFIG_RECENT_LAST_OPEN_PATH] =
         QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);

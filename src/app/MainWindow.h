@@ -102,6 +102,9 @@ class MainWindow : public SARibbonMainWindow {
   void onOpenFile();
   void onCloseProject();
   void onNewFile();
+  void onQuickCreateFile(const QString& categoryId, const QString& extension,
+                         const QString& baseName);
+  void openSettingsDialog();
   void onProjectOpened(const QString& projectPath);
   void onProjectClosed();
   void updateWindowTitle();

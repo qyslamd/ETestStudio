@@ -85,22 +85,26 @@ add_executable(${TARGET_NAME} WIN32
     dialogs/SettingsDialog.cpp
     SearchWidget.h
     SearchWidget.cpp
-    WelcomeWidget.h
-    WelcomeWidget.cpp
-    grid/grid_layout.h
-    grid/grid_layout.cpp
-    grid/grid_tile.h
-    grid/grid_tile.cpp
-    grid/gradientpainter.h
-    grid/gradientpainter.cpp
-    grid/layout_calculator_base.h
-    grid/layout_calculator_base.cpp
-    grid/layout_calculator_v1.h
-    grid/layout_calculator_v1.cpp
-    grid/layout_calculator_v3.h
-    grid/layout_calculator_v3.cpp
-    grid/grid_animator.h
-    grid/grid_animator.cpp
+    welcome/WelcomeWidget.h
+    welcome/WelcomeWidget.cpp
+    welcome/v1/WelcomeV1Widget.h
+    welcome/v1/WelcomeV1Widget.cpp
+    welcome/v2/WelcomeV2Widget.h
+    welcome/v2/WelcomeV2Widget.cpp
+    welcome/v1/grid/grid_layout.h
+    welcome/v1/grid/grid_layout.cpp
+    welcome/v1/grid/grid_tile.h
+    welcome/v1/grid/grid_tile.cpp
+    welcome/v1/grid/gradientpainter.h
+    welcome/v1/grid/gradientpainter.cpp
+    welcome/v1/grid/layout_calculator_base.h
+    welcome/v1/grid/layout_calculator_base.cpp
+    welcome/v1/grid/layout_calculator_v1.h
+    welcome/v1/grid/layout_calculator_v1.cpp
+    welcome/v1/grid/layout_calculator_v3.h
+    welcome/v1/grid/layout_calculator_v3.cpp
+    welcome/v1/grid/grid_animator.h
+    welcome/v1/grid/grid_animator.cpp
     widgets/clock_renderer.h
     widgets/modern_clock_renderer.h
     widgets/modern_clock_renderer.cpp
