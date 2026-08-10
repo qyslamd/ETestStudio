@@ -86,8 +86,15 @@ void NewProjectWizard::TemplatePage::initUi() {
 }
 
 void NewProjectWizard::TemplatePage::initSignals() {
-  // 切换模板时刷新摘要
+  // 切换模板时刷新摘要（Qt 5.15 有 idClicked，5.12 只有 buttonClicked，
+  // 双平台兼容：按版本分支连接，避免 5.15 弃用警告与 5.12 编译失败）
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   connect(group_, &QButtonGroup::idClicked, this, &WizardPage::completeChanged);
+#else
+  connect(group_,
+          QOverload<QAbstractButton*>::of(&QButtonGroup::buttonClicked), this,
+          &WizardPage::completeChanged);
+#endif
 }
 
 QString NewProjectWizard::TemplatePage::selectedTemplateId() const {
