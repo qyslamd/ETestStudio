@@ -1599,9 +1599,8 @@ void MainWindow::openSettingsDialog() {
             [this]() { activity_bar_->setSettingsActive(false); });
   }
   activity_bar_->setSettingsActive(true);
-  settings_dialog_->show();
-  settings_dialog_->raise();
-  settings_dialog_->activateWindow();
+  // OverlayDialog 模态遮罩（与登录/关于一致）
+  settings_dialog_->exec();
 }
 
 void MainWindow::onProjectOpened(const QString& projectPath) {

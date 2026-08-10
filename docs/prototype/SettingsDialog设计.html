@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>设置 · ETest Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* ============================================================
+           Fluent Design System 2 — 色彩与材质
+           ============================================================ */
+        :root {
+            --accent: #0078d4;
+            --accent-hover: #106ebe;
+            --accent-active: #005a9e;
+            --accent-strong: rgba(0, 120, 212, 0.12);
+            --accent-soft: rgba(0, 120, 212, 0.06);
+            --text-primary: #1a1a1a;
+            --text-secondary: #5a5a6e;
+            --text-muted: #8c8ca8;
+            --card: rgba(255, 255, 255, 0.78);
+            --card-solid: #fafafa;
+            --divider: rgba(0, 0, 0, 0.08);
+            --hover: rgba(0, 0, 0, 0.05);
+            --shadow: 0 16px 48px rgba(0, 0, 0, 0.14);
+            --radius: 12px;
+            --font: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --accent: #4aa8ff;
+                --accent-hover: #6abaff;
+                --accent-active: #2e8ae0;
+                --accent-strong: rgba(74, 168, 255, 0.16);
+                --accent-soft: rgba(74, 168, 255, 0.08);
+                --text-primary: #f0f0f4;
+                --text-secondary: #a8a8c0;
+                --text-muted: #6a6a84;
+                --card: rgba(32, 32, 38, 0.82);
+                --card-solid: #2d2d33;
+                --divider: rgba(255, 255, 255, 0.09);
+                --hover: rgba(255, 255, 255, 0.07);
+                --shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+            }
+        }
+
+        *,
+        *::before,
+        *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ============================================================
+           Mica 背景（毛玻璃墙纸）
+           ============================================================ */
+        body {
+            font-family: var(--font);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            background:
+                radial-gradient(1200px 600px at 20% 10%, rgba(74, 168, 255, 0.18), transparent 60%),
+                radial-gradient(1000px 500px at 85% 90%, rgba(200, 90, 200, 0.12), transparent 55%),
+                linear-gradient(160deg, #e8ecf2, #d6dbe6);
+            background-attachment: fixed;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background:
+                    radial-gradient(1200px 600px at 20% 10%, rgba(74, 168, 255, 0.14), transparent 60%),
+                    radial-gradient(1000px 500px at 85% 90%, rgba(150, 80, 220, 0.10), transparent 55%),
+                    linear-gradient(160deg, #1e1e24, #26262e);
+            }
+        }
+
+        /* ============================================================
+           Acrylic 设置窗口
+           ============================================================ */
+        .dialog {
+            width: 880px;
+            max-width: 100%;
+            height: 580px;
+            border-radius: 16px;
+            backdrop-filter: blur(36px) saturate(1.6);
+            -webkit-backdrop-filter: blur(36px) saturate(1.6);
+            background: rgba(255, 255, 255, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        @media (prefers-color-scheme: dark) {
+            .dialog {
+                background: rgba(28, 28, 34, 0.72);
+                border-color: rgba(255, 255, 255, 0.10);
+            }
+        }
+
+        /* ============================================================
+           标题栏
+           ============================================================ */
+        .titlebar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 22px 14px;
+        }
+        .titlebar .app-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #0078d4, #4aa8ff);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
+        }
+        .titlebar .tb-text { flex: 1; }
+        .titlebar h1 {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .titlebar .tb-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+        .titlebar .close-btn {
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .titlebar .close-btn:hover {
+            background: var(--hover);
+            color: var(--text-primary);
+        }
+
+        /* ============================================================
+           NavigationView 左导轨
+           ============================================================ */
+        .body { flex: 1; display: flex; min-height: 0; }
+        .nav {
+            width: 196px;
+            padding: 6px 8px 14px;
+            border-right: 1px solid var(--divider);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 6px 12px 8px;
+        }
+        .nav-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 2px;
+            border: none;
+            background: transparent;
+            font-family: var(--font);
+            text-align: left;
+            width: 100%;
+        }
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 15px;
+            color: var(--text-muted);
+            transition: color 0.15s;
+        }
+        .nav-item:hover {
+            background: var(--hover);
+        }
+        .nav-item.active {
+            background: var(--accent-strong);
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .nav-item.active i { color: var(--accent); }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 20%;
+            bottom: 20%;
+            width: 3px;
+            border-radius: 2px;
+            background: var(--accent);
+        }
+
+        /* ============================================================
+           内容区
+           ============================================================ */
+        .content {
+            flex: 1;
+            padding: 8px 26px 22px;
+            overflow-y: auto;
+            min-width: 0;
+        }
+        .page { display: none; animation: fadeUp 0.25s ease; }
+        .page.active { display: block; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-head { margin-bottom: 18px; }
+        .page-head h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+        .page-head p { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+
+        /* ============================================================
+           设置卡片
+           ============================================================ */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--divider);
+            border-radius: var(--radius);
+            padding: 6px 20px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 12px 0 6px;
+        }
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 13px 0;
+            border-top: 1px solid var(--divider);
+        }
+        .row:first-of-type { border-top: none; }
+        .row .row-body { flex: 1; min-width: 0; }
+        .row .row-title { font-size: 14px; color: var(--text-primary); }
+        .row .row-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        /* ============================================================
+           Fluent 控件
+           ============================================================ */
+        select,
+        input[type="number"] {
+            font-family: var(--font);
+            font-size: 13px;
+            color: var(--text-primary);
+            background: var(--card-solid);
+            border: 1px solid var(--divider);
+            border-radius: 7px;
+            padding: 7px 10px;
+            outline: none;
+            min-width: 140px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        select:focus,
+        input[type="number"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-strong);
+        }
+        select option { background: #fff; color: #1a1a1a; }
+        @media (prefers-color-scheme: dark) {
+            select option { background: #2d2d33; color: #f0f0f4; }
+        }
+
+        /* Fluent Toggle */
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle .track {
+            position: absolute;
+            inset: 0;
+            border-radius: 11px;
+            background: rgba(0, 0, 0, 0.16);
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        .toggle .thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+            cursor: pointer;
+        }
+        .toggle input:checked + .track { background: var(--accent); }
+        .toggle input:checked + .track .thumb { transform: translateX(22px); }
+        @media (prefers-color-scheme: dark) {
+            .toggle .track { background: rgba(255, 255, 255, 0.22); }
+        }
+
+        /* 按钮 */
+        .btn {
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 7px 18px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-accent { background: var(--accent); color: #fff; }
+        .btn-accent:hover { background: var(--accent-hover); }
+        .btn-secondary { background: var(--accent-strong); color: var(--accent); }
+        .btn-secondary:hover { background: var(--accent); color: #fff; }
+        .btn-ghost { background: transparent; color: var(--text-secondary); }
+        .btn-ghost:hover { background: var(--hover); }
+        .btn-danger { background: rgba(209, 52, 56, 0.10); color: #d13438; }
+        .btn-danger:hover { background: #d13438; color: #fff; }
+
+        /* ============================================================
+           底部操作栏
+           ============================================================ */
+        .footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 22px 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dialog">
+        <!-- 标题栏 -->
+        <div class="titlebar">
+            <div class="app-icon"><i class="fas fa-flask"></i></div>
+            <div class="tb-text">
+                <h1>设置</h1>
+                <div class="tb-sub">ETest Studio · 自动化测试系统</div>
+            </div>
+            <button class="close-btn" title="关闭"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- 主体 -->
+        <div class="body">
+            <!-- NavigationView -->
+            <div class="nav">
+                <div class="nav-label">设置</div>
+                <button class="nav-item active" data-page="0"><i class="fas fa-sliders-h"></i>通用</button>
+                <button class="nav-item" data-page="1"><i class="fas fa-code"></i>编辑器</button>
+                <button class="nav-item" data-page="2"><i class="fas fa-terminal"></i>终端</button>
+                <button class="nav-item" data-page="3"><i class="fas fa-palette"></i>外观</button>
+                <button class="nav-item" data-page="4"><i class="fas fa-folder"></i>项目</button>
+                <button class="nav-item" data-page="5"><i class="fas fa-save"></i>备份</button>
+                <div style="flex:1"></div>
+                <div class="nav-label" style="margin-top:8px">关于</div>
+                <button class="nav-item" data-page="6"><i class="fas fa-info-circle"></i>关于</button>
+            </div>
+
+            <!-- 内容 -->
+            <div class="content" id="content">
+
+                <!-- 通用 -->
+                <div class="page active">
+                    <div class="page-head">
+                        <h2>通用</h2>
+                        <p>日志与默认保存目录</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">日志</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">日志级别</div><div class="row-desc">记录到日志文件的最低级别</div></div>
+                            <select><option>调试</option><option selected>信息</option><option>警告</option><option>错误</option><option>致命</option></select>
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">单文件大小上限</div><div class="row-desc">单个日志文件的最大体积（MB）</div></div>
+                            <input type="number" value="10" style="width:92px" />
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">默认保存目录</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">保存目录</div><div class="row-desc">新文件的默认存放位置</div></div>
+                            <button class="btn btn-secondary">浏览…</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 编辑器 -->
+                <div class="page">
+                    <div class="page-head">
+                        <h2>编辑器</h2>
+                        <p>代码编辑与排版偏好</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">编辑器</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">字体大小</div><div class="row-desc">编辑器文字大小（像素）</div></div>
+                            <input type="number" value="14" style="width:92px" />
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">显示行号</div><div class="row-desc">在编辑器左侧显示行号</div></div>
+                            <label class="toggle"><input type="checkbox" checked /><span class="track"><span class="thumb"></span></span></label>
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">自动缩进</div><div class="row-desc">换行时自动对齐缩进</div></div>
+                            <label class="toggle"><input type="checkbox" checked /><span class="track"><span class="thumb"></span></span></label>
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">Tab 宽度</div><div class="row-desc">制表符占据的空格数</div></div>
+                            <input type="number" value="4" style="width:92px" />
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">空格替代 Tab</div><div class="row-desc">按 Tab 键插入空格而非制表符</div></div>
+                            <label class="toggle"><input type="checkbox" /><span class="track"><span class="thumb"></span></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 终端 -->
+                <div class="page">
+                    <div class="page-head">
+                        <h2>终端</h2>
+                        <p>命令行解释器与显示</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">终端</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">Shell</div><div class="row-desc">终端使用的命令行解释器</div></div>
+                            <select><option>cmd.exe</option><option>powershell.exe</option><option>bash.exe</option></select>
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">字体大小</div><div class="row-desc">终端文字大小（像素）</div></div>
+                            <input type="number" value="13" style="width:92px" />
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">滚动缓冲行数</div><div class="row-desc">终端可回滚查看的历史行数</div></div>
+                            <input type="number" value="5000" style="width:110px" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 外观 -->
+                <div class="page">
+                    <div class="page-head">
+                        <h2>外观</h2>
+                        <p>主题、欢迎页背景与屏保</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">外观</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">主题</div><div class="row-desc">界面配色方案</div></div>
+                            <select><option>默认主题</option><option>VS Code 暗黑</option></select>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">欢迎页背景</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">图片目录</div><div class="row-desc">从目录中随机选取背景图</div></div>
+                            <button class="btn btn-secondary">浏览…</button>
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">固定图片</div><div class="row-desc">使用单张固定背景图</div></div>
+                            <button class="btn btn-secondary">浏览…</button>
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">填充方式</div><div class="row-desc">背景图的显示模式</div></div>
+                            <select><option>居中</option><option>平铺</option><option>拉伸</option></select>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">屏保</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">屏保模式</div><div class="row-desc">空闲时显示的屏保类型</div></div>
+                            <select><option>智慧</option><option>关闭</option></select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 项目 -->
+                <div class="page">
+                    <div class="page-head">
+                        <h2>项目</h2>
+                        <p>项目打开与 Git 行为</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">项目</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">自动打开所属项目</div><div class="row-desc">打开文件时自动打开其所属项目</div></div>
+                            <label class="toggle"><input type="checkbox" /><span class="track"><span class="thumb"></span></span></label>
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">提示初始化 Git 仓库</div><div class="row-desc">打开未初始化 Git 的项目时弹窗询问</div></div>
+                            <label class="toggle"><input type="checkbox" checked /><span class="track"><span class="thumb"></span></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 备份 -->
+                <div class="page">
+                    <div class="page-head">
+                        <h2>备份</h2>
+                        <p>自动备份与手动操作</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">自动备份</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">启用自动备份</div><div class="row-desc">按设定间隔自动备份项目文件</div></div>
+                            <label class="toggle"><input type="checkbox" checked /><span class="track"><span class="thumb"></span></span></label>
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">备份间隔（分钟）</div><div class="row-desc">两次自动备份之间的时间间隔</div></div>
+                            <input type="number" value="5" style="width:92px" />
+                        </div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">最大备份数</div><div class="row-desc">保留的份数上限，超出自动删除最旧</div></div>
+                            <input type="number" value="10" style="width:92px" />
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">手动操作</div>
+                        <div class="row">
+                            <div class="row-body"><div class="row-title">立即备份</div><div class="row-desc">立即创建一次项目备份</div></div>
+                            <button class="btn btn-accent">备份</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 关于 -->
+                <div class="page">
+                    <div class="page-head">
+                        <h2>关于</h2>
+                        <p>版本信息</p>
+                    </div>
+                    <div class="card" style="text-align:center; padding:28px 20px;">
+                        <div class="app-icon" style="width:56px;height:56px;border-radius:14px;font-size:26px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0078d4,#4aa8ff);color:#fff;box-shadow:0 4px 16px rgba(0,120,212,0.3);"><i class="fas fa-flask"></i></div>
+                        <div style="font-size:17px;font-weight:600;">ETest Studio</div>
+                        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">版本 1.0.0 · 自动化测试系统</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:14px;">Copyright © 2026 ETest</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer">
+            <button class="btn btn-ghost">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+            const navItems = document.querySelectorAll('.nav-item');
+            const pages = document.querySelectorAll('.page');
+            const closeBtn = document.querySelector('.close-btn');
+            const footerClose = document.querySelector('.footer .btn');
+            navItems.forEach(function(item) {
+                item.addEventListener('click', function() {
+                    navItems.forEach(function(n) { n.classList.remove('active'); });
+                    pages.forEach(function(p) { p.classList.remove('active'); });
+                    item.classList.add('active');
+                    const idx = Number(item.dataset.page);
+                    if (pages[idx]) pages[idx].classList.add('active');
+                });
+            });
+            [closeBtn, footerClose].forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    console.log('关闭设置');
+                });
+            });
+        })();
+    </script>
+
+</body>
+</html>

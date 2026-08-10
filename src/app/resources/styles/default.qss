@@ -873,7 +873,74 @@ etest--app--SearchWidget QLabel#contentSectionLabel {
 
 /* ==================== etest--app--SettingsDialog ==================== */
 etest--app--SettingsDialog {
+    background-color: transparent;  /* 遮罩由 OverlayDialog paintEvent 绘制，卡片区由 #SettingsContent 覆盖 */
+}
+QWidget#SettingsContent {
     background-color: #FFFFFF;
+    border-radius: 16px;
+}
+QLabel#SettingsAppIcon {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+        stop: 0 #0078D4, stop: 1 #4AA8FF);
+    border-radius: 9px;
+}
+QLabel#SettingsTitleText {
+    color: #1F1F1F;
+    font-size: 15px;
+    font-weight: 600;
+    background-color: transparent;
+}
+QLabel#SettingsTitleSub {
+    color: #8C8CA8;
+    font-size: 12px;
+    background-color: transparent;
+}
+QToolButton#SettingsCloseBtn {
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    padding: 6px;
+}
+QToolButton#SettingsCloseBtn:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+QLabel#SettingsPageTitle {
+    color: #1F1F1F;
+    font-size: 20px;
+    font-weight: 600;
+    background-color: transparent;
+}
+QLabel#SettingsPageSub {
+    color: #8C8CA8;
+    font-size: 13px;
+    background-color: transparent;
+}
+QWidget#SettingsAboutCard {
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+}
+QLabel#SettingsAboutIcon {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+        stop: 0 #0078D4, stop: 1 #4AA8FF);
+    border-radius: 14px;
+}
+QLabel#SettingsAboutName {
+    color: #1F1F1F;
+    font-size: 17px;
+    font-weight: 600;
+    background-color: transparent;
+}
+QLabel#SettingsAboutVersion,
+QLabel#SettingsAboutCopyright {
+    color: #8C8CA8;
+    background-color: transparent;
+}
+QLabel#SettingsAboutVersion {
+    font-size: 13px;
+}
+QLabel#SettingsAboutCopyright {
+    font-size: 12px;
 }
 
 /* 左侧分类列表 */
@@ -885,15 +952,17 @@ etest--app--SettingsDialog QListWidget {
     outline: none;
 }
 etest--app--SettingsDialog QListWidget::item {
-    padding: 8px 12px;
+    padding: 9px 12px;
     border: none;
+    border-radius: 7px;
+    margin: 2px 6px;
 }
 etest--app--SettingsDialog QListWidget::item:hover {
-    background-color: #E0E0E0;
+    background-color: rgba(0, 0, 0, 0.05);
 }
 etest--app--SettingsDialog QListWidget::item:selected {
-    background-color: #CCE4F7;
-    color: #1F1F1F;
+    background-color: rgba(0, 120, 212, 0.12);
+    color: #0078D4;
 }
 
 /* 右侧页面容器 */
@@ -908,7 +977,7 @@ etest--app--SettingsDialog QStackedWidget > QWidget {
 QWidget#SettingsCard {
     background-color: #FAFAFA;
     border: 1px solid #E0E0E0;
-    border-radius: 8px;
+    border-radius: 12px;
 }
 QLabel#SettingsCardTitle {
     color: #333333;
@@ -944,7 +1013,17 @@ QLabel#SettingsHint {
 /* 底部按钮栏 */
 QWidget#SettingsButtonBar {
     border-top: 1px solid #E0E0E0;
-    background-color: #FFFFFF;
+    background-color: transparent;  /* 露出卡片圆角底部 */
+}
+QWidget#SettingsButtonBar QPushButton {
+    background-color: transparent;
+    color: #555555;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 18px;
+}
+QWidget#SettingsButtonBar QPushButton:hover {
+    background-color: rgba(0, 0, 0, 0.06);
 }
 
 /* 设置页通用标签 */
@@ -972,11 +1051,25 @@ etest--app--SettingsDialog QLineEdit:focus {
     border-color: #007ACC;
 }
 
-/* 复选框 */
-etest--app--SettingsDialog QCheckBox {
-    color: #333333;
-    spacing: 8px;
-    background-color: transparent;
+/* Fluent 下拉 / 数字控件 */
+etest--app--SettingsDialog QComboBox,
+etest--app--SettingsDialog QSpinBox {
+    background-color: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #D0D0D0;
+    border-radius: 6px;
+    padding: 5px 10px;
+    min-width: 120px;
+}
+etest--app--SettingsDialog QComboBox:hover,
+etest--app--SettingsDialog QSpinBox:hover,
+etest--app--SettingsDialog QComboBox:focus,
+etest--app--SettingsDialog QSpinBox:focus {
+    border-color: #0078D4;
+}
+etest--app--SettingsDialog QComboBox::drop-down {
+    border: none;
+    width: 22px;
 }
 
 /* 滚动区（外观页内嵌） */

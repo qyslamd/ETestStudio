@@ -37,6 +37,8 @@
         <file>resources/icons/svg/git_light.svg</file>
         <file>resources/icons/svg/settings_dark.svg</file>
         <file>resources/icons/svg/settings_light.svg</file>
+        <file>resources/icons/svg/palette_dark.svg</file>
+        <file>resources/icons/svg/palette_light.svg</file>
         <file>resources/icons/svg/message_dark.svg</file>
         <file>resources/icons/svg/message_light.svg</file>
         <file>resources/icons/svg/message_alert_dark.svg</file>

@@ -1,33 +1,74 @@
 #include "dialogs/SettingsDialog.h"
 
 #include <QFileDialog>
+#include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
+#include "core_ui/AppIconProvider.h"
 #include "ThemeManager.h"
+#include "utils/switch_button.h"
+#include "version.h"
 
 namespace etest::app {
 
 using namespace core::config;
 
-SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent) {
+SettingsDialog::SettingsDialog(QWidget* parent) : OverlayDialog(parent) {
+  round_radius_ = 16;  // 遮罩圆角
   initUi();
   initSignals();
 }
 
 void SettingsDialog::initUi() {
   setWindowTitle(QStringLiteral("设置"));
-  setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-  resize(800, 500);
 
-  auto* mainLayout = new QVBoxLayout(this);
+  // OverlayDialog 内容卡片（固定尺寸，居中显示于遮罩）
+  auto* content = new QWidget;
+  content->setObjectName(QStringLiteral("SettingsContent"));
+  content->setFixedSize(800, 600);
+  auto* mainLayout = new QVBoxLayout(content);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
+
+  // in-dialog 标题栏（无原生标题，替代之）
+  auto* titleBar = new QHBoxLayout();
+  titleBar->setContentsMargins(20, 14, 12, 10);
+  titleBar->setSpacing(12);
+  title_icon_ = new QLabel(content);
+  title_icon_->setObjectName(QStringLiteral("SettingsAppIcon"));
+  title_icon_->setFixedSize(34, 34);
+  title_icon_->setAlignment(Qt::AlignCenter);
+  title_icon_->setPixmap(etest::core_ui::AppIconProvider::instance()
+                             .icon(QStringLiteral("welcome"))
+                             .pixmap(18, 18));
+  auto* titleGroup = new QVBoxLayout();
+  titleGroup->setSpacing(0);
+  auto* titleLabel = new QLabel(QStringLiteral("设置"), content);
+  titleLabel->setObjectName(QStringLiteral("SettingsTitleText"));
+  auto* subtitleLabel = new QLabel(
+      QStringLiteral("ETest Studio · 自动化测试系统"), content);
+  subtitleLabel->setObjectName(QStringLiteral("SettingsTitleSub"));
+  titleGroup->addWidget(titleLabel);
+  titleGroup->addWidget(subtitleLabel);
+  titleBar->addWidget(title_icon_);
+  titleBar->addLayout(titleGroup);
+  titleBar->addStretch();
+  auto* closeBtn = new QToolButton(content);
+  closeBtn->setObjectName(QStringLiteral("SettingsCloseBtn"));
+  closeBtn->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("close")));
+  closeBtn->setIconSize(QSize(16, 16));
+  closeBtn->setCursor(Qt::PointingHandCursor);
+  connect(closeBtn, &QToolButton::clicked, this, [this](bool) { reject(); });
+  titleBar->addWidget(closeBtn);
+  mainLayout->addLayout(titleBar);
 
   // === Content area: navigation + pages ===
   auto* contentLayout = new QHBoxLayout();
@@ -35,48 +76,89 @@ void SettingsDialog::initUi() {
   contentLayout->setSpacing(0);
 
   // === Left: category list ===
-  list_ = new QListWidget(this);
+  list_ = new QListWidget(content);
   list_->setFixedWidth(180);
   list_->setIconSize(QSize(16, 16));
   list_->setFocusPolicy(Qt::NoFocus);
   list_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+  auto makeLabelItem = [this](const QString& text) {
+    auto* item = new QListWidgetItem(text, list_);
+    item->setFlags(Qt::NoItemFlags);
+    item->setData(Qt::UserRole, -1);
+    item->setForeground(
+        etest::core_ui::ThemeManager::instance().secondaryTextColor());
+    QFont f = list_->font();
+    f.setBold(true);
+    f.setPointSizeF(qMax<qreal>(9.0, f.pointSizeF() - 1.5));
+    item->setFont(f);
+    return item;
+  };
+  makeLabelItem(QStringLiteral("设置"));
+
   QListWidgetItem* itemGeneral =
       new QListWidgetItem(QStringLiteral("通用"), list_);
+  itemGeneral->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("settings")));
   QListWidgetItem* itemEditor =
       new QListWidgetItem(QStringLiteral("编辑器"), list_);
+  itemEditor->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("file_cpp")));
   QListWidgetItem* itemTerminal =
       new QListWidgetItem(QStringLiteral("终端"), list_);
+  itemTerminal->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("tab_terminal")));
   QListWidgetItem* itemAppearance =
       new QListWidgetItem(QStringLiteral("外观"), list_);
+  itemAppearance->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("palette")));
   QListWidgetItem* itemProject =
       new QListWidgetItem(QStringLiteral("项目"), list_);
+  itemProject->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("folder")));
   QListWidgetItem* itemBackup =
       new QListWidgetItem(QStringLiteral("备份"), list_);
+  itemBackup->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("file_save")));
 
   itemGeneral->setData(Qt::UserRole, 0);
+  itemGeneral->setData(Qt::UserRole + 1, QStringLiteral("settings"));
   itemEditor->setData(Qt::UserRole, 1);
+  itemEditor->setData(Qt::UserRole + 1, QStringLiteral("file_cpp"));
   itemTerminal->setData(Qt::UserRole, 2);
+  itemTerminal->setData(Qt::UserRole + 1, QStringLiteral("tab_terminal"));
   itemAppearance->setData(Qt::UserRole, 3);
+  itemAppearance->setData(Qt::UserRole + 1, QStringLiteral("palette"));
   itemProject->setData(Qt::UserRole, 4);
+  itemProject->setData(Qt::UserRole + 1, QStringLiteral("folder"));
   itemBackup->setData(Qt::UserRole, 5);
+  itemBackup->setData(Qt::UserRole + 1, QStringLiteral("file_save"));
+
+  makeLabelItem(QStringLiteral("关于"));
+  QListWidgetItem* itemAbout =
+      new QListWidgetItem(QStringLiteral("关于"), list_);
+  itemAbout->setIcon(etest::core_ui::AppIconProvider::instance().icon(
+      QStringLiteral("ribbon_about")));
+  itemAbout->setData(Qt::UserRole, 6);
+  itemAbout->setData(Qt::UserRole + 1, QStringLiteral("ribbon_about"));
 
   contentLayout->addWidget(list_);
 
   // === Right: stacked pages ===
-  pages_ = new QStackedWidget(this);
+  pages_ = new QStackedWidget(content);
   pages_->addWidget(createGeneralPage());   // index 0
   pages_->addWidget(createEditorPage());     // index 1
   pages_->addWidget(createTerminalPage());   // index 2
   pages_->addWidget(createAppearancePage()); // index 3
   pages_->addWidget(createProjectPage());    // index 4
   pages_->addWidget(createBackupPage());     // index 5
+  pages_->addWidget(createAboutPage());      // index 6
 
   contentLayout->addWidget(pages_, 1);
   mainLayout->addLayout(contentLayout, 1);
 
   // === Bottom: button bar ===
-  auto* buttonBar = new QWidget(this);
+  auto* buttonBar = new QWidget(content);
   buttonBar->setObjectName("SettingsButtonBar");
   auto* buttonLayout = new QHBoxLayout(buttonBar);
   buttonLayout->setContentsMargins(12, 8, 12, 8);
@@ -89,21 +171,66 @@ void SettingsDialog::initUi() {
 
   mainLayout->addWidget(buttonBar);
 
-  // Select first item by default
-  list_->setCurrentRow(0);
+  setWidget(content);
+
+  // 默认选中「通用」（跳过开头的分组标签行）
+  for (int i = 0; i < list_->count(); ++i) {
+    if (list_->item(i)->data(Qt::UserRole).toInt() == 0) {
+      list_->setCurrentItem(list_->item(i));
+      break;
+    }
+  }
   pages_->setCurrentIndex(0);
 }
 
 void SettingsDialog::initSignals() {
   connect(list_, &QListWidget::currentRowChanged, this, [this](int row) {
-    if (row >= 0)
-      pages_->setCurrentIndex(row);
+    QListWidgetItem* item = (row >= 0) ? list_->item(row) : nullptr;
+    if (!item) {
+      return;
+    }
+    const int page = item->data(Qt::UserRole).toInt();
+    if (page >= 0) {
+      pages_->setCurrentIndex(page);
+    }
   });
 
   connect(&ConfigManager::instance(), &ConfigManager::configChanged, this,
           &SettingsDialog::onConfigChanged);
 
   connect(btn_close_, &QPushButton::clicked, this, &QDialog::reject);
+
+  // 主题切换后刷新导航图标与 Toggle on 色（对话框复用，构造时烧入的值需跟随主题）
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this, [this](bool) {
+            for (int i = 0; i < list_->count(); ++i) {
+              QListWidgetItem* item = list_->item(i);
+              const QString iconName = item->data(Qt::UserRole + 1).toString();
+              if (!iconName.isEmpty()) {
+                item->setIcon(
+                    etest::core_ui::AppIconProvider::instance().icon(iconName));
+              }
+              // 分组标签前景随主题刷新
+              if (item->data(Qt::UserRole).toInt() < 0) {
+                item->setForeground(
+                    etest::core_ui::ThemeManager::instance()
+                        .secondaryTextColor());
+              }
+            }
+            if (title_icon_) {
+              title_icon_->setPixmap(
+                  etest::core_ui::AppIconProvider::instance()
+                      .icon(QStringLiteral("welcome"))
+                      .pixmap(18, 18));
+            }
+            const QColor accent =
+                etest::core_ui::ThemeManager::instance().accentColor();
+            for (QAbstractButton* btn : check_map_) {
+              if (auto* sw = qobject_cast<SwitchButton*>(btn)) {
+                sw->setOnBackground(accent);
+              }
+            }
+          });
 }
 
 // =========================================================================
@@ -117,6 +244,8 @@ QWidget* SettingsDialog::createGeneralPage() {
   layout->setSpacing(12);
 
   // --- 日志 card ---
+  addPageHeader(layout, QStringLiteral("通用"),
+                QStringLiteral("日志与默认保存目录"));
   auto* cardLog = createSettingsCard(page, QStringLiteral("日志"));
 
   // 日志级别（int 值存 userData，仿主题下拉写法）
@@ -225,6 +354,8 @@ QWidget* SettingsDialog::createEditorPage() {
   layout->setContentsMargins(20, 16, 20, 16);
   layout->setSpacing(12);
 
+  addPageHeader(layout, QStringLiteral("编辑器"),
+                QStringLiteral("代码编辑与排版偏好"));
   auto* card = createSettingsCard(page, QStringLiteral("编辑器"));
   addSpinBoxRow(card, QStringLiteral("字体大小"),
                 QStringLiteral("编辑器文字大小（像素）"),
@@ -254,6 +385,8 @@ QWidget* SettingsDialog::createTerminalPage() {
   layout->setContentsMargins(20, 16, 20, 16);
   layout->setSpacing(12);
 
+  addPageHeader(layout, QStringLiteral("终端"),
+                QStringLiteral("命令行解释器与显示"));
   auto* card = createSettingsCard(page, QStringLiteral("终端"));
   addComboBoxRow(card, QStringLiteral("Shell"),
                  QStringLiteral("终端使用的命令行解释器"),
@@ -292,6 +425,8 @@ QWidget* SettingsDialog::createAppearancePage() {
   layout->setSpacing(12);
 
   // --- 外观 card ---
+  addPageHeader(layout, QStringLiteral("外观"),
+                QStringLiteral("主题、欢迎页背景与屏保"));
   auto* cardAppearance =
       createSettingsCard(scrollContent, QStringLiteral("外观"));
 
@@ -489,6 +624,8 @@ QWidget* SettingsDialog::createProjectPage() {
   layout->setContentsMargins(20, 16, 20, 16);
   layout->setSpacing(12);
 
+  addPageHeader(layout, QStringLiteral("项目"),
+                QStringLiteral("项目打开与 Git 行为"));
   auto* card = createSettingsCard(page, QStringLiteral("项目"));
   addCheckBoxRow(card, QStringLiteral("自动打开所属项目"),
                  QStringLiteral("打开文件时自动打开其所属项目"),
@@ -509,6 +646,8 @@ QWidget* SettingsDialog::createBackupPage() {
   layout->setContentsMargins(20, 16, 20, 16);
   layout->setSpacing(12);
 
+  addPageHeader(layout, QStringLiteral("备份"),
+                QStringLiteral("自动备份与手动操作"));
   auto* cardAuto = createSettingsCard(page, QStringLiteral("自动备份"));
   addCheckBoxRow(cardAuto, QStringLiteral("启用自动备份"),
                  QStringLiteral("按设定间隔自动备份项目文件"),
@@ -530,6 +669,63 @@ QWidget* SettingsDialog::createBackupPage() {
     etest::core::backup::BackupManager::instance().manualBackup();
   });
 
+  layout->addStretch();
+  return page;
+}
+
+void SettingsDialog::addPageHeader(QVBoxLayout* layout, const QString& title,
+                                   const QString& subtitle) {
+  auto* titleLabel = new QLabel(title, layout->parentWidget());
+  titleLabel->setObjectName(QStringLiteral("SettingsPageTitle"));
+  auto* subLabel = new QLabel(subtitle, layout->parentWidget());
+  subLabel->setObjectName(QStringLiteral("SettingsPageSub"));
+  layout->addWidget(titleLabel);
+  layout->addWidget(subLabel);
+  layout->addSpacing(10);
+}
+
+QWidget* SettingsDialog::createAboutPage() {
+  auto* page = new QWidget(this);
+  auto* layout = new QVBoxLayout(page);
+  layout->setContentsMargins(20, 16, 20, 16);
+  layout->setSpacing(12);
+  addPageHeader(layout, QStringLiteral("关于"), QStringLiteral("版本信息"));
+
+  auto* card = new QWidget(page);
+  card->setObjectName(QStringLiteral("SettingsAboutCard"));
+  auto* cardLayout = new QVBoxLayout(card);
+  cardLayout->setContentsMargins(24, 28, 24, 28);
+  cardLayout->setSpacing(6);
+  cardLayout->setAlignment(Qt::AlignCenter);
+
+  auto* icon = new QLabel(card);
+  icon->setObjectName(QStringLiteral("SettingsAboutIcon"));
+  icon->setFixedSize(56, 56);
+  icon->setAlignment(Qt::AlignCenter);
+  icon->setPixmap(etest::core_ui::AppIconProvider::instance()
+                      .icon(QStringLiteral("welcome"))
+                      .pixmap(26, 26));
+  cardLayout->addWidget(icon, 0, Qt::AlignCenter);
+
+  auto* nameLabel = new QLabel(QStringLiteral("ETest Studio"), card);
+  nameLabel->setObjectName(QStringLiteral("SettingsAboutName"));
+  nameLabel->setAlignment(Qt::AlignCenter);
+  cardLayout->addWidget(nameLabel);
+
+  auto* versionLabel =
+      new QLabel(QStringLiteral("版本 %1 · 自动化测试系统").arg(PROJECT_VERSION),
+                 card);
+  versionLabel->setObjectName(QStringLiteral("SettingsAboutVersion"));
+  versionLabel->setAlignment(Qt::AlignCenter);
+  cardLayout->addWidget(versionLabel);
+
+  auto* copyright =
+      new QLabel(QStringLiteral("Copyright © 2026 ETest"), card);
+  copyright->setObjectName(QStringLiteral("SettingsAboutCopyright"));
+  copyright->setAlignment(Qt::AlignCenter);
+  cardLayout->addWidget(copyright);
+
+  layout->addWidget(card);
   layout->addStretch();
   return page;
 }
@@ -621,24 +817,25 @@ QSpinBox* SettingsDialog::addSpinBoxRow(QWidget* parent,
   return spin;
 }
 
-QCheckBox* SettingsDialog::addCheckBoxRow(QWidget* parent,
-                                          const QString& title,
-                                          const QString& description,
-                                          const QString& configKey,
-                                          bool defaultVal) {
+QAbstractButton* SettingsDialog::addCheckBoxRow(
+    QWidget* parent, const QString& title, const QString& description,
+    const QString& configKey, bool defaultVal) {
   auto* rightLayout = addSettingRow(parent, title, description);
 
-  auto* cb = new QCheckBox();
+  // Fluent Toggle（SwitchButton 自绘滑块），on=主题 accent、off=中性灰
+  auto* sw = new SwitchButton();
+  sw->setOnBackground(etest::core_ui::ThemeManager::instance().accentColor());
+  sw->setOffBackground(QColor(0xD0, 0xD0, 0xDD));
 
   bool val = ConfigManager::instance().get<bool>(configKey, defaultVal);
-  cb->setChecked(val);
+  sw->setChecked(val);
 
-  rightLayout->addWidget(cb);
+  rightLayout->addWidget(sw);
 
-  check_map_.insert(configKey, cb);
-  checkBoxToConfig(configKey, cb);
+  check_map_.insert(configKey, sw);
+  checkBoxToConfig(configKey, sw);
 
-  return cb;
+  return sw;
 }
 
 QComboBox* SettingsDialog::addComboBoxRow(QWidget* parent,
@@ -694,8 +891,8 @@ void SettingsDialog::spinBoxToConfig(const QString& key, QSpinBox* spin) {
           [key](int val) { ConfigManager::instance().set<int>(key, val); });
 }
 
-void SettingsDialog::checkBoxToConfig(const QString& key, QCheckBox* cb) {
-  connect(cb, &QCheckBox::toggled, this, [key](bool checked) {
+void SettingsDialog::checkBoxToConfig(const QString& key, QAbstractButton* cb) {
+  connect(cb, &QAbstractButton::toggled, this, [key](bool checked) {
     ConfigManager::instance().set<bool>(key, checked);
   });
 }

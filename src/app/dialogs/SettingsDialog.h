@@ -1,7 +1,6 @@
-#ifndef ETEST_APP_DIALOGS_SETTINGSDIALOG_H_
-#define ETEST_APP_DIALOGS_SETTINGSDIALOG_H_
+#pragma once
 
-#include <QCheckBox>
+#include <QAbstractButton>
 #include <QComboBox>
 #include <QDialog>
 #include <QHBoxLayout>
@@ -14,9 +13,13 @@
 
 #include <functional>
 
+class QLabel;
+
+#include "dialogs/OverlayDialog.h"
+
 namespace etest::app {
 
-class SettingsDialog : public QDialog {
+class SettingsDialog : public OverlayDialog {
   Q_OBJECT
 
  public:
@@ -34,6 +37,11 @@ class SettingsDialog : public QDialog {
   QWidget* createProjectPage();
   QWidget* createBackupPage();
 
+  // Fluent 页面头（大标题 + 副标题）
+  void addPageHeader(QVBoxLayout* layout, const QString& title,
+                     const QString& subtitle);
+  QWidget* createAboutPage();
+
   // VS Code style setting row — returns the right-side layout for controls
   QHBoxLayout* addSettingRow(QWidget* parent,
                               const QString& title,
@@ -48,11 +56,11 @@ class SettingsDialog : public QDialog {
                            int max,
                            int step,
                            int defaultVal);
-  QCheckBox* addCheckBoxRow(QWidget* parent,
-                             const QString& title,
-                             const QString& description,
-                             const QString& configKey,
-                             bool defaultVal);
+  QAbstractButton* addCheckBoxRow(QWidget* parent,
+                                  const QString& title,
+                                  const QString& description,
+                                  const QString& configKey,
+                                  bool defaultVal);
   QComboBox* addComboBoxRow(QWidget* parent,
                              const QString& title,
                              const QString& description,
@@ -70,20 +78,19 @@ class SettingsDialog : public QDialog {
 
   // Bidirectional binding helpers
   void spinBoxToConfig(const QString& key, QSpinBox* spin);
-  void checkBoxToConfig(const QString& key, QCheckBox* cb);
+  void checkBoxToConfig(const QString& key, QAbstractButton* cb);
   void comboBoxToConfig(const QString& key, QComboBox* combo);
   void onConfigChanged(const QString& key);
 
   QListWidget* list_;
   QStackedWidget* pages_;
   QPushButton* btn_close_;
+  QLabel* title_icon_ = nullptr;
 
   // Maps config key -> control widget for bidirectional sync
   QMap<QString, QSpinBox*> spin_map_;
-  QMap<QString, QCheckBox*> check_map_;
+  QMap<QString, QAbstractButton*> check_map_;
   QMap<QString, QComboBox*> combo_map_;
 };
 
 }  // namespace etest::app
-
-#endif  // ETEST_APP_DIALOGS_SETTINGSDIALOG_H_
