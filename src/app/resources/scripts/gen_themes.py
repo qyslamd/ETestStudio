@@ -243,33 +243,9 @@ def inject_widget_styles():
         print('  INJECT: {}'.format(theme_id))
 
 
-themes = [
-    {
-        'id': 'avocado_green',
-        'displayName': 'Niuyouguo Green Avocado Green',
-        'accent': '#8A9A5B',
-    },
-    {
-        'id': 'mocha_brown',
-        'displayName': 'Moka Brown Mocha Brown',
-        'accent': '#967259',
-    },
-    {
-        'id': 'hermes_orange',
-        'displayName': 'Aimashicheng Hermes Orange',
-        'accent': '#F3702A',
-    },
-    {
-        'id': 'bright_yellow',
-        'displayName': 'Minghuang Bright Yellow',
-        'accent': '#FFD700',
-    },
-    {
-        'id': 'cyan',
-        'displayName': '青色',
-        'accent': '#008080',
-    },
-]
+# 主题已精简为两套（default/vscode），此处不再生成亮色变体主题。
+# 脚本保留：--widgets 注入控件样式仍生效。日后重启主题设计时，在此列表填回主题即可。
+themes = []
 
 # --widgets 参数：仅注入 QSpinBox/QComboBox 样式，不重新生成主题
 if '--widgets' in sys.argv:

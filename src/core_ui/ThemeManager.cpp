@@ -99,6 +99,11 @@ ThemeManager::ThemeManager(QObject* parent) : QObject(parent) {
   QString theme =
       cfg.get<QString>(CONFIG_APPEARANCE_THEME,
                        QString::fromLatin1(CONFIG_APPEARANCE_DEFAULT_THEME));
+  // 已删主题回退 default：在 loadQss/current_theme_ 赋值前归一化，
+  // 避免 current_theme_ 残留无效 ID 导致 onThemeChanged 加载 ads_<id>.qss 失败
+  if (!palettes_.contains(theme)) {
+    theme = QStringLiteral("default");
+  }
 
   loadQss(theme);
   current_theme_ = theme;
@@ -250,22 +255,27 @@ QStringList ThemeManager::availableThemes() const {
 }
 
 void ThemeManager::setTheme(const QString& themeId) {
-  if (themeId == current_theme_)
+  // 已删主题回退 default：归一化后再比较/保存，确保配置里不写入无效 ID
+  QString resolved = themeId;
+  if (!palettes_.contains(resolved)) {
+    resolved = QStringLiteral("default");
+  }
+  if (resolved == current_theme_)
     return;
 
-  current_theme_ = themeId;
-  auto it = palettes_.find(themeId);
+  current_theme_ = resolved;
+  auto it = palettes_.find(resolved);
   if (it == palettes_.end()) {
     it = palettes_.find(QStringLiteral("default"));
   }
   palette_ = (it != palettes_.end()) ? &it.value() : nullptr;
   is_dark_ = palette_ ? palette_->isDark : true;
 
-  loadQss(themeId);
+  loadQss(resolved);
   applyEditorTheme();
 
   ConfigManager::instance().set(QString::fromLatin1(CONFIG_APPEARANCE_THEME),
-                                themeId);
+                                resolved);
 
   emit themeChanged(is_dark_);
 }

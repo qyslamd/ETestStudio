@@ -24,7 +24,7 @@ themes = [
 2. `src/app/resources/styles/<id>.qss` — 基于 `vscode.qss`（暗色）或 `default.qss`（亮色）替换颜色
 3. `src/app/resources/styles/ribbon_<id>.qss` — 基于 `theme-dark2.qss`（暗色）或 `theme-office2021-blue.qss`（亮色）替换颜色
 4. `src/app/resources/styles/ads_<id>.qss` — QADS dock 样式，基于 `ads_template.qss`（亮色）或 `ads_vscode.qss`（暗色）替换颜色
-5. 亮色 ribbon QSS 必须补 `SARibbonButtonGroupWidget > QToolButton` + `SARibbonQuickAccessBar` 块（见 `ribbon_lime.qss` 头部），暗色不需要
+5. 亮色 ribbon QSS 必须补 `SARibbonButtonGroupWidget > QToolButton` + `SARibbonQuickAccessBar` 块（见 `ribbon_default.qss` 头部），暗色不需要
 6. 用 Python 批量替换颜色时，旧值和新值都要带 `#` 前缀避双井号
 7. `src/app/resource.qrc` 注册 4 个文件（JSON/QSS/ribbon QSS/ads QSS）
 8. 亮色 ads QSS 引用 `_dark` 图标变体、暗色引用 `_light`（与 `AppIconProvider` 规则一致）
