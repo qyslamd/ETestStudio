@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AnimationDialog.h"
+#include "dialogs/AnimationDialog.h"
 
 #include <QPixmap>
 

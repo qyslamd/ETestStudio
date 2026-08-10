@@ -129,20 +129,20 @@ add_executable(${TARGET_NAME} WIN32
     widgets/ProjectTreeDelegate.cpp
     dialogs/AnimationDialog.h
     dialogs/AnimationDialog.cpp
-    dialogs/BaseWizardDialog.h
-    dialogs/BaseWizardDialog.cpp
-    dialogs/NewProjectWizard.h
-    dialogs/NewProjectWizard.cpp
-    dialogs/WizardTemplateCard.h
-    dialogs/WizardTemplateCard.cpp
+    wizards/BaseWizardDialog.h
+    wizards/BaseWizardDialog.cpp
+    wizards/NewProjectWizard.h
+    wizards/NewProjectWizard.cpp
+    wizards/WizardTemplateCard.h
+    wizards/WizardTemplateCard.cpp
     dialogs/StepEditDialog.h
     dialogs/StepEditDialog.cpp
-    dialogs/TestProgramWizard.h
-    dialogs/TestProgramWizard.cpp
-    dialogs/ProtocolFileWizard.h
-    dialogs/ProtocolFileWizard.cpp
-    dialogs/TopologyFileWizard.h
-    dialogs/TopologyFileWizard.cpp
+    wizards/TestProgramWizard.h
+    wizards/TestProgramWizard.cpp
+    wizards/ProtocolFileWizard.h
+    wizards/ProtocolFileWizard.cpp
+    wizards/TopologyFileWizard.h
+    wizards/TopologyFileWizard.cpp
     dialogs/AboutDialog.h
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h

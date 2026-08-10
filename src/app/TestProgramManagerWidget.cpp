@@ -13,7 +13,7 @@
 #include <QVBoxLayout>
 
 #include "TestProgramData.h"
-#include "dialogs/TestProgramWizard.h"
+#include "wizards/TestProgramWizard.h"
 #include "project/ProjectManager.h"
 #include "logger/Logger.h"
 

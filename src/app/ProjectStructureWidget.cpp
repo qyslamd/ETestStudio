@@ -48,9 +48,9 @@
 #include "ConfigManager.h"
 #include "TestProgramData.h"
 #include "config/ConfigDefs.h"
-#include "dialogs/ProtocolFileWizard.h"
-#include "dialogs/TestProgramWizard.h"
-#include "dialogs/TopologyFileWizard.h"
+#include "wizards/ProtocolFileWizard.h"
+#include "wizards/TestProgramWizard.h"
+#include "wizards/TopologyFileWizard.h"
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyJsonSerializer.h"
 

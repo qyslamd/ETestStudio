@@ -33,7 +33,7 @@
 #include <utility>
 
 #include "AppIconProvider.h"
-#include "StepEditDialog.h"
+#include "dialogs/StepEditDialog.h"
 #include "ThemeManager.h"
 #include "WizardTemplateCard.h"
 #include "logger/Logger.h"

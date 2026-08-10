@@ -11,7 +11,7 @@
 #include "editors/EditorFactory.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "dialogs/NewProjectWizard.h"
+#include "wizards/NewProjectWizard.h"
 #include "logger/Logger.h"
 #include "project/ProjectManager.h"
 
