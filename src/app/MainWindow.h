@@ -26,6 +26,7 @@ namespace etest::app {
 
 class ActivityBarWidget;
 class SidebarWidget;
+class ProjectStructureWidget;
 class ExecutionOutputPanel;
 class LogOutputPanel;
 class SettingsDialog;
@@ -100,6 +101,7 @@ class MainWindow : public SARibbonMainWindow {
   void onOpenProject();
   void onOpenFile();
   void onCloseProject();
+  void onNewFile();
   void onProjectOpened(const QString& projectPath);
   void onProjectClosed();
   void updateWindowTitle();
@@ -140,6 +142,7 @@ class MainWindow : public SARibbonMainWindow {
   // 活动栏 + 侧边栏
   ActivityBarWidget* activity_bar_ = nullptr;
   SidebarWidget* sidebar_ = nullptr;
+  ProjectStructureWidget* project_structure_widget_ = nullptr;
   TestProgramManagerWidget* test_program_mgr_ = nullptr;
 
   // 水平/垂直分割器
@@ -193,6 +196,7 @@ class MainWindow : public SARibbonMainWindow {
   QAction* open_project_action_ = nullptr;
   QAction* open_file_action_ = nullptr;
   QAction* close_project_action_ = nullptr;
+  QAction* new_file_action_ = nullptr;
   QAction* save_action_ = nullptr;
   QAction* save_as_action_ = nullptr;
   QAction* save_all_action_ = nullptr;

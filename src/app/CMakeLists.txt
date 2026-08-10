@@ -143,6 +143,8 @@ add_executable(${TARGET_NAME} WIN32
     wizards/ProtocolFileWizard.cpp
     wizards/TopologyFileWizard.h
     wizards/TopologyFileWizard.cpp
+    wizards/NewFileGuideWizard.h
+    wizards/NewFileGuideWizard.cpp
     dialogs/AboutDialog.h
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h

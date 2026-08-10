@@ -114,6 +114,9 @@ class ProjectStructureWidget : public QWidget {
   void clearTreeSelection();
   /// 自动跟随开关是否开启（编辑器切换时自动定位当前文件）
   bool isSyncDocEnabled() const;
+  /// 新建文件（File 菜单「新建文件」引导向导派发复用；按 extension 分支）
+  void createNewFile(const QString& categoryId, const QString& extension,
+                     const QString& baseName);
 
  private slots:
   void onCustomContextMenu(const QPoint& pos);
@@ -128,9 +131,6 @@ class ProjectStructureWidget : public QWidget {
   void onDirectoryChanged(const QString& path);
 
   // 文件操作
-  void createNewFile(const QString& categoryId,
-                     const QString& extension,
-                     const QString& baseName);
   void createStandaloneFile(const QString& extension, const QString& baseName);
   void deleteSelectedFile();
   void copyFilePath();

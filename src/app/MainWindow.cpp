@@ -37,6 +37,7 @@
 #include "dialogs/IcdSignalSelection.h"
 #include "dialogs/LoginDialog.h"
 #include "dialogs/UserManagerDialog.h"
+#include "wizards/NewFileGuideWizard.h"
 
 #include "SARibbonBar.h"
 #include "SARibbonCategory.h"
@@ -446,6 +447,7 @@ void MainWindow::initSignalsLate() {
   // 项目结构树：项目打开/关闭时切换
   auto* psWidget = qobject_cast<ProjectStructureWidget*>(
       sidebar_->pageById(PageId::kProjectOverview));
+  project_structure_widget_ = psWidget;
   if (psWidget) {
     connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
             psWidget, &ProjectStructureWidget::setProjectPath);
@@ -1560,9 +1562,24 @@ void MainWindow::onCloseProject() {
   project_controller_->closeProject();
 }
 
+void MainWindow::onNewFile() {
+  LOG_INFO("MAIN_UI", "点击「新建文件」");
+  NewFileGuideWizard wizard(this);
+  if (wizard.exec() != QDialog::Accepted) {
+    return;
+  }
+  if (!project_structure_widget_) {
+    return;
+  }
+  project_structure_widget_->createNewFile(wizard.selectedCategoryId(),
+                                           wizard.selectedExtension(),
+                                           wizard.selectedBaseName());
+}
+
 void MainWindow::onProjectOpened(const QString& projectPath) {
   LOG_INFO("MAIN_UI", "项目已打开 [path={}]", projectPath.toStdString());
   close_project_action_->setEnabled(true);
+  new_file_action_->setEnabled(true);
   open_file_action_->setEnabled(false);
   ribbon_search_edit_->setEnabled(true);
 
@@ -1783,6 +1800,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
 void MainWindow::onProjectClosed() {
   LOG_INFO("MAIN_UI", "项目已关闭");
   close_project_action_->setEnabled(false);
+  new_file_action_->setEnabled(false);
   open_file_action_->setEnabled(true);
   ribbon_search_edit_->setEnabled(false);
   status_bar_ctrl_->setProject(QStringLiteral("无打开项目"));
@@ -2066,6 +2084,12 @@ void MainWindow::setupRibbon() {
   connect(close_project_action_, &QAction::triggered, this,
           &MainWindow::onCloseProject);
 
+  new_file_action_ = new QAction(QStringLiteral("新建文件"), this);
+  new_file_action_->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("file_new")));
+  new_file_action_->setEnabled(false);
+  connect(new_file_action_, &QAction::triggered, this, &MainWindow::onNewFile);
+
   save_action_ = new QAction(QStringLiteral("保存"), this);
   save_action_->setShortcut(QKeySequence::Save);
   save_action_->setShortcutContext(Qt::ApplicationShortcut);
@@ -2248,10 +2272,6 @@ void MainWindow::setupRibbon() {
     LOG_INFO("MAIN_UI", "点击「退出登录」");
     AuthService::instance().logout();
   });
-  connect(logoutAction, &QAction::triggered, this, [this]() {
-    LOG_INFO("MAIN_UI", "点击「退出登录」");
-    AuthService::instance().logout();
-  });
 
   // ---- Application Button ----
   ribbon->applicationButton()->setIcon(
@@ -2260,6 +2280,8 @@ void MainWindow::setupRibbon() {
 
   // 文件 Application Button 菜单 (QMenu)
   auto* app_menu = new QMenu(this);
+  app_menu->addAction(new_file_action_);
+  app_menu->addSeparator();
   app_menu->addAction(close_project_action_);
   app_menu->addSeparator();
   app_menu->addAction(save_all_action_);
@@ -2850,6 +2872,7 @@ void MainWindow::disableEditActions() {
   new_project_action_->setEnabled(false);
   open_project_action_->setEnabled(false);
   open_file_action_->setEnabled(false);
+  new_file_action_->setEnabled(false);
   // 视图面板操作在运行态保持可用
 }
 
@@ -2879,8 +2902,10 @@ void MainWindow::enableEditActions() {
   edit_go_to_line_action_->setEnabled(hasEditors);
   new_project_action_->setEnabled(true);
   open_project_action_->setEnabled(true);
-  open_file_action_->setEnabled(
-      etest::core::project::ProjectManager::instance().isProjectOpen());
+  const bool projectOpen =
+      etest::core::project::ProjectManager::instance().isProjectOpen();
+  open_file_action_->setEnabled(projectOpen);
+  new_file_action_->setEnabled(projectOpen);
   // 视图面板操作始终可用，无需在此恢复
 }
 
