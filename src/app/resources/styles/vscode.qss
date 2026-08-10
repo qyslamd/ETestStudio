@@ -1499,11 +1499,10 @@ etest--app--SettingsDialog QListWidget::item:selected {
 }
 
 /* 右侧页面容器 */
-etest--app--SettingsDialog QStackedWidget {
-    background-color: #1E1E1E;
-}
-etest--app--SettingsDialog QStackedWidget > QWidget {
-    background-color: #1E1E1E;
+/* 右侧平铺滚动区 */
+etest--app--SettingsDialog QScrollArea {
+    background: transparent;
+    border: none;
 }
 
 /* 外观页内嵌滚动区 */

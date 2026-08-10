@@ -4,12 +4,12 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QHBoxLayout>
+#include <QList>
 #include <QListWidget>
 #include <QMap>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
-#include <QStackedWidget>
 
 #include <functional>
 
@@ -83,7 +83,8 @@ class SettingsDialog : public OverlayDialog {
   void onConfigChanged(const QString& key);
 
   QListWidget* list_;
-  QStackedWidget* pages_;
+  QScrollArea* scroll_area_ = nullptr;
+  QList<QWidget*> page_widgets_;
   QPushButton* btn_close_;
   QLabel* title_icon_ = nullptr;
 

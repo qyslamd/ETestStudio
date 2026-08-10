@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QScrollBar>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -144,17 +145,28 @@ void SettingsDialog::initUi() {
 
   contentLayout->addWidget(list_);
 
-  // === Right: stacked pages ===
-  pages_ = new QStackedWidget(content);
-  pages_->addWidget(createGeneralPage());   // index 0
-  pages_->addWidget(createEditorPage());     // index 1
-  pages_->addWidget(createTerminalPage());   // index 2
-  pages_->addWidget(createAppearancePage()); // index 3
-  pages_->addWidget(createProjectPage());    // index 4
-  pages_->addWidget(createBackupPage());     // index 5
-  pages_->addWidget(createAboutPage());      // index 6
+  // === Right: all categories stacked in one scroll area ===
+  scroll_area_ = new QScrollArea(content);
+  scroll_area_->setWidgetResizable(true);
+  scroll_area_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scroll_area_->setFrameShape(QFrame::NoFrame);
 
-  contentLayout->addWidget(pages_, 1);
+  auto* scrollContent = new QWidget();
+  scrollContent->setObjectName(QStringLiteral("ScrollAreaContent"));
+  scroll_area_->setWidget(scrollContent);
+  auto* scrollLayout = new QVBoxLayout(scrollContent);
+  scrollLayout->setContentsMargins(0, 0, 0, 0);
+  scrollLayout->setSpacing(0);
+
+  page_widgets_ = {createGeneralPage(),   createEditorPage(),
+                   createTerminalPage(),  createAppearancePage(),
+                   createProjectPage(),   createBackupPage(),
+                   createAboutPage()};
+  for (QWidget* page : page_widgets_) {
+    scrollLayout->addWidget(page);
+  }
+
+  contentLayout->addWidget(scroll_area_, 1);
   mainLayout->addLayout(contentLayout, 1);
 
   // === Bottom: button bar ===
@@ -173,14 +185,13 @@ void SettingsDialog::initUi() {
 
   setWidget(content);
 
-  // 默认选中「通用」（跳过开头的分组标签行）
+  // 默认选中「通用」（跳过开头的分组标签行），触发滚动定位到首分类
   for (int i = 0; i < list_->count(); ++i) {
     if (list_->item(i)->data(Qt::UserRole).toInt() == 0) {
       list_->setCurrentItem(list_->item(i));
       break;
     }
   }
-  pages_->setCurrentIndex(0);
 }
 
 void SettingsDialog::initSignals() {
@@ -190,8 +201,11 @@ void SettingsDialog::initSignals() {
       return;
     }
     const int page = item->data(Qt::UserRole).toInt();
-    if (page >= 0) {
-      pages_->setCurrentIndex(page);
+    if (page >= 0 && page < page_widgets_.size()) {
+      // 左导航仅定位：把该分类顶部滚到可视区起点
+      const int y =
+          page_widgets_[page]->mapTo(scroll_area_->widget(), QPoint(0, 0)).y();
+      scroll_area_->verticalScrollBar()->setValue(y);
     }
   });
 
@@ -344,7 +358,6 @@ QWidget* SettingsDialog::createGeneralPage() {
     });
   }
 
-  layout->addStretch();
   return page;
 }
 
@@ -375,7 +388,6 @@ QWidget* SettingsDialog::createEditorPage() {
                  CONFIG_EDITOR_SPACES_FOR_TAB,
                  CONFIG_EDITOR_DEFAULT_SPACES_FOR_TAB);
 
-  layout->addStretch();
   return page;
 }
 
@@ -402,33 +414,19 @@ QWidget* SettingsDialog::createTerminalPage() {
                 CONFIG_TERMINAL_SCROLLBACK, 100, 100000, 1000,
                 CONFIG_TERMINAL_DEFAULT_SCROLLBACK);
 
-  layout->addStretch();
   return page;
 }
 
 QWidget* SettingsDialog::createAppearancePage() {
-  // Outer page wraps a QScrollArea because this page has the most content
   auto* page = new QWidget(this);
-  auto* pageLayout = new QVBoxLayout(page);
-  pageLayout->setContentsMargins(0, 0, 0, 0);
-
-  auto* scrollArea = new QScrollArea(page);
-  scrollArea->setWidgetResizable(true);
-  scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  scrollArea->setFrameShape(QFrame::NoFrame);
-
-  auto* scrollContent = new QWidget();
-  scrollContent->setObjectName(QStringLiteral("ScrollAreaContent"));
-  scrollArea->setWidget(scrollContent);
-  auto* layout = new QVBoxLayout(scrollContent);
+  auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(20, 16, 20, 16);
   layout->setSpacing(12);
 
   // --- 外观 card ---
   addPageHeader(layout, QStringLiteral("外观"),
                 QStringLiteral("主题、欢迎页背景与屏保"));
-  auto* cardAppearance =
-      createSettingsCard(scrollContent, QStringLiteral("外观"));
+  auto* cardAppearance = createSettingsCard(page, QStringLiteral("外观"));
 
   // 主题选择（使用 userData 存储配置值）
   {
@@ -470,8 +468,7 @@ QWidget* SettingsDialog::createAppearancePage() {
                []() { ConfigManager::instance().resetAllToDefault(); });
 
   // --- 欢迎页背景 card ---
-  auto* cardBg =
-      createSettingsCard(scrollContent, QStringLiteral("欢迎页背景"));
+  auto* cardBg = createSettingsCard(page, QStringLiteral("欢迎页背景"));
 
   {
     auto* hint = new QLabel(
@@ -576,7 +573,7 @@ QWidget* SettingsDialog::createAppearancePage() {
   }
 
   // --- 屏保 card ---
-  auto* cardSaver = createSettingsCard(scrollContent, QStringLiteral("屏保"));
+  auto* cardSaver = createSettingsCard(page, QStringLiteral("屏保"));
 
   addCheckBoxRow(cardSaver, QStringLiteral("空闲时显示屏保"),
                  QStringLiteral("一段时间无操作后自动显示屏保动画"),
@@ -613,8 +610,6 @@ QWidget* SettingsDialog::createAppearancePage() {
             });
   }
 
-  layout->addStretch();
-  pageLayout->addWidget(scrollArea);
   return page;
 }
 
@@ -636,7 +631,6 @@ QWidget* SettingsDialog::createProjectPage() {
                  CONFIG_PROJECT_GIT_PROMPT_INIT,
                  CONFIG_PROJECT_DEFAULT_GIT_PROMPT_INIT);
 
-  layout->addStretch();
   return page;
 }
 
@@ -669,7 +663,6 @@ QWidget* SettingsDialog::createBackupPage() {
     etest::core::backup::BackupManager::instance().manualBackup();
   });
 
-  layout->addStretch();
   return page;
 }
 
@@ -726,7 +719,6 @@ QWidget* SettingsDialog::createAboutPage() {
   cardLayout->addWidget(copyright);
 
   layout->addWidget(card);
-  layout->addStretch();
   return page;
 }
 

@@ -966,11 +966,10 @@ etest--app--SettingsDialog QListWidget::item:selected {
 }
 
 /* 右侧页面容器 */
-etest--app--SettingsDialog QStackedWidget {
-    background-color: #FFFFFF;
-}
-etest--app--SettingsDialog QStackedWidget > QWidget {
-    background-color: #FFFFFF;
+/* 右侧平铺滚动区 */
+etest--app--SettingsDialog QScrollArea {
+    background: transparent;
+    border: none;
 }
 
 /* 设置卡片 */
