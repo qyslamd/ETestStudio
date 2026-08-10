@@ -24,6 +24,9 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
+
+#include <functional>
+
 #include "core_ui/AppIconProvider.h"
 
 #include "logger/Logger.h"
@@ -312,6 +315,50 @@ void MockConfigEditor::setIcdRepository(icd::Repository* repo) {
     signal_resolver_ = std::make_unique<etest::engine::SignalResolver>(
         &signal_registry_, repo);
   }
+}
+
+// ── IEditorCommandSource ────────────────────────────────────────
+
+QList<EditorCommand> MockConfigEditor::editorCommands() {
+  QList<EditorCommand> cmds;
+  auto addBtnCmd = [](const QString& group, const QString& title,
+                      const QString& iconName, bool large, QPushButton* btn,
+                      std::function<void()> trigger) {
+    EditorCommand c;
+    c.group = group;
+    c.title = title;
+    c.iconName = iconName;
+    c.large = large;
+    c.trigger = std::move(trigger);
+    c.isEnabled = [btn]() { return btn->isEnabled(); };
+    return c;
+  };
+  // Mock
+  cmds.append(addBtnCmd(QStringLiteral("Mock"), QStringLiteral("创建配置"),
+                        QString(), true, create_config_btn_,
+                        [this]() { onCreateConfigClicked(); }));
+  // 编辑
+  cmds.append(addBtnCmd(QStringLiteral("编辑"), QStringLiteral("添加行"),
+                        QString(), false, fr_add_row_btn_,
+                        [this]() { onFrAddRow(); }));
+  cmds.append(addBtnCmd(QStringLiteral("编辑"), QStringLiteral("删除行"),
+                        QString(), false, fr_del_row_btn_,
+                        [this]() { onFrDeleteRow(); }));
+  // 响应
+  cmds.append(addBtnCmd(QStringLiteral("响应"), QStringLiteral("新建响应"),
+                        QString(), false, fr_add_resp_btn_,
+                        [this]() { onFrAddRespClicked(); }));
+  cmds.append(addBtnCmd(QStringLiteral("响应"), QStringLiteral("删除响应"),
+                        QString(), false, fr_del_resp_btn_,
+                        [this]() { onFrDelRespClicked(); }));
+  cmds.append(addBtnCmd(QStringLiteral("响应"), QStringLiteral("删除端口配置"),
+                        QString(), false, fr_del_port_config_btn_,
+                        [this]() { onFrDelPortConfigClicked(); }));
+  return cmds;
+}
+
+QObject* MockConfigEditor::commandStateObject() {
+  return this;
 }
 
 // ── IEditor 实现 ──

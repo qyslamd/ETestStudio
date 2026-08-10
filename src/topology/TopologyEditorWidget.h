@@ -7,12 +7,15 @@
 #include <memory>
 
 #include "api/IEditor.h"
+#include "api/IEditorCommands.h"
 
 class QAction;
 class QDockWidget;
 class QResizeEvent;
 class QGraphicsItem;
 class QLabel;
+class QMenu;
+class QToolBar;
 
 namespace etest::topology {
 
@@ -23,7 +26,9 @@ class PropertyPanelWidget;
 class TopologyOutlineWidget;
 class DevicePaletteWidget;
 
-class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
+class TopologyEditorWidget : public QMainWindow,
+                             public etest::app::IEditor,
+                             public etest::app::IEditorCommandSource {
   Q_OBJECT
  public:
   explicit TopologyEditorWidget(QWidget* parent = nullptr);
@@ -39,6 +44,10 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QWidget* widget() override;
   QString editorType() const override;
   QObject* signalObject() override;
+
+  // IEditorCommandSource
+  QList<etest::app::EditorCommand> editorCommands() override;
+  QObject* commandStateObject() override;
 
   // Undo/Redo
   bool canUndo() const override;
@@ -65,6 +74,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);
   void undoStateChanged();
+  void commandsChanged();
 
  private slots:
   void onAddUut(const QPointF& scenePos = QPointF());
@@ -121,6 +131,7 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QDockWidget* property_dock_ = nullptr;
 
   // Toolbar
+  QToolBar* toolbar_ = nullptr;
   QLabel* zoom_label_ = nullptr;
 
   QAction* outline_toggle_action_ = nullptr;
@@ -158,6 +169,8 @@ class TopologyEditorWidget : public QMainWindow, public etest::app::IEditor {
   QAction* distribute_action_ = nullptr;
   QAction* distribute_horizontal_action_ = nullptr;
   QAction* distribute_vertical_action_ = nullptr;
+  QMenu* align_menu_ = nullptr;
+  QMenu* distribute_menu_ = nullptr;
 
   QString current_file_;
 };

@@ -122,9 +122,70 @@ void TestProgramEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded_) {
     menuBar()->hide();
+    toolbar_->hide();
   } else {
     menuBar()->show();
+    toolbar_->show();
   }
+}
+
+// ── IEditorCommandSource ────────────────────────────────────────
+
+QList<EditorCommand> TestProgramEditorWidget::editorCommands() {
+  QList<EditorCommand> cmds;
+  auto addCmd = [](const QString& group, const QString& title,
+                   const QString& iconName, bool large, QAction* action) {
+    EditorCommand c;
+    c.group = group;
+    c.title = title;
+    c.iconName = iconName;
+    c.large = large;
+    c.trigger = [action]() { action->trigger(); };
+    c.isEnabled = [action]() { return action->isEnabled(); };
+    return c;
+  };
+  auto addCheckableCmd = [&](const QString& group, const QString& title,
+                             const QString& iconName, bool large,
+                             QAction* action) {
+    EditorCommand c = addCmd(group, title, iconName, large, action);
+    c.checkable = true;
+    c.isChecked = [action]() { return action->isChecked(); };
+    return c;
+  };
+  // 编辑
+  cmds.append(addCmd(QStringLiteral("编辑"), QStringLiteral("撤销"),
+                     QStringLiteral("undo"), true, undo_action_));
+  cmds.append(addCmd(QStringLiteral("编辑"), QStringLiteral("重做"),
+                     QStringLiteral("redo"), true, redo_action_));
+  // 用例
+  cmds.append(addCmd(QStringLiteral("用例"), QStringLiteral("添加用例"),
+                     QStringLiteral("testprog_add_case"), false,
+                     add_case_action_));
+  cmds.append(addCmd(QStringLiteral("用例"), QStringLiteral("删除用例"),
+                     QStringLiteral("testprog_remove_case"), false,
+                     remove_case_action_));
+  // 步骤
+  cmds.append(addCmd(QStringLiteral("步骤"), QStringLiteral("添加步骤"),
+                     QStringLiteral("testprog_add_step"), false,
+                     add_step_action_));
+  cmds.append(addCmd(QStringLiteral("步骤"), QStringLiteral("删除步骤"),
+                     QStringLiteral("testprog_remove_step"), false,
+                     remove_step_action_));
+  cmds.append(addCmd(QStringLiteral("步骤"), QStringLiteral("上移"),
+                     QStringLiteral("testprog_move_up"), false,
+                     move_up_action_));
+  cmds.append(addCmd(QStringLiteral("步骤"), QStringLiteral("下移"),
+                     QStringLiteral("testprog_move_down"), false,
+                     move_down_action_));
+  // 视图
+  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("纵向标签"),
+                              QStringLiteral("testprog_tab_vertical"), false,
+                              toggle_orientation_action_));
+  return cmds;
+}
+
+QObject* TestProgramEditorWidget::commandStateObject() {
+  return this;
 }
 
 void TestProgramEditorWidget::newProgram() {
@@ -178,10 +239,10 @@ void TestProgramEditorWidget::initUi() {
   };
 
   // ── QToolBar ──
-  auto* toolbar = addToolBar(QStringLiteral("测试程序工具栏"));
-  toolbar->setObjectName(QStringLiteral("testProgramToolbar"));
-  toolbar->setMovable(false);
-  toolbar->setFloatable(false);
+  toolbar_ = addToolBar(QStringLiteral("测试程序工具栏"));
+  toolbar_->setObjectName(QStringLiteral("testProgramToolbar"));
+  toolbar_->setMovable(false);
+  toolbar_->setFloatable(false);
 
   // ── 撤销 / 重做 ──
   undo_action_ =
@@ -189,56 +250,56 @@ void TestProgramEditorWidget::initUi() {
   undo_action_->setShortcut(QKeySequence::Undo);
   undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
   undo_action_->setEnabled(false);
-  toolbar->addAction(undo_action_);
+  toolbar_->addAction(undo_action_);
 
   redo_action_ =
       new QAction(tpIcon(QStringLiteral("redo")), QStringLiteral("重做"), this);
   redo_action_->setShortcut(QKeySequence::Redo);
   redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
   redo_action_->setEnabled(false);
-  toolbar->addAction(redo_action_);
+  toolbar_->addAction(redo_action_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   add_case_action_ = new QAction(tpIcon(QStringLiteral("testprog_add_case")),
                                  QStringLiteral("添加用例"), this);
   add_case_action_->setToolTip(QStringLiteral("添加测试用例"));
-  toolbar->addAction(add_case_action_);
+  toolbar_->addAction(add_case_action_);
 
   remove_case_action_ =
       new QAction(tpIcon(QStringLiteral("testprog_remove_case")),
                   QStringLiteral("删除用例"), this);
   remove_case_action_->setToolTip(QStringLiteral("删除当前测试用例"));
-  toolbar->addAction(remove_case_action_);
+  toolbar_->addAction(remove_case_action_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   add_step_action_ = new QAction(tpIcon(QStringLiteral("testprog_add_step")),
                                  QStringLiteral("添加步骤"), this);
   add_step_action_->setToolTip(QStringLiteral("添加测试步骤"));
-  toolbar->addAction(add_step_action_);
+  toolbar_->addAction(add_step_action_);
 
   remove_step_action_ =
       new QAction(tpIcon(QStringLiteral("testprog_remove_step")),
                   QStringLiteral("删除步骤"), this);
   remove_step_action_->setToolTip(QStringLiteral("删除当前测试步骤"));
-  toolbar->addAction(remove_step_action_);
+  toolbar_->addAction(remove_step_action_);
 
   move_up_action_ = new QAction(tpIcon(QStringLiteral("testprog_move_up")),
                                 QStringLiteral("上移"), this);
   move_up_action_->setToolTip(QStringLiteral("上移步骤"));
-  toolbar->addAction(move_up_action_);
+  toolbar_->addAction(move_up_action_);
 
   move_down_action_ = new QAction(tpIcon(QStringLiteral("testprog_move_down")),
                                   QStringLiteral("下移"), this);
   move_down_action_->setToolTip(QStringLiteral("下移步骤"));
-  toolbar->addAction(move_down_action_);
+  toolbar_->addAction(move_down_action_);
 
-  auto* spacer = new QWidget(toolbar);
+  auto* spacer = new QWidget(toolbar_);
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  toolbar->addWidget(spacer);
+  toolbar_->addWidget(spacer);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // 切换标签栏方向（横向 QTabBar / 纵向 QListView）
   toggle_orientation_action_ =
@@ -246,7 +307,7 @@ void TestProgramEditorWidget::initUi() {
                   QStringLiteral("纵向标签"), this);
   toggle_orientation_action_->setToolTip(QStringLiteral("切换纵向/横向标签栏"));
   toggle_orientation_action_->setCheckable(true);
-  toolbar->addAction(toggle_orientation_action_);
+  toolbar_->addAction(toggle_orientation_action_);
 
   auto* content = new QWidget(this);
   auto* main_layout = new QVBoxLayout(content);
@@ -1226,6 +1287,7 @@ void TestProgramEditorWidget::updateActions() {
                                     row < table->rowCount() - 1);
     }
   }
+  emit commandsChanged();
   emit undoStateChanged();
 }
 

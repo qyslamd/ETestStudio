@@ -210,9 +210,83 @@ void RunConfigEditor::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded) {
     menuBar()->hide();
+    toolbar_->hide();
   } else {
     menuBar()->show();
+    toolbar_->show();
   }
+}
+
+// ── IEditorCommandSource ────────────────────────────────────────
+
+QList<etest::app::EditorCommand> RunConfigEditor::editorCommands() {
+  QList<etest::app::EditorCommand> cmds;
+  auto addCmd = [](const QString& group, const QString& title,
+                   const QString& iconName, bool large, QAction* action) {
+    etest::app::EditorCommand c;
+    c.group = group;
+    c.title = title;
+    c.iconName = iconName;
+    c.large = large;
+    c.trigger = [action]() { action->trigger(); };
+    c.isEnabled = [action]() { return action->isEnabled(); };
+    return c;
+  };
+  auto addCheckableCmd = [&](const QString& group, const QString& title,
+                             const QString& iconName, bool large,
+                             QAction* action) {
+    etest::app::EditorCommand c = addCmd(group, title, iconName, large, action);
+    c.checkable = true;
+    c.isChecked = [action]() { return action->isChecked(); };
+    return c;
+  };
+  // 编辑
+  cmds.append(addCmd(QStringLiteral("编辑"), QStringLiteral("撤销"),
+                     QStringLiteral("undo"), true, undo_action_));
+  cmds.append(addCmd(QStringLiteral("编辑"), QStringLiteral("重做"),
+                     QStringLiteral("redo"), true, redo_action_));
+  // 文件
+  cmds.append(addCmd(QStringLiteral("文件"), QStringLiteral("新建"),
+                     QStringLiteral("file_new"), false, new_action_));
+  cmds.append(addCmd(QStringLiteral("文件"), QStringLiteral("保存"),
+                     QStringLiteral("file_save"), false, save_action_));
+  // 布局
+  {
+    etest::app::EditorCommand c;
+    c.group = QStringLiteral("布局");
+    c.title = QStringLiteral("排列");
+    c.iconName = QStringLiteral("topo_align");
+    c.large = true;
+    c.isEnabled = [this]() { return align_btn_->isEnabled(); };
+    c.menu = [this]() { return align_menu_; };
+    cmds.append(c);
+  }
+  {
+    etest::app::EditorCommand c;
+    c.group = QStringLiteral("布局");
+    c.title = QStringLiteral("分布");
+    c.iconName = QStringLiteral("topo_distribute");
+    c.large = true;
+    c.isEnabled = [this]() { return dist_btn_->isEnabled(); };
+    c.menu = [this]() { return dist_menu_; };
+    cmds.append(c);
+  }
+  // 视图
+  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("测试程序"),
+                              QStringLiteral("testprogram"), false,
+                              test_program_toggle_action_));
+  cmds.append(addCheckableCmd(QStringLiteral("视图"),
+                              QStringLiteral("可视化组件"),
+                              QStringLiteral("monitor"), false,
+                              palette_toggle_action_));
+  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("属性"),
+                              QStringLiteral("file_json"), false,
+                              property_toggle_action_));
+  return cmds;
+}
+
+QObject* RunConfigEditor::commandStateObject() {
+  return this;
 }
 
 void RunConfigEditor::reloadToolbarIcons() {
@@ -259,6 +333,8 @@ bool RunConfigEditor::eventFilter(QObject* obj, QEvent* event) {
     } else if (obj == property_dock_) {
       syncDockCloseAction(property_toggle_action_);
     }
+    // 面板开关勾选态变化 → 刷新 Ribbon 上下文命令（3.6 状态同步）
+    emit commandsChanged();
   }
   return QMainWindow::eventFilter(obj, event);
 }
@@ -320,10 +396,10 @@ void RunConfigEditor::initUi() {
   align_btn_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("topo_align")));
   align_btn_->setPopupMode(QToolButton::InstantPopup);
-  auto* alignMenu = new QMenu(align_btn_);
-  auto addAlign = [this, alignMenu](const QString& text,
-                                    VisualizationArea::AlignType t) {
-    auto* act = alignMenu->addAction(text);
+  align_menu_ = new QMenu(align_btn_);
+  auto addAlign = [this](const QString& text,
+                         VisualizationArea::AlignType t) {
+    auto* act = align_menu_->addAction(text);
     connect(act, &QAction::triggered, this,
             [this, t]() { vis_area_->alignVisualizers(t); });
   };
@@ -333,7 +409,7 @@ void RunConfigEditor::initUi() {
   addAlign(QStringLiteral("顶端对齐"), VisualizationArea::AlignType::Top);
   addAlign(QStringLiteral("垂直居中"), VisualizationArea::AlignType::VCenter);
   addAlign(QStringLiteral("底端对齐"), VisualizationArea::AlignType::Bottom);
-  align_btn_->setMenu(alignMenu);
+  align_btn_->setMenu(align_menu_);
   align_btn_->setEnabled(false);  // 初始无选中，禁用直到选中 >=2
   toolbar_->addWidget(align_btn_);
 
@@ -343,10 +419,10 @@ void RunConfigEditor::initUi() {
   dist_btn_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("topo_distribute")));
   dist_btn_->setPopupMode(QToolButton::InstantPopup);
-  auto* distMenu = new QMenu(dist_btn_);
-  auto addDist = [this, distMenu](const QString& text,
-                                  VisualizationArea::DistributeType t) {
-    auto* act = distMenu->addAction(text);
+  dist_menu_ = new QMenu(dist_btn_);
+  auto addDist = [this](const QString& text,
+                        VisualizationArea::DistributeType t) {
+    auto* act = dist_menu_->addAction(text);
     connect(act, &QAction::triggered, this,
             [this, t]() { vis_area_->distributeVisualizers(t); });
   };
@@ -354,7 +430,7 @@ void RunConfigEditor::initUi() {
           VisualizationArea::DistributeType::Horizontal);
   addDist(QStringLiteral("垂直分布"),
           VisualizationArea::DistributeType::Vertical);
-  dist_btn_->setMenu(distMenu);
+  dist_btn_->setMenu(dist_menu_);
   dist_btn_->setEnabled(false);  // 初始无选中，禁用直到选中 >=2
   toolbar_->addWidget(dist_btn_);
 
@@ -512,6 +588,7 @@ void RunConfigEditor::initUi() {
               dist_btn_->setEnabled(enabled);
             }
             refreshPropertyPanel();
+            emit commandsChanged();
           });
 
   // 面板可见性与工具栏 toggle 同步（与 Topology 一致：toggled 直接驱动 dock 显隐）
@@ -799,6 +876,7 @@ void RunConfigEditor::updateUndoRedoActions() {
   if (redo_action_) {
     redo_action_->setEnabled(canRedo());
   }
+  emit commandsChanged();
   emit undoStateChanged();
 }
 

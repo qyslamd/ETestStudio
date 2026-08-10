@@ -1,5 +1,9 @@
 #pragma once
 
+#include <QList>
+#include <QMap>
+#include <QMetaObject>
+
 #include <memory>
 
 #include "DockManager.h"
@@ -43,6 +47,7 @@ class EditorPanelController;
 class ProjectController;
 class ExecutionDashboard;
 class ExecutionPanelController;
+class IEditor;
 }  // namespace etest::app
 
 namespace etest::engine {
@@ -93,6 +98,19 @@ class MainWindow : public SARibbonMainWindow {
   void setupRibbon();
   void createStatusBar();
 
+  // Ribbon 上下文页（随当前编辑器动态切换，命令定义模式）
+  void setupContextCategories();
+  void applyContextPageVisibility();
+  void refreshContextCommands();
+  void clearContextActions();
+  static QString contextKeyForEditor(IEditor* editor);
+  SARibbonCategory* contextCategory(const QString& key);
+
+ private slots:
+  // 命令清单状态变化（enabled/checked）刷新
+  void onContextCommandsChanged();
+
+ private:
   // 项目相关
   bool tryCloseCurrentProject();
   void openRecentProject(const QString& path);
@@ -226,6 +244,15 @@ class MainWindow : public SARibbonMainWindow {
   SARibbonCategory* category_exec_ = nullptr;
   bool switching_page_ = false;
   bool running_locked_ = false;
+
+  // Ribbon 上下文页（key = 分类标题；"编辑"为兜底页）
+  QMap<QString, SARibbonCategory*> context_categories_;
+  // 当前上下文页由命令清单创建的动作（parent 均为 this，随刷新重建）
+  QList<QAction*> context_actions_;
+  // 命令状态变化信号源（编辑器 commandStateObject），断开时用于匹配
+  QObject* context_commands_sender_ = nullptr;
+  // 当前命令动作对应的编辑器（page 切换时若编辑器未变则复用动作，不重复重建）
+  IEditor* context_commands_editor_ = nullptr;
 
   // 剪贴板
   QClipboard* clipboard_ = nullptr;

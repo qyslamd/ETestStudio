@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "IEditor.h"
+#include "IEditorCommands.h"
 #include "SignalCodec.h"
 #include "SignalRegistry.h"
 #include "SignalResolver.h"
@@ -29,7 +30,9 @@ namespace etest::app {
 
 // MockConfigEditor -- Mock 响应配置编辑器（独立编辑器，page0 tab）
 // 编辑 MockResponses.emock：帧响应字段工程值 + AD 端口波形/序列 + DA 端口固定值
-class MockConfigEditor : public QWidget, public IEditor {
+class MockConfigEditor : public QWidget,
+                         public IEditor,
+                         public IEditorCommandSource {
   Q_OBJECT
 
  public:
@@ -43,6 +46,11 @@ class MockConfigEditor : public QWidget, public IEditor {
   QString filePath() const override;
   QWidget* widget() override;
   QObject* signalObject() override;
+
+  // IEditorCommandSource
+  QList<EditorCommand> editorCommands() override;
+  QObject* commandStateObject() override;
+
   bool isModified() const override;
   bool save() override;
   bool saveAs(const QString& path) override;
@@ -56,6 +64,7 @@ class MockConfigEditor : public QWidget, public IEditor {
 
  signals:
   void modificationChanged(bool modified);
+  void commandsChanged();
 
  private:
   void initUi();

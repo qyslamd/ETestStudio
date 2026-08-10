@@ -102,6 +102,7 @@ void ProtocolEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded) {
     menuBar()->hide();
+    toolbar_->hide();
     // embedded 模式禁止浮动，仅保留关闭和拖拽
     for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
       dock->setFeatures(QDockWidget::DockWidgetClosable |
@@ -115,6 +116,7 @@ void ProtocolEditorWidget::setEmbeddedMode(bool embedded) {
     }
   } else {
     menuBar()->show();
+    toolbar_->show();
     // 恢复完整功能
     for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
       dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
@@ -126,6 +128,78 @@ void ProtocolEditorWidget::setEmbeddedMode(bool embedded) {
       }
     }
   }
+}
+
+// ── IEditorCommandSource ────────────────────────────────────────
+
+QList<etest::app::EditorCommand> ProtocolEditorWidget::editorCommands() {
+  QList<etest::app::EditorCommand> cmds;
+  auto addCmd = [](const QString& group, const QString& title,
+                   const QString& iconName, bool large, QAction* action) {
+    etest::app::EditorCommand c;
+    c.group = group;
+    c.title = title;
+    c.iconName = iconName;
+    c.large = large;
+    c.trigger = [action]() { action->trigger(); };
+    c.isEnabled = [action]() { return action->isEnabled(); };
+    return c;
+  };
+  auto addCheckableCmd = [&](const QString& group, const QString& title,
+                             const QString& iconName, bool large,
+                             QAction* action) {
+    etest::app::EditorCommand c = addCmd(group, title, iconName, large, action);
+    c.checkable = true;
+    c.isChecked = [action]() { return action->isChecked(); };
+    return c;
+  };
+  // 编辑
+  cmds.append(addCmd(QStringLiteral("编辑"), QStringLiteral("撤销"),
+                     QStringLiteral("undo"), true, undo_action_));
+  cmds.append(addCmd(QStringLiteral("编辑"), QStringLiteral("重做"),
+                     QStringLiteral("redo"), true, redo_action_));
+  // 帧
+  cmds.append(addCmd(QStringLiteral("帧"), QStringLiteral("新建帧"),
+                     QStringLiteral("protocol_new_frame"), false,
+                     new_frame_action_));
+  cmds.append(addCmd(QStringLiteral("帧"), QStringLiteral("删除帧"),
+                     QStringLiteral("protocol_delete_frame"), false,
+                     delete_frame_action_));
+  // 字节序（D11：widget 项改造为 checkable 命令，触发走 byte_order_btn_ 统一逻辑）
+  {
+    etest::app::EditorCommand c;
+    c.group = QStringLiteral("帧");
+    c.title = QStringLiteral("字节序");
+    c.iconName = QStringLiteral("protocol_byte_order");
+    c.checkable = true;
+    c.trigger = [this]() { byte_order_btn_->click(); };
+    c.isEnabled = [this]() { return byte_order_btn_->isEnabled(); };
+    c.isChecked = [this]() { return byte_order_btn_->isChecked(); };
+    cmds.append(c);
+  }
+  // 节点
+  cmds.append(addCmd(QStringLiteral("节点"), QStringLiteral("添加节点"),
+                     QStringLiteral("protocol_add_node"), false,
+                     add_node_action_));
+  cmds.append(addCmd(QStringLiteral("节点"), QStringLiteral("删除选中"),
+                     QStringLiteral("protocol_delete_node"), false,
+                     delete_selected_action_));
+  // 视图
+  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("节点列表"),
+                              QStringLiteral("protocol_node_tree"), false,
+                              node_tree_toggle_action_));
+  cmds.append(addCheckableCmd(QStringLiteral("视图"),
+                              QStringLiteral("属性面板"),
+                              QStringLiteral("protocol_property"), false,
+                              property_toggle_action_));
+  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("报文预览"),
+                              QStringLiteral("protocol_preview"), false,
+                              preview_toggle_action_));
+  return cmds;
+}
+
+QObject* ProtocolEditorWidget::commandStateObject() {
+  return this;
 }
 
 // ── Status message routing ─────────────────────────────────────
@@ -260,6 +334,7 @@ void ProtocolEditorWidget::undo() {
   restoreSnapshot(snapshots_[snapshot_index_]);
   setModified(snapshot_index_ != 0);
   emit undoStateChanged();
+  emit commandsChanged();
 }
 void ProtocolEditorWidget::redo() {
   if (!canRedo())
@@ -268,6 +343,7 @@ void ProtocolEditorWidget::redo() {
   restoreSnapshot(snapshots_[snapshot_index_]);
   setModified(snapshot_index_ != 0);
   emit undoStateChanged();
+  emit commandsChanged();
 }
 
 void ProtocolEditorWidget::setReadOnly(bool readOnly) {
@@ -687,32 +763,32 @@ void ProtocolEditorWidget::initUi() {
   };
 
   // ── QToolBar (帧操作 + 帧属性) ──
-  auto* toolbar = addToolBar(QStringLiteral("帧工具栏"));
-  toolbar->setObjectName(QStringLiteral("protocolToolbar"));
-  toolbar->setMovable(false);
-  toolbar->setFloatable(false);
+  toolbar_ = addToolBar(QStringLiteral("帧工具栏"));
+  toolbar_->setObjectName(QStringLiteral("protocolToolbar"));
+  toolbar_->setMovable(false);
+  toolbar_->setFloatable(false);
 
   // 撤销 / 重做
   undo_action_ = new QAction(protoIcon(QStringLiteral("undo")),
                              QStringLiteral("撤销"), this);
   undo_action_->setToolTip(QStringLiteral("撤销 (Ctrl+Z)"));
   undo_action_->setEnabled(false);
-  toolbar->addAction(undo_action_);
+  toolbar_->addAction(undo_action_);
 
   redo_action_ = new QAction(protoIcon(QStringLiteral("redo")),
                              QStringLiteral("重做"), this);
   redo_action_->setToolTip(QStringLiteral("重做 (Ctrl+Y)"));
   redo_action_->setEnabled(false);
-  toolbar->addAction(redo_action_);
+  toolbar_->addAction(redo_action_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // 新建帧
   new_frame_action_ =
       new QAction(protoIcon(QStringLiteral("protocol_new_frame")),
                   QStringLiteral("+帧"), this);
   new_frame_action_->setToolTip(QStringLiteral("新建帧"));
-  toolbar->addAction(new_frame_action_);
+  toolbar_->addAction(new_frame_action_);
 
   // 删除帧
   delete_frame_action_ =
@@ -720,9 +796,9 @@ void ProtocolEditorWidget::initUi() {
                   QStringLiteral("-帧"), this);
   delete_frame_action_->setToolTip(QStringLiteral("删除当前帧"));
   delete_frame_action_->setEnabled(false);
-  toolbar->addAction(delete_frame_action_);
+  toolbar_->addAction(delete_frame_action_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // 添加节点（当前选中字段下加子字段，无选中则在当前帧加根字段）
   add_node_action_ =
@@ -730,7 +806,7 @@ void ProtocolEditorWidget::initUi() {
                   QStringLiteral("+节点"), this);
   add_node_action_->setToolTip(QStringLiteral("添加信号（选中帧→根字段，选中字段→子字段）"));
   add_node_action_->setEnabled(false);
-  toolbar->addAction(add_node_action_);
+  toolbar_->addAction(add_node_action_);
 
   // 删除选中节点
   delete_selected_action_ =
@@ -738,28 +814,28 @@ void ProtocolEditorWidget::initUi() {
                   QStringLiteral("-选中"), this);
   delete_selected_action_->setToolTip(QStringLiteral("删除选中的字段"));
   delete_selected_action_->setEnabled(false);
-  toolbar->addAction(delete_selected_action_);
+  toolbar_->addAction(delete_selected_action_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // 帧属性区
-  auto* title_label = new QLabel(QStringLiteral("帧属性"), toolbar);
+  auto* title_label = new QLabel(QStringLiteral("帧属性"), toolbar_);
   title_label->setObjectName(QStringLiteral("protocolTitleLabel"));
-  toolbar->addWidget(title_label);
+  toolbar_->addWidget(title_label);
 
-  frame_name_label_ = new QLabel(QStringLiteral("(无帧)"), toolbar);
+  frame_name_label_ = new QLabel(QStringLiteral("(无帧)"), toolbar_);
   frame_name_label_->setObjectName(QStringLiteral("frameNameLabel"));
-  toolbar->addWidget(frame_name_label_);
+  toolbar_->addWidget(frame_name_label_);
 
-  frame_type_combo_ = new QComboBox(toolbar);
+  frame_type_combo_ = new QComboBox(toolbar_);
   frame_type_combo_->addItem(QStringLiteral("数据 (Data)"));
   frame_type_combo_->addItem(QStringLiteral("命令 (Cmd)"));
   frame_type_combo_->addItem(QStringLiteral("数据/命令 (DataCfg)"));
   frame_type_combo_->setEnabled(false);
-  toolbar->addWidget(frame_type_combo_);
+  toolbar_->addWidget(frame_type_combo_);
 
   // 字节序切换按钮（取代之前的 QComboBox）
-  byte_order_btn_ = new QToolButton(toolbar);
+  byte_order_btn_ = new QToolButton(toolbar_);
   byte_order_btn_->setIcon(protoIcon(QStringLiteral("protocol_byte_order")));
   byte_order_btn_->setText(QStringLiteral("LE"));
   byte_order_btn_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -767,23 +843,23 @@ void ProtocolEditorWidget::initUi() {
   byte_order_btn_->setToolTip(
       QStringLiteral("切换字节序：小端(LE) / 大端(BE)"));
   byte_order_btn_->setEnabled(false);
-  toolbar->addWidget(byte_order_btn_);
+  toolbar_->addWidget(byte_order_btn_);
 
-  frame_id_label_ = new QLabel(QStringLiteral("ID: -"), toolbar);
+  frame_id_label_ = new QLabel(QStringLiteral("ID: -"), toolbar_);
   frame_id_label_->setObjectName(QStringLiteral("idLabel"));
-  toolbar->addWidget(frame_id_label_);
+  toolbar_->addWidget(frame_id_label_);
 
-  frame_length_label_ = new QLabel(QStringLiteral("长度: -"), toolbar);
+  frame_length_label_ = new QLabel(QStringLiteral("长度: -"), toolbar_);
   frame_length_label_->setObjectName(QStringLiteral("lengthLabel"));
 
   // 弹簧 + 长度标签（右对齐）
-  auto* spacer = new QWidget(toolbar);
+  auto* spacer = new QWidget(toolbar_);
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  toolbar->addWidget(spacer);
+  toolbar_->addWidget(spacer);
 
-  toolbar->addWidget(frame_length_label_);
+  toolbar_->addWidget(frame_length_label_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // 面板开关 toggle actions
   node_tree_toggle_action_ =
@@ -792,7 +868,7 @@ void ProtocolEditorWidget::initUi() {
   node_tree_toggle_action_->setCheckable(true);
   node_tree_toggle_action_->setChecked(true);
   node_tree_toggle_action_->setToolTip(QStringLiteral("显示/隐藏节点列表"));
-  toolbar->addAction(node_tree_toggle_action_);
+  toolbar_->addAction(node_tree_toggle_action_);
 
   property_toggle_action_ =
       new QAction(protoIcon(QStringLiteral("protocol_property")),
@@ -800,7 +876,7 @@ void ProtocolEditorWidget::initUi() {
   property_toggle_action_->setCheckable(true);
   property_toggle_action_->setChecked(true);
   property_toggle_action_->setToolTip(QStringLiteral("显示/隐藏属性面板"));
-  toolbar->addAction(property_toggle_action_);
+  toolbar_->addAction(property_toggle_action_);
 
   preview_toggle_action_ =
       new QAction(protoIcon(QStringLiteral("protocol_preview")),
@@ -808,7 +884,7 @@ void ProtocolEditorWidget::initUi() {
   preview_toggle_action_->setCheckable(true);
   preview_toggle_action_->setChecked(true);
   preview_toggle_action_->setToolTip(QStringLiteral("显示/隐藏报文预览"));
-  toolbar->addAction(preview_toggle_action_);
+  toolbar_->addAction(preview_toggle_action_);
 
   // ── Dock: 节点列表 (左侧) ──
   node_tree_ = new IcdNodeTreeWidget(this);
@@ -1321,6 +1397,7 @@ void ProtocolEditorWidget::updateToolbar() {
     add_node_action_->setEnabled(false);
     delete_selected_action_->setEnabled(false);
   }
+  emit commandsChanged();
 }
 
 // ── Populate tree from repo ──────────────────────────────────
@@ -1391,6 +1468,7 @@ void ProtocolEditorWidget::clearAll() {
 
   // 快照重置后 canUndo/canRedo 归零，通知撤销状态变化
   emit undoStateChanged();
+  emit commandsChanged();
 }
 
 // ── Snapshot (undo/redo) ──────────────────────────────────────
@@ -1438,6 +1516,7 @@ void ProtocolEditorWidget::saveSnapshot() {
   // 快照截断/追加后 canUndo/canRedo 可能变化，无条件通知
   // （setModified 有 modified_ != modified 守卫，脏态间 undo 不触发 modificationChanged）
   emit undoStateChanged();
+  emit commandsChanged();
 }
 
 void ProtocolEditorWidget::restoreSnapshot(const QByteArray& data) {

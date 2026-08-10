@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "api/IEditor.h"
+#include "api/IEditorCommands.h"
 
 #include <icd/file_entry.hpp>
 #include <icd/frame.hpp>
@@ -31,7 +32,9 @@ class IcdBitLayoutView;
 class IcdPropertyPanel;
 class IcdFramePreviewPanel;
 
-class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
+class ProtocolEditorWidget : public QMainWindow,
+                             public etest::app::IEditor,
+                             public etest::app::IEditorCommandSource {
   Q_OBJECT
  public:
   explicit ProtocolEditorWidget(QWidget* parent = nullptr);
@@ -47,6 +50,10 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   QWidget* widget() override;
   QString editorType() const override;
   QObject* signalObject() override;
+
+  // IEditorCommandSource
+  QList<etest::app::EditorCommand> editorCommands() override;
+  QObject* commandStateObject() override;
 
   // Undo/Redo
   bool canUndo() const override;
@@ -86,6 +93,7 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   void modificationChanged(bool modified);
   void editorIdChanged(const QString& oldId, const QString& newId);
   void undoStateChanged();
+  void commandsChanged();
 
  private:
   void showLoadingOverlay();
@@ -139,6 +147,7 @@ class ProtocolEditorWidget : public QMainWindow, public etest::app::IEditor {
   IcdFramePreviewPanel* preview_panel_ = nullptr;
 
   // Toolbar widgets
+  QToolBar* toolbar_ = nullptr;
   QLabel* frame_name_label_ = nullptr;
   QLabel* frame_id_label_ = nullptr;
   QLabel* frame_length_label_ = nullptr;

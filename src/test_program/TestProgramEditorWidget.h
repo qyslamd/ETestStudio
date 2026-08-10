@@ -5,6 +5,7 @@
 #include <QVector>
 
 #include "api/IEditor.h"
+#include "api/IEditorCommands.h"
 #include "TestProgramData.h"
 
 #include "StepDetailPanel.h"
@@ -21,6 +22,7 @@ class QListView;
 class QStandardItemModel;
 class QTabWidget;
 class QTextEdit;
+class QToolBar;
 
 namespace etest::core {
 class SignalRegistry;
@@ -32,7 +34,9 @@ class ISignalSelection;
 
 class VerticalTabListDelegate;
 
-class TestProgramEditorWidget : public QMainWindow, public IEditor {
+class TestProgramEditorWidget : public QMainWindow,
+                                public IEditor,
+                                public IEditorCommandSource {
   Q_OBJECT
 
  public:
@@ -49,6 +53,10 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   QWidget* widget() override;
   QString editorType() const override;
   QObject* signalObject() override;
+
+  // IEditorCommandSource
+  QList<EditorCommand> editorCommands() override;
+  QObject* commandStateObject() override;
 
   // Undo/Redo
   bool canUndo() const override;
@@ -76,6 +84,7 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   void editorIdChanged(const QString& oldId, const QString& newId);
   void programSaved(const QString& path);
   void undoStateChanged();
+  void commandsChanged();
 
  protected:
   bool eventFilter(QObject* obj, QEvent* event) override;
@@ -145,6 +154,7 @@ class TestProgramEditorWidget : public QMainWindow, public IEditor {
   bool syncing_vertical_tabs_ = false;
   bool applying_orientation_ = false;
 
+  QToolBar* toolbar_ = nullptr;
   QAction* add_case_action_ = nullptr;
   QAction* remove_case_action_ = nullptr;
   QAction* add_step_action_ = nullptr;

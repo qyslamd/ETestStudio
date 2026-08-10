@@ -99,6 +99,7 @@ void TopologyEditorWidget::setEmbeddedMode(bool embedded) {
   embedded_ = embedded;
   if (embedded) {
     menuBar()->hide();
+    toolbar_->hide();
     for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
       dock->setFeatures(QDockWidget::DockWidgetClosable |
                         QDockWidget::DockWidgetMovable);
@@ -111,6 +112,7 @@ void TopologyEditorWidget::setEmbeddedMode(bool embedded) {
     }
   } else {
     menuBar()->show();
+    toolbar_->show();
     for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
       dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
       if (auto* titleBar = dock->titleBarWidget()) {
@@ -127,6 +129,96 @@ void TopologyEditorWidget::setAvailableIcdFrames(const QStringList& frames) {
   if (property_panel_) {
     property_panel_->setAvailableIcdFrames(frames);
   }
+}
+
+// ── IEditorCommandSource ────────────────────────────────────────
+
+QList<etest::app::EditorCommand> TopologyEditorWidget::editorCommands() {
+  QList<etest::app::EditorCommand> cmds;
+  auto addCmd = [](const QString& group, const QString& title,
+                   const QString& iconName, bool large, QAction* action) {
+    etest::app::EditorCommand c;
+    c.group = group;
+    c.title = title;
+    c.iconName = iconName;
+    c.large = large;
+    c.trigger = [action]() { action->trigger(); };
+    c.isEnabled = [action]() { return action->isEnabled(); };
+    return c;
+  };
+  auto addCheckableCmd = [&](const QString& group, const QString& title,
+                             const QString& iconName, bool large,
+                             QAction* action) {
+    etest::app::EditorCommand c = addCmd(group, title, iconName, large, action);
+    c.checkable = true;
+    c.isChecked = [action]() { return action->isChecked(); };
+    return c;
+  };
+  // 编辑
+  cmds.append(addCmd(QStringLiteral("编辑"), QStringLiteral("撤销"),
+                     QStringLiteral("undo"), true, undo_action_));
+  cmds.append(addCmd(QStringLiteral("编辑"), QStringLiteral("重做"),
+                     QStringLiteral("redo"), true, redo_action_));
+  // 排列
+  cmds.append(addCmd(QStringLiteral("排列"), QStringLiteral("复制"),
+                     QStringLiteral("topo_copy"), false, copy_action_));
+  cmds.append(addCmd(QStringLiteral("排列"), QStringLiteral("粘贴"),
+                     QStringLiteral("topo_paste"), false, paste_action_));
+  cmds.append(addCmd(QStringLiteral("排列"), QStringLiteral("删除"),
+                     QStringLiteral("topo_delete"), false, delete_action_));
+  // 对齐 / 分布（带下拉菜单的大命令）
+  {
+    etest::app::EditorCommand c;
+    c.group = QStringLiteral("排列");
+    c.title = QStringLiteral("排列");
+    c.iconName = QStringLiteral("topo_align");
+    c.large = true;
+    c.isEnabled = [this]() { return align_left_action_->isEnabled(); };
+    c.menu = [this]() { return align_menu_; };
+    cmds.append(c);
+  }
+  {
+    etest::app::EditorCommand c;
+    c.group = QStringLiteral("排列");
+    c.title = QStringLiteral("分布");
+    c.iconName = QStringLiteral("topo_distribute");
+    c.large = true;
+    c.isEnabled = [this]() {
+      return distribute_horizontal_action_->isEnabled();
+    };
+    c.menu = [this]() { return distribute_menu_; };
+    cmds.append(c);
+  }
+  // 视图
+  cmds.append(addCmd(QStringLiteral("视图"), QStringLiteral("放大"),
+                     QStringLiteral("topo_zoom_in"), false, zoom_in_action_));
+  cmds.append(addCmd(QStringLiteral("视图"), QStringLiteral("缩小"),
+                     QStringLiteral("topo_zoom_out"), false, zoom_out_action_));
+  cmds.append(addCmd(QStringLiteral("视图"), QStringLiteral("重置"),
+                     QStringLiteral("topo_zoom_reset"), false,
+                     zoom_reset_action_));
+  cmds.append(addCmd(QStringLiteral("视图"), QStringLiteral("适应窗口"),
+                     QStringLiteral("topo_zoom_fit"), false, zoom_fit_action_));
+  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("面板"),
+                              QStringLiteral("topo_device"), false,
+                              device_palette_toggle_action_));
+  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("大纲"),
+                              QStringLiteral("topo_uut"), false,
+                              outline_toggle_action_));
+  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("属性"),
+                              QStringLiteral("topo_property"), false,
+                              property_toggle_action_));
+  // 文件
+  cmds.append(addCmd(QStringLiteral("文件"), QStringLiteral("导出图片"),
+                     QStringLiteral("topo_export"), false,
+                     export_image_action_));
+  cmds.append(addCmd(QStringLiteral("文件"), QStringLiteral("清理无效连线"),
+                     QStringLiteral("topo_cleanup"), false, cleanup_action_));
+  return cmds;
+}
+
+QObject* TopologyEditorWidget::commandStateObject() {
+  return this;
 }
 
 void TopologyEditorWidget::showStatusMessage(const QString& msg) {
@@ -340,12 +432,15 @@ void TopologyEditorWidget::resizeEvent(QResizeEvent* event) {
 
 bool TopologyEditorWidget::eventFilter(QObject* obj, QEvent* event) {
   if (event->type() == QEvent::Close) {
-    if (obj == device_palette_dock_)
+    if (obj == device_palette_dock_) {
       syncDockCloseAction(device_palette_toggle_action_);
-    else if (obj == outline_dock_)
+    } else if (obj == outline_dock_) {
       syncDockCloseAction(outline_toggle_action_);
-    else if (obj == property_dock_)
+    } else if (obj == property_dock_) {
       syncDockCloseAction(property_toggle_action_);
+    }
+    // 面板开关勾选态变化 → 刷新 Ribbon 上下文命令（3.6 状态同步）
+    emit commandsChanged();
   }
   return QMainWindow::eventFilter(obj, event);
 }
@@ -358,132 +453,132 @@ void TopologyEditorWidget::initUi() {
   };
 
   // ── QToolBar ──
-  auto* toolbar = addToolBar(QStringLiteral("拓扑工具栏"));
-  toolbar->setObjectName(QStringLiteral("topologyToolbar"));
-  toolbar->setMovable(false);
-  toolbar->setFloatable(false);
+  toolbar_ = addToolBar(QStringLiteral("拓扑工具栏"));
+  toolbar_->setObjectName(QStringLiteral("topologyToolbar"));
+  toolbar_->setMovable(false);
+  toolbar_->setFloatable(false);
 
   // ── 撤销 / 重做 ──
   undo_action_ = new QAction(topoIcon(QStringLiteral("undo")),
                              QStringLiteral("撤销"), this);
   undo_action_->setEnabled(false);
-  toolbar->addAction(undo_action_);
+  toolbar_->addAction(undo_action_);
   redo_action_ = new QAction(topoIcon(QStringLiteral("redo")),
                              QStringLiteral("重做"), this);
   redo_action_->setEnabled(false);
-  toolbar->addAction(redo_action_);
+  toolbar_->addAction(redo_action_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // ── 编辑组 ──
   copy_action_ = new QAction(topoIcon(QStringLiteral("topo_copy")),
                              QStringLiteral("复制"), this);
   copy_action_->setToolTip(QStringLiteral("复制选中元素 (Ctrl+C)"));
   copy_action_->setEnabled(false);
-  toolbar->addAction(copy_action_);
+  toolbar_->addAction(copy_action_);
 
   paste_action_ = new QAction(topoIcon(QStringLiteral("topo_paste")),
                               QStringLiteral("粘贴"), this);
   paste_action_->setToolTip(QStringLiteral("粘贴 (Ctrl+V)"));
   paste_action_->setEnabled(false);
-  toolbar->addAction(paste_action_);
+  toolbar_->addAction(paste_action_);
 
   delete_action_ = new QAction(topoIcon(QStringLiteral("topo_delete")),
                                QStringLiteral("删除"), this);
   delete_action_->setToolTip(QStringLiteral("删除选中元素 (Delete)"));
   delete_action_->setEnabled(false);
-  toolbar->addAction(delete_action_);
+  toolbar_->addAction(delete_action_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // ── 排列/分布组 ──
   {
     align_action_ = new QAction(
         topoIcon(QStringLiteral("topo_align")), QStringLiteral("排列"), this);
-    auto* alignBtn = new QToolButton(toolbar);
+    auto* alignBtn = new QToolButton(toolbar_);
     alignBtn->setDefaultAction(align_action_);
     alignBtn->setPopupMode(QToolButton::InstantPopup);
-    auto* alignMenu = new QMenu(alignBtn);
-    align_left_action_ = alignMenu->addAction(
+    align_menu_ = new QMenu(alignBtn);
+    align_left_action_ = align_menu_->addAction(
         topoIcon(QStringLiteral("topo_align_left")), QStringLiteral("左对齐"));
     align_hcenter_action_ =
-        alignMenu->addAction(topoIcon(QStringLiteral("topo_align_center")),
-                             QStringLiteral("水平居中"));
-    align_right_action_ = alignMenu->addAction(
+        align_menu_->addAction(topoIcon(QStringLiteral("topo_align_center")),
+                               QStringLiteral("水平居中"));
+    align_right_action_ = align_menu_->addAction(
         topoIcon(QStringLiteral("topo_align_right")), QStringLiteral("右对齐"));
-    alignMenu->addSeparator();
-    align_top_action_ = alignMenu->addAction(
+    align_menu_->addSeparator();
+    align_top_action_ = align_menu_->addAction(
         topoIcon(QStringLiteral("topo_align_top")), QStringLiteral("顶端对齐"));
     align_vcenter_action_ =
-        alignMenu->addAction(topoIcon(QStringLiteral("topo_align_middle")),
-                             QStringLiteral("垂直居中"));
+        align_menu_->addAction(topoIcon(QStringLiteral("topo_align_middle")),
+                               QStringLiteral("垂直居中"));
     align_bottom_action_ =
-        alignMenu->addAction(topoIcon(QStringLiteral("topo_align_bottom")),
-                             QStringLiteral("底端对齐"));
-    alignBtn->setMenu(alignMenu);
-    toolbar->addWidget(alignBtn);
+        align_menu_->addAction(topoIcon(QStringLiteral("topo_align_bottom")),
+                               QStringLiteral("底端对齐"));
+    alignBtn->setMenu(align_menu_);
+    toolbar_->addWidget(alignBtn);
   }
   {
     distribute_action_ = new QAction(
         topoIcon(QStringLiteral("topo_distribute")), QStringLiteral("分布"), this);
-    auto* distributeBtn = new QToolButton(toolbar);
+    auto* distributeBtn = new QToolButton(toolbar_);
     distributeBtn->setDefaultAction(distribute_action_);
     distributeBtn->setPopupMode(QToolButton::InstantPopup);
-    auto* distributeMenu = new QMenu(distributeBtn);
-    distribute_horizontal_action_ = distributeMenu->addAction(
+    distribute_menu_ = new QMenu(distributeBtn);
+    distribute_horizontal_action_ = distribute_menu_->addAction(
         topoIcon(QStringLiteral("topo_distribute_horizontal")),
         QStringLiteral("横向分布"));
-    distribute_vertical_action_ = distributeMenu->addAction(
+    distribute_vertical_action_ = distribute_menu_->addAction(
         topoIcon(QStringLiteral("topo_distribute_vertical")),
         QStringLiteral("纵向分布"));
-    distributeBtn->setMenu(distributeMenu);
-    toolbar->addWidget(distributeBtn);
+    distributeBtn->setMenu(distribute_menu_);
+    toolbar_->addWidget(distributeBtn);
   }
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // ── 缩放组 ──
   zoom_in_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_in")),
                                 QStringLiteral("放大"), this);
-  toolbar->addAction(zoom_in_action_);
+  toolbar_->addAction(zoom_in_action_);
   zoom_out_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_out")),
                                  QStringLiteral("缩小"), this);
-  toolbar->addAction(zoom_out_action_);
+  toolbar_->addAction(zoom_out_action_);
   zoom_reset_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_reset")),
                                    QStringLiteral("重置"), this);
-  toolbar->addAction(zoom_reset_action_);
+  toolbar_->addAction(zoom_reset_action_);
   zoom_fit_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_fit")),
                                   QStringLiteral("适应窗口"), this);
   zoom_fit_action_->setToolTip(QStringLiteral("缩放至所有拓扑元素可见"));
-  toolbar->addAction(zoom_fit_action_);
+  toolbar_->addAction(zoom_fit_action_);
 
   // 缩放比例标签
   zoom_label_ = new QLabel(QStringLiteral("100%"), this);
   zoom_label_->setObjectName(QStringLiteral("topologyZoomLabel"));
-  toolbar->addWidget(zoom_label_);
+  toolbar_->addWidget(zoom_label_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // ── 导出 ──
   export_image_action_ = new QAction(topoIcon(QStringLiteral("topo_export")),
                                      QStringLiteral("导出图片"), this);
   export_image_action_->setToolTip(QStringLiteral("导出拓扑图为 PNG"));
-  toolbar->addAction(export_image_action_);
+  toolbar_->addAction(export_image_action_);
 
-  toolbar->addSeparator();
+  toolbar_->addSeparator();
 
   // ── 清理无效连线 ──
   cleanup_action_ = new QAction(topoIcon(QStringLiteral("topo_cleanup")),
                                 QStringLiteral("清理无效连线"), this);
   cleanup_action_->setToolTip(QStringLiteral("检测并移除无效的连线和监听器挂载"));
-  toolbar->addAction(cleanup_action_);
+  toolbar_->addAction(cleanup_action_);
 
   // ── 弹簧 + 面板开关（右对齐）──
-  auto* spacer = new QWidget(toolbar);
+  auto* spacer = new QWidget(toolbar_);
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  toolbar->addWidget(spacer);
+  toolbar_->addWidget(spacer);
 
   auto makeToggleAction = [&](const QString& iconName,
                               const QString& text,
@@ -492,7 +587,7 @@ void TopologyEditorWidget::initUi() {
     act->setCheckable(true);
     act->setChecked(true);
     act->setToolTip(tip);
-    toolbar->addAction(act);
+    toolbar_->addAction(act);
     return act;
   };
   device_palette_toggle_action_ =
@@ -596,6 +691,7 @@ void TopologyEditorWidget::initSignals() {
     bool hasSelection = !selected.isEmpty();
     delete_action_->setEnabled(hasSelection);
     copy_action_->setEnabled(hasSelection);
+    emit commandsChanged();
   });
 
   connect(view_, &TopologyView::addUutRequested, this,
@@ -705,10 +801,14 @@ void TopologyEditorWidget::initSignals() {
   connect(undoStack, &QUndoStack::canRedoChanged, redo_action_,
           &QAction::setEnabled);
   // 统一撤销状态通知：canUndo/canRedo 可用性变化转发到中继信号
-  connect(undoStack, &QUndoStack::canUndoChanged, this,
-          [this]() { emit undoStateChanged(); });
-  connect(undoStack, &QUndoStack::canRedoChanged, this,
-          [this]() { emit undoStateChanged(); });
+  connect(undoStack, &QUndoStack::canUndoChanged, this, [this]() {
+    emit undoStateChanged();
+    emit commandsChanged();
+  });
+  connect(undoStack, &QUndoStack::canRedoChanged, this, [this]() {
+    emit undoStateChanged();
+    emit commandsChanged();
+  });
   connect(undoStack, &QUndoStack::cleanChanged, this,
           [this](bool clean) { emit modificationChanged(!clean); });
 
@@ -1539,6 +1639,7 @@ void TopologyEditorWidget::updateAlignDistributeActions() {
   align_bottom_action_->setEnabled(en);
   distribute_horizontal_action_->setEnabled(en);
   distribute_vertical_action_->setEnabled(en);
+  emit commandsChanged();
 }
 
 void TopologyEditorWidget::doAlign(Align alignType) {

@@ -9,10 +9,12 @@
 #include <QVector>
 
 #include "IEditor.h"
+#include "IEditorCommands.h"
 #include "RunConfig.h"
 
 class QAction;
 class QDockWidget;
+class QMenu;
 class QToolBar;
 class QToolButton;
 
@@ -30,7 +32,9 @@ class VisualizerPaletteWidget;
 // 编辑 .erun 运行配置。纯新增骨架：IEditor 接口 + .erun 序列化/反序列化
 // + 基础数据展示。可视化区手动布局（VisualizerProxy/resize）后续作为
 // 主视图增强接入，不破坏现有 ExecutionDashboard。
-class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
+class RunConfigEditor : public QMainWindow,
+                        public etest::app::IEditor,
+                        public etest::app::IEditorCommandSource {
   Q_OBJECT
 
  public:
@@ -44,6 +48,11 @@ class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
   QString filePath() const override;
   QWidget* widget() override;
   QObject* signalObject() override;
+
+  // IEditorCommandSource
+  QList<etest::app::EditorCommand> editorCommands() override;
+  QObject* commandStateObject() override;
+
   bool isModified() const override;
   bool save() override;
   bool saveAs(const QString& path) override;
@@ -63,6 +72,7 @@ class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
  signals:
   void modificationChanged(bool modified);
   void undoStateChanged();
+  void commandsChanged();
 
  protected:
   // 拦截 dock 关闭按钮，同步工具栏 toggle 勾选态（与三编辑器统一）
@@ -114,6 +124,8 @@ class RunConfigEditor : public QMainWindow, public etest::app::IEditor {
   etest::runconfig::VisualizationArea* vis_area_ = nullptr;
   QToolButton* align_btn_ = nullptr;   // 排列（选中≥2 才启用）
   QToolButton* dist_btn_ = nullptr;    // 分布
+  QMenu* align_menu_ = nullptr;        // 排列下拉菜单（命令定义模式复用）
+  QMenu* dist_menu_ = nullptr;         // 分布下拉菜单（命令定义模式复用）
 
   // 工具栏 actions（存成员供 reloadToolbarIcons 重设图标）
   QAction* undo_action_ = nullptr;

@@ -72,6 +72,7 @@
 #include "TuxSaverController.h"
 #include "welcome/WelcomeWidget.h"
 #include "api/IEditor.h"
+#include "api/IEditorCommands.h"
 #include "auth/AuthService.h"
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
@@ -775,6 +776,8 @@ void MainWindow::initSignals() {
       [this, &projectMgr](IEditor* editor) {
         bool hasEditor = (editor != nullptr);
         bool hasSelection = false;
+        bool isTextEditor =
+            hasEditor && dynamic_cast<TextEditorWidget*>(editor) != nullptr;
 
         save_as_action_->setEnabled(hasEditor);
         close_file_action_->setEnabled(hasEditor);
@@ -830,12 +833,13 @@ void MainWindow::initSignals() {
         }
         updateWindowTitle();
 
+        // D13：剪切/复制/粘贴/查找/替换/跳转行 仅文本编辑器启用
         edit_cut_action_->setEnabled(hasSelection);
         edit_copy_action_->setEnabled(hasSelection);
-        edit_paste_action_->setEnabled(hasEditor);
-        edit_find_action_->setEnabled(hasEditor);
-        edit_replace_action_->setEnabled(hasEditor);
-        edit_go_to_line_action_->setEnabled(hasEditor);
+        edit_paste_action_->setEnabled(isTextEditor);
+        edit_find_action_->setEnabled(isTextEditor);
+        edit_replace_action_->setEnabled(isTextEditor);
+        edit_go_to_line_action_->setEnabled(isTextEditor);
         if (running_locked_)
           disableEditActions();
 
@@ -860,6 +864,9 @@ void MainWindow::initSignals() {
         } else {
           LOG_INFO("PROJECT_UI", "currentEditorChanged: 无活动编辑器");
         }
+
+        // 上下文页随当前编辑器切换（命令定义模式）
+        applyContextPageVisibility();
       });
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
@@ -912,6 +919,8 @@ void MainWindow::initSignals() {
           [this](const QString&) {
             close_all_files_action_->setEnabled(
                 editor_manager_->currentEditor() != nullptr);
+            // 关闭编辑器后上下文页回退（closeFile 不发射 currentEditorChanged）
+            applyContextPageVisibility();
           });
 
   // 手动初始化按钮状态，处理程序启动时已经有打开的编辑器的情况
@@ -929,14 +938,18 @@ void MainWindow::initSignals() {
   syncEditorActions();
   edit_cut_action_->setEnabled(hasSelection);
   edit_copy_action_->setEnabled(hasSelection);
-  edit_paste_action_->setEnabled(hasEditor);
+  bool isTextEditor = current_editor &&
+                      dynamic_cast<TextEditorWidget*>(current_editor) != nullptr;
+  edit_paste_action_->setEnabled(isTextEditor);
 
   // 剪贴板处理：动态更新粘贴按钮状态
   clipboard_ = QGuiApplication::clipboard();
   auto updatePasteState = [this]() {
-    bool hasEditor = (editor_manager_->currentEditor() != nullptr);
+    IEditor* editor = editor_manager_->currentEditor();
+    bool isTextEditor =
+        editor && dynamic_cast<TextEditorWidget*>(editor) != nullptr;
     bool hasText = !clipboard_->text().isEmpty();
-    edit_paste_action_->setEnabled(hasEditor && hasText);
+    edit_paste_action_->setEnabled(isTextEditor && hasText);
   };
   connect(clipboard_, &QClipboard::dataChanged, this, updatePasteState);
   updatePasteState();  // 初始化状态
@@ -1241,6 +1254,9 @@ void MainWindow::lazyInit() {
               }
               switching_page_ = false;
             }
+
+            // 上下文页随 page 状态联动（page1 隐藏、page0 恢复；D15）
+            applyContextPageVisibility();
           });
 
   // ── Ribbon category tab 切换 → central_stack page 切换 ──
@@ -1438,6 +1454,11 @@ void MainWindow::onThemeChanged(bool isDark) {
                  ThemeManager::instance().secondaryTextColor());
     ribbon_search_edit_->setPalette(pal);
   }
+
+  // 上下文页命令图标随主题刷新：强制重建命令（否则 context_commands_editor_ 守卫在
+  // 编辑器未变化时跳过重建，图标保留旧主题 pixmap）
+  context_commands_editor_ = nullptr;
+  applyContextPageVisibility();
 }
 
 void MainWindow::createStatusBar() {
@@ -2297,7 +2318,13 @@ void MainWindow::setupRibbon() {
   ribbon->applicationButton()->setText(QStringLiteral("文件"));
 
   // 文件 Application Button 菜单 (QMenu)
+  // 新建项目/打开项目/打开文件/保存 自原「编辑」页文件 panel 并入（D12）
   auto* app_menu = new QMenu(this);
+  app_menu->addAction(new_project_action_);
+  app_menu->addAction(open_project_action_);
+  app_menu->addAction(open_file_action_);
+  app_menu->addAction(save_action_);
+  app_menu->addSeparator();
   app_menu->addAction(new_file_action_);
   app_menu->addSeparator();
   app_menu->addAction(close_project_action_);
@@ -2324,39 +2351,10 @@ void MainWindow::setupRibbon() {
   }
 
   // ============================================================
-  //  编辑
+  //  视图（常驻全局页：IDE 布局开关）
   // ============================================================
   {
-    auto* cat = ribbon->addCategoryPage(QStringLiteral("编辑"));
-
-    // 文件 Panel
-    auto* panel_file = cat->addPanel(QStringLiteral("文件"));
-    panel_file->addLargeAction(new_project_action_);
-    panel_file->addLargeAction(open_project_action_);
-    panel_file->addLargeAction(open_file_action_);
-    panel_file->addLargeAction(save_action_);
-
-    // 编辑 Panel
-    auto* panel_edit = cat->addPanel(QStringLiteral("编辑"));
-    panel_edit->addLargeAction(edit_undo_action_);
-    panel_edit->addLargeAction(edit_redo_action_);
-    panel_edit->addSeparator();
-
-    edit_cut_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("file_cut")));
-    edit_copy_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("file_copy")));
-    edit_paste_action_->setIcon(
-        AppIconProvider::instance().icon(QStringLiteral("file_paste")));
-    panel_edit->addSmallAction(edit_cut_action_);
-    panel_edit->addSmallAction(edit_copy_action_);
-    panel_edit->addSmallAction(edit_paste_action_);
-
-    panel_edit->addSeparator();
-    panel_edit->addSmallAction(edit_find_action_);
-    panel_edit->addSmallAction(edit_replace_action_);
-    panel_edit->addSmallAction(edit_go_to_line_action_);
-
+    auto* cat = ribbon->addCategoryPage(QStringLiteral("视图"));
     // 视图 Panel
     auto* panel_view = cat->addPanel(QStringLiteral("视图"));
 
@@ -2638,8 +2636,226 @@ void MainWindow::setupRibbon() {
     }
   }
 
+  // 上下文页（随当前编辑器动态切换）初始创建，全部隐藏（D14：insert 0 后立即 hide）
+  setupContextCategories();
+
   // 设置 Ribbon 运行按钮的初始状态
   execution_controller_->syncControlStates();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Ribbon 上下文页（命令定义模式）
+// ══════════════════════════════════════════════════════════════════════════════
+
+QString MainWindow::contextKeyForEditor(IEditor* editor) {
+  if (!editor) {
+    return QString();
+  }
+  const QString type = editor->editorType();
+  if (type == QStringLiteral("topology")) {
+    return QStringLiteral("拓扑");
+  }
+  if (type == QStringLiteral("protocol")) {
+    return QStringLiteral("协议");
+  }
+  if (type == QStringLiteral("testprogram")) {
+    return QStringLiteral("测试程序");
+  }
+  if (type == QStringLiteral("runconfig")) {
+    return QStringLiteral("运行配置");
+  }
+  if (type == QStringLiteral("mockconfig")) {
+    return QStringLiteral("Mock");
+  }
+  return QStringLiteral("编辑");  // text / image / etlog 等普通编辑器兜底
+}
+
+SARibbonCategory* MainWindow::contextCategory(const QString& key) {
+  return context_categories_.value(key, nullptr);
+}
+
+void MainWindow::setupContextCategories() {
+  auto* ribbon = ribbonBar();
+  const QStringList keys = {
+      QStringLiteral("拓扑"), QStringLiteral("协议"),
+      QStringLiteral("测试程序"), QStringLiteral("运行配置"),
+      QStringLiteral("Mock"), QStringLiteral("编辑")};
+  for (const QString& key : keys) {
+    auto* cat = ribbon->insertCategoryPage(key, 0);
+    // 编辑兜底页填充通用编辑动作（静态，随 QAB 共享同一 QAction）；专用页由
+    // refreshContextCommands 按命令清单重建
+    if (key == QStringLiteral("编辑")) {
+      edit_cut_action_->setIcon(
+          AppIconProvider::instance().icon(QStringLiteral("file_cut")));
+      edit_copy_action_->setIcon(
+          AppIconProvider::instance().icon(QStringLiteral("file_copy")));
+      edit_paste_action_->setIcon(
+          AppIconProvider::instance().icon(QStringLiteral("file_paste")));
+      auto* panel_edit = cat->addPanel(QStringLiteral("编辑"));
+      panel_edit->addLargeAction(edit_undo_action_);
+      panel_edit->addLargeAction(edit_redo_action_);
+      panel_edit->addSeparator();
+      panel_edit->addSmallAction(edit_cut_action_);
+      panel_edit->addSmallAction(edit_copy_action_);
+      panel_edit->addSmallAction(edit_paste_action_);
+      panel_edit->addSeparator();
+      panel_edit->addSmallAction(edit_find_action_);
+      panel_edit->addSmallAction(edit_replace_action_);
+      panel_edit->addSmallAction(edit_go_to_line_action_);
+    }
+    context_categories_[key] = cat;
+    // D14：insert 到 index 0 后立即 hide，确保 showCategory 恢复位置固定为 0
+    ribbon->hideCategory(cat);
+  }
+  // 初始全部隐藏；启动空态无上下文页（D16）
+  clearContextActions();
+}
+
+void MainWindow::clearContextActions() {
+  if (context_commands_sender_) {
+    QObject::disconnect(context_commands_sender_, SIGNAL(commandsChanged()),
+                        this, SLOT(onContextCommandsChanged()));
+    context_commands_sender_ = nullptr;
+  }
+  for (QAction* action : context_actions_) {
+    delete action;
+  }
+  context_actions_.clear();
+  context_commands_editor_ = nullptr;
+}
+
+void MainWindow::applyContextPageVisibility() {
+  // 统一在 switching_page_ 守卫作用域内执行 hide/show（D15），防止 showCategory
+  // 无条件 raise 触发 currentRibbonTabChanged 误切 central_stack page
+  const bool saved_guard = switching_page_;
+  switching_page_ = true;
+
+  const bool page0 = central_stack_ && central_stack_->currentIndex() == 0;
+  IEditor* editor = editor_manager_ ? editor_manager_->currentEditor() : nullptr;
+  const QString key = page0 ? contextKeyForEditor(editor) : QString();
+
+  if (!page0) {
+    // 运行态：隐藏全部上下文页，保留命令动作（编辑器仍存活，回 page0 复用）
+    for (auto it = context_categories_.constBegin();
+         it != context_categories_.constEnd(); ++it) {
+      ribbonBar()->hideCategory(it.value());
+    }
+  } else if (key.isEmpty()) {
+    // 纯空态：隐藏全部上下文页，清空命令动作
+    for (auto it = context_categories_.constBegin();
+         it != context_categories_.constEnd(); ++it) {
+      ribbonBar()->hideCategory(it.value());
+    }
+    clearContextActions();
+  } else {
+    for (auto it = context_categories_.constBegin();
+         it != context_categories_.constEnd(); ++it) {
+      if (it.key() == key) {
+        ribbonBar()->showCategory(it.value());
+      } else {
+        ribbonBar()->hideCategory(it.value());
+      }
+    }
+    if (key == QStringLiteral("编辑")) {
+      clearContextActions();  // 兜底页为静态动作，无命令清单
+    } else if (context_commands_editor_ != editor) {
+      refreshContextCommands();  // 仅编辑器变化时重建命令
+    }
+  }
+
+  switching_page_ = saved_guard;
+}
+
+void MainWindow::refreshContextCommands() {
+  clearContextActions();
+
+  IEditor* editor = editor_manager_->currentEditor();
+  if (!editor) {
+    return;
+  }
+  auto* source = dynamic_cast<IEditorCommandSource*>(editor);
+  if (!source) {
+    return;  // 非命令贡献编辑器：兜底「编辑」页为静态动作，无需重建
+  }
+  SARibbonCategory* cat = contextCategory(contextKeyForEditor(editor));
+  if (!cat) {
+    return;
+  }
+
+  // 清空 category 现有 panel（面板随命令清单重建）
+  const auto panels = cat->panelList();
+  for (SARibbonPanel* panel : panels) {
+    cat->removePanel(panel);
+  }
+
+  const QList<EditorCommand> commands = source->editorCommands();
+  QMap<QString, SARibbonPanel*> group_panels;
+  int index = 0;
+  for (const EditorCommand& command : commands) {
+    SARibbonPanel* panel = group_panels.value(command.group);
+    if (!panel) {
+      panel = cat->addPanel(command.group);
+      group_panels[command.group] = panel;
+    }
+    auto* action = new QAction(command.title, this);
+    if (!command.iconName.isEmpty()) {
+      action->setIcon(AppIconProvider::instance().icon(command.iconName));
+    }
+    action->setCheckable(command.checkable);
+    action->setData(index);
+    if (command.isEnabled) {
+      action->setEnabled(command.isEnabled());
+    }
+    if (command.checkable && command.isChecked) {
+      action->setChecked(command.isChecked());
+    }
+    if (command.menu) {
+      action->setMenu(command.menu());
+    }
+    connect(action, &QAction::triggered, this, [command]() {
+      if (command.trigger) {
+        command.trigger();
+      }
+    });
+    if (command.large) {
+      panel->addLargeAction(action);
+    } else {
+      panel->addSmallAction(action);
+    }
+    context_actions_.append(action);
+    ++index;
+  }
+  context_commands_editor_ = editor;
+
+  // 状态同步：命令清单变化（enabled/checked）→ 刷新上下文动作。
+  // commandStateObject 约定携带 `commandsChanged()` 信号，旧式 SIGNAL/SLOT 连接。
+  if (QObject* state_object = source->commandStateObject()) {
+    context_commands_sender_ = state_object;
+    QObject::connect(state_object, SIGNAL(commandsChanged()), this,
+                     SLOT(onContextCommandsChanged()));
+  }
+}
+
+void MainWindow::onContextCommandsChanged() {
+  IEditor* editor = editor_manager_->currentEditor();
+  auto* source = editor ? dynamic_cast<IEditorCommandSource*>(editor) : nullptr;
+  if (!source) {
+    return;
+  }
+  const QList<EditorCommand> commands = source->editorCommands();
+  for (QAction* action : context_actions_) {
+    const int i = action->data().toInt();
+    if (i < 0 || i >= commands.size()) {
+      continue;
+    }
+    const EditorCommand& command = commands.at(i);
+    if (command.isEnabled) {
+      action->setEnabled(command.isEnabled());
+    }
+    if (command.checkable && command.isChecked) {
+      action->setChecked(command.isChecked());
+    }
+  }
 }
 
 void MainWindow::saveWindowState() {
@@ -2911,13 +3127,16 @@ void MainWindow::enableEditActions() {
   close_all_files_action_->setEnabled(hasEditors &&
                                       editor_manager_->allEditors().size() > 1);
 
-  // 编辑操作（有编辑器时 enable，cut/copy 精确态由 Qsci selectionChanged 修正）
-  edit_cut_action_->setEnabled(hasEditors);
-  edit_copy_action_->setEnabled(hasEditors);
-  edit_paste_action_->setEnabled(hasEditors);
-  edit_find_action_->setEnabled(hasEditors);
-  edit_replace_action_->setEnabled(hasEditors);
-  edit_go_to_line_action_->setEnabled(hasEditors);
+  // D13：剪切/复制/粘贴/查找/替换/跳转行 仅文本编辑器启用（cut/copy 精确态由
+  // Qsci selectionChanged 修正）
+  IEditor* editor = editor_manager_->currentEditor();
+  bool isTextEditor = editor && dynamic_cast<TextEditorWidget*>(editor) != nullptr;
+  edit_cut_action_->setEnabled(hasEditors && isTextEditor);
+  edit_copy_action_->setEnabled(hasEditors && isTextEditor);
+  edit_paste_action_->setEnabled(isTextEditor);
+  edit_find_action_->setEnabled(isTextEditor);
+  edit_replace_action_->setEnabled(isTextEditor);
+  edit_go_to_line_action_->setEnabled(isTextEditor);
   new_project_action_->setEnabled(true);
   open_project_action_->setEnabled(true);
   const bool projectOpen =
