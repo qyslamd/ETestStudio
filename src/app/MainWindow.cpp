@@ -113,8 +113,7 @@ MainWindow::MainWindow(QWidget* parent, StartupSplashWidget* splash)
       execution_controller_(new ExecutionPanelController(this, this)),
       splash_widget_(splash) {
   initUi();
-  initSignalsEarly();
-  // 安排懒加载（窗口 show() 之后执行）
+  // 安排懒加载（事件循环启动后分步执行，splash 分步进度载体）
   QTimer::singleShot(0, this, &MainWindow::lazyInit);
 
   LOG_INFO("MAIN", "主窗口初始化完成");
@@ -295,7 +294,7 @@ void MainWindow::reportSplashProgress(const QString& text, int percent) {
   }
 }
 
-void MainWindow::initSignalsEarly() {
+void MainWindow::initSignals() {
   // 主题切换
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
           &MainWindow::onThemeChanged);
@@ -357,9 +356,7 @@ void MainWindow::initSignalsEarly() {
                 QStringLiteral("测试执行完成 P%1 F%2").arg(pass).arg(fail),
                 QStringLiteral("查看"), [this]() { navigateTo(1); });
           });
-}
 
-void MainWindow::initSignalsLate() {
   // 辅助 lambda：根据面板显隐状态更新容器显隐
   auto updateContainerVisibility = [this]() {
     bool anyVisible = false;
@@ -1319,8 +1316,8 @@ void MainWindow::lazyInit() {
   // 4. 连接跨组件信号（此时所有子控件已就绪）
   // （WelcomeWidget 已在 initUi 中提前创建，避免白色占位闪烁）
   step_timer.restart();
-  initSignalsLate();
-  LOG_INFO("LAZY", "  [4/7] initSignalsLate: {} ms", step_timer.elapsed());
+  initSignals();
+  LOG_INFO("LAZY", "  [4/7] initSignals: {} ms", step_timer.elapsed());
   reportSplashProgress(QStringLiteral("连接组件信号"), 75);
 
   // 5. 初始化认证服务

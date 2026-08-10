@@ -79,8 +79,8 @@ class MainWindow : public SARibbonMainWindow {
 
  private:
   void initUi();
-  void initSignalsEarly();
-  void initSignalsLate();
+  // 所有子部件创建完毕后统一连接跨组件信号（lazyInit 内调用）
+  void initSignals();
   void lazyInit();
   void onThemeChanged(bool isDark);
 
