@@ -155,21 +155,19 @@
 
 > 还在酝酿中的想法，未到具体方案阶段，先记下来。
 
-- **Mock 所有的插件**（已出方案，见 `docs/plan/Mock模式推断与配置方案.md`）
-  原想法：mock 模式需要一个全局开关来开启，提供界面入口，放在执行页面，在开始执行之前，弄一个 checkbox，勾选上就走 Mock，否则就真实硬件，不靠拓扑或测试程序中编写字段。
-  讨论后结论：
-  - 「不靠拓扑中编写 mock 字段」采纳 -- 移除 `mock` 字段
-  - 「全局 checkbox 切换模式」放弃 -- 模式由拓扑选用的插件类型（pluginId -> is_mock）自动决定，设备在拓扑加载时实例化，运行时无法切换
-  - 「UI 配置 Mock 交互数据」保留 -- 新增 MockConfigDialog，入口在拓扑编辑器
-  - 业务流程梳理见 `docs/01-规划/测试执行业务流程.md`
+> 2026-08-11 梳理：Mock 已实现，移至「八、已完成」；UUID 已落地；测试报告 / ICD
+> 部分实现，状态已标注。
 
-- **测试报告还未实现**
+- **测试报告还未实现** 【部分实现：`EtlogViewerWidget`（.etlog 查看器）已落地；报告
+  导出 / 分类标记待梳理】
   状态记录，待后续设计
 
-- **UUID 四元组似乎不是很好啊**
+- **UUID 四元组似乎不是很好啊** 【已落地：UUID 实现规划 V1.1 + SignalRegistry 四索引
+  已实现；设计是否最优仍可讨论】
   存疑，需要重新审视 UUID 四元组设计是否最优
 
-- **ICD 协议规范还未弄好啊**
+- **ICD 协议规范还未弄好啊** 【部分解决：.eproto 降级为兼容格式、.eprotox(XML) 已成为
+  主格式；icd 遗留问题 V1.0 中 5 项未修复仍存在】
   状态记录，icd 遗留问题 V1.0 中有 5 项未修复
 
 - **core 完全不依赖 Qt**
@@ -376,6 +374,11 @@ UI 响应、文件操作均有明显差距，实际逻辑相同。
 - [x] **SARibbon 主窗口改造**
   QMainWindow -> SARibbonMainWindow，Ribbon 功能区替代传统菜单栏/工具栏
   (commit 7e15c75)
+
+- [x] **Mock 所有的插件**
+  "全局 checkbox 开关"方案放弃，模式由拓扑插件类型（pluginId -> is_mock）自动决定；
+  MockConfigEditor 与 mock 设备插件（AD/DA/串口/CAN/A429）落地（阶段 1-4）
+  -> [方案](docs/plan/Mock模式推断与配置方案.md)
 
 - [x] **core -> etest_core 重命名**
   统一 CMake 目标命名规范，涉及 12 个 CMakeLists.txt

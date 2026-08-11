@@ -98,7 +98,7 @@ scripts/build_ninja.sh -t debug -c
 13. git提交规则：
    - 能使用中文的描述必须使用中文
    - 当你生成 git commit 信息时：
-   - 使用 Co-Authored-By 信息（如果需要）：Co-Authored-By: claude code 助手 <zhouyohu@163.com>
+   - 严禁出现 Co-Authored-By 信息 以及 Co-Authored-By: claude code 助手等相关信息
    - 不使用默认的 Claude 署名
    - 提交信息必须通过 Bash heredoc (cat <<'EOF') 传入，禁止使用 PowerShell here-string (@'...'@)，避免 @ 与邮箱等内容的冲突
    - 提交信息的开始和结束不能有 @ 符号
