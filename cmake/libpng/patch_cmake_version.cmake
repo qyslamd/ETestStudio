@@ -88,10 +88,8 @@ project(libpng
     endif()
 endfunction()
 
-# 补丁 libpng CMakeLists.txt
-if(WIN32)
-    patch_libpng_cmake(
-        "${CMAKE_SOURCE_DIR}/3rdparty/libpng-1.6.43/CMakeLists.txt"
-        "libpng root CMakeLists.txt"
-    )
-endif()
+# 补丁 libpng CMakeLists.txt（全平台生效：升级 CMake 最低版本、注释 zlib 查找、移除 ASM 声明）
+patch_libpng_cmake(
+    "${CMAKE_SOURCE_DIR}/3rdparty/libpng-1.6.43/CMakeLists.txt"
+    "libpng root CMakeLists.txt"
+)

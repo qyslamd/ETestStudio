@@ -270,8 +270,9 @@ if(EXISTS "${TEST_PROJECTS_SOURCE_DIR}")
 endif()
 
 #=======================================
-# 安装打包工具链
+# 安装打包工具链（windeployqt / ISCC 均为 Windows 专属工具）
 #=======================================
+if(WIN32)
 
 # 查找 windeployqt — 从 Qt5::qmake 目标推导 bin 目录
 get_target_property(_qt_qmake Qt5::qmake IMPORTED_LOCATION)
@@ -311,6 +312,8 @@ if(EXISTS ${WINDEPLOYQT_EXECUTABLE})
     add_dependencies(make_deploy ${TARGET_NAME})
 endif()
 
+endif() # if(WIN32)
+
 #=======================================
 # 架构变量（供 configure_file 注入到 .iss.in / .bat.in）
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -345,7 +348,7 @@ configure_file(
 )
 
 # make_package target — 调用生成的 .bat 完成 windeployqt + ISCC
-if(EXISTS ${ISCC_EXECUTABLE})
+if(WIN32 AND EXISTS ${ISCC_EXECUTABLE})
     add_custom_target(make_package
         COMMAND "${CMAKE_BINARY_DIR}/scripts/make_installer.bat"
             "$<TARGET_FILE_DIR:${TARGET_NAME}>"

@@ -59,7 +59,8 @@ endif ( )
 ## SETUP
 # Optional libraries
 if ( NOT WIN32 )
-  find_package ( Readline )
+  # readline 仅影响 Lua CLI 交互，可选依赖，静默查找避免缺包警告
+  find_package ( Readline QUIET )
   if ( READLINE_FOUND )
     option ( LUA_USE_READLINE "Use readline in the Lua CLI." ON )
   endif ( )

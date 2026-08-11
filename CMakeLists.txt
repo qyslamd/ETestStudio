@@ -160,13 +160,18 @@ set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "Do not build spdlog tests" FORCE)
 add_subdirectory(3rdparty/spdlog-1.17.0)
 
 # QWindowKit - frameless window support library (used by SARibbon)
-set(QWINDOWKIT_BUILD_STATIC ON CACHE BOOL "Build static library for QWindowKit" FORCE)
-set(QWINDOWKIT_BUILD_EXAMPLES OFF CACHE BOOL "Do not build QWindowKit examples" FORCE)
-set(QWINDOWKIT_BUILD_DOCUMENTATIONS OFF CACHE BOOL "Do not build QWindowKit docs" FORCE)
-set(QWINDOWKIT_BUILD_QUICK OFF CACHE BOOL "Do not build QWindowKit quick module" FORCE)
-set(QWINDOWKIT_BUILD_WIDGETS ON CACHE BOOL "Build QWindowKit widgets module" FORCE)
-set(QWINDOWKIT_INSTALL OFF CACHE BOOL "Do not install QWindowKit" FORCE)
-add_subdirectory(3rdparty/qwindowkit-1.5.0)
+# Qt < 5.14 无法使用 frameless 库，低版本跳过构建并在下方关闭 SARibbon frameless 支持
+if(QT_VERSION VERSION_LESS "5.14")
+    message(STATUS "Qt version ${QT_VERSION} < 5.14, skip building QWindowKit, SARibbon frameless disabled")
+else()
+    set(QWINDOWKIT_BUILD_STATIC ON CACHE BOOL "Build static library for QWindowKit" FORCE)
+    set(QWINDOWKIT_BUILD_EXAMPLES OFF CACHE BOOL "Do not build QWindowKit examples" FORCE)
+    set(QWINDOWKIT_BUILD_DOCUMENTATIONS OFF CACHE BOOL "Do not build QWindowKit docs" FORCE)
+    set(QWINDOWKIT_BUILD_QUICK OFF CACHE BOOL "Do not build QWindowKit quick module" FORCE)
+    set(QWINDOWKIT_BUILD_WIDGETS ON CACHE BOOL "Build QWindowKit widgets module" FORCE)
+    set(QWINDOWKIT_INSTALL OFF CACHE BOOL "Do not install QWindowKit" FORCE)
+    add_subdirectory(3rdparty/qwindowkit-1.5.0)
+endif()
 
 # SARibbon CMake 版本补丁：更新 cmake_minimum_required 避免 deprecation 警告
 include(cmake/saribbon/patch_cmake_version.cmake)
@@ -177,7 +182,12 @@ include(cmake/saribbon/patch_qwindowkit.cmake)
 # SARibbon 构建选项（须在 patch_examples.cmake 之前设置）
 set(SARIBBON_BUILD_STATIC_LIBS ON CACHE BOOL "Build static library for SARibbon" FORCE)
 set(SARIBBON_BUILD_EXAMPLES OFF CACHE BOOL "Do not build SARibbon examples" FORCE)
-set(SARIBBON_USE_FRAMELESS_LIB ON CACHE BOOL "Use QWindowKit for frameless window" FORCE)
+# Qt < 5.14 无法使用 frameless 库（QWindowKit 最低要求 5.14），否则 SARibbon 内部会降级并发出警告
+if(QT_VERSION VERSION_LESS "5.14")
+    set(SARIBBON_USE_FRAMELESS_LIB OFF CACHE BOOL "Use QWindowKit for frameless window" FORCE)
+else()
+    set(SARIBBON_USE_FRAMELESS_LIB ON CACHE BOOL "Use QWindowKit for frameless window" FORCE)
+endif()
 set(SARIBBON_INSTALL_IN_CURRENT_DIR OFF CACHE BOOL "Do not install in current dir" FORCE)
 
 # SARibbon 示例补丁：为每个 example 的 CMakeLists.txt 添加 configure_file
@@ -278,6 +288,8 @@ add_subdirectory(src)
 # =======================================
 # 包含单元测试
 option(BUILD_TESTING "Build unit tests" ON)
+# 第三方库测试开关：须在顶层声明，否则 BUILD_TESTING=OFF 时该变量不被消费，CMake 报未使用警告
+option(BUILD_TESTS_THIRD_PARTY "Build third party library tests" ON)
 if (BUILD_TESTING)
     include(CTest)
     enable_testing()
