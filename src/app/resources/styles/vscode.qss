@@ -1887,6 +1887,7 @@ QToolButton#HintPopupClearBtn:hover {
 /* ==================== ProjectStructureWidget Placeholder ==================== */
 QWidget#PhPlaceholder {
     background-color: #252526;
+    border-radius: 8px;
 }
 QScrollArea#PhScrollArea {
     background-color: transparent;
@@ -1895,7 +1896,7 @@ QScrollArea#PhScrollArea {
 QScrollArea#PhScrollArea > QWidget > QWidget {
     background-color: transparent;
 }
-QWidget#PhScrollContent {
+QWidget#ScrollAreaContent {
     background-color: transparent;
 }
 

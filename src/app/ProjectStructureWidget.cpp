@@ -137,8 +137,9 @@ void ProjectStructureWidget::initUi() {
   recent_projects_view_->setContextMenuPolicy(Qt::CustomContextMenu);
   recent_projects_model_ = new QStandardItemModel(this);
   recent_projects_view_->setModel(recent_projects_model_);
-  auto* rp_delegate = new OpenFileDelegate(this);
+  auto* rp_delegate = new RecentProjOrFileDelegate(this);
   rp_delegate->setCloseButtonVisible(false);
+  rp_delegate->setShowTime(true);  // 最近项目显示右侧时间
   recent_projects_view_->setItemDelegate(rp_delegate);
   rp_section_layout->addWidget(recent_projects_view_);
 
@@ -161,7 +162,7 @@ void ProjectStructureWidget::initUi() {
   recent_files_view_->setContextMenuPolicy(Qt::CustomContextMenu);
   recent_files_model_ = new QStandardItemModel(this);
   recent_files_view_->setModel(recent_files_model_);
-  auto* rf_delegate = new OpenFileDelegate(this);
+  auto* rf_delegate = new RecentProjOrFileDelegate(this);
   rf_delegate->setCloseButtonVisible(false);
   recent_files_view_->setItemDelegate(rf_delegate);
   recent_files_view_->setFixedHeight(200);
@@ -200,7 +201,7 @@ void ProjectStructureWidget::initUi() {
   open_files_view_->setContextMenuPolicy(Qt::CustomContextMenu);
   open_files_model_ = new QStandardItemModel(this);
   open_files_view_->setModel(open_files_model_);
-  open_file_delegate_ = new OpenFileDelegate(this);
+  open_file_delegate_ = new RecentProjOrFileDelegate(this);
   open_files_view_->setItemDelegate(open_file_delegate_);
   of_layout->addWidget(open_files_view_);
 
@@ -333,7 +334,7 @@ void ProjectStructureWidget::initSignals() {
               emit openFileCloseRequested(path);
             }
           });
-  connect(open_file_delegate_, &OpenFileDelegate::closeRequested, this,
+  connect(open_file_delegate_, &RecentProjOrFileDelegate::closeRequested, this,
           &ProjectStructureWidget::openFileCloseRequested);
 
   // ── 最近项目列表 ──
@@ -1657,6 +1658,7 @@ void ProjectStructureWidget::refreshRecentProjects() {
         QStringLiteral("folder")));
     item->setData(path, FilePathRole);
     item->setData(fi.absolutePath(), DirPathRole);
+    item->setData(timeStr, TimeStrRole);
     QString tooltip = path;
     if (!timeStr.isEmpty())
       tooltip += QStringLiteral("\n") + timeStr;

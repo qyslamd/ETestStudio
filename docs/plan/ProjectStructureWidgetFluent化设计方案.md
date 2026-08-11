@@ -28,14 +28,14 @@
 - 模式 0 结构（可滚动）：
   - 卡片 1（QGroupBox「没有打开的项目」）：`ph_desc` 两行描述 + `btn_grid`（3×2：
     `new_proj_btn_`/`open_proj_btn_` + 最多 4 个 `PhQuickBtn`，复用 `defaultCategories()`）。
-  - 卡片 3（QGroupBox「最近项目」）：QListView + `OpenFileDelegate`。
-  - 卡片 4（QGroupBox「最近文件」）：QListView + `OpenFileDelegate`，固定高 200。
+  - 卡片 3（QGroupBox「最近项目」）：QListView + `RecentProjOrFileDelegate`。
+  - 卡片 4（QGroupBox「最近文件」）：QListView + `RecentProjOrFileDelegate`，固定高 200。
 - 模式 1：垂直分割器 = 项目树（QTreeView + `ProjectTreeDelegate`）+ 「已打开」区
-  （QListView + `OpenFileDelegate`）。
+  （QListView + `RecentProjOrFileDelegate`）。
 - `initSignals` 中 `PhQuickBtn` 走 `createStandaloneFile`/`createNewFile`；
   `new_proj_btn_`/`open_proj_btn_` 发射 `newProjectRequested`/`openProjectRequested`。
   `createStandaloneFile` 唯一调用点是 PhQuickBtn lambda，随按钮删除成为死方法。
-- `OpenFileDelegate`（`src/app/widgets/OpenFileDelegate.cpp`）：paint 先
+- `RecentProjOrFileDelegate`（`src/app/widgets/RecentProjOrFileDelegate.cpp`）：paint 先
   `drawControl(CE_ItemViewItem)`（QSS ::item 生效），随后自绘一层半透明 hover 填充
   （约 42-49 行）。text 布局用 option.rect + 自有 8/4px 边距，与 QSS padding 不耦合。
 - 样式：objectName 选择器（PhPlaceholder/PhDesc/PhProjectBtn/PhQuickBtn/PhSectionLabel
@@ -70,18 +70,22 @@
     `::item:selected` 对称规则（default 主题现缺失）；`::item` 显式覆盖全局
     `QListView::item` padding（vscode.qss:257-259），控制行高与圆角条。
 - 删除：`PhDesc`、`PhProjectBtn`、`PhQuickBtn` 相关块。
-- 列表 hover 统一走 QSS；**删除 OpenFileDelegate 自绘半透明 hover 填充**（约
-  OpenFileDelegate.cpp:42-49），避免双重高亮。
+- 列表 hover 统一走 QSS；**删除 RecentProjOrFileDelegate 自绘半透明 hover 填充**（约
+  RecentProjOrFileDelegate.cpp:42-49），避免双重高亮。
 - 列表项图标：model 项 `setIcon`（最近项目 folder、最近文件/已打开 `file_generic`，
-  经 AppIconProvider）；OpenFileDelegate 文本起点按 `initStyleOption` 后的
+  经 AppIconProvider）；RecentProjOrFileDelegate 文本起点按 `initStyleOption` 后的
   `opt.features` 的 `HasDecoration` 偏移 `decorationSize.width() + spacing` 避开图标
   （仅此一处文本布局改动，关闭按钮与其余绘制不动）。
+- 列表项为两行布局（第 1 行名称粗体、第 2 行路径小一号），
+  `RecentProjOrFileDelegate` 经 `setShowTime` 控制右侧时间显示（最近项目开、
+  其余关）、`setCloseButtonVisible` 控制 hover 关闭按钮（已打开开、其余关）。
+- 占位页容器 `QWidget#PhPlaceholder` 加 `border-radius: 8px`，与 PhEmptyCard 圆角呼应。
 - 项目树 hover/选中沿用 ProjectTreeDelegate 现状（不新增 QTreeView::item 规则）。
 - 空态图标经 `AppIconProvider` 加载 SVG，不硬编码颜色。
 
 ## 4. 方案选项对比
 
-### 方案 A：保留 QListView + OpenFileDelegate，紧凑列表行走 QSS + delegate 微调（推荐）
+### 方案 A：保留 QListView + RecentProjOrFileDelegate，紧凑列表行走 QSS + delegate 微调（推荐）
 
 - 数据与 delegate 绘制逻辑基本不动，外观走 QSS（行高、hover、选中）+ 删 delegate
   自绘 hover。
@@ -91,7 +95,7 @@
 
 ### 方案 B：换用自绘卡片控件
 
-- 每项独立 QWidget 卡片堆叠。视觉最重但改动大，与 OpenFileDelegate 职责重叠，
+- 每项独立 QWidget 卡片堆叠。视觉最重但改动大，与 RecentProjOrFileDelegate 职责重叠，
   且偏离 Win11 紧凑列表惯例。
 
 ### 决策
@@ -107,7 +111,7 @@
 | D2 | 卡片 1 简化为空态提示（QFrame：图标 + 主文案 + 副文案） | 占位页职责从"操作入口"降为"状态提示" |
 | D3 | 最近项目/最近文件保留，Fluent 紧凑列表行 | 侧边栏常驻可快速打开最近项；紧凑行符合 Win11 惯例、窄栏省空间 |
 | D4 | 模式 1 一并 Fluent 化，仅容器/视觉，树逻辑不动 | 统一视觉语言，降低回归风险 |
-| D5 | 保留 QListView + OpenFileDelegate，外观走 QSS + 删 delegate 自绘 hover | 改动最小；QSS ::item:hover 经 drawControl 生效，统一由 QSS 提供 hover 避免双重 |
+| D5 | 保留 QListView + RecentProjOrFileDelegate，外观走 QSS + 删 delegate 自绘 hover | 改动最小；QSS ::item:hover 经 drawControl 生效，统一由 QSS 提供 hover 避免双重 |
 | D6 | 空态图标经 AppIconProvider 加载 SVG | 主题自适应，禁 emoji/QSS 硬编码 |
 | D7 | `newProjectRequested`/`openProjectRequested` 信号保留声明，但移除占位页按钮发射源后 MainWindow 对它们的连接为死连接，一并删除 | 功能入口在 Ribbon/Welcome，无缺失；删除死连接防误导 |
 | D8 | `createStandaloneFile` 死方法、`PhDesc`/`PhProjectBtn`/`PhQuickBtn` QSS 块一并删除 | 随 btn_grid 移除成为死代码 |
@@ -124,7 +128,7 @@
     `open_files_view_` 均设 `PhRecentList`。
   - model 项 `setIcon`（最近项目 folder、最近文件/已打开 `file_generic`）。
   - 空分节整节隐藏（refactor refreshRecentProjects/refreshRecentFiles 的显隐逻辑）。
-- `src/app/widgets/OpenFileDelegate.cpp`：删除自绘半透明 hover 填充（约 42-49 行）；
+- `src/app/widgets/RecentProjOrFileDelegate.cpp`：删除自绘半透明 hover 填充（约 42-49 行）；
   文本起点按 `HasDecoration` 偏移图标宽度；如行高不足则 `sizeHint` 微调。
 - `src/app/MainWindow.cpp`：删除对 `newProjectRequested`/`openProjectRequested` 的死
   connect（约 539-542），确认 Welcome/Ribbon 入口不受影响。

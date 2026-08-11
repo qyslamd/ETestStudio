@@ -12,7 +12,7 @@
 #include <QWidget>
 #include "plugin_sdk/IDevicePlugin.h"
 #include "plugin_sdk/PluginManager.h"
-#include "widgets/OpenFileDelegate.h"
+#include "widgets/RecentProjOrFileDelegate.h"
 #include "widgets/ProjectTreeDelegate.h"
 
 class QFileSystemWatcher;
@@ -185,7 +185,7 @@ class ProjectStructureWidget : public QWidget {
   QLabel* open_files_header_label_ = nullptr;
   QListView* open_files_view_ = nullptr;
   QStandardItemModel* open_files_model_ = nullptr;
-  OpenFileDelegate* open_file_delegate_ = nullptr;
+  RecentProjOrFileDelegate* open_file_delegate_ = nullptr;
 
   QString project_path_;
   QStandardItem* root_item_ = nullptr;

@@ -127,8 +127,8 @@ add_executable(${TARGET_NAME} WIN32
     widgets/StartupSplashWidget.cpp
     widgets/RecentProjectCard.h
     widgets/RecentProjectCard.cpp
-    widgets/OpenFileDelegate.h
-    widgets/OpenFileDelegate.cpp
+    widgets/RecentProjOrFileDelegate.h
+    widgets/RecentProjOrFileDelegate.cpp
     widgets/ProjectTreeDelegate.h
     widgets/ProjectTreeDelegate.cpp
     dialogs/OverlayDialog.h
