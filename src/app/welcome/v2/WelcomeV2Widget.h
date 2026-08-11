@@ -6,7 +6,12 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+class QListView;
+class QStandardItemModel;
+
 namespace etest::app {
+
+class WelcomeRecentDelegate;
 
 // 新双栏启动页（VS Code 风格）：头部品牌区 + 左栏「开始/最近项目」+
 // 右栏「快速新建/入门指南」+ 底部状态条。背景沿用 CONFIG_WELCOME_BG_* 配置。
@@ -35,14 +40,17 @@ class WelcomeV2Widget : public QWidget {
   void initSignals();
   void loadBackground();
   void rebuildRecentList();
+  void removeRecentProject(const QString& path);
   void showNextTip();
   QWidget* makeStartSection();
   QWidget* makeRecentSection();
   QWidget* makeQuickCreateSection();
   QWidget* makeGuideSection();
 
-  // 最近项目
-  QVBoxLayout* recent_layout_ = nullptr;
+  // 最近项目（QListView + model + delegate，固定高度内部滚动）
+  QListView* recent_view_ = nullptr;
+  QStandardItemModel* recent_model_ = nullptr;
+  WelcomeRecentDelegate* recent_delegate_ = nullptr;
   QLabel* recent_empty_ = nullptr;
 
   // 每日提示

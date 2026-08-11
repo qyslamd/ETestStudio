@@ -25,6 +25,11 @@ QListView::item:hover {
 QListView::item:selected {
     background-color: rgba(0, 103, 192, 0.10);
 }
+/* Welcome 启动页最近项目列表：透明背景融入 Mica 卡片（覆盖全局 QListView 底色） */
+QListView#WelcomeRecentList {
+    background-color: transparent;
+    border: none;
+}
 
 /* ==================== QDoubleSpinBox ==================== */
 /* ==================== ValueLabelWidget ==================== */

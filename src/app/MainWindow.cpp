@@ -1628,13 +1628,21 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   open_file_action_->setEnabled(false);
   ribbon_search_edit_->setEnabled(true);
 
-  // 记录项目打开时间戳
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+
+  // 记录项目打开时间戳。key 必须与最近列表（CONFIG_RECENT_PROJECT_LIST）一致：
+  // 存项目文件路径（projectFilePath），而非 projectOpened 信号的 rootPath（目录），
+  // 否则 refreshRecentProjects / WelcomeV1 的 timestamps.contains(path) 永远不命中，
+  // 最近项目的时间无法显示。
   QVariantMap timestamps = ConfigManager::instance().get<QVariantMap>(
       CONFIG_RECENT_PROJECT_TIMESTAMPS);
-  timestamps[projectPath] = QDateTime::currentDateTime();
+  QString tsKey = projectPath;
+  if (auto* info = projectMgr.currentProject()) {
+    tsKey = info->projectFilePath();
+  }
+  timestamps[tsKey] = QDateTime::currentDateTime();
   ConfigManager::instance().set(CONFIG_RECENT_PROJECT_TIMESTAMPS, timestamps);
 
-  auto& projectMgr = etest::core::project::ProjectManager::instance();
   auto* project = projectMgr.currentProject();
   if (project) {
     status_bar_ctrl_->setProject(project->name());

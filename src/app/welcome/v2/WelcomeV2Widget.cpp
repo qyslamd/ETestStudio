@@ -1,13 +1,19 @@
 #include "WelcomeV2Widget.h"
 
+#include <QAbstractItemView>
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QListView>
+#include <QMenu>
 #include <QPainter>
 #include <QPushButton>
 #include <QRandomGenerator>
+#include <QStandardItem>
+#include <QStandardItemModel>
+#include <QStyleOptionViewItem>
 #include <QToolButton>
 
 #include "config/ConfigDefs.h"
@@ -15,7 +21,8 @@
 #include "core_ui/AppIconProvider.h"
 #include "logger/Logger.h"
 #include "version.h"
-#include "widgets/RecentProjectCard.h"
+#include "widgets/RecentProjOrFileDelegate.h"
+#include "widgets/WelcomeRecentDelegate.h"
 
 namespace etest::app {
 
@@ -153,6 +160,39 @@ void WelcomeV2Widget::initUi() {
 }
 
 void WelcomeV2Widget::initSignals() {
+  // 最近项目列表交互：点击打开、右键/移除按钮移除
+  if (recent_view_) {
+    connect(recent_view_, &QListView::clicked, this,
+            [this](const QModelIndex& index) {
+              const QString path = index.data(FilePathRole).toString();
+              if (!path.isEmpty()) {
+                emit projectOpenRequested(path);
+              }
+            });
+    connect(recent_view_, &QListView::customContextMenuRequested, this,
+            [this](const QPoint& pos) {
+              const QModelIndex index = recent_view_->indexAt(pos);
+              if (!index.isValid()) {
+                return;
+              }
+              const QString path = index.data(FilePathRole).toString();
+              if (path.isEmpty()) {
+                return;
+              }
+              QMenu menu(recent_view_);
+              auto* removeAction =
+                  menu.addAction(QStringLiteral("从列表中移除"));
+              if (menu.exec(recent_view_->viewport()->mapToGlobal(pos)) ==
+                  removeAction) {
+                removeRecentProject(path);
+              }
+            });
+  }
+  if (recent_delegate_) {
+    connect(recent_delegate_, &WelcomeRecentDelegate::removeRequested, this,
+            &WelcomeV2Widget::removeRecentProject);
+  }
+
   // 背景配置变化时重载（与 v1 同源，即时生效）
   auto& cfg = ConfigManager::instance();
   connect(&cfg, &ConfigManager::configChanged, this,
@@ -203,17 +243,31 @@ QWidget* WelcomeV2Widget::makeRecentSection() {
   title->setObjectName(QStringLiteral("welcomeSectionTitle"));
   lay->addWidget(title);
 
-  auto* listWidget = new QWidget(section);
-  auto* listLay = new QVBoxLayout(listWidget);
-  listLay->setContentsMargins(0, 0, 0, 0);
-  listLay->setSpacing(6);
-  recent_layout_ = listLay;
-  recent_empty_ = new QLabel(QStringLiteral("暂无最近项目"), listWidget);
+  // 空态标签（model 空时显示，与列表互斥）
+  recent_empty_ = new QLabel(QStringLiteral("暂无最近项目"), section);
   recent_empty_->setObjectName(QStringLiteral("welcomeRecentEmpty"));
   recent_empty_->setAlignment(Qt::AlignCenter);
-  listLay->addWidget(recent_empty_);
-  listLay->addStretch();
-  lay->addWidget(listWidget, 1);
+  recent_empty_->setFixedHeight(60);
+  lay->addWidget(recent_empty_);
+
+  // 最近项目列表：QListView + model + delegate（固定高度，内部滚动），背景透明
+  // （QSS #WelcomeRecentList）。改用列表避免 QWidget 逐项堆叠导致高度无限增长。
+  recent_view_ = new QListView(section);
+  recent_view_->setObjectName(QStringLiteral("WelcomeRecentList"));
+  recent_view_->setFrameShape(QFrame::NoFrame);
+  recent_view_->setMouseTracking(true);
+  recent_view_->setSelectionMode(QAbstractItemView::NoSelection);
+  recent_view_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  recent_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  recent_model_ = new QStandardItemModel(this);
+  recent_view_->setModel(recent_model_);
+  recent_delegate_ = new WelcomeRecentDelegate(this);
+  recent_view_->setItemDelegate(recent_delegate_);
+  // 固定高度：约 4 行（行高由 delegate sizeHint 决定），避免撑高整页
+  const int rowHeight =
+      recent_delegate_->sizeHint(QStyleOptionViewItem(), QModelIndex()).height();
+  recent_view_->setFixedHeight(4 * rowHeight);
+  lay->addWidget(recent_view_, 1);
   return section;
 }
 
@@ -281,16 +335,7 @@ void WelcomeV2Widget::refreshRecentProjects() {
 }
 
 void WelcomeV2Widget::rebuildRecentList() {
-  while (QLayoutItem* item = recent_layout_->takeAt(0)) {
-    if (QWidget* w = item->widget()) {
-      if (w != recent_empty_) {
-        w->deleteLater();
-      }
-    }
-    delete item;
-  }
-  // 空态标签常驻列表首项（不被 clear 销毁），列表为空时显示
-  recent_layout_->addWidget(recent_empty_);
+  recent_model_->clear();
 
   auto& cfg = ConfigManager::instance();
   const QStringList recentList =
@@ -305,26 +350,36 @@ void WelcomeV2Widget::rebuildRecentList() {
       continue;
     }
     QString timeStr;
-    if (timestamps.contains(path)) {
-      const QDateTime dt = timestamps[path].toDateTime();
+    QString tsKey = path;
+    if (!timestamps.contains(tsKey)) {
+      // 兼容历史数据：旧版本以项目根目录（rootPath）为 key，等价于项目文件父目录
+      tsKey = fi.absolutePath();
+    }
+    if (timestamps.contains(tsKey)) {
+      const QDateTime dt = timestamps[tsKey].toDateTime();
       timeStr = dt.toString(QStringLiteral("yyyy-MM-dd hh:mm"));
     }
-    auto* card =
-        new RecentProjectCard(path, displayName, fi.absolutePath(), timeStr);
-    connect(card, &RecentProjectCard::openRequested, this,
-            &WelcomeV2Widget::projectOpenRequested);
-    connect(card, &RecentProjectCard::removeRequested, this,
-            [this](const QString& p) {
-              auto& c = ConfigManager::instance();
-              QStringList list = c.get<QStringList>(CONFIG_RECENT_PROJECT_LIST);
-              list.removeAll(p);
-              c.set(CONFIG_RECENT_PROJECT_LIST, list);
-              rebuildRecentList();
-            });
-    recent_layout_->addWidget(card);
+    auto* item = new QStandardItem(displayName);
+    item->setEditable(false);
+    item->setData(path, FilePathRole);
+    item->setData(fi.absolutePath(), DirPathRole);
+    item->setData(timeStr, TimeStrRole);
+    recent_model_->appendRow(item);
   }
-  recent_layout_->addStretch();
-  recent_empty_->setVisible(recentList.isEmpty());
+
+  // 空态与列表互斥显示
+  const bool empty = recent_model_->rowCount() == 0;
+  recent_empty_->setVisible(empty);
+  recent_view_->setVisible(!empty);
+}
+
+void WelcomeV2Widget::removeRecentProject(const QString& path) {
+  auto& c = ConfigManager::instance();
+  QStringList list = c.get<QStringList>(CONFIG_RECENT_PROJECT_LIST);
+  if (list.removeAll(path) > 0) {
+    c.set(CONFIG_RECENT_PROJECT_LIST, list);
+    rebuildRecentList();
+  }
 }
 
 void WelcomeV2Widget::showNextTip() {

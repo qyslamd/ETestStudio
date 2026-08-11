@@ -90,7 +90,7 @@ void RecentProjOrFileDelegate::paint(QPainter* painter,
     pathFont.setPointSizeF(qMax(option.font.pointSizeF() - 1.0, 6.0));
     const QFontMetrics smallFm(pathFont);
     const QString elidedPath =
-        smallFm.elidedText(dirPath, Qt::ElideLeft, textWidth);
+        smallFm.elidedText(dirPath, Qt::ElideRight, textWidth);
     painter->setFont(pathFont);
     painter->setPen(tm.disabledTextColor());
     painter->drawText(QRect(textLeft, itemRect.top() + half, textWidth, half),

@@ -1647,8 +1647,13 @@ void ProjectStructureWidget::refreshRecentProjects() {
       continue;
 
     QString timeStr;
-    if (timestamps.contains(path)) {
-      QDateTime dt = timestamps[path].toDateTime();
+    QString tsKey = path;
+    if (!timestamps.contains(tsKey)) {
+      // 兼容历史数据：旧版本以项目根目录（rootPath）为 key，等价于项目文件父目录
+      tsKey = QFileInfo(path).absolutePath();
+    }
+    if (timestamps.contains(tsKey)) {
+      QDateTime dt = timestamps[tsKey].toDateTime();
       timeStr = dt.toString(QStringLiteral("yyyy-MM-dd hh:mm"));
     }
 
