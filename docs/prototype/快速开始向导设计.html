@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快速开始向导 UI 原型</title>
+<style>
+  :root {
+    --bg: #F3F3F3;
+    --card: #FFFFFF;
+    --border: rgba(0,0,0,0.08);
+    --ink: #242424;
+    --ink-2: #6E6E6E;
+    --ink-3: #9B9B9B;
+    --accent: #0067C0;
+    --accent-soft: rgba(0,103,192,0.08);
+    --hover: #F0F0F0;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    background: #E9E9E9; color: var(--ink);
+    padding: 24px; display: flex; flex-direction: column; gap: 18px;
+  }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .page-sub { color: var(--ink-2); font-size: 13px; margin-top: 4px; }
+  .toolbar { display: flex; gap: 8px; align-items: center; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; width: fit-content; }
+  .seg-btn { border: 1px solid var(--border); background: var(--card); padding: 6px 16px;
+    border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--ink); }
+  .seg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .stage { display: flex; gap: 28px; align-items: flex-start; }
+
+  /* ── Ribbon 开始页 ── */
+  .ribbon {
+    width: 720px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .ribbon-tabs { display: flex; gap: 2px; padding: 8px 12px 0; border-bottom: 1px solid var(--border); }
+  .ribbon-tab { padding: 6px 18px; font-size: 13px; color: var(--ink-2); border-radius: 6px 6px 0 0; }
+  .ribbon-tab.active { color: var(--accent); font-weight: 600;
+    border-bottom: 2px solid var(--accent); }
+  .ribbon-body { display: flex; gap: 16px; padding: 16px; }
+  .ribbon-panel { min-width: 130px; }
+  .ribbon-panel-title { font-size: 11px; color: var(--ink-3); margin-bottom: 8px;
+    letter-spacing: .02em; }
+  .ribbon-panel-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ribbon-large {
+    width: 72px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 10px 4px; border: 1px solid transparent; border-radius: 8px; cursor: pointer;
+  }
+  .ribbon-large:hover { background: var(--hover); }
+  .ribbon-large.primary { border-color: var(--accent); background: var(--accent-soft); }
+  .ribbon-large .ico {
+    width: 32px; height: 32px; border-radius: 6px; background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ribbon-large .ico svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+  .ribbon-large .lbl { font-size: 11px; color: var(--ink); text-align: center; }
+
+  /* ── Wizard ── */
+  .wizard {
+    width: 560px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  }
+  .wizard-head { padding: 22px 28px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; }
+  .wizard-head .wz-title { font-size: 18px; font-weight: 600; }
+  .wizard-head .wz-sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+  .wizard-head .steps { margin-left: auto; font-size: 12px; color: var(--ink-3); }
+  .wizard-body { padding: 24px 28px; min-height: 320px; display: flex; flex-direction: column; gap: 16px; }
+  .wizard-body h3 { font-size: 14px; font-weight: 600; }
+  .wizard-body .desc { font-size: 12.5px; color: var(--ink-2); line-height: 1.6; }
+  .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tpl-card { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border);
+    border-radius: 10px; cursor: pointer; }
+  .tpl-card:hover { background: var(--hover); }
+  .tpl-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .tpl-card .tpl-ico { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center; flex: none; }
+  .tpl-card .tpl-ico svg { width: 18px; height: 18px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+  .tpl-card .tpl-name { font-size: 13px; font-weight: 600; }
+  .tpl-card .tpl-desc { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .form-row { display: flex; flex-direction: column; gap: 5px; }
+  .form-row label { font-size: 12px; color: var(--ink-2); }
+  .form-row input { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+    font-size: 13px; color: var(--ink); outline: none; }
+  .form-row input:focus { border-color: var(--accent); }
+  .summary { background: var(--bg); border-radius: 10px; padding: 14px 16px; font-size: 12.5px;
+    line-height: 1.8; }
+  .summary b { color: var(--ink); }
+  .wizard-foot { padding: 14px 28px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+  .btn { padding: 7px 20px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--card); color: var(--ink); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  .notes { max-width: 380px; display: flex; flex-direction: column; gap: 10px; }
+  .note { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; font-size: 12.5px; line-height: 1.6; color: var(--ink); }
+  .note b { color: var(--accent); }
+</style>
+</head>
+<body>
+  <div>
+    <div class="page-title">快速开始向导 — UI 原型（功能未接）</div>
+    <div class="page-sub">ribbon「开始」页入口 + BaseWizardDialog 空壳 · 三页：模板选择 / 项目信息 / 摘要</div>
+  </div>
+
+  <div class="toolbar">
+    <span style="font-size:13px;color:var(--ink-2)">预览：</span>
+    <button class="seg-btn active" id="btn-rb" onclick="show('stage-ribbon')">Ribbon 开始页</button>
+    <button class="seg-btn" id="btn-wz" onclick="show('stage-wizard')">快速开始向导</button>
+  </div>
+
+  <!-- Ribbon 开始页 -->
+  <div class="stage" id="stage-ribbon">
+    <div class="ribbon">
+      <div class="ribbon-tabs">
+        <div class="ribbon-tab active">开始</div>
+        <div class="ribbon-tab">视图</div>
+        <div class="ribbon-tab">执行</div>
+        <div class="ribbon-tab">工具</div>
+        <div class="ribbon-tab">帮助</div>
+      </div>
+      <div class="ribbon-body">
+        <div class="ribbon-panel">
+          <div class="ribbon-panel-title">文件</div>
+          <div class="ribbon-panel-grid">
+            <div class="ribbon-large primary">
+              <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+              <div class="lbl">快速开始</div>
+            </div>
+            <div class="ribbon-large">
+              <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></div>
+              <div class="lbl">新建项目</div>
+            </div>
+            <div class="ribbon-large">
+              <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></div>
+              <div class="lbl">打开项目</div>
+            </div>
+            <div class="ribbon-large">
+              <div class="ico"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/></svg></div>
+              <div class="lbl">新建文件</div>
+            </div>
+            <div class="ribbon-large">
+              <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg></div>
+              <div class="lbl">打开文件</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="note"><b>入口。</b>「开始」页文件面板最前加「快速开始」大按钮（强调色），
+        点击弹快速开始向导。</div>
+      <div class="note"><b>仅 UI。</b>本次只做入口 + 向导界面骨架，点击暂不创建任何东西。</div>
+    </div>
+  </div>
+
+  <!-- 快速开始向导 -->
+  <div class="stage" id="stage-wizard" style="display:none">
+    <div class="wizard">
+      <div class="wizard-head">
+        <div>
+          <div class="wz-title">快速开始</div>
+          <div class="wz-sub">几步创建一个测试工程</div>
+        </div>
+        <div class="steps">第 1 步，共 3 步</div>
+      </div>
+      <div class="wizard-body">
+        <h3>选择模板</h3>
+        <div class="desc">选择内置模板快速搭建测试工程，后续可在项目内自由编辑。</div>
+        <div class="template-grid">
+          <div class="tpl-card selected">
+            <div class="tpl-ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></div>
+            <div><div class="tpl-name">综合测试台</div><div class="tpl-desc">拓扑 + 协议 + 测试程序</div></div>
+          </div>
+          <div class="tpl-card">
+            <div class="tpl-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/></svg></div>
+            <div><div class="tpl-name">AD 采集</div><div class="tpl-desc">模拟量采集 + 波形</div></div>
+          </div>
+          <div class="tpl-card">
+            <div class="tpl-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16"/></svg></div>
+            <div><div class="tpl-name">DA 输出</div><div class="tpl-desc">模拟量输出</div></div>
+          </div>
+          <div class="tpl-card">
+            <div class="tpl-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg></div>
+            <div><div class="tpl-name">串口 / CAN / A429</div><div class="tpl-desc">总线通信</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="wizard-foot">
+        <button class="btn" disabled>上一步</button>
+        <button class="btn primary">下一步</button>
+        <button class="btn">取消</button>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="note"><b>步骤 1/3 · 模板选择。</b>复用内置 mock 模板卡片
+        （参考新建项目向导的模板选择）。</div>
+      <div class="note">步骤 2 项目信息（名称/位置/浏览）、步骤 3 摘要（完成）为占位。
+        导航（上一步/下一步/完成）由 BaseWizardDialog 承载。</div>
+    </div>
+  </div>
+
+<script>
+  function show(id) {
+    ['stage-ribbon','stage-wizard'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? 'flex' : 'none';
+    });
+    document.getElementById('btn-rb').className = 'seg-btn' + (id === 'stage-ribbon' ? ' active' : '');
+    document.getElementById('btn-wz').className = 'seg-btn' + (id === 'stage-wizard' ? ' active' : '');
+  }
+</script>
+</body>
+</html>

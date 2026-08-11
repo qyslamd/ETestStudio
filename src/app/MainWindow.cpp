@@ -38,6 +38,7 @@
 #include "dialogs/LoginDialog.h"
 #include "dialogs/UserManagerDialog.h"
 #include "wizards/NewFileGuideWizard.h"
+#include "wizards/QuickStartWizard.h"
 
 #include "SARibbonBar.h"
 #include "SARibbonCategory.h"
@@ -2356,6 +2357,28 @@ void MainWindow::setupRibbon() {
   }
 
   // ============================================================
+  //  开始（常驻第一 tab，Office 惯例：无项目时的引导入口）
+  // ============================================================
+  {
+    auto* cat = ribbon->insertCategoryPage(QStringLiteral("开始"), 0);
+    auto* panel_file = cat->addPanel(QStringLiteral("文件"));
+    // 快速开始（UI 空壳：入口 + 向导骨架，功能后接）
+    auto* quick_start_action =
+        new QAction(AppIconProvider::instance().icon(QStringLiteral("plus")),
+                    QStringLiteral("快速开始"), this);
+    quick_start_action->setToolTip(QStringLiteral("几步创建一个测试工程"));
+    connect(quick_start_action, &QAction::triggered, this, [this]() {
+      QuickStartWizard dlg(this);
+      dlg.exec();
+    });
+    panel_file->addLargeAction(quick_start_action);
+    panel_file->addLargeAction(new_project_action_);
+    panel_file->addLargeAction(open_project_action_);
+    panel_file->addLargeAction(new_file_action_);
+    panel_file->addLargeAction(open_file_action_);
+  }
+
+  // ============================================================
   //  视图（常驻全局页：IDE 布局开关）
   // ============================================================
   {
@@ -2641,7 +2664,7 @@ void MainWindow::setupRibbon() {
     }
   }
 
-  // 上下文页（随当前编辑器动态切换）初始创建，全部隐藏（D14：insert 0 后立即 hide）
+  // 上下文页（随当前编辑器动态切换）初始创建，全部隐藏（D14：insert 1 后立即 hide）
   setupContextCategories();
 
   // 设置 Ribbon 运行按钮的初始状态
@@ -2686,7 +2709,8 @@ void MainWindow::setupContextCategories() {
       QStringLiteral("测试程序"), QStringLiteral("运行配置"),
       QStringLiteral("Mock"), QStringLiteral("编辑")};
   for (const QString& key : keys) {
-    auto* cat = ribbon->insertCategoryPage(key, 0);
+    // insert 到 index 1（「开始」页之后），保证「开始」永远是第一 tab
+    auto* cat = ribbon->insertCategoryPage(key, 1);
     // 编辑兜底页填充通用编辑动作（静态，随 QAB 共享同一 QAction）；专用页由
     // refreshContextCommands 按命令清单重建
     if (key == QStringLiteral("编辑")) {
@@ -2709,7 +2733,7 @@ void MainWindow::setupContextCategories() {
       panel_edit->addSmallAction(edit_go_to_line_action_);
     }
     context_categories_[key] = cat;
-    // D14：insert 到 index 0 后立即 hide，确保 showCategory 恢复位置固定为 0
+    // D14：insert 到 index 1 后立即 hide，确保 showCategory 恢复位置固定为 1
     ribbon->hideCategory(cat);
   }
   // 初始全部隐藏；启动空态无上下文页（D16）

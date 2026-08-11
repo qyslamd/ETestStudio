@@ -151,6 +151,8 @@ add_executable(${TARGET_NAME} WIN32
     wizards/TopologyFileWizard.cpp
     wizards/NewFileGuideWizard.h
     wizards/NewFileGuideWizard.cpp
+    wizards/QuickStartWizard.h
+    wizards/QuickStartWizard.cpp
     dialogs/AboutDialog.h
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h
