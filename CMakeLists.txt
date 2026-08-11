@@ -161,8 +161,9 @@ add_subdirectory(3rdparty/spdlog-1.17.0)
 
 # QWindowKit - frameless window support library (used by SARibbon)
 # Qt < 5.14 无法使用 frameless 库，低版本跳过构建并在下方关闭 SARibbon frameless 支持
-if(QT_VERSION VERSION_LESS "5.14")
-    message(STATUS "Qt version ${QT_VERSION} < 5.14, skip building QWindowKit, SARibbon frameless disabled")
+# 注意：find_package(Qt5) 设置的是 Qt5_VERSION，QT_VERSION 不会由 Qt5Config 提供（曾因此误判）
+if(Qt5_VERSION VERSION_LESS "5.14")
+    message(STATUS "Qt version ${Qt5_VERSION} < 5.14, skip building QWindowKit, SARibbon frameless disabled")
 else()
     set(QWINDOWKIT_BUILD_STATIC ON CACHE BOOL "Build static library for QWindowKit" FORCE)
     set(QWINDOWKIT_BUILD_EXAMPLES OFF CACHE BOOL "Do not build QWindowKit examples" FORCE)
@@ -183,7 +184,7 @@ include(cmake/saribbon/patch_qwindowkit.cmake)
 set(SARIBBON_BUILD_STATIC_LIBS ON CACHE BOOL "Build static library for SARibbon" FORCE)
 set(SARIBBON_BUILD_EXAMPLES OFF CACHE BOOL "Do not build SARibbon examples" FORCE)
 # Qt < 5.14 无法使用 frameless 库（QWindowKit 最低要求 5.14），否则 SARibbon 内部会降级并发出警告
-if(QT_VERSION VERSION_LESS "5.14")
+if(Qt5_VERSION VERSION_LESS "5.14")
     set(SARIBBON_USE_FRAMELESS_LIB OFF CACHE BOOL "Use QWindowKit for frameless window" FORCE)
 else()
     set(SARIBBON_USE_FRAMELESS_LIB ON CACHE BOOL "Use QWindowKit for frameless window" FORCE)
