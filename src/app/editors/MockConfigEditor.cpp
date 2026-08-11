@@ -335,24 +335,25 @@ QList<EditorCommand> MockConfigEditor::editorCommands() {
   };
   // Mock
   cmds.append(addBtnCmd(QStringLiteral("Mock"), QStringLiteral("创建配置"),
-                        QString(), true, create_config_btn_,
+                        QStringLiteral("plus"), true, create_config_btn_,
                         [this]() { onCreateConfigClicked(); }));
   // 编辑
   cmds.append(addBtnCmd(QStringLiteral("编辑"), QStringLiteral("添加行"),
-                        QString(), false, fr_add_row_btn_,
-                        [this]() { onFrAddRow(); }));
+                        QStringLiteral("testprog_add_step"), false,
+                        fr_add_row_btn_, [this]() { onFrAddRow(); }));
   cmds.append(addBtnCmd(QStringLiteral("编辑"), QStringLiteral("删除行"),
-                        QString(), false, fr_del_row_btn_,
-                        [this]() { onFrDeleteRow(); }));
+                        QStringLiteral("testprog_remove_step"), false,
+                        fr_del_row_btn_, [this]() { onFrDeleteRow(); }));
   // 响应
   cmds.append(addBtnCmd(QStringLiteral("响应"), QStringLiteral("新建响应"),
-                        QString(), false, fr_add_resp_btn_,
-                        [this]() { onFrAddRespClicked(); }));
+                        QStringLiteral("protocol_new_frame"), false,
+                        fr_add_resp_btn_, [this]() { onFrAddRespClicked(); }));
   cmds.append(addBtnCmd(QStringLiteral("响应"), QStringLiteral("删除响应"),
-                        QString(), false, fr_del_resp_btn_,
-                        [this]() { onFrDelRespClicked(); }));
+                        QStringLiteral("protocol_delete_frame"), false,
+                        fr_del_resp_btn_, [this]() { onFrDelRespClicked(); }));
   cmds.append(addBtnCmd(QStringLiteral("响应"), QStringLiteral("删除端口配置"),
-                        QString(), false, fr_del_port_config_btn_,
+                        QStringLiteral("trash"), false,
+                        fr_del_port_config_btn_,
                         [this]() { onFrDelPortConfigClicked(); }));
   return cmds;
 }
