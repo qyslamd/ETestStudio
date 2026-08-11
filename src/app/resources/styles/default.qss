@@ -5,6 +5,27 @@ QTreeView {
     border: none;
 }
 
+/* ==================== QListView（白色主题全局样式） ==================== */
+QListView {
+    background-color: #FFFFFF;
+    color: #1F1F1F;
+    border: none;
+    outline: none;
+    selection-background-color: #CCE4F7;
+    selection-color: #1F1F1F;
+}
+QListView::item {
+    padding: 5px 8px;
+    border: none;
+    border-radius: 6px;
+}
+QListView::item:hover {
+    background-color: #EAEAEA;
+}
+QListView::item:selected {
+    background-color: rgba(0, 103, 192, 0.10);
+}
+
 /* ==================== QDoubleSpinBox ==================== */
 /* ==================== ValueLabelWidget ==================== */
 #ValueLabelTitle {
@@ -722,22 +743,6 @@ QLabel#PhSectionLabel {
     font-size: 11px;
     font-weight: 600;
     color: #6E6E6E;
-}
-
-/* Fluent 紧凑列表行（最近项目/最近文件/已打开 共用） */
-QListView#PhRecentList {
-    background-color: transparent;
-    border: none;
-}
-QListView#PhRecentList::item {
-    padding: 5px 8px;
-    border-radius: 6px;
-}
-QListView#PhRecentList::item:hover {
-    background-color: #EAEAEA;
-}
-QListView#PhRecentList::item:selected {
-    background-color: rgba(0, 103, 192, 0.10);
 }
 
 /* ==================== QDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */

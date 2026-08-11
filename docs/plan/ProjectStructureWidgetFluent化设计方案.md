@@ -65,10 +65,10 @@
 - 新增（类型限定选择器，与现状约定一致）：
   - `QFrame#PhEmptyCard`、`QLabel#PhEmptyTitle`、`QLabel#PhEmptyDesc`：空态卡。
   - `QLabel#PhSectionLabel`：分区标题（全新规则，两主题均无现状）。
-  - `QListView#PhRecentList`：最近项目/最近文件/**已打开**三个列表共用
-    （`open_files_view_` 也设该 objectName），补 `::item`/`::item:hover`/
-    `::item:selected` 对称规则（default 主题现缺失）；`::item` 显式覆盖全局
-    `QListView::item` padding（vscode.qss:257-259），控制行高与圆角条。
+- 全局 QListView 样式（各主题一套，不特殊处理）：default（白）/ vscode（深）各自
+  新增统一 `QListView` + `QListView::item`/`:hover`/`:selected`（padding 5px 8px、
+  圆角 6px、hover/选中色随主题），覆盖最近项目/最近文件/已打开及所有 QListView；
+  不再使用 `QListView#PhRecentList` 特殊选择器。
 - 删除：`PhDesc`、`PhProjectBtn`、`PhQuickBtn` 相关块。
 - 列表 hover 统一走 QSS；**删除 RecentProjOrFileDelegate 自绘半透明 hover 填充**（约
   RecentProjOrFileDelegate.cpp:42-49），避免双重高亮。
@@ -124,8 +124,7 @@
     `<QGridLayout>`/`<QPushButton>` include、QPushButton 前置声明）。
   - 删除 `createStandaloneFile` 声明与定义及其专属 include。
   - 卡片 1 重构为空态卡（`PhEmptyCard`/`PhEmptyTitle`/`PhEmptyDesc`）。
-  - 列表容器加 objectName：`recent_projects_view_`/`recent_files_view_`/
-    `open_files_view_` 均设 `PhRecentList`。
+  - 列表容器不设特殊 objectName（全局 `QListView` 规则统一覆盖）。
   - model 项 `setIcon`（最近项目 folder、最近文件/已打开 `file_generic`）。
   - 空分节整节隐藏（refactor refreshRecentProjects/refreshRecentFiles 的显隐逻辑）。
 - `src/app/widgets/RecentProjOrFileDelegate.cpp`：删除自绘半透明 hover 填充（约 42-49 行）；

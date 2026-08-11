@@ -33,8 +33,8 @@
 #include <functional>
 #include <memory>
 #include <utility>
-#include "logger/Logger.h"
 #include "format/xml_serializer.hpp"
+#include "logger/Logger.h"
 #include "utils/FileUtil.h"
 
 #include <icd/repository.hpp>
@@ -43,11 +43,11 @@
 #include "ConfigManager.h"
 #include "TestProgramData.h"
 #include "config/ConfigDefs.h"
+#include "topology/TopologyDocument.h"
+#include "topology/TopologyJsonSerializer.h"
 #include "wizards/ProtocolFileWizard.h"
 #include "wizards/TestProgramWizard.h"
 #include "wizards/TopologyFileWizard.h"
-#include "topology/TopologyDocument.h"
-#include "topology/TopologyJsonSerializer.h"
 
 namespace etest::app {
 
@@ -99,13 +99,13 @@ void ProjectStructureWidget::initUi() {
 
   auto* empty_icon = new QLabel(empty_card);
   empty_icon->setAlignment(Qt::AlignCenter);
-  empty_icon->setPixmap(
-      etest::core_ui::AppIconProvider::instance()
-          .icon(QStringLiteral("folder"))
-          .pixmap(22, 22));
+  empty_icon->setPixmap(etest::core_ui::AppIconProvider::instance()
+                            .icon(QStringLiteral("folder"))
+                            .pixmap(22, 22));
   empty_layout->addWidget(empty_icon);
 
-  auto* empty_title = new QLabel(QStringLiteral("没有打开任何项目"), empty_card);
+  auto* empty_title =
+      new QLabel(QStringLiteral("没有打开任何项目"), empty_card);
   empty_title->setObjectName(QStringLiteral("PhEmptyTitle"));
   empty_title->setAlignment(Qt::AlignCenter);
   empty_layout->addWidget(empty_title);
@@ -131,7 +131,6 @@ void ProjectStructureWidget::initUi() {
   rp_section_layout->addWidget(rp_label);
 
   recent_projects_view_ = new QListView(recent_projects_section_);
-  recent_projects_view_->setObjectName(QStringLiteral("PhRecentList"));
   recent_projects_view_->setFrameShape(QFrame::NoFrame);
   recent_projects_view_->setMouseTracking(true);
   recent_projects_view_->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -151,12 +150,12 @@ void ProjectStructureWidget::initUi() {
   rf_section_layout->setContentsMargins(0, 0, 0, 0);
   rf_section_layout->setSpacing(6);
 
-  auto* rf_label = new QLabel(QStringLiteral("最近文件"), recent_files_section_);
+  auto* rf_label =
+      new QLabel(QStringLiteral("最近文件"), recent_files_section_);
   rf_label->setObjectName(QStringLiteral("PhSectionLabel"));
   rf_section_layout->addWidget(rf_label);
 
   recent_files_view_ = new QListView(recent_files_section_);
-  recent_files_view_->setObjectName(QStringLiteral("PhRecentList"));
   recent_files_view_->setFrameShape(QFrame::NoFrame);
   recent_files_view_->setMouseTracking(true);
   recent_files_view_->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -194,7 +193,6 @@ void ProjectStructureWidget::initUi() {
   of_layout->addWidget(open_files_header_label_);
 
   open_files_view_ = new QListView();
-  open_files_view_->setObjectName(QStringLiteral("PhRecentList"));
   open_files_view_->setFrameShape(QFrame::NoFrame);
   open_files_view_->setMouseTracking(true);
   open_files_view_->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -1027,7 +1025,8 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
     }
     created = saveTestProgram(fullPath, suite);
     skipRename = true;
-    LOG_INFO("PROJECT_UI", "向导新建测试程序 [name={}] [version={}] [author={}]",
+    LOG_INFO("PROJECT_UI",
+             "向导新建测试程序 [name={}] [version={}] [author={}]",
              suite.name.toStdString(), suite.version.toStdString(),
              suite.author.toStdString());
   } else if (extension == QStringLiteral("eprotox")) {
@@ -1081,8 +1080,9 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
         etest::topology::TopologyJsonSerializer::serialize(*doc);
     QFile file(fullPath);
     if (!file.open(QIODevice::WriteOnly)) {
-      QMessageBox::warning(this, QStringLiteral("新建失败"),
-                           QStringLiteral("写入拓扑文件失败：%1").arg(fullPath));
+      QMessageBox::warning(
+          this, QStringLiteral("新建失败"),
+          QStringLiteral("写入拓扑文件失败：%1").arg(fullPath));
       return;
     }
     file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
