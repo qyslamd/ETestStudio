@@ -1,13 +1,15 @@
 #include "guidance_config.h"
-#include <QList>
+
 #include <QtDebug>
+
+namespace etest::app {
 
 GuidanceFlow::~GuidanceFlow() {
   clear();
 }
 
 void GuidanceFlow::addStep(GuidanceStep* step) {
-  if (!step) {
+  if (step == nullptr) {
     qWarning() << __FUNCTION__ << "foolish! step is nullptr!";
     return;
   }
@@ -34,11 +36,14 @@ GuidanceConfig::~GuidanceConfig() {
 }
 
 GuidanceFlow* GuidanceConfig::addFlow(GuidanceFlow* flow) {
+  if (flow == nullptr) {
+    qWarning() << __FUNCTION__ << "foolish! flow is nullptr!";
+    return flow;
+  }
   if (flows_.contains(flow)) {
     qWarning() << __FUNCTION__ << "foolish! flow is already existed!";
     return flow;
   }
-
   flows_.append(flow);
   return flow;
 }
@@ -55,7 +60,11 @@ void GuidanceConfig::clear() {
 int GuidanceConfig::totalSteps() const {
   int total = 0;
   for (auto flow : flows_) {
-    total += flow->stepCount();
+    if (flow != nullptr) {
+      total += flow->stepCount();
+    }
   }
   return total;
 }
+
+}  // namespace etest::app

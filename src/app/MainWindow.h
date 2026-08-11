@@ -48,6 +48,8 @@ class ProjectController;
 class ExecutionDashboard;
 class ExecutionPanelController;
 class IEditor;
+class GuidanceController;
+class GuidanceHomePage;
 }  // namespace etest::app
 
 namespace etest::engine {
@@ -81,6 +83,7 @@ class MainWindow : public SARibbonMainWindow {
   void resizeEvent(QResizeEvent* event) override;
   void closeEvent(QCloseEvent* event) override;
   void showEvent(QShowEvent* event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
  private:
   void initUi();
@@ -288,6 +291,21 @@ class MainWindow : public SARibbonMainWindow {
   // QAB 文件搜索框
   QLineEdit* ribbon_search_edit_ = nullptr;
   QCompleter* ribbon_search_completer_ = nullptr;
+
+  // ── 新手引导（懒创建，D1/D16） ──
+  void onOpenGuidance();
+  void ensureGuidanceCreated();
+  void setupGuidanceFlows();
+  QWidget* ribbonButtonForAction(QAction* action);
+  QWidget* findTopologyEditor() const;
+  QWidget* findTopologyCanvas(const QString& filePath) const;
+  QWidget* findTopologyDevicePalette() const;
+  QString writeGuidanceSampleTopology() const;
+
+  GuidanceController* guidance_controller_ = nullptr;
+  GuidanceHomePage* guidance_home_page_ = nullptr;
+  bool guidance_shortcut_filter_installed_ = false;
+  QString guidance_sample_path_;
 };
 
 }  // namespace etest::app

@@ -1,15 +1,13 @@
 #include "guidance_controller.h"
-#include <QApplication>
+
 #include <QDebug>
-#include <QDesktopWidget>
-#include <QStandardItemModel>
-#include <QTimer>
-#include <variant>
+
 #include "guidance_presentation.h"
+
+namespace etest::app {
 
 GuidanceController::GuidanceController(QObject* parent)
     : QObject(parent),
-      viewport_(nullptr),
       presentation_(new GuidancePresentation(nullptr)),
       isRunning_(false),
       curFlowIndex_(0),
@@ -24,6 +22,9 @@ GuidanceController::GuidanceController(QObject* parent)
 
 GuidanceController::~GuidanceController() {
   stop();
+  // 演示层由控制器持有，销毁时回收（stop 后无父级，避免泄漏）。
+  delete presentation_;
+  presentation_ = nullptr;
   config_.clear();
 }
 
@@ -57,20 +58,32 @@ void GuidanceController::startAll(bool autoMode) {
     return;
   }
 
-  if (!viewport_) {
+  if (viewport_ == nullptr) {
     qWarning() << "Viewport must be set before start()";
+    return;
+  }
+
+  // 占位主题（stepCount()==0）仅供首页卡片展示，不进入播放。
+  const int firstPlayable = nextPlayableFlowIndex(0);
+  if (firstPlayable < 0) {
+    qWarning() << "No playable flow to start";
     return;
   }
 
   run_all_ = true;
   auto_mode_ = autoMode;
-  curFlowIndex_ = 0;
+  curFlowIndex_ = firstPlayable;
   curStepIndex_ = 0;
   execute();
 }
 
 void GuidanceController::startOne(GuidanceFlow* const flow, bool autoMode) {
-  if (!flow) {
+  if (flow == nullptr) {
+    return;
+  }
+
+  if (flow->stepCount() == 0) {
+    qWarning() << "Placeholder flow can not be played";
     return;
   }
 
@@ -78,7 +91,7 @@ void GuidanceController::startOne(GuidanceFlow* const flow, bool autoMode) {
     return;
   }
 
-  if (!viewport_) {
+  if (viewport_ == nullptr) {
     qWarning() << "Viewport must be set before start()";
     return;
   }
@@ -91,7 +104,7 @@ void GuidanceController::startOne(GuidanceFlow* const flow, bool autoMode) {
 }
 
 void GuidanceController::updateOverlayGeometry() {
-  if (viewport_) {
+  if (viewport_ != nullptr) {
     presentation_->setGeometry(viewport_->rect());
   }
 }
@@ -101,15 +114,6 @@ void GuidanceController::stop() {
 
   presentation_->setParent(nullptr);
   presentation_->hide();
-}
-
-void GuidanceController::loadFlowToListModel(QStandardItemModel* model) {
-  model->clear();
-  for (auto const& flow : config_.flows()) {
-    auto item = new QStandardItem(QIcon(flow->icon()), flow->name());
-    item->setData(QVariant::fromValue(flow), Qt::UserRole + 1);
-    model->appendRow(item);
-  }
 }
 
 void GuidanceController::onNextClicked() {
@@ -146,14 +150,21 @@ void GuidanceController::onNextClicked() {
     curFlow->exitFunc()();
   }
 
-  // 如果是运行单个 flow 或者 运行所有且所有 flow 结束了
-  if (!run_all_ || curFlowIndex_ >= config_.flows().size() - 1) {
+  // 单主题运行，或已无下一个可播放主题（跳过占位主题）时结束。
+  if (!run_all_) {
     stop();
     emit finished();
     return;
   }
 
-  curFlowIndex_++;
+  const int nextIndex = nextPlayableFlowIndex(curFlowIndex_ + 1);
+  if (nextIndex < 0) {
+    stop();
+    emit finished();
+    return;
+  }
+
+  curFlowIndex_ = nextIndex;
   curStepIndex_ = 0;
   GuidanceFlow* nextFlow = config_.flows().at(curFlowIndex_);
   if (nextFlow->enterFunc()) {
@@ -176,13 +187,18 @@ void GuidanceController::onPrevClicked() {
     return;
   }
 
-  // 回退 flow
+  // 回退 flow（跳过占位主题）
+  const int prevIndex = previousPlayableFlowIndex(curFlowIndex_ - 1);
+  if (prevIndex < 0) {
+    return;
+  }
+
   GuidanceFlow* curFlow = config_.flows().at(curFlowIndex_);
   if (curFlow->exitFunc()) {
     curFlow->exitFunc()();
   }
 
-  curFlowIndex_--;
+  curFlowIndex_ = prevIndex;
   GuidanceFlow* prevFlow = config_.flows().at(curFlowIndex_);
   curStepIndex_ = prevFlow->stepCount() - 1;
   if (prevFlow->enterFunc()) {
@@ -197,28 +213,55 @@ void GuidanceController::onSkipClicked() {
   emit finishedByUser();
 }
 
-void GuidanceController::onViewportStateChanged() {
-  if (viewport_ == nullptr) {
-    return;
-  }
-
-  presentation_->setGeometry(viewport_->rect());
-}
-
 void GuidanceController::updateStep() {
   if (config_.flows().isEmpty()) {
     return;
   }
+  if (curFlowIndex_ < 0 || curFlowIndex_ >= config_.flows().size()) {
+    return;
+  }
 
   GuidanceFlow* curFlow = config_.flows().at(curFlowIndex_);
+  if (curStepIndex_ < 0 || curStepIndex_ >= curFlow->stepCount()) {
+    return;
+  }
   GuidanceStep* curStep = curFlow->steps().at(curStepIndex_);
 
   if (curStep->enterFunc()) {
     curStep->enterFunc()();
   }
 
-  // ------------------------------------
-  // guess waht?
+  refreshStepPresentation();
+
+  int globalIndex = 0;
+  for (int i = 0; i < curFlowIndex_; ++i) {
+    globalIndex += config_.flows().at(i)->stepCount();
+  }
+  globalIndex += curStepIndex_;
+
+  emit stepChanged(globalIndex, config_.totalSteps());
+}
+
+void GuidanceController::refreshCurrentStepHighlight() {
+  refreshStepPresentation();
+}
+
+// 刷新当前步骤的演示层（高亮/气泡/按钮态）。从 updateStep 抽出，
+// 便于 enter 回调中目标控件异步就绪后重新定位（D12）。
+void GuidanceController::refreshStepPresentation() {
+  if (!isRunning_ || config_.flows().isEmpty()) {
+    return;
+  }
+  if (curFlowIndex_ < 0 || curFlowIndex_ >= config_.flows().size()) {
+    return;
+  }
+
+  GuidanceFlow* curFlow = config_.flows().at(curFlowIndex_);
+  if (curStepIndex_ < 0 || curStepIndex_ >= curFlow->stepCount()) {
+    return;
+  }
+  GuidanceStep* curStep = curFlow->steps().at(curStepIndex_);
+
   bool canPrev = true;
   bool canNext = true;
   if (run_all_) {
@@ -240,13 +283,26 @@ void GuidanceController::updateStep() {
     }
   }
   presentation_->updateUi(curFlow, curStep, canPrev, canNext);
-  // ------------------------------------
-
-  int globalIndex = 0;
-  for (int i = 0; i < curFlowIndex_; ++i) {
-    globalIndex += config_.flows().at(i)->stepCount();
-  }
-  globalIndex += curStepIndex_;
-
-  emit stepChanged(globalIndex, config_.totalSteps());
 }
+
+// 自 fromIndex 起向后找第一个可播放（stepCount()>0）的 Flow 下标，无则 -1。
+int GuidanceController::nextPlayableFlowIndex(int fromIndex) const {
+  for (int i = fromIndex; i < config_.flows().size(); ++i) {
+    if (config_.flows().at(i)->stepCount() > 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// 自 fromIndex 起向前找第一个可播放（stepCount()>0）的 Flow 下标，无则 -1。
+int GuidanceController::previousPlayableFlowIndex(int fromIndex) const {
+  for (int i = fromIndex; i >= 0; --i) {
+    if (config_.flows().at(i)->stepCount() > 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+}  // namespace etest::app

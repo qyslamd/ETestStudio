@@ -1,14 +1,24 @@
 #include "guidance_presentation.h"
+
+#include <QEasingCurve>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPropertyAnimation>
 #include <QPushButton>
 #include <QTimer>
+#include <QVariantAnimation>
 #include <QVBoxLayout>
-#include <QtDebug>
+
+#include "ThemeManager.h"
 #include "guidance_config.h"
+
+namespace etest::app {
+
+using etest::core_ui::ThemeManager;
 
 GuidancePresentation::GuidancePresentation(QWidget* parent)
     : QWidget(parent),
@@ -16,11 +26,13 @@ GuidancePresentation::GuidancePresentation(QWidget* parent)
       title_label_(new QLabel(bubble_widget_)),
       countdown_label_(new QLabel(bubble_widget_)),
       text_label_(new QLabel(bubble_widget_)),
-      skip_btn_(new QPushButton("跳过", bubble_widget_)),
-      prev_btn_(new QPushButton("上一步", bubble_widget_)),
-      next_btn_(new QPushButton("下一步", bubble_widget_)),
-      count_down_timer_(new QTimer(this)),
-      pixmap_smile_(":/resrouces/icons/grinning_squinting_face_256px.png") {
+      skip_btn_(new QPushButton(QStringLiteral("跳过"), bubble_widget_)),
+      prev_btn_(new QPushButton(QStringLiteral("上一步"), bubble_widget_)),
+      next_btn_(new QPushButton(QStringLiteral("下一步"), bubble_widget_)),
+      count_down_timer_(new QTimer(this)) {
+  // 覆盖 viewport 的半透明遮罩，让主窗口内容透出（遮罩底色自绘）。
+  setAttribute(Qt::WA_TranslucentBackground);
+  setAutoFillBackground(false);
   initUi();
   initOthers();
   initSignals();
@@ -52,10 +64,10 @@ bool GuidancePresentation::eventFilter(QObject* obj, QEvent* event) {
 }
 
 void GuidancePresentation::initUi() {
-  bubble_widget_->setObjectName("bubble_self");
-  bubble_widget_->setStyleSheet(
-      "QWidget#bubble_self{background: transparent;}");
-  //  bubble_->setStyleSheet("QWidget#bubble_self{border:1px solid red;}");
+  bubble_widget_->setObjectName(QStringLiteral("bubble_self"));
+  // 气泡底由自绘（drawBubble）完成，背景保持透明，让遮罩/主窗口内容透出。
+  bubble_widget_->setAutoFillBackground(false);
+  bubble_widget_->setAttribute(Qt::WA_TranslucentBackground);
   bubble_widget_->setMinimumWidth(300);
   bubble_widget_->setMinimumHeight(200);
 
@@ -63,56 +75,29 @@ void GuidancePresentation::initUi() {
   mainLayout->setContentsMargins(kLayoutMargin, kLayoutMargin, kLayoutMargin,
                                  kLayoutMargin);
   mainLayout->setSpacing(8);
+
   countdown_label_->setAlignment(Qt::AlignRight);
-  countdown_label_->setObjectName("bubble_countdown");
-  countdown_label_->setStyleSheet(
-      "QLabel#bubble_countdown { background: transparent; font-size: 16px; "
-      "font-weight: bold; color: #CDCDCD; }");
+  countdown_label_->setObjectName(QStringLiteral("bubble_countdown"));
   countdown_label_->hide();
 
   title_label_->setAlignment(Qt::AlignCenter);
-  title_label_->setObjectName("bubble_title");
-  title_label_->setStyleSheet(
-      "QLabel#bubble_title { background: transparent; font-size: 16px; "
-      "font-weight: bold; color: "
-      "#333333; }");
+  title_label_->setObjectName(QStringLiteral("bubble_title"));
 
-  text_label_->setObjectName("bubble_text");
-  text_label_->setStyleSheet(
-      "QLabel#bubble_text { background: transparent; font-size: 14px; color: "
-      "#666666; }");
+  text_label_->setObjectName(QStringLiteral("bubble_text"));
   text_label_->setWordWrap(true);
 
   QHBoxLayout* horizontalLayout = new QHBoxLayout();
-  horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
+  horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
   horizontalLayout->addItem(
       new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum));
 
-  skip_btn_->setObjectName("skip_btn");
-  skip_btn_->setStyleSheet(
-      "QPushButton#skip_btn { background: transparent; border: none; color: "
-      "#999999; "
-      "padding: 8px; font-size: 14px; } QPushButton#skip_btn:hover { color: "
-      "#666666; }");
-
+  skip_btn_->setObjectName(QStringLiteral("bubble_skip"));
   horizontalLayout->addWidget(skip_btn_);
 
-  prev_btn_->setObjectName("prev_btn");
-  prev_btn_->setStyleSheet(
-      "QPushButton#prev_btn { background: transparent; border: 1px solid "
-      "#4CAF50; color: #4CAF50; padding: 8px 16px; border-radius: 4px; "
-      "font-size: 14px; } "
-      "QPushButton#prev_btn:hover { background: rgba(76, 175, 80, 0.1); }"
-      "QPushButton#prev_btn:disabled{background:#adb5bd;}");
+  prev_btn_->setObjectName(QStringLiteral("bubble_prev"));
   horizontalLayout->addWidget(prev_btn_);
 
-  next_btn_->setObjectName("next_btn");
-  next_btn_->setStyleSheet(
-      "QPushButton#next_btn { background: #4CAF50; border: none; color: white; "
-      "padding: 8px 24px; border-radius: 4px; font-size: 14px; } "
-      "QPushButton#next_btn:hover { background: #45a049; }"
-      "QPushButton#next_btn:disabled{background:#adb5bd;}");
-
+  next_btn_->setObjectName(QStringLiteral("bubble_next"));
   horizontalLayout->addWidget(next_btn_);
 
   mainLayout->addWidget(countdown_label_);
@@ -156,16 +141,17 @@ void GuidancePresentation::initSignals() {
   });
 
   connect(count_down_timer_, &QTimer::timeout, this, [this] {
-    static constexpr int sb = 3000 / 30;
+    // 倒计时 5 秒自动前进（与文案 5..0 一致）：5000ms / 30ms 每次 tick。
+    static constexpr int kCountDownMaxTicks = 5000 / 30;
 
-    static int Count = 0;
-    if (++Count >= sb) {
+    if (++count_down_tick_ >= kCountDownMaxTicks) {
       time_percent_ = 1.0;
       count_down_timer_->stop();
-      Count = 0;  // 恢复默认值
+      count_down_tick_ = 0;  // 复位，避免下次续接残留值
       emit nextClicked();
     } else {
-      time_percent_ = (qreal)Count / (qreal)sb;
+      time_percent_ = static_cast<qreal>(count_down_tick_) /
+                      static_cast<qreal>(kCountDownMaxTicks);
 
       int seconds = 5 * (1 - time_percent_);
       countdown_label_->setText(QString::number(seconds));
@@ -238,6 +224,7 @@ void GuidancePresentation::updateUi(GuidanceFlow* const flow,
   // 自动挡
   if (auto_mode_) {
     time_percent_ = 1.0;
+    count_down_tick_ = 0;
     count_down_timer_->start(30);
   }
 }
@@ -245,6 +232,11 @@ void GuidancePresentation::updateUi(GuidanceFlow* const flow,
 void GuidancePresentation::setIsAutoMode(bool autoMode) {
   auto_mode_ = autoMode;
   countdown_label_->setVisible(auto_mode_);
+  // 每次切换都复位计数并停表，避免下次重启从残留值继续。
+  count_down_tick_ = 0;
+  if (!auto_mode_) {
+    count_down_timer_->stop();
+  }
 }
 
 void GuidancePresentation::drawCountDownOnBubble(QPainter* painter) {
@@ -262,7 +254,9 @@ void GuidancePresentation::drawCountDownOnBubble(QPainter* painter) {
 
   QPainterPath path;
   path.addRoundedRect(rect, cornerRadius_, cornerRadius_);
-  p.fillPath(path, QBrush(QColor(212, 252, 121, 245)));
+  QColor bar = accentColor();
+  bar.setAlpha(245);
+  p.fillPath(path, QBrush(bar));
 }
 
 void GuidancePresentation::drawBubble(QPainter* painter) {
@@ -307,7 +301,7 @@ void GuidancePresentation::drawBubble(QPainter* painter) {
   arrow.closeSubpath();
 
   path.addPath(arrow);
-  p.fillPath(path, QBrush(QColor(255, 255, 255, 245)));
+  p.fillPath(path, QBrush(bubbleColor()));
 }
 
 void GuidancePresentation::drawHighlight(QPainter* painter) {
@@ -315,7 +309,7 @@ void GuidancePresentation::drawHighlight(QPainter* painter) {
 
   auto& p = *painter;
   if (target_rect.isNull()) {
-    p.fillRect(rect(), maskColor_);
+    p.fillRect(rect(), maskColor());
     return;
   }
 
@@ -330,11 +324,11 @@ void GuidancePresentation::drawHighlight(QPainter* painter) {
 
   // 通过挖孔的方式突出高亮
   QPainterPath maskPath = fullPath - highlightPath;
-  p.fillPath(maskPath, maskColor_);
+  p.fillPath(maskPath, maskColor());
 
-  // 绘制一个虚线外框
+  // 绘制一个虚线外框（accent 色）
   p.save();
-  p.setPen(QPen(QColor(0x4CAF50), borderWidth_, Qt::DashLine, Qt::RoundCap,
+  p.setPen(QPen(accentColor(), borderWidth_, Qt::DashLine, Qt::RoundCap,
                 Qt::RoundJoin));
   p.drawRoundedRect(highlightWithMargin, 8, 8);
   p.restore();
@@ -343,6 +337,20 @@ void GuidancePresentation::drawHighlight(QPainter* painter) {
   if (!pixmap_.isNull()) {
     p.drawPixmap(target_rect, pixmap_, pixmap_.rect());
   }
+}
+
+void GuidancePresentation::mousePressEvent(QMouseEvent* event) {
+  // 高亮目标区域：引导期间目标不响应鼠标（设计文档 D11），点击仅拦截不退出。
+  QRect target_rect = use_anime_ ? anime_highlight_rect_ : highlightRect_;
+  if (target_rect.adjusted(-margin_, -margin_, margin_, margin_)
+          .contains(event->pos())) {
+    return;
+  }
+
+  // 遮罩空白：退出引导（设计文档 3.7 / D5）。
+  count_down_timer_->stop();
+  emit skipClicked();
+  QWidget::mousePressEvent(event);
 }
 
 void GuidancePresentation::changeBubblePosition() {
@@ -492,3 +500,22 @@ void GuidancePresentation::paintEvent(QPaintEvent* event) {
 
   drawHighlight(&p);
 }
+
+QColor GuidancePresentation::maskColor() const {
+  // 遮罩按设计文档 3.8 固定为半透明黑（default 0.50 / vscode 0.55），
+  // alpha 随明暗主题微调，无单个硬编码色值。
+  const int alpha = ThemeManager::instance().isDarkTheme() ? 140 : 128;
+  return QColor(0, 0, 0, alpha);
+}
+
+QColor GuidancePresentation::bubbleColor() const {
+  QColor color = ThemeManager::instance().panelBackground();
+  color.setAlpha(245);
+  return color;
+}
+
+QColor GuidancePresentation::accentColor() const {
+  return ThemeManager::instance().accentColor();
+}
+
+}  // namespace etest::app

@@ -1,5 +1,4 @@
-#ifndef GUIDANCE_CONFIG_H
-#define GUIDANCE_CONFIG_H
+#pragma once
 
 #include <QList>
 #include <QPixmap>
@@ -9,6 +8,10 @@
 #include <functional>
 #include <variant>
 
+namespace etest::app {
+
+// 单个引导步骤：目标元素（控件/矩形/图片）+ 标题/描述 + 进入/退出回调。
+// 纯类，无 Q_OBJECT（不依赖元对象系统）。
 class GuidanceStep {
  public:
   using Target = std::variant<QWidget*, QRect, QPixmap>;
@@ -37,6 +40,9 @@ class GuidanceStep {
 
   inline Target target() { return target_; }
 
+  // 允许在 enter 回调中延迟定位目标（D12：编辑器 openFile 后才可拿到画布控件）。
+  inline void setTarget(const Target& target) { target_ = target; }
+
   inline Func enterFunc() const { return onEnter; }
   inline void setEnterFunc(const Func& func) { onEnter = func; }
 
@@ -44,23 +50,25 @@ class GuidanceStep {
   inline void setExitFunc(const Func& func) { onExit = func; }
 
   GuidanceStep* withTitle(const QString& title) {
-    this->title_ = title;
+    title_ = title;
     return this;
   }
-  GuidanceStep* withDescripton(const QString& desc) {
-    this->description_ = desc;
+  GuidanceStep* withDescription(const QString& desc) {
+    description_ = desc;
     return this;
   }
   GuidanceStep* withEnterFunc(const Func& func) {
-    this->onEnter = func;
+    onEnter = func;
     return this;
   }
   GuidanceStep* withExitFunc(const Func& func) {
-    this->onExit = func;
+    onExit = func;
     return this;
   }
 };
 
+// 一条引导主题（Flow）：图标 + 名称/描述 + 一组 Step + 主题级进入/退出回调。
+// 纯类，无 Q_OBJECT。
 class GuidanceFlow {
  private:
   QPixmap icon_;
@@ -74,12 +82,12 @@ class GuidanceFlow {
   GuidanceFlow(const QString& name, const QString& desc)
       : name_(name), description_(desc) {}
 
-  GuidanceFlow(const QPixmap& icon1, const QString& name1, const QString& desc1)
-      : icon_(icon1), name_(name1), description_(desc1) {}
+  GuidanceFlow(const QPixmap& icon, const QString& name, const QString& desc)
+      : icon_(icon), name_(name), description_(desc) {}
 
   GuidanceFlow(const QPixmap& icon) : icon_(icon) {}
 
-  GuidanceFlow(){};
+  GuidanceFlow() = default;
   ~GuidanceFlow();
 
   void addStep(GuidanceStep* step);
@@ -111,6 +119,7 @@ class GuidanceFlow {
   }
 };
 
+// 引导配置：持有全部 Flow。纯类，无 Q_OBJECT。
 class GuidanceConfig {
  public:
   GuidanceConfig();
@@ -126,6 +135,6 @@ class GuidanceConfig {
   QList<GuidanceFlow*> flows_;
 };
 
-Q_DECLARE_METATYPE(GuidanceFlow*)
+}  // namespace etest::app
 
-#endif  // GUIDANCE_CONFIG_H
+Q_DECLARE_METATYPE(etest::app::GuidanceFlow*)

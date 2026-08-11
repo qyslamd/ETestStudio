@@ -153,6 +153,16 @@ add_executable(${TARGET_NAME} WIN32
     wizards/NewFileGuideWizard.cpp
     wizards/QuickStartWizard.h
     wizards/QuickStartWizard.cpp
+    guidance/guidance_config.h
+    guidance/guidance_config.cpp
+    guidance/guidance_controller.h
+    guidance/guidance_controller.cpp
+    guidance/guidance_homepage.h
+    guidance/guidance_homepage.cpp
+    guidance/guidance_presentation.h
+    guidance/guidance_presentation.cpp
+    guidance/guidance_common.h
+    guidance/guidance_common.cpp
     dialogs/AboutDialog.h
     dialogs/AboutDialog.cpp
     dialogs/LoginDialog.h

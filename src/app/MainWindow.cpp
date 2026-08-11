@@ -33,12 +33,18 @@
 #include <QStringListModel>
 #include <QTimer>
 #include <QToolButton>
+#include <QEvent>
+#include <QGraphicsView>
+#include <QStandardPaths>
 #include "dialogs/AboutDialog.h"
 #include "dialogs/IcdSignalSelection.h"
 #include "dialogs/LoginDialog.h"
 #include "dialogs/UserManagerDialog.h"
 #include "wizards/NewFileGuideWizard.h"
 #include "wizards/QuickStartWizard.h"
+#include "guidance/guidance_config.h"
+#include "guidance/guidance_controller.h"
+#include "guidance/guidance_homepage.h"
 
 #include "SARibbonBar.h"
 #include "SARibbonCategory.h"
@@ -164,6 +170,12 @@ MainWindow::~MainWindow() {
 
   // 清空消息服务，避免回调 lambda 持有悬空 this
   MessageService::instance().clearAll();
+
+  // 引导运行中关闭窗口时，移除 qApp 事件过滤器，避免悬空 this。
+  if (guidance_shortcut_filter_installed_) {
+    qApp->removeEventFilter(this);
+    guidance_shortcut_filter_installed_ = false;
+  }
 }
 
 void MainWindow::initUi() {
@@ -2372,6 +2384,14 @@ void MainWindow::setupRibbon() {
       dlg.exec();
     });
     panel_file->addLargeAction(quick_start_action);
+    // 新手引导（D1：与「快速开始」并列，打开全屏引导首页）
+    auto* guidance_action = new QAction(
+        AppIconProvider::instance().icon(QStringLiteral("ribbon_about")),
+        QStringLiteral("新手引导"), this);
+    guidance_action->setToolTip(QStringLiteral("分步了解 ETest Studio 核心功能"));
+    connect(guidance_action, &QAction::triggered, this,
+            &MainWindow::onOpenGuidance);
+    panel_file->addLargeAction(guidance_action);
     panel_file->addLargeAction(new_project_action_);
     panel_file->addLargeAction(open_project_action_);
     panel_file->addLargeAction(new_file_action_);
@@ -3183,6 +3203,274 @@ void MainWindow::enableEditActions() {
   open_file_action_->setEnabled(projectOpen);
   new_file_action_->setEnabled(projectOpen);
   // 视图面板操作始终可用，无需在此恢复
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 新手引导（D1/D16）：懒创建 controller + 首页，配置 2 条主题
+// ══════════════════════════════════════════════════════════════════════════════
+
+void MainWindow::onOpenGuidance() {
+  ensureGuidanceCreated();
+  if (guidance_home_page_ == nullptr) {
+    return;
+  }
+  // 模态显示：exec() 自行 show + 事件循环，遮罩/居中/覆盖父窗口由 OverlayDialog 承担；
+  // 引导结束（hide/accept）后返回，继续走引导流程。
+  guidance_home_page_->exec();
+}
+
+void MainWindow::ensureGuidanceCreated() {
+  if (guidance_controller_ != nullptr) {
+    return;
+  }
+
+  guidance_controller_ = new GuidanceController(this);
+  guidance_controller_->setViewport(this);
+  setupGuidanceFlows();
+
+  // D11：引导期间拦截快捷键（QEvent::ShortcutOverride），随 controller 启停安装过滤器。
+  const auto uninstallFilter = [this]() {
+    if (guidance_shortcut_filter_installed_) {
+      qApp->removeEventFilter(this);
+      guidance_shortcut_filter_installed_ = false;
+    }
+  };
+  connect(guidance_controller_, &GuidanceController::started, this, [this]() {
+    if (!guidance_shortcut_filter_installed_) {
+      qApp->installEventFilter(this);
+      guidance_shortcut_filter_installed_ = true;
+    }
+  });
+  connect(guidance_controller_, &GuidanceController::finished, this,
+          uninstallFilter);
+  connect(guidance_controller_, &GuidanceController::finishedByUser, this,
+          uninstallFilter);
+
+  guidance_home_page_ = new GuidanceHomePage(guidance_controller_, this);
+}
+
+void MainWindow::setupGuidanceFlows() {
+  if (guidance_controller_ == nullptr) {
+    return;
+  }
+
+  // ── 主题 1：创建测试工程（2 步，仅静态高亮 + 说明，不触发模态向导） ──
+  auto* flowProject = new GuidanceFlow(
+      AppIconProvider::instance().icon(QStringLiteral("folder_plus"))
+          .pixmap(32, 32),
+      QStringLiteral("创建测试工程"),
+      QStringLiteral("从零搭建一个测试工程，贯穿新建、编辑到执行"));
+  auto* stepProject1 =
+      new GuidanceStep(ribbonButtonForAction(new_project_action_));
+  stepProject1->withTitle(QStringLiteral("新建项目"))
+      ->withDescription(QStringLiteral(
+          "「新建项目」将打开创建测试工程的向导。"))
+      ->withEnterFunc([this]() { navigateTo(0); });
+  flowProject->withStep(stepProject1);
+  auto* stepProject2 =
+      new GuidanceStep(ribbonButtonForAction(new_project_action_));
+  stepProject2->withTitle(QStringLiteral("选择模板并命名"))
+      ->withDescription(QStringLiteral(
+          "在向导中选择工程模板，填写工程名称与保存位置，即可完成创建。"));
+  flowProject->withStep(stepProject2);
+  guidance_controller_->addFlow(flowProject);
+
+  // ── 主题 2：创建拓扑（3 步） ──
+  auto* flowTopo = new GuidanceFlow(
+      AppIconProvider::instance().icon(QStringLiteral("topology"))
+          .pixmap(32, 32),
+      QStringLiteral("创建拓扑"),
+      QStringLiteral("搭建激励设备与被测设备之间的连接拓扑"));
+  auto* stepTopo1 =
+      new GuidanceStep(ribbonButtonForAction(new_file_action_));
+  stepTopo1->withTitle(QStringLiteral("新建文件"))
+      ->withDescription(QStringLiteral(
+          "「新建文件」可新建拓扑文件（.etopo）。"))
+      ->withEnterFunc([this]() { navigateTo(0); });
+  flowTopo->withStep(stepTopo1);
+
+  // Step2：enter 回调打开示例 .etopo 后再定位拓扑画布（D12，编辑器同步创建后映射）。
+  auto* stepTopo2 = new GuidanceStep(static_cast<QWidget*>(nullptr));
+  stepTopo2->withTitle(QStringLiteral("拓扑画布"))
+      ->withDescription(QStringLiteral(
+          "已自动打开一个示例拓扑：在画布上拖入设备、连接端口，搭建被测设备与激励设备的关系。"))
+      ->withEnterFunc([this, stepTopo2]() {
+        guidance_sample_path_ = writeGuidanceSampleTopology();
+        if (guidance_sample_path_.isEmpty()) {
+          return;
+        }
+        // 拓扑 openFile 内部 QtConcurrent 异步读文件，且 dock 布局尚未定型，
+        // 立即定位画布会得到偏移坐标；延后到下一轮事件循环再定位（D12）。
+        editor_manager_->openFile(guidance_sample_path_);
+        QTimer::singleShot(0, this, [this, stepTopo2]() {
+          if (QWidget* canvas = findTopologyCanvas(guidance_sample_path_)) {
+            stepTopo2->setTarget(canvas);
+            guidance_controller_->refreshCurrentStepHighlight();
+          }
+        });
+      });
+  flowTopo->withStep(stepTopo2);
+
+  // Step3：高亮设备面板（打开编辑器后的可见元素）。
+  auto* stepTopo3 = new GuidanceStep(static_cast<QWidget*>(nullptr));
+  stepTopo3->withTitle(QStringLiteral("设备面板"))
+      ->withDescription(QStringLiteral(
+          "左侧「设备面板」列出可用设备，拖到画布即可加入拓扑；工具栏提供对齐、连线样式等操作。"))
+      ->withEnterFunc([this, stepTopo3]() {
+        if (QWidget* palette = findTopologyDevicePalette()) {
+          stepTopo3->setTarget(palette);
+        }
+      });
+  flowTopo->withStep(stepTopo3);
+
+  guidance_controller_->addFlow(flowTopo);
+
+  // 占位主题（首页 5 槽位，D16）：无步骤 → GuidanceCard 显示"敬请期待"
+  guidance_controller_->addFlow(
+      new GuidanceFlow(QStringLiteral("协议编辑"), QStringLiteral("敬请期待")));
+  guidance_controller_->addFlow(
+      new GuidanceFlow(QStringLiteral("测试程序"), QStringLiteral("敬请期待")));
+  guidance_controller_->addFlow(
+      new GuidanceFlow(QStringLiteral("执行运行"), QStringLiteral("敬请期待")));
+}
+
+QWidget* MainWindow::ribbonButtonForAction(QAction* action) {
+  if (action == nullptr || ribbonBar() == nullptr) {
+    return nullptr;
+  }
+  SARibbonCategory* startCat = ribbonBar()->categoryByIndex(0);
+  const auto buttons = ribbonBar()->findChildren<QToolButton*>();
+  QWidget* fallback = nullptr;
+  for (QToolButton* button : buttons) {
+    if (button->defaultAction() != action &&
+        !button->actions().contains(action)) {
+      continue;
+    }
+    // 优先「开始」页面板大按钮（QAB 也可能含同一 action）。
+    if (startCat != nullptr && startCat->isAncestorOf(button)) {
+      return button;
+    }
+    if (fallback == nullptr) {
+      fallback = button;
+    }
+  }
+  return fallback;
+}
+
+QWidget* MainWindow::findTopologyEditor() const {
+  if (editor_manager_ == nullptr) {
+    return nullptr;
+  }
+  for (IEditor* editor : editor_manager_->allEditors()) {
+    auto* topo = dynamic_cast<etest::topology::TopologyEditorWidget*>(
+        editor->widget());
+    if (topo != nullptr) {
+      return topo;
+    }
+  }
+  return nullptr;
+}
+
+QWidget* MainWindow::findTopologyCanvas(const QString& filePath) const {
+  if (editor_manager_ == nullptr) {
+    return nullptr;
+  }
+  IEditor* editor = editor_manager_->editorById(filePath);
+  if (editor == nullptr) {
+    return nullptr;
+  }
+  auto* topo = dynamic_cast<etest::topology::TopologyEditorWidget*>(
+      editor->widget());
+  if (topo == nullptr) {
+    return nullptr;
+  }
+  return topo->findChild<QGraphicsView*>();
+}
+
+QWidget* MainWindow::findTopologyDevicePalette() const {
+  QWidget* topo = findTopologyEditor();
+  if (topo == nullptr) {
+    return nullptr;
+  }
+  return topo->findChild<QWidget*>(QStringLiteral("topologyDevicePalette"));
+}
+
+QString MainWindow::writeGuidanceSampleTopology() const {
+  const QString dir =
+      QStandardPaths::writableLocation(QStandardPaths::TempLocation) +
+      QStringLiteral("/etest_guidance");
+  QDir().mkpath(dir);
+  const QString path = dir + QStringLiteral("/sample_topology.etopo");
+  QFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    return QString();
+  }
+  file.write(R"({
+    "version": 1,
+    "products": [
+        {
+            "name": "示例UUT",
+            "positionX": -300,
+            "positionY": -200,
+            "ports": [
+                {
+                    "name": "CAN",
+                    "direction": "Bidirectional",
+                    "allowedDeviceTypes": [
+                        "can"
+                    ],
+                    "positionHint": -1,
+                    "portStyle": 0,
+                    "functionType": "CUSTOM"
+                }
+            ]
+        }
+    ],
+    "devices": [
+        {
+            "id": "guidance-sample-device-1",
+            "name": "示例激励设备",
+            "deviceType": "can",
+            "pluginId": "etest.plugin.device.mock_can",
+            "positionX": 300,
+            "positionY": -200,
+            "properties": [],
+            "ports": [
+                {
+                    "name": "ch0",
+                    "direction": "Bidirectional",
+                    "functionType": "CUSTOM",
+                    "positionHint": -1,
+                    "portStyle": 0,
+                    "boundFrames": []
+                }
+            ]
+        }
+    ],
+    "connections": [
+        {
+            "id": "guidance-sample-connection-1",
+            "product": "示例UUT",
+            "port": "CAN",
+            "device": "示例激励设备",
+            "devicePort": "ch0",
+            "style": "bezier"
+        }
+    ]
+})");
+  file.close();
+  return path;
+}
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
+  // D11：引导期间拦截快捷键。ShortcutOverride 需 accept（而非 ignore）才会阻止
+  // QShortcutMap 触发快捷键；ignore 会放行快捷键，与「禁用」目标相反。
+  if (guidance_controller_ != nullptr && guidance_controller_->isRunning() &&
+      event->type() == QEvent::ShortcutOverride) {
+    event->accept();
+    return true;
+  }
+  return SARibbonMainWindow::eventFilter(obj, event);
 }
 
 }  // namespace etest::app

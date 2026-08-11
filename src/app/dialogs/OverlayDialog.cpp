@@ -64,13 +64,20 @@ void OverlayDialog::showEvent(QShowEvent* event) {
   }
 }
 
+void OverlayDialog::setMaskColor(const QColor& color) {
+  mask_color_ = color;
+  update();
+}
+
+QColor OverlayDialog::maskColor() const { return mask_color_; }
+
 void OverlayDialog::paintEvent(QPaintEvent* event) {
   QDialog::paintEvent(event);
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
   QPainterPath path;
   path.addRoundedRect(rect(), round_radius_, round_radius_);
-  p.fillPath(path, QColor(205, 205, 205, 170));
+  p.fillPath(path, mask_color_);
 }
 
 void OverlayDialog::keyPressEvent(QKeyEvent* e) {

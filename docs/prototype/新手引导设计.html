@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新手引导 UI 原型（深浅主题）</title>
+<style>
+  /* ── Fluent 主题 token（浅色 default / 深色 vscode 切换） ── */
+  :root {
+    --app-bg: #EDEDED;
+    --app-ribbon: #FFFFFF;
+    --app-content: #F7F7F7;
+    --app-border: #E0E0E0;
+    --app-text: #333333;
+    --app-muted: #8A8A8A;
+    --accent: #0078D4;
+    --accent-soft: rgba(0,103,192,0.10);
+    --hover: #F0F0F0;
+    --card-bg: #FFFFFF;
+    --card-border: #E0E0E0;
+    --mask: rgba(0,0,0,0.50);
+    --bubble-bg: #FFFFFF;
+    --bubble-border: #E0E0E0;
+    --bubble-shadow: 0 6px 24px rgba(0,0,0,0.18);
+    --title: #333333;
+    --desc: #8A8A8A;
+    --btn-border: #D0D0D0;
+  }
+  body.theme-dark {
+    --app-bg: #1E1E1E;
+    --app-ribbon: #252526;
+    --app-content: #2D2D2D;
+    --app-border: #3C3C3C;
+    --app-text: #CCCCCC;
+    --app-muted: #9D9D9D;
+    --accent: #007ACC;
+    --accent-soft: rgba(0,122,204,0.25);
+    --hover: #383838;
+    --card-bg: #2D2D2D;
+    --card-border: #3C3C3C;
+    --mask: rgba(0,0,0,0.55);
+    --bubble-bg: #2D2D2D;
+    --bubble-border: #3C3C3C;
+    --bubble-shadow: 0 6px 24px rgba(0,0,0,0.5);
+    --title: #CCCCCC;
+    --desc: #9D9D9D;
+    --btn-border: #3C3C3C;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    background: #E9E9E9; color: var(--app-text);
+    padding: 24px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .page-sub { color: #6E6E6E; font-size: 13px; margin-top: 4px; }
+  .toolbar { display: flex; gap: 8px; align-items: center; background: #fff;
+    border: 1px solid var(--app-border); border-radius: 10px; padding: 10px 14px; width: fit-content;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .seg-btn { border: 1px solid var(--app-border); background: #fff; padding: 6px 16px;
+    border-radius: 6px; font-size: 13px; cursor: pointer; color: #333; }
+  .seg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── 主窗口模拟 ── */
+  .app-window {
+    position: relative; width: 920px; height: 560px;
+    background: var(--app-bg); border: 1px solid var(--app-border);
+    border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    transition: background .2s;
+  }
+  .app-ribbon {
+    height: 96px; background: var(--app-ribbon); border-bottom: 1px solid var(--app-border);
+    padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+    transition: background .2s;
+  }
+  .ribbon-tab { padding: 5px 14px; font-size: 12px; color: var(--app-muted); border-radius: 5px; }
+  .ribbon-tab.active { color: var(--accent); font-weight: 600; }
+  .ribbon-sep { width: 1px; height: 36px; background: var(--app-border); margin: 0 6px; }
+  .ribbon-btn { display: flex; flex-direction: column; align-items: center; gap: 4px;
+    width: 58px; padding: 6px 2px; border-radius: 6px; cursor: pointer; }
+  .ribbon-btn .ico { width: 30px; height: 30px; border-radius: 6px; background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center; }
+  .ribbon-btn .ico svg { width: 18px; height: 18px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+  .ribbon-btn .lbl { font-size: 10px; color: var(--app-muted); }
+  .ribbon-btn.hl-target { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+  .app-content {
+    height: 464px; background: var(--app-content); padding: 24px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s;
+  }
+  .content-placeholder { color: var(--app-muted); font-size: 13px; }
+  .app-titlebar { height: 30px; display: flex; align-items: center; padding: 0 12px;
+    color: var(--app-muted); font-size: 12px; border-bottom: 1px solid var(--app-border); }
+
+  /* ── 引导遮罩层 ── */
+  .guide-mask {
+    position: absolute; inset: 0; background: var(--mask);
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s;
+  }
+
+  /* 引导首页：居中主题卡 */
+  .guide-home {
+    width: 760px; display: flex; flex-direction: column; gap: 14px; align-items: center;
+  }
+  .guide-home-title { color: #fff; font-size: 20px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .guide-home-sub { color: rgba(255,255,255,0.85); font-size: 13px; }
+  .guide-cards { display: flex; gap: 12px; width: 100%; }
+  .guide-card {
+    flex: 1; background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 14px 10px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+    transition: background .15s, transform .15s;
+  }
+  .guide-card:hover { background: var(--hover); transform: translateY(-2px); }
+  .guide-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .guide-card .gico { width: 34px; height: 34px; border-radius: 8px; background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center; }
+  .guide-card .gico svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+  .guide-card .gname { font-size: 13px; font-weight: 600; color: var(--title); }
+  .guide-card .gdesc { font-size: 11px; color: var(--desc); line-height: 1.5; }
+  .guide-home-close { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px;
+    border-radius: 6px; color: #fff; font-size: 16px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; }
+  .guide-home-close:hover { background: rgba(255,255,255,0.15); }
+
+  /* 分步引导：气泡 */
+  .guide-bubble {
+    position: absolute; width: 280px; background: var(--bubble-bg);
+    border: 1px solid var(--bubble-border); border-radius: 8px;
+    box-shadow: var(--bubble-shadow); padding: 14px 16px;
+    transition: background .2s;
+  }
+  .guide-bubble::before {
+    content: ""; position: absolute; top: -7px; left: 40px;
+    width: 12px; height: 12px; background: var(--bubble-bg);
+    border-left: 1px solid var(--bubble-border); border-top: 1px solid var(--bubble-border);
+    transform: rotate(45deg);
+  }
+  .bubble-title { font-size: 14px; font-weight: 600; color: var(--title); margin-bottom: 6px; }
+  .bubble-desc { font-size: 12px; color: var(--desc); line-height: 1.6; margin-bottom: 12px; }
+  .bubble-step { font-size: 11px; color: var(--desc); margin-bottom: 10px; }
+  .bubble-nav { display: flex; align-items: center; gap: 8px; }
+  .bubble-btn { padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--btn-border); background: var(--card-bg); color: var(--title); }
+  .bubble-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .bubble-skip { margin-left: auto; font-size: 12px; color: var(--accent); cursor: pointer; }
+  .step-dots { display: flex; gap: 4px; margin-left: 10px; }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+  .step-dot.active { background: #fff; width: 14px; border-radius: 3px; }
+
+  .stage-note { margin-top: 10px; font-size: 12px; color: #6E6E6E; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="page-title">新手引导 — UI 原型（深浅主题）</div>
+    <div class="page-sub">引导首页（全屏遮罩 + 主题卡）与分步引导（目标高亮 + 气泡导航）</div>
+  </div>
+
+  <div class="toolbar">
+    <span style="font-size:13px;color:#6E6E6E">主题：</span>
+    <button class="seg-btn active" id="btn-light" onclick="setTheme('light')">浅色 default</button>
+    <button class="seg-btn" id="btn-dark" onclick="setTheme('dark')">深色 vscode</button>
+    <span style="font-size:13px;color:#6E6E6E;margin-left:12px">视图：</span>
+    <button class="seg-btn active" id="btn-home" onclick="setView('home')">引导首页</button>
+    <button class="seg-btn" id="btn-step" onclick="setView('step')">分步引导</button>
+  </div>
+
+  <div class="app-window" id="appWin">
+    <div class="app-titlebar">ETest Studio</div>
+    <div class="app-ribbon">
+      <div class="ribbon-tab active">开始</div>
+      <div class="ribbon-tab">视图</div>
+      <div class="ribbon-tab">执行</div>
+      <div class="ribbon-tab">工具</div>
+      <div class="ribbon-tab">帮助</div>
+      <div class="ribbon-sep"></div>
+      <div class="ribbon-btn" id="newProjBtn">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="lbl">新建项目</div>
+      </div>
+      <div class="ribbon-btn">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="lbl">打开项目</div>
+      </div>
+    </div>
+    <div class="app-content">
+      <div class="content-placeholder">主窗口中央区域（欢迎页 / 编辑器 / 执行仪表盘）</div>
+    </div>
+
+    <!-- 引导遮罩 -->
+    <div class="guide-mask" id="guideMask">
+      <!-- 首页 -->
+      <div class="guide-home" id="guideHome">
+        <div class="guide-home-title">欢迎使用 ETest Studio</div>
+        <div class="guide-home-sub">选择一项开始了解，或点击遮罩空白退出</div>
+        <div class="guide-cards">
+          <div class="guide-card selected">
+            <div class="gico"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></div>
+            <div class="gname">新建项目</div>
+            <div class="gdesc">创建测试工程</div>
+          </div>
+          <div class="guide-card">
+            <div class="gico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg></div>
+            <div class="gname">拓扑编辑</div>
+            <div class="gdesc">设备与连线</div>
+          </div>
+          <div class="guide-card">
+            <div class="gico"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/></svg></div>
+            <div class="gname">协议编辑</div>
+            <div class="gdesc">信号与帧</div>
+          </div>
+          <div class="guide-card">
+            <div class="gico"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+            <div class="gname">测试程序</div>
+            <div class="gdesc">用例与步骤</div>
+          </div>
+          <div class="guide-card">
+            <div class="gico"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></div>
+            <div class="gname">执行运行</div>
+            <div class="gdesc">运行与验证</div>
+          </div>
+        </div>
+        <div class="guide-home-close" onclick="alert('退出引导')">×</div>
+      </div>
+
+      <!-- 分步引导 -->
+      <div id="guideStep" style="display:none">
+        <div class="guide-bubble" style="position:absolute; top:150px; left:60px;">
+          <div class="bubble-title">新建项目</div>
+          <div class="bubble-desc">点击「开始」页的<b>新建项目</b>按钮，创建一个测试工程。可在向导中选择模板。</div>
+          <div class="bubble-step">第 1 步 / 共 2 步</div>
+          <div class="bubble-nav">
+            <button class="bubble-btn" disabled>上一步</button>
+            <button class="bubble-btn primary">下一步</button>
+            <span class="bubble-skip">跳过</span>
+          </div>
+        </div>
+        <div class="step-dots" style="position:absolute; bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:4px;">
+          <span class="step-dot active"></span>
+          <span class="step-dot"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-note">提示：切换主题看明暗适配；分步引导中「新建项目」按钮为高亮目标（accent 描边），气泡带完整导航。</div>
+
+<script>
+  function setTheme(t) {
+    document.body.classList.toggle('theme-dark', t === 'dark');
+    document.getElementById('btn-light').className = 'seg-btn' + (t === 'light' ? ' active' : '');
+    document.getElementById('btn-dark').className = 'seg-btn' + (t === 'dark' ? ' active' : '');
+  }
+  function setView(v) {
+    document.getElementById('guideHome').style.display = v === 'home' ? '' : 'none';
+    document.getElementById('guideStep').style.display = v === 'step' ? '' : 'none';
+    document.getElementById('newProjBtn').classList.toggle('hl-target', v === 'step');
+    document.getElementById('btn-home').className = 'seg-btn' + (v === 'home' ? ' active' : '');
+    document.getElementById('btn-step').className = 'seg-btn' + (v === 'step' ? ' active' : '');
+  }
+</script>
+</body>
+</html>
