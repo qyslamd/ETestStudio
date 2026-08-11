@@ -19,7 +19,6 @@
 
 #include "AppIconProvider.h"
 #include "ThemeManager.h"
-#include "guidance_common.h"
 #include "guidance_config.h"
 #include "guidance_controller.h"
 

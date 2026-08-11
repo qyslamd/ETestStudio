@@ -254,8 +254,9 @@ void GuidancePresentation::drawCountDownOnBubble(QPainter* painter) {
 
   QPainterPath path;
   path.addRoundedRect(rect, cornerRadius_, cornerRadius_);
+  // 倒计时条用 accent 淡色（两主题统一降低深浅）
   QColor bar = accentColor();
-  bar.setAlpha(245);
+  bar.setAlpha(140);
   p.fillPath(path, QBrush(bar));
 }
 

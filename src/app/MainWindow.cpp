@@ -3323,6 +3323,19 @@ void MainWindow::setupGuidanceFlows() {
       });
   flowTopo->withStep(stepTopo3);
 
+  // 拓扑演示结束（controller 在 flow 结束时调 exitFunc）：关闭临时示例编辑器 + 删除临时文件，
+  // 最后回到 ribbon「开始」页（编辑态 + 抬升第一 tab）。
+  flowTopo->setExitFunc([this]() {
+    if (!guidance_sample_path_.isEmpty()) {
+      if (editor_manager_->isOpen(guidance_sample_path_)) {
+        editor_manager_->closeFile(guidance_sample_path_);
+      }
+      QFile::remove(guidance_sample_path_);
+      guidance_sample_path_.clear();
+    }
+    navigateTo(0);
+  });
+
   guidance_controller_->addFlow(flowTopo);
 
   // 占位主题（首页 5 槽位，D16）：无步骤 → GuidanceCard 显示"敬请期待"
