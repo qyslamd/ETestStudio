@@ -1,6 +1,6 @@
 #include "RecentProjOrFileDelegate.h"
 
-#include <QApplication>
+#include <QIcon>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStyle>
@@ -25,30 +25,41 @@ void RecentProjOrFileDelegate::setShowTime(bool show) { show_time_ = show; }
 void RecentProjOrFileDelegate::paint(QPainter* painter,
                                      const QStyleOptionViewItem& option,
                                      const QModelIndex& index) const {
-  // Draw selection / hover background via the style system（QSS）
-  QStyleOptionViewItem opt = option;
-  initStyleOption(&opt, index);
-  opt.text.clear();
-  QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &opt, painter);
-
-  const QString fileName = index.data(Qt::DisplayRole).toString();
-  const QString dirPath = index.data(DirPathRole).toString();
-  const QString timeStr =
-      show_time_ ? index.data(TimeStrRole).toString() : QString();
-
+  // 完全自绘（参照 HintMessageDelegate）：QSS 的 QListView::item:hover/selected
+  // 对自定义 delegate 不可靠，背景用 ThemeManager 主题色，明暗自适应。
   painter->save();
   painter->setRenderHint(QPainter::Antialiasing);
 
   const QRect itemRect = option.rect;
   const bool itemHovered = (option.state & QStyle::State_MouseOver);
 
-  // 左侧内边距：带图标（model setIcon）时避开 decoration 区。
-  // 读 initStyleOption 后的 opt：option.features 恒为 0（HasDecoration 由
-  // initStyleOption 填充）。
-  int leftMargin = 8;
-  if (opt.features & QStyleOptionViewItem::HasDecoration) {
-    leftMargin += opt.decorationSize.width() + 6;
+  auto& tm = etest::core_ui::ThemeManager::instance();
+
+  // 背景：选中 → selectionBackground，hover → hoverBackground
+  if (option.state & QStyle::State_Selected) {
+    painter->fillRect(itemRect, tm.selectionBackground());
+  } else if (itemHovered) {
+    painter->fillRect(itemRect, tm.hoverBackground());
   }
+
+  const QString fileName = index.data(Qt::DisplayRole).toString();
+  const QString dirPath = index.data(DirPathRole).toString();
+  const QString timeStr =
+      show_time_ ? index.data(TimeStrRole).toString() : QString();
+
+  // 图标（model setIcon，经 DecorationRole 自绘）
+  const QVariant deco = index.data(Qt::DecorationRole);
+  const bool hasIcon =
+      deco.type() == QVariant::Icon && !deco.value<QIcon>().isNull();
+  const int iconSize = 16;
+  if (hasIcon) {
+    const QRect iconRect(itemRect.left() + 4,
+                         itemRect.center().y() - iconSize / 2, iconSize,
+                         iconSize);
+    deco.value<QIcon>().paint(painter, iconRect, Qt::AlignCenter,
+                              QIcon::Normal);
+  }
+  const int leftMargin = 8 + (hasIcon ? iconSize + 6 : 0);
 
   // 右侧：时间占位 + 关闭按钮占位
   int timeWidth = 0;
@@ -70,7 +81,7 @@ void RecentProjOrFileDelegate::paint(QPainter* painter,
   const QString elidedName =
       nameFm.elidedText(fileName, Qt::ElideRight, textWidth);
   painter->setFont(nameFont);
-  painter->setPen(option.palette.color(QPalette::WindowText));
+  painter->setPen(tm.textColor());
   painter->drawText(QRect(textLeft, itemRect.top(), textWidth, half),
                     Qt::AlignLeft | Qt::AlignVCenter, elidedName);
 
@@ -81,8 +92,7 @@ void RecentProjOrFileDelegate::paint(QPainter* painter,
     const QString elidedPath =
         smallFm.elidedText(dirPath, Qt::ElideLeft, textWidth);
     painter->setFont(pathFont);
-    painter->setPen(
-        option.palette.color(QPalette::Disabled, QPalette::WindowText));
+    painter->setPen(tm.disabledTextColor());
     painter->drawText(QRect(textLeft, itemRect.top() + half, textWidth, half),
                       Qt::AlignLeft | Qt::AlignVCenter, elidedPath);
   }
@@ -90,8 +100,7 @@ void RecentProjOrFileDelegate::paint(QPainter* painter,
   // 时间（右侧，垂直居中）
   if (show_time_ && !timeStr.isEmpty()) {
     painter->setFont(option.font);
-    painter->setPen(
-        option.palette.color(QPalette::Disabled, QPalette::WindowText));
+    painter->setPen(tm.disabledTextColor());
     painter->drawText(
         QRect(textRight + 8, itemRect.top(), timeWidth, itemRect.height()),
         Qt::AlignRight | Qt::AlignVCenter, timeStr);
@@ -104,9 +113,9 @@ void RecentProjOrFileDelegate::paint(QPainter* painter,
 
     painter->setPen(Qt::NoPen);
     if (btnHovered) {
-      painter->setBrush(etest::core_ui::ThemeManager::instance().accentColor());
+      painter->setBrush(tm.accentColor());
     } else {
-      QColor btnBg = option.palette.color(QPalette::WindowText);
+      QColor btnBg = tm.textColor();
       btnBg.setAlpha(60);
       painter->setBrush(btnBg);
     }
