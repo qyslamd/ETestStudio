@@ -32,6 +32,8 @@
     height: 16px;
     color: #CCCCCC;
     font-size: 11px;
+    /* QSS 未声明 text-align 时 QStyleSheetStyle 默认左对齐，须显式居中 */
+    text-align: center;
 }
 
 #StartupSplashProgressBar::chunk {
