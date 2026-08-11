@@ -2941,6 +2941,16 @@ void MainWindow::revealAfterSplash() {
     showMaximized();
   } else {
     show();
+    // show() 后 frameless 窗口几何可能被收缩到内容最小尺寸（隐藏 sidebar/ribbon
+    // 时约 900x631），重新应用 restore 的几何，确保恢复上次保存的窗口大小
+    auto& cfg = ConfigManager::instance();
+    resize(cfg.get<int>(CONFIG_WINDOW_WIDTH, CONFIG_WINDOW_DEFAULT_WIDTH),
+           cfg.get<int>(CONFIG_WINDOW_HEIGHT, CONFIG_WINDOW_DEFAULT_HEIGHT));
+    const int rx = cfg.get<int>(CONFIG_WINDOW_X, CONFIG_WINDOW_DEFAULT_X);
+    const int ry = cfg.get<int>(CONFIG_WINDOW_Y, CONFIG_WINDOW_DEFAULT_Y);
+    if (rx >= 0 && ry >= 0) {
+      move(rx, ry);
+    }
   }
   restoreLazyLayout();
 
