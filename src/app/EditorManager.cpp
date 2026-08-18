@@ -808,6 +808,16 @@ void EditorManager::onDockWidgetActivated(ads::CDockWidget* dock) {
     return;
   }
 
+  // 中央欢迎页激活（无对应编辑器 dock）：视为无活动编辑器，清空当前
+  // 文件并通知，让 MainWindow 回到「开始」ribbon 首页态（D-welcome）
+  if (dock->isCentralWidget()) {
+    if (!current_file_path_.isEmpty()) {
+      current_file_path_.clear();
+      emit currentEditorChanged(nullptr);
+    }
+    return;
+  }
+
   QString editorId;
   for (auto it = dock_widgets_.constBegin(); it != dock_widgets_.constEnd();
        ++it) {
