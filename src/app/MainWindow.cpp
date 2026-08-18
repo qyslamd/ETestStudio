@@ -2694,14 +2694,22 @@ void MainWindow::applyContextPageVisibility() {
       ribbonBar()->hideCategory(it.value());
     }
   } else if (key.isEmpty()) {
-    // 纯空态：隐藏全部上下文页，清空命令动作，回到「开始」页
+    // 纯空态：隐藏全部上下文页，清空命令动作。仅当隐藏前 ribbon 停在
+    // 上下文页时回「开始」页；用户主动停在基础页（视图/工具/帮助等）
+    // 时保持其选择，避免 central_stack 回 page0 误把 ribbon 拽到「开始」
+    SARibbonCategory* curCat =
+        ribbonBar()->categoryByIndex(ribbonBar()->currentIndex());
+    const bool wasContext =
+        curCat && context_categories_.values().contains(curCat);
     for (auto it = context_categories_.constBegin();
          it != context_categories_.constEnd(); ++it) {
       ribbonBar()->hideCategory(it.value());
     }
     clearContextActions();
-    if (auto* homeCat = ribbonBar()->categoryByIndex(0)) {
-      ribbonBar()->raiseCategory(homeCat);
+    if (wasContext) {
+      if (auto* homeCat = ribbonBar()->categoryByIndex(0)) {
+        ribbonBar()->raiseCategory(homeCat);
+      }
     }
   } else {
     for (auto it = context_categories_.constBegin();
