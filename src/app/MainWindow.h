@@ -117,6 +117,7 @@ class MainWindow : public SARibbonMainWindow {
   // 项目相关
   bool tryCloseCurrentProject();
   void openRecentProject(const QString& path);
+  void onRecentFileOpenRequested(const QString& path);
   void onNewProject();
   static QString findProjectFile(const QString& dirPath);
   void onOpenProject();
@@ -138,6 +139,7 @@ class MainWindow : public SARibbonMainWindow {
   void onSaveAllFiles();
   void onCloseCurrentFile();
   void onCloseAllFiles();
+  void onCurrentEditorChanged(IEditor* editor);
 
   // 编辑操作
   void onUndo();

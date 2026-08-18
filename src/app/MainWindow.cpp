@@ -616,77 +616,8 @@ void MainWindow::initSignals() {
               psw->locateFileByPath(rel_path);
             });
     // 点击最近文件 → 项目检测 + 打开
-    connect(
-        psWidget, &ProjectStructureWidget::recentFileOpenRequested, this,
-        [this](const QString& path) {
-          QFileInfo fi(path);
-          if (!fi.exists()) {
-            // 文件已不存在，从最近文件列表中移除
-            auto& cfg = ConfigManager::instance();
-            QStringList files = cfg.get<QStringList>(
-                QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
-            if (files.removeAll(path) > 0) {
-              cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST), files);
-            }
-            return;
-          }
-
-          // 向上遍历找 .etproj 项目文件
-          QString projFile = findProjectFile(fi.absolutePath());
-          if (projFile.isEmpty()) {
-            editor_manager_->openFile(path);
-            return;
-          }
-
-          QFileInfo projFi(projFile);
-          if (projFi.absolutePath() ==
-              etest::core::project::ProjectManager::instance()
-                  .currentProjectRoot()) {
-            editor_manager_->openFile(path);
-            return;
-          }
-
-          // 检查自动打开项目的配置
-          auto& cfg = ConfigManager::instance();
-          bool autoOpenProject = cfg.get<bool>(
-              QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
-              CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
-          auto& projMgr = etest::core::project::ProjectManager::instance();
-
-          // 如果当前有项目打开，先关闭
-          if (projMgr.isProjectOpen()) {
-            if (!tryCloseCurrentProject())
-              return;
-          }
-
-          if (autoOpenProject) {
-            projMgr.openProject(projFile);
-            editor_manager_->openFile(path);
-            return;
-          }
-
-          // 不同项目 → 弹对话框询问（含复选框）
-          QMessageBox msgBox;
-          msgBox.setWindowTitle(QStringLiteral("打开文件"));
-          msgBox.setText(
-              QStringLiteral("此文件属于项目 \"%1\"，是否打开该项目？")
-                  .arg(projFi.completeBaseName()));
-          msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-          msgBox.setDefaultButton(QMessageBox::Yes);
-
-          auto* cb =
-              new QCheckBox(QStringLiteral("以后始终打开所属项目，不再询问"));
-          msgBox.setCheckBox(cb);
-
-          if (msgBox.exec() == QMessageBox::Yes) {
-            if (cb->isChecked()) {
-              cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
-                      true);
-            }
-            projMgr.openProject(projFile);
-          }
-          editor_manager_->openFile(path);
-        });
+    connect(psWidget, &ProjectStructureWidget::recentFileOpenRequested, this,
+            &MainWindow::onRecentFileOpenRequested);
 
     // 拓扑管理器：双击文件打开编辑器
     if (auto* topoMgr = sidebar_->topologyManager()) {
@@ -781,103 +712,8 @@ void MainWindow::initSignals() {
           [this](const QString& path) { editor_manager_->openFile(path); });
 
   // 编辑器：当前编辑器切换时更新状态栏和菜单状态
-  connect(
-      editor_manager_, &EditorManager::currentEditorChanged, this,
-      [this, &projectMgr](IEditor* editor) {
-        bool hasEditor = (editor != nullptr);
-        bool hasSelection = false;
-        bool isTextEditor =
-            hasEditor && dynamic_cast<TextEditorWidget*>(editor) != nullptr;
-
-        save_as_action_->setEnabled(hasEditor);
-        close_file_action_->setEnabled(hasEditor);
-        close_all_files_action_->setEnabled(hasEditor);
-
-        // 保存/撤销/重做使能状态统一从当前编辑器读取；实时变化由
-        // EditorManager 的 modificationChanged/undoStateChanged 中继驱动
-        syncEditorActions();
-
-        // 断开之前编辑器的所有信号连接
-        QObject::disconnect(current_editor_selection_connection_);
-
-        if (hasEditor) {
-          status_bar_ctrl_->setMessage(editor->filePath());
-
-          if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
-            QsciScintilla* sci_editor = textEditor->editor();
-            hasSelection = sci_editor->hasSelectedText();
-
-            int line, col;
-            sci_editor->getCursorPosition(&line, &col);
-            status_bar_ctrl_->setCursorPos(line + 1, col + 1);
-            status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
-            status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
-            status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
-
-            current_editor_selection_connection_ =
-                connect(sci_editor, &QsciScintilla::selectionChanged, this,
-                        [this, sci_editor]() {
-                          if (running_locked_)
-                            return;
-                          bool hasSelection = sci_editor->hasSelectedText();
-                          edit_cut_action_->setEnabled(hasSelection);
-                          edit_copy_action_->setEnabled(hasSelection);
-                        });
-          } else {
-            status_bar_ctrl_->setCursorPos(1, 1);
-            status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
-            status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
-            status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
-          }
-        } else {
-          status_bar_ctrl_->setMessage(QStringLiteral("就绪"));
-          status_bar_ctrl_->setCursorPos(1, 1);
-          status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
-          status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
-          status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
-          edit_cut_action_->setEnabled(false);
-          edit_copy_action_->setEnabled(false);
-          edit_find_action_->setEnabled(false);
-          edit_replace_action_->setEnabled(false);
-          edit_go_to_line_action_->setEnabled(false);
-        }
-        updateWindowTitle();
-
-        // D13：剪切/复制/粘贴/查找/替换/跳转行 仅文本编辑器启用
-        edit_cut_action_->setEnabled(hasSelection);
-        edit_copy_action_->setEnabled(hasSelection);
-        edit_paste_action_->setEnabled(isTextEditor);
-        edit_find_action_->setEnabled(isTextEditor);
-        edit_replace_action_->setEnabled(isTextEditor);
-        edit_go_to_line_action_->setEnabled(isTextEditor);
-        if (running_locked_)
-          disableEditActions();
-
-        // 同步项目树：自动跟随开启时定位当前激活编辑器对应的文件节点
-        if (hasEditor) {
-          QString project_root = projectMgr.currentProjectRoot();
-          if (!project_root.isEmpty()) {
-            QString rel_path =
-                QDir(project_root).relativeFilePath(editor->filePath());
-            auto* psw = qobject_cast<ProjectStructureWidget*>(
-                sidebar_->pageById(PageId::kProjectOverview));
-            LOG_DEBUG("PROJECT_UI",
-                      "currentEditorChanged: 同步项目树 file={} syncDoc={} psw={}",
-                      rel_path.toStdString(),
-                      psw ? psw->isSyncDocEnabled() : false, psw ? 1 : 0);
-            if (psw && psw->isSyncDocEnabled()) {
-              psw->locateFileByPath(rel_path);
-            }
-          } else {
-            LOG_INFO("PROJECT_UI", "currentEditorChanged: 项目根为空，跳过同步");
-          }
-        } else {
-          LOG_INFO("PROJECT_UI", "currentEditorChanged: 无活动编辑器");
-        }
-
-        // 上下文页随当前编辑器切换（命令定义模式）
-        applyContextPageVisibility();
-      });
+  connect(editor_manager_, &EditorManager::currentEditorChanged, this,
+          &MainWindow::onCurrentEditorChanged);
 
   // 编辑器：未保存更改状态变化时更新窗口标题和保存所有按钮
   connect(editor_manager_, &EditorManager::unsavedChangesChanged, this,
@@ -1489,6 +1325,74 @@ void MainWindow::onOpenFile() {
 
 QString MainWindow::findProjectFile(const QString& dirPath) {
   return ProjectController::findProjectFile(dirPath);
+}
+
+void MainWindow::onRecentFileOpenRequested(const QString& path) {
+  QFileInfo fi(path);
+  if (!fi.exists()) {
+    // 文件已不存在，从最近文件列表中移除
+    auto& cfg = ConfigManager::instance();
+    QStringList files =
+        cfg.get<QStringList>(QString::fromLatin1(CONFIG_RECENT_FILE_LIST));
+    if (files.removeAll(path) > 0) {
+      cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_LIST), files);
+    }
+    return;
+  }
+
+  // 向上遍历找 .etproj 项目文件
+  QString projFile = findProjectFile(fi.absolutePath());
+  if (projFile.isEmpty()) {
+    editor_manager_->openFile(path);
+    return;
+  }
+
+  QFileInfo projFi(projFile);
+  if (projFi.absolutePath() ==
+      etest::core::project::ProjectManager::instance()
+          .currentProjectRoot()) {
+    editor_manager_->openFile(path);
+    return;
+  }
+
+  // 检查自动打开项目的配置
+  auto& cfg = ConfigManager::instance();
+  bool autoOpenProject = cfg.get<bool>(
+      QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
+      CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
+  auto& projMgr = etest::core::project::ProjectManager::instance();
+
+  // 如果当前有项目打开，先关闭
+  if (projMgr.isProjectOpen()) {
+    if (!tryCloseCurrentProject())
+      return;
+  }
+
+  if (autoOpenProject) {
+    projMgr.openProject(projFile);
+    editor_manager_->openFile(path);
+    return;
+  }
+
+  // 不同项目 → 弹对话框询问（含复选框）
+  QMessageBox msgBox;
+  msgBox.setWindowTitle(QStringLiteral("打开文件"));
+  msgBox.setText(
+      QStringLiteral("此文件属于项目 \"%1\"，是否打开该项目？")
+          .arg(projFi.completeBaseName()));
+  msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+  msgBox.setDefaultButton(QMessageBox::Yes);
+
+  auto* cb = new QCheckBox(QStringLiteral("以后始终打开所属项目，不再询问"));
+  msgBox.setCheckBox(cb);
+
+  if (msgBox.exec() == QMessageBox::Yes) {
+    if (cb->isChecked()) {
+      cfg.set(QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT), true);
+    }
+    projMgr.openProject(projFile);
+  }
+  editor_manager_->openFile(path);
 }
 
 void MainWindow::openRecentProject(const QString& path) {
@@ -2790,12 +2694,15 @@ void MainWindow::applyContextPageVisibility() {
       ribbonBar()->hideCategory(it.value());
     }
   } else if (key.isEmpty()) {
-    // 纯空态：隐藏全部上下文页，清空命令动作
+    // 纯空态：隐藏全部上下文页，清空命令动作，回到「开始」页
     for (auto it = context_categories_.constBegin();
          it != context_categories_.constEnd(); ++it) {
       ribbonBar()->hideCategory(it.value());
     }
     clearContextActions();
+    if (auto* homeCat = ribbonBar()->categoryByIndex(0)) {
+      ribbonBar()->raiseCategory(homeCat);
+    }
   } else {
     for (auto it = context_categories_.constBegin();
          it != context_categories_.constEnd(); ++it) {
@@ -3167,6 +3074,103 @@ void MainWindow::disableEditActions() {
   open_file_action_->setEnabled(false);
   new_file_action_->setEnabled(false);
   // 视图面板操作在运行态保持可用
+}
+
+void MainWindow::onCurrentEditorChanged(IEditor* editor) {
+  bool hasEditor = (editor != nullptr);
+  bool hasSelection = false;
+  bool isTextEditor =
+      hasEditor && dynamic_cast<TextEditorWidget*>(editor) != nullptr;
+
+  save_as_action_->setEnabled(hasEditor);
+  close_file_action_->setEnabled(hasEditor);
+  close_all_files_action_->setEnabled(hasEditor);
+
+  // 保存/撤销/重做使能状态统一从当前编辑器读取；实时变化由
+  // EditorManager 的 modificationChanged/undoStateChanged 中继驱动
+  syncEditorActions();
+
+  // 断开之前编辑器的所有信号连接
+  QObject::disconnect(current_editor_selection_connection_);
+
+  if (hasEditor) {
+    status_bar_ctrl_->setMessage(editor->filePath());
+
+    if (auto* textEditor = dynamic_cast<TextEditorWidget*>(editor)) {
+      QsciScintilla* sci_editor = textEditor->editor();
+      hasSelection = sci_editor->hasSelectedText();
+
+      int line, col;
+      sci_editor->getCursorPosition(&line, &col);
+      status_bar_ctrl_->setCursorPos(line + 1, col + 1);
+      status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
+      status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
+      status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
+
+      current_editor_selection_connection_ =
+          connect(sci_editor, &QsciScintilla::selectionChanged, this,
+                  [this, sci_editor]() {
+                    if (running_locked_)
+                      return;
+                    bool hasSelection = sci_editor->hasSelectedText();
+                    edit_cut_action_->setEnabled(hasSelection);
+                    edit_copy_action_->setEnabled(hasSelection);
+                  });
+    } else {
+      status_bar_ctrl_->setCursorPos(1, 1);
+      status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
+      status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
+      status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
+    }
+  } else {
+    status_bar_ctrl_->setMessage(QStringLiteral("就绪"));
+    status_bar_ctrl_->setCursorPos(1, 1);
+    status_bar_ctrl_->setLanguage(QStringLiteral("纯文本"));
+    status_bar_ctrl_->setEol(QStringLiteral("CRLF"));
+    status_bar_ctrl_->setEncoding(QStringLiteral("UTF-8"));
+    edit_cut_action_->setEnabled(false);
+    edit_copy_action_->setEnabled(false);
+    edit_find_action_->setEnabled(false);
+    edit_replace_action_->setEnabled(false);
+    edit_go_to_line_action_->setEnabled(false);
+  }
+  updateWindowTitle();
+
+  // D13：剪切/复制/粘贴/查找/替换/跳转行 仅文本编辑器启用
+  edit_cut_action_->setEnabled(hasSelection);
+  edit_copy_action_->setEnabled(hasSelection);
+  edit_paste_action_->setEnabled(isTextEditor);
+  edit_find_action_->setEnabled(isTextEditor);
+  edit_replace_action_->setEnabled(isTextEditor);
+  edit_go_to_line_action_->setEnabled(isTextEditor);
+  if (running_locked_)
+    disableEditActions();
+
+  // 同步项目树：自动跟随开启时定位当前激活编辑器对应的文件节点
+  auto& projectMgr = etest::core::project::ProjectManager::instance();
+  if (hasEditor) {
+    QString project_root = projectMgr.currentProjectRoot();
+    if (!project_root.isEmpty()) {
+      QString rel_path =
+          QDir(project_root).relativeFilePath(editor->filePath());
+      auto* psw = qobject_cast<ProjectStructureWidget*>(
+          sidebar_->pageById(PageId::kProjectOverview));
+      LOG_DEBUG("PROJECT_UI",
+                "currentEditorChanged: 同步项目树 file={} syncDoc={} psw={}",
+                rel_path.toStdString(),
+                psw ? psw->isSyncDocEnabled() : false, psw ? 1 : 0);
+      if (psw && psw->isSyncDocEnabled()) {
+        psw->locateFileByPath(rel_path);
+      }
+    } else {
+      LOG_INFO("PROJECT_UI", "currentEditorChanged: 项目根为空，跳过同步");
+    }
+  } else {
+    LOG_INFO("PROJECT_UI", "currentEditorChanged: 无活动编辑器");
+  }
+
+  // 上下文页随当前编辑器切换（命令定义模式）
+  applyContextPageVisibility();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
