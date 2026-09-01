@@ -24,6 +24,7 @@ class LoginDialog : public OverlayDialog {
   void initSignals();
   void onLoginClicked();
 
+  QPushButton* closeBtn_ = nullptr;
   QLineEdit* usernameEdit_ = nullptr;
   QLineEdit* passwordEdit_ = nullptr;
   QCheckBox* rememberCheckBox_ = nullptr;

@@ -4,21 +4,20 @@
 
 #include <QComboBox>
 #include <QHBoxLayout>
-#include <QLineEdit>
 #include <QHeaderView>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QToolButton>
 #include <QTableWidget>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 namespace etest::app {
 
 using namespace etest::core::auth;
 
-UserManagerDialog::UserManagerDialog(QWidget* parent)
-    : OverlayDialog(parent) {
+UserManagerDialog::UserManagerDialog(QWidget* parent) : OverlayDialog(parent) {
   round_radius_ = 12;
   initUi();
   initSignals();
@@ -45,30 +44,28 @@ void UserManagerDialog::initUi() {
   addBtn->setObjectName(QStringLiteral("userMgrAddBtn"));
   addBtn->setCursor(Qt::PointingHandCursor);
   connect(addBtn, &QToolButton::clicked, this, &UserManagerDialog::onAddUser);
-  auto* closeBtn = new QToolButton(content);
-  closeBtn->setText(QStringLiteral("×"));
-  closeBtn->setObjectName(QStringLiteral("userMgrCloseBtn"));
-  closeBtn->setFixedSize(28, 28);
-  closeBtn->setCursor(Qt::PointingHandCursor);
-  connect(closeBtn, &QToolButton::clicked, this, [this]() {
-    actHideAnimation();
-  });
+  closeBtn_ = new QToolButton(content);
+  closeBtn_->setText(QStringLiteral("×"));
+  closeBtn_->setObjectName(QStringLiteral("userMgrCloseBtn"));
+  closeBtn_->setFixedSize(28, 28);
+  closeBtn_->setCursor(Qt::PointingHandCursor);
+
   headerRow->addWidget(title);
   headerRow->addWidget(countLabel_);
   headerRow->addStretch();
   headerRow->addWidget(addBtn);
-  headerRow->addWidget(closeBtn);
+  headerRow->addWidget(closeBtn_);
   mainLayout->addLayout(headerRow);
 
   // Table
   table_ = new QTableWidget(content);
   table_->setObjectName(QStringLiteral("userMgrTable"));
   table_->setColumnCount(3);
-  table_->setHorizontalHeaderLabels(
-      {QStringLiteral("用户名"), QStringLiteral("角色"), QStringLiteral("操作")});
+  table_->setHorizontalHeaderLabels({QStringLiteral("用户名"),
+                                     QStringLiteral("角色"),
+                                     QStringLiteral("操作")});
   table_->horizontalHeader()->setStretchLastSection(false);
-  table_->horizontalHeader()->setSectionResizeMode(
-      0, QHeaderView::Stretch);
+  table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
   table_->horizontalHeader()->setSectionResizeMode(
       1, QHeaderView::ResizeToContents);
   table_->horizontalHeader()->setSectionResizeMode(
@@ -80,8 +77,7 @@ void UserManagerDialog::initUi() {
   mainLayout->addWidget(table_);
 
   // Hint
-  auto* hint = new QLabel(
-      QStringLiteral("admin 用户不可删除"), content);
+  auto* hint = new QLabel(QStringLiteral("admin 用户不可删除"), content);
   hint->setObjectName(QStringLiteral("userMgrHint"));
   mainLayout->addWidget(hint);
 
@@ -91,12 +87,12 @@ void UserManagerDialog::initUi() {
 
 void UserManagerDialog::initSignals() {
   // 表内按钮的连接在 refreshUserList 中动态建立
+  connect(closeBtn_, &QToolButton::clicked, this, &QDialog::reject);
 }
 
 void UserManagerDialog::refreshUserList() {
   auto users = UserManager::instance().allUsers();
-  countLabel_->setText(
-      QStringLiteral("共 %1 个用户").arg(users.size()));
+  countLabel_->setText(QStringLiteral("共 %1 个用户").arg(users.size()));
   table_->setRowCount(users.size());
 
   for (int i = 0; i < users.size(); ++i) {
@@ -106,9 +102,9 @@ void UserManagerDialog::refreshUserList() {
     nameItem->setFlags(nameItem->flags() & ~Qt::ItemIsEditable);
     table_->setItem(i, 0, nameItem);
 
-    auto* roleItem = new QTableWidgetItem(
-        u.role == UserRole::Admin ? QStringLiteral("Admin")
-                                  : QStringLiteral("User"));
+    auto* roleItem = new QTableWidgetItem(u.role == UserRole::Admin
+                                              ? QStringLiteral("Admin")
+                                              : QStringLiteral("User"));
     roleItem->setFlags(roleItem->flags() & ~Qt::ItemIsEditable);
     table_->setItem(i, 1, roleItem);
 
@@ -122,9 +118,8 @@ void UserManagerDialog::refreshUserList() {
     editBtn->setText(QStringLiteral("编辑"));
     editBtn->setObjectName(QStringLiteral("userMgrEditBtn"));
     editBtn->setCursor(Qt::PointingHandCursor);
-    connect(editBtn, &QToolButton::clicked, this, [this, i]() {
-      onEditUser(i);
-    });
+    connect(editBtn, &QToolButton::clicked, this,
+            [this, i]() { onEditUser(i); });
     actionsLayout->addWidget(editBtn);
 
     if (u.userName != "admin") {
@@ -132,9 +127,8 @@ void UserManagerDialog::refreshUserList() {
       deleteBtn->setText(QStringLiteral("删除"));
       deleteBtn->setObjectName(QStringLiteral("userMgrDeleteBtn"));
       deleteBtn->setCursor(Qt::PointingHandCursor);
-      connect(deleteBtn, &QToolButton::clicked, this, [this, i]() {
-        onDeleteUser(i);
-      });
+      connect(deleteBtn, &QToolButton::clicked, this,
+              [this, i]() { onDeleteUser(i); });
       actionsLayout->addWidget(deleteBtn);
     }
 
@@ -142,9 +136,10 @@ void UserManagerDialog::refreshUserList() {
   }
 }
 
-bool UserManagerDialog::showUserForm(
-    bool isAdd, const QString& userName, const QString& password,
-    UserRole role) {
+bool UserManagerDialog::showUserForm(bool isAdd,
+                                     const QString& userName,
+                                     const QString& password,
+                                     UserRole role) {
   QDialog dlg(this);
   dlg.setWindowTitle(isAdd ? QStringLiteral("添加用户")
                            : QStringLiteral("编辑用户"));
@@ -187,8 +182,8 @@ bool UserManagerDialog::showUserForm(
   btnRow->addWidget(cancelBtn);
   btnRow->addWidget(okBtn);
 
-  layout->addWidget(new QLabel(isAdd ? QStringLiteral("添加用户")
-                                     : QStringLiteral("编辑用户"), &dlg));
+  layout->addWidget(new QLabel(
+      isAdd ? QStringLiteral("添加用户") : QStringLiteral("编辑用户"), &dlg));
   layout->addWidget(nameEdit);
   layout->addWidget(passEdit);
   layout->addWidget(confirmEdit);
@@ -242,7 +237,8 @@ void UserManagerDialog::onAddUser() {
 
 void UserManagerDialog::onEditUser(int row) {
   auto users = UserManager::instance().allUsers();
-  if (row < 0 || row >= users.size()) return;
+  if (row < 0 || row >= users.size())
+    return;
   const auto& u = users[row];
   if (showUserForm(false, u.userName, {}, u.role))
     refreshUserList();
@@ -250,7 +246,8 @@ void UserManagerDialog::onEditUser(int row) {
 
 void UserManagerDialog::onDeleteUser(int row) {
   auto users = UserManager::instance().allUsers();
-  if (row < 0 || row >= users.size()) return;
+  if (row < 0 || row >= users.size())
+    return;
   const auto& u = users[row];
   auto ret = QMessageBox::question(
       this, QStringLiteral("确认删除"),

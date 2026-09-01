@@ -73,16 +73,13 @@ void LoginDialog::initUi() {
   auto* titleRow = new QHBoxLayout;
   auto* titleLabel = new QLabel(QStringLiteral("登录"), form);
   titleLabel->setObjectName(QStringLiteral("loginFormTitle"));
-  auto* closeBtn = new QPushButton(QStringLiteral("×"), form);
-  closeBtn->setObjectName(QStringLiteral("loginCloseBtn"));
-  closeBtn->setFixedSize(28, 28);
-  closeBtn->setCursor(Qt::PointingHandCursor);
+  closeBtn_ = new QPushButton(QStringLiteral("×"), form);
+  closeBtn_->setObjectName(QStringLiteral("loginCloseBtn"));
+  closeBtn_->setFixedSize(28, 28);
+  closeBtn_->setCursor(Qt::PointingHandCursor);
   titleRow->addWidget(titleLabel);
   titleRow->addStretch();
-  titleRow->addWidget(closeBtn);
-  connect(closeBtn, &QPushButton::clicked, this, [this]() {
-    actHideAnimation();
-  });
+  titleRow->addWidget(closeBtn_);
 
   usernameEdit_ = new QLineEdit(form);
   usernameEdit_->setObjectName(QStringLiteral("loginUsername"));
@@ -117,10 +114,12 @@ void LoginDialog::initUi() {
 }
 
 void LoginDialog::initSignals() {
+  // 关闭就意味着不登录
+  connect(closeBtn_, &QPushButton::clicked, this, &QDialog::reject);
   connect(loginButton_, &QPushButton::clicked, this,
           &LoginDialog::onLoginClicked);
-  connect(&AuthService::instance(), &AuthService::loginSucceeded,
-          this, [this]() {
+  connect(&AuthService::instance(), &AuthService::loginSucceeded, this,
+          [this]() {
             // 保存或清除记住的密码
             auto& cfg = etest::core::config::ConfigManager::instance();
             if (rememberCheckBox_->isChecked()) {
@@ -130,18 +129,17 @@ void LoginDialog::initSignals() {
               cfg.set(CONFIG_AUTH_REMEMBER_USERNAME, QString());
               cfg.set(CONFIG_AUTH_REMEMBER_PASSWORD, QString());
             }
-            actHideAnimation();
+            accept();
           });
-  connect(&AuthService::instance(), &AuthService::loginFailed,
-          this, [this](const QString& reason) {
+  connect(&AuthService::instance(), &AuthService::loginFailed, this,
+          [this](const QString& reason) {
             hintLabel_->setText(reason);
             hintLabel_->show();
           });
 }
 
 void LoginDialog::keyReleaseEvent(QKeyEvent* event) {
-  if (event->key() == Qt::Key_Return ||
-      event->key() == Qt::Key_Enter) {
+  if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
     onLoginClicked();
   }
   OverlayDialog::keyReleaseEvent(event);
@@ -149,8 +147,7 @@ void LoginDialog::keyReleaseEvent(QKeyEvent* event) {
 
 void LoginDialog::onLoginClicked() {
   hintLabel_->hide();
-  AuthService::instance().login(
-      usernameEdit_->text(), passwordEdit_->text());
+  AuthService::instance().login(usernameEdit_->text(), passwordEdit_->text());
 }
 
 }  // namespace etest::app

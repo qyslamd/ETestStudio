@@ -4,9 +4,10 @@
 #include <QLayout>
 #include <QPainter>
 #include <QPixmap>
-#include <QToolButton>
 #include <QStyle>
+#include <QToolButton>
 #include <QVBoxLayout>
+
 
 #include "version.h"
 
@@ -153,8 +154,7 @@ void AboutDialog::initUi() {
   ok_button_->setCursor(Qt::PointingHandCursor);
   ok_button_->setFixedWidth(160);
   ok_button_->setFixedHeight(36);
-  connect(ok_button_, &QToolButton::clicked, this,
-          [this] { actHideAnimation(); });
+  connect(ok_button_, &QToolButton::clicked, this, &QDialog::accept);
   auto* btn_row = new QHBoxLayout;
   btn_row->setAlignment(Qt::AlignCenter);
   btn_row->addWidget(ok_button_);

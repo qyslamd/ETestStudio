@@ -5,6 +5,7 @@
 
 class QTableWidget;
 class QLabel;
+class QToolButton;
 
 namespace etest::app {
 
@@ -21,11 +22,14 @@ class UserManagerDialog : public OverlayDialog {
   void onAddUser();
   void onEditUser(int row);
   void onDeleteUser(int row);
-  bool showUserForm(bool isAdd, const QString& userName = {},
-                    const QString& password = {},
-                    etest::core::auth::UserRole role =
-                        etest::core::auth::UserRole::User);
+  bool showUserForm(
+      bool isAdd,
+      const QString& userName = {},
+      const QString& password = {},
+      etest::core::auth::UserRole role = etest::core::auth::UserRole::User);
 
+ private:
+  QToolButton* closeBtn_ = nullptr;
   QTableWidget* table_ = nullptr;
   QLabel* countLabel_ = nullptr;
 };

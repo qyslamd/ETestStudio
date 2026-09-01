@@ -9,9 +9,11 @@
 #include <QDateTime>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QGraphicsView>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QInputDialog>
@@ -29,22 +31,20 @@
 #include <QShortcut>
 #include <QSplitter>
 #include <QStackedWidget>
+#include <QStandardPaths>
 #include <QStatusBar>
 #include <QStringListModel>
 #include <QTimer>
 #include <QToolButton>
-#include <QEvent>
-#include <QGraphicsView>
-#include <QStandardPaths>
 #include "dialogs/AboutDialog.h"
 #include "dialogs/IcdSignalSelection.h"
 #include "dialogs/LoginDialog.h"
 #include "dialogs/UserManagerDialog.h"
-#include "wizards/NewFileGuideWizard.h"
-#include "wizards/QuickStartWizard.h"
 #include "guidance/guidance_config.h"
 #include "guidance/guidance_controller.h"
 #include "guidance/guidance_homepage.h"
+#include "wizards/NewFileGuideWizard.h"
+#include "wizards/QuickStartWizard.h"
 
 #include "SARibbonBar.h"
 #include "SARibbonCategory.h"
@@ -77,7 +77,6 @@
 #include "ThemeManager.h"
 #include "TopologyManagerWidget.h"
 #include "TuxSaverController.h"
-#include "welcome/WelcomeWidget.h"
 #include "api/IEditor.h"
 #include "api/IEditorCommands.h"
 #include "auth/AuthService.h"
@@ -98,12 +97,13 @@
 #include "topology/TopologyDocument.h"
 #include "topology/TopologyEditorWidget.h"
 #include "utils/SignalSyncHelper.h"
+#include "welcome/WelcomeWidget.h"
 #include "widgets/BottomContainerWidget.h"
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/HintButton.h"
+#include "widgets/LogOutputPanel.h"
 #include "widgets/MessageService.h"
 #include "widgets/StartupSplashWidget.h"
-#include "widgets/LogOutputPanel.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -364,8 +364,8 @@ void MainWindow::initSignals() {
           });
 
   // 引擎正常执行完成 -> 发消息 5（仅 engineFinished，不含手动 stop / Error）
-  connect(execution_controller_, &ExecutionPanelController::engineFinished, this,
-          [this](int pass, int fail) {
+  connect(execution_controller_, &ExecutionPanelController::engineFinished,
+          this, [this](int pass, int fail) {
             MessageService::instance().postHint(
                 QStringLiteral("测试执行完成 P%1 F%2").arg(pass).arg(fail),
                 QStringLiteral("查看"), [this]() { navigateTo(1); });
@@ -548,8 +548,9 @@ void MainWindow::initSignals() {
     connect(psWidget, &ProjectStructureWidget::fileRenamed, editor_manager_,
             &EditorManager::onFileRenamed);
 
-    // 占位页：项目操作（btn_grid 移除后 newProjectRequested/openProjectRequested
-    // 无发射源，连接删除；入口在 Ribbon 文件菜单与 WelcomeV2）
+    // 占位页：项目操作（btn_grid 移除后
+    // newProjectRequested/openProjectRequested 无发射源，连接删除；入口在
+    // Ribbon 文件菜单与 WelcomeV2）
     connect(psWidget, &ProjectStructureWidget::projectOpenRequested, this,
             &MainWindow::openRecentProject);
     // 最近项目变更时刷新占位页
@@ -784,8 +785,8 @@ void MainWindow::initSignals() {
   syncEditorActions();
   edit_cut_action_->setEnabled(hasSelection);
   edit_copy_action_->setEnabled(hasSelection);
-  bool isTextEditor = current_editor &&
-                      dynamic_cast<TextEditorWidget*>(current_editor) != nullptr;
+  bool isTextEditor = current_editor && dynamic_cast<TextEditorWidget*>(
+                                            current_editor) != nullptr;
   edit_paste_action_->setEnabled(isTextEditor);
 
   // 剪贴板处理：动态更新粘贴按钮状态
@@ -1045,8 +1046,7 @@ void MainWindow::lazyInit() {
 
   // 创建 ProjectController 和 EditorPanelController（依赖 editor_manager_）
   project_controller_ = new ProjectController(this, editor_manager_, this);
-  editor_controller_ =
-      new EditorPanelController(editor_manager_, this);
+  editor_controller_ = new EditorPanelController(editor_manager_, this);
 
   // 连接 project_controller_ 信号 → MainWindow 槽
   connect(project_controller_, &ProjectController::fileRequested, this,
@@ -1265,7 +1265,8 @@ void MainWindow::onThemeChanged(bool isDark) {
     }
   }
 
-  // 后设 QADS 样式（default.css 基底 + 每主题覆盖，覆盖 QADS 内置 widget 级 default.css）
+  // 后设 QADS 样式（default.css 基底 + 每主题覆盖，覆盖 QADS 内置 widget 级
+  // default.css）
   if (dock_manager_) {
     QString adsQss;
     QFile defaultCss(QStringLiteral(":ads/stylesheets/default.css"));
@@ -1301,8 +1302,8 @@ void MainWindow::onThemeChanged(bool isDark) {
     ribbon_search_edit_->setPalette(pal);
   }
 
-  // 上下文页命令图标随主题刷新：强制重建命令（否则 context_commands_editor_ 守卫在
-  // 编辑器未变化时跳过重建，图标保留旧主题 pixmap）
+  // 上下文页命令图标随主题刷新：强制重建命令（否则 context_commands_editor_
+  // 守卫在 编辑器未变化时跳过重建，图标保留旧主题 pixmap）
   context_commands_editor_ = nullptr;
   applyContextPageVisibility();
 }
@@ -1349,17 +1350,16 @@ void MainWindow::onRecentFileOpenRequested(const QString& path) {
 
   QFileInfo projFi(projFile);
   if (projFi.absolutePath() ==
-      etest::core::project::ProjectManager::instance()
-          .currentProjectRoot()) {
+      etest::core::project::ProjectManager::instance().currentProjectRoot()) {
     editor_manager_->openFile(path);
     return;
   }
 
   // 检查自动打开项目的配置
   auto& cfg = ConfigManager::instance();
-  bool autoOpenProject = cfg.get<bool>(
-      QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
-      CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
+  bool autoOpenProject =
+      cfg.get<bool>(QString::fromLatin1(CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT),
+                    CONFIG_RECENT_FILE_AUTO_OPEN_PROJECT_DEFAULT);
   auto& projMgr = etest::core::project::ProjectManager::instance();
 
   // 如果当前有项目打开，先关闭
@@ -1377,9 +1377,8 @@ void MainWindow::onRecentFileOpenRequested(const QString& path) {
   // 不同项目 → 弹对话框询问（含复选框）
   QMessageBox msgBox;
   msgBox.setWindowTitle(QStringLiteral("打开文件"));
-  msgBox.setText(
-      QStringLiteral("此文件属于项目 \"%1\"，是否打开该项目？")
-          .arg(projFi.completeBaseName()));
+  msgBox.setText(QStringLiteral("此文件属于项目 \"%1\"，是否打开该项目？")
+                     .arg(projFi.completeBaseName()));
   msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
   msgBox.setDefaultButton(QMessageBox::Yes);
 
@@ -1401,9 +1400,8 @@ void MainWindow::openRecentProject(const QString& path) {
   // 有项目打开时，先确认是否关闭
   auto& pm = etest::core::project::ProjectManager::instance();
   if (pm.isProjectOpen()) {
-    QString currentName = pm.currentProject()
-                              ? pm.currentProject()->name()
-                              : QString();
+    QString currentName =
+        pm.currentProject() ? pm.currentProject()->name() : QString();
     QString targetName = QFileInfo(path).fileName();
     int ret = QMessageBox::question(
         this, QStringLiteral("关闭当前项目"),
@@ -1516,8 +1514,9 @@ void MainWindow::onQuickCreateFile(const QString& categoryId,
                                    const QString& extension,
                                    const QString& baseName) {
   if (!etest::core::project::ProjectManager::instance().isProjectOpen()) {
-    QMessageBox::information(this, QStringLiteral("快速新建"),
-                             QStringLiteral("请先新建或打开项目，再创建文件。"));
+    QMessageBox::information(
+        this, QStringLiteral("快速新建"),
+        QStringLiteral("请先新建或打开项目，再创建文件。"));
     return;
   }
   if (!project_structure_widget_) {
@@ -1548,9 +1547,9 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   auto& projectMgr = etest::core::project::ProjectManager::instance();
 
   // 记录项目打开时间戳。key 必须与最近列表（CONFIG_RECENT_PROJECT_LIST）一致：
-  // 存项目文件路径（projectFilePath），而非 projectOpened 信号的 rootPath（目录），
-  // 否则 refreshRecentProjects / WelcomeV1 的 timestamps.contains(path) 永远不命中，
-  // 最近项目的时间无法显示。
+  // 存项目文件路径（projectFilePath），而非 projectOpened 信号的
+  // rootPath（目录）， 否则 refreshRecentProjects / WelcomeV1 的
+  // timestamps.contains(path) 永远不命中， 最近项目的时间无法显示。
   QVariantMap timestamps = ConfigManager::instance().get<QVariantMap>(
       CONFIG_RECENT_PROJECT_TIMESTAMPS);
   QString tsKey = projectPath;
@@ -1597,8 +1596,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
               icd_repository_->frames().size());
 
     MessageService::instance().postHint(
-        QStringLiteral("ICD 协议仓库解析完成"),
-        QStringLiteral("查看"), [this]() { navigateTo(0, PageId::kProtocol); });
+        QStringLiteral("ICD 协议仓库解析完成"), QStringLiteral("查看"),
+        [this]() { navigateTo(0, PageId::kProtocol); });
 
     // 预注册项目中的已有拓扑设备：扫描 topology/ 目录下所有 .etopo 文件
     const QString topoDir = projectPath + QStringLiteral("/topology");
@@ -1704,8 +1703,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
 
   // 消息中心：项目打开 + 拓扑同步
   {
-    auto* project = etest::core::project::ProjectManager::instance()
-                        .currentProject();
+    auto* project =
+        etest::core::project::ProjectManager::instance().currentProject();
     QString projectName =
         project ? project->name() : QStringLiteral("未知项目");
     MessageService::instance().postHint(
@@ -1713,8 +1712,8 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
         QStringLiteral("查看"),
         [this]() { navigateTo(0, PageId::kProjectOverview); });
     MessageService::instance().postHint(
-        QStringLiteral("拓扑数据已同步"),
-        QStringLiteral("查看"), [this]() { navigateTo(0, PageId::kTopology); });
+        QStringLiteral("拓扑数据已同步"), QStringLiteral("查看"),
+        [this]() { navigateTo(0, PageId::kTopology); });
   }
 
   // 同步 ribbon 按钮 enable 状态
@@ -1977,6 +1976,12 @@ void MainWindow::showEvent(QShowEvent* event) {
   if (first_show_) {
     first_show_ = false;
     onThemeChanged(ThemeManager::instance().isDarkTheme());
+
+    // 首次显示主窗口的时候弹出登录对话框
+    auto* dlg = new LoginDialog(this);
+    connect(dlg, &QDialog::finished, dlg, &QObject::deleteLater);
+    dlg->show();
+    LOG_INFO("MAIN_UI", "首次显示主窗口，弹出登录对话框");
   }
 }
 
@@ -2154,6 +2159,7 @@ void MainWindow::setupRibbon() {
       AppIconProvider::instance().icon(QStringLiteral("redo")));
   qab->addAction(edit_redo_action_);
   qab->addSeparator();
+
   // ---- QAB login ----
   {
     auto* login_action =
@@ -2292,7 +2298,8 @@ void MainWindow::setupRibbon() {
     auto* guidance_action = new QAction(
         AppIconProvider::instance().icon(QStringLiteral("ribbon_about")),
         QStringLiteral("新手引导"), this);
-    guidance_action->setToolTip(QStringLiteral("分步了解 ETest Studio 核心功能"));
+    guidance_action->setToolTip(
+        QStringLiteral("分步了解 ETest Studio 核心功能"));
     connect(guidance_action, &QAction::triggered, this,
             &MainWindow::onOpenGuidance);
     panel_file->addLargeAction(guidance_action);
@@ -2440,12 +2447,13 @@ void MainWindow::setupRibbon() {
         QStringLiteral("检查硬件设备"), this);
     check_hardware_action_->setToolTip(
         QStringLiteral("查看系统硬件设备列表，确认测试板卡是否被识别"));
-    QObject::connect(check_hardware_action_, &QAction::triggered, this, [this]() {
+    QObject::connect(
+        check_hardware_action_, &QAction::triggered, this, [this]() {
 #ifdef Q_OS_WIN
-      QProcess::startDetached(QStringLiteral("cmd.exe"),
-                               QStringList{QStringLiteral("/c"),
-                                           QStringLiteral("start"),
-                                           QStringLiteral("devmgmt.msc")});
+          QProcess::startDetached(
+              QStringLiteral("cmd.exe"),
+              QStringList{QStringLiteral("/c"), QStringLiteral("start"),
+                          QStringLiteral("devmgmt.msc")});
 #else
       QProcess lspci;
       lspci.start(QStringLiteral("lspci"), QStringList());
@@ -2475,7 +2483,7 @@ void MainWindow::setupRibbon() {
                              QStringLiteral("无法执行 lspci，请确认已安装 pciutils"));
       }
 #endif
-    });
+        });
 
     auto* panel_hardware = cat->addPanel(QStringLiteral("硬件"));
     panel_hardware->addLargeAction(check_hardware_action_);
@@ -2588,7 +2596,8 @@ void MainWindow::setupRibbon() {
     }
   }
 
-  // 上下文页（随当前编辑器动态切换）初始创建，全部隐藏（D14：insert 1 后立即 hide）
+  // 上下文页（随当前编辑器动态切换）初始创建，全部隐藏（D14：insert 1 后立即
+  // hide）
   setupContextCategories();
 
   // 设置 Ribbon 运行按钮的初始状态
@@ -2629,9 +2638,9 @@ SARibbonCategory* MainWindow::contextCategory(const QString& key) {
 void MainWindow::setupContextCategories() {
   auto* ribbon = ribbonBar();
   const QStringList keys = {
-      QStringLiteral("拓扑"), QStringLiteral("协议"),
+      QStringLiteral("拓扑"),     QStringLiteral("协议"),
       QStringLiteral("测试程序"), QStringLiteral("运行配置"),
-      QStringLiteral("Mock"), QStringLiteral("编辑")};
+      QStringLiteral("Mock"),     QStringLiteral("编辑")};
   for (const QString& key : keys) {
     // insert 到 index 1（「开始」页之后），保证「开始」永远是第一 tab
     auto* cat = ribbon->insertCategoryPage(key, 1);
@@ -2684,7 +2693,8 @@ void MainWindow::applyContextPageVisibility() {
   switching_page_ = true;
 
   const bool page0 = central_stack_ && central_stack_->currentIndex() == 0;
-  IEditor* editor = editor_manager_ ? editor_manager_->currentEditor() : nullptr;
+  IEditor* editor =
+      editor_manager_ ? editor_manager_->currentEditor() : nullptr;
   const QString key = page0 ? contextKeyForEditor(editor) : QString();
 
   if (!page0) {
@@ -2792,7 +2802,8 @@ void MainWindow::refreshContextCommands() {
   context_commands_editor_ = editor;
 
   // 状态同步：命令清单变化（enabled/checked）→ 刷新上下文动作。
-  // commandStateObject 约定携带 `commandsChanged()` 信号，旧式 SIGNAL/SLOT 连接。
+  // commandStateObject 约定携带 `commandsChanged()` 信号，旧式 SIGNAL/SLOT
+  // 连接。
   if (QObject* state_object = source->commandStateObject()) {
     context_commands_sender_ = state_object;
     QObject::connect(state_object, SIGNAL(commandsChanged()), this,
@@ -3165,8 +3176,8 @@ void MainWindow::onCurrentEditorChanged(IEditor* editor) {
           sidebar_->pageById(PageId::kProjectOverview));
       LOG_DEBUG("PROJECT_UI",
                 "currentEditorChanged: 同步项目树 file={} syncDoc={} psw={}",
-                rel_path.toStdString(),
-                psw ? psw->isSyncDocEnabled() : false, psw ? 1 : 0);
+                rel_path.toStdString(), psw ? psw->isSyncDocEnabled() : false,
+                psw ? 1 : 0);
       if (psw && psw->isSyncDocEnabled()) {
         psw->locateFileByPath(rel_path);
       }
@@ -3201,7 +3212,8 @@ void MainWindow::enableEditActions() {
   // D13：剪切/复制/粘贴/查找/替换/跳转行 仅文本编辑器启用（cut/copy 精确态由
   // Qsci selectionChanged 修正）
   IEditor* editor = editor_manager_->currentEditor();
-  bool isTextEditor = editor && dynamic_cast<TextEditorWidget*>(editor) != nullptr;
+  bool isTextEditor =
+      editor && dynamic_cast<TextEditorWidget*>(editor) != nullptr;
   edit_cut_action_->setEnabled(hasEditors && isTextEditor);
   edit_copy_action_->setEnabled(hasEditors && isTextEditor);
   edit_paste_action_->setEnabled(isTextEditor);
@@ -3226,8 +3238,8 @@ void MainWindow::onOpenGuidance() {
   if (guidance_home_page_ == nullptr) {
     return;
   }
-  // 模态显示：exec() 自行 show + 事件循环，遮罩/居中/覆盖父窗口由 OverlayDialog 承担；
-  // 引导结束（hide/accept）后返回，继续走引导流程。
+  // 模态显示：exec() 自行 show + 事件循环，遮罩/居中/覆盖父窗口由 OverlayDialog
+  // 承担； 引导结束（hide/accept）后返回，继续走引导流程。
   guidance_home_page_->exec();
 }
 
@@ -3240,7 +3252,8 @@ void MainWindow::ensureGuidanceCreated() {
   guidance_controller_->setViewport(this);
   setupGuidanceFlows();
 
-  // D11：引导期间拦截快捷键（QEvent::ShortcutOverride），随 controller 启停安装过滤器。
+  // D11：引导期间拦截快捷键（QEvent::ShortcutOverride），随 controller
+  // 启停安装过滤器。
   const auto uninstallFilter = [this]() {
     if (guidance_shortcut_filter_installed_) {
       qApp->removeEventFilter(this);
@@ -3268,15 +3281,16 @@ void MainWindow::setupGuidanceFlows() {
 
   // ── 主题 1：创建测试工程（2 步，仅静态高亮 + 说明，不触发模态向导） ──
   auto* flowProject = new GuidanceFlow(
-      AppIconProvider::instance().icon(QStringLiteral("folder_plus"))
+      AppIconProvider::instance()
+          .icon(QStringLiteral("folder_plus"))
           .pixmap(32, 32),
       QStringLiteral("创建测试工程"),
       QStringLiteral("从零搭建一个测试工程，贯穿新建、编辑到执行"));
   auto* stepProject1 =
       new GuidanceStep(ribbonButtonForAction(new_project_action_));
   stepProject1->withTitle(QStringLiteral("新建项目"))
-      ->withDescription(QStringLiteral(
-          "「新建项目」将打开创建测试工程的向导。"))
+      ->withDescription(
+          QStringLiteral("「新建项目」将打开创建测试工程的向导。"))
       ->withEnterFunc([this]() { navigateTo(0); });
   flowProject->withStep(stepProject1);
   auto* stepProject2 =
@@ -3288,24 +3302,26 @@ void MainWindow::setupGuidanceFlows() {
   guidance_controller_->addFlow(flowProject);
 
   // ── 主题 2：创建拓扑（3 步） ──
-  auto* flowTopo = new GuidanceFlow(
-      AppIconProvider::instance().icon(QStringLiteral("topology"))
-          .pixmap(32, 32),
-      QStringLiteral("创建拓扑"),
-      QStringLiteral("搭建激励设备与被测设备之间的连接拓扑"));
-  auto* stepTopo1 =
-      new GuidanceStep(ribbonButtonForAction(new_file_action_));
+  auto* flowTopo =
+      new GuidanceFlow(AppIconProvider::instance()
+                           .icon(QStringLiteral("topology"))
+                           .pixmap(32, 32),
+                       QStringLiteral("创建拓扑"),
+                       QStringLiteral("搭建激励设备与被测设备之间的连接拓扑"));
+  auto* stepTopo1 = new GuidanceStep(ribbonButtonForAction(new_file_action_));
   stepTopo1->withTitle(QStringLiteral("新建文件"))
-      ->withDescription(QStringLiteral(
-          "「新建文件」可新建拓扑文件（.etopo）。"))
+      ->withDescription(
+          QStringLiteral("「新建文件」可新建拓扑文件（.etopo）。"))
       ->withEnterFunc([this]() { navigateTo(0); });
   flowTopo->withStep(stepTopo1);
 
-  // Step2：enter 回调打开示例 .etopo 后再定位拓扑画布（D12，编辑器同步创建后映射）。
+  // Step2：enter 回调打开示例 .etopo
+  // 后再定位拓扑画布（D12，编辑器同步创建后映射）。
   auto* stepTopo2 = new GuidanceStep(static_cast<QWidget*>(nullptr));
   stepTopo2->withTitle(QStringLiteral("拓扑画布"))
-      ->withDescription(QStringLiteral(
-          "已自动打开一个示例拓扑：在画布上拖入设备、连接端口，搭建被测设备与激励设备的关系。"))
+      ->withDescription(
+          QStringLiteral("已自动打开一个示例拓扑：在画布上拖入设备、连接端口，"
+                         "搭建被测设备与激励设备的关系。"))
       ->withEnterFunc([this, stepTopo2]() {
         guidance_sample_path_ = writeGuidanceSampleTopology();
         if (guidance_sample_path_.isEmpty()) {
@@ -3326,8 +3342,9 @@ void MainWindow::setupGuidanceFlows() {
   // Step3：高亮设备面板（打开编辑器后的可见元素）。
   auto* stepTopo3 = new GuidanceStep(static_cast<QWidget*>(nullptr));
   stepTopo3->withTitle(QStringLiteral("设备面板"))
-      ->withDescription(QStringLiteral(
-          "左侧「设备面板」列出可用设备，拖到画布即可加入拓扑；工具栏提供对齐、连线样式等操作。"))
+      ->withDescription(
+          QStringLiteral("左侧「设备面板」列出可用设备，拖到画布即可加入拓扑；"
+                         "工具栏提供对齐、连线样式等操作。"))
       ->withEnterFunc([this, stepTopo3]() {
         if (QWidget* palette = findTopologyDevicePalette()) {
           stepTopo3->setTarget(palette);
@@ -3335,8 +3352,8 @@ void MainWindow::setupGuidanceFlows() {
       });
   flowTopo->withStep(stepTopo3);
 
-  // 拓扑演示结束（controller 在 flow 结束时调 exitFunc）：关闭临时示例编辑器 + 删除临时文件，
-  // 最后回到 ribbon「开始」页（编辑态 + 抬升第一 tab）。
+  // 拓扑演示结束（controller 在 flow 结束时调 exitFunc）：关闭临时示例编辑器 +
+  // 删除临时文件， 最后回到 ribbon「开始」页（编辑态 + 抬升第一 tab）。
   flowTopo->setExitFunc([this]() {
     if (!guidance_sample_path_.isEmpty()) {
       if (editor_manager_->isOpen(guidance_sample_path_)) {
@@ -3387,8 +3404,8 @@ QWidget* MainWindow::findTopologyEditor() const {
     return nullptr;
   }
   for (IEditor* editor : editor_manager_->allEditors()) {
-    auto* topo = dynamic_cast<etest::topology::TopologyEditorWidget*>(
-        editor->widget());
+    auto* topo =
+        dynamic_cast<etest::topology::TopologyEditorWidget*>(editor->widget());
     if (topo != nullptr) {
       return topo;
     }
@@ -3404,8 +3421,8 @@ QWidget* MainWindow::findTopologyCanvas(const QString& filePath) const {
   if (editor == nullptr) {
     return nullptr;
   }
-  auto* topo = dynamic_cast<etest::topology::TopologyEditorWidget*>(
-      editor->widget());
+  auto* topo =
+      dynamic_cast<etest::topology::TopologyEditorWidget*>(editor->widget());
   if (topo == nullptr) {
     return nullptr;
   }

@@ -69,7 +69,9 @@ void OverlayDialog::setMaskColor(const QColor& color) {
   update();
 }
 
-QColor OverlayDialog::maskColor() const { return mask_color_; }
+QColor OverlayDialog::maskColor() const {
+  return mask_color_;
+}
 
 void OverlayDialog::paintEvent(QPaintEvent* event) {
   QDialog::paintEvent(event);
@@ -82,21 +84,6 @@ void OverlayDialog::paintEvent(QPaintEvent* event) {
 
 void OverlayDialog::keyPressEvent(QKeyEvent* e) {
   QWidget::keyPressEvent(e);
-}
-
-void OverlayDialog::actHideAnimation() {
-  actHideAnimation([this] { accept(); });
-}
-
-void OverlayDialog::actHideAnimation(std::function<void()> func) {
-  // 即时关闭（去掉飞出动画）
-  if (widget_) {
-    widget_->hide();
-  }
-  emit hideAnimationFinished();
-  if (func) {
-    func();
-  }
 }
 
 }  // namespace etest::app
