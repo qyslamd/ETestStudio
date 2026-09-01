@@ -1,5 +1,4 @@
-#ifndef ETEST_APP_SIDEBAR_WIDGET_H_
-#define ETEST_APP_SIDEBAR_WIDGET_H_
+#pragma once
 
 #include <QMap>
 #include <QStackedWidget>
@@ -29,11 +28,11 @@ constexpr auto kSearch = "search";
 constexpr auto kGit = "git";
 }  // namespace PageId
 
-class SidebarWidget : public QWidget {
+class SidebarContentWidget : public QWidget {
   Q_OBJECT
 
  public:
-  explicit SidebarWidget(QWidget* parent = nullptr);
+  explicit SidebarContentWidget(QWidget* parent = nullptr);
 
   void addPage(const QString& id, QWidget* page, const QString& title);
   void switchPage(const QString& id);
@@ -75,5 +74,3 @@ class SidebarWidget : public QWidget {
 };
 
 }  // namespace etest::app
-
-#endif  // ETEST_APP_SIDEBAR_WIDGET_H_

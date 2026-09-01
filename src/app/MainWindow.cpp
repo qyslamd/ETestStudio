@@ -55,7 +55,7 @@
 #include <DockAreaWidget.h>
 #include <DockSplitter.h>
 #include <DockWidgetTab.h>
-#include "ActivityBarWidget.h"
+#include "SidebarNavWidget.h"
 #include "AppIconProvider.h"
 #include "AppStatusBarController.h"
 #include "EditorManager.h"
@@ -68,7 +68,7 @@
 #include "ProjectStructureWidget.h"
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
-#include "SidebarWidget.h"
+#include "SidebarContentWidget.h"
 #include "SignalRegistry.h"
 #include "TerminalPanel.h"
 #include "TestProgramData.h"
@@ -203,8 +203,8 @@ void MainWindow::initUi() {
   page0_layout->setSpacing(0);
 
   // ==================== 活动栏 ====================
-  activity_bar_ = new ActivityBarWidget(page_editor_widget_);
-  page0_layout->addWidget(activity_bar_);
+  sidebar_nav_ = new SidebarNavWidget(page_editor_widget_);
+  page0_layout->addWidget(sidebar_nav_);
 
   // ==================== 水平分割器 ====================
   h_splitter_ = new QSplitter(Qt::Horizontal, page_editor_widget_);
@@ -214,8 +214,8 @@ void MainWindow::initUi() {
   reportSplashProgress(QStringLiteral("构建中央界面"), 50);
 
   // ===== 侧边栏 =====
-  sidebar_ = new SidebarWidget(h_splitter_);
-  h_splitter_->addWidget(sidebar_);
+  sidebar_content_ = new SidebarContentWidget(h_splitter_);
+  h_splitter_->addWidget(sidebar_content_);
 
   // ===== 垂直分割器（编辑器区域 + 底部面板） =====
   v_splitter_ = new QSplitter(Qt::Vertical, h_splitter_);
@@ -322,30 +322,30 @@ void MainWindow::initSignals() {
           });
 
   // 活动栏：页面切换
-  connect(activity_bar_, &ActivityBarWidget::pageClicked, this,
+  connect(sidebar_nav_, &SidebarNavWidget::pageClicked, this,
           [this](const QString& id) {
-            bool samePage = (id == activity_bar_->activePageId());
-            if (samePage && sidebar_->isContentVisible()) {
+            bool samePage = (id == sidebar_nav_->activePageId());
+            if (samePage && sidebar_content_->isContentVisible()) {
               auto sizes = h_splitter_->sizes();
               if (!sizes.isEmpty()) {
                 sidebar_expanded_width_ = sizes[0];
                 sizes[0] = 0;
                 h_splitter_->setSizes(sizes);
               }
-              sidebar_->hideContent();
-              activity_bar_->clearActivePage();
+              sidebar_content_->hideContent();
+              sidebar_nav_->clearActivePage();
               return;
             }
-            if (!sidebar_->isContentVisible()) {
-              sidebar_->showContent();
+            if (!sidebar_content_->isContentVisible()) {
+              sidebar_content_->showContent();
               auto sizes = h_splitter_->sizes();
               if (!sizes.isEmpty()) {
                 sizes[0] = sidebar_expanded_width_;
                 h_splitter_->setSizes(sizes);
               }
             }
-            sidebar_->switchPage(id);
-            activity_bar_->setActivePageId(id);
+            sidebar_content_->switchPage(id);
+            sidebar_nav_->setActivePageId(id);
           });
 
   // 引擎状态 -> 编辑锁
@@ -356,10 +356,10 @@ void MainWindow::initSignals() {
             running_locked_ = locked;
             if (locked) {
               disableEditActions();
-              sidebar_->setEnabled(false);
+              sidebar_content_->setEnabled(false);
             } else {
               enableEditActions();
-              sidebar_->setEnabled(true);
+              sidebar_content_->setEnabled(true);
             }
           });
 
@@ -457,7 +457,7 @@ void MainWindow::initSignals() {
 
   // 项目结构树：项目打开/关闭时切换
   auto* psWidget = qobject_cast<ProjectStructureWidget*>(
-      sidebar_->pageById(PageId::kProjectOverview));
+      sidebar_content_->pageById(PageId::kProjectOverview));
   project_structure_widget_ = psWidget;
   if (psWidget) {
     connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
@@ -468,7 +468,7 @@ void MainWindow::initSignals() {
     // 文件列表变化时刷新搜索框 completer（buildTree / refreshCategory 后触发）
     connect(psWidget, &ProjectStructureWidget::fileListChanged, this, [this]() {
       auto* psw = qobject_cast<ProjectStructureWidget*>(
-          sidebar_->pageById(PageId::kProjectOverview));
+          sidebar_content_->pageById(PageId::kProjectOverview));
       if (!psw) {
         return;
       }
@@ -493,7 +493,7 @@ void MainWindow::initSignals() {
     connect(ribbon_search_edit_, &QLineEdit::textChanged, this, [this]() {
       if (ribbon_search_edit_->text().isEmpty()) {
         auto* psw = qobject_cast<ProjectStructureWidget*>(
-            sidebar_->pageById(PageId::kProjectOverview));
+            sidebar_content_->pageById(PageId::kProjectOverview));
         if (psw) {
           psw->clearTreeSelection();
         }
@@ -505,15 +505,15 @@ void MainWindow::initSignals() {
             QOverload<const QString&>::of(&QCompleter::activated), this,
             [this](const QString& fileName) {
               auto* psw = qobject_cast<ProjectStructureWidget*>(
-                  sidebar_->pageById(PageId::kProjectOverview));
+                  sidebar_content_->pageById(PageId::kProjectOverview));
               if (!psw) {
                 return;
               }
-              sidebar_->switchPage(PageId::kProjectOverview);
-              if (!sidebar_->isContentVisible()) {
-                sidebar_->showContent();
+              sidebar_content_->switchPage(PageId::kProjectOverview);
+              if (!sidebar_content_->isContentVisible()) {
+                sidebar_content_->showContent();
               }
-              activity_bar_->setActivePageId(PageId::kProjectOverview);
+              sidebar_nav_->setActivePageId(PageId::kProjectOverview);
               psw->locateFile(fileName);
             });
 
@@ -523,16 +523,16 @@ void MainWindow::initSignals() {
         [this](const QString& path) {
           // ICDConfig 是配置容器，切到 sidebar 协议页，不打开编辑器
           if (path.contains(QStringLiteral("ICDConfig"), Qt::CaseInsensitive)) {
-            if (!sidebar_->isContentVisible()) {
-              sidebar_->showContent();
+            if (!sidebar_content_->isContentVisible()) {
+              sidebar_content_->showContent();
               auto sizes = h_splitter_->sizes();
               if (!sizes.isEmpty()) {
                 sizes[0] = sidebar_expanded_width_;
                 h_splitter_->setSizes(sizes);
               }
             }
-            sidebar_->switchPage(PageId::kProtocol);
-            activity_bar_->setActivePageId(PageId::kProtocol);
+            sidebar_content_->switchPage(PageId::kProtocol);
+            sidebar_nav_->setActivePageId(PageId::kProtocol);
             return;
           }
           editor_manager_->openFile(path);
@@ -605,7 +605,7 @@ void MainWindow::initSignals() {
                 return;
               }
               auto* psw = qobject_cast<ProjectStructureWidget*>(
-                  sidebar_->pageById(PageId::kProjectOverview));
+                  sidebar_content_->pageById(PageId::kProjectOverview));
               if (!psw) {
                 return;
               }
@@ -621,7 +621,7 @@ void MainWindow::initSignals() {
             &MainWindow::onRecentFileOpenRequested);
 
     // 拓扑管理器：双击文件打开编辑器
-    if (auto* topoMgr = sidebar_->topologyManager()) {
+    if (auto* topoMgr = sidebar_content_->topologyManager()) {
       connect(topoMgr, &TopologyManagerWidget::openFileRequested, topoMgr,
               [this](const QString& path) { editor_manager_->openFile(path); });
     }
@@ -631,20 +631,20 @@ void MainWindow::initSignals() {
             [this](const QString& dirPath) {
               if (dirPath.endsWith(QStringLiteral("/protocol")) ||
                   dirPath.endsWith(QStringLiteral("\\protocol"))) {
-                sidebar_->protocolManager()->refreshList();
+                sidebar_content_->protocolManager()->refreshList();
               } else if (dirPath.endsWith(QStringLiteral("/cases")) ||
                          dirPath.endsWith(QStringLiteral("\\cases"))) {
-                sidebar_->testProgramManager()->refreshList();
+                sidebar_content_->testProgramManager()->refreshList();
               } else if (dirPath.endsWith(QStringLiteral("/topology")) ||
                          dirPath.endsWith(QStringLiteral("\\topology"))) {
-                if (auto* tm = sidebar_->topologyManager())
+                if (auto* tm = sidebar_content_->topologyManager())
                   tm->refreshList();
               }
             });
   }
 
   // 搜索组件：项目打开/关闭时设置搜索根目录
-  auto* searchWidget = sidebar_->searchWidget();
+  auto* searchWidget = sidebar_content_->searchWidget();
   connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
           searchWidget, [searchWidget](const QString& projectPath) {
             searchWidget->setSearchRoot(projectPath);
@@ -657,7 +657,7 @@ void MainWindow::initSignals() {
           &EditorManager::openFileAtLine);
 
   // Git面板：项目打开/关闭时设置根目录
-  auto* gitWidget = sidebar_->gitWidget();
+  auto* gitWidget = sidebar_content_->gitWidget();
   connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
           gitWidget, [gitWidget](const QString& projectPath) {
             gitWidget->setProjectRoot(projectPath);
@@ -667,7 +667,7 @@ void MainWindow::initSignals() {
 
   // Git面板：空状态页"初始化 Git 仓库"按钮 -> 弹窗确认 -> 执行 init
   connect(gitWidget, &GitWidget::initRepoRequested, this, [this]() {
-    auto* gw = sidebar_->gitWidget();
+    auto* gw = sidebar_content_->gitWidget();
     if (!gw || gw->projectRoot().isEmpty()) {
       return;
     }
@@ -815,23 +815,23 @@ void MainWindow::initSignals() {
       new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F), this);
   connect(globalSearchShortcut, &QShortcut::activated, this, [this]() {
     LOG_INFO("MAIN_UI", "快捷键 Ctrl+Shift+F 全局搜索");
-    if (!sidebar_->isContentVisible()) {
-      sidebar_->showContent();
+    if (!sidebar_content_->isContentVisible()) {
+      sidebar_content_->showContent();
       auto sizes = h_splitter_->sizes();
       if (!sizes.isEmpty()) {
         sizes[0] = sidebar_expanded_width_;
         h_splitter_->setSizes(sizes);
       }
     }
-    sidebar_->switchPage(PageId::kSearch);
-    activity_bar_->setActivePageId(PageId::kSearch);
-    if (auto* sw = sidebar_->searchWidget()) {
+    sidebar_content_->switchPage(PageId::kSearch);
+    sidebar_nav_->setActivePageId(PageId::kSearch);
+    if (auto* sw = sidebar_content_->searchWidget()) {
       sw->setFocusOnSearchInput();
     }
   });
 
   // 硬件树：插件加载/卸载时自动刷新
-  auto* hardwareTree = sidebar_->hardwareTree();
+  auto* hardwareTree = sidebar_content_->hardwareTree();
   auto& pluginMgr = etest::core::plugin::PluginManager::instance();
   connect(&pluginMgr, &etest::core::plugin::PluginManager::pluginLoaded,
           hardwareTree, &HardwareTreeWidget::refreshTree);
@@ -841,45 +841,45 @@ void MainWindow::initSignals() {
   // 项目树硬件节点 → 导航到平台设备树
   {
     auto* hwPsWidget = qobject_cast<ProjectStructureWidget*>(
-        sidebar_->pageById(PageId::kProjectOverview));
+        sidebar_content_->pageById(PageId::kProjectOverview));
     if (hwPsWidget) {
       connect(
           hwPsWidget, &ProjectStructureWidget::hardwareDeviceNavigateRequested,
           this, [this](const QString& deviceType, const QString& pluginId) {
             // 侧边栏切换到平台设备树页面
-            sidebar_->switchPage(PageId::kHardware);
-            if (!sidebar_->isContentVisible()) {
-              sidebar_->showContent();
+            sidebar_content_->switchPage(PageId::kHardware);
+            if (!sidebar_content_->isContentVisible()) {
+              sidebar_content_->showContent();
               auto sizes = h_splitter_->sizes();
               if (!sizes.isEmpty()) {
                 sizes[0] = sidebar_expanded_width_;
                 h_splitter_->setSizes(sizes);
               }
             }
-            activity_bar_->setActivePageId(PageId::kHardware);
+            sidebar_nav_->setActivePageId(PageId::kHardware);
             // 高亮对应的设备类型
-            sidebar_->hardwareTree()->highlightDeviceType(deviceType, pluginId);
+            sidebar_content_->hardwareTree()->highlightDeviceType(deviceType, pluginId);
           });
     }
   }
 
   // 协议管理器：双击文件打开编辑器
-  auto* protocolMgr = sidebar_->protocolManager();
+  auto* protocolMgr = sidebar_content_->protocolManager();
   connect(
       protocolMgr, &ProtocolManagerWidget::openFileRequested, protocolMgr,
       [this, protocolMgr](const QString& path) {
         // ICDConfig 是配置容器，不打开编辑器，切到 sidebar 协议页
         if (path.contains(QStringLiteral("ICDConfig"), Qt::CaseInsensitive)) {
-          if (!sidebar_->isContentVisible()) {
-            sidebar_->showContent();
+          if (!sidebar_content_->isContentVisible()) {
+            sidebar_content_->showContent();
             auto sizes = h_splitter_->sizes();
             if (!sizes.isEmpty()) {
               sizes[0] = sidebar_expanded_width_;
               h_splitter_->setSizes(sizes);
             }
           }
-          sidebar_->switchPage(PageId::kProtocol);
-          activity_bar_->setActivePageId(PageId::kProtocol);
+          sidebar_content_->switchPage(PageId::kProtocol);
+          sidebar_nav_->setActivePageId(PageId::kProtocol);
           return;
         }
         editor_manager_->openFile(path);
@@ -903,7 +903,7 @@ void MainWindow::initSignals() {
           protocolMgr, &ProtocolManagerWidget::refreshList);
 
   // 用例管理器：双击文件打开编辑器
-  auto* tpMgr = sidebar_->testProgramManager();
+  auto* tpMgr = sidebar_content_->testProgramManager();
 
   // 运行按钮 enable 改由 popup 状态变化驱动，此处不再需要
   connect(tpMgr, &TestProgramManagerWidget::openFileRequested, tpMgr,
@@ -916,7 +916,7 @@ void MainWindow::initSignals() {
           tpMgr, &TestProgramManagerWidget::refreshList);
 
   // 拓扑管理器：项目打开/关闭时刷新
-  if (auto* topoMgr = sidebar_->topologyManager()) {
+  if (auto* topoMgr = sidebar_content_->topologyManager()) {
     connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
             topoMgr, &TopologyManagerWidget::refreshList);
     connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
@@ -951,7 +951,7 @@ void MainWindow::initSignals() {
         QString roleStr = (user.role == UserRole::Admin)
                               ? QStringLiteral("Admin")
                               : QStringLiteral("User");
-        activity_bar_->setLoginState(true, user.userName, roleStr);
+        sidebar_nav_->setLoginState(true, user.userName, roleStr);
 
         login_user_info_action_->setText(
             QStringLiteral("%1 (%2)").arg(user.userName).arg(roleStr));
@@ -959,7 +959,7 @@ void MainWindow::initSignals() {
       });
 
   connect(&AuthService::instance(), &AuthService::loggedOut, this, [this]() {
-    activity_bar_->setLoginState(false, QString(), QString());
+    sidebar_nav_->setLoginState(false, QString(), QString());
   });
 }
 
@@ -973,40 +973,40 @@ void MainWindow::lazyInit() {
   step_timer.start();
   reportSplashProgress(QStringLiteral("注册侧边栏页面"), 60);
   {
-    activity_bar_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
+    sidebar_nav_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
                            QStringLiteral("project"));
-    activity_bar_->addPage(PageId::kSearch, QStringLiteral("搜索"),
+    sidebar_nav_->addPage(PageId::kSearch, QStringLiteral("搜索"),
                            QStringLiteral("search"));
-    activity_bar_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
+    sidebar_nav_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
                            QStringLiteral("topo_tap"));
-    activity_bar_->addPage(PageId::kHardware, QStringLiteral("硬件"),
+    sidebar_nav_->addPage(PageId::kHardware, QStringLiteral("硬件"),
                            QStringLiteral("hardware"));
-    activity_bar_->addPage(PageId::kProtocol, QStringLiteral("协议"),
+    sidebar_nav_->addPage(PageId::kProtocol, QStringLiteral("协议"),
                            QStringLiteral("protocol"));
-    activity_bar_->addPage(PageId::kTestProgram, QStringLiteral("测试程序"),
+    sidebar_nav_->addPage(PageId::kTestProgram, QStringLiteral("测试程序"),
                            QStringLiteral("testprogram"));
-    activity_bar_->addPage(PageId::kReport, QStringLiteral("报告"),
+    sidebar_nav_->addPage(PageId::kReport, QStringLiteral("报告"),
                            QStringLiteral("report"));
-    activity_bar_->addPage(PageId::kGit, QStringLiteral("Git"),
+    sidebar_nav_->addPage(PageId::kGit, QStringLiteral("Git"),
                            QStringLiteral("git"));
 
-    sidebar_->addPage(PageId::kProjectOverview,
-                      new ProjectStructureWidget(sidebar_),
+    sidebar_content_->addPage(PageId::kProjectOverview,
+                      new ProjectStructureWidget(sidebar_content_),
                       QStringLiteral("项目概览"));
-    sidebar_->addPage(PageId::kSearch, new SearchWidget(sidebar_),
+    sidebar_content_->addPage(PageId::kSearch, new SearchWidget(sidebar_content_),
                       QStringLiteral("搜索"));
-    sidebar_->addPage(PageId::kTopology, new TopologyManagerWidget(sidebar_),
+    sidebar_content_->addPage(PageId::kTopology, new TopologyManagerWidget(sidebar_content_),
                       QStringLiteral("拓扑"));
-    sidebar_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_),
+    sidebar_content_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_content_),
                       QStringLiteral("硬件"));
-    sidebar_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_),
+    sidebar_content_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_content_),
                       QStringLiteral("协议"));
-    test_program_mgr_ = new TestProgramManagerWidget(sidebar_);
-    sidebar_->addPage(PageId::kTestProgram, test_program_mgr_,
+    test_program_mgr_ = new TestProgramManagerWidget(sidebar_content_);
+    sidebar_content_->addPage(PageId::kTestProgram, test_program_mgr_,
                       QStringLiteral("测试程序"));
-    sidebar_->addPage(PageId::kReport, new QWidget(sidebar_),
+    sidebar_content_->addPage(PageId::kReport, new QWidget(sidebar_content_),
                       QStringLiteral("报告"));
-    sidebar_->addPage(PageId::kGit, new GitWidget(sidebar_),
+    sidebar_content_->addPage(PageId::kGit, new GitWidget(sidebar_content_),
                       QStringLiteral("Git"));
 
     // 立即覆盖 addPage 的自动选中，恢复保存的页面
@@ -1014,11 +1014,11 @@ void MainWindow::lazyInit() {
     bool sidebarVisible = cfg.get<bool>(CONFIG_SIDEBAR_VISIBLE, true);
     QString activePage =
         cfg.get<QString>(CONFIG_SIDEBAR_ACTIVE_PAGE, PageId::kProjectOverview);
-    if (sidebarVisible && sidebar_->pageById(activePage)) {
-      sidebar_->switchPage(activePage);
-      activity_bar_->setActivePageId(activePage);
+    if (sidebarVisible && sidebar_content_->pageById(activePage)) {
+      sidebar_content_->switchPage(activePage);
+      sidebar_nav_->setActivePageId(activePage);
     } else if (!sidebarVisible) {
-      activity_bar_->clearActivePage();
+      sidebar_nav_->clearActivePage();
     }
   }
   LOG_INFO("LAZY", "  [1/7] 活动栏+侧边栏+恢复: {} ms", step_timer.elapsed());
@@ -1155,18 +1155,18 @@ void MainWindow::lazyInit() {
                 // 无目标可跳，仅切回 page0 即可
                 break;
               case NavTarget::Icd:
-                sidebar_->switchPage(PageId::kProtocol);
+                sidebar_content_->switchPage(PageId::kProtocol);
                 break;
               case NavTarget::Topology:
               case NavTarget::Signal:
                 // Signal 表示拓扑未绑定信号，也跳到拓扑页让用户选 .etopo
-                sidebar_->switchPage(PageId::kTopology);
+                sidebar_content_->switchPage(PageId::kTopology);
                 break;
               case NavTarget::Program:
-                sidebar_->switchPage(PageId::kTestProgram);
+                sidebar_content_->switchPage(PageId::kTestProgram);
                 break;
               case NavTarget::Hardware:
-                sidebar_->switchPage(PageId::kHardware);
+                sidebar_content_->switchPage(PageId::kHardware);
                 break;
             }
           });
@@ -1196,7 +1196,7 @@ void MainWindow::lazyInit() {
     pluginMgr.addSearchPath(QCoreApplication::applicationDirPath() +
                             "/plugins");
     pluginMgr.loadAll();
-    sidebar_->hardwareTree()->refreshTree();
+    sidebar_content_->hardwareTree()->refreshTree();
   }
   LOG_INFO("LAZY", "  [6/7] 插件+硬件: {} ms", step_timer.elapsed());
   reportSplashProgress(QStringLiteral("加载硬件插件"), 85);
@@ -1420,16 +1420,16 @@ void MainWindow::openRecentProject(const QString& path) {
   }
 
   if (pm.openProject(path)) {
-    sidebar_->switchPage(PageId::kProjectOverview);
-    if (!sidebar_->isContentVisible()) {
-      sidebar_->showContent();
+    sidebar_content_->switchPage(PageId::kProjectOverview);
+    if (!sidebar_content_->isContentVisible()) {
+      sidebar_content_->showContent();
       auto sizes = h_splitter_->sizes();
       if (!sizes.isEmpty()) {
         sizes[0] = sidebar_expanded_width_;
         h_splitter_->setSizes(sizes);
       }
     }
-    activity_bar_->setActivePageId(PageId::kProjectOverview);
+    sidebar_nav_->setActivePageId(PageId::kProjectOverview);
     return;
   }
 
@@ -1530,9 +1530,9 @@ void MainWindow::openSettingsDialog() {
     settings_dialog_ = new SettingsDialog(this);
     settings_dialog_->setStyleSheet(qApp->styleSheet());
     connect(settings_dialog_, &QDialog::finished, this,
-            [this]() { activity_bar_->setSettingsActive(false); });
+            [this]() { sidebar_nav_->setSettingsActive(false); });
   }
-  activity_bar_->setSettingsActive(true);
+  sidebar_nav_->setSettingsActive(true);
   // OverlayDialog 模态遮罩（与登录/关于一致）
   settings_dialog_->exec();
 }
@@ -1579,7 +1579,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   // 同步触发协议管理器刷新（确保 ICD 数据已加载），
   // ProtocolManagerWidget::refreshList 在同一信号链中稍后执行，
   // 这里手动触发一次以保证 onProjectOpened 返回时 ICD 数据就绪
-  if (auto* pm = sidebar_->protocolManager()) {
+  if (auto* pm = sidebar_content_->protocolManager()) {
     pm->refreshList();
     icd_repository_ = pm->repository();
   }
@@ -1681,20 +1681,20 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   }
 
   // 切换到侧边栏项目管理页面
-  sidebar_->switchPage(PageId::kProjectOverview);
-  if (!sidebar_->isContentVisible()) {
-    sidebar_->showContent();
+  sidebar_content_->switchPage(PageId::kProjectOverview);
+  if (!sidebar_content_->isContentVisible()) {
+    sidebar_content_->showContent();
     auto sizes = h_splitter_->sizes();
     if (!sizes.isEmpty()) {
       sizes[0] = sidebar_expanded_width_;
       h_splitter_->setSizes(sizes);
     }
   }
-  activity_bar_->setActivePageId(PageId::kProjectOverview);
+  sidebar_nav_->setActivePageId(PageId::kProjectOverview);
 
   // 确保测试程序树已加载（信号连接的 refreshList 在 onProjectOpened
   // 返回后才执行）
-  if (auto* tpMgr = sidebar_->testProgramManager()) {
+  if (auto* tpMgr = sidebar_content_->testProgramManager()) {
     tpMgr->refreshList();
   }
 
@@ -1734,7 +1734,7 @@ void MainWindow::onProjectOpened(const QString& projectPath) {
   // 只对"打开"项目触发，新建项目在 createProject 中已自动 init
   // 用户可在弹窗勾「不再提示」或在设置页关闭，CONFIG_PROJECT_GIT_PROMPT_INIT
   // 控制
-  if (auto* gw = sidebar_->gitWidget()) {
+  if (auto* gw = sidebar_content_->gitWidget()) {
     if (!QDir(projectPath).exists(QStringLiteral(".git"))) {
       bool prompt = ConfigManager::instance().get<bool>(
           CONFIG_PROJECT_GIT_PROMPT_INIT,
@@ -2436,9 +2436,9 @@ void MainWindow::setupRibbon() {
         settings_dialog_ = new SettingsDialog(this);
         settings_dialog_->setStyleSheet(qApp->styleSheet());
         connect(settings_dialog_, &QDialog::finished, this,
-                [this]() { activity_bar_->setSettingsActive(false); });
+                [this]() { sidebar_nav_->setSettingsActive(false); });
       }
-      activity_bar_->setSettingsActive(true);
+      sidebar_nav_->setSettingsActive(true);
       settings_dialog_->show();
       settings_dialog_->raise();
       settings_dialog_->activateWindow();
@@ -2852,10 +2852,10 @@ void MainWindow::saveWindowState() {
   cfg.set(CONFIG_WINDOW_V_SPLITTER_STATE, v_splitter_->saveState());
 
   // sidebar state — 保存侧边栏内部页面 ID（即使用户折叠了侧边栏也有有效值）
-  cfg.set(CONFIG_SIDEBAR_ACTIVE_PAGE, sidebar_->currentPageId());
+  cfg.set(CONFIG_SIDEBAR_ACTIVE_PAGE, sidebar_content_->currentPageId());
 
   // 侧边栏显隐状态（独立于 splitter 尺寸，避免 restoreState 布局时机问题）
-  cfg.set(CONFIG_SIDEBAR_VISIBLE, sidebar_->isContentVisible());
+  cfg.set(CONFIG_SIDEBAR_VISIBLE, sidebar_content_->isContentVisible());
 
   // 侧边栏展开宽度（会话间记忆）
   cfg.set(CONFIG_SIDEBAR_EXPANDED_WIDTH, sidebar_expanded_width_);
@@ -2895,9 +2895,9 @@ void MainWindow::restoreWindowState() {
   // 侧边栏显隐 — 使用显式配置（比 splitter 尺寸推断更可靠）
   bool sidebarVisible = cfg.get<bool>(CONFIG_SIDEBAR_VISIBLE, true);
   if (sidebarVisible) {
-    sidebar_->showContent();
+    sidebar_content_->showContent();
   } else {
-    sidebar_->hideContent();
+    sidebar_content_->hideContent();
   }
   if (view_sidebar_action_) {
     view_sidebar_action_->setChecked(sidebarVisible);
@@ -3017,20 +3017,20 @@ void MainWindow::setupDockTitleBarButtons(ads::CDockAreaWidget* area) {
 
 void MainWindow::toggleSidebar() {
   LOG_INFO("MAIN_UI", "切换「侧边栏」");
-  if (sidebar_->isContentVisible()) {
+  if (sidebar_content_->isContentVisible()) {
     auto sizes = h_splitter_->sizes();
     if (!sizes.isEmpty()) {
       sidebar_expanded_width_ = sizes[0];
       sizes[0] = 0;
       h_splitter_->setSizes(sizes);
     }
-    sidebar_->hideContent();
-    activity_bar_->clearActivePage();
+    sidebar_content_->hideContent();
+    sidebar_nav_->clearActivePage();
     if (view_sidebar_action_) {
       view_sidebar_action_->setChecked(false);
     }
   } else {
-    sidebar_->showContent();
+    sidebar_content_->showContent();
     auto sizes = h_splitter_->sizes();
     if (!sizes.isEmpty()) {
       sizes[0] = sidebar_expanded_width_;
@@ -3060,11 +3060,11 @@ void MainWindow::navigateTo(int page, const QString& sidebarId) {
     }
   }
   if (!sidebarId.isEmpty()) {
-    if (!sidebar_->isContentVisible()) {
-      sidebar_->showContent();
+    if (!sidebar_content_->isContentVisible()) {
+      sidebar_content_->showContent();
     }
-    sidebar_->switchPage(sidebarId);
-    activity_bar_->setActivePageId(sidebarId);
+    sidebar_content_->switchPage(sidebarId);
+    sidebar_nav_->setActivePageId(sidebarId);
   }
 }
 
@@ -3179,7 +3179,7 @@ void MainWindow::onCurrentEditorChanged(IEditor* editor) {
       QString rel_path =
           QDir(project_root).relativeFilePath(editor->filePath());
       auto* psw = qobject_cast<ProjectStructureWidget*>(
-          sidebar_->pageById(PageId::kProjectOverview));
+          sidebar_content_->pageById(PageId::kProjectOverview));
       LOG_DEBUG("PROJECT_UI",
                 "currentEditorChanged: 同步项目树 file={} syncDoc={} psw={}",
                 rel_path.toStdString(), psw ? psw->isSyncDocEnabled() : false,

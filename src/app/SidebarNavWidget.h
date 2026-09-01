@@ -1,5 +1,4 @@
-#ifndef ETEST_APP_ACTIVITY_BAR_WIDGET_H_
-#define ETEST_APP_ACTIVITY_BAR_WIDGET_H_
+#pragma once
 
 #include <QEvent>
 #include <QIcon>
@@ -12,17 +11,17 @@ class QVBoxLayout;
 
 namespace etest::app {
 
-struct ActivityBarPageInfo {
+struct SidebarNavPageInfo {
   QString id;
   QString iconName;
   QString tooltip;
 };
 
-class ActivityBarWidget : public QWidget {
+class SidebarNavWidget : public QWidget {
   Q_OBJECT
 
  public:
-  explicit ActivityBarWidget(QWidget* parent = nullptr);
+  explicit SidebarNavWidget(QWidget* parent = nullptr);
 
   void addPage(const QString& id,
                const QString& tooltip,
@@ -50,12 +49,10 @@ class ActivityBarWidget : public QWidget {
 
   enum { kNormalIconSize = 24, kActiveIconSize = 36 };
 
-  QVector<ActivityBarPageInfo> pages_;
+  QVector<SidebarNavPageInfo> pages_;
   QVector<QToolButton*> buttons_;
   QVBoxLayout* top_layout_ = nullptr;
   QString active_page_id_;
 };
 
 }  // namespace etest::app
-
-#endif  // ETEST_APP_ACTIVITY_BAR_WIDGET_H_

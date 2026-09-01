@@ -496,11 +496,11 @@ QScrollArea {
 }
 
 /* ==================== 侧边栏活动按钮栏 ==================== */
-QWidget#sidebarActivityBar {
+QWidget#sidebarNavBar {
     background-color: #333333;
     border-right: 1px solid #252526;
 }
-QWidget#sidebarActivityBar QToolButton {
+QWidget#sidebarNavBar QToolButton {
     background-color: transparent;
     border: none;
     border-left: 2px solid transparent;
@@ -509,33 +509,33 @@ QWidget#sidebarActivityBar QToolButton {
     padding: 0px;
     margin: 0px;
 }
-QWidget#sidebarActivityBar QToolButton:hover {
+QWidget#sidebarNavBar QToolButton:hover {
     background-color: #2A2D2E;
     color: #FFFFFF;
 }
-QWidget#sidebarActivityBar QToolButton:checked {
+QWidget#sidebarNavBar QToolButton:checked {
     border-left: 2px solid #007ACC;
     color: #FFFFFF;
     background-color: #2A2D2E;
 }
 
-/* ==================== SidebarWidget ==================== */
-SidebarWidget {
+/* ==================== SidebarContentWidget ==================== */
+etest--app--SidebarContentWidget {
     background-color: #252526;
     border-right: 1px solid #1E1E1E;
 }
-SidebarWidget QLabel {
+etest--app--SidebarContentWidget QLabel {
     color: #BBBBBB;
     font-size: 11px;
     font-weight: bold;
 }
-SidebarWidget QToolButton {
+etest--app--SidebarContentWidget QToolButton {
     background-color: transparent;
     border: none;
     color: #858585;
     padding: 2px;
 }
-SidebarWidget QToolButton:hover {
+etest--app--SidebarContentWidget QToolButton:hover {
     color: #FFFFFF;
 }
 #sidebarTitleBar {

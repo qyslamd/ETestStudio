@@ -28,8 +28,8 @@ class QTimer;
 
 namespace etest::app {
 
-class ActivityBarWidget;
-class SidebarWidget;
+class SidebarNavWidget;
+class SidebarContentWidget;
 class ProjectStructureWidget;
 class ExecutionOutputPanel;
 class LogOutputPanel;
@@ -166,8 +166,8 @@ class MainWindow : public SARibbonMainWindow {
   ads::CDockManager* dock_manager_ = nullptr;
 
   // 活动栏 + 侧边栏
-  ActivityBarWidget* activity_bar_ = nullptr;
-  SidebarWidget* sidebar_ = nullptr;
+  SidebarNavWidget* sidebar_nav_ = nullptr;
+  SidebarContentWidget* sidebar_content_ = nullptr;
   ProjectStructureWidget* project_structure_widget_ = nullptr;
   TestProgramManagerWidget* test_program_mgr_ = nullptr;
 

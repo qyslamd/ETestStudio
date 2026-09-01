@@ -1,4 +1,4 @@
-#include "ActivityBarWidget.h"
+#include "SidebarNavWidget.h"
 
 #include <QVBoxLayout>
 
@@ -11,16 +11,16 @@ namespace etest::app {
 using etest::core_ui::AppIconProvider;
 using etest::core_ui::ThemeManager;
 
-ActivityBarWidget::ActivityBarWidget(QWidget* parent) : QWidget(parent) {
+SidebarNavWidget::SidebarNavWidget(QWidget* parent) : QWidget(parent) {
   initUi();
 
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
-          &ActivityBarWidget::reloadIcons);
+          &SidebarNavWidget::reloadIcons);
 }
 
-void ActivityBarWidget::initUi() {
+void SidebarNavWidget::initUi() {
   setFixedWidth(48);
-  setObjectName(QStringLiteral("sidebarActivityBar"));
+  setObjectName(QStringLiteral("sidebarNavBar"));
 
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 4, 0, 4);
@@ -34,7 +34,7 @@ void ActivityBarWidget::initUi() {
   layout->addStretch();
 }
 
-void ActivityBarWidget::addPage(const QString& id,
+void SidebarNavWidget::addPage(const QString& id,
                                 const QString& tooltip,
                                 const QString& iconName) {
   // 不重复添加相同 ID 的按钮
@@ -63,28 +63,28 @@ void ActivityBarWidget::addPage(const QString& id,
   }
 }
 
-void ActivityBarWidget::reloadIcons() {
+void SidebarNavWidget::reloadIcons() {
   for (int i = 0; i < buttons_.size(); ++i) {
     buttons_[i]->setIcon(AppIconProvider::instance().icon(pages_[i].iconName));
   }
   updateActiveIconSize();
 }
 
-void ActivityBarWidget::setLoginState(bool /*loggedIn*/,
+void SidebarNavWidget::setLoginState(bool /*loggedIn*/,
                                       const QString& /*userName*/,
                                       const QString& /*role*/) {
   // 登录状态展示已迁移到 QAB 登录菜单，此处保留为空操作
 }
 
-void ActivityBarWidget::setLoginActive(bool /*active*/) {
+void SidebarNavWidget::setLoginActive(bool /*active*/) {
   // 已迁移到 QAB
 }
 
-void ActivityBarWidget::setSettingsActive(bool /*active*/) {
+void SidebarNavWidget::setSettingsActive(bool /*active*/) {
   // 已迁移到 QAB
 }
 
-void ActivityBarWidget::updateActiveIconSize() {
+void SidebarNavWidget::updateActiveIconSize() {
   for (int i = 0; i < buttons_.size(); ++i) {
     bool active = (pages_[i].id == active_page_id_);
     buttons_[i]->setIconSize(active ? QSize(kActiveIconSize, kActiveIconSize)
@@ -92,19 +92,19 @@ void ActivityBarWidget::updateActiveIconSize() {
   }
 }
 
-QToolButton* ActivityBarWidget::createButton(const QString& tooltip) {
+QToolButton* SidebarNavWidget::createButton(const QString& tooltip) {
   auto* btn = new QToolButton(this);
   btn->setToolTip(tooltip);
   btn->setFixedSize(48, 40);
   btn->setCheckable(true);
   btn->setAutoRaise(true);
   btn->setFocusPolicy(Qt::NoFocus);
-  btn->setObjectName(QStringLiteral("ActivityBarBtn"));
+  btn->setObjectName(QStringLiteral("sidebarNavBtn"));
   btn->installEventFilter(this);
   return btn;
 }
 
-void ActivityBarWidget::setActivePageId(const QString& id) {
+void SidebarNavWidget::setActivePageId(const QString& id) {
   active_page_id_ = id;
   for (int i = 0; i < pages_.size(); ++i) {
     buttons_[i]->setChecked(pages_[i].id == id);
@@ -112,7 +112,7 @@ void ActivityBarWidget::setActivePageId(const QString& id) {
   updateActiveIconSize();
 }
 
-void ActivityBarWidget::clearActivePage() {
+void SidebarNavWidget::clearActivePage() {
   active_page_id_.clear();
   for (auto* btn : buttons_) {
     btn->setChecked(false);
@@ -120,11 +120,11 @@ void ActivityBarWidget::clearActivePage() {
   }
 }
 
-QString ActivityBarWidget::activePageId() const {
+QString SidebarNavWidget::activePageId() const {
   return active_page_id_;
 }
 
-bool ActivityBarWidget::eventFilter(QObject* obj, QEvent* event) {
+bool SidebarNavWidget::eventFilter(QObject* obj, QEvent* event) {
   auto* btn = qobject_cast<QToolButton*>(obj);
   if (!btn)
     return QWidget::eventFilter(obj, event);

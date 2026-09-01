@@ -25,8 +25,8 @@ add_executable(${TARGET_NAME} WIN32
     widgets/HintMessageDelegate.cpp
     widgets/MessageService.h
     widgets/MessageService.cpp
-    ActivityBarWidget.h
-    ActivityBarWidget.cpp
+    SidebarNavWidget.h
+    SidebarNavWidget.cpp
     AppStatusBarController.h
     AppStatusBarController.cpp
     TuxSaverController.h
@@ -39,8 +39,8 @@ add_executable(${TARGET_NAME} WIN32
     ExecutionDashboard.cpp
     ExecutionPanelController.h
     ExecutionPanelController.cpp
-    SidebarWidget.h
-    SidebarWidget.cpp
+    SidebarContentWidget.h
+    SidebarContentWidget.cpp
     ProjectStructureWidget.h
     ProjectStructureWidget.cpp
     GitWidget.h

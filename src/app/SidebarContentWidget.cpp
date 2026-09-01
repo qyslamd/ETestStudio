@@ -1,4 +1,4 @@
-#include "SidebarWidget.h"
+#include "SidebarContentWidget.h"
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "ProtocolManagerWidget.h"
@@ -11,11 +11,11 @@
 
 namespace etest::app {
 
-SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
+SidebarContentWidget::SidebarContentWidget(QWidget* parent) : QWidget(parent) {
   initUi();
 }
 
-void SidebarWidget::initUi() {
+void SidebarContentWidget::initUi() {
   auto* outer_layout = new QHBoxLayout(this);
   outer_layout->setContentsMargins(0, 0, 0, 0);
   outer_layout->setSpacing(0);
@@ -48,7 +48,7 @@ void SidebarWidget::initUi() {
   outer_layout->addWidget(content_panel_);
 }
 
-void SidebarWidget::addPage(const QString& id,
+void SidebarContentWidget::addPage(const QString& id,
                             QWidget* page,
                             const QString& title) {
   if (id_to_index_.contains(id))
@@ -81,7 +81,7 @@ void SidebarWidget::addPage(const QString& id,
   }
 }
 
-void SidebarWidget::switchPage(const QString& id) {
+void SidebarContentWidget::switchPage(const QString& id) {
   auto it = id_to_index_.constFind(id);
   if (it != id_to_index_.constEnd()) {
     stack_->setCurrentIndex(it.value());
@@ -93,11 +93,11 @@ void SidebarWidget::switchPage(const QString& id) {
   }
 }
 
-QString SidebarWidget::currentPageId() const {
+QString SidebarContentWidget::currentPageId() const {
   return current_page_id_;
 }
 
-QWidget* SidebarWidget::pageById(const QString& id) const {
+QWidget* SidebarContentWidget::pageById(const QString& id) const {
   auto it = id_to_index_.constFind(id);
   if (it != id_to_index_.constEnd()) {
     return stack_->widget(it.value());
@@ -105,43 +105,43 @@ QWidget* SidebarWidget::pageById(const QString& id) const {
   return nullptr;
 }
 
-int SidebarWidget::pageCount() const {
+int SidebarContentWidget::pageCount() const {
   return stack_->count();
 }
 
-void SidebarWidget::showContent() {
+void SidebarContentWidget::showContent() {
   show();  // QSplitter 自动恢复布局空间
 }
 
-void SidebarWidget::hideContent() {
+void SidebarContentWidget::hideContent() {
   hide();  // QSplitter 自动缩至 0 宽
 }
 
-bool SidebarWidget::isContentVisible() const {
+bool SidebarContentWidget::isContentVisible() const {
   return !isHidden();
 }
 
-HardwareTreeWidget* SidebarWidget::hardwareTree() const {
+HardwareTreeWidget* SidebarContentWidget::hardwareTree() const {
   return hardware_tree_;
 }
 
-ProtocolManagerWidget* SidebarWidget::protocolManager() const {
+ProtocolManagerWidget* SidebarContentWidget::protocolManager() const {
   return protocol_manager_;
 }
 
-SearchWidget* SidebarWidget::searchWidget() const {
+SearchWidget* SidebarContentWidget::searchWidget() const {
   return search_widget_;
 }
 
-GitWidget* SidebarWidget::gitWidget() const {
+GitWidget* SidebarContentWidget::gitWidget() const {
   return git_widget_;
 }
 
-TestProgramManagerWidget* SidebarWidget::testProgramManager() const {
+TestProgramManagerWidget* SidebarContentWidget::testProgramManager() const {
   return test_program_manager_;
 }
 
-TopologyManagerWidget* SidebarWidget::topologyManager() const {
+TopologyManagerWidget* SidebarContentWidget::topologyManager() const {
   return topology_manager_;
 }
 
