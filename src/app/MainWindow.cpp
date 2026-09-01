@@ -1980,6 +1980,12 @@ void MainWindow::showEvent(QShowEvent* event) {
     // 首次显示主窗口的时候弹出登录对话框
     auto* dlg = new LoginDialog(this);
     connect(dlg, &QDialog::finished, dlg, &QObject::deleteLater);
+    connect(dlg, &QDialog::rejected, [this]() {
+      // 用户取消登录，退出程序
+      LOG_INFO("MAIN_UI", "用户取消登录，退出程序");
+      qApp->exit(0);
+    });
+
     dlg->show();
     LOG_INFO("MAIN_UI", "首次显示主窗口，弹出登录对话框");
   }

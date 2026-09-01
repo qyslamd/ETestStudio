@@ -1,6 +1,8 @@
 #include "UserManagerDialog.h"
+#include "AppIconProvider.h"
 #include "auth/AuthService.h"
 #include "auth/UserManager.h"
+
 
 #include <QComboBox>
 #include <QHBoxLayout>
@@ -16,6 +18,7 @@
 namespace etest::app {
 
 using namespace etest::core::auth;
+using etest::core_ui::AppIconProvider;
 
 UserManagerDialog::UserManagerDialog(QWidget* parent) : OverlayDialog(parent) {
   round_radius_ = 12;
@@ -45,7 +48,7 @@ void UserManagerDialog::initUi() {
   addBtn->setCursor(Qt::PointingHandCursor);
   connect(addBtn, &QToolButton::clicked, this, &UserManagerDialog::onAddUser);
   closeBtn_ = new QToolButton(content);
-  closeBtn_->setText(QStringLiteral("×"));
+  closeBtn_->setIcon(AppIconProvider::instance().icon("close"));
   closeBtn_->setObjectName(QStringLiteral("userMgrCloseBtn"));
   closeBtn_->setFixedSize(28, 28);
   closeBtn_->setCursor(Qt::PointingHandCursor);

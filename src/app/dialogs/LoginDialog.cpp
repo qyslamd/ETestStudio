@@ -1,4 +1,5 @@
 #include "LoginDialog.h"
+#include "AppIconProvider.h"
 #include "auth/AuthService.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
@@ -16,6 +17,7 @@ namespace etest::app {
 using etest::core::auth::AuthService;
 using etest::core::auth::User;
 using namespace etest::core::config;
+using etest::core_ui::AppIconProvider;
 
 LoginDialog::LoginDialog(QWidget* parent) : OverlayDialog(parent) {
   round_radius_ = 12;
@@ -73,7 +75,8 @@ void LoginDialog::initUi() {
   auto* titleRow = new QHBoxLayout;
   auto* titleLabel = new QLabel(QStringLiteral("登录"), form);
   titleLabel->setObjectName(QStringLiteral("loginFormTitle"));
-  closeBtn_ = new QPushButton(QStringLiteral("×"), form);
+  closeBtn_ = new QPushButton(form);
+  closeBtn_->setIcon(AppIconProvider::instance().icon("close"));
   closeBtn_->setObjectName(QStringLiteral("loginCloseBtn"));
   closeBtn_->setFixedSize(28, 28);
   closeBtn_->setCursor(Qt::PointingHandCursor);

@@ -22,9 +22,6 @@ class OverlayDialog : public QDialog {
   void setMaskColor(const QColor& color);
   QColor maskColor() const;
 
- signals:
-  void hideAnimationFinished();
-
  protected:
   void setWidget(QWidget* widget);
   void showEvent(QShowEvent* event) override;

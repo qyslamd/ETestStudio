@@ -74,8 +74,8 @@ class FlowLayout : public QLayout {
   QSize calculateSize(SizeType type) const {
     QSize size;
     for (const QLayoutItem* item : items_) {
-      const QSize s = (type == MinimumSize) ? item->minimumSize()
-                                            : item->sizeHint();
+      const QSize s =
+          (type == MinimumSize) ? item->minimumSize() : item->sizeHint();
       size = size.expandedTo(s);
     }
     const QMargins m = contentsMargins();
@@ -229,7 +229,8 @@ QString nextPortName(const QStringList& existing) {
 }
 
 // ── 模板预置辅助 ──
-void addDeviceToData(TopologyData& data, const DeviceTemplate& tpl,
+void addDeviceToData(TopologyData& data,
+                     const DeviceTemplate& tpl,
                      const QString& name) {
   WizardDevice d;
   d.name = name;
@@ -241,7 +242,8 @@ void addDeviceToData(TopologyData& data, const DeviceTemplate& tpl,
   data.devices.append(d);
 }
 
-void addUutToData(TopologyData& data, const QString& name,
+void addUutToData(TopologyData& data,
+                  const QString& name,
                   const QStringList& ports) {
   WizardUut u;
   u.name = name;
@@ -252,8 +254,10 @@ void addUutToData(TopologyData& data, const QString& name,
   data.uuts.append(u);
 }
 
-void addConnectionToData(TopologyData& data, const QString& deviceName,
-                         const QString& devicePort, const QString& uutName,
+void addConnectionToData(TopologyData& data,
+                         const QString& deviceName,
+                         const QString& devicePort,
+                         const QString& uutName,
                          const QString& uutPort) {
   WizardConnection c;
   c.deviceName = deviceName;
@@ -283,10 +287,13 @@ class TopologyFileWizard::TemplatePage : public WizardPage {
   void initUi();
   void initSignals();
   void onNameChanged();
-  WizardTemplateCard* addCard(QButtonGroup* group, QHBoxLayout* layout,
+  WizardTemplateCard* addCard(QButtonGroup* group,
+                              QHBoxLayout* layout,
                               const QString& templateId,
-                              const QString& iconName, const QString& title,
-                              const QString& desc, const QString& badge);
+                              const QString& iconName,
+                              const QString& title,
+                              const QString& desc,
+                              const QString& badge);
 
   QLineEdit* name_edit_ = nullptr;
   QLabel* name_hint_ = nullptr;
@@ -357,8 +364,8 @@ void TopologyFileWizard::TemplatePage::initUi() {
   name_edit_->setObjectName(QStringLiteral("topoNameEdit"));
   name_edit_->setClearButtonEnabled(true);
   nameRow->addWidget(name_edit_, 1);
-  name_hint_ = new QLabel(
-      QStringLiteral("名称不能包含 \\ / : * ? \" < > | 字符"), this);
+  name_hint_ =
+      new QLabel(QStringLiteral("名称不能包含 \\ / : * ? \" < > | 字符"), this);
   name_hint_->setObjectName(QStringLiteral("topoNameHint"));
   name_hint_->hide();
   nameRow->addWidget(name_hint_);
@@ -369,16 +376,15 @@ void TopologyFileWizard::TemplatePage::initUi() {
   group_->setExclusive(true);
   auto* cards = new QHBoxLayout();
   cards->setSpacing(14);
-  auto* emptyCard = addCard(group_, cards, QStringLiteral("empty"),
-                            QStringLiteral("topo_tap"),
-                            QStringLiteral("空拓扑"),
-                            QStringLiteral("从零开始添加设备和 UUT"),
-                            QStringLiteral("推荐"));
+  auto* emptyCard =
+      addCard(group_, cards, QStringLiteral("empty"),
+              QStringLiteral("topo_tap"), QStringLiteral("空拓扑"),
+              QStringLiteral("从零开始添加设备和 UUT"), QStringLiteral("推荐"));
   addCard(group_, cards, QStringLiteral("single"),
           QStringLiteral("topo_device"), QStringLiteral("单设备 + UUT"),
           QStringLiteral("一个测试设备连接一个被测对象"), QString());
-  addCard(group_, cards, QStringLiteral("multi"),
-          QStringLiteral("topology"), QStringLiteral("多设备混合"),
+  addCard(group_, cards, QStringLiteral("multi"), QStringLiteral("topology"),
+          QStringLiteral("多设备混合"),
           QStringLiteral("AD/DA/CAN/串口 多种设备混合拓扑"), QString());
   layout->addLayout(cards);
   layout->addStretch();
@@ -392,16 +398,19 @@ void TopologyFileWizard::TemplatePage::initSignals() {
 }
 
 WizardTemplateCard* TopologyFileWizard::TemplatePage::addCard(
-    QButtonGroup* group, QHBoxLayout* layout, const QString& templateId,
-    const QString& iconName, const QString& title, const QString& desc,
+    QButtonGroup* group,
+    QHBoxLayout* layout,
+    const QString& templateId,
+    const QString& iconName,
+    const QString& title,
+    const QString& desc,
     const QString& badge) {
   auto* card = new WizardTemplateCard(iconName, title, desc, badge, this);
   card->setProperty("templateId", templateId);
   group->addButton(card);
   layout->addWidget(card);
-  connect(card, &QAbstractButton::clicked, this, [this](bool) {
-    emit completeChanged();
-  });
+  connect(card, &QAbstractButton::clicked, this,
+          [this](bool) { emit completeChanged(); });
   return card;
 }
 
@@ -449,7 +458,8 @@ class TopologyFileWizard::DeviceUutPage : public WizardPage {
                                std::function<void()> handler,
                                QWidget* parent);
   QWidget* makePortChip(const QString& portName,
-                        std::function<void()> onRemove, QWidget* parent);
+                        std::function<void()> onRemove,
+                        QWidget* parent);
 
   std::function<void()> changed_cb_;
   TopologyData* data_ = nullptr;
@@ -533,8 +543,8 @@ void TopologyFileWizard::DeviceUutPage::rebuild() {
 
 void TopologyFileWizard::DeviceUutPage::addDevice(const DeviceTemplate& tpl) {
   ++device_seq_;
-  addDeviceToData(*data_, tpl, tpl.displayName + QStringLiteral("_%1")
-                                       .arg(device_seq_));
+  addDeviceToData(*data_, tpl,
+                  tpl.displayName + QStringLiteral("_%1").arg(device_seq_));
   rebuild();
   notifyChanged();
 }
@@ -605,7 +615,7 @@ void TopologyFileWizard::DeviceUutPage::addUutPort(int index) {
 }
 
 void TopologyFileWizard::DeviceUutPage::removeDevicePort(int index,
-                                                        int portIndex) {
+                                                         int portIndex) {
   if (index < 0 || index >= data_->devices.size()) {
     return;
   }
@@ -628,7 +638,7 @@ void TopologyFileWizard::DeviceUutPage::removeDevicePort(int index,
 }
 
 void TopologyFileWizard::DeviceUutPage::removeUutPort(int index,
-                                                     int portIndex) {
+                                                      int portIndex) {
   if (index < 0 || index >= data_->uuts.size()) {
     return;
   }
@@ -728,7 +738,8 @@ void TopologyFileWizard::DeviceUutPage::initUi() {
   devListLay->setContentsMargins(0, 0, 0, 0);
   devListLay->setSpacing(8);
   device_list_layout_ = devListLay;
-  device_empty_ = new QLabel(QStringLiteral("点击下方按钮添加设备"), devContent);
+  device_empty_ =
+      new QLabel(QStringLiteral("点击下方按钮添加设备"), devContent);
   device_empty_->setObjectName(QStringLiteral("topoEmptyHint"));
   device_empty_->setAlignment(Qt::AlignCenter);
   devListLay->addWidget(device_empty_);
@@ -740,8 +751,8 @@ void TopologyFileWizard::DeviceUutPage::initUi() {
   auto* addDeviceBtn = new QToolButton(devPool);
   addDeviceBtn->setObjectName(QStringLiteral("topoAddDeviceBtn"));
   addDeviceBtn->setText(QStringLiteral("添加设备"));
-  addDeviceBtn->setIcon(AppIconProvider::instance().icon(
-      QStringLiteral("microchip")));
+  addDeviceBtn->setIcon(
+      AppIconProvider::instance().icon(QStringLiteral("microchip")));
   addDeviceBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   addDeviceBtn->setPopupMode(QToolButton::InstantPopup);
   auto* menu = new QMenu(addDeviceBtn);
@@ -756,9 +767,8 @@ void TopologyFileWizard::DeviceUutPage::initUi() {
   clearDevBtn->setObjectName(QStringLiteral("topoDangerBtn"));
   clearDevBtn->setText(QStringLiteral("清空"));
   clearDevBtn->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  connect(clearDevBtn, &QToolButton::clicked, this, [this](bool) {
-    clearDevices();
-  });
+  connect(clearDevBtn, &QToolButton::clicked, this,
+          [this](bool) { clearDevices(); });
   devFooter->addWidget(clearDevBtn);
   devFooter->addStretch();
   devLay->addLayout(devFooter);
@@ -811,9 +821,8 @@ void TopologyFileWizard::DeviceUutPage::initUi() {
   clearUutBtn->setObjectName(QStringLiteral("topoDangerBtn"));
   clearUutBtn->setText(QStringLiteral("清空"));
   clearUutBtn->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  connect(clearUutBtn, &QToolButton::clicked, this, [this](bool) {
-    clearUuts();
-  });
+  connect(clearUutBtn, &QToolButton::clicked, this,
+          [this](bool) { clearUuts(); });
   uutFooter->addWidget(clearUutBtn);
   uutFooter->addStretch();
   uutLay->addLayout(uutFooter);
@@ -846,23 +855,20 @@ QWidget* TopologyFileWizard::DeviceUutPage::makeDeviceItem(int index) {
   auto* typeTag = new QLabel(d.deviceType, card);
   typeTag->setObjectName(QStringLiteral("topoPortsTag"));
   head->addWidget(typeTag);
-  auto* countTag = new QLabel(
-      QStringLiteral("%1端口").arg(d.ports.size()), card);
+  auto* countTag =
+      new QLabel(QStringLiteral("%1端口").arg(d.ports.size()), card);
   countTag->setObjectName(QStringLiteral("topoPortsTag"));
   head->addWidget(countTag);
-  head->addWidget(makeSmallButton(QStringLiteral("plus"),
-                                  [this, index]() { addDevicePort(index); },
-                                  card));
-  head->addWidget(makeSmallButton(QStringLiteral("trash"),
-                                  [this, index]() { removeDevice(index); },
-                                  card));
+  head->addWidget(makeSmallButton(
+      QStringLiteral("plus"), [this, index]() { addDevicePort(index); }, card));
+  head->addWidget(makeSmallButton(
+      QStringLiteral("trash"), [this, index]() { removeDevice(index); }, card));
   lay->addLayout(head);
 
   auto* portsLay = new FlowLayout();
   for (int p = 0; p < d.ports.size(); ++p) {
     portsLay->addWidget(makePortChip(
-        d.ports[p], [this, index, p]() { removeDevicePort(index, p); },
-        card));
+        d.ports[p], [this, index, p]() { removeDevicePort(index, p); }, card));
   }
   lay->addLayout(portsLay);
   return card;
@@ -888,30 +894,28 @@ QWidget* TopologyFileWizard::DeviceUutPage::makeUutItem(int index) {
   name->setObjectName(QStringLiteral("topoItemName"));
   name->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
   head->addWidget(name, 1);
-  auto* countTag = new QLabel(
-      QStringLiteral("%1端口").arg(u.ports.size()), card);
+  auto* countTag =
+      new QLabel(QStringLiteral("%1端口").arg(u.ports.size()), card);
   countTag->setObjectName(QStringLiteral("topoPortsTag"));
   head->addWidget(countTag);
-  head->addWidget(makeSmallButton(QStringLiteral("plus"),
-                                  [this, index]() { addUutPort(index); },
-                                  card));
-  head->addWidget(makeSmallButton(QStringLiteral("trash"),
-                                  [this, index]() { removeUut(index); },
-                                  card));
+  head->addWidget(makeSmallButton(
+      QStringLiteral("plus"), [this, index]() { addUutPort(index); }, card));
+  head->addWidget(makeSmallButton(
+      QStringLiteral("trash"), [this, index]() { removeUut(index); }, card));
   lay->addLayout(head);
 
   auto* portsLay = new FlowLayout();
   for (int p = 0; p < u.ports.size(); ++p) {
     portsLay->addWidget(makePortChip(
-        u.ports[p], [this, index, p]() { removeUutPort(index, p); },
-        card));
+        u.ports[p], [this, index, p]() { removeUutPort(index, p); }, card));
   }
   lay->addLayout(portsLay);
   return card;
 }
 
 QToolButton* TopologyFileWizard::DeviceUutPage::makeSmallButton(
-    const QString& iconName, std::function<void()> handler,
+    const QString& iconName,
+    std::function<void()> handler,
     QWidget* parent) {
   auto* btn = new QToolButton(parent);
   btn->setObjectName(QStringLiteral("topoItemBtn"));
@@ -919,13 +923,14 @@ QToolButton* TopologyFileWizard::DeviceUutPage::makeSmallButton(
   btn->setIcon(AppIconProvider::instance().icon(iconName));
   btn->setIconSize(QSize(14, 14));
   btn->setCursor(Qt::PointingHandCursor);
-  connect(btn, &QToolButton::clicked, this,
-          [handler](bool) { handler(); });
+  connect(btn, &QToolButton::clicked, this, [handler](bool) { handler(); });
   return btn;
 }
 
 QWidget* TopologyFileWizard::DeviceUutPage::makePortChip(
-    const QString& portName, std::function<void()> onRemove, QWidget* parent) {
+    const QString& portName,
+    std::function<void()> onRemove,
+    QWidget* parent) {
   auto* chip = new QFrame(parent);
   chip->setObjectName(QStringLiteral("topoPortChip"));
   chip->setFrameShape(QFrame::NoFrame);
@@ -937,7 +942,7 @@ QWidget* TopologyFileWizard::DeviceUutPage::makePortChip(
   lay->addWidget(label);
   auto* del = new QToolButton(chip);
   del->setObjectName(QStringLiteral("topoPortChipDel"));
-  del->setText(QStringLiteral("×"));
+  del->setIcon(AppIconProvider::instance().icon("close"));
   del->setFixedSize(14, 14);
   del->setCursor(Qt::PointingHandCursor);
   connect(del, &QToolButton::clicked, this, [onRemove](bool) { onRemove(); });
@@ -969,11 +974,12 @@ class TopologyFileWizard::ConnectionPage : public WizardPage {
   void addConnection();
   void removeConnection(int index);
   void refreshList();
-  bool connectionExists(const QString& device, const QString& devicePort,
-                        const QString& uut, const QString& uutPort) const;
+  bool connectionExists(const QString& device,
+                        const QString& devicePort,
+                        const QString& uut,
+                        const QString& uutPort) const;
   QWidget* makeConnectionRow(int index);
-  QToolButton* makeDeleteButton(std::function<void()> handler,
-                                QWidget* parent);
+  QToolButton* makeDeleteButton(std::function<void()> handler, QWidget* parent);
 
   std::function<void()> changed_cb_;
   TopologyData* data_ = nullptr;
@@ -1027,8 +1033,8 @@ void TopologyFileWizard::ConnectionPage::initUi() {
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(12);
 
-  auto* intro = new QLabel(
-      QStringLiteral("定义设备端口与 UUT 端口的物理连接"), this);
+  auto* intro =
+      new QLabel(QStringLiteral("定义设备端口与 UUT 端口的物理连接"), this);
   intro->setObjectName(QStringLiteral("topoIntro"));
   layout->addWidget(intro);
 
@@ -1042,8 +1048,7 @@ void TopologyFileWizard::ConnectionPage::initUi() {
   device_combo_ = new QComboBox(addRow);
   device_combo_->setObjectName(QStringLiteral("topoConnDeviceCombo"));
   device_port_combo_ = new QComboBox(addRow);
-  device_port_combo_->setObjectName(
-      QStringLiteral("topoConnDevicePortCombo"));
+  device_port_combo_->setObjectName(QStringLiteral("topoConnDevicePortCombo"));
   uut_combo_ = new QComboBox(addRow);
   uut_combo_->setObjectName(QStringLiteral("topoConnUutCombo"));
   uut_port_combo_ = new QComboBox(addRow);
@@ -1065,8 +1070,8 @@ void TopologyFileWizard::ConnectionPage::initUi() {
 
   // 已有连线列表（空态 / 列表 双页切换）
   list_stack_ = new QStackedWidget(this);
-  empty_label_ = new QLabel(QStringLiteral("暂无连线，点击上方添加连线"),
-                            list_stack_);
+  empty_label_ =
+      new QLabel(QStringLiteral("暂无连线，点击上方添加连线"), list_stack_);
   empty_label_->setObjectName(QStringLiteral("topoEmptyHint"));
   empty_label_->setAlignment(Qt::AlignCenter);
   list_container_ = new QWidget(list_stack_);
@@ -1085,8 +1090,8 @@ void TopologyFileWizard::ConnectionPage::initUi() {
 }
 
 void TopologyFileWizard::ConnectionPage::initSignals() {
-  connect(device_combo_, qOverload<int>(&QComboBox::currentIndexChanged),
-          this, &ConnectionPage::onDeviceComboChanged);
+  connect(device_combo_, qOverload<int>(&QComboBox::currentIndexChanged), this,
+          &ConnectionPage::onDeviceComboChanged);
   connect(uut_combo_, qOverload<int>(&QComboBox::currentIndexChanged), this,
           &ConnectionPage::onUutComboChanged);
   connect(add_btn_, &QToolButton::clicked, this,
@@ -1162,7 +1167,9 @@ void TopologyFileWizard::ConnectionPage::onUutComboChanged() {
 }
 
 bool TopologyFileWizard::ConnectionPage::connectionExists(
-    const QString& device, const QString& devicePort, const QString& uut,
+    const QString& device,
+    const QString& devicePort,
+    const QString& uut,
     const QString& uutPort) const {
   for (const WizardConnection& c : data_->connections) {
     if (c.deviceName == device && c.devicePort == devicePort &&
@@ -1230,14 +1237,14 @@ QWidget* TopologyFileWizard::ConnectionPage::makeConnectionRow(int index) {
   auto* lay = new QHBoxLayout(row);
   lay->setContentsMargins(12, 8, 12, 8);
   lay->setSpacing(8);
-  auto* deviceLabel = new QLabel(
-      c.deviceName + QStringLiteral(" · ") + c.devicePort, row);
+  auto* deviceLabel =
+      new QLabel(c.deviceName + QStringLiteral(" · ") + c.devicePort, row);
   auto* arrow = new QLabel(QStringLiteral("→"), row);
   arrow->setObjectName(QStringLiteral("topoConnArrow"));
   auto* uutLabel =
       new QLabel(c.uutName + QStringLiteral(" · ") + c.uutPort, row);
-  auto* del = makeDeleteButton(
-      [this, index]() { removeConnection(index); }, row);
+  auto* del =
+      makeDeleteButton([this, index]() { removeConnection(index); }, row);
   lay->addWidget(deviceLabel, 1);
   lay->addWidget(arrow);
   lay->addWidget(uutLabel, 1);
@@ -1246,7 +1253,8 @@ QWidget* TopologyFileWizard::ConnectionPage::makeConnectionRow(int index) {
 }
 
 QToolButton* TopologyFileWizard::ConnectionPage::makeDeleteButton(
-    std::function<void()> handler, QWidget* parent) {
+    std::function<void()> handler,
+    QWidget* parent) {
   auto* btn = new QToolButton(parent);
   btn->setObjectName(QStringLiteral("topoConnDelete"));
   btn->setIcon(AppIconProvider::instance().icon(QStringLiteral("close")));
@@ -1267,8 +1275,12 @@ class TopologyFileWizard::SummaryPage : public WizardPage {
 
  private:
   void initUi();
-  QLabel* addItem(QGridLayout* grid, int row, int col, const QString& label,
-                  const QString& value, int colspan = 1);
+  QLabel* addItem(QGridLayout* grid,
+                  int row,
+                  int col,
+                  const QString& label,
+                  const QString& value,
+                  int colspan = 1);
 
   QLabel* template_value_ = nullptr;
   QLabel* device_value_ = nullptr;
@@ -1297,21 +1309,22 @@ void TopologyFileWizard::SummaryPage::initUi() {
   grid->setContentsMargins(0, 0, 0, 0);
   grid->setHorizontalSpacing(32);
   grid->setVerticalSpacing(16);
-  template_value_ = addItem(grid, 0, 0, QStringLiteral("拓扑模板"),
-                            QStringLiteral("—"));
-  device_value_ = addItem(grid, 0, 1, QStringLiteral("设备数量"),
-                          QStringLiteral("0"));
-  uut_value_ = addItem(grid, 1, 0, QStringLiteral("UUT 数量"),
-                       QStringLiteral("0"));
-  connection_value_ = addItem(grid, 1, 1, QStringLiteral("连线数量"),
-                              QStringLiteral("0"));
+  template_value_ =
+      addItem(grid, 0, 0, QStringLiteral("拓扑模板"), QStringLiteral("—"));
+  device_value_ =
+      addItem(grid, 0, 1, QStringLiteral("设备数量"), QStringLiteral("0"));
+  uut_value_ =
+      addItem(grid, 1, 0, QStringLiteral("UUT 数量"), QStringLiteral("0"));
+  connection_value_ =
+      addItem(grid, 1, 1, QStringLiteral("连线数量"), QStringLiteral("0"));
   desc_value_ = addItem(grid, 2, 0, QStringLiteral("拓扑结构"),
                         QStringLiteral("（暂无设备）"), 2);
   layout->addLayout(grid);
   layout->addStretch();
 }
 
-QLabel* TopologyFileWizard::SummaryPage::addItem(QGridLayout* grid, int row,
+QLabel* TopologyFileWizard::SummaryPage::addItem(QGridLayout* grid,
+                                                 int row,
                                                  int col,
                                                  const QString& label,
                                                  const QString& value,
@@ -1326,8 +1339,8 @@ QLabel* TopologyFileWizard::SummaryPage::addItem(QGridLayout* grid, int row,
   return valueEl;
 }
 
-void TopologyFileWizard::SummaryPage::setSummary(
-    const QString& templateLabel, const TopologyData& data) {
+void TopologyFileWizard::SummaryPage::setSummary(const QString& templateLabel,
+                                                 const TopologyData& data) {
   template_value_->setText(templateLabel);
   device_value_->setText(QString::number(data.devices.size()));
   uut_value_->setText(QString::number(data.uuts.size()));
@@ -1345,11 +1358,10 @@ void TopologyFileWizard::SummaryPage::setSummary(
   for (const WizardUut& u : data.uuts) {
     uutNames << QStringLiteral("%1(%2p)").arg(u.name).arg(u.ports.size());
   }
-  desc_value_->setText(
-      QStringLiteral("设备: %1 | UUT: %2 | 连线: %3条")
-          .arg(devNames.join(QStringLiteral("; ")))
-          .arg(uutNames.join(QStringLiteral("; ")))
-          .arg(data.connections.size()));
+  desc_value_->setText(QStringLiteral("设备: %1 | UUT: %2 | 连线: %3条")
+                           .arg(devNames.join(QStringLiteral("; ")))
+                           .arg(uutNames.join(QStringLiteral("; ")))
+                           .arg(data.connections.size()));
 }
 
 // ── 向导主体 ──
@@ -1397,14 +1409,13 @@ void TopologyFileWizard::initSignals() {
     updateSummary();
   });
   connection_page_->setChangedCallback([this]() { updateSummary(); });
-  connect(this, &BaseWizardDialog::currentPageChanged, this,
-          [this](int index) {
-            if (index == pageCount() - 1) {
-              updateSummary();
-            } else if (index == 2) {
-              connection_page_->refresh();
-            }
-          });
+  connect(this, &BaseWizardDialog::currentPageChanged, this, [this](int index) {
+    if (index == pageCount() - 1) {
+      updateSummary();
+    } else if (index == 2) {
+      connection_page_->refresh();
+    }
+  });
 }
 
 QString TopologyFileWizard::topologyName() const {
@@ -1428,9 +1439,9 @@ void TopologyFileWizard::loadTemplate(const QString& templateId) {
                     QStringLiteral("PXI-AD采集卡_1"));
     addDeviceToData(data_, *deviceTemplate(QStringLiteral("serial")),
                     QStringLiteral("PXI-串口卡_1"));
-    addUutToData(data_, QStringLiteral("飞控#1"),
-                 {QStringLiteral("CAN"), QStringLiteral("AD"),
-                  QStringLiteral("IO")});
+    addUutToData(
+        data_, QStringLiteral("飞控#1"),
+        {QStringLiteral("CAN"), QStringLiteral("AD"), QStringLiteral("IO")});
     addUutToData(data_, QStringLiteral("飞控#2"),
                  {QStringLiteral("CAN"), QStringLiteral("AD")});
     addConnectionToData(data_, QStringLiteral("PXI-CAN卡_1"),
@@ -1536,8 +1547,7 @@ bool TopologyFileWizard::onCreateValidate() {
 
 void TopologyFileWizard::confirmCancel() {
   const QMessageBox::StandardButton reply = QMessageBox::question(
-      this, QStringLiteral("取消"),
-      QStringLiteral("确定要取消创建拓扑吗？"));
+      this, QStringLiteral("取消"), QStringLiteral("确定要取消创建拓扑吗？"));
   if (reply == QMessageBox::Yes) {
     reject();
   }
