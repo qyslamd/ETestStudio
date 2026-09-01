@@ -75,8 +75,8 @@ add_executable(${TARGET_NAME} WIN32
     widgets/LogOutputPanel.cpp
     widgets/ExecutionOutputPanel.h
     widgets/ExecutionOutputPanel.cpp
-    widgets/BottomContainerWidget.h
-    widgets/BottomContainerWidget.cpp
+    BottomContainerWidget.h
+    BottomContainerWidget.cpp
     widgets/ProblemsPanel.h
     widgets/ProblemsPanel.cpp
     TerminalPanel.h

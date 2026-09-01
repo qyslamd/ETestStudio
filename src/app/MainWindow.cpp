@@ -55,9 +55,9 @@
 #include <DockAreaWidget.h>
 #include <DockSplitter.h>
 #include <DockWidgetTab.h>
-#include "SidebarNavWidget.h"
 #include "AppIconProvider.h"
 #include "AppStatusBarController.h"
+#include "BottomContainerWidget.h"
 #include "EditorManager.h"
 #include "EditorPanelController.h"
 #include "ExecutionDashboard.h"
@@ -69,6 +69,7 @@
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
 #include "SidebarContentWidget.h"
+#include "SidebarNavWidget.h"
 #include "SignalRegistry.h"
 #include "TerminalPanel.h"
 #include "TestProgramData.h"
@@ -98,7 +99,6 @@
 #include "topology/TopologyEditorWidget.h"
 #include "utils/SignalSyncHelper.h"
 #include "welcome/WelcomeWidget.h"
-#include "widgets/BottomContainerWidget.h"
 #include "widgets/ExecutionOutputPanel.h"
 #include "widgets/HintButton.h"
 #include "widgets/LogOutputPanel.h"
@@ -199,8 +199,8 @@ void MainWindow::initUi() {
   page_editor_widget_ = new QWidget(central_stack_);
   page_editor_widget_->setObjectName("PageEditor");
   auto* page0_layout = new QHBoxLayout(page_editor_widget_);
-  page0_layout->setContentsMargins(0, 0, 0, 0);
-  page0_layout->setSpacing(0);
+  page0_layout->setContentsMargins(0, 6, 0, 6);
+  page0_layout->setSpacing(6);
 
   // ==================== 活动栏 ====================
   sidebar_nav_ = new SidebarNavWidget(page_editor_widget_);
@@ -223,10 +223,11 @@ void MainWindow::initUi() {
   h_splitter_->addWidget(v_splitter_);
 
   // 编辑器区域（提示栏 + DockManager）
-  auto* editor_area = new QWidget(v_splitter_);
+  // 右侧垂直分裂器 上
+  auto* editor_area = new QFrame(v_splitter_);
   editor_area->setObjectName("EditorArea");
   auto* editor_area_layout = new QVBoxLayout(editor_area);
-  editor_area_layout->setContentsMargins(0, 0, 0, 0);
+  editor_area_layout->setContentsMargins(0, 6, 0, 6);
   editor_area_layout->setSpacing(0);
 
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
@@ -256,6 +257,7 @@ void MainWindow::initUi() {
   v_splitter_->addWidget(editor_area);
 
   // 底部容器空壳（lazyInit 时 addPanel）
+  // 右侧垂直分裂器 下
   bottom_container_ = new BottomContainerWidget(v_splitter_);
   v_splitter_->addWidget(bottom_container_);
   bottom_container_->hide();  // 无面板时隐藏
@@ -843,23 +845,24 @@ void MainWindow::initSignals() {
     auto* hwPsWidget = qobject_cast<ProjectStructureWidget*>(
         sidebar_content_->pageById(PageId::kProjectOverview));
     if (hwPsWidget) {
-      connect(
-          hwPsWidget, &ProjectStructureWidget::hardwareDeviceNavigateRequested,
-          this, [this](const QString& deviceType, const QString& pluginId) {
-            // 侧边栏切换到平台设备树页面
-            sidebar_content_->switchPage(PageId::kHardware);
-            if (!sidebar_content_->isContentVisible()) {
-              sidebar_content_->showContent();
-              auto sizes = h_splitter_->sizes();
-              if (!sizes.isEmpty()) {
-                sizes[0] = sidebar_expanded_width_;
-                h_splitter_->setSizes(sizes);
-              }
-            }
-            sidebar_nav_->setActivePageId(PageId::kHardware);
-            // 高亮对应的设备类型
-            sidebar_content_->hardwareTree()->highlightDeviceType(deviceType, pluginId);
-          });
+      connect(hwPsWidget,
+              &ProjectStructureWidget::hardwareDeviceNavigateRequested, this,
+              [this](const QString& deviceType, const QString& pluginId) {
+                // 侧边栏切换到平台设备树页面
+                sidebar_content_->switchPage(PageId::kHardware);
+                if (!sidebar_content_->isContentVisible()) {
+                  sidebar_content_->showContent();
+                  auto sizes = h_splitter_->sizes();
+                  if (!sizes.isEmpty()) {
+                    sizes[0] = sidebar_expanded_width_;
+                    h_splitter_->setSizes(sizes);
+                  }
+                }
+                sidebar_nav_->setActivePageId(PageId::kHardware);
+                // 高亮对应的设备类型
+                sidebar_content_->hardwareTree()->highlightDeviceType(
+                    deviceType, pluginId);
+              });
     }
   }
 
@@ -974,40 +977,44 @@ void MainWindow::lazyInit() {
   reportSplashProgress(QStringLiteral("注册侧边栏页面"), 60);
   {
     sidebar_nav_->addPage(PageId::kProjectOverview, QStringLiteral("项目概览"),
-                           QStringLiteral("project"));
+                          QStringLiteral("project"));
     sidebar_nav_->addPage(PageId::kSearch, QStringLiteral("搜索"),
-                           QStringLiteral("search"));
+                          QStringLiteral("search"));
     sidebar_nav_->addPage(PageId::kTopology, QStringLiteral("拓扑"),
-                           QStringLiteral("topo_tap"));
+                          QStringLiteral("topo_tap"));
     sidebar_nav_->addPage(PageId::kHardware, QStringLiteral("硬件"),
-                           QStringLiteral("hardware"));
+                          QStringLiteral("hardware"));
     sidebar_nav_->addPage(PageId::kProtocol, QStringLiteral("协议"),
-                           QStringLiteral("protocol"));
+                          QStringLiteral("protocol"));
     sidebar_nav_->addPage(PageId::kTestProgram, QStringLiteral("测试程序"),
-                           QStringLiteral("testprogram"));
+                          QStringLiteral("testprogram"));
     sidebar_nav_->addPage(PageId::kReport, QStringLiteral("报告"),
-                           QStringLiteral("report"));
+                          QStringLiteral("report"));
     sidebar_nav_->addPage(PageId::kGit, QStringLiteral("Git"),
-                           QStringLiteral("git"));
+                          QStringLiteral("git"));
 
     sidebar_content_->addPage(PageId::kProjectOverview,
-                      new ProjectStructureWidget(sidebar_content_),
-                      QStringLiteral("项目概览"));
-    sidebar_content_->addPage(PageId::kSearch, new SearchWidget(sidebar_content_),
-                      QStringLiteral("搜索"));
-    sidebar_content_->addPage(PageId::kTopology, new TopologyManagerWidget(sidebar_content_),
-                      QStringLiteral("拓扑"));
-    sidebar_content_->addPage(PageId::kHardware, new HardwareTreeWidget(sidebar_content_),
-                      QStringLiteral("硬件"));
-    sidebar_content_->addPage(PageId::kProtocol, new ProtocolManagerWidget(sidebar_content_),
-                      QStringLiteral("协议"));
+                              new ProjectStructureWidget(sidebar_content_),
+                              QStringLiteral("项目概览"));
+    sidebar_content_->addPage(PageId::kSearch,
+                              new SearchWidget(sidebar_content_),
+                              QStringLiteral("搜索"));
+    sidebar_content_->addPage(PageId::kTopology,
+                              new TopologyManagerWidget(sidebar_content_),
+                              QStringLiteral("拓扑"));
+    sidebar_content_->addPage(PageId::kHardware,
+                              new HardwareTreeWidget(sidebar_content_),
+                              QStringLiteral("硬件"));
+    sidebar_content_->addPage(PageId::kProtocol,
+                              new ProtocolManagerWidget(sidebar_content_),
+                              QStringLiteral("协议"));
     test_program_mgr_ = new TestProgramManagerWidget(sidebar_content_);
     sidebar_content_->addPage(PageId::kTestProgram, test_program_mgr_,
-                      QStringLiteral("测试程序"));
+                              QStringLiteral("测试程序"));
     sidebar_content_->addPage(PageId::kReport, new QWidget(sidebar_content_),
-                      QStringLiteral("报告"));
+                              QStringLiteral("报告"));
     sidebar_content_->addPage(PageId::kGit, new GitWidget(sidebar_content_),
-                      QStringLiteral("Git"));
+                              QStringLiteral("Git"));
 
     // 立即覆盖 addPage 的自动选中，恢复保存的页面
     auto& cfg = ConfigManager::instance();

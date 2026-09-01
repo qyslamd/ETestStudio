@@ -1,9 +1,9 @@
 #pragma once
 
+#include <QFrame>
 #include <QMap>
 #include <QStackedWidget>
 #include <QVBoxLayout>
-#include <QWidget>
 
 class QLabel;
 
@@ -28,7 +28,7 @@ constexpr auto kSearch = "search";
 constexpr auto kGit = "git";
 }  // namespace PageId
 
-class SidebarContentWidget : public QWidget {
+class SidebarContentWidget : public QFrame {
   Q_OBJECT
 
  public:
@@ -57,7 +57,6 @@ class SidebarContentWidget : public QWidget {
 
   QStackedWidget* stack_;
   QLabel* title_label_;
-  QWidget* content_panel_ = nullptr;
 
   QMap<QString, int> id_to_index_;
   QMap<QString, QString> id_to_title_;

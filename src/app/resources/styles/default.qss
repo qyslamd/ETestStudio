@@ -120,17 +120,47 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
 }
 
 /* ==================== QSplitter ==================== */
+QSplitter {
+  border: none;
+  background-color: transparent;
+}
+
 QSplitter::handle {
-    background-color: #D0D0D0;
+  background-color: transparent;
+  border: none;
+  image: none;
 }
-QSplitter::handle:horizontal {
-    width: 3px;
-}
-QSplitter::handle:vertical {
-    height: 3px;
+QSplitter::handle:pressed {
+    background-color: #0055aa; 
 }
 QSplitter::handle:hover {
-    background-color: #0078D4;
+    background-color: #0055aa; 
+}
+
+QSplitter::handle:horizontal {
+    background-color: transparent;
+    border: none;
+    image: none;
+    width: 6px;
+}
+QSplitter::handle:horizontal:hover {
+    background-color: #0055aa;
+}
+QSplitter::handle:horizontal:pressed {
+    background-color: #0055aa; 
+}
+
+QSplitter::handle:vertical {
+    background-color: transparent;
+    border: none;
+    image: none;
+    height: 6px;
+}
+QSplitter::handle:vertical:hover {
+    background-color: #0055aa;
+}
+QSplitter::handle:vertical:pressed {
+    background-color: #0055aa; 
 }
 
 /* ==================== TopologyManagerWidget ==================== */
@@ -671,11 +701,11 @@ QToolButton#HintPopupClearBtn:hover {
     color: #2B6CB0;
 }
 /* ==================== 侧边栏活动按钮栏 ==================== */
-QWidget#sidebarNavBar {
-    background-color: #F0F0F0;
-    border-right: 1px solid #D0D0D0;
+#sidebarNavBar {
+    background-color: #D0D0D0;
+    border-right:1px solid #D0D0D0;
 }
-QWidget#sidebarNavBar QToolButton {
+#sidebarNavBar QToolButton {
     background-color: transparent;
     border: none;
     border-left: 2px solid transparent;
@@ -684,10 +714,42 @@ QWidget#sidebarNavBar QToolButton {
     padding: 0px;
     margin: 0px;
 }
-QWidget#sidebarNavBar QToolButton:hover {
+#sidebarNavBar QToolButton:hover {
     background-color: #E0E0E0;
     color: #222222;
 }
+
+/* ==================== SidebarContentWidget ==================== */
+etest--app--SidebarContentWidget {
+    background-color: transparent;
+    border:1px solid #D0D0D0;
+    border-radius:8px;
+}
+#sidebarTitleBar {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+/* ==================== EditorArea ==================== */
+#EditorArea {
+    background-color: transparent;
+    border-radius: 8px;
+    border: 1px solid #D0D0D0;
+}
+
+/* ==================== bottomContainerWidget ==================== */
+#bottomContainerWidget {
+    background-color: transparent;
+    border-radius: 8px;
+    border: 1px solid #D0D0D0;
+}
+
+#bottomTabWidget {
+    background: transparent;
+    background-color: transparent;
+    border: none;
+}
+
 /* ==================== Tab Close Button ==================== */
 #tabCloseButton {
     margin-top: 2px;

@@ -1,14 +1,14 @@
 #ifndef ETEST_APP_BOTTOM_CONTAINER_WIDGET_H_
 #define ETEST_APP_BOTTOM_CONTAINER_WIDGET_H_
 
+#include <QFrame>
 #include <QStringList>
 #include <QTabWidget>
 #include <QVBoxLayout>
-#include <QWidget>
 
 namespace etest::app {
 
-class BottomContainerWidget : public QWidget {
+class BottomContainerWidget : public QFrame {
   Q_OBJECT
 
  public:

@@ -11,22 +11,17 @@
 
 namespace etest::app {
 
-SidebarContentWidget::SidebarContentWidget(QWidget* parent) : QWidget(parent) {
+SidebarContentWidget::SidebarContentWidget(QWidget* parent) : QFrame(parent) {
   initUi();
 }
 
 void SidebarContentWidget::initUi() {
-  auto* outer_layout = new QHBoxLayout(this);
-  outer_layout->setContentsMargins(0, 0, 0, 0);
-  outer_layout->setSpacing(0);
+  setObjectName(QStringLiteral("sidebarContentWidget"));
 
-  // 内容面板
-  content_panel_ = new QWidget(this);
-  auto* content_layout = new QVBoxLayout(content_panel_);
-  content_layout->setContentsMargins(0, 0, 0, 0);
-  content_layout->setSpacing(0);
+  auto* layout = new QVBoxLayout(this);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(0);
 
-  // 视图标题栏
   auto* title_bar = new QWidget(this);
   title_bar->setObjectName(QStringLiteral("sidebarTitleBar"));
   title_bar->setFixedHeight(35);
@@ -34,23 +29,18 @@ void SidebarContentWidget::initUi() {
   auto* title_layout = new QHBoxLayout(title_bar);
   title_layout->setContentsMargins(12, 0, 8, 0);
   title_layout->setSpacing(4);
-
-  title_label_ = new QLabel(this);
+  title_label_ = new QLabel(title_bar);
   title_layout->addWidget(title_label_);
   title_layout->addStretch();
 
-  content_layout->addWidget(title_bar);
-
-  // 内容区域
   stack_ = new QStackedWidget(this);
-  content_layout->addWidget(stack_);
-
-  outer_layout->addWidget(content_panel_);
+  layout->addWidget(title_bar);
+  layout->addWidget(stack_);
 }
 
 void SidebarContentWidget::addPage(const QString& id,
-                            QWidget* page,
-                            const QString& title) {
+                                   QWidget* page,
+                                   const QString& title) {
   if (id_to_index_.contains(id))
     return;
 

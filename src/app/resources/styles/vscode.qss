@@ -138,23 +138,48 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: none;
 }
 
-/* 分割器 */
-QSplitter::handle {
-    background-color: #3C3C3C;
+/* ==================== QSplitter ==================== */
+QSplitter {
+  border: none;
+  background-color: transparent;
 }
+
+QSplitter::handle {
+  background-color: transparent;
+  border: none;
+  image: none;
+}
+QSplitter::handle:pressed {
+    background-color: #0055aa; 
+}
+QSplitter::handle:hover {
+    background-color: #0055aa; 
+}
+
 QSplitter::handle:horizontal {
-    background-color: #3C3C3C;
-    width: 3px;
+    background-color: transparent;
+    border: none;
+    image: none;
+    width: 6px;
 }
 QSplitter::handle:horizontal:hover {
-    background-color: #007ACC;
+    background-color: #0055aa;
 }
+QSplitter::handle:horizontal:pressed {
+    background-color: #0055aa; 
+}
+
 QSplitter::handle:vertical {
-    background-color: #3C3C3C;
-    height: 3px;
+    background-color: transparent;
+    border: none;
+    image: none;
+    height: 6px;
 }
 QSplitter::handle:vertical:hover {
-    background-color: #007ACC;
+    background-color: #0055aa;
+}
+QSplitter::handle:vertical:pressed {
+    background-color: #0055aa; 
 }
 
 /* Tab Widget — 由 TabBarStyle 全权自绘，不使用 QSS */
@@ -522,7 +547,8 @@ QWidget#sidebarNavBar QToolButton:checked {
 /* ==================== SidebarContentWidget ==================== */
 etest--app--SidebarContentWidget {
     background-color: #252526;
-    border-right: 1px solid #1E1E1E;
+    border:none;
+    border-radius:8px;
 }
 etest--app--SidebarContentWidget QLabel {
     color: #BBBBBB;
@@ -540,6 +566,39 @@ etest--app--SidebarContentWidget QToolButton:hover {
 }
 #sidebarTitleBar {
     background-color: #252526;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+/* ==================== EditorArea ==================== */
+#EditorArea{
+    background-color:#252526;
+    border-radius:8px;
+    border:1px solid #252526;
+}
+
+/* ==================== bottomContainerWidget ==================== */
+#bottomContainerWidget{
+    background-color:#252526;
+    border-radius:8px;
+    border:1px solid #252526;
+}
+
+#bottomTabWidget{
+  background: transparent;
+    background-color: transparent;
+    border: none;
+}
+
+#bottomTabWidget QTabBar::close-button {
+    image: url(:/resources/icons/svg/close_light.svg);
+    subcontrol-position: right;
+    width: 14px;
+    height: 14px;
+}
+#bottomTabWidget QTabBar::close-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
 }
 
 /* ==================== ProtocolManagerWidget (ICDConfig 视图) ==================== */
@@ -2007,18 +2066,6 @@ QToolButton#saverCloseBtn:pressed {
     color: white;
     border-color: rgba(200,50,50,220);
     border-style: solid;
-}
-
-/* ==================== Tab Close Button (Dark) ==================== */
-#bottomTabWidget QTabBar::close-button {
-    image: url(:/resources/icons/svg/close_light.svg);
-    subcontrol-position: right;
-    width: 14px;
-    height: 14px;
-}
-#bottomTabWidget QTabBar::close-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
 }
 
 /* ==================== Signal Visualizers (Dark) ==================== */

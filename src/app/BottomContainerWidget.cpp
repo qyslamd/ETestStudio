@@ -13,17 +13,16 @@ namespace etest::app {
 using etest::core_ui::AppIconProvider;
 using etest::core_ui::ThemeManager;
 
-BottomContainerWidget::BottomContainerWidget(QWidget* parent)
-    : QWidget(parent) {
+BottomContainerWidget::BottomContainerWidget(QWidget* parent) : QFrame(parent) {
   initUi();
 }
 
 void BottomContainerWidget::initUi() {
-  setAutoFillBackground(true);
+  setObjectName(QStringLiteral("bottomContainerWidget"));
 
-  auto* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(0);
+  auto* layout = new QVBoxLayout(this);
+  layout->setContentsMargins(0, 6, 0, 6);
+  layout->setSpacing(0);
 
   tab_widget_ = new QTabWidget(this);
   tab_widget_->setTabPosition(QTabWidget::North);
@@ -36,10 +35,7 @@ void BottomContainerWidget::initUi() {
   tab_widget_->setObjectName(QStringLiteral("bottomTabWidget"));
   TabBarStyle::install(tab_widget_->tabBar());
 
-  // test
-  // tab_widget_->setTabPosition(QTabWidget::South);
-
-  main_layout->addWidget(tab_widget_);
+  layout->addWidget(tab_widget_);
 
   // 关闭 tab → 隐藏面板
   connect(tab_widget_, &QTabWidget::tabCloseRequested, this, [this](int index) {
