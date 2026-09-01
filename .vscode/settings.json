@@ -4,13 +4,24 @@
     "clang-format.fallbackStyle": "Chromium",
     "editor.fontSize": 14,
     "editor.fontFamily": "Cascadia Mono Light, Microsoft YaHei, monospace",
-    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
     "terminal.integrated.profiles.windows": {
         "Command Prompt": {
             "path": "C:\\Windows\\System32\\cmd.exe",
             "args": [
                 "/K",
                 "chcp 65001 >nul"
+            ]
+        },
+        "PowerShell": {
+            "path": "powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Unrestricted",
+                "-NoLogo",
+                "-NoExit",
+                "-Command",
+                "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser"
             ]
         }
     },
