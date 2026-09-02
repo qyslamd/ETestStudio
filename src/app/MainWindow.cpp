@@ -227,7 +227,7 @@ void MainWindow::initUi() {
   auto* editor_area = new QFrame(v_splitter_);
   editor_area->setObjectName("EditorArea");
   auto* editor_area_layout = new QVBoxLayout(editor_area);
-  editor_area_layout->setContentsMargins(0, 6, 0, 6);
+  editor_area_layout->setContentsMargins(0, 0, 0, 0);
   editor_area_layout->setSpacing(0);
 
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);

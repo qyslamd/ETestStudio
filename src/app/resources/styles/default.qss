@@ -729,6 +729,11 @@ etest--app--SidebarContentWidget {
     border-top-right-radius: 8px;
 }
 
+#PageEditor{
+    background-color: white;
+    border:none;
+}
+
 /* ==================== EditorArea ==================== */
 #EditorArea {
     background-color: transparent;

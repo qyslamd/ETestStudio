@@ -7,11 +7,29 @@
 #include <QPainterPath>
 #include <QShowEvent>
 
+#include "core_ui/ThemeManager.h"
+
 namespace etest::app {
+
+namespace {
+
+// 主题默认遮罩色：半透明黑，深色主题 alpha 微调（同
+// GuidancePresentation::maskColor 的设计文档 3.8 口径）
+QColor themeDefaultMaskColor() {
+  const int alpha =
+      etest::core_ui::ThemeManager::instance().isDarkTheme() ? 140 : 128;
+  return QColor(0, 0, 0, alpha);
+}
+
+}  // namespace
 
 OverlayDialog::OverlayDialog(QWidget* parent) : QDialog(parent) {
   setWindowFlag(Qt::FramelessWindowHint);
   setAttribute(Qt::WA_TranslucentBackground);
+  // 主题切换时重绘遮罩（SettingsDialog 自身即 OverlayDialog，内部切主题需实时跟随）
+  connect(&etest::core_ui::ThemeManager::instance(),
+          &etest::core_ui::ThemeManager::themeChanged, this,
+          [this](bool) { update(); });
 #ifndef Q_OS_WIN
   // Linux（WSLg/Wayland）下客户端拿不到全局坐标，独立顶层窗口无法覆盖
   // 到主窗口之上。退化为顶层窗口的子覆盖层，配合 showEvent 中 parentWidget()
@@ -55,7 +73,6 @@ void OverlayDialog::showEvent(QShowEvent* event) {
 #endif
   }
   raise();
-  // 直接居中显示卡片（去掉飞入动画，即时呈现）
   if (widget_) {
     const int w = widget_->width();
     const int h = widget_->height();
@@ -70,7 +87,7 @@ void OverlayDialog::setMaskColor(const QColor& color) {
 }
 
 QColor OverlayDialog::maskColor() const {
-  return mask_color_;
+  return mask_color_.isValid() ? mask_color_ : themeDefaultMaskColor();
 }
 
 void OverlayDialog::paintEvent(QPaintEvent* event) {
@@ -79,7 +96,7 @@ void OverlayDialog::paintEvent(QPaintEvent* event) {
   p.setRenderHint(QPainter::Antialiasing);
   QPainterPath path;
   path.addRoundedRect(rect(), round_radius_, round_radius_);
-  p.fillPath(path, mask_color_);
+  p.fillPath(path, maskColor());
 }
 
 void OverlayDialog::keyPressEvent(QKeyEvent* e) {

@@ -4,6 +4,11 @@
  * 同时设置到 qApp（覆盖浮动窗口）和 CDockManager（覆盖内置 default.css）
  */
 
+ads--CDockManager{
+    border:none;
+    border-radius:8px;
+}
+
 /* ==================== 容器 ==================== */
 ads--CDockContainerWidget {
     background: #F0F0F0;

@@ -151,8 +151,8 @@ void GuidanceCard::mouseReleaseEvent(QMouseEvent* event) {
 GuidanceHomePage::GuidanceHomePage(GuidanceController* controller,
                                    QWidget* parent)
     : OverlayDialog(parent), controller_(controller) {
-  // 引导聚焦遮罩：黑色半透明。遮罩绘制/圆角/阴影/覆盖父窗口全部由 OverlayDialog 承担。
-  setMaskColor(QColor(0, 0, 0, 128));
+  // 引导聚焦遮罩：黑色半透明（OverlayDialog 默认已跟随主题深浅）。
+  // 遮罩绘制/圆角/阴影/覆盖父窗口全部由 OverlayDialog 承担。
   initUi();
   initSignals();
 }
