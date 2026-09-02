@@ -21,7 +21,7 @@ void BottomContainerWidget::initUi() {
   setObjectName(QStringLiteral("bottomContainerWidget"));
 
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(0, 6, 0, 6);
+  layout->setContentsMargins(0, 1, 0, 0);
   layout->setSpacing(0);
 
   tab_widget_ = new QTabWidget(this);
@@ -31,8 +31,7 @@ void BottomContainerWidget::initUi() {
   tab_widget_->tabBar()->setMovable(true);
   tab_widget_->tabBar()->setElideMode(Qt::ElideRight);
   tab_widget_->tabBar()->setUsesScrollButtons(true);
-  tab_widget_->setAutoFillBackground(true);
-  tab_widget_->setObjectName(QStringLiteral("bottomTabWidget"));
+  tab_widget_->tabBar()->setDrawBase(false);  // 非常关键哦！不然顶部会有一根线
   TabBarStyle::install(tab_widget_->tabBar());
 
   layout->addWidget(tab_widget_);

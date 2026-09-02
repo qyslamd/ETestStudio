@@ -744,7 +744,7 @@ etest--app--SidebarContentWidget {
     border: 1px solid #D0D0D0;
 }
 
-#bottomTabWidget {
+etest--app--BottomContainerWidget {
     background: transparent;
     background-color: transparent;
     border: none;
@@ -1208,13 +1208,13 @@ etest--app--EtlogViewerWidget {
 }
 
 /* ==================== Tab Close Button (Light) ==================== */
-#bottomTabWidget QTabBar::close-button {
+etest--app--BottomContainerWidget QTabBar::close-button {
     image: url(:/resources/icons/svg/close_dark.svg);
     subcontrol-position: right;
     width: 14px;
     height: 14px;
 }
-#bottomTabWidget QTabBar::close-button:hover {
+etest--app--BottomContainerWidget QTabBar::close-button:hover {
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 2px;
 }

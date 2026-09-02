@@ -64,9 +64,9 @@ QColor TabBarStyle::textColor(bool selected) const {
 }
 
 QSize TabBarStyle::sizeFromContents(QStyle::ContentsType type,
-                                     const QStyleOption* option,
-                                     const QSize& size,
-                                     const QWidget* widget) const {
+                                    const QStyleOption* option,
+                                    const QSize& size,
+                                    const QWidget* widget) const {
   if (type == CT_TabBarTab) {
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     // Qt 5.12 没有 setTabVisible，用 setTabEnabled(false) + 零尺寸模拟隐藏
@@ -116,7 +116,8 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
-    painter->setPen(QPen(accent, kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter->setPen(QPen(accent, kTabBorderWidth, Qt::SolidLine, Qt::RoundCap,
+                         Qt::RoundJoin));
     painter->setBrush(selectedBrush(option->rect));
     // drawPath 而非 drawPolygon：填充仍按闭合区域，但描边不画底部闭合线，
     // 选中 tab 底边与内容区自然衔接
@@ -128,49 +129,17 @@ void TabBarStyle::drawTabBarTabShape(const QStyleOption* option,
       painter->save();
       painter->setRenderHint(QPainter::Antialiasing);
       QLinearGradient grad(option->rect.left(), 0, option->rect.right(), 0);
-      grad.setColorAt(0.0,  accent.darker(140));
+      grad.setColorAt(0.0, accent.darker(140));
       grad.setColorAt(0.15, accent.darker(115));
-      grad.setColorAt(0.5,  accent);
+      grad.setColorAt(0.5, accent);
       grad.setColorAt(0.85, accent.darker(115));
-      grad.setColorAt(1.0,  accent.darker(140));
-      painter->setPen(QPen(QBrush(grad), kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+      grad.setColorAt(1.0, accent.darker(140));
+      painter->setPen(QPen(QBrush(grad), kTabBorderWidth, Qt::SolidLine,
+                           Qt::RoundCap, Qt::RoundJoin));
       painter->setBrush(Qt::NoBrush);
       painter->drawPath(path);
       painter->restore();
     }
-
-    // 选中 tab 两侧斜边底部水平延伸至 tab bar 可见区域左右边缘
-    if (w) {
-      const QRect barRect = w->rect();
-      const qreal y = option->rect.bottom();
-      const qreal per = option->rect.height() * kTabHRatio;
-      qreal leftX = option->rect.left();
-      qreal rightX = option->rect.right();
-      auto* tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
-      if (tabOption) {
-        if (tabOption->position != QStyleOptionTab::Beginning &&
-            tabOption->position != QStyleOptionTab::OnlyOneTab) {
-          leftX -= per;
-        }
-        if (tabOption->position != QStyleOptionTab::End &&
-            tabOption->position != QStyleOptionTab::OnlyOneTab) {
-          rightX += per;
-        }
-      }
-      painter->save();
-      painter->setRenderHint(QPainter::Antialiasing);
-      painter->setPen(QPen(accent, kTabBorderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-      if (leftX > barRect.left()) {
-        painter->drawLine(
-            QLineF(QPointF(leftX, y), QPointF(barRect.left(), y)));
-      }
-      if (rightX < barRect.right()) {
-        painter->drawLine(
-            QLineF(QPointF(rightX, y), QPointF(barRect.right(), y)));
-      }
-      painter->restore();
-    }
-
   } else if (state.testFlag(QStyle::State_MouseOver)) {
     auto path = getHoveredShape(option);
 

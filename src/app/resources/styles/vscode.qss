@@ -547,8 +547,8 @@ QWidget#sidebarNavBar QToolButton:checked {
 /* ==================== SidebarContentWidget ==================== */
 etest--app--SidebarContentWidget {
     background-color: #252526;
-    border:none;
     border-radius:8px;
+    border:1px solid #454545;
 }
 etest--app--SidebarContentWidget QLabel {
     color: #BBBBBB;
@@ -566,6 +566,7 @@ etest--app--SidebarContentWidget QToolButton:hover {
 }
 #sidebarTitleBar {
     background-color: #252526;
+    border:none;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
 }
@@ -574,29 +575,78 @@ etest--app--SidebarContentWidget QToolButton:hover {
 #EditorArea{
     background-color:#252526;
     border-radius:8px;
-    border:1px solid #252526;
+    border:1px solid #454545;
 }
 
-/* ==================== bottomContainerWidget ==================== */
-#bottomContainerWidget{
+/* ==================== etest--app--BottomContainerWidget ==================== */
+etest--app--BottomContainerWidget {
     background-color:#252526;
     border-radius:8px;
-    border:1px solid #252526;
+    border:1px solid #454545;
 }
-
-#bottomTabWidget{
-  background: transparent;
+etest--app--BottomContainerWidget QTabWidget {
+    background-color: #1E1E1E;
+    border:none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+etest--app--BottomContainerWidget QTabWidget::pane {
+    background-color: #1E1E1E;
+    border:none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+etest--app--BottomContainerWidget QTabWidget::tab-bar {
+    background-color: #1E1E1E;
+    border:none;
+}
+etest--app--BottomContainerWidget QToolButton {
     background-color: transparent;
     border: none;
+    color: #858585;
+    padding: 2px;
+}
+etest--app--BottomContainerWidget QToolButton:hover {
+    color: #FFFFFF;
 }
 
-#bottomTabWidget QTabBar::close-button {
+/* Output 面板（QTextEdit） */
+etest--app--BottomContainerWidget QTextEdit {
+    background-color: #1E1E1E;
+    color: #CCCCCC;
+    border: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+/* 问题面板（QTableWidget） */
+etest--app--BottomContainerWidget QTableWidget {
+    background-color: #1E1E1E;
+    color: #CCCCCC;
+    border: none;
+    gridline-color: #3C3C3C;
+}
+etest--app--BottomContainerWidget QTableWidget::item {
+    color: #CCCCCC;
+}
+etest--app--BottomContainerWidget QTableWidget::item:selected {
+    background-color: #264F78;
+    color: #FFFFFF;
+}
+etest--app--BottomContainerWidget QHeaderView::section {
+    background-color: #2D2D2D;
+    color: #858585;
+    border: none;
+    padding: 4px;
+}
+
+etest--app--BottomContainerWidget QTabBar::close-button {
     image: url(:/resources/icons/svg/close_light.svg);
     subcontrol-position: right;
     width: 14px;
     height: 14px;
 }
-#bottomTabWidget QTabBar::close-button:hover {
+etest--app--BottomContainerWidget QTabBar::close-button:hover {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 2px;
 }
@@ -1008,55 +1058,6 @@ GitWidget QTreeWidget::item:selected {
 GitWidget QLabel#gitEmptyLabel {
     color: #858585;
     font-size: 13px;
-}
-
-/* ==================== etest--app--BottomContainerWidget ==================== */
-etest--app--BottomContainerWidget {
-    background-color: #1E1E1E;
-}
-etest--app--BottomContainerWidget QTabWidget {
-    background-color: #1E1E1E;
-}
-etest--app--BottomContainerWidget QTabWidget::pane {
-    border: none;
-    background-color: #1E1E1E;
-}
-etest--app--BottomContainerWidget QToolButton {
-    background-color: transparent;
-    border: none;
-    color: #858585;
-    padding: 2px;
-}
-etest--app--BottomContainerWidget QToolButton:hover {
-    color: #FFFFFF;
-}
-
-/* Output 面板（QTextEdit） */
-etest--app--BottomContainerWidget QTextEdit {
-    background-color: #1E1E1E;
-    color: #CCCCCC;
-    border: none;
-}
-
-/* 问题面板（QTableWidget） */
-etest--app--BottomContainerWidget QTableWidget {
-    background-color: #1E1E1E;
-    color: #CCCCCC;
-    border: none;
-    gridline-color: #3C3C3C;
-}
-etest--app--BottomContainerWidget QTableWidget::item {
-    color: #CCCCCC;
-}
-etest--app--BottomContainerWidget QTableWidget::item:selected {
-    background-color: #264F78;
-    color: #FFFFFF;
-}
-etest--app--BottomContainerWidget QHeaderView::section {
-    background-color: #2D2D2D;
-    color: #858585;
-    border: none;
-    padding: 4px;
 }
 
 /* ==================== page1 执行仪表盘底部 tab（#ExecBottomTabs） ==================== */
