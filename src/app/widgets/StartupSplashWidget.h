@@ -12,8 +12,9 @@ namespace etest::app {
 // 启动阶段，提供 logo + 状态文本 + 进度条（百分比）。无边框置顶窗口，
 // 主窗口在 lazyInit 完成后由 MainWindow::revealAfterSplash() 统一显示，
 // 本组件负责隐藏自身。
-// 样式走独立 startup.qss（主题加载前无法使用主题 QSS），由调用方在 main()
-// 中通过 setStyleSheet 加载资源。
+// 样式走独立 startup_dark.qss / startup_light.qss（objectName 选择器不在
+// 主题 QSS 内，固定两档配色），由调用方在 main() 中按当前主题深浅
+// setStyleSheet 加载对应资源。
 class StartupSplashWidget : public QWidget {
   Q_OBJECT
 

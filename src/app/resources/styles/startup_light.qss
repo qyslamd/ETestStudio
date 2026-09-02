@@ -1,0 +1,43 @@
+/* Startup Splash 浅色皮肤（default 主题档）
+ * Splash 早于主窗口创建，其 objectName 选择器不在主题 QSS 内，
+ * 故独立成 startup_dark.qss / startup_light.qss 两份固定配色，
+ * 由 main() 按当前主题深浅二选一。 */
+
+#StartupSplashContent {
+    background-color: #FFFFFF;
+    border: 1px solid #D0D0D0;
+    border-radius: 12px;
+}
+
+#StartupSplashLogo {
+    background: transparent;
+}
+
+#StartupSplashTitle {
+    color: #1E1E1E;
+    font-size: 24px;
+    font-weight: bold;
+    background: transparent;
+}
+
+#StartupSplashStatus {
+    color: #666666;
+    font-size: 13px;
+    background: transparent;
+}
+
+#StartupSplashProgressBar {
+    background-color: #E0E0E0;
+    border: none;
+    border-radius: 4px;
+    height: 16px;
+    color: #666666;
+    font-size: 11px;
+    /* QSS 未声明 text-align 时 QStyleSheetStyle 默认左对齐，须显式居中 */
+    text-align: center;
+}
+
+#StartupSplashProgressBar::chunk {
+    background-color: #007ACC;
+    border-radius: 4px;
+}

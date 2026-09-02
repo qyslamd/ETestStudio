@@ -6,7 +6,8 @@
         <file>resources/icons/svg/switch_on.svg</file>
         <file>resources/styles/default.qss</file>
         <file>resources/styles/ribbon_default.qss</file>
-        <file>resources/styles/startup.qss</file>
+        <file>resources/styles/startup_dark.qss</file>
+        <file>resources/styles/startup_light.qss</file>
         <file>resources/styles/vscode.qss</file>
         <file>resources/styles/ribbon_vscode.qss</file>
         <file>resources/styles/ads_vscode.qss</file>

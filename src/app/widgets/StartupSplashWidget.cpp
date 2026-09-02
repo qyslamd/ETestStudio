@@ -44,8 +44,8 @@ void StartupSplashWidget::initUi() {
   layout->setContentsMargins(32, 28, 32, 24);
   layout->setSpacing(10);
 
-  // logo（直接 QIcon 加载，禁用 AppIconProvider —— 其会强制提前初始化
-  // ThemeManager，且 resolvePath 只查 svg/ 子目录，加载不到根目录图标）
+  // logo（直接 QIcon 加载，禁用 AppIconProvider —— 其 resolvePath
+  // 只查 svg/ 子目录，加载不到根目录图标）
   logo_label_ = new QLabel(content);
   logo_label_->setObjectName(QStringLiteral("StartupSplashLogo"));
   logo_label_->setAlignment(Qt::AlignCenter);
