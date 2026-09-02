@@ -1,4 +1,5 @@
 #include "TopologyScene.h"
+#include "Logger.h"
 #include "TopologyDocument.h"
 #include "TopologyTheme.h"
 #include "UndoCommands.h"
@@ -21,8 +22,7 @@ namespace etest::topology {
 static const char kTopologyDeviceMime[] = "application/x-topology-device";
 
 TopologyScene::TopologyScene(TopologyDocument* doc, QObject* parent)
-    : QGraphicsScene(parent), doc_(doc) {
-}
+    : QGraphicsScene(parent), doc_(doc) {}
 
 void TopologyScene::loadFromDocument() {
   clearScene();
@@ -186,6 +186,13 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
         if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
           TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
           doc_->undoStack()->push(new AddConnectionCommand(doc_, conn));
+          LOG_INFO("TOPOLOGY_UI", "连接成功: {}:{} -> {}:{}",
+                   prod->name.toStdString(), port.name.toStdString(),
+                   dev->name.toStdString(), dp.name.toStdString());
+        } else {
+          LOG_WARN("TOPOLOGY_UI", "连接不合法: {}:{} -> {}:{}",
+                   prod->name.toStdString(), port.name.toStdString(),
+                   dev->name.toStdString(), dp.name.toStdString());
         }
       }
     }
@@ -202,7 +209,8 @@ void TopologyScene::createDragPreview() {
   constexpr qreal kRadius = 10.0;
 
   int portCount = drag_preview_data_["channelCount"].toInt(1);
-  qreal kHeight = qMax(kBaseHeight, 2.0 * kPortMargin + portCount * kPortSpacing);
+  qreal kHeight =
+      qMax(kBaseHeight, 2.0 * kPortMargin + portCount * kPortSpacing);
 
   QPainterPath path;
   path.addRoundedRect(0, 0, kWidth, kHeight, kRadius, kRadius);
@@ -281,11 +289,9 @@ void TopologyScene::dropEvent(QGraphicsSceneDragDropEvent* event) {
     if (jdoc.isObject()) {
       QJsonObject obj = jdoc.object();
       emit deviceDropped(obj["deviceType"].toString(),
-                           obj["channelCount"].toInt(),
-                           obj["direction"].toInt(),
-                           obj["functionType"].toInt(),
-                           obj["pluginId"].toString(),
-                           event->scenePos());
+                         obj["channelCount"].toInt(), obj["direction"].toInt(),
+                         obj["functionType"].toInt(),
+                         obj["pluginId"].toString(), event->scenePos());
     }
     drag_preview_data_ = QJsonObject();
     event->acceptProposedAction();
@@ -302,8 +308,8 @@ void TopologyScene::onItemMoved() {
 }
 
 DeviceItem* TopologyScene::deviceItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemShape,
-                           Qt::DescendingOrder);
+  auto items =
+      this->items(scenePos, Qt::IntersectsItemShape, Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* dev = qgraphicsitem_cast<DeviceItem*>(item)) {
       return dev;
@@ -357,8 +363,8 @@ DeviceItem* TopologyScene::findDeviceItem(int deviceIndex) const {
 }
 
 ConnectionItem* TopologyScene::connectionItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemShape,
-                           Qt::DescendingOrder);
+  auto items =
+      this->items(scenePos, Qt::IntersectsItemShape, Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* conn = qgraphicsitem_cast<ConnectionItem*>(item)) {
       return conn;
@@ -376,8 +382,8 @@ ConnectionItem* TopologyScene::findConnectionItem(int connIndex) const {
 }
 
 UutItem* TopologyScene::uutItemAt(QPointF scenePos) const {
-  auto items = this->items(scenePos, Qt::IntersectsItemShape,
-                           Qt::DescendingOrder);
+  auto items =
+      this->items(scenePos, Qt::IntersectsItemShape, Qt::DescendingOrder);
   for (auto* item : items) {
     if (auto* uut = qgraphicsitem_cast<UutItem*>(item)) {
       return uut;

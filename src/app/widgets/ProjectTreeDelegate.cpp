@@ -33,6 +33,16 @@ static constexpr int kRootBtnReserve =
 ProjectTreeDelegate::ProjectTreeDelegate(QObject* parent)
     : QStyledItemDelegate(parent) {}
 
+QWidget* ProjectTreeDelegate::createEditor(QWidget* parent,
+                                           const QStyleOptionViewItem& option,
+                                           const QModelIndex& index) const {
+  // F2/延迟点击/右键菜单触发编辑的统一必经点，供宿主记录编辑前状态
+  // （如重命名前的旧文件路径）。createEditor 为 const，Qt 信号非 const，
+  // 需 const_cast 才能在 const 成员里发射。
+  emit const_cast<ProjectTreeDelegate*>(this)->editStarted(index);
+  return QStyledItemDelegate::createEditor(parent, option, index);
+}
+
 void ProjectTreeDelegate::paint(QPainter* painter,
                                 const QStyleOptionViewItem& option,
                                 const QModelIndex& index) const {

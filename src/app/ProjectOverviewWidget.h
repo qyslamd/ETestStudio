@@ -1,19 +1,19 @@
 #pragma once
 
+#include <QFileInfo>
 #include <QMap>
+#include <QRegularExpression>
 #include <QSet>
 #include <QStackedWidget>
 #include <QStandardItemModel>
-#include <QFileInfo>
-#include <QRegularExpression>
 #include <QStringList>
 
 #include <QString>
 #include <QWidget>
 #include "plugin_sdk/IDevicePlugin.h"
 #include "plugin_sdk/PluginManager.h"
-#include "widgets/RecentProjOrFileDelegate.h"
 #include "widgets/ProjectTreeDelegate.h"
+#include "widgets/RecentProjOrFileDelegate.h"
 
 class QFileSystemWatcher;
 class QLabel;
@@ -36,9 +36,9 @@ enum ProjectNodeRole {
   RelativePathRole,                 // 相对于项目根目录的路径
   CategoryIdRole,                   // category 的标识（如 "protocol"）
   IsLatestRole,                     // bool: 报告分类中每个程序名的最新文件
-  IsEffectiveTopologyRole,          // bool: topology.etopo（引擎加载的唯一拓扑文件）
-  IsIcdConfigRole,                  // bool: ICDConfig.xml/json（协议配置容器文件）
-  IsMockConfigRole,                 // bool: MockResponses.emock（Mock 响应配置）
+  IsEffectiveTopologyRole,  // bool: topology.etopo（引擎加载的唯一拓扑文件）
+  IsIcdConfigRole,          // bool: ICDConfig.xml/json（协议配置容器文件）
+  IsMockConfigRole,         // bool: MockResponses.emock（Mock 响应配置）
 };
 
 struct CategoryInfo {
@@ -95,7 +95,7 @@ class ProjectOverviewWidget : public QWidget {
   // 根节点自动跟随开关变化（delegate 转发）
   void syncDocEnabledChanged(bool enabled);
 
-  public:
+ public:
   void refreshRecentProjects();
   void refreshRecentFiles();
   void setOpenFiles(const QStringList& paths);
@@ -113,13 +113,16 @@ class ProjectOverviewWidget : public QWidget {
   /// 自动跟随开关是否开启（编辑器切换时自动定位当前文件）
   bool isSyncDocEnabled() const;
   /// 新建文件（File 菜单「新建文件」引导向导派发复用；按 extension 分支）
-  void createNewFile(const QString& categoryId, const QString& extension,
+  void createNewFile(const QString& categoryId,
+                     const QString& extension,
                      const QString& baseName);
 
  private slots:
   void onCustomContextMenu(const QPoint& pos);
   void onItemDoubleClicked(const QModelIndex& index);
   void onItemChanged(QStandardItem* item);
+  // 树编辑开始（delegate createEditor 统一上报）：记录重命名前旧路径
+  void onTreeEditStarted(const QModelIndex& index);
 
  private:
   void initUi();
@@ -164,10 +167,12 @@ class ProjectOverviewWidget : public QWidget {
   void clearOpenFiles();
   void updateOpenFilesCount();
 
+ private:
   QStackedWidget* stack_;
-  QTreeView* tree_view_;
-  QStandardItemModel* model_;
+
   QWidget* page_default_ = nullptr;
+  QTreeView* project_tree_view_;
+  QStandardItemModel* project_tree_model_;
 
   // 最近项目/最近文件分节（分区标题 + 列表，空时整节隐藏）
   QWidget* recent_projects_section_ = nullptr;

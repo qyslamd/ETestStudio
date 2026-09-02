@@ -203,25 +203,25 @@ void ProjectOverviewWidget::initUi() {
   open_files_view_->setItemDelegate(open_file_delegate_);
   of_layout->addWidget(open_files_view_);
 
-  tree_view_ = new QTreeView();
-  tree_view_->setHeaderHidden(true);
-  tree_view_->setAnimated(true);
-  tree_view_->setEditTriggers(QAbstractItemView::SelectedClicked |
-                              QAbstractItemView::EditKeyPressed);
-  tree_view_->setContextMenuPolicy(Qt::CustomContextMenu);
-  tree_view_->setDragDropMode(QAbstractItemView::NoDragDrop);
-  tree_view_->setSelectionMode(QAbstractItemView::SingleSelection);
-  tree_view_->setIndentation(16);
-  tree_view_->setIconSize(QSize(16, 16));
-  tree_view_->setMouseTracking(true);
+  project_tree_view_ = new QTreeView();
+  project_tree_view_->setHeaderHidden(true);
+  project_tree_view_->setAnimated(true);
+  project_tree_view_->setEditTriggers(QAbstractItemView::SelectedClicked |
+                                      QAbstractItemView::EditKeyPressed);
+  project_tree_view_->setContextMenuPolicy(Qt::CustomContextMenu);
+  project_tree_view_->setDragDropMode(QAbstractItemView::NoDragDrop);
+  project_tree_view_->setSelectionMode(QAbstractItemView::SingleSelection);
+  project_tree_view_->setIndentation(16);
+  project_tree_view_->setIconSize(QSize(16, 16));
+  project_tree_view_->setMouseTracking(true);
 
   tree_delegate_ = new ProjectTreeDelegate(this);
-  tree_view_->setItemDelegate(tree_delegate_);
+  project_tree_view_->setItemDelegate(tree_delegate_);
 
-  model_ = new QStandardItemModel(this);
-  tree_view_->setModel(model_);
+  project_tree_model_ = new QStandardItemModel(this);
+  project_tree_view_->setModel(project_tree_model_);
 
-  tree_splitter_->addWidget(tree_view_);
+  tree_splitter_->addWidget(project_tree_view_);
   tree_splitter_->addWidget(open_files_widget_);
   tree_splitter_->setStretchFactor(0, 1);
   tree_splitter_->setStretchFactor(1, 0);
@@ -268,18 +268,21 @@ void ProjectOverviewWidget::initSignals() {
   });
 
   // 树视图信号
-  connect(tree_view_, &QTreeView::customContextMenuRequested, this,
+  connect(project_tree_view_, &QTreeView::customContextMenuRequested, this,
           &ProjectOverviewWidget::onCustomContextMenu);
-  connect(tree_view_, &QTreeView::doubleClicked, this,
+  connect(project_tree_view_, &QTreeView::doubleClicked, this,
           &ProjectOverviewWidget::onItemDoubleClicked);
-  connect(model_, &QStandardItemModel::itemChanged, this,
+  connect(project_tree_model_, &QStandardItemModel::itemChanged, this,
           &ProjectOverviewWidget::onItemChanged);
+  // 编辑开始（F2/延迟点击）→ 补记旧路径，保证非右键菜单触发也能重命名
+  connect(tree_delegate_, &ProjectTreeDelegate::editStarted, this,
+          &ProjectOverviewWidget::onTreeEditStarted);
 
   // ── 根节点操作按钮（delegate 信号）──
   connect(tree_delegate_, &ProjectTreeDelegate::refreshRequested, this,
           [this]() {
             LOG_INFO("PROJECT_UI", "点击根节点「刷新」按钮");
-            model_->clear();
+            project_tree_model_->clear();
             root_item_ = nullptr;
             tree_delegate_->resetShowAll(true);
             buildTree();
@@ -294,7 +297,8 @@ void ProjectOverviewWidget::initSignals() {
             for (int i = 0; i < root_item_->rowCount(); ++i) {
               auto* child = root_item_->child(i);
               if (child && child->data(CategoryIdRole).toString() == "other") {
-                tree_view_->setRowHidden(i, root_item_->index(), !showAll);
+                project_tree_view_->setRowHidden(i, root_item_->index(),
+                                                 !showAll);
                 break;
               }
             }
@@ -452,7 +456,7 @@ void ProjectOverviewWidget::setProjectPath(const QString& path) {
     return;
   project_path_ = path;
 
-  model_->clear();
+  project_tree_model_->clear();
   root_item_ = nullptr;
 
   buildTree();
@@ -470,7 +474,7 @@ void ProjectOverviewWidget::clearProjectPath() {
     file_watcher_->removePaths(file_watcher_->directories());
   }
 
-  model_->clear();
+  project_tree_model_->clear();
   root_item_ = nullptr;
 
   // 项目关闭后重置显示全部状态，避免新项目树与按钮图标不一致
@@ -490,12 +494,12 @@ QString ProjectOverviewWidget::projectPath() const {
 
 QList<CategoryInfo> ProjectOverviewWidget::defaultCategories() const {
   return {
-      {QStringLiteral("protocol"), QStringLiteral("协议"),
-       QStringLiteral("protocol/"), QStringLiteral("protocol"),
-       QStringLiteral("eprotox"), QStringLiteral("新建协议文件")},
       {QStringLiteral("topology"), QStringLiteral("拓扑"),
        QStringLiteral("topology/"), QStringLiteral("topo_tap"),
        QStringLiteral("etopo"), QStringLiteral("新建拓扑文件")},
+      {QStringLiteral("protocol"), QStringLiteral("协议"),
+       QStringLiteral("protocol/"), QStringLiteral("protocol"),
+       QStringLiteral("eprotox"), QStringLiteral("新建协议文件")},
       {QStringLiteral("testprog"), QStringLiteral("测试程序"),
        QStringLiteral("cases/"), QStringLiteral("testprogram"),
        QStringLiteral("etprog"), QStringLiteral("新建测试程序")},
@@ -533,7 +537,7 @@ void ProjectOverviewWidget::buildTree() {
   root_item_->setFont(rootFont);
   root_item_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("project")));
-  model_->appendRow(root_item_);
+  project_tree_model_->appendRow(root_item_);
 
   QStringList watchedDirs;
 
@@ -645,7 +649,7 @@ void ProjectOverviewWidget::buildTree() {
   root_item_->appendRow(hwItem);
 
   // 展开根节点
-  tree_view_->expand(root_item_->index());
+  project_tree_view_->expand(root_item_->index());
 
   // 开始监视
   if (!watchedDirs.isEmpty()) {
@@ -739,7 +743,7 @@ void ProjectOverviewWidget::onDirectoryChanged(const QString& path) {
 
 void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
   LOG_INFO("PROJECT_UI", "文件树右键菜单");
-  QModelIndex index = tree_view_->indexAt(pos);
+  QModelIndex index = project_tree_view_->indexAt(pos);
   QMenu menu(this);
 
   if (!index.isValid()) {
@@ -754,7 +758,8 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
     auto* openInFileManagerAction =
         menu.addAction(QStringLiteral("在文件系统中打开"));
 
-    QAction* chosen = menu.exec(tree_view_->viewport()->mapToGlobal(pos));
+    QAction* chosen =
+        menu.exec(project_tree_view_->viewport()->mapToGlobal(pos));
 
     if (chosen == newFileAction) {
       createNewFile(QString(), QString(), QStringLiteral("新建文件"));
@@ -769,14 +774,15 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
     return;
   }
 
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = project_tree_model_->itemFromIndex(index);
   QString nodeType = item->data(NodeTypeRole).toString();
 
   if (nodeType == QStringLiteral("hardware_device")) {
     // 硬件设备节点右键 — 导航到平台设备树
     auto* navigateAction = menu.addAction(QStringLiteral("跳转到设备树"));
 
-    if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) == navigateAction) {
+    if (menu.exec(project_tree_view_->viewport()->mapToGlobal(pos)) ==
+        navigateAction) {
       QString deviceType = item->data(Qt::UserRole + 1).toString();
       QString pluginId = item->data(Qt::UserRole + 2).toString();
       emit hardwareDeviceNavigateRequested(deviceType, pluginId);
@@ -798,7 +804,8 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
         auto* openInFmAction =
             menu.addAction(QStringLiteral("在文件系统中打开"));
 
-        QAction* chosen = menu.exec(tree_view_->viewport()->mapToGlobal(pos));
+        QAction* chosen =
+            menu.exec(project_tree_view_->viewport()->mapToGlobal(pos));
         if (chosen == newAction) {
           createNewFile(catId, cat.newFileExt, cat.newFileLabel);
         } else if (chosen == openInFmAction) {
@@ -814,7 +821,7 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
       // 硬件节点不显示"在文件系统中打开"
       if (catId == QLatin1String("hardware")) {
         auto* refreshAction = menu.addAction(QStringLiteral("刷新硬件设备"));
-        if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) ==
+        if (menu.exec(project_tree_view_->viewport()->mapToGlobal(pos)) ==
             refreshAction) {
           refreshHardwareDevices();
         }
@@ -828,7 +835,8 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
         auto* openInFmAction =
             menu.addAction(QStringLiteral("在文件系统中打开"));
 
-        QAction* chosen = menu.exec(tree_view_->viewport()->mapToGlobal(pos));
+        QAction* chosen =
+            menu.exec(project_tree_view_->viewport()->mapToGlobal(pos));
         if (chosen == clearAllAction) {
           clearAllEtlogFiles(catId);
         } else if (chosen == openInFmAction) {
@@ -839,7 +847,7 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
       } else {
         auto* openInFmAction =
             menu.addAction(QStringLiteral("在文件系统中打开"));
-        if (menu.exec(tree_view_->viewport()->mapToGlobal(pos)) ==
+        if (menu.exec(project_tree_view_->viewport()->mapToGlobal(pos)) ==
             openInFmAction) {
           QString dirPath = categoryDirPath(catId);
           if (dirPath.isEmpty()) {
@@ -875,7 +883,8 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
       setAsRunAction = menu.addAction(QStringLiteral("设为当前运行配置"));
     }
 
-    QAction* chosen = menu.exec(tree_view_->viewport()->mapToGlobal(pos));
+    QAction* chosen =
+        menu.exec(project_tree_view_->viewport()->mapToGlobal(pos));
 
     if (chosen == openAction) {
       emit fileOpenRequested(absolutePath(relPath));
@@ -887,7 +896,7 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
         return;
       }
       rename_old_path_ = absolutePath(relPath);
-      tree_view_->edit(index);
+      project_tree_view_->edit(index);
     } else if (chosen == deleteAction) {
       deleteSelectedFile();
     } else if (chosen == copyPathAction) {
@@ -904,7 +913,7 @@ void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
 
 void ProjectOverviewWidget::onItemDoubleClicked(const QModelIndex& index) {
   LOG_INFO("PROJECT_UI", "文件树双击打开");
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = project_tree_model_->itemFromIndex(index);
   if (!item)
     return;
   QString nodeType = item->data(NodeTypeRole).toString();
@@ -931,7 +940,7 @@ void ProjectOverviewWidget::onItemChanged(QStandardItem* item) {
   QString newFileName = item->text().trimmed();
   if (newFileName.isEmpty()) {
     // 用户清空了文件名,取消编辑
-    QSignalBlocker blocker(model_);
+    QSignalBlocker blocker(project_tree_model_);
     item->setText(QFileInfo(rename_old_path_).fileName());
     rename_old_path_.clear();
     return;
@@ -956,7 +965,7 @@ void ProjectOverviewWidget::onItemChanged(QStandardItem* item) {
   }
   if (QFile::exists(newPath)) {
     // 目标已存在,还原
-    QSignalBlocker blocker(model_);
+    QSignalBlocker blocker(project_tree_model_);
     item->setText(oldFileName);
     QMessageBox::warning(this, QStringLiteral("重命名失败"),
                          QStringLiteral("目标文件已存在: %1").arg(newFileName));
@@ -965,7 +974,7 @@ void ProjectOverviewWidget::onItemChanged(QStandardItem* item) {
   }
 
   if (!src.rename(newPath)) {
-    QSignalBlocker blocker(model_);
+    QSignalBlocker blocker(project_tree_model_);
     item->setText(oldFileName);
     QMessageBox::warning(this, QStringLiteral("重命名失败"),
                          QStringLiteral("无法重命名文件: %1").arg(newFileName));
@@ -977,7 +986,7 @@ void ProjectOverviewWidget::onItemChanged(QStandardItem* item) {
   QDir projectDir(project_path_);
   QString newRelPath = projectDir.relativeFilePath(newPath);
   {
-    QSignalBlocker blocker(model_);
+    QSignalBlocker blocker(project_tree_model_);
     item->setData(newRelPath, RelativePathRole);
   }
 
@@ -985,11 +994,22 @@ void ProjectOverviewWidget::onItemChanged(QStandardItem* item) {
   rename_old_path_.clear();
 }
 
+void ProjectOverviewWidget::onTreeEditStarted(const QModelIndex& index) {
+  auto* item = project_tree_model_->itemFromIndex(index);
+  if (!item || item->data(NodeTypeRole).toString() != QStringLiteral("file")) {
+    return;
+  }
+  // F2 / 延迟点击触发的编辑没有右键菜单的前置记录，补记旧路径；
+  // 右键菜单「重命名」路径已设置过，此处覆盖为同一值，无害
+  rename_old_path_ =
+      absolutePath(item->data(RelativePathRole).toString());
+}
+
 // ── 文件操作 ──
 
 void ProjectOverviewWidget::createNewFile(const QString& categoryId,
-                                           const QString& extension,
-                                           const QString& baseName) {
+                                          const QString& extension,
+                                          const QString& baseName) {
   QString targetDir;
   if (!categoryId.isEmpty()) {
     targetDir = categoryDirPath(categoryId);
@@ -1153,21 +1173,21 @@ void ProjectOverviewWidget::createNewFile(const QString& categoryId,
   // 选中并进入重命名模式（向导创建的文件名已定，跳过行内重命名）
   if (newItem) {
     QModelIndex newIndex = newItem->index();
-    tree_view_->setCurrentIndex(newIndex);
-    tree_view_->scrollTo(newIndex);
+    project_tree_view_->setCurrentIndex(newIndex);
+    project_tree_view_->scrollTo(newIndex);
     if (!skipRename) {
       rename_old_path_ = fullPath;
-      tree_view_->edit(newIndex);
+      project_tree_view_->edit(newIndex);
     }
   }
 }
 
 void ProjectOverviewWidget::deleteSelectedFile() {
-  QModelIndex index = tree_view_->currentIndex();
+  QModelIndex index = project_tree_view_->currentIndex();
   if (!index.isValid())
     return;
 
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = project_tree_model_->itemFromIndex(index);
   if (!item)
     return;
   if (item->data(NodeTypeRole).toString() != QStringLiteral("file"))
@@ -1190,10 +1210,10 @@ void ProjectOverviewWidget::deleteSelectedFile() {
 }
 
 void ProjectOverviewWidget::copyFilePath() {
-  QModelIndex index = tree_view_->currentIndex();
+  QModelIndex index = project_tree_view_->currentIndex();
   if (!index.isValid())
     return;
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = project_tree_model_->itemFromIndex(index);
   if (!item)
     return;
 
@@ -1205,10 +1225,10 @@ void ProjectOverviewWidget::copyFilePath() {
 }
 
 void ProjectOverviewWidget::copyRelativePath() {
-  QModelIndex index = tree_view_->currentIndex();
+  QModelIndex index = project_tree_view_->currentIndex();
   if (!index.isValid())
     return;
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = project_tree_model_->itemFromIndex(index);
   if (!item)
     return;
 
@@ -1220,10 +1240,10 @@ void ProjectOverviewWidget::copyRelativePath() {
 }
 
 void ProjectOverviewWidget::openInFileManager() {
-  QModelIndex index = tree_view_->currentIndex();
+  QModelIndex index = project_tree_view_->currentIndex();
   if (!index.isValid())
     return;
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = project_tree_model_->itemFromIndex(index);
   if (!item)
     return;
 
@@ -1237,10 +1257,10 @@ void ProjectOverviewWidget::openInFileManager() {
 }
 
 void ProjectOverviewWidget::openWithTextEditor() {
-  QModelIndex index = tree_view_->currentIndex();
+  QModelIndex index = project_tree_view_->currentIndex();
   if (!index.isValid())
     return;
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = project_tree_model_->itemFromIndex(index);
   if (!item)
     return;
 
@@ -1266,10 +1286,9 @@ QStandardItem* ProjectOverviewWidget::createCategoryItem(
   return item;
 }
 
-void ProjectOverviewWidget::populateReportCategory(
-    QStandardItem* catItem,
-    const QFileInfoList& entries,
-    const QString& dirPath) {
+void ProjectOverviewWidget::populateReportCategory(QStandardItem* catItem,
+                                                   const QFileInfoList& entries,
+                                                   const QString& dirPath) {
   QFileInfoList sorted = entries;
   std::sort(sorted.begin(), sorted.end(),
             [](const QFileInfo& a, const QFileInfo& b) {
@@ -1303,10 +1322,9 @@ void ProjectOverviewWidget::populateReportCategory(
   }
 }
 
-void ProjectOverviewWidget::populateBackupCategory(
-    QStandardItem* catItem,
-    const QFileInfoList& entries,
-    const QString& dirPath) {
+void ProjectOverviewWidget::populateBackupCategory(QStandardItem* catItem,
+                                                   const QFileInfoList& entries,
+                                                   const QString& dirPath) {
   QFileInfoList sorted = entries;
   std::sort(sorted.begin(), sorted.end(),
             [](const QFileInfo& a, const QFileInfo& b) {
@@ -1382,8 +1400,7 @@ QStandardItem* ProjectOverviewWidget::createFileItem(
   return item;
 }
 
-QString ProjectOverviewWidget::absolutePath(
-    const QString& relativePath) const {
+QString ProjectOverviewWidget::absolutePath(const QString& relativePath) const {
   return QDir(project_path_).absoluteFilePath(relativePath);
 }
 
@@ -1649,7 +1666,8 @@ void ProjectOverviewWidget::refreshRecentProjects() {
     QString timeStr;
     QString tsKey = path;
     if (!timestamps.contains(tsKey)) {
-      // 兼容历史数据：旧版本以项目根目录（rootPath）为 key，等价于项目文件父目录
+      // 兼容历史数据：旧版本以项目根目录（rootPath）为
+      // key，等价于项目文件父目录
       tsKey = QFileInfo(path).absolutePath();
     }
     if (timestamps.contains(tsKey)) {
@@ -1810,15 +1828,15 @@ bool ProjectOverviewWidget::locateFile(const QString& fileName) {
   if (!root_item_ || project_path_.isEmpty()) {
     return false;
   }
-  QModelIndex startIndex = model_->index(0, 0);
+  QModelIndex startIndex = project_tree_model_->index(0, 0);
   QModelIndexList matches =
-      model_->match(startIndex, Qt::DisplayRole, fileName, -1,
-                    Qt::MatchExactly | Qt::MatchRecursive);
+      project_tree_model_->match(startIndex, Qt::DisplayRole, fileName, -1,
+                                 Qt::MatchExactly | Qt::MatchRecursive);
   for (const auto& idx : matches) {
     if (idx.data(NodeTypeRole).toString() == QStringLiteral("file")) {
-      tree_view_->expand(idx.parent());
-      tree_view_->setCurrentIndex(idx);
-      tree_view_->scrollTo(idx, QAbstractItemView::EnsureVisible);
+      project_tree_view_->expand(idx.parent());
+      project_tree_view_->setCurrentIndex(idx);
+      project_tree_view_->scrollTo(idx, QAbstractItemView::EnsureVisible);
       return true;
     }
   }
@@ -1831,17 +1849,17 @@ bool ProjectOverviewWidget::locateFileByPath(const QString& relativePath) {
               root_item_ ? 1 : 0, project_path_.toStdString());
     return false;
   }
-  QModelIndex start_index = model_->index(0, 0);
+  QModelIndex start_index = project_tree_model_->index(0, 0);
   QModelIndexList matches =
-      model_->match(start_index, RelativePathRole, relativePath, -1,
-                    Qt::MatchExactly | Qt::MatchRecursive);
+      project_tree_model_->match(start_index, RelativePathRole, relativePath,
+                                 -1, Qt::MatchExactly | Qt::MatchRecursive);
   LOG_DEBUG("PROJECT_UI", "locateFileByPath: 查找 rel={} 命中数={}",
             relativePath.toStdString(), matches.size());
   for (const auto& idx : matches) {
     if (idx.data(NodeTypeRole).toString() == QStringLiteral("file")) {
-      tree_view_->expand(idx.parent());
-      tree_view_->setCurrentIndex(idx);
-      tree_view_->scrollTo(idx, QAbstractItemView::EnsureVisible);
+      project_tree_view_->expand(idx.parent());
+      project_tree_view_->setCurrentIndex(idx);
+      project_tree_view_->scrollTo(idx, QAbstractItemView::EnsureVisible);
       return true;
     }
   }
@@ -1849,7 +1867,7 @@ bool ProjectOverviewWidget::locateFileByPath(const QString& relativePath) {
 }
 
 void ProjectOverviewWidget::clearTreeSelection() {
-  tree_view_->clearSelection();
+  project_tree_view_->clearSelection();
 }
 
 bool ProjectOverviewWidget::isSyncDocEnabled() const {

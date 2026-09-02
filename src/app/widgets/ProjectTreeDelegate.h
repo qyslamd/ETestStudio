@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QHelpEvent>
+#include <QModelIndex>
 #include <QStyledItemDelegate>
 
 namespace etest::app {
@@ -15,6 +16,9 @@ class ProjectTreeDelegate : public QStyledItemDelegate {
              const QModelIndex& index) const override;
   QSize sizeHint(const QStyleOptionViewItem& option,
                  const QModelIndex& index) const override;
+  QWidget* createEditor(QWidget* parent,
+                        const QStyleOptionViewItem& option,
+                        const QModelIndex& index) const override;
   bool editorEvent(QEvent* event, QAbstractItemModel* model,
                    const QStyleOptionViewItem& option,
                    const QModelIndex& index) override;
@@ -28,6 +32,8 @@ class ProjectTreeDelegate : public QStyledItemDelegate {
   void syncRequested();
   // SyncDoc 自动跟随开关变化（checked = 编辑器切换时自动定位）
   void syncDocEnabledChanged(bool enabled);
+  // 编辑器创建（编辑开始，F2/延迟点击/右键菜单等所有触发方式的必经点）
+  void editStarted(const QModelIndex& index);
 
  public:
   bool isShowAll() const { return show_all_; }
