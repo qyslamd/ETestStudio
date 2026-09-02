@@ -35,7 +35,7 @@ OverlayDialog::OverlayDialog(QWidget* parent) : QDialog(parent) {
   // 到主窗口之上。退化为顶层窗口的子覆盖层，配合 showEvent 中 parentWidget()
   // 本地坐标定位（与 TuxSaverOverlay 同模式），跨平台一套逻辑。
   setWindowFlags((windowFlags() & ~Qt::WindowType_Mask) | Qt::Widget);
-  // 创建者可能是侧边栏等子控件（如文件向导的父对象 ProjectStructureWidget），
+  // 创建者可能是侧边栏等子控件（如文件向导的父对象 ProjectOverviewWidget），
   // 子覆盖层会被父对象边界裁剪、只能覆盖局部区域；统一 re-parent 到顶层窗口，
   // 保证遮罩覆盖整个主窗口。父对象本就是顶层窗口时（如登录/新建项目=MainWindow）
   // 不做任何改动。

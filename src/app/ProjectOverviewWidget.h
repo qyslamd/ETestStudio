@@ -50,11 +50,11 @@ struct CategoryInfo {
   QString newFileLabel;  // "新建"菜单项的标签，如"新建协议文件"
 };
 
-class ProjectStructureWidget : public QWidget {
+class ProjectOverviewWidget : public QWidget {
   Q_OBJECT
 
  public:
-  explicit ProjectStructureWidget(QWidget* parent = nullptr);
+  explicit ProjectOverviewWidget(QWidget* parent = nullptr);
 
   void setProjectPath(const QString& path);
   void clearProjectPath();

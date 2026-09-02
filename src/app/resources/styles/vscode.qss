@@ -1947,7 +1947,7 @@ QToolButton#HintPopupClearBtn:hover {
     color: #75BEFF;
 }
 
-/* ==================== ProjectStructureWidget Placeholder ==================== */
+/* ==================== ProjectOverviewWidget Placeholder ==================== */
 QWidget#PhPlaceholder {
     background-color: #252526;
     border-radius: 8px;

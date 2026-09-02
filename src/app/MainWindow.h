@@ -30,7 +30,7 @@ namespace etest::app {
 
 class SidebarNavWidget;
 class SidebarContentWidget;
-class ProjectStructureWidget;
+class ProjectOverviewWidget;
 class ExecutionOutputPanel;
 class LogOutputPanel;
 class SettingsDialog;
@@ -168,7 +168,7 @@ class MainWindow : public SARibbonMainWindow {
   // 活动栏 + 侧边栏
   SidebarNavWidget* sidebar_nav_ = nullptr;
   SidebarContentWidget* sidebar_content_ = nullptr;
-  ProjectStructureWidget* project_structure_widget_ = nullptr;
+  ProjectOverviewWidget* project_overview_widget_ = nullptr;
   TestProgramManagerWidget* test_program_mgr_ = nullptr;
 
   // 水平/垂直分割器

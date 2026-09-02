@@ -4,7 +4,7 @@
     "clang-format.fallbackStyle": "Chromium",
     "editor.fontSize": 14,
     "editor.fontFamily": "Cascadia Mono Light, Microsoft YaHei, monospace",
-    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
     "terminal.integrated.profiles.windows": {
         "Command Prompt": {
             "path": "C:\\Windows\\System32\\cmd.exe",

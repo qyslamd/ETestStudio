@@ -777,7 +777,7 @@ etest--app--SidebarNavWidget QToolButton:checked {
     background-color: #E0E0E0;
 }
 
-/* ==================== ProjectStructureWidget Placeholder ==================== */
+/* ==================== ProjectOverviewWidget Placeholder ==================== */
 QWidget#PhPlaceholder {
     background-color: #F5F5F5;
     border-radius: 8px;

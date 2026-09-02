@@ -65,7 +65,7 @@
 #include "GitWidget.h"
 #include "HardwareTreeWidget.h"
 #include "ProjectController.h"
-#include "ProjectStructureWidget.h"
+#include "ProjectOverviewWidget.h"
 #include "ProtocolManagerWidget.h"
 #include "SearchWidget.h"
 #include "SidebarContentWidget.h"
@@ -458,18 +458,18 @@ void MainWindow::initSignals() {
       [this]() { return editor_manager_->hasUnsavedChanges(); });
 
   // 项目结构树：项目打开/关闭时切换
-  auto* psWidget = qobject_cast<ProjectStructureWidget*>(
+  auto* psWidget = qobject_cast<ProjectOverviewWidget*>(
       sidebar_content_->pageById(PageId::kProjectOverview));
-  project_structure_widget_ = psWidget;
+  project_overview_widget_ = psWidget;
   if (psWidget) {
     connect(&projectMgr, &etest::core::project::ProjectManager::projectOpened,
-            psWidget, &ProjectStructureWidget::setProjectPath);
+            psWidget, &ProjectOverviewWidget::setProjectPath);
     connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
-            psWidget, &ProjectStructureWidget::clearProjectPath);
+            psWidget, &ProjectOverviewWidget::clearProjectPath);
 
     // 文件列表变化时刷新搜索框 completer（buildTree / refreshCategory 后触发）
-    connect(psWidget, &ProjectStructureWidget::fileListChanged, this, [this]() {
-      auto* psw = qobject_cast<ProjectStructureWidget*>(
+    connect(psWidget, &ProjectOverviewWidget::fileListChanged, this, [this]() {
+      auto* psw = qobject_cast<ProjectOverviewWidget*>(
           sidebar_content_->pageById(PageId::kProjectOverview));
       if (!psw) {
         return;
@@ -494,7 +494,7 @@ void MainWindow::initSignals() {
     // QAB 搜索框：textChanged 清空时清除树上选中
     connect(ribbon_search_edit_, &QLineEdit::textChanged, this, [this]() {
       if (ribbon_search_edit_->text().isEmpty()) {
-        auto* psw = qobject_cast<ProjectStructureWidget*>(
+        auto* psw = qobject_cast<ProjectOverviewWidget*>(
             sidebar_content_->pageById(PageId::kProjectOverview));
         if (psw) {
           psw->clearTreeSelection();
@@ -506,7 +506,7 @@ void MainWindow::initSignals() {
     connect(ribbon_search_completer_,
             QOverload<const QString&>::of(&QCompleter::activated), this,
             [this](const QString& fileName) {
-              auto* psw = qobject_cast<ProjectStructureWidget*>(
+              auto* psw = qobject_cast<ProjectOverviewWidget*>(
                   sidebar_content_->pageById(PageId::kProjectOverview));
               if (!psw) {
                 return;
@@ -521,7 +521,7 @@ void MainWindow::initSignals() {
 
     // 项目结构树：双击文件打开编辑器
     connect(
-        psWidget, &ProjectStructureWidget::fileOpenRequested, psWidget,
+        psWidget, &ProjectOverviewWidget::fileOpenRequested, psWidget,
         [this](const QString& path) {
           // ICDConfig 是配置容器，切到 sidebar 协议页，不打开编辑器
           if (path.contains(QStringLiteral("ICDConfig"), Qt::CaseInsensitive)) {
@@ -540,31 +540,31 @@ void MainWindow::initSignals() {
           editor_manager_->openFile(path);
         });
     // 项目结构树：右键→用文本编辑器打开
-    connect(psWidget, &ProjectStructureWidget::fileOpenAsTextRequested,
+    connect(psWidget, &ProjectOverviewWidget::fileOpenAsTextRequested,
             psWidget, [this](const QString& path) {
               editor_manager_->openFile(path, QStringLiteral("text"));
             });
     // 项目结构树：文件删除/重命名同步到编辑器
-    connect(psWidget, &ProjectStructureWidget::fileDeleted, editor_manager_,
+    connect(psWidget, &ProjectOverviewWidget::fileDeleted, editor_manager_,
             &EditorManager::onFileDeleted);
-    connect(psWidget, &ProjectStructureWidget::fileRenamed, editor_manager_,
+    connect(psWidget, &ProjectOverviewWidget::fileRenamed, editor_manager_,
             &EditorManager::onFileRenamed);
 
     // 占位页：项目操作（btn_grid 移除后
     // newProjectRequested/openProjectRequested 无发射源，连接删除；入口在
     // Ribbon 文件菜单与 WelcomeV2）
-    connect(psWidget, &ProjectStructureWidget::projectOpenRequested, this,
+    connect(psWidget, &ProjectOverviewWidget::projectOpenRequested, this,
             &MainWindow::openRecentProject);
     // 最近项目变更时刷新占位页
     connect(&projectMgr,
             &etest::core::project::ProjectManager::recentProjectsChanged,
-            psWidget, &ProjectStructureWidget::refreshRecentProjects);
+            psWidget, &ProjectOverviewWidget::refreshRecentProjects);
 
     // 已打开文件列表：同步 EditorManager 状态
     connect(editor_manager_, &EditorManager::fileOpened, psWidget,
-            &ProjectStructureWidget::onFileOpened);
+            &ProjectOverviewWidget::onFileOpened);
     connect(editor_manager_, &EditorManager::fileClosed, psWidget,
-            &ProjectStructureWidget::onFileClosed);
+            &ProjectOverviewWidget::onFileClosed);
     // 记录最近文件
     connect(editor_manager_, &EditorManager::fileOpened, this,
             [this](const QString& path) {
@@ -594,19 +594,19 @@ void MainWindow::initSignals() {
     connect(&projectMgr, &etest::core::project::ProjectManager::projectClosed,
             psWidget, [psWidget]() { psWidget->setOpenFiles({}); });
     // 点击已打开文件 → 激活编辑器
-    connect(psWidget, &ProjectStructureWidget::openFileActivateRequested, this,
+    connect(psWidget, &ProjectOverviewWidget::openFileActivateRequested, this,
             [this](const QString& path) { editor_manager_->openFile(path); });
     // 右键关闭已打开文件
-    connect(psWidget, &ProjectStructureWidget::openFileCloseRequested, this,
+    connect(psWidget, &ProjectOverviewWidget::openFileCloseRequested, this,
             [this](const QString& path) { editor_manager_->closeFile(path); });
     // 根节点同步按钮 → 定位当前激活编辑器文件
-    connect(psWidget, &ProjectStructureWidget::syncCurrentEditorRequested, this,
+    connect(psWidget, &ProjectOverviewWidget::syncCurrentEditorRequested, this,
             [this, &projectMgr]() {
               QString file_path = editor_manager_->currentFilePath();
               if (file_path.isEmpty()) {
                 return;
               }
-              auto* psw = qobject_cast<ProjectStructureWidget*>(
+              auto* psw = qobject_cast<ProjectOverviewWidget*>(
                   sidebar_content_->pageById(PageId::kProjectOverview));
               if (!psw) {
                 return;
@@ -619,7 +619,7 @@ void MainWindow::initSignals() {
               psw->locateFileByPath(rel_path);
             });
     // 点击最近文件 → 项目检测 + 打开
-    connect(psWidget, &ProjectStructureWidget::recentFileOpenRequested, this,
+    connect(psWidget, &ProjectOverviewWidget::recentFileOpenRequested, this,
             &MainWindow::onRecentFileOpenRequested);
 
     // 拓扑管理器：双击文件打开编辑器
@@ -629,7 +629,7 @@ void MainWindow::initSignals() {
     }
 
     // 文件系统监控：目录内容变化时刷新对应管理器
-    connect(psWidget, &ProjectStructureWidget::directoryContentChanged, this,
+    connect(psWidget, &ProjectOverviewWidget::directoryContentChanged, this,
             [this](const QString& dirPath) {
               if (dirPath.endsWith(QStringLiteral("/protocol")) ||
                   dirPath.endsWith(QStringLiteral("\\protocol"))) {
@@ -842,11 +842,11 @@ void MainWindow::initSignals() {
 
   // 项目树硬件节点 → 导航到平台设备树
   {
-    auto* hwPsWidget = qobject_cast<ProjectStructureWidget*>(
+    auto* hwPsWidget = qobject_cast<ProjectOverviewWidget*>(
         sidebar_content_->pageById(PageId::kProjectOverview));
     if (hwPsWidget) {
       connect(hwPsWidget,
-              &ProjectStructureWidget::hardwareDeviceNavigateRequested, this,
+              &ProjectOverviewWidget::hardwareDeviceNavigateRequested, this,
               [this](const QString& deviceType, const QString& pluginId) {
                 // 侧边栏切换到平台设备树页面
                 sidebar_content_->switchPage(PageId::kHardware);
@@ -994,7 +994,7 @@ void MainWindow::lazyInit() {
                           QStringLiteral("git"));
 
     sidebar_content_->addPage(PageId::kProjectOverview,
-                              new ProjectStructureWidget(sidebar_content_),
+                              new ProjectOverviewWidget(sidebar_content_),
                               QStringLiteral("项目概览"));
     sidebar_content_->addPage(PageId::kSearch,
                               new SearchWidget(sidebar_content_),
@@ -1509,10 +1509,10 @@ void MainWindow::onNewFile() {
   if (wizard.exec() != QDialog::Accepted) {
     return;
   }
-  if (!project_structure_widget_) {
+  if (!project_overview_widget_) {
     return;
   }
-  project_structure_widget_->createNewFile(wizard.selectedCategoryId(),
+  project_overview_widget_->createNewFile(wizard.selectedCategoryId(),
                                            wizard.selectedExtension(),
                                            wizard.selectedBaseName());
 }
@@ -1526,10 +1526,10 @@ void MainWindow::onQuickCreateFile(const QString& categoryId,
         QStringLiteral("请先新建或打开项目，再创建文件。"));
     return;
   }
-  if (!project_structure_widget_) {
+  if (!project_overview_widget_) {
     return;
   }
-  project_structure_widget_->createNewFile(categoryId, extension, baseName);
+  project_overview_widget_->createNewFile(categoryId, extension, baseName);
 }
 
 void MainWindow::openSettingsDialog() {
@@ -3185,7 +3185,7 @@ void MainWindow::onCurrentEditorChanged(IEditor* editor) {
     if (!project_root.isEmpty()) {
       QString rel_path =
           QDir(project_root).relativeFilePath(editor->filePath());
-      auto* psw = qobject_cast<ProjectStructureWidget*>(
+      auto* psw = qobject_cast<ProjectOverviewWidget*>(
           sidebar_content_->pageById(PageId::kProjectOverview));
       LOG_DEBUG("PROJECT_UI",
                 "currentEditorChanged: 同步项目树 file={} syncDoc={} psw={}",

@@ -135,7 +135,7 @@
             "program": "${workspaceFolder}/build/ninja-debug-x64/bin/topology-editor.exe",
             "args": [
                 "-f",
-                "${workspaceFolder}/temp/projects/Demo_Project3/topology/啥啊.etopo"
+                "${workspaceFolder}/temp/projects/demo_mock/topology/topology.etopo"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/ninja-debug-x64/bin",

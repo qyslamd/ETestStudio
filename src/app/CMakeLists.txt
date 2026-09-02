@@ -41,8 +41,8 @@ add_executable(${TARGET_NAME} WIN32
     ExecutionPanelController.cpp
     SidebarContentWidget.h
     SidebarContentWidget.cpp
-    ProjectStructureWidget.h
-    ProjectStructureWidget.cpp
+    ProjectOverviewWidget.h
+    ProjectOverviewWidget.cpp
     GitWidget.h
     GitWidget.cpp
     HardwareTreeWidget.h

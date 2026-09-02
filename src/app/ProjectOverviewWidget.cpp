@@ -1,4 +1,4 @@
-#include "ProjectStructureWidget.h"
+#include "ProjectOverviewWidget.h"
 
 #include "project/ProjectManager.h"
 #include "widgets/ProjectTreeDelegate.h"
@@ -56,7 +56,7 @@ using etest::core_ui::AppIconProvider;
 // ── 新建文件默认基名（自动递增） ──
 static QString newFileBaseName(const QString& base, const QString& dir);
 
-ProjectStructureWidget::ProjectStructureWidget(QWidget* parent)
+ProjectOverviewWidget::ProjectOverviewWidget(QWidget* parent)
     : QWidget(parent) {
   initUi();
   initSignals();
@@ -64,7 +64,7 @@ ProjectStructureWidget::ProjectStructureWidget(QWidget* parent)
   refreshRecentFiles();
 }
 
-void ProjectStructureWidget::initUi() {
+void ProjectOverviewWidget::initUi() {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
@@ -248,10 +248,10 @@ void ProjectStructureWidget::initUi() {
   stack_->setCurrentIndex(0);
 }
 
-void ProjectStructureWidget::initSignals() {
+void ProjectOverviewWidget::initSignals() {
   // 文件监视器
   connect(file_watcher_, &QFileSystemWatcher::directoryChanged, this,
-          &ProjectStructureWidget::onDirectoryChanged);
+          &ProjectOverviewWidget::onDirectoryChanged);
 
   // 防抖定时器
   connect(debounce_timer_, &QTimer::timeout, this, [this]() {
@@ -269,11 +269,11 @@ void ProjectStructureWidget::initSignals() {
 
   // 树视图信号
   connect(tree_view_, &QTreeView::customContextMenuRequested, this,
-          &ProjectStructureWidget::onCustomContextMenu);
+          &ProjectOverviewWidget::onCustomContextMenu);
   connect(tree_view_, &QTreeView::doubleClicked, this,
-          &ProjectStructureWidget::onItemDoubleClicked);
+          &ProjectOverviewWidget::onItemDoubleClicked);
   connect(model_, &QStandardItemModel::itemChanged, this,
-          &ProjectStructureWidget::onItemChanged);
+          &ProjectOverviewWidget::onItemChanged);
 
   // ── 根节点操作按钮（delegate 信号）──
   connect(tree_delegate_, &ProjectTreeDelegate::refreshRequested, this,
@@ -304,7 +304,7 @@ void ProjectStructureWidget::initSignals() {
     emit syncCurrentEditorRequested();
   });
   connect(tree_delegate_, &ProjectTreeDelegate::syncDocEnabledChanged, this,
-          &ProjectStructureWidget::syncDocEnabledChanged);
+          &ProjectOverviewWidget::syncDocEnabledChanged);
 
   // ── 已打开文件列表 ──
   connect(open_files_view_, &QListView::clicked, this,
@@ -333,7 +333,7 @@ void ProjectStructureWidget::initSignals() {
             }
           });
   connect(open_file_delegate_, &RecentProjOrFileDelegate::closeRequested, this,
-          &ProjectStructureWidget::openFileCloseRequested);
+          &ProjectOverviewWidget::openFileCloseRequested);
 
   // ── 最近项目列表 ──
   if (recent_projects_view_) {
@@ -447,7 +447,7 @@ void ProjectStructureWidget::initSignals() {
   connectHardwareRefresh();
 }
 
-void ProjectStructureWidget::setProjectPath(const QString& path) {
+void ProjectOverviewWidget::setProjectPath(const QString& path) {
   if (path == project_path_)
     return;
   project_path_ = path;
@@ -460,7 +460,7 @@ void ProjectStructureWidget::setProjectPath(const QString& path) {
   stack_->setCurrentIndex(1);
 }
 
-void ProjectStructureWidget::clearProjectPath() {
+void ProjectOverviewWidget::clearProjectPath() {
   project_path_.clear();
 
   if (!file_watcher_->files().isEmpty()) {
@@ -482,13 +482,13 @@ void ProjectStructureWidget::clearProjectPath() {
   stack_->setCurrentIndex(0);
 }
 
-QString ProjectStructureWidget::projectPath() const {
+QString ProjectOverviewWidget::projectPath() const {
   return project_path_;
 }
 
 // ── 标准分类定义 ──
 
-QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
+QList<CategoryInfo> ProjectOverviewWidget::defaultCategories() const {
   return {
       {QStringLiteral("protocol"), QStringLiteral("协议"),
        QStringLiteral("protocol/"), QStringLiteral("protocol"),
@@ -519,7 +519,7 @@ QList<CategoryInfo> ProjectStructureWidget::defaultCategories() const {
 
 // ── 树构建 ──
 
-void ProjectStructureWidget::buildTree() {
+void ProjectOverviewWidget::buildTree() {
   QDir projectDir(project_path_);
   if (!projectDir.exists())
     return;
@@ -657,7 +657,7 @@ void ProjectStructureWidget::buildTree() {
   emit fileListChanged();
 }
 
-void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
+void ProjectOverviewWidget::refreshCategory(const QString& dirPath) {
   if (project_path_.isEmpty() || !root_item_)
     return;
 
@@ -730,14 +730,14 @@ void ProjectStructureWidget::refreshCategory(const QString& dirPath) {
   emit fileListChanged();
 }
 
-void ProjectStructureWidget::onDirectoryChanged(const QString& path) {
+void ProjectOverviewWidget::onDirectoryChanged(const QString& path) {
   debounce_timer_queued_paths_.insert(path);
   debounce_timer_->start();
 }
 
 // ── 槽函数 ──
 
-void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
+void ProjectOverviewWidget::onCustomContextMenu(const QPoint& pos) {
   LOG_INFO("PROJECT_UI", "文件树右键菜单");
   QModelIndex index = tree_view_->indexAt(pos);
   QMenu menu(this);
@@ -902,7 +902,7 @@ void ProjectStructureWidget::onCustomContextMenu(const QPoint& pos) {
   }
 }
 
-void ProjectStructureWidget::onItemDoubleClicked(const QModelIndex& index) {
+void ProjectOverviewWidget::onItemDoubleClicked(const QModelIndex& index) {
   LOG_INFO("PROJECT_UI", "文件树双击打开");
   QStandardItem* item = model_->itemFromIndex(index);
   if (!item)
@@ -921,7 +921,7 @@ void ProjectStructureWidget::onItemDoubleClicked(const QModelIndex& index) {
   emit fileOpenRequested(absolutePath(relPath));
 }
 
-void ProjectStructureWidget::onItemChanged(QStandardItem* item) {
+void ProjectOverviewWidget::onItemChanged(QStandardItem* item) {
   if (!item || rename_old_path_.isEmpty())
     return;
   if (item->data(NodeTypeRole).toString() != QStringLiteral("file"))
@@ -987,7 +987,7 @@ void ProjectStructureWidget::onItemChanged(QStandardItem* item) {
 
 // ── 文件操作 ──
 
-void ProjectStructureWidget::createNewFile(const QString& categoryId,
+void ProjectOverviewWidget::createNewFile(const QString& categoryId,
                                            const QString& extension,
                                            const QString& baseName) {
   QString targetDir;
@@ -1162,7 +1162,7 @@ void ProjectStructureWidget::createNewFile(const QString& categoryId,
   }
 }
 
-void ProjectStructureWidget::deleteSelectedFile() {
+void ProjectOverviewWidget::deleteSelectedFile() {
   QModelIndex index = tree_view_->currentIndex();
   if (!index.isValid())
     return;
@@ -1189,7 +1189,7 @@ void ProjectStructureWidget::deleteSelectedFile() {
   }
 }
 
-void ProjectStructureWidget::copyFilePath() {
+void ProjectOverviewWidget::copyFilePath() {
   QModelIndex index = tree_view_->currentIndex();
   if (!index.isValid())
     return;
@@ -1204,7 +1204,7 @@ void ProjectStructureWidget::copyFilePath() {
   QApplication::clipboard()->setText(absolutePath(relPath));
 }
 
-void ProjectStructureWidget::copyRelativePath() {
+void ProjectOverviewWidget::copyRelativePath() {
   QModelIndex index = tree_view_->currentIndex();
   if (!index.isValid())
     return;
@@ -1219,7 +1219,7 @@ void ProjectStructureWidget::copyRelativePath() {
   QApplication::clipboard()->setText(relPath);
 }
 
-void ProjectStructureWidget::openInFileManager() {
+void ProjectOverviewWidget::openInFileManager() {
   QModelIndex index = tree_view_->currentIndex();
   if (!index.isValid())
     return;
@@ -1236,7 +1236,7 @@ void ProjectStructureWidget::openInFileManager() {
   QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absolutePath()));
 }
 
-void ProjectStructureWidget::openWithTextEditor() {
+void ProjectOverviewWidget::openWithTextEditor() {
   QModelIndex index = tree_view_->currentIndex();
   if (!index.isValid())
     return;
@@ -1253,7 +1253,7 @@ void ProjectStructureWidget::openWithTextEditor() {
 
 // ── 工具方法 ──
 
-QStandardItem* ProjectStructureWidget::createCategoryItem(
+QStandardItem* ProjectOverviewWidget::createCategoryItem(
     const CategoryInfo& info,
     int fileCount) {
   QString displayText = info.displayName + QStringLiteral(" (") +
@@ -1266,7 +1266,7 @@ QStandardItem* ProjectStructureWidget::createCategoryItem(
   return item;
 }
 
-void ProjectStructureWidget::populateReportCategory(
+void ProjectOverviewWidget::populateReportCategory(
     QStandardItem* catItem,
     const QFileInfoList& entries,
     const QString& dirPath) {
@@ -1303,7 +1303,7 @@ void ProjectStructureWidget::populateReportCategory(
   }
 }
 
-void ProjectStructureWidget::populateBackupCategory(
+void ProjectOverviewWidget::populateBackupCategory(
     QStandardItem* catItem,
     const QFileInfoList& entries,
     const QString& dirPath) {
@@ -1322,7 +1322,7 @@ void ProjectStructureWidget::populateBackupCategory(
   }
 }
 
-QStandardItem* ProjectStructureWidget::createFileItem(
+QStandardItem* ProjectOverviewWidget::createFileItem(
     const QString& fileName,
     const QString& relativePath) {
   auto* item = new QStandardItem(fileName);
@@ -1382,12 +1382,12 @@ QStandardItem* ProjectStructureWidget::createFileItem(
   return item;
 }
 
-QString ProjectStructureWidget::absolutePath(
+QString ProjectOverviewWidget::absolutePath(
     const QString& relativePath) const {
   return QDir(project_path_).absoluteFilePath(relativePath);
 }
 
-QString ProjectStructureWidget::categoryDirPath(
+QString ProjectOverviewWidget::categoryDirPath(
     const QString& categoryId) const {
   for (const auto& cat : defaultCategories()) {
     if (cat.id == categoryId) {
@@ -1397,7 +1397,7 @@ QString ProjectStructureWidget::categoryDirPath(
   return QString();
 }
 
-void ProjectStructureWidget::clearAllEtlogFiles(const QString& categoryId) {
+void ProjectOverviewWidget::clearAllEtlogFiles(const QString& categoryId) {
   QString dirPath = categoryDirPath(categoryId);
   if (dirPath.isEmpty())
     return;
@@ -1436,7 +1436,7 @@ void ProjectStructureWidget::clearAllEtlogFiles(const QString& categoryId) {
   }
 }
 
-void ProjectStructureWidget::refreshOtherCategory() {
+void ProjectOverviewWidget::refreshOtherCategory() {
   if (project_path_.isEmpty() || !root_item_)
     return;
 
@@ -1501,7 +1501,7 @@ void ProjectStructureWidget::refreshOtherCategory() {
 
 // ── 硬件节点 ──
 
-void ProjectStructureWidget::refreshHardwareDevices() {
+void ProjectOverviewWidget::refreshHardwareDevices() {
   if (!root_item_ || project_path_.isEmpty())
     return;
 
@@ -1596,9 +1596,9 @@ void ProjectStructureWidget::refreshHardwareDevices() {
   hwItem->setText(QStringLiteral("硬件 (%1)").arg(count));
 }
 
-void ProjectStructureWidget::connectHardwareRefresh() {
+void ProjectOverviewWidget::connectHardwareRefresh() {
   // Topology directory changes → refresh hardware
-  connect(this, &ProjectStructureWidget::directoryContentChanged, this,
+  connect(this, &ProjectOverviewWidget::directoryContentChanged, this,
           [this](const QString& dirPath) {
             if (dirPath.endsWith(QStringLiteral("/topology")) ||
                 dirPath.endsWith(QStringLiteral("\\topology"))) {
@@ -1608,9 +1608,9 @@ void ProjectStructureWidget::connectHardwareRefresh() {
   // Plugin load/unload → refresh hardware
   auto& pm = etest::core::plugin::PluginManager::instance();
   connect(&pm, &etest::core::plugin::PluginManager::pluginLoaded, this,
-          &ProjectStructureWidget::refreshHardwareDevices);
+          &ProjectOverviewWidget::refreshHardwareDevices);
   connect(&pm, &etest::core::plugin::PluginManager::pluginUnloaded, this,
-          &ProjectStructureWidget::refreshHardwareDevices);
+          &ProjectOverviewWidget::refreshHardwareDevices);
 }
 
 // ── 静态辅助函数 ──
@@ -1629,7 +1629,7 @@ static QString newFileBaseName(const QString& base, const QString& dir) {
 
 // ── 占位页：刷新最近项目列表 ──
 
-void ProjectStructureWidget::refreshRecentProjects() {
+void ProjectOverviewWidget::refreshRecentProjects() {
   if (!recent_projects_model_)
     return;
   recent_projects_model_->clear();
@@ -1679,7 +1679,7 @@ void ProjectStructureWidget::refreshRecentProjects() {
 
 // ── 已打开文件列表 ──
 
-void ProjectStructureWidget::setOpenFiles(const QStringList& paths) {
+void ProjectOverviewWidget::setOpenFiles(const QStringList& paths) {
   clearOpenFiles();
   for (const QString& path : paths) {
     addOpenFileItem(path);
@@ -1687,18 +1687,18 @@ void ProjectStructureWidget::setOpenFiles(const QStringList& paths) {
   updateOpenFilesCount();
 }
 
-void ProjectStructureWidget::onFileOpened(const QString& path) {
+void ProjectOverviewWidget::onFileOpened(const QString& path) {
   removeOpenFileItem(path);
   addOpenFileItem(path);
   updateOpenFilesCount();
 }
 
-void ProjectStructureWidget::onFileClosed(const QString& path) {
+void ProjectOverviewWidget::onFileClosed(const QString& path) {
   removeOpenFileItem(path);
   updateOpenFilesCount();
 }
 
-void ProjectStructureWidget::addOpenFileItem(const QString& path) {
+void ProjectOverviewWidget::addOpenFileItem(const QString& path) {
   QFileInfo fi(path);
   QString displayName = fi.fileName();
   QString dirPath =
@@ -1717,7 +1717,7 @@ void ProjectStructureWidget::addOpenFileItem(const QString& path) {
   updateOpenFilesCount();
 }
 
-void ProjectStructureWidget::removeOpenFileItem(const QString& path) {
+void ProjectOverviewWidget::removeOpenFileItem(const QString& path) {
   for (int i = 0; i < open_files_model_->rowCount(); ++i) {
     if (open_files_model_->item(i)->data(FilePathRole).toString() == path) {
       open_files_model_->removeRow(i);
@@ -1727,19 +1727,19 @@ void ProjectStructureWidget::removeOpenFileItem(const QString& path) {
   updateOpenFilesCount();
 }
 
-void ProjectStructureWidget::clearOpenFiles() {
+void ProjectOverviewWidget::clearOpenFiles() {
   open_files_model_->clear();
   updateOpenFilesCount();
 }
 
-void ProjectStructureWidget::updateOpenFilesCount() {
+void ProjectOverviewWidget::updateOpenFilesCount() {
   int count = open_files_model_->rowCount();
   open_files_header_label_->setText(QStringLiteral("已打开 (%1)").arg(count));
 }
 
 // ── 最近文件 ──
 
-void ProjectStructureWidget::refreshRecentFiles() {
+void ProjectOverviewWidget::refreshRecentFiles() {
   if (!recent_files_model_)
     return;
   recent_files_model_->clear();
@@ -1770,7 +1770,7 @@ void ProjectStructureWidget::refreshRecentFiles() {
   }
 }
 
-void ProjectStructureWidget::removeRecentFileFromConfig(const QString& path) {
+void ProjectOverviewWidget::removeRecentFileFromConfig(const QString& path) {
   auto& cfg = etest::core::config::ConfigManager::instance();
   QStringList files = cfg.get<QStringList>(
       QString::fromLatin1(etest::core::config::CONFIG_RECENT_FILE_LIST));
@@ -1784,7 +1784,7 @@ void ProjectStructureWidget::removeRecentFileFromConfig(const QString& path) {
 // QAB 搜索支持
 // ══════════════════════════════════════════════════════════════════════════════
 
-QStringList ProjectStructureWidget::allFileNames() const {
+QStringList ProjectOverviewWidget::allFileNames() const {
   QStringList result;
   if (!root_item_ || project_path_.isEmpty()) {
     return result;
@@ -1806,7 +1806,7 @@ QStringList ProjectStructureWidget::allFileNames() const {
   return result;
 }
 
-bool ProjectStructureWidget::locateFile(const QString& fileName) {
+bool ProjectOverviewWidget::locateFile(const QString& fileName) {
   if (!root_item_ || project_path_.isEmpty()) {
     return false;
   }
@@ -1825,7 +1825,7 @@ bool ProjectStructureWidget::locateFile(const QString& fileName) {
   return false;
 }
 
-bool ProjectStructureWidget::locateFileByPath(const QString& relativePath) {
+bool ProjectOverviewWidget::locateFileByPath(const QString& relativePath) {
   if (!root_item_ || project_path_.isEmpty()) {
     LOG_DEBUG("PROJECT_UI", "locateFileByPath: 项目树未就绪 root={} proj={}",
               root_item_ ? 1 : 0, project_path_.toStdString());
@@ -1848,11 +1848,11 @@ bool ProjectStructureWidget::locateFileByPath(const QString& relativePath) {
   return false;
 }
 
-void ProjectStructureWidget::clearTreeSelection() {
+void ProjectOverviewWidget::clearTreeSelection() {
   tree_view_->clearSelection();
 }
 
-bool ProjectStructureWidget::isSyncDocEnabled() const {
+bool ProjectOverviewWidget::isSyncDocEnabled() const {
   return tree_delegate_->isSyncDocEnabled();
 }
 

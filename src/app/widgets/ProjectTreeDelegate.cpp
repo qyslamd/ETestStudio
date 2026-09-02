@@ -16,7 +16,7 @@ namespace etest::app {
 
 using etest::core_ui::AppIconProvider;
 
-// Role 常量（与 ProjectStructureWidget.h 的 ProjectNodeRole 枚举对齐）
+// Role 常量（与 ProjectOverviewWidget.h 的 ProjectNodeRole 枚举对齐）
 static constexpr int kNodeTypeRole = Qt::UserRole + 1;
 static constexpr int kIsLatestRole = Qt::UserRole + 4;
 static constexpr int kIsEffectiveTopologyRole = Qt::UserRole + 5;
