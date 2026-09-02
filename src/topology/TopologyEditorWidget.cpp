@@ -87,11 +87,20 @@ TopologyEditorWidget::TopologyEditorWidget(QWidget* parent)
 }
 
 TopologyEditorWidget::~TopologyEditorWidget() {
-  // 断开 undoStack 信号，防止在析构过程中触发回调访问已释放的数据
-  if (doc_) {
-    auto* stack = doc_->undoStack();
-    if (stack)
-      stack->disconnect(this);
+  // 断开 undoStack / doc 到属性面板的信号（属性面板也订阅了
+  // undoStack::indexChanged 等信号）。doc_ 是 QObject 子对象，析构顺序
+  // 先于子控件，若不提前断开，文档析构阶段触发刷新会访问已释放数据。
+  if (property_panel_) {
+    property_panel_->clearPanel();  // 复位全部编辑定位索引
+    if (doc_) {
+      auto* stack = doc_->undoStack();
+      if (stack) {
+        stack->disconnect(property_panel_);
+        stack->disconnect(this);
+      }
+      doc_->disconnect(property_panel_);
+      doc_->disconnect(this);
+    }
   }
 }
 

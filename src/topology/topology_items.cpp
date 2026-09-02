@@ -1,6 +1,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+#include "Logger.h"
 #include "TopologyDocument.h"
 #include "TopologyScene.h"
 #include "TopologyTheme.h"
@@ -657,6 +658,11 @@ void ConnectionItem::updatePath() {
 
   TopologyPathRouter router;
   QPainterPath p = router.route(ctx);
+  if (p.isEmpty()) {
+    LOG_WARN("TOPOLOGY_UI",
+             "ConnectionItem#{} updatePath 得到空路径 start=({},{}) end=({},{})",
+             conn_index_, start.x(), start.y(), end.x(), end.y());
+  }
   setPath(p);
 
   // Compute direction arrow at endpoint near relevant side

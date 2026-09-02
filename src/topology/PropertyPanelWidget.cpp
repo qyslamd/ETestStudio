@@ -574,12 +574,15 @@ void PropertyPanelWidget::refreshDevicePortFrames() {
     devport_frames_stack_->setCurrentIndex(0);
     return;
   }
-  const auto& ports = doc_->device(editing_device_port_device_)->ports;
-  if (editing_device_port_index_ >= ports.size()) {
+  const auto* dev = doc_->device(editing_device_port_device_);
+  if (!dev || editing_device_port_index_ >= dev->ports.size()) {
+    // 设备已被删除/端口收缩：复位编辑定位，避免后续信号悬垂访问
+    editing_device_port_device_ = -1;
+    editing_device_port_index_ = -1;
     devport_frames_stack_->setCurrentIndex(0);
     return;
   }
-  const QStringList& frames = ports[editing_device_port_index_].boundFrameNames;
+  const QStringList& frames = dev->ports[editing_device_port_index_].boundFrameNames;
   devport_frames_list_->clear();
   if (frames.isEmpty()) {
     devport_frames_stack_->setCurrentIndex(0);

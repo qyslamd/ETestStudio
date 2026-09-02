@@ -71,8 +71,10 @@ DeviceItem* TopologyScene::addDeviceItem(int deviceIndex, const QPointF& pos) {
 
 ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
   const auto* conn = doc_->connection(connIndex);
-  if (!conn)
+  if (!conn) {
+    LOG_WARN("TOPOLOGY_UI", "addConnectionItem: connIndex={} 越界", connIndex);
     return nullptr;
+  }
 
   UutPortItem* sourcePort = nullptr;
   DevicePortItem* targetPort = nullptr;
@@ -105,8 +107,15 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
     }
   }
 
-  if (!sourcePort || !targetPort)
+  if (!sourcePort || !targetPort) {
+    LOG_WARN("TOPOLOGY_UI",
+             "addConnectionItem: 找不到端口 uut(prod)={} port={} dev={} "
+             "devport={} 源={} 目标={}",
+             conn->productName.toStdString(), conn->portName.toStdString(),
+             conn->deviceName.toStdString(), conn->devicePort.toStdString(),
+             sourcePort ? "有" : "无", targetPort ? "有" : "无");
     return nullptr;
+  }
 
   auto* item =
       new ConnectionItem(sourcePort, targetPort, conn->devicePort, doc_);
@@ -115,6 +124,12 @@ ConnectionItem* TopologyScene::addConnectionItem(int connIndex) {
   item->setStyle(conn->style);
   item->updatePath();
   connection_items_.append(item);
+  LOG_INFO("TOPOLOGY_UI",
+           "addConnectionItem #{} 已创建 {}:{} -> {}:{}  路径空={}",
+           connIndex, conn->productName.toStdString(),
+           conn->portName.toStdString(), conn->deviceName.toStdString(),
+           conn->devicePort.toStdString(),
+           item->path().isEmpty() ? "是" : "否");
   return item;
 }
 
@@ -155,6 +170,23 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
   auto* srcPort = qgraphicsitem_cast<UutPortItem*>(drag_source_);
   auto* srcDevPort = qgraphicsitem_cast<DevicePortItem*>(drag_source_);
 
+  // 校验通过的连线在此收集，统一在鼠标事件结束后再入栈
+  TopologyConnection pending;
+  bool pending_valid = false;
+
+  // 注意：TopologyConnection 首字段是 id（UUID），禁止用 4 元聚合初始化
+  // （会把 4 个名字错位塞进 id/productName/portName/deviceName，devicePort
+  // 落空，导致 addConnectionItem 匹配不到端口、连线画不出来）
+  auto buildConn = [](const TopologyProduct* p, const TopologyPort& pt,
+                      const TopologyDevice* d, const TopologyDevicePort& dpt) {
+    TopologyConnection c;
+    c.productName = p->name;
+    c.portName = pt.name;
+    c.deviceName = d->name;
+    c.devicePort = dpt.name;
+    return c;
+  };
+
   if (srcPort) {
     auto* devPort = devicePortItemAt(scenePos);
     if (devPort) {
@@ -167,8 +199,15 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
         const auto& port = prod->ports[srcPort->portIndex()];
         const auto& dp = dev->ports[devPort->portIndex()];
         if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
-          TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
-          doc_->undoStack()->push(new AddConnectionCommand(doc_, conn));
+          pending = buildConn(prod, port, dev, dp);
+          pending_valid = true;
+          LOG_INFO("TOPOLOGY_UI", "连接成功: {}:{} -> {}:{}",
+                   prod->name.toStdString(), port.name.toStdString(),
+                   dev->name.toStdString(), dp.name.toStdString());
+        } else {
+          LOG_WARN("TOPOLOGY_UI", "连接不合法: {}:{} -> {}:{}",
+                   prod->name.toStdString(), port.name.toStdString(),
+                   dev->name.toStdString(), dp.name.toStdString());
         }
       }
     }
@@ -184,8 +223,8 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
         const auto& dp = dev->ports[srcDevPort->portIndex()];
         const auto& port = prod->ports[uutPort->portIndex()];
         if (doc_->canConnect(prod->name, port.name, dev->name, dp.name)) {
-          TopologyConnection conn{prod->name, port.name, dev->name, dp.name};
-          doc_->undoStack()->push(new AddConnectionCommand(doc_, conn));
+          pending = buildConn(prod, port, dev, dp);
+          pending_valid = true;
           LOG_INFO("TOPOLOGY_UI", "连接成功: {}:{} -> {}:{}",
                    prod->name.toStdString(), port.name.toStdString(),
                    dev->name.toStdString(), dp.name.toStdString());
@@ -199,6 +238,23 @@ void TopologyScene::finishConnectionDrag(QPointF scenePos) {
   }
 
   drag_source_ = nullptr;
+
+  if (pending_valid) {
+    // 入栈会同步触发 QUndoStack::indexChanged → 场景全量重建（clearScene），
+    // 若在本函数（端口 mouseReleaseEvent 内）立即执行会删除正在处理事件的
+    // 端口 item，导致悬垂崩溃。推迟到事件结束后再 push，重建即为安全上下文。
+    QMetaObject::invokeMethod(
+        this,
+        [this, pending]() {
+          LOG_INFO("TOPOLOGY_UI", "延迟入栈连线: {}:{} -> {}:{}",
+                   pending.productName.toStdString(),
+                   pending.portName.toStdString(),
+                   pending.deviceName.toStdString(),
+                   pending.devicePort.toStdString());
+          doc_->undoStack()->push(new AddConnectionCommand(doc_, pending));
+        },
+        Qt::QueuedConnection);
+  }
 }
 
 void TopologyScene::createDragPreview() {
