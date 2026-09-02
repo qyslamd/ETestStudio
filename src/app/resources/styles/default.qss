@@ -31,7 +31,6 @@ QListView#WelcomeRecentList {
     border: none;
 }
 
-/* ==================== QDoubleSpinBox ==================== */
 /* ==================== ValueLabelWidget ==================== */
 #ValueLabelTitle {
     font-weight: bold;
@@ -701,11 +700,11 @@ QToolButton#HintPopupClearBtn:hover {
     color: #2B6CB0;
 }
 /* ==================== 侧边栏活动按钮栏 ==================== */
-#sidebarNavBar {
+etest--app--SidebarNavWidget {
     background-color: #D0D0D0;
     border-right:1px solid #D0D0D0;
 }
-#sidebarNavBar QToolButton {
+etest--app--SidebarNavWidget QToolButton {
     background-color: transparent;
     border: none;
     border-left: 2px solid transparent;
@@ -714,7 +713,7 @@ QToolButton#HintPopupClearBtn:hover {
     padding: 0px;
     margin: 0px;
 }
-#sidebarNavBar QToolButton:hover {
+etest--app--SidebarNavWidget QToolButton:hover {
     background-color: #E0E0E0;
     color: #222222;
 }
@@ -767,7 +766,7 @@ etest--app--BottomContainerWidget {
     background-color: rgba(0, 0, 0, 0.15);
 }
 
-QWidget#sidebarNavBar QToolButton:checked {
+etest--app--SidebarNavWidget QToolButton:checked {
     border-left: 2px solid #0078D4;
     color: #222222;
     background-color: #E0E0E0;

@@ -514,18 +514,12 @@ QListWidget::item:selected {
     background-color: #094771;
 }
 
-/* ScrollArea */
-QScrollArea {
-    background-color: #1E1E1E;
-    border: none;
-}
-
 /* ==================== 侧边栏活动按钮栏 ==================== */
-QWidget#sidebarNavBar {
+etest--app--SidebarNavWidget {
     background-color: #333333;
     border-right: 1px solid #252526;
 }
-QWidget#sidebarNavBar QToolButton {
+etest--app--SidebarNavWidget QToolButton {
     background-color: transparent;
     border: none;
     border-left: 2px solid transparent;
@@ -534,11 +528,11 @@ QWidget#sidebarNavBar QToolButton {
     padding: 0px;
     margin: 0px;
 }
-QWidget#sidebarNavBar QToolButton:hover {
+etest--app--SidebarNavWidget QToolButton:hover {
     background-color: #2A2D2E;
     color: #FFFFFF;
 }
-QWidget#sidebarNavBar QToolButton:checked {
+etest--app--SidebarNavWidget QToolButton:checked {
     border-left: 2px solid #007ACC;
     color: #FFFFFF;
     background-color: #2A2D2E;
@@ -757,24 +751,24 @@ QToolButton#protocolManagerCreateBtn:pressed {
 }
 
 /* ==================== TestProgramManagerWidget ==================== */
-TestProgramManagerWidget {
+etest--app--TestProgramManagerWidget {
     background-color: #252526;
 }
-TestProgramManagerWidget QTreeWidget {
+etest--app--TestProgramManagerWidget QTreeWidget {
     background-color: #252526;
     color: #CCCCCC;
     border: none;
     outline: none;
 }
-TestProgramManagerWidget QTreeWidget::item {
+etest--app--TestProgramManagerWidget QTreeWidget::item {
     padding: 4px 8px;
     min-height: 22px;
 }
-TestProgramManagerWidget QTreeWidget::item:selected {
+etest--app--TestProgramManagerWidget QTreeWidget::item:selected {
     background-color: #094771;
     color: #FFFFFF;
 }
-TestProgramManagerWidget QTreeWidget::item:hover {
+etest--app--TestProgramManagerWidget QTreeWidget::item:hover {
     background-color: #2A2D2E;
 }
 #testProgramToolbar {
@@ -783,10 +777,10 @@ TestProgramManagerWidget QTreeWidget::item:hover {
 }
 
 /* ==================== TestProgramEditorWidget ==================== */
-TestProgramEditorWidget {
+etest--app--TestProgramEditorWidget {
     background-color: #1E1E1E;
 }
-TestProgramEditorWidget QLineEdit {
+etest--app--TestProgramEditorWidget QLineEdit {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
@@ -794,20 +788,20 @@ TestProgramEditorWidget QLineEdit {
     padding: 4px 8px;
     selection-background-color: #264F78;
 }
-TestProgramEditorWidget QLineEdit:focus {
+etest--app--TestProgramEditorWidget QLineEdit:focus {
     border-color: #007ACC;
 }
-TestProgramEditorWidget QTextEdit {
+etest--app--TestProgramEditorWidget QTextEdit {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
     border-radius: 2px;
     selection-background-color: #264F78;
 }
-TestProgramEditorWidget QTextEdit:focus {
+etest--app--TestProgramEditorWidget QTextEdit:focus {
     border-color: #007ACC;
 }
-TestProgramEditorWidget QTableWidget {
+etest--app--TestProgramEditorWidget QTableWidget {
     background-color: #252526;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
@@ -816,10 +810,10 @@ TestProgramEditorWidget QTableWidget {
     selection-background-color: #094771;
     selection-color: #FFFFFF;
 }
-TestProgramEditorWidget QTableWidget::item {
+etest--app--TestProgramEditorWidget QTableWidget::item {
     padding: 4px 8px;
 }
-TestProgramEditorWidget QHeaderView::section {
+etest--app--TestProgramEditorWidget QHeaderView::section {
     background-color: #2D2D2D;
     color: #CCCCCC;
     border: none;
@@ -827,7 +821,7 @@ TestProgramEditorWidget QHeaderView::section {
     padding: 4px 8px;
     font-weight: bold;
 }
-TestProgramEditorWidget QTabWidget::pane {
+etest--app--TestProgramEditorWidget QTabWidget::pane {
     border: 1px solid #3C3C3C;
     background-color: #252526;
 }
@@ -863,7 +857,7 @@ TestProgramEditorWidget QTabWidget::pane {
 }
 
 /* ── Step detail panel ── */
-StepDetailPanel QLabel {
+etest--app--StepDetailPanel QLabel {
     color: #CCCCCC;
     font-size: 12px;
 }
@@ -873,7 +867,8 @@ StepDetailPanel QLabel {
 #stepDetailEmptyLabel {
     color: #888;
 }
-StepDetailPanel QLineEdit {
+
+etest--app--StepDetailPanel QLineEdit {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
@@ -881,16 +876,16 @@ StepDetailPanel QLineEdit {
     padding: 2px 4px;
     min-height: 20px;
 }
-StepDetailPanel QLineEdit:focus {
+etest--app--StepDetailPanel QLineEdit:focus {
     border-color: #007ACC;
 }
 
-StepDetailPanel QCheckBox {
+etest--app--StepDetailPanel QCheckBox {
     color: #CCCCCC;
     spacing: 6px;
 }
 
-StepDetailPanel QCheckBox::indicator {
+etest--app--StepDetailPanel QCheckBox::indicator {
     width: 14px;
     height: 14px;
     border: 1px solid #454545;
@@ -898,12 +893,12 @@ StepDetailPanel QCheckBox::indicator {
     background-color: #3C3C3C;
 }
 
-StepDetailPanel QCheckBox::indicator:checked {
+etest--app--StepDetailPanel QCheckBox::indicator:checked {
     background-color: #007ACC;
     border-color: #007ACC;
 }
 
-StepDetailPanel QTableWidget {
+etest--app--StepDetailPanel QTableWidget {
     background-color: #2D2D2D;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
@@ -1011,14 +1006,23 @@ etest--app--SearchWidget QListWidget::item:selected {
 }
 
 /* ==================== GitWidget ==================== */
-GitWidget {
+
+/* ==================== GitWidget ==================== */
+etest--app--GitWidget {
     background-color: #252526;
 }
-GitWidget QLabel {
+etest--app--GitWidget QLabel {
     color: #CCCCCC;
     background-color: transparent;
 }
-GitWidget QTextEdit {
+etest--app--GitWidget QLabel#gitTitleLabel {
+    color: #BBBBBB;
+    font-weight: bold;
+    font-size: 11px;
+    background: transparent;
+}
+
+etest--app--GitWidget QTextEdit {
     background-color: #3C3C3C;
     color: #CCCCCC;
     border: 1px solid #3C3C3C;
@@ -1026,36 +1030,36 @@ GitWidget QTextEdit {
     selection-background-color: #264F78;
     font-size: 13px;
 }
-GitWidget QTextEdit:focus {
+etest--app--GitWidget QTextEdit:focus {
     border-color: #007ACC;
 }
-GitWidget QToolButton#refresh_button_ {
+etest--app--GitWidget QToolButton#refresh_button_ {
     background-color: transparent;
     border: none;
     padding: 0px;
 }
-GitWidget QToolButton#refresh_button_:hover {
+etest--app--GitWidget QToolButton#refresh_button_:hover {
     background-color: #505050;
     border-radius: 3px;
 }
-GitWidget QTreeWidget {
+etest--app--GitWidget QTreeWidget {
     background-color: #252526;
     color: #CCCCCC;
     border: none;
     outline: none;
     font-size: 13px;
 }
-GitWidget QTreeWidget::item {
+etest--app--GitWidget QTreeWidget::item {
     padding: 2px 0px;
     border: none;
 }
-GitWidget QTreeWidget::item:hover {
+etest--app--GitWidget QTreeWidget::item:hover {
     background-color: #2A2D2E;
 }
-GitWidget QTreeWidget::item:selected {
+etest--app--GitWidget QTreeWidget::item:selected {
     background-color: #094771;
 }
-GitWidget QLabel#gitEmptyLabel {
+etest--app--GitWidget QLabel#gitEmptyLabel {
     color: #858585;
     font-size: 13px;
 }
@@ -1257,6 +1261,7 @@ QLabel#PhLoadingOverlayLabel {
 QWidget#topologyPropertyPanel {
     background-color: #252526;
 }
+
 QStackedWidget#topologyPropertyStack {
     background-color: #252526;
 }
@@ -1265,14 +1270,6 @@ QStackedWidget#topologyPropertyStack {
 }
 #emptyPage QLabel {
     color: #888888;
-}
-
-/* ==================== GitWidget ==================== */
-GitWidget QLabel#gitTitleLabel {
-    color: #BBBBBB;
-    font-weight: bold;
-    font-size: 11px;
-    background: transparent;
 }
 
 /* ==================== 欢迎页 ==================== */

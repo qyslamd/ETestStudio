@@ -20,7 +20,6 @@ SidebarNavWidget::SidebarNavWidget(QWidget* parent) : QWidget(parent) {
 
 void SidebarNavWidget::initUi() {
   setFixedWidth(48);
-  setObjectName(QStringLiteral("sidebarNavBar"));
 
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 4, 0, 4);
@@ -35,8 +34,8 @@ void SidebarNavWidget::initUi() {
 }
 
 void SidebarNavWidget::addPage(const QString& id,
-                                const QString& tooltip,
-                                const QString& iconName) {
+                               const QString& tooltip,
+                               const QString& iconName) {
   // 不重复添加相同 ID 的按钮
   for (const auto& p : pages_) {
     if (p.id == id)
@@ -51,11 +50,10 @@ void SidebarNavWidget::addPage(const QString& id,
   buttons_.append(btn);
   top_layout_->addWidget(btn);
 
-  connect(btn, &QAbstractButton::clicked, this,
-          [this, id]() {
-            LOG_INFO("PROJECT_UI", "侧边栏导航 [page={}]", id.toStdString());
-            emit pageClicked(id);
-          });
+  connect(btn, &QAbstractButton::clicked, this, [this, id]() {
+    LOG_INFO("PROJECT_UI", "侧边栏导航 [page={}]", id.toStdString());
+    emit pageClicked(id);
+  });
 
   // 默认选中第一个添加的页面
   if (buttons_.size() == 1) {
@@ -71,8 +69,8 @@ void SidebarNavWidget::reloadIcons() {
 }
 
 void SidebarNavWidget::setLoginState(bool /*loggedIn*/,
-                                      const QString& /*userName*/,
-                                      const QString& /*role*/) {
+                                     const QString& /*userName*/,
+                                     const QString& /*role*/) {
   // 登录状态展示已迁移到 QAB 登录菜单，此处保留为空操作
 }
 
