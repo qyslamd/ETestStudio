@@ -2,7 +2,7 @@
 
 #include <QGraphicsObject>
 #include <QGraphicsScene>
-#include <QWidget>
+#include <QGraphicsView>
 
 #include <QColor>
 #include <QFont>
@@ -253,9 +253,9 @@ class IcdBitLayoutScene : public QGraphicsScene {
 };
 
 // ============================================================
-// IcdBitLayoutView — 外层 QWidget + toolbar + QGraphicsView
+// IcdBitLayoutView — 直接派生 QGraphicsView，见名知意
 // ============================================================
-class IcdBitLayoutView : public QWidget {
+class IcdBitLayoutView : public QGraphicsView {
   Q_OBJECT
  public:
   explicit IcdBitLayoutView(QWidget* parent = nullptr);
@@ -276,7 +276,6 @@ class IcdBitLayoutView : public QWidget {
   void initUi();
 
   IcdBitLayoutScene* scene_ = nullptr;
-  QGraphicsView* view_ = nullptr;
   const icd::Frame* last_frame_ = nullptr;
 };
 

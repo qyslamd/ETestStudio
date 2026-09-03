@@ -1,20 +1,16 @@
 #include "IcdBitLayoutView.h"
-
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsView>
-#include <QLabel>
 #include <QMap>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QVBoxLayout>
-
 #include <algorithm>
 #include <cmath>
 #include <icd/node.hpp>
-
 #include "IcdProtocolUtils.h"
+#include "Logger.h"
 #include "ThemeManager.h"
 
 namespace {
@@ -106,8 +102,8 @@ static int absoluteStartBit(const icd::Node& node) {
 }
 
 static QString valueTypeText(const icd::Node& node) {
-  return QString::fromLatin1(etest::protocol::utils::valueTypeName(
-      node.value_type()));
+  return QString::fromLatin1(
+      etest::protocol::utils::valueTypeName(node.value_type()));
 }
 
 static QString nodeNameText(const icd::Node& node) {
@@ -146,6 +142,8 @@ static bool looksLikeEnum(const QString& value_text_list) {
 
 }  // anonymous namespace
 
+using namespace etest::core_ui;
+
 namespace etest::protocol {
 
 QString buildNodeTooltip(const icd::Node& node) {
@@ -179,8 +177,7 @@ QString buildNodeTooltip(const icd::Node& node) {
 
   const auto& attrs = node.attrs();
   if (!attrs.unit.empty()) {
-    lines << QStringLiteral("Unit: %1")
-                 .arg(QString::fromStdString(attrs.unit));
+    lines << QStringLiteral("Unit: %1").arg(QString::fromStdString(attrs.unit));
   }
   if (attrs.is_scaled) {
     QStringList scale_parts;
@@ -194,17 +191,16 @@ QString buildNodeTooltip(const icd::Node& node) {
     lines << scale_parts.join(' ');
   }
   if (attrs.min.has_value() || attrs.max.has_value()) {
-    QString min_text = attrs.min.has_value()
-                           ? QString::number(*attrs.min)
-                           : QStringLiteral("-");
-    QString max_text = attrs.max.has_value()
-                           ? QString::number(*attrs.max)
-                           : QStringLiteral("-");
+    QString min_text = attrs.min.has_value() ? QString::number(*attrs.min)
+                                             : QStringLiteral("-");
+    QString max_text = attrs.max.has_value() ? QString::number(*attrs.max)
+                                             : QStringLiteral("-");
     lines << QStringLiteral("Range: %1 ~ %2").arg(min_text, max_text);
   }
   if (!attrs.value_text_list.empty()) {
     QString vtl = QString::fromStdString(attrs.value_text_list);
-    QString label = looksLikeEnum(vtl) ? QStringLiteral("枚举") : QStringLiteral("默认值");
+    QString label =
+        looksLikeEnum(vtl) ? QStringLiteral("枚举") : QStringLiteral("默认值");
     lines << QStringLiteral("%1: %2").arg(label, vtl);
   }
   if (!attrs.link_to.empty()) {
@@ -246,16 +242,24 @@ bool isNodeBigEndian(const icd::Node& node) {
   return node.tag() == icd::Tag::big_endian_value;
 }
 
-LayoutNodeItem::LayoutNodeItem(QGraphicsItem* parent) : QGraphicsObject(parent) {}
+LayoutNodeItem::LayoutNodeItem(QGraphicsItem* parent)
+    : QGraphicsObject(parent) {}
 
 FieldSectionItem::FieldSectionItem(const icd::Node* node,
                                    const QString& value_type,
-                                   const QColor& color, int cell_size,
-                                   int bits_per_row, QGraphicsItem* parent)
-    : FieldSectionItem(node ? nodeNameText(*node) : QString(), value_type,
-                       node ? node->offset() : 0, node ? node->bit_offset() : 0,
-                       node ? node->bit_width() : 0, color, cell_size,
-                       bits_per_row, parent) {
+                                   const QColor& color,
+                                   int cell_size,
+                                   int bits_per_row,
+                                   QGraphicsItem* parent)
+    : FieldSectionItem(node ? nodeNameText(*node) : QString(),
+                       value_type,
+                       node ? node->offset() : 0,
+                       node ? node->bit_offset() : 0,
+                       node ? node->bit_width() : 0,
+                       color,
+                       cell_size,
+                       bits_per_row,
+                       parent) {
   node_ = node;
   if (node_) {
     setToolTip(buildNodeTooltip(*node_));
@@ -263,10 +267,14 @@ FieldSectionItem::FieldSectionItem(const icd::Node* node,
 }
 
 FieldSectionItem::FieldSectionItem(const QString& name,
-                                   const QString& value_type, int byte_offset,
-                                   int start_bit, int bit_width,
-                                   const QColor& color, int cell_size,
-                                   int bits_per_row, QGraphicsItem* parent)
+                                   const QString& value_type,
+                                   int byte_offset,
+                                   int start_bit,
+                                   int bit_width,
+                                   const QColor& color,
+                                   int cell_size,
+                                   int bits_per_row,
+                                   QGraphicsItem* parent)
     : LayoutNodeItem(parent),
       name_(name),
       value_type_(value_type),
@@ -324,9 +332,10 @@ void FieldSectionItem::setHoveredNode(const icd::Node* node, bool on) {
   }
 }
 
-void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
+void FieldSectionItem::paint(QPainter* painter,
+                             const QStyleOptionGraphicsItem*,
                              QWidget*) {
-  auto& tm = etest::core_ui::ThemeManager::instance();
+  auto& tm = ThemeManager::instance();
 
   int cols = std::min(bit_width_, bits_per_row_);
   int rows = (bit_width_ + bits_per_row_ - 1) / bits_per_row_;
@@ -392,9 +401,10 @@ void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
 
   int global_start = byte_offset_ * 8 + start_bit_;
   int global_end = global_start + bit_width_ - 1;
-  QString range_str = (bit_width_ > 1)
-                          ? QStringLiteral("%1~%2").arg(global_start).arg(global_end)
-                          : QString::number(global_start);
+  QString range_str =
+      (bit_width_ > 1)
+          ? QStringLiteral("%1~%2").arg(global_start).arg(global_end)
+          : QString::number(global_start);
   QString header_text =
       QStringLiteral("%1  [%2 bits]").arg(name_).arg(range_str);
 
@@ -423,7 +433,8 @@ void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
   painter->setFont(header_font_);
   QRectF name_rect(14, 0, sec_w - 14 - badge_reserved, sec_hdr);
   QString elided_header_text = painter->fontMetrics().elidedText(
-      header_text, Qt::ElideRight, qMax(0, static_cast<int>(name_rect.width())));
+      header_text, Qt::ElideRight,
+      qMax(0, static_cast<int>(name_rect.width())));
   painter->drawText(name_rect, Qt::AlignVCenter | Qt::AlignLeft,
                     elided_header_text);
 
@@ -442,8 +453,8 @@ void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
     painter->drawRoundedRect(cur_x, badge_y, badge_w, badge_h, 4, 4);
 
     painter->setPen(highlighted_ ? Qt::white : QColor(255, 255, 255, 220));
-    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h),
-                      Qt::AlignCenter, value_type_);
+    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h), Qt::AlignCenter,
+                      value_type_);
     cur_x -= badge_gap;
   }
 
@@ -452,15 +463,15 @@ void FieldSectionItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
     cur_x -= badge_w;
     int badge_y = (sec_hdr - badge_h) / 2;
 
-    QColor badge_bg = highlighted_ ? QColor(255, 255, 255, 90)
-                                    : QColor(255, 255, 255, 45);
+    QColor badge_bg =
+        highlighted_ ? QColor(255, 255, 255, 90) : QColor(255, 255, 255, 45);
     painter->setPen(Qt::NoPen);
     painter->setBrush(badge_bg);
     painter->drawRoundedRect(cur_x, badge_y, badge_w, badge_h, 4, 4);
 
     painter->setPen(highlighted_ ? Qt::white : QColor(255, 255, 255, 230));
-    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h),
-                      Qt::AlignCenter, b);
+    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h), Qt::AlignCenter,
+                      b);
     cur_x -= badge_gap;
   }
 
@@ -559,9 +570,12 @@ void FieldSectionItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
   }
 }
 
-ChildFieldItem::ChildFieldItem(const icd::Node* node, int relative_start,
-                               int relative_end, const QString& value_type,
-                               const QColor& color, int cell_size,
+ChildFieldItem::ChildFieldItem(const icd::Node* node,
+                               int relative_start,
+                               int relative_end,
+                               const QString& value_type,
+                               const QColor& color,
+                               int cell_size,
                                QGraphicsItem* parent)
     : QGraphicsObject(parent),
       node_(node),
@@ -592,9 +606,10 @@ void ChildFieldItem::setHovered(bool on) {
   update();
 }
 
-void ChildFieldItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
+void ChildFieldItem::paint(QPainter* painter,
+                           const QStyleOptionGraphicsItem*,
                            QWidget*) {
-  auto& tm = etest::core_ui::ThemeManager::instance();
+  auto& tm = ThemeManager::instance();
   bool dark = tm.isDarkTheme();
   int rh = kRowHeight;
 
@@ -610,8 +625,10 @@ void ChildFieldItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
   }
 
   // Tree connector: ├─ or └─
-  QString connector = is_last_ ? QStringLiteral("  └─ ") : QStringLiteral("  ├─ ");
-  painter->setPen(tm.isDarkTheme() ? QColor(160, 160, 165) : QColor(130, 130, 135));
+  QString connector =
+      is_last_ ? QStringLiteral("  └─ ") : QStringLiteral("  ├─ ");
+  painter->setPen(tm.isDarkTheme() ? QColor(160, 160, 165)
+                                   : QColor(130, 130, 135));
   painter->setFont(row_font_);
   QFontMetrics fm(row_font_);
   int conn_w = fm.horizontalAdvance(connector);
@@ -623,7 +640,8 @@ void ChildFieldItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
   const int pill_space = 100;  // reserved for type badge
   int name_max_w = row_width_ - conn_w - 12 - range_w - pill_space;
   QString name_text = node_ ? nodeNameText(*node_) : QString();
-  QString elided = fm.elidedText(name_text, Qt::ElideRight, qMax(0, name_max_w));
+  QString elided =
+      fm.elidedText(name_text, Qt::ElideRight, qMax(0, name_max_w));
   painter->setPen(dark ? QColor(220, 220, 225) : QColor(45, 45, 50));
   painter->drawText(4 + conn_w, 0, name_max_w, rh,
                     Qt::AlignVCenter | Qt::AlignLeft, elided);
@@ -640,8 +658,8 @@ void ChildFieldItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*,
     painter->setBrush(pill_bg);
     painter->drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4);
     painter->setPen(color_.lighter(180));
-    painter->drawText(QRectF(pill_x, pill_y, pill_w, pill_h),
-                      Qt::AlignCenter, value_type_);
+    painter->drawText(QRectF(pill_x, pill_y, pill_w, pill_h), Qt::AlignCenter,
+                      value_type_);
   }
 
   // Bit range
@@ -697,7 +715,8 @@ void ChildFieldItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
 
 ContainerFieldItem::ContainerFieldItem(const icd::Node* node,
                                        const QString& value_type,
-                                       const QColor& color, int cell_size,
+                                       const QColor& color,
+                                       int cell_size,
                                        QGraphicsItem* parent)
     : LayoutNodeItem(parent),
       node_(node),
@@ -721,7 +740,7 @@ int ContainerFieldItem::parentStartBit() const {
 }
 
 void ContainerFieldItem::initChildren() {
-  if (!node_){
+  if (!node_) {
     return;
   }
 
@@ -733,9 +752,9 @@ void ContainerFieldItem::initChildren() {
     int child_start = absoluteStartBit(*child);
     int relative_start = child_start - parent_start;
     int relative_end = relative_start + child->bit_width() - 1;
-    auto* item = new ChildFieldItem(child.get(), relative_start, relative_end,
-                                    valueTypeText(*child), color_, cell_size_,
-                                    this);
+    auto* item =
+        new ChildFieldItem(child.get(), relative_start, relative_end,
+                           valueTypeText(*child), color_, cell_size_, this);
     item->setRowWidth(row_w);
     item->is_last_ = (i == child_count - 1);
     item->setPos(kChildIndent, kHeaderHeight + 8 + i * kRowHeight);
@@ -773,7 +792,8 @@ QPair<int, int> ContainerFieldItem::childRelativeRange(
   return qMakePair(-1, -1);
 }
 
-ChildFieldItem* ContainerFieldItem::childFieldItem(const icd::Node* node) const {
+ChildFieldItem* ContainerFieldItem::childFieldItem(
+    const icd::Node* node) const {
   for (auto* item : child_items_) {
     if (item->node() == node) {
       return item;
@@ -803,8 +823,9 @@ void ContainerFieldItem::setHoveredNode(const icd::Node* node, bool on) {
 }
 
 void ContainerFieldItem::paint(QPainter* painter,
-                               const QStyleOptionGraphicsItem*, QWidget*) {
-  auto& tm = etest::core_ui::ThemeManager::instance();
+                               const QStyleOptionGraphicsItem*,
+                               QWidget*) {
+  auto& tm = ThemeManager::instance();
   bool dark = tm.isDarkTheme();
   int sec_w = sectionWidth();
   int sec_h = totalHeight();
@@ -870,8 +891,8 @@ void ContainerFieldItem::paint(QPainter* painter,
     painter->setBrush(badge_bg);
     painter->drawRoundedRect(cur_x, badge_y, badge_w, badge_h, 4, 4);
     painter->setPen(QColor(255, 255, 255, 230));
-    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h),
-                      Qt::AlignCenter, b);
+    painter->drawText(QRectF(cur_x, badge_y, badge_w, badge_h), Qt::AlignCenter,
+                      b);
     cur_x -= badge_gap;
   }
 
@@ -913,7 +934,8 @@ void ContainerFieldItem::mousePressEvent(QGraphicsSceneMouseEvent*) {
   emit clicked(node_);
 }
 
-void ContainerFieldItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
+void ContainerFieldItem::contextMenuEvent(
+    QGraphicsSceneContextMenuEvent* event) {
   QMenu menu;
   QAction* act_edit = menu.addAction(QStringLiteral("编辑"));
   menu.addSeparator();
@@ -935,8 +957,12 @@ void ContainerFieldItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
 }
 
 IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent) : QGraphicsScene(parent) {
-  setBackgroundBrush(
-      etest::core_ui::ThemeManager::instance().windowBackground());
+  LOG_INFO(
+      "ICD_UI", "theme manager scene background: {}, window background: {}",
+      ThemeManager::instance().sceneBackground().name().toStdString().c_str(),
+      ThemeManager::instance().windowBackground().name().toStdString().c_str());
+
+  setBackgroundBrush(ThemeManager::instance().sceneBackground());
 }
 
 void IcdBitLayoutScene::appendLayoutItem(LayoutNodeItem* item) {
@@ -955,7 +981,8 @@ void IcdBitLayoutScene::appendLayoutItem(LayoutNodeItem* item) {
 
 FieldSectionItem* IcdBitLayoutScene::addBlock(const QString& name,
                                               const QString& value_type,
-                                              int byte_offset, int start_bit,
+                                              int byte_offset,
+                                              int start_bit,
                                               int bit_width,
                                               const QColor& color) {
   auto* item = new FieldSectionItem(name, value_type, byte_offset, start_bit,
@@ -1036,33 +1063,21 @@ QVector<ContainerFieldItem*> IcdBitLayoutScene::containerItems() const {
   return containers;
 }
 
-IcdBitLayoutView::IcdBitLayoutView(QWidget* parent) : QWidget(parent) {
+IcdBitLayoutView::IcdBitLayoutView(QWidget* parent) : QGraphicsView(parent) {
   initUi();
 }
 
 void IcdBitLayoutView::initUi() {
-  auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(0, 0, 0, 0);
-  layout->setSpacing(0);
-
-  auto* toolbar = new QWidget(this);
-  toolbar->setFixedHeight(32);
-  auto* tb_layout = new QHBoxLayout(toolbar);
-  tb_layout->setContentsMargins(8, 0, 8, 0);
-  layout->addWidget(toolbar);
-
-  view_ = new QGraphicsView(this);
-  view_->setRenderHint(QPainter::Antialiasing);
-  view_->setDragMode(QGraphicsView::ScrollHandDrag);
-  view_->setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
-  view_->setBackgroundBrush(
-      etest::core_ui::ThemeManager::instance().windowBackground());
-  view_->setFrameShape(QFrame::NoFrame);
-  view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  view_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setRenderHint(QPainter::Antialiasing);
+  setDragMode(QGraphicsView::ScrollHandDrag);
+  setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
+  setBackgroundBrush(ThemeManager::instance().sceneBackground());
+  setFrameShape(QFrame::NoFrame);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
   scene_ = new IcdBitLayoutScene(this);
-  view_->setScene(scene_);
+  setScene(scene_);
 
   connect(scene_, &IcdBitLayoutScene::nodeClicked, this,
           &IcdBitLayoutView::nodeClicked);
@@ -1071,18 +1086,15 @@ void IcdBitLayoutView::initUi() {
   connect(scene_, &IcdBitLayoutScene::nodeHovered, this,
           &IcdBitLayoutView::nodeHovered);
 
-  connect(&etest::core_ui::ThemeManager::instance(),
-          &etest::core_ui::ThemeManager::themeChanged, this, [this](bool) {
-            QColor bg =
-                etest::core_ui::ThemeManager::instance().windowBackground();
-            scene_->setBackgroundBrush(bg);
-            view_->setBackgroundBrush(bg);
-            if (last_frame_) {
-              loadFromFrame(*last_frame_);
-            }
-          });
-
-  layout->addWidget(view_, 1);
+  connect(
+      &ThemeManager::instance(), &ThemeManager::themeChanged, this,
+      [this](bool) {
+        scene_->setBackgroundBrush(ThemeManager::instance().sceneBackground());
+        setBackgroundBrush(ThemeManager::instance().sceneBackground());
+        if (last_frame_) {
+          loadFromFrame(*last_frame_);
+        }
+      });
 }
 
 void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
@@ -1098,17 +1110,18 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
     roots.push_back(root.get());
   }
 
-  std::sort(roots.begin(), roots.end(), [](const icd::Node* a, const icd::Node* b) {
-    if (a->offset() != b->offset()) {
-      return a->offset() < b->offset();
-    }
-    if (a->bit_offset() != b->bit_offset()) {
-      return a->bit_offset() < b->bit_offset();
-    }
-    return a->bit_width() > b->bit_width();
-  });
+  std::sort(roots.begin(), roots.end(),
+            [](const icd::Node* a, const icd::Node* b) {
+              if (a->offset() != b->offset()) {
+                return a->offset() < b->offset();
+              }
+              if (a->bit_offset() != b->bit_offset()) {
+                return a->bit_offset() < b->bit_offset();
+              }
+              return a->bit_width() > b->bit_width();
+            });
 
-  bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
+  bool dark = ThemeManager::instance().isDarkTheme();
   int cycle_idx = 0;
 
   for (auto* node : roots) {
@@ -1135,12 +1148,13 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
       scene_->itemsBoundingRect().adjusted(-10, -10, 160, 160);
   QRectF default_rect(0, 0, 960, 720);
   scene_->setSceneRect(content_rect.united(default_rect));
-  view_->centerOn(0, 0);
+  centerOn(0, 0);
 }
 
 FieldSectionItem* IcdBitLayoutView::addBlock(const QString& name,
                                              const QString& value_type,
-                                             int byte_offset, int start_bit,
+                                             int byte_offset,
+                                             int start_bit,
                                              int bit_width,
                                              const QColor& color) {
   return scene_->addBlock(name, value_type, byte_offset, start_bit, bit_width,
@@ -1150,8 +1164,8 @@ FieldSectionItem* IcdBitLayoutView::addBlock(const QString& name,
 void IcdBitLayoutView::clearBlocks() {
   last_frame_ = nullptr;
   scene_->clearBlocks();
-  view_->resetTransform();
-  view_->centerOn(0, 0);
+  resetTransform();
+  centerOn(0, 0);
 }
 
 void IcdBitLayoutView::highlightNode(const icd::Node* node) {
