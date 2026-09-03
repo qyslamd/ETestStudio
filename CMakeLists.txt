@@ -75,6 +75,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/run_app.cmake)
 # 查找Qt库
 find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test Xml Svg Network Concurrent Sql
     CONFIG REQUIRED)
+find_package(Qt5 COMPONENTS LinguistTools CONFIG)
 
 # Threads: spdlog/lua 等依赖，显式在顶层查找使 Threads::Threads 全局可见
 find_package(Threads REQUIRED)

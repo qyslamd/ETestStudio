@@ -239,8 +239,6 @@ target_link_libraries(${TARGET_NAME}
     SARibbonBar::SARibbonBar
     )
 
-
-find_package(Qt5 COMPONENTS LinguistTools CONFIG)
 if(Qt5LinguistTools_FOUND)
     message(STATUS "Qt5LinguistTools found, enabling translations")
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/translations)
