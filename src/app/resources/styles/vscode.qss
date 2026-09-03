@@ -203,15 +203,6 @@ QTabWidget::pane {
     background-color: #1E1E1E;
 }
 
-/* 文本编辑区 */
-QTextEdit {
-    background-color: #1E1E1E;
-    color: #CCCCCC;
-    border: none;
-    selection-background-color: #264F78;
-    selection-color: #FFFFFF;
-}
-
 /* 表格 */
 QTableWidget, QTableView {
     background-color: #1E1E1E;
@@ -275,14 +266,6 @@ QTreeView::branch:closed:has-children:has-siblings {
 QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children:has-siblings {
     image: url(:/resources/icons/svg/chevron_down_light.svg);
-}
-QTreeView QLineEdit {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #007ACC;
-    padding: 0px 2px;
-    margin: 0px;
-    selection-background-color: #264F78;
 }
 
 /* 列表视图（最近文件等） */
@@ -359,19 +342,6 @@ QPushButton:disabled {
     background-color: #3C3C3C;
     color: #5A5A5A;
     border-color: #3C3C3C;
-}
-
-/* 输入框 */
-QLineEdit {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 4px 8px;
-    selection-background-color: #264F78;
-}
-QLineEdit:focus {
-    border-color: #007ACC;
 }
 
 /* 对话框 */
@@ -560,15 +530,6 @@ etest--app--BottomContainerWidget QToolButton:hover {
     color: #FFFFFF;
 }
 
-/* Output 面板（QTextEdit） */
-etest--app--BottomContainerWidget QTextEdit {
-    background-color: #1E1E1E;
-    color: #CCCCCC;
-    border: none;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-
 /* 问题面板（QTableWidget） */
 etest--app--BottomContainerWidget QTableWidget {
     background-color: #1E1E1E;
@@ -736,27 +697,6 @@ etest--app--TestProgramManagerWidget QTreeWidget::item:hover {
 etest--app--TestProgramEditorWidget {
     background-color: #1E1E1E;
 }
-etest--app--TestProgramEditorWidget QLineEdit {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 4px 8px;
-    selection-background-color: #264F78;
-}
-etest--app--TestProgramEditorWidget QLineEdit:focus {
-    border-color: #007ACC;
-}
-etest--app--TestProgramEditorWidget QTextEdit {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    selection-background-color: #264F78;
-}
-etest--app--TestProgramEditorWidget QTextEdit:focus {
-    border-color: #007ACC;
-}
 etest--app--TestProgramEditorWidget QTableWidget {
     background-color: #252526;
     color: #CCCCCC;
@@ -824,18 +764,6 @@ etest--app--StepDetailPanel QLabel {
     color: #888;
 }
 
-etest--app--StepDetailPanel QLineEdit {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 2px 4px;
-    min-height: 20px;
-}
-etest--app--StepDetailPanel QLineEdit:focus {
-    border-color: #007ACC;
-}
-
 etest--app--StepDetailPanel QCheckBox {
     color: #CCCCCC;
     spacing: 6px;
@@ -865,17 +793,6 @@ etest--app--StepDetailPanel QTableWidget {
 /* ==================== SearchWidget ==================== */
 etest--app--SearchWidget {
     background-color: #252526;
-}
-etest--app--SearchWidget QLineEdit {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 4px 8px;
-    selection-background-color: #264F78;
-}
-etest--app--SearchWidget QLineEdit:focus {
-    border-color: #007ACC;
 }
 etest--app--SearchWidget QToolButton {
     background-color: transparent;
@@ -977,18 +894,6 @@ etest--app--GitWidget QLabel#gitTitleLabel {
     font-size: 11px;
     background: transparent;
 }
-
-etest--app--GitWidget QTextEdit {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    selection-background-color: #264F78;
-    font-size: 13px;
-}
-etest--app--GitWidget QTextEdit:focus {
-    border-color: #007ACC;
-}
 etest--app--GitWidget QToolButton#refresh_button_ {
     background-color: transparent;
     border: none;
@@ -1037,11 +942,6 @@ etest--app--GitWidget QLabel#gitEmptyLabel {
 }
 #ExecBottomTabs QToolButton:hover {
     color: #FFFFFF;
-}
-#ExecBottomTabs QTextEdit {
-    background-color: #1E1E1E;
-    color: #CCCCCC;
-    border: none;
 }
 #ExecBottomTabs QTableWidget {
     background-color: #1E1E1E;
@@ -1600,18 +1500,6 @@ QComboBox QAbstractItemView {
     border: 1px solid #454545;
 }
 
-/* 设置页中的文本框 */
-etest--app--SettingsDialog QLineEdit {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 4px 8px;
-}
-etest--app--SettingsDialog QLineEdit:focus {
-    border-color: #007ACC;
-}
-
 /* 设置页中的按钮 — 已由全局 QPushButton 统一样式覆盖 */
 
 /* ==================== AboutDialog ==================== */
@@ -2146,21 +2034,7 @@ QToolButton#saverCloseBtn:pressed {
     background: #252526;
     border: none;
 }
-#LogFilterBar QLineEdit#LogFilterBox {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 2px 6px;
-    selection-background-color: #264F78;
-}
-#LogFilterBar QLineEdit#LogFilterBox:focus {
-    border-color: #007ACC;
-}
-/* 正则非法红框 */
-#LogFilterBar QLineEdit#LogFilterBox[invalid="true"] {
-    border: 1px solid #F44747;
-}
+
 #LogFilterBar QToolButton {
     background-color: transparent;
     border: 1px solid #3C3C3C;
@@ -2208,12 +2082,44 @@ QToolButton#saverCloseBtn:pressed {
     background-color: #1E1E1E;
 }
 
-/* ===== QSpinBox 主题适配样式 START ===== */
-/* QSpinBox / QDoubleSpinBox 主题适配样式模板
- * 由 gen_themes.py 读取替换 token 后注入各主题 QSS（幂等）
- * token: #3C3C3C #252526 #4B4B4B #363637 #454545 #CCCCCC
- *        #094771 #007ACC #5A5A5A 0 122 204 light
- */
+/* ===== QLineEdit 主题适样式===== */
+QLineEdit {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1.5px solid #3C3C3C;
+    border-radius: 8px;
+    padding: 4px 12px;
+    selection-background-color: #264F78;
+}
+QLineEdit:focus {
+    border-color: #007ACC;
+}
+
+QLineEdit[error="true"],
+QLineEdit[invalid="true"]{
+    border: 1.5px solid #F44747;
+}
+
+/* ===== QTextEdit===== */
+QTextEdit {
+  background-color: #3C3C3C;
+  border: 1.5px solid #4A4A58;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #CCCCCC;
+  selection-background-color: #007ACC;
+}
+
+QTextEdit:focus {
+  border-color: #007ACC;
+}
+
+QTextEdit[error="true"],
+QTextEdit[invalid="true"] {
+  border: 1.5px solid #D13438;
+}
+
+/* ===== QSpinBox and QLineEdit===== */
 QSpinBox, QDoubleSpinBox {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                         stop:0 #3C3C3C,
@@ -2387,14 +2293,8 @@ QSpinBox[frameless="true"]::up-button, QDoubleSpinBox[frameless="true"]::up-butt
 QSpinBox[frameless="true"]::down-button, QDoubleSpinBox[frameless="true"]::down-button {
     border-left: none;
 }
-/* ===== QSpinBox 主题适配样式 END ===== */
 
-/* ===== QComboBox 主题适配样式 START ===== */
-/* QComboBox 主题适配样式模板
- * 由 gen_themes.py 读取替换 token 后注入各主题 QSS（幂等）
- * token: #3C3C3C #252526 #4B4B4B #363637 #454545 #CCCCCC
- *        #094771 #007ACC #5A5A5A 0 122 204 light
- */
+/* ===== QComboBox 主题适样式===== */
 QComboBox {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                         stop:0 #3C3C3C,
@@ -2497,7 +2397,7 @@ QComboBox[editable="true"] {
                         stop:0 #3C3C3C,
                         stop:1 #252526);
 }
-QComboBox[editable="true"] QLineEdit {
+QComboBox[editable="true"] {
     background: transparent;
     border: none;
     color: #CCCCCC;
@@ -2505,10 +2405,11 @@ QComboBox[editable="true"] QLineEdit {
     selection-color: #FFFFFF;
     padding: 0px;
 }
-QComboBox[editable="true"] QLineEdit:focus {
+QComboBox[editable="true"]{
     border: none;
     outline: none;
 }
+
 /* 状态样式 */
 QComboBox[status="success"] {
     border: 1px solid rgba(34, 197, 94, 0.6);
@@ -2723,27 +2624,6 @@ QGroupBox[selected="true"] {
   color: #5A5A5A;
   font-size: 12px;
 }
-QLineEdit#projectNameEdit,
-QLineEdit#projectLocationEdit,
-QLineEdit#projectVersionEdit,
-QLineEdit#projectDescEdit {
-  background-color: #3A3A44;
-  border: 1.5px solid #4A4A58;
-  border-radius: 10px;
-  padding: 9px 12px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-QLineEdit#projectNameEdit:focus,
-QLineEdit#projectLocationEdit:focus,
-QLineEdit#projectVersionEdit:focus,
-QLineEdit#projectDescEdit:focus {
-  border-color: #007ACC;
-  background-color: #454550;
-}
-QLineEdit#projectNameEdit[error="true"] {
-  border: 1.5px solid #D13438;
-}
 
 #configGroup {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -2830,46 +2710,6 @@ QLineEdit#projectNameEdit[error="true"] {
 #tpInfoIntro {
   color: #858585;
   font-size: 14px;
-}
-
-QLineEdit#progNameEdit,
-QLineEdit#progVersionEdit,
-QLineEdit#progAuthorEdit {
-  background-color: #3A3A44;
-  border: 1.5px solid #4A4A58;
-  border-radius: 10px;
-  padding: 9px 12px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-QLineEdit#progNameEdit:focus,
-QLineEdit#progVersionEdit:focus,
-QLineEdit#progAuthorEdit:focus {
-  border-color: #007ACC;
-  background-color: #454550;
-}
-QTextEdit#progDescEdit,
-QTextEdit#progPrecondEdit {
-  background-color: #3A3A44;
-  border: 1.5px solid #4A4A58;
-  border-radius: 10px;
-  padding: 8px 10px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-QTextEdit#progDescEdit:focus,
-QTextEdit#progPrecondEdit:focus {
-  border-color: #007ACC;
-  background-color: #454550;
-}
-QLineEdit#progNameEdit[error="true"],
-QLineEdit#progVersionEdit[error="true"],
-QLineEdit#progAuthorEdit[error="true"] {
-  border: 1.5px solid #D13438;
-}
-QTextEdit#progDescEdit[error="true"],
-QTextEdit#progPrecondEdit[error="true"] {
-  border: 1.5px solid #D13438;
 }
 
 #tpFieldLabel {
@@ -3037,37 +2877,6 @@ QTextEdit#progPrecondEdit[error="true"] {
   font-weight: 500;
 }
 
-QLineEdit#frameNameEdit,
-QLineEdit#frameIdEdit {
-  background-color: #3A3A44;
-  border: 1.5px solid #4A4A58;
-  border-radius: 10px;
-  padding: 9px 12px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-QLineEdit#frameNameEdit:focus,
-QLineEdit#frameIdEdit:focus {
-  border-color: #007ACC;
-  background-color: #454550;
-}
-QLineEdit#frameNameEdit[error="true"],
-QLineEdit#frameIdEdit[error="true"] {
-  border: 1.5px solid #D13438;
-}
-QTextEdit#frameDescEdit {
-  background-color: #3A3A44;
-  border: 1.5px solid #4A4A58;
-  border-radius: 10px;
-  padding: 8px 10px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-QTextEdit#frameDescEdit:focus {
-  border-color: #007ACC;
-  background-color: #454550;
-}
-
 #fieldTable {
   background-color: transparent;
   border: none;
@@ -3089,9 +2898,6 @@ QTextEdit#frameDescEdit:focus {
 #fieldTable QTableCornerButton::section {
   background-color: transparent;
   border: none;
-}
-#fieldTable QLineEdit[error="true"] {
-  border-bottom: 1.5px solid #D13438;
 }
 #fieldDelBtn {
   background-color: transparent;

@@ -141,6 +141,23 @@ QSplitter::handle:vertical:pressed {
     background-color: #0055aa; 
 }
 
+/* ==================== QLineEdit ==================== */
+QLineEdit {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid #D0D0DD;
+  border-radius: 8px;
+  padding: 4px 12px;
+  color: #333333;
+  selection-background-color: #007ACC;
+}
+QLineEdit:focus {
+  border-color: #007ACC;
+  background-color: #FFFFFF;
+}
+QLineEdit[error="true"] {
+  border: 1.5px solid #D13438;
+}
+
 /* ==================== QMainWindow separator ==================== */
 /* 设置分割线的颜色、宽度和边框 */
 QMainWindow::separator {
@@ -1093,18 +1110,6 @@ etest--app--SettingsDialog QLabel {
     background-color: transparent;
 }
 
-/* 文本输入框 */
-etest--app--SettingsDialog QLineEdit {
-    background-color: #FFFFFF;
-    color: #1F1F1F;
-    border: 1px solid #D0D0D0;
-    border-radius: 3px;
-    padding: 4px 8px;
-}
-etest--app--SettingsDialog QLineEdit:focus {
-    border-color: #007ACC;
-}
-
 /* 滚动区（外观页内嵌） */
 etest--app--SettingsDialog QScrollArea {
     background-color: #FFFFFF;
@@ -1323,20 +1328,6 @@ etest--app--BottomContainerWidget QTabBar::close-button:hover {
 #LogFilterBar {
     background: palette(window);
     border: none;
-}
-#LogFilterBar QLineEdit#LogFilterBox {
-    background-color: palette(base);
-    color: palette(text);
-    border: 1px solid palette(mid);
-    border-radius: 2px;
-    padding: 2px 6px;
-    selection-background-color: palette(highlight);
-}
-#LogFilterBar QLineEdit#LogFilterBox:focus {
-    border-color: #007ACC;
-}
-#LogFilterBar QLineEdit#LogFilterBox[invalid="true"] {
-    border: 1px solid #C62828;
 }
 #LogFilterBar QToolButton {
     background-color: transparent;
@@ -1673,7 +1664,7 @@ QComboBox[editable="true"] {
                         stop:0 #F0F0F0,
                         stop:1 #F0F0F0);
 }
-QComboBox[editable="true"] QLineEdit {
+QComboBox[editable="true"] {
     background: transparent;
     border: none;
     color: #333333;
@@ -1681,7 +1672,7 @@ QComboBox[editable="true"] QLineEdit {
     selection-color: #FFFFFF;
     padding: 0px;
 }
-QComboBox[editable="true"] QLineEdit:focus {
+QComboBox[editable="true"] {
     border: none;
     outline: none;
 }
@@ -1903,27 +1894,6 @@ QGroupBox[selected="true"] {
   color: #AAAAAA;
   font-size: 12px;
 }
-QLineEdit#projectNameEdit,
-QLineEdit#projectLocationEdit,
-QLineEdit#projectVersionEdit,
-QLineEdit#projectDescEdit {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 10px;
-  padding: 9px 12px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-QLineEdit#projectNameEdit:focus,
-QLineEdit#projectLocationEdit:focus,
-QLineEdit#projectVersionEdit:focus,
-QLineEdit#projectDescEdit:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
-}
-QLineEdit#projectNameEdit[error="true"] {
-  border: 1.5px solid #D13438;
-}
 
 #configGroup {
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -2011,23 +1981,6 @@ QLineEdit#projectNameEdit[error="true"] {
   color: #888888;
   font-size: 14px;
 }
-
-QLineEdit#progNameEdit,
-QLineEdit#progVersionEdit,
-QLineEdit#progAuthorEdit {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 10px;
-  padding: 9px 12px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-QLineEdit#progNameEdit:focus,
-QLineEdit#progVersionEdit:focus,
-QLineEdit#progAuthorEdit:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
-}
 QTextEdit#progDescEdit,
 QTextEdit#progPrecondEdit {
   background-color: rgba(255, 255, 255, 0.85);
@@ -2042,11 +1995,7 @@ QTextEdit#progPrecondEdit:focus {
   border-color: #007ACC;
   background-color: #FFFFFF;
 }
-QLineEdit#progNameEdit[error="true"],
-QLineEdit#progVersionEdit[error="true"],
-QLineEdit#progAuthorEdit[error="true"] {
-  border: 1.5px solid #D13438;
-}
+
 QTextEdit#progDescEdit[error="true"],
 QTextEdit#progPrecondEdit[error="true"] {
   border: 1.5px solid #D13438;
@@ -2215,25 +2164,6 @@ QTextEdit#progPrecondEdit[error="true"] {
   color: #333333;
   font-size: 13px;
   font-weight: 500;
-}
-
-QLineEdit#frameNameEdit,
-QLineEdit#frameIdEdit {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 10px;
-  padding: 9px 12px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-QLineEdit#frameNameEdit:focus,
-QLineEdit#frameIdEdit:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
-}
-QLineEdit#frameNameEdit[error="true"],
-QLineEdit#frameIdEdit[error="true"] {
-  border: 1.5px solid #D13438;
 }
 
 QTextEdit#frameDescEdit {
