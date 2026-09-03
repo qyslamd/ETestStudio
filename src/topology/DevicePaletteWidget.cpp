@@ -32,11 +32,11 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
   auto* item = items.first();
 
   QJsonObject obj;
-  obj["deviceType"]    = item->data(Qt::UserRole).toString();
-  obj["channelCount"]  = item->data(Qt::UserRole + 2).toInt();
-  obj["pluginId"]      = item->data(Qt::UserRole + 3).toString();
-  obj["direction"]     = item->data(Qt::UserRole + 4).toInt();
-  obj["functionType"]  = item->data(Qt::UserRole + 5).toInt();
+  obj["deviceType"] = item->data(Qt::UserRole).toString();
+  obj["channelCount"] = item->data(Qt::UserRole + 2).toInt();
+  obj["pluginId"] = item->data(Qt::UserRole + 3).toString();
+  obj["direction"] = item->data(Qt::UserRole + 4).toInt();
+  obj["functionType"] = item->data(Qt::UserRole + 5).toInt();
 
   auto* mime = new QMimeData();
   mime->setData(QLatin1String(kTopologyDeviceMime),
@@ -49,7 +49,7 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
 
 // ── DevicePaletteWidget ──────────────────────────────────────
 
-DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QWidget(parent) {
+DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QFrame(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
@@ -64,10 +64,10 @@ DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QWidget(parent) {
 
   // Connect plugin load/unload to refresh the device list
   auto& pm = etest::core::plugin::PluginManager::instance();
-  connect(&pm, &etest::core::plugin::PluginManager::pluginLoaded,
-          this, &DevicePaletteWidget::populateDeviceTypes);
-  connect(&pm, &etest::core::plugin::PluginManager::pluginUnloaded,
-          this, &DevicePaletteWidget::populateDeviceTypes);
+  connect(&pm, &etest::core::plugin::PluginManager::pluginLoaded, this,
+          &DevicePaletteWidget::populateDeviceTypes);
+  connect(&pm, &etest::core::plugin::PluginManager::pluginUnloaded, this,
+          &DevicePaletteWidget::populateDeviceTypes);
 
   // Initial population (also used as refresh target)
   populateDeviceTypes();
@@ -114,11 +114,14 @@ void DevicePaletteWidget::populateDeviceTypes() {
                           bool is_mock) {
     auto* item = new QListWidgetItem(list_widget_);
     QString base_name = meta.name.isEmpty() ? meta.device_type : meta.name;
-    QString display = is_mock
-        ? QStringLiteral("[Mock] %1 (%2ch)").arg(base_name).arg(meta.device_channels)
-        : QStringLiteral("%1 (%2ch)").arg(base_name).arg(meta.device_channels);
+    QString display = is_mock ? QStringLiteral("[Mock] %1 (%2ch)")
+                                    .arg(base_name)
+                                    .arg(meta.device_channels)
+                              : QStringLiteral("%1 (%2ch)")
+                                    .arg(base_name)
+                                    .arg(meta.device_channels);
     item->setText(display);
-    item->setData(Qt::UserRole,     meta.device_type);
+    item->setData(Qt::UserRole, meta.device_type);
     item->setData(Qt::UserRole + 2, meta.device_channels);
     item->setData(Qt::UserRole + 3, meta.id);
 
@@ -131,13 +134,15 @@ void DevicePaletteWidget::populateDeviceTypes() {
     item->setData(Qt::UserRole + 4, direction);
 
     FunctionType ft = stringToFunctionType(meta.device_function.isEmpty()
-        ? QStringLiteral("CUSTOM") : meta.device_function);
+                                               ? QStringLiteral("CUSTOM")
+                                               : meta.device_function);
     item->setData(Qt::UserRole + 5, static_cast<int>(ft));
 
     QString tip = QStringLiteral("%1\n%2ch %3 %4\n拖放至画布创建设备")
                       .arg(display)
                       .arg(meta.device_channels)
-                      .arg(directionToString(static_cast<TopologyPort::Direction>(direction)))
+                      .arg(directionToString(
+                          static_cast<TopologyPort::Direction>(direction)))
                       .arg(functionTypeToString(ft));
     item->setToolTip(tip);
     item->setFlags(item->flags() | Qt::ItemIsDragEnabled);

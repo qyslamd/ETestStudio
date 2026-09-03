@@ -23,16 +23,16 @@
 #include <QVBoxLayout>
 
 #include "AppIconProvider.h"
+#include "MonitorPropertyWidget.h"
+#include "ProgramChecklistWidget.h"
 #include "VisualizationArea.h"
+#include "VisualizerPaletteWidget.h"
+#include "libui/EtDockWidget.h"
+#include "logger/Logger.h"
+#include "project/ProjectManager.h"
 #include "visualizers/SignalVisualizer.h"
 #include "visualizers/VisualizerFactory.h"
 #include "visualizers/VisualizerProxy.h"
-#include "libui/dock_title_bar/DockTitleBar.h"
-#include "logger/Logger.h"
-#include "project/ProjectManager.h"
-#include "MonitorPropertyWidget.h"
-#include "ProgramChecklistWidget.h"
-#include "VisualizerPaletteWidget.h"
 
 using etest::core_ui::AppIconProvider;
 
@@ -59,8 +59,9 @@ RunConfigEditor::RunConfigEditor(const QString& id, QWidget* parent)
 RunConfigEditor::~RunConfigEditor() {
   // Qt 析构顺序：先删 children 后断开连接，而成员（config_/snapshots_）先于
   // ~QObject 销毁。children 析构期间若触发访问成员的槽：
-  //   1) vis_area_ 析构 clearAll() → selectionChanged → 访问 toolbar 按钮（已删）
-  //   2) vis_area_ 析构 clearAll() → visualizerRemoved → removeMonitorById
+  //   1) vis_area_ 析构 clearAll() → selectionChanged → 访问 toolbar
+  //   按钮（已删） 2) vis_area_ 析构 clearAll() → visualizerRemoved →
+  //   removeMonitorById
   //      访问 config_/snapshots_（成员已销毁）
   // 均在 children 析构前显式断开。
   if (vis_area_ && vis_area_->scene()) {
@@ -136,7 +137,8 @@ bool RunConfigEditor::save() {
     box->show();
   }
   if (saveToFile(path)) {
-    // 保存到当前项目 run/ 下 → 设为当前运行配置（.etproj settings.runConfigFile）
+    // 保存到当前项目 run/ 下 → 设为当前运行配置（.etproj
+    // settings.runConfigFile）
     syncRunConfigRef(path);
     modified_ = false;
     emit modificationChanged(false);
@@ -272,13 +274,12 @@ QList<etest::app::EditorCommand> RunConfigEditor::editorCommands() {
     cmds.append(c);
   }
   // 视图
-  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("测试程序"),
-                              QStringLiteral("testprogram"), false,
-                              test_program_toggle_action_));
-  cmds.append(addCheckableCmd(QStringLiteral("视图"),
-                              QStringLiteral("可视化组件"),
-                              QStringLiteral("monitor"), false,
-                              palette_toggle_action_));
+  cmds.append(addCheckableCmd(
+      QStringLiteral("视图"), QStringLiteral("测试程序"),
+      QStringLiteral("testprogram"), false, test_program_toggle_action_));
+  cmds.append(addCheckableCmd(
+      QStringLiteral("视图"), QStringLiteral("可视化组件"),
+      QStringLiteral("monitor"), false, palette_toggle_action_));
   cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("属性"),
                               QStringLiteral("file_json"), false,
                               property_toggle_action_));
@@ -319,7 +320,8 @@ void RunConfigEditor::reloadToolbarIcons() {
     palette_toggle_action_->setIcon(provider.icon(QStringLiteral("monitor")));
   }
   if (property_toggle_action_) {
-    property_toggle_action_->setIcon(provider.icon(QStringLiteral("file_json")));
+    property_toggle_action_->setIcon(
+        provider.icon(QStringLiteral("file_json")));
   }
 }
 
@@ -397,8 +399,7 @@ void RunConfigEditor::initUi() {
       AppIconProvider::instance().icon(QStringLiteral("topo_align")));
   align_btn_->setPopupMode(QToolButton::InstantPopup);
   align_menu_ = new QMenu(align_btn_);
-  auto addAlign = [this](const QString& text,
-                         VisualizationArea::AlignType t) {
+  auto addAlign = [this](const QString& text, VisualizationArea::AlignType t) {
     auto* act = align_menu_->addAction(text);
     connect(act, &QAction::triggered, this,
             [this, t]() { vis_area_->alignVisualizers(t); });
@@ -439,33 +440,31 @@ void RunConfigEditor::initUi() {
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar_->addWidget(spacer);
 
-  // 测试程序面板显示/隐藏 toggle（与三编辑器统一：dock 可关，工具栏 toggle 重开）
+  // 测试程序面板显示/隐藏 toggle（与三编辑器统一：dock 可关，工具栏 toggle
+  // 重开）
   test_program_toggle_action_ = toolbar_->addAction(QStringLiteral("测试程序"));
   test_program_toggle_action_->setIcon(
       AppIconProvider::instance().icon(QStringLiteral("testprogram")));
   test_program_toggle_action_->setCheckable(true);
   test_program_toggle_action_->setChecked(true);
-  test_program_toggle_action_->setToolTip(QStringLiteral("显示/隐藏测试程序面板"));
+  test_program_toggle_action_->setToolTip(
+      QStringLiteral("显示/隐藏测试程序面板"));
 
   // 测试程序多选 dock（Left 停靠，同套 dock 管理）
   program_list_ = new ProgramChecklistWidget(this);
-  test_program_dock_ = new QDockWidget(QStringLiteral("测试程序"), this);
+  test_program_dock_ =
+      new etest::ui::EtDockWidget(QStringLiteral("测试程序"), this);
   test_program_dock_->setObjectName(QStringLiteral("runConfigProgramDock"));
   test_program_dock_->setWidget(program_list_);
-  test_program_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
-  test_program_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
-      QStringLiteral("测试程序"), test_program_dock_));
   test_program_dock_->installEventFilter(this);
   addDockWidget(Qt::LeftDockWidgetArea, test_program_dock_);
 
   // 可视化组件 dock（visualizer 拖放源，左侧测试程序下方）
   palette_widget_ = new VisualizerPaletteWidget(this);
-  palette_dock_ = new QDockWidget(QStringLiteral("可视化组件"), this);
+  palette_dock_ =
+      new etest::ui::EtDockWidget(QStringLiteral("可视化组件"), this);
   palette_dock_->setObjectName(QStringLiteral("runConfigPaletteDock"));
   palette_dock_->setWidget(palette_widget_);
-  palette_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
-  palette_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
-      QStringLiteral("可视化组件"), palette_dock_));
   palette_dock_->installEventFilter(this);
   addDockWidget(Qt::LeftDockWidgetArea, palette_dock_);
   palette_toggle_action_ = toolbar_->addAction(QStringLiteral("可视化组件"));
@@ -478,12 +477,9 @@ void RunConfigEditor::initUi() {
 
   // 属性面板 dock（选中卡片加载，右侧）
   property_widget_ = new MonitorPropertyWidget(this);
-  property_dock_ = new QDockWidget(QStringLiteral("属性"), this);
+  property_dock_ = new etest::ui::EtDockWidget(QStringLiteral("属性"), this);
   property_dock_->setObjectName(QStringLiteral("runConfigPropertyDock"));
   property_dock_->setWidget(property_widget_);
-  property_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
-  property_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
-      QStringLiteral("属性"), property_dock_));
   property_dock_->installEventFilter(this);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
   property_toggle_action_ = toolbar_->addAction(QStringLiteral("属性"));
@@ -548,7 +544,7 @@ void RunConfigEditor::initUi() {
                 saveSnapshot();
                 m.connectionId = cid;
                 markModified();
-                refreshUi();  // 重建卡片（副标题更新 + 绑定状态）
+                refreshUi();            // 重建卡片（副标题更新 + 绑定状态）
                 selectMonitorCard(id);  // 重建后保持选中（🔵3）
                 return;
               }
@@ -564,7 +560,7 @@ void RunConfigEditor::initUi() {
                 saveSnapshot();
                 m.displayMode = mode;
                 markModified();
-                refreshUi();  // 单卡重建（保留 id/连接/几何/名称）
+                refreshUi();            // 单卡重建（保留 id/连接/几何/名称）
                 selectMonitorCard(id);  // 重建后保持选中（🔵3）
                 return;
               }
@@ -591,9 +587,10 @@ void RunConfigEditor::initUi() {
             emit commandsChanged();
           });
 
-  // 面板可见性与工具栏 toggle 同步（与 Topology 一致：toggled 直接驱动 dock 显隐）
-  connect(test_program_toggle_action_, &QAction::toggled,
-          test_program_dock_, &QWidget::setVisible);
+  // 面板可见性与工具栏 toggle 同步（与 Topology 一致：toggled 直接驱动 dock
+  // 显隐）
+  connect(test_program_toggle_action_, &QAction::toggled, test_program_dock_,
+          &QWidget::setVisible);
 }
 
 void RunConfigEditor::refreshUi() {
@@ -644,8 +641,8 @@ void RunConfigEditor::refreshUi() {
     if (m.w == 0 && m.h == 0) {
       const QSize size = vis->sizeHint();
       vis_area_->setVisualizerGeometry(
-          m.id, QRectF(20.0 + fallback * 40, 20.0 + fallback * 40,
-                       size.width(), size.height()));
+          m.id, QRectF(20.0 + fallback * 40, 20.0 + fallback * 40, size.width(),
+                       size.height()));
       ++fallback;
     } else {
       vis_area_->setVisualizerGeometry(m.id, QRectF(m.x, m.y, m.w, m.h));
@@ -813,7 +810,8 @@ bool RunConfigEditor::saveToFile(const QString& path) {
 // ── 撤销/重做（快照式，仿 ProtocolEditorWidget） ──
 
 void RunConfigEditor::collectLayout() {
-  // 布局几何写回 config_.monitors（Monitor 自包含 x/y/w/h，废弃独立 layout 数组）
+  // 布局几何写回 config_.monitors（Monitor 自包含 x/y/w/h，废弃独立 layout
+  // 数组）
   const auto geoms = vis_area_->visualizerGeometries();
   for (const auto& g : geoms) {
     for (auto& m : config_.monitors) {

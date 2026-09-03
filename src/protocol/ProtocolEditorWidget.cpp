@@ -3,10 +3,10 @@
 #include <QComboBox>
 #include <QDir>
 #include <QDockWidget>
+#include <QEvent>
 #include <QFile>
 #include <QFileInfo>
 #include <QHBoxLayout>
-#include <QEvent>
 #include <QHideEvent>
 #include <QLabel>
 #include <QMenuBar>
@@ -34,7 +34,7 @@
 #include "format/json_parser.hpp"
 #include "format/json_serializer.hpp"
 #include "format/xml_serializer.hpp"
-#include "libui/dock_title_bar/DockTitleBar.h"
+#include "libui/EtDockWidget.h"
 #include "utils/FileUtil.h"
 
 #include <icd/loader.hpp>
@@ -103,30 +103,9 @@ void ProtocolEditorWidget::setEmbeddedMode(bool embedded) {
   if (embedded) {
     menuBar()->hide();
     toolbar_->hide();
-    // embedded 模式禁止浮动，仅保留关闭和拖拽
-    for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
-      dock->setFeatures(QDockWidget::DockWidgetClosable |
-                        QDockWidget::DockWidgetMovable);
-      if (auto* titleBar = dock->titleBarWidget()) {
-        if (auto* floatBtn = titleBar->findChild<QToolButton*>(
-                QStringLiteral("dockFloatButton"))) {
-          floatBtn->setVisible(false);
-        }
-      }
-    }
   } else {
     menuBar()->show();
     toolbar_->show();
-    // 恢复完整功能
-    for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
-      dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
-      if (auto* titleBar = dock->titleBarWidget()) {
-        if (auto* floatBtn = titleBar->findChild<QToolButton*>(
-                QStringLiteral("dockFloatButton"))) {
-          floatBtn->setVisible(true);
-        }
-      }
-    }
   }
 }
 
@@ -165,7 +144,8 @@ QList<etest::app::EditorCommand> ProtocolEditorWidget::editorCommands() {
   cmds.append(addCmd(QStringLiteral("帧"), QStringLiteral("删除帧"),
                      QStringLiteral("protocol_delete_frame"), false,
                      delete_frame_action_));
-  // 字节序（D11：widget 项改造为 checkable 命令，触发走 byte_order_btn_ 统一逻辑）
+  // 字节序（D11：widget 项改造为 checkable 命令，触发走 byte_order_btn_
+  // 统一逻辑）
   {
     etest::app::EditorCommand c;
     c.group = QStringLiteral("帧");
@@ -185,16 +165,15 @@ QList<etest::app::EditorCommand> ProtocolEditorWidget::editorCommands() {
                      QStringLiteral("protocol_delete_node"), false,
                      delete_selected_action_));
   // 视图
-  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("节点列表"),
-                              QStringLiteral("protocol_node_tree"), false,
-                              node_tree_toggle_action_));
-  cmds.append(addCheckableCmd(QStringLiteral("视图"),
-                              QStringLiteral("属性面板"),
-                              QStringLiteral("protocol_property"), false,
-                              property_toggle_action_));
-  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("报文预览"),
-                              QStringLiteral("protocol_preview"), false,
-                              preview_toggle_action_));
+  cmds.append(addCheckableCmd(
+      QStringLiteral("视图"), QStringLiteral("节点列表"),
+      QStringLiteral("protocol_node_tree"), false, node_tree_toggle_action_));
+  cmds.append(addCheckableCmd(
+      QStringLiteral("视图"), QStringLiteral("属性面板"),
+      QStringLiteral("protocol_property"), false, property_toggle_action_));
+  cmds.append(addCheckableCmd(
+      QStringLiteral("视图"), QStringLiteral("报文预览"),
+      QStringLiteral("protocol_preview"), false, preview_toggle_action_));
   return cmds;
 }
 
@@ -242,10 +221,12 @@ bool ProtocolEditorWidget::saveAs(const QString& path) {
     format_ = ProtocolFormat::Json;
   } else if (path.endsWith(QStringLiteral(".eprotox"))) {
     format_ = ProtocolFormat::Xml;
-  } else if (path.endsWith(QStringLiteral("ICDConfig.xml"), Qt::CaseInsensitive)) {
+  } else if (path.endsWith(QStringLiteral("ICDConfig.xml"),
+                           Qt::CaseInsensitive)) {
     format_ = ProtocolFormat::ConfigDriven;
     config_format_ = icd::Format::xml;
-  } else if (path.endsWith(QStringLiteral("ICDConfig.json"), Qt::CaseInsensitive)) {
+  } else if (path.endsWith(QStringLiteral("ICDConfig.json"),
+                           Qt::CaseInsensitive)) {
     format_ = ProtocolFormat::ConfigDriven;
     config_format_ = icd::Format::json;
   } else {
@@ -264,7 +245,7 @@ bool ProtocolEditorWidget::saveAs(const QString& path) {
     frame_file_map_.clear();
     for (const auto& frame_ptr : repo_.frames()) {
       auto rel_path = generateFrameFilePath(frame_ptr->id(),
-          std::string(frame_ptr->name()));
+                                            std::string(frame_ptr->name()));
       icd::FrameFileInfo info;
       info.id = frame_ptr->id();
       info.name = std::string(frame_ptr->name());
@@ -275,7 +256,7 @@ bool ProtocolEditorWidget::saveAs(const QString& path) {
       info.format = icd::Format::xml;
       file_entries_.push_back(std::move(info));
       frame_file_map_.insert(frame_ptr->id(),
-          QString::fromStdString(rel_path.string()));
+                             QString::fromStdString(rel_path.string()));
     }
 
     // saveConfigDriven() writes all frame files + ICDConfig
@@ -347,16 +328,26 @@ void ProtocolEditorWidget::redo() {
 }
 
 void ProtocolEditorWidget::setReadOnly(bool readOnly) {
-  if (node_tree_) node_tree_->setEnabled(!readOnly);
-  if (bit_view_) bit_view_->setEnabled(!readOnly);
-  if (property_panel_) property_panel_->setEnabled(!readOnly);
-  if (new_frame_action_) new_frame_action_->setEnabled(!readOnly);
-  if (delete_frame_action_) delete_frame_action_->setEnabled(!readOnly);
-  if (add_node_action_) add_node_action_->setEnabled(!readOnly);
-  if (delete_selected_action_) delete_selected_action_->setEnabled(!readOnly);
-  if (undo_action_) undo_action_->setEnabled(!readOnly);
-  if (redo_action_) redo_action_->setEnabled(!readOnly);
-  if (frame_type_combo_) frame_type_combo_->setEnabled(!readOnly);
+  if (node_tree_)
+    node_tree_->setEnabled(!readOnly);
+  if (bit_view_)
+    bit_view_->setEnabled(!readOnly);
+  if (property_panel_)
+    property_panel_->setEnabled(!readOnly);
+  if (new_frame_action_)
+    new_frame_action_->setEnabled(!readOnly);
+  if (delete_frame_action_)
+    delete_frame_action_->setEnabled(!readOnly);
+  if (add_node_action_)
+    add_node_action_->setEnabled(!readOnly);
+  if (delete_selected_action_)
+    delete_selected_action_->setEnabled(!readOnly);
+  if (undo_action_)
+    undo_action_->setEnabled(!readOnly);
+  if (redo_action_)
+    redo_action_->setEnabled(!readOnly);
+  if (frame_type_combo_)
+    frame_type_combo_->setEnabled(!readOnly);
 }
 
 void ProtocolEditorWidget::openFile(const QString& filePath) {
@@ -399,8 +390,7 @@ void ProtocolEditorWidget::openFile(const QString& filePath) {
 
   // ── Async load based on format ──
   load_watcher_ = new QFutureWatcher<AsyncLoadResult>(this);
-  connect(load_watcher_,
-          &QFutureWatcher<AsyncLoadResult>::finished, this,
+  connect(load_watcher_, &QFutureWatcher<AsyncLoadResult>::finished, this,
           [this, thisGeneration]() {
             if (thisGeneration != load_generation_)
               return;
@@ -425,7 +415,7 @@ void ProtocolEditorWidget::openFile(const QString& filePath) {
               frame_file_map_.clear();
               for (const auto& entry : file_entries_) {
                 frame_file_map_.insert(entry.id,
-                    QString::fromStdString(entry.path));
+                                       QString::fromStdString(entry.path));
               }
             }
 
@@ -452,42 +442,44 @@ void ProtocolEditorWidget::openFile(const QString& filePath) {
           });
 
   switch (format_) {
-  case ProtocolFormat::Json: {
-    auto jsonPath = toFsPath(filePath);
-    load_watcher_->setFuture(
-        QtConcurrent::run([jsonPath]() -> AsyncLoadResult {
-          auto result = icd::format::deserialize_repository(jsonPath);
-          if (!result) return {};
-          return {std::make_shared<icd::Repository>(std::move(*result))};
-        }));
-    break;
-  }
+    case ProtocolFormat::Json: {
+      auto jsonPath = toFsPath(filePath);
+      load_watcher_->setFuture(
+          QtConcurrent::run([jsonPath]() -> AsyncLoadResult {
+            auto result = icd::format::deserialize_repository(jsonPath);
+            if (!result)
+              return {};
+            return {std::make_shared<icd::Repository>(std::move(*result))};
+          }));
+      break;
+    }
 
-  case ProtocolFormat::Xml: {
-    auto xmlPath = toFsPath(filePath);
-    load_watcher_->setFuture(
-        QtConcurrent::run([xmlPath]() -> AsyncLoadResult {
-          auto result = icd::format::deserialize_xml_repository(xmlPath);
-          if (!result) return {};
-          return {std::make_shared<icd::Repository>(std::move(*result))};
-        }));
-    break;
-  }
+    case ProtocolFormat::Xml: {
+      auto xmlPath = toFsPath(filePath);
+      load_watcher_->setFuture(
+          QtConcurrent::run([xmlPath]() -> AsyncLoadResult {
+            auto result = icd::format::deserialize_xml_repository(xmlPath);
+            if (!result)
+              return {};
+            return {std::make_shared<icd::Repository>(std::move(*result))};
+          }));
+      break;
+    }
 
-  case ProtocolFormat::ConfigDriven:
-    load_watcher_->setFuture(
-        QtConcurrent::run([path]() -> AsyncLoadResult {
-          auto loadResult = icd::Loader::init_with_metadata(path);
-          if (!loadResult) return {};
-          AsyncLoadResult ar;
-          ar.repo = std::make_shared<icd::Repository>(
-              std::move(loadResult->repository));
-          ar.config_path = loadResult->config_path;
-          ar.config_format = loadResult->format;
-          ar.file_entries = std::move(loadResult->file_entries);
-          return ar;
-        }));
-    break;
+    case ProtocolFormat::ConfigDriven:
+      load_watcher_->setFuture(QtConcurrent::run([path]() -> AsyncLoadResult {
+        auto loadResult = icd::Loader::init_with_metadata(path);
+        if (!loadResult)
+          return {};
+        AsyncLoadResult ar;
+        ar.repo = std::make_shared<icd::Repository>(
+            std::move(loadResult->repository));
+        ar.config_path = loadResult->config_path;
+        ar.config_format = loadResult->format;
+        ar.file_entries = std::move(loadResult->file_entries);
+        return ar;
+      }));
+      break;
   }
 }
 
@@ -553,15 +545,13 @@ bool ProtocolEditorWidget::saveByFormat() {
 
 // ── Save .eproto JSON ─────────────────────────────────────────
 bool ProtocolEditorWidget::saveEproto(const QString& path) {
-  auto result = icd::format::serialize_repository(
-      toFsPath(path), repo_);
+  auto result = icd::format::serialize_repository(toFsPath(path), repo_);
   return result.has_value();
 }
 
 // ── Save .eprotox XML ─────────────────────────────────────────
 bool ProtocolEditorWidget::saveEprotox(const QString& path) {
-  auto result = icd::format::serialize_xml_repository(
-      toFsPath(path), repo_);
+  auto result = icd::format::serialize_xml_repository(toFsPath(path), repo_);
   return result.has_value();
 }
 
@@ -588,15 +578,15 @@ bool ProtocolEditorWidget::saveConfigDriven() {
   // Sync frame_file_map_ keys with file_entries_
   frame_file_map_.clear();
   for (const auto& entry : file_entries_) {
-    frame_file_map_.insert(entry.id,
-        QString::fromStdString(entry.path));
+    frame_file_map_.insert(entry.id, QString::fromStdString(entry.path));
   }
 
   // Write all frame files
   for (const auto& frame_ptr : repo_.frames()) {
     QString relPath = frame_file_map_.value(frame_ptr->id());
     if (relPath.isEmpty()) {
-      qWarning("saveConfigDriven: no file path for frame id %d", frame_ptr->id());
+      qWarning("saveConfigDriven: no file path for frame id %d",
+               frame_ptr->id());
       continue;
     }
     auto abs_path = base_dir / toFsPath(relPath);
@@ -614,7 +604,8 @@ bool ProtocolEditorWidget::saveConfigDriven() {
 
 bool ProtocolEditorWidget::rewriteConfigFile() {
   if (config_format_ == icd::Format::json) {
-    auto result = icd::format::serialize_json_config(config_path_, file_entries_);
+    auto result =
+        icd::format::serialize_json_config(config_path_, file_entries_);
     return result.has_value();
   }
   auto result = icd::format::serialize_xml_config(config_path_, file_entries_);
@@ -623,10 +614,12 @@ bool ProtocolEditorWidget::rewriteConfigFile() {
 
 // ── ConfigDriven: generate frame file path ────────────────────
 std::filesystem::path ProtocolEditorWidget::generateFrameFilePath(
-    int frame_id, const std::string& frame_name) const {
+    int frame_id,
+    const std::string& frame_name) const {
   // Sanitize frame name: replace illegal Windows file chars with '_'
   auto sanitized = frame_name;
-  static const char illegal_chars[] = {'\\', '/', ':', '*', '?', '"', '<', '>', '|', '\0'};
+  static const char illegal_chars[] = {'\\', '/', ':', '*', '?',
+                                       '"',  '<', '>', '|', '\0'};
   for (auto& c : sanitized) {
     for (auto ic : illegal_chars) {
       if (c == ic || static_cast<unsigned char>(c) < 0x20) {
@@ -640,14 +633,15 @@ std::filesystem::path ProtocolEditorWidget::generateFrameFilePath(
   }
 
   auto rel_path = std::filesystem::path("frame_" + std::to_string(frame_id) +
-      "_" + sanitized + ".xml");
+                                        "_" + sanitized + ".xml");
 
   // Check conflict and append suffix if needed
   if (checkFrameFileNameConflict(rel_path)) {
     int suffix = 2;
     while (true) {
-      auto candidate = std::filesystem::path("frame_" + std::to_string(frame_id) +
-          "_" + sanitized + "_" + std::to_string(suffix) + ".xml");
+      auto candidate = std::filesystem::path(
+          "frame_" + std::to_string(frame_id) + "_" + sanitized + "_" +
+          std::to_string(suffix) + ".xml");
       if (!checkFrameFileNameConflict(candidate)) {
         rel_path = candidate;
         break;
@@ -678,7 +672,8 @@ bool ProtocolEditorWidget::checkFrameFileNameConflict(
 }
 
 bool ProtocolEditorWidget::createConfigFrameFile(
-    const icd::Frame& frame, const std::filesystem::path& rel_path) {
+    const icd::Frame& frame,
+    const std::filesystem::path& rel_path) {
   if (config_path_.empty())
     return false;
   auto abs_path = config_path_.parent_path() / rel_path;
@@ -721,12 +716,15 @@ bool ProtocolEditorWidget::rewriteAllFrameFiles() {
 }
 
 // ── ConfigDriven helpers: extracted to eliminate duplication ──────
-void ProtocolEditorWidget::addConfigFrameEntry(int id, const std::string& name, icd::Frame& frame) {
+void ProtocolEditorWidget::addConfigFrameEntry(int id,
+                                               const std::string& name,
+                                               icd::Frame& frame) {
   auto rel_path = generateFrameFilePath(id, name);
 
   // Write frame file first — if it fails, do not touch metadata or config
   if (!createConfigFrameFile(frame, rel_path)) {
-    qWarning("addConfigFrameEntry: 帧文件创建失败 (id=%d, name=%s)", id, name.c_str());
+    qWarning("addConfigFrameEntry: 帧文件创建失败 (id=%d, name=%s)", id,
+             name.c_str());
     return;
   }
 
@@ -747,7 +745,7 @@ void ProtocolEditorWidget::removeConfigFrameEntry(int id) {
   deleteConfigFrameFile(id);
   file_entries_.erase(
       std::remove_if(file_entries_.begin(), file_entries_.end(),
-          [id](const icd::FrameFileInfo& e) { return e.id == id; }),
+                     [id](const icd::FrameFileInfo& e) { return e.id == id; }),
       file_entries_.end());
   frame_file_map_.remove(id);
   rewriteConfigFile();
@@ -801,10 +799,10 @@ void ProtocolEditorWidget::initUi() {
   toolbar_->addSeparator();
 
   // 添加节点（当前选中字段下加子字段，无选中则在当前帧加根字段）
-  add_node_action_ =
-      new QAction(protoIcon(QStringLiteral("protocol_add_node")),
-                  QStringLiteral("+节点"), this);
-  add_node_action_->setToolTip(QStringLiteral("添加信号（选中帧→根字段，选中字段→子字段）"));
+  add_node_action_ = new QAction(protoIcon(QStringLiteral("protocol_add_node")),
+                                 QStringLiteral("+节点"), this);
+  add_node_action_->setToolTip(
+      QStringLiteral("添加信号（选中帧→根字段，选中字段→子字段）"));
   add_node_action_->setEnabled(false);
   toolbar_->addAction(add_node_action_);
 
@@ -891,7 +889,8 @@ void ProtocolEditorWidget::initUi() {
   node_tree_->setMinimumWidth(200);
   node_tree_->setObjectName(QStringLiteral("protocolNodeTree"));
 
-  node_tree_dock_ = new QDockWidget(QStringLiteral("节点列表"), this);
+  node_tree_dock_ =
+      new ::etest::ui::EtDockWidget(QStringLiteral("节点列表"), this);
   node_tree_dock_->setObjectName(QStringLiteral("protocolNodeTreeDock"));
   node_tree_dock_->setWidget(node_tree_);
   addDockWidget(Qt::LeftDockWidgetArea, node_tree_dock_);
@@ -901,7 +900,8 @@ void ProtocolEditorWidget::initUi() {
   property_panel_->setMinimumWidth(220);
   property_panel_->setObjectName(QStringLiteral("protocolPropertyPanel"));
 
-  property_dock_ = new QDockWidget(QStringLiteral("属性面板"), this);
+  property_dock_ =
+      new ::etest::ui::EtDockWidget(QStringLiteral("属性面板"), this);
   property_dock_->setObjectName(QStringLiteral("protocolPropertyDock"));
   property_dock_->setWidget(property_panel_);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
@@ -911,28 +911,16 @@ void ProtocolEditorWidget::initUi() {
   preview_panel_->setMinimumHeight(120);
   preview_panel_->setObjectName(QStringLiteral("protocolPreviewPanel"));
 
-  preview_dock_ = new QDockWidget(QStringLiteral("报文预览"), this);
+  preview_dock_ =
+      new ::etest::ui::EtDockWidget(QStringLiteral("报文预览"), this);
   preview_dock_->setObjectName(QStringLiteral("protocolPreviewDock"));
   preview_dock_->setWidget(preview_panel_);
   addDockWidget(Qt::LeftDockWidgetArea, preview_dock_);
   splitDockWidget(node_tree_dock_, preview_dock_, Qt::Vertical);
 
-  // Custom title bars for full control over button size and icon
-  node_tree_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
-      QStringLiteral("节点列表"), node_tree_dock_));
-  property_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
-      QStringLiteral("属性面板"), property_dock_));
-  preview_dock_->setTitleBarWidget(new ::etest::ui::DockTitleBar(
-      QStringLiteral("报文预览"), preview_dock_));
-
   node_tree_dock_->installEventFilter(this);
   property_dock_->installEventFilter(this);
   preview_dock_->installEventFilter(this);
-
-  // Dock features: 允许关闭/浮动/拖拽/标签页组合
-  for (auto* dock : {node_tree_dock_, property_dock_, preview_dock_}) {
-    dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
-  }
 
   // ── Central Widget: 位图视图 ──
   bit_view_ = new IcdBitLayoutView(this);
@@ -1193,13 +1181,15 @@ void ProtocolEditorWidget::initSignals() {
 
   // ── Toolbar: 添加 / 删除 节点 ──
   connect(add_node_action_, &QAction::triggered, this, [this]() {
-    if (!current_frame_) return;
+    if (!current_frame_)
+      return;
     saveSnapshot();
-    auto node = std::make_unique<icd::Node>(
-        "NewNode", "", 0, 0, 8, icd::ValueType::byte_, icd::Tag::none,
-        icd::NodeAttrs{});
+    auto node = std::make_unique<icd::Node>("NewNode", "", 0, 0, 8,
+                                            icd::ValueType::byte_,
+                                            icd::Tag::none, icd::NodeAttrs{});
     if (current_selected_node_) {
-      const_cast<icd::Node*>(current_selected_node_)->add_child(std::move(node));
+      const_cast<icd::Node*>(current_selected_node_)
+          ->add_child(std::move(node));
     } else {
       current_frame_->add_root(std::move(node));
     }
@@ -1208,7 +1198,8 @@ void ProtocolEditorWidget::initSignals() {
   });
 
   connect(delete_selected_action_, &QAction::triggered, this, [this]() {
-    if (!current_frame_ || !current_selected_node_) return;
+    if (!current_frame_ || !current_selected_node_)
+      return;
     saveSnapshot();
     auto* parent = const_cast<icd::Node*>(current_selected_node_->parent());
     if (!parent) {
@@ -1480,15 +1471,13 @@ void ProtocolEditorWidget::saveSnapshot() {
   // Include file_entries for ConfigDriven mode (always included for simplicity)
   nlohmann::json entries = nlohmann::json::array();
   for (const auto& entry : file_entries_) {
-    entries.push_back({
-      {"id", entry.id},
-      {"name", entry.name},
-      {"path", entry.path}
-    });
+    entries.push_back(
+        {{"id", entry.id}, {"name", entry.name}, {"path", entry.path}});
   }
   snapshot["file_entries"] = entries;
   // ⚠️ 必须用 u8string() 而非 string()：后者在中文路径下会输出 ANSI/GBK 编码，
-  // 导致 nlohmann::json::dump() 序列化时抛出 type_error(316) "invalid UTF-8 byte"
+  // 导致 nlohmann::json::dump() 序列化时抛出 type_error(316) "invalid UTF-8
+  // byte"
   snapshot["config_path"] = config_path_.u8string();
 
   QString jsonStr = QString::fromStdString(snapshot.dump());
@@ -1514,7 +1503,8 @@ void ProtocolEditorWidget::saveSnapshot() {
   }
 
   // 快照截断/追加后 canUndo/canRedo 可能变化，无条件通知
-  // （setModified 有 modified_ != modified 守卫，脏态间 undo 不触发 modificationChanged）
+  // （setModified 有 modified_ != modified 守卫，脏态间 undo 不触发
+  // modificationChanged）
   emit undoStateChanged();
   emit commandsChanged();
 }
@@ -1540,9 +1530,11 @@ void ProtocolEditorWidget::restoreSnapshot(const QByteArray& data) {
   current_frame_ = nullptr;
 
   // Handle ConfigDriven disk reconstruction
-  // Use current editor format, not snapshot content — even an empty-frame snapshot
-  // needs disk cleanup (delete stale files, rewrite ICDConfig with zero entries).
-  bool isConfigDriven = (format_ == ProtocolFormat::ConfigDriven) && !config_path_.empty();
+  // Use current editor format, not snapshot content — even an empty-frame
+  // snapshot needs disk cleanup (delete stale files, rewrite ICDConfig with
+  // zero entries).
+  bool isConfigDriven =
+      (format_ == ProtocolFormat::ConfigDriven) && !config_path_.empty();
   if (isConfigDriven) {
     // Delete current frame files
     for (const auto& entry : file_entries_) {
@@ -1561,7 +1553,7 @@ void ProtocolEditorWidget::restoreSnapshot(const QByteArray& data) {
       entry.path = entry_json["path"].get<std::string>();
       file_entries_.push_back(std::move(entry));
       frame_file_map_.insert(file_entries_.back().id,
-          QString::fromStdString(file_entries_.back().path));
+                             QString::fromStdString(file_entries_.back().path));
     }
 
     // Restore config_path from snapshot
@@ -1625,7 +1617,8 @@ void ProtocolEditorWidget::reloadToolbarIcons() {
   property_toggle_action_->setIcon(icon(QStringLiteral("protocol_property")));
   preview_toggle_action_->setIcon(icon(QStringLiteral("protocol_preview")));
   add_node_action_->setIcon(icon(QStringLiteral("protocol_add_node")));
-  delete_selected_action_->setIcon(icon(QStringLiteral("protocol_delete_node")));
+  delete_selected_action_->setIcon(
+      icon(QStringLiteral("protocol_delete_node")));
 }
 
 }  // namespace etest::protocol

@@ -1,14 +1,15 @@
 #include "TopologyEditorWidget.h"
 #include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <QClipboard>
 #include <QDockWidget>
+#include <QEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QEvent>
+#include <QHeaderView>
 #include <QHideEvent>
 #include <QIcon>
 #include <QJsonArray>
@@ -24,13 +25,11 @@
 #include <QShortcut>
 #include <QStatusBar>
 #include <QTableWidget>
-#include <QHeaderView>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <algorithm>
-
 
 #include <QtConcurrent/QtConcurrentRun>
 
@@ -39,13 +38,12 @@
 #include "AppIconProvider.h"
 #include "ConnectionCleanup.h"
 #include "DevicePaletteWidget.h"
-#include "libui/dock_title_bar/DockTitleBar.h"
-#include "TopologyCleanupController.h"
-#include "TopologyExportController.h"
 #include "DeviceTemplateManager.h"
 #include "PropertyPanelWidget.h"
 #include "ThemeManager.h"
+#include "TopologyCleanupController.h"
 #include "TopologyDocument.h"
+#include "TopologyExportController.h"
 #include "TopologyJsonSerializer.h"
 #include "TopologyOutlineWidget.h"
 #include "TopologyScene.h"
@@ -54,9 +52,9 @@
 #include "UndoCommands.h"
 #include "core/config/ConfigDefs.h"
 #include "core/config/ConfigManager.h"
+#include "libui/EtDockWidget.h"
 #include "plugin_sdk/PluginManager.h"
 #include "topology_items.h"
-
 
 using namespace etest::core::config;
 
@@ -109,28 +107,10 @@ void TopologyEditorWidget::setEmbeddedMode(bool embedded) {
   if (embedded) {
     menuBar()->hide();
     toolbar_->hide();
-    for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
-      dock->setFeatures(QDockWidget::DockWidgetClosable |
-                        QDockWidget::DockWidgetMovable);
-      if (auto* titleBar = dock->titleBarWidget()) {
-        if (auto* floatBtn = titleBar->findChild<QToolButton*>(
-                QStringLiteral("dockFloatButton"))) {
-          floatBtn->setVisible(false);
-        }
-      }
-    }
+
   } else {
     menuBar()->show();
     toolbar_->show();
-    for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
-      dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
-      if (auto* titleBar = dock->titleBarWidget()) {
-        if (auto* floatBtn = titleBar->findChild<QToolButton*>(
-                QStringLiteral("dockFloatButton"))) {
-          floatBtn->setVisible(true);
-        }
-      }
-    }
   }
 }
 
@@ -240,7 +220,6 @@ void TopologyEditorWidget::showStatusMessage(const QString& msg) {
   }
 }
 
-
 // ── IEditor interface ──────────────────────────────────────────
 
 QString TopologyEditorWidget::displayName() const {
@@ -320,12 +299,18 @@ QWidget* TopologyEditorWidget::widget() {
 
 void TopologyEditorWidget::setReadOnly(bool readOnly) {
   view_->setInteractive(!readOnly);
-  if (delete_action_) delete_action_->setEnabled(!readOnly);
-  if (undo_action_) undo_action_->setEnabled(!readOnly);
-  if (redo_action_) redo_action_->setEnabled(!readOnly);
-  if (copy_action_) copy_action_->setEnabled(!readOnly);
-  if (paste_action_) paste_action_->setEnabled(!readOnly);
-  if (export_image_action_) export_image_action_->setEnabled(!readOnly);
+  if (delete_action_)
+    delete_action_->setEnabled(!readOnly);
+  if (undo_action_)
+    undo_action_->setEnabled(!readOnly);
+  if (redo_action_)
+    redo_action_->setEnabled(!readOnly);
+  if (copy_action_)
+    copy_action_->setEnabled(!readOnly);
+  if (paste_action_)
+    paste_action_->setEnabled(!readOnly);
+  if (export_image_action_)
+    export_image_action_->setEnabled(!readOnly);
   // 禁用拖放添加设备
   if (device_palette_) {
     device_palette_->setEnabled(!readOnly);
@@ -380,25 +365,25 @@ void TopologyEditorWidget::openFile(const QString& filePath) {
 
   // 后台读取并解析 JSON，主线程反序列化到文档 + 重建场景
   load_watcher_ = new QFutureWatcher<QJsonDocument>(this);
-  connect(load_watcher_, &QFutureWatcher<QJsonDocument>::finished, this,
-          [this]() {
-            QJsonDocument jdoc = load_watcher_->result();
-            load_watcher_->deleteLater();
-            load_watcher_ = nullptr;
+  connect(
+      load_watcher_, &QFutureWatcher<QJsonDocument>::finished, this, [this]() {
+        QJsonDocument jdoc = load_watcher_->result();
+        load_watcher_->deleteLater();
+        load_watcher_ = nullptr;
 
-            if (!jdoc.isNull()) {
-              if (etest::topology::TopologyJsonSerializer::deserialize(
-                      jdoc.object(), doc_)) {
-                doc_->undoStack()->clear();
-                reloadScene();
-              } else {
-                showStatusMessage(
-                    QStringLiteral("拓扑文件解析失败: %1")
-                        .arg(etest::topology::TopologyJsonSerializer::lastError()));
-              }
-            }
-            hideLoadingOverlay();
-          });
+        if (!jdoc.isNull()) {
+          if (etest::topology::TopologyJsonSerializer::deserialize(
+                  jdoc.object(), doc_)) {
+            doc_->undoStack()->clear();
+            reloadScene();
+          } else {
+            showStatusMessage(
+                QStringLiteral("拓扑文件解析失败: %1")
+                    .arg(etest::topology::TopologyJsonSerializer::lastError()));
+          }
+        }
+        hideLoadingOverlay();
+      });
   load_watcher_->setFuture(QtConcurrent::run([filePath]() -> QJsonDocument {
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly))
@@ -502,8 +487,8 @@ void TopologyEditorWidget::initUi() {
 
   // ── 排列/分布组 ──
   {
-    align_action_ = new QAction(
-        topoIcon(QStringLiteral("topo_align")), QStringLiteral("排列"), this);
+    align_action_ = new QAction(topoIcon(QStringLiteral("topo_align")),
+                                QStringLiteral("排列"), this);
     auto* alignBtn = new QToolButton(toolbar_);
     alignBtn->setDefaultAction(align_action_);
     alignBtn->setPopupMode(QToolButton::InstantPopup);
@@ -528,8 +513,9 @@ void TopologyEditorWidget::initUi() {
     toolbar_->addWidget(alignBtn);
   }
   {
-    distribute_action_ = new QAction(
-        topoIcon(QStringLiteral("topo_distribute")), QStringLiteral("分布"), this);
+    distribute_action_ =
+        new QAction(topoIcon(QStringLiteral("topo_distribute")),
+                    QStringLiteral("分布"), this);
     auto* distributeBtn = new QToolButton(toolbar_);
     distributeBtn->setDefaultAction(distribute_action_);
     distributeBtn->setPopupMode(QToolButton::InstantPopup);
@@ -557,7 +543,7 @@ void TopologyEditorWidget::initUi() {
                                    QStringLiteral("重置"), this);
   toolbar_->addAction(zoom_reset_action_);
   zoom_fit_action_ = new QAction(topoIcon(QStringLiteral("topo_zoom_fit")),
-                                  QStringLiteral("适应窗口"), this);
+                                 QStringLiteral("适应窗口"), this);
   zoom_fit_action_->setToolTip(QStringLiteral("缩放至所有拓扑元素可见"));
   toolbar_->addAction(zoom_fit_action_);
 
@@ -581,7 +567,8 @@ void TopologyEditorWidget::initUi() {
   // ── 清理无效连线 ──
   cleanup_action_ = new QAction(topoIcon(QStringLiteral("topo_cleanup")),
                                 QStringLiteral("清理无效连线"), this);
-  cleanup_action_->setToolTip(QStringLiteral("检测并移除无效的连线和监听器挂载"));
+  cleanup_action_->setToolTip(
+      QStringLiteral("检测并移除无效的连线和监听器挂载"));
   toolbar_->addAction(cleanup_action_);
 
   // ── 弹簧 + 面板开关（右对齐）──
@@ -589,8 +576,7 @@ void TopologyEditorWidget::initUi() {
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar_->addWidget(spacer);
 
-  auto makeToggleAction = [&](const QString& iconName,
-                              const QString& text,
+  auto makeToggleAction = [&](const QString& iconName, const QString& text,
                               const QString& tip) {
     auto* act = new QAction(topoIcon(iconName), text, this);
     act->setCheckable(true);
@@ -613,7 +599,8 @@ void TopologyEditorWidget::initUi() {
   device_palette_ = new DevicePaletteWidget(this);
   device_palette_->setObjectName(QStringLiteral("topologyDevicePalette"));
 
-  device_palette_dock_ = new QDockWidget(QStringLiteral("设备面板"), this);
+  device_palette_dock_ =
+      new ::etest::ui::EtDockWidget(QStringLiteral("设备面板"), this);
   device_palette_dock_->setObjectName(
       QStringLiteral("topologyDevicePaletteDock"));
   device_palette_dock_->setWidget(device_palette_);
@@ -623,41 +610,39 @@ void TopologyEditorWidget::initUi() {
   outline_widget_->setMinimumWidth(160);
   outline_widget_->setObjectName(QStringLiteral("topologyOutline"));
 
-  outline_dock_ = new QDockWidget(QStringLiteral("导航大纲"), this);
+  outline_dock_ =
+      new ::etest::ui::EtDockWidget(QStringLiteral("导航大纲"), this);
   outline_dock_->setObjectName(QStringLiteral("topologyOutlineDock"));
   outline_dock_->setWidget(outline_widget_);
   addDockWidget(Qt::LeftDockWidgetArea, outline_dock_);
 
-  property_dock_ = new QDockWidget(QStringLiteral("属性面板"), this);
+  property_dock_ =
+      new ::etest::ui::EtDockWidget(QStringLiteral("属性面板"), this);
   property_dock_->setObjectName(QStringLiteral("topologyPropertyDock"));
   property_dock_->setWidget(property_panel_);
   addDockWidget(Qt::RightDockWidgetArea, property_dock_);
-
-  // Custom title bars for full control over button size and icon
-  device_palette_dock_->setTitleBarWidget(
-      new ::etest::ui::DockTitleBar(QStringLiteral("设备面板"), device_palette_dock_));
-  outline_dock_->setTitleBarWidget(
-      new ::etest::ui::DockTitleBar(QStringLiteral("导航大纲"), outline_dock_));
-  property_dock_->setTitleBarWidget(
-      new ::etest::ui::DockTitleBar(QStringLiteral("属性面板"), property_dock_));
-
-  for (auto* dock : {device_palette_dock_, outline_dock_, property_dock_}) {
-    dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
-  }
 
   // 中央视图
   setCentralWidget(view_);
 }
 
 void TopologyEditorWidget::initSignals() {
-  connect(zoom_in_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "放大"); view_->zoomIn(); });
-  connect(zoom_out_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "缩小"); view_->zoomOut(); });
-  connect(zoom_reset_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "重置缩放"); view_->zoomReset(); });
-  connect(zoom_fit_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "适应窗口"); view_->zoomFit(); });
+  connect(zoom_in_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "放大");
+    view_->zoomIn();
+  });
+  connect(zoom_out_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "缩小");
+    view_->zoomOut();
+  });
+  connect(zoom_reset_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "重置缩放");
+    view_->zoomReset();
+  });
+  connect(zoom_fit_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "适应窗口");
+    view_->zoomFit();
+  });
 
   connect(export_image_action_, &QAction::triggered, this,
           &TopologyEditorWidget::onExportImage);
@@ -675,22 +660,38 @@ void TopologyEditorWidget::initSignals() {
           &TopologyEditorWidget::onRedo);
 
   // ── Align / Distribute ──
-  connect(align_left_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "左对齐"); doAlign(Align::Left); });
-  connect(align_hcenter_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "水平居中"); doAlign(Align::HCenter); });
-  connect(align_right_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "右对齐"); doAlign(Align::Right); });
-  connect(align_top_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "上对齐"); doAlign(Align::Top); });
-  connect(align_vcenter_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "垂直居中"); doAlign(Align::VCenter); });
-  connect(align_bottom_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "下对齐"); doAlign(Align::Bottom); });
-  connect(distribute_horizontal_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "水平分布"); doDistribute(Distribute::Horizontal); });
-  connect(distribute_vertical_action_, &QAction::triggered, this,
-          [this]() { LOG_INFO("TOPOLOGY_UI", "垂直分布"); doDistribute(Distribute::Vertical); });
+  connect(align_left_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "左对齐");
+    doAlign(Align::Left);
+  });
+  connect(align_hcenter_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "水平居中");
+    doAlign(Align::HCenter);
+  });
+  connect(align_right_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "右对齐");
+    doAlign(Align::Right);
+  });
+  connect(align_top_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "上对齐");
+    doAlign(Align::Top);
+  });
+  connect(align_vcenter_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "垂直居中");
+    doAlign(Align::VCenter);
+  });
+  connect(align_bottom_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "下对齐");
+    doAlign(Align::Bottom);
+  });
+  connect(distribute_horizontal_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "水平分布");
+    doDistribute(Distribute::Horizontal);
+  });
+  connect(distribute_vertical_action_, &QAction::triggered, this, [this]() {
+    LOG_INFO("TOPOLOGY_UI", "垂直分布");
+    doDistribute(Distribute::Vertical);
+  });
   connect(scene_, &QGraphicsScene::selectionChanged, this,
           &TopologyEditorWidget::updateAlignDistributeActions);
 
@@ -727,8 +728,8 @@ void TopologyEditorWidget::initSignals() {
           });
   connect(view_, &TopologyView::connectionStyleChangeRequested, this,
           [this](int connectionIndex, PathStyle style) {
-            doc_->undoStack()->push(new SetConnectionStyleCommand(
-                doc_, connectionIndex, style));
+            doc_->undoStack()->push(
+                new SetConnectionStyleCommand(doc_, connectionIndex, style));
           });
 
   connect(scene_, &TopologyScene::itemSelected, this,
@@ -746,10 +747,10 @@ void TopologyEditorWidget::initSignals() {
   // ── Dock 可见性同步（eventFilter 拦截 QEvent::Close） ──
   connect(device_palette_toggle_action_, &QAction::toggled,
           device_palette_dock_, &QWidget::setVisible);
-  connect(outline_toggle_action_, &QAction::toggled,
-          outline_dock_, &QWidget::setVisible);
-  connect(property_toggle_action_, &QAction::toggled,
-          property_dock_, &QWidget::setVisible);
+  connect(outline_toggle_action_, &QAction::toggled, outline_dock_,
+          &QWidget::setVisible);
+  connect(property_toggle_action_, &QAction::toggled, property_dock_,
+          &QWidget::setVisible);
 
   device_palette_dock_->installEventFilter(this);
   outline_dock_->installEventFilter(this);
@@ -923,10 +924,12 @@ void TopologyEditorWidget::buildDefaultDocument() {
   dev1.position = QPointF(50, 80);
   dev1.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                      {QStringLiteral("slot"), QStringLiteral("2")}};
-  dev1.ports.append(
-      {QStringLiteral("ch0"), TopologyPort::Direction::Bidirectional, FunctionType::A429});
-  dev1.ports.append(
-      {QStringLiteral("ch1"), TopologyPort::Direction::Bidirectional, FunctionType::A429});
+  dev1.ports.append({QStringLiteral("ch0"),
+                     TopologyPort::Direction::Bidirectional,
+                     FunctionType::A429});
+  dev1.ports.append({QStringLiteral("ch1"),
+                     TopologyPort::Direction::Bidirectional,
+                     FunctionType::A429});
   doc_->addDevice(dev1);
 
   TopologyDevice dev2;
@@ -935,10 +938,12 @@ void TopologyEditorWidget::buildDefaultDocument() {
   dev2.position = QPointF(50, 200);
   dev2.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                      {QStringLiteral("slot"), QStringLiteral("3")}};
-  dev2.ports.append(
-      {QStringLiteral("ch0"), TopologyPort::Direction::Bidirectional, FunctionType::A429});
-  dev2.ports.append(
-      {QStringLiteral("ch1"), TopologyPort::Direction::Bidirectional, FunctionType::A429});
+  dev2.ports.append({QStringLiteral("ch0"),
+                     TopologyPort::Direction::Bidirectional,
+                     FunctionType::A429});
+  dev2.ports.append({QStringLiteral("ch1"),
+                     TopologyPort::Direction::Bidirectional,
+                     FunctionType::A429});
   doc_->addDevice(dev2);
 
   TopologyDevice dev3;
@@ -947,7 +952,8 @@ void TopologyEditorWidget::buildDefaultDocument() {
   dev3.position = QPointF(50, 350);
   dev3.properties = {{QStringLiteral("bus"), QStringLiteral("PXI6")},
                      {QStringLiteral("slot"), QStringLiteral("5")}};
-  dev3.ports.append({QStringLiteral("ch0"), TopologyPort::Direction::Bidirectional,
+  dev3.ports.append({QStringLiteral("ch0"),
+                     TopologyPort::Direction::Bidirectional,
                      FunctionType::DISCRETE});
   doc_->addDevice(dev3);
 
@@ -1124,8 +1130,8 @@ void TopologyEditorWidget::onSelectionChanged(QGraphicsItem* item) {
     property_panel_->showPropertiesFor(item);
 
     // 连线不支持复制
-    copy_action_->setEnabled(
-        qgraphicsitem_cast<ConnectionItem*>(item) == nullptr);
+    copy_action_->setEnabled(qgraphicsitem_cast<ConnectionItem*>(item) ==
+                             nullptr);
 
     // Sync outline tree selection
     int type = -1, mainIdx = -1, subIdx = -1;
@@ -1580,7 +1586,8 @@ void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
   auto& pm = etest::core::plugin::PluginManager::instance();
   auto matched = pm.devicesByType(dev.deviceType);
   if (matched.isEmpty()) {
-    QMessageBox::warning(this, QStringLiteral("错误"),
+    QMessageBox::warning(
+        this, QStringLiteral("错误"),
         QStringLiteral("找不到匹配的设备插件 \"%1\"，请先加载对应插件")
             .arg(dev.deviceType));
     return;
@@ -1595,9 +1602,9 @@ void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
   }
   if (matched.size() > 1) {
     LOG_WARN("TOPOLOGY_UI",
-        "设备类型 \"{}\" 有 {} 个插件，选择: {} (is_mock={})",
-        dev.deviceType.toStdString(), matched.size(),
-        chosen->id.toStdString(), chosen->is_mock);
+             "设备类型 \"{}\" 有 {} 个插件，选择: {} (is_mock={})",
+             dev.deviceType.toStdString(), matched.size(),
+             chosen->id.toStdString(), chosen->is_mock);
   }
   dev.pluginId = chosen->id;
 
@@ -1620,7 +1627,8 @@ void TopologyEditorWidget::onAddDeviceFromTemplate(const QPointF& scenePos) {
       dev.ports.append(dp);
     }
   } else {
-    dev.ports.append({QStringLiteral("default"), TopologyPort::Direction::Bidirectional,
+    dev.ports.append({QStringLiteral("default"),
+                      TopologyPort::Direction::Bidirectional,
                       FunctionType::CUSTOM});
   }
 

@@ -21,7 +21,7 @@ class DeviceListWidget : public QListWidget {
 };
 
 // Panel showing device types that can be dragged onto the topology scene.
-class DevicePaletteWidget : public QWidget {
+class DevicePaletteWidget : public QFrame {
   Q_OBJECT
  public:
   explicit DevicePaletteWidget(QWidget* parent = nullptr);

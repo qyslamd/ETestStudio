@@ -831,21 +831,21 @@ QLabel#PhSectionLabel {
     color: #6E6E6E;
 }
 
-/* ==================== QDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */
-QDockWidget {
-    border: 1px solid red; /*D0D0D0*/
-    border-radius:8px;
-}
+/* ==================== EtDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */
 etest--ui--DockTitleBar {
     background-color: #2584CF;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
     border-bottom: 1px solid #D0D0D0;
 }
-QLabel#dockTitleBarLabel {
-    color: #333333;
+etest--ui--DockTitleBar #dockTitleBarLabel {
+    color: white;
     font-size: 12px;
     background: transparent;
+}
+etest--topology--DevicePaletteWidget{
+    border: none;
+    border-radius:8px;
 }
 QToolButton#dockFloatButton, QToolButton#dockCloseButton {
     border: none;

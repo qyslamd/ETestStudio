@@ -26,28 +26,26 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
-
-#include "logger/Logger.h"
-
+#include "AppIconProvider.h"
 #include "ConfigManager.h"
-#include "control_flow_config.h"
 #include "StepDetailPanel.h"
 #include "StepTableWidget.h"
 #include "StepValidation.h"
-#include "VerticalTabListDelegate.h"
-#include "AppIconProvider.h"
 #include "ThemeManager.h"
+#include "VerticalTabListDelegate.h"
 #include "config/ConfigDefs.h"
-#include "libui/dock_title_bar/DockTitleBar.h"
+#include "control_flow_config.h"
+#include "libui/EtDockWidget.h"
 #include "libui/styles/TabBarStyle.h"
-
+#include "logger/Logger.h"
 
 namespace etest::app {
 
 namespace {
 
 // kColExtra 是动态含义列，按命令返回应显示的文本：
-//   SET/DELAY=延迟(ms), VERIFY=容差min, WAIT/WHILE/IF=条件值, INJECT_FAULT=故障值
+//   SET/DELAY=延迟(ms), VERIFY=容差min, WAIT/WHILE/IF=条件值,
+//   INJECT_FAULT=故障值
 QString extraCellText(const TestStepData& step) {
   const QString& cmd = step.cmd;
   if (cmd == QStringLiteral("SET") || cmd == QStringLiteral("DELAY")) {
@@ -58,8 +56,8 @@ QString extraCellText(const TestStepData& step) {
                                   : QString();
   }
   if (cmd == QStringLiteral("WAIT") ||
-      (kControlFlowEnabled && (cmd == QStringLiteral("WHILE") ||
-                               cmd == QStringLiteral("IF")))) {
+      (kControlFlowEnabled &&
+       (cmd == QStringLiteral("WHILE") || cmd == QStringLiteral("IF")))) {
     return step.condition.value.toString();
   }
   if (cmd == QStringLiteral("INJECT_FAULT")) {
@@ -100,22 +98,32 @@ TestProgramEditorWidget::TestProgramEditorWidget(const QString& filePath,
   }
 }
 
-
-
 void TestProgramEditorWidget::setReadOnly(bool readOnly) {
-  if (suite_name_edit_) suite_name_edit_->setReadOnly(readOnly);
-  if (suite_desc_edit_) suite_desc_edit_->setReadOnly(readOnly);
-  if (setup_table_) setup_table_->setReadOnly(readOnly);
-  if (teardown_table_) teardown_table_->setReadOnly(readOnly);
+  if (suite_name_edit_)
+    suite_name_edit_->setReadOnly(readOnly);
+  if (suite_desc_edit_)
+    suite_desc_edit_->setReadOnly(readOnly);
+  if (setup_table_)
+    setup_table_->setReadOnly(readOnly);
+  if (teardown_table_)
+    teardown_table_->setReadOnly(readOnly);
   // Disable toolbar actions
-  if (add_case_action_) add_case_action_->setEnabled(!readOnly);
-  if (remove_case_action_) remove_case_action_->setEnabled(!readOnly);
-  if (add_step_action_) add_step_action_->setEnabled(!readOnly);
-  if (remove_step_action_) remove_step_action_->setEnabled(!readOnly);
-  if (move_up_action_) move_up_action_->setEnabled(!readOnly);
-  if (move_down_action_) move_down_action_->setEnabled(!readOnly);
-  if (undo_action_) undo_action_->setEnabled(!readOnly);
-  if (redo_action_) redo_action_->setEnabled(!readOnly);
+  if (add_case_action_)
+    add_case_action_->setEnabled(!readOnly);
+  if (remove_case_action_)
+    remove_case_action_->setEnabled(!readOnly);
+  if (add_step_action_)
+    add_step_action_->setEnabled(!readOnly);
+  if (remove_step_action_)
+    remove_step_action_->setEnabled(!readOnly);
+  if (move_up_action_)
+    move_up_action_->setEnabled(!readOnly);
+  if (move_down_action_)
+    move_down_action_->setEnabled(!readOnly);
+  if (undo_action_)
+    undo_action_->setEnabled(!readOnly);
+  if (redo_action_)
+    redo_action_->setEnabled(!readOnly);
 }
 
 void TestProgramEditorWidget::setEmbeddedMode(bool embedded) {
@@ -178,7 +186,8 @@ QList<EditorCommand> TestProgramEditorWidget::editorCommands() {
                      QStringLiteral("testprog_move_down"), false,
                      move_down_action_));
   // 视图
-  cmds.append(addCheckableCmd(QStringLiteral("视图"), QStringLiteral("纵向标签"),
+  cmds.append(addCheckableCmd(QStringLiteral("视图"),
+                              QStringLiteral("纵向标签"),
                               QStringLiteral("testprog_tab_vertical"), false,
                               toggle_orientation_action_));
   return cmds;
@@ -363,22 +372,16 @@ void TestProgramEditorWidget::initUi() {
   info_layout->addWidget(suite_desc_edit_);
   info_layout->addStretch();
 
-  info_dock_ = new QDockWidget(QStringLiteral("套件信息"), this);
+  info_dock_ = new etest::ui::EtDockWidget(QStringLiteral("套件信息"), this);
   info_dock_->setObjectName(QStringLiteral("testProgramInfoDock"));
   info_dock_->setWidget(info_widget);
-  info_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
-  info_dock_->setTitleBarWidget(
-      new ::etest::ui::DockTitleBar(QStringLiteral("套件信息"), info_dock_));
   addDockWidget(Qt::RightDockWidgetArea, info_dock_);
 
   // ── Detail Dock：步骤详情（常驻显示） ──
   step_detail_panel_ = new StepDetailPanel(this);
-  detail_dock_ = new QDockWidget(QStringLiteral("步骤详情"), this);
+  detail_dock_ = new etest::ui::EtDockWidget(QStringLiteral("步骤详情"), this);
   detail_dock_->setObjectName(QStringLiteral("testProgramDetailDock"));
   detail_dock_->setWidget(step_detail_panel_);
-  detail_dock_->setFeatures(QDockWidget::AllDockWidgetFeatures);
-  detail_dock_->setTitleBarWidget(
-      new ::etest::ui::DockTitleBar(QStringLiteral("步骤详情"), detail_dock_));
   addDockWidget(Qt::RightDockWidgetArea, detail_dock_);
 
   // ── Vertical Tabs Dock：Edge 风格垂直标签栏 ──
@@ -394,20 +397,13 @@ void TestProgramEditorWidget::initUi() {
   vertical_tabs_delegate_ = new VerticalTabListDelegate(this);
   vertical_tabs_view_->setItemDelegate(vertical_tabs_delegate_);
 
-  vertical_tabs_dock_ = new QDockWidget(QStringLiteral("标签页"), this);
+  vertical_tabs_dock_ =
+      new etest::ui::EtDockWidget(QStringLiteral("标签页"), this);
   vertical_tabs_dock_->setObjectName(
       QStringLiteral("testProgramVerticalTabsDock"));
   vertical_tabs_dock_->setWidget(vertical_tabs_view_);
   vertical_tabs_dock_->setAllowedAreas(Qt::LeftDockWidgetArea);
   vertical_tabs_dock_->setFeatures(QDockWidget::DockWidgetClosable);
-  auto* vt_title_bar = new ::etest::ui::DockTitleBar(QStringLiteral("标签页"),
-                                                     vertical_tabs_dock_);
-  // 不允许浮动：藏掉标题栏的浮动按钮
-  if (auto* float_btn = vt_title_bar->findChild<QToolButton*>(
-          QStringLiteral("dockFloatButton"))) {
-    float_btn->setVisible(false);
-  }
-  vertical_tabs_dock_->setTitleBarWidget(vt_title_bar);
   addDockWidget(Qt::LeftDockWidgetArea, vertical_tabs_dock_);
   vertical_tabs_dock_->installEventFilter(this);
 
@@ -466,7 +462,8 @@ void TestProgramEditorWidget::initSignals() {
 
   // 详情面板数据变更 → 同步扩展字段到当前行的 UserRole
   // 面板是扩展字段（容差/故障/条件/循环参数/子步骤）的唯一编辑入口，需全量回写；
-  // 可见列（cmd/desc/target/value/delay/timeout）由 readStepData 保存时从单元格覆盖。
+  // 可见列（cmd/desc/target/value/delay/timeout）由 readStepData
+  // 保存时从单元格覆盖。
   connect(step_detail_panel_, &StepDetailPanel::dataChanged, this, [this]() {
     if (loading_ || undo_redo_in_progress_ || validating_) {
       return;
@@ -484,11 +481,10 @@ void TestProgramEditorWidget::initSignals() {
       existing.subSteps = panelStep.subSteps;
       existing.elseSubSteps = panelStep.elseSubSteps;
       table->setStepExtData(row, existing);
-      // 同步动态列显示（容差/条件/故障/间隔）及 description（ActionLog 页编辑内容），
-      // 阻塞信号避免重复入快照
+      // 同步动态列显示（容差/条件/故障/间隔）及 description（ActionLog
+      // 页编辑内容）， 阻塞信号避免重复入快照
       table->model()->blockSignals(true);
-      table->setCellText(row, StepTableWidget::kColDesc,
-                         panelStep.description);
+      table->setCellText(row, StepTableWidget::kColDesc, panelStep.description);
       table->setCellText(row, StepTableWidget::kColExtra,
                          extraCellText(existing));
       table->setCellText(row, StepTableWidget::kColExtra2,
@@ -579,7 +575,6 @@ void TestProgramEditorWidget::initSignals() {
               }
             }
           });
-
 }
 
 void TestProgramEditorWidget::connectTable(StepTableWidget* table) {
@@ -636,10 +631,12 @@ TestStepData TestProgramEditorWidget::readStepData(StepTableWidget* table,
   step.description = table->cellText(row, StepTableWidget::kColDesc);
   step.target = table->cellText(row, StepTableWidget::kColTarget);
   step.value = table->cellText(row, StepTableWidget::kColValue);
-  // kColExtra 动态列：仅 SET/DELAY 的"延迟"从单元格读（cell 是该字段编辑入口）；
-  // VERIFY/WAIT/WHILE/IF/INJECT_FAULT 的 kColExtra(kColExtra2) 是纯显示
-  // （容差/条件/故障等扩展字段以 ext data 为准），不在此覆盖，避免污染 delayMs
-  if (step.cmd == QStringLiteral("SET") || step.cmd == QStringLiteral("DELAY")) {
+  // kColExtra 动态列：仅 SET/DELAY 的"延迟"从单元格读（cell
+  // 是该字段编辑入口）； VERIFY/WAIT/WHILE/IF/INJECT_FAULT 的
+  // kColExtra(kColExtra2) 是纯显示 （容差/条件/故障等扩展字段以 ext data
+  // 为准），不在此覆盖，避免污染 delayMs
+  if (step.cmd == QStringLiteral("SET") ||
+      step.cmd == QStringLiteral("DELAY")) {
     step.delayMs =
         table->cellText(row, StepTableWidget::kColExtra).toInt(nullptr, 10);
   }
@@ -669,8 +666,10 @@ void TestProgramEditorWidget::onAddCase() {
   auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
   connectTable(table);
   // M0: 传播信号选择器和 registry
-  if (signal_selection_) table->setSignalSelection(signal_selection_);
-  if (registry_) table->setRegistry(registry_);
+  if (signal_selection_)
+    table->setSignalSelection(signal_selection_);
+  if (registry_)
+    table->setRegistry(registry_);
   // 命名去重：找最小不重复编号，避免 undo/redo 按名恢复落到错误 tab
   int n = 1;
   while (true) {
@@ -683,11 +682,10 @@ void TestProgramEditorWidget::onAddCase() {
       }
     }
     if (!dup) {
-      tab_widget_->addTab(
-          table,
-          etest::core_ui::AppIconProvider::instance().icon(
-              QStringLiteral("testprog_tab_case")),
-          name);
+      tab_widget_->addTab(table,
+                          etest::core_ui::AppIconProvider::instance().icon(
+                              QStringLiteral("testprog_tab_case")),
+                          name);
       break;
     }
     ++n;
@@ -982,7 +980,8 @@ void TestProgramEditorWidget::restoreState(const TestProgramData& state) {
   loadProgramToUi(state);
   loading_ = false;
 
-  // 恢复选区：case tab 按 name 找（loadProgramToUi 重建 case tab，index 可能变）
+  // 恢复选区：case tab 按 name 找（loadProgramToUi 重建 case tab，index
+  // 可能变）
   int restoreTab = prevTab;
   if (prevTab >= 2 && !prevCaseName.isEmpty()) {
     restoreTab = -1;
@@ -1188,8 +1187,10 @@ void TestProgramEditorWidget::loadProgramToUi(const TestProgramData& suite) {
     auto* table = new StepTableWidget(CommandTypeDelegate::Full, this);
     connectTable(table);
     // M0/M5: 传播 signal_selection_ 和 registry_ 给新表格
-    if (signal_selection_) table->setSignalSelection(signal_selection_);
-    if (registry_) table->setRegistry(registry_);
+    if (signal_selection_)
+      table->setSignalSelection(signal_selection_);
+    if (registry_)
+      table->setRegistry(registry_);
     fillTable(table, tc.steps);
     tab_widget_->addTab(table,
                         etest::core_ui::AppIconProvider::instance().icon(
