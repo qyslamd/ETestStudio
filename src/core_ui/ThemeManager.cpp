@@ -27,8 +27,7 @@ static QColor parseColor(const json& j) {
 
 // ── JSON 加载 ──
 
-bool ThemeManager::loadPaletteFromJson(const QString& path,
-                                       ThemePalette& out) {
+bool ThemeManager::loadPaletteFromJson(const QString& path, ThemePalette& out) {
   QFile f(path);
   if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     return false;
@@ -47,10 +46,12 @@ bool ThemeManager::loadPaletteFromJson(const QString& path,
     if (!colors.is_null()) {
       auto setColor = [&](const char* key, QColor& target) {
         auto it = colors.find(key);
-        if (it != colors.end()) target = parseColor(*it);
+        if (it != colors.end())
+          target = parseColor(*it);
       };
       setColor("windowBackground", out.windowBackground);
       setColor("panelBackground", out.panelBackground);
+      setColor("sceneBackground", out.sceneBackground);
       setColor("toolbarBackground", out.toolbarBackground);
       setColor("hoverBackground", out.hoverBackground);
       setColor("selectionBackground", out.selectionBackground);
@@ -136,7 +137,8 @@ void ThemeManager::registerBuiltinPalettes() {
             json j = json::parse(f.readAll().toStdString());
             display_names_[p.themeId] =
                 QString::fromStdString(j.value("displayName", std::string()));
-          } catch (...) {}
+          } catch (...) {
+          }
           f.close();
         }
       }
@@ -151,6 +153,7 @@ void ThemeManager::registerBuiltinPalettes() {
     fallback.ribbonBaseTheme = 2;
     fallback.windowBackground = QColor(0xF0, 0xF0, 0xF0);
     fallback.panelBackground = QColor(0xF0, 0xF0, 0xF0);
+    fallback.sceneBackground = QColor(0xFA, 0xFA, 0xFA);
     fallback.toolbarBackground = QColor(0xF0, 0xF0, 0xF0);
     fallback.hoverBackground = QColor(0xE0, 0xE0, 0xE0);
     fallback.selectionBackground = QColor(0xCC, 0xE4, 0xF7);
@@ -166,8 +169,7 @@ void ThemeManager::registerBuiltinPalettes() {
     fallback.clockSecondaryColor = QColor(0x55, 0x55, 0x55);
     fallback.clockAccentColor = QColor(0xFF, 0x66, 0x00);
     palettes_[QStringLiteral("default")] = fallback;
-    display_names_[QStringLiteral("default")] =
-        QStringLiteral("默认主题");
+    display_names_[QStringLiteral("default")] = QStringLiteral("默认主题");
   }
 }
 
@@ -206,6 +208,9 @@ QColor ThemeManager::windowBackground() const {
 }
 QColor ThemeManager::panelBackground() const {
   return palette_ ? palette_->panelBackground : QColor();
+}
+QColor ThemeManager::sceneBackground() const {
+  return palette_ ? palette_->sceneBackground : QColor();
 }
 QColor ThemeManager::toolbarBackground() const {
   return palette_ ? palette_->toolbarBackground : QColor();
@@ -305,22 +310,27 @@ bool ThemeManager::detectDarkFromQss(const QString& qss) const {
   static const QRegularExpression rx(
       QStringLiteral("background-color\\s*:\\s*(#[0-9a-fA-F]{3,8})"));
   auto match = rx.match(qss);
-  if (!match.hasMatch()) return false;
+  if (!match.hasMatch())
+    return false;
 
   QString hex = match.captured(1).trimmed();
-  if (hex.startsWith('#')) hex = hex.mid(1);
-  if (hex.length() < 6) return false;
+  if (hex.startsWith('#'))
+    hex = hex.mid(1);
+  if (hex.length() < 6)
+    return false;
   bool ok1, ok2, ok3;
   int r = hex.mid(0, 2).toInt(&ok1, 16);
   int g = hex.mid(2, 2).toInt(&ok2, 16);
   int b = hex.mid(4, 2).toInt(&ok3, 16);
-  if (!ok1 || !ok2 || !ok3) return false;
+  if (!ok1 || !ok2 || !ok3)
+    return false;
   double luma = 0.2126 * r / 255.0 + 0.7152 * g / 255.0 + 0.0722 * b / 255.0;
   return luma < 0.4;
 }
 
 void ThemeManager::applyEditorTheme() {
-  if (!palette_) return;
+  if (!palette_)
+    return;
   auto& cfg = ConfigManager::instance();
   for (auto it = palette_->editorColors.constBegin();
        it != palette_->editorColors.constEnd(); ++it) {

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QColor>
-#include <QObject>
 #include <QHash>
+#include <QObject>
 #include <QString>
 #include <QStringList>
 
@@ -32,6 +32,7 @@ class ThemeManager : public QObject {
   // -- 语义色板 --
   QColor windowBackground() const;
   QColor panelBackground() const;
+  QColor sceneBackground() const;
   QColor toolbarBackground() const;
   QColor hoverBackground() const;
   QColor selectionBackground() const;

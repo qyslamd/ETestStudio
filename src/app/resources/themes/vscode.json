@@ -6,6 +6,7 @@
   "colors": {
     "windowBackground": "#1E1E1E",
     "panelBackground": "#252526",
+    "sceneBackground": "#1E1E1E",
     "toolbarBackground": "#3C3C3C",
     "hoverBackground": "#505050",
     "selectionBackground": "#094771",
