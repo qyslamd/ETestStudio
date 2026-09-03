@@ -2001,32 +2001,14 @@ QLabel#PhSectionLabel {
     color: #9D9D9D;
 }
 
-/* ==================== QDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */
-QDockWidget {
-    border: 1px solid red; /*D0D0D0*/
-    border-radius:8px;
-}
+/* ==================== EtDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */
 etest--ui--DockTitleBar {
-    background: red;
+    background-color: #4169E1;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
-}
-
-/* IcdPropertyPanel 内容区 */
-QScrollArea#icdPropertyScroll {
-    background-color: #252526;
-    border: none;
-}
-QScrollArea#icdPropertyScroll > QWidget > QWidget {
-    background-color: #252526;
-}
-QWidget#icdPropertyForm {
-    background-color: #252526;
-}
-etest--ui--DockTitleBar {
-    background: #2D2D2D;
     border-bottom: 1px solid #3C3C3C;
 }
+
 QLabel#dockTitleBarLabel {
     color: #CCCCCC;
     font-size: 12px;
@@ -2042,6 +2024,19 @@ QToolButton#dockFloatButton:hover, QToolButton#dockCloseButton:hover {
 }
 QToolButton#dockFloatButton:pressed, QToolButton#dockCloseButton:pressed {
     background: rgba(255, 255, 255, 0.18);
+}
+
+
+/* IcdPropertyPanel 内容区 */
+QScrollArea#icdPropertyScroll {
+    background-color: #252526;
+    border: none;
+}
+QScrollArea#icdPropertyScroll > QWidget > QWidget {
+    background-color: #252526;
+}
+QWidget#icdPropertyForm {
+    background-color: #252526;
 }
 
 /* --- Open Files section (tree mode) --- */

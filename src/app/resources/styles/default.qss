@@ -845,7 +845,6 @@ etest--ui--DockTitleBar #dockTitleBarLabel {
 }
 etest--topology--DevicePaletteWidget{
     border: none;
-    border-radius:8px;
 }
 QToolButton#dockFloatButton, QToolButton#dockCloseButton {
     border: none;
