@@ -16,6 +16,7 @@ class AppStatusBarController : public QObject {
   void setup(QStatusBar* status_bar);
 
  public slots:
+  void setRunningState(bool running);
   void setProject(const QString& name);
   void setEngineState(const QString& text);
   void setExecStats(int pass, int fail, int elapsed);

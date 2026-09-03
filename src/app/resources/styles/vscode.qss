@@ -72,11 +72,15 @@ QToolButton:disabled {
 
 /* 状态栏 */
 QStatusBar {
-    background-color: #007ACC;
+    background-color: #1E1E1E;
     color: #FFFFFF;
     font-size: 12px;
-    border-top: 1px solid #006BAB;
+    border-top: 1px solid #454545;
 }
+QStatusBar[activated="true"] {
+    background-color: #007ACC;
+}
+
 QStatusBar::item {
     border: none;
 }
@@ -1138,7 +1142,7 @@ QWidget#welcomeV2 {
     background-color: #1E1E1E;
 }
 QFrame#welcomeCard {
-    background-color: rgba(32, 32, 38, 0.78);
+    background-color: #202025;
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 16px;
 }
@@ -2102,8 +2106,8 @@ QLineEdit[invalid="true"]{
 
 /* ===== QTextEdit===== */
 QTextEdit {
-  background-color: #3C3C3C;
-  border: 1.5px solid #4A4A58;
+  background-color: #252526;
+  border: 1px solid #4A4A58;
   border-radius: 10px;
   padding: 8px 10px;
   color: #CCCCCC;
@@ -2111,7 +2115,7 @@ QTextEdit {
 }
 
 QTextEdit:focus {
-  border-color: #007ACC;
+  border: 1.5px solid #007ACC;
 }
 
 QTextEdit[error="true"],

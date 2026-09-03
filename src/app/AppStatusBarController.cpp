@@ -2,6 +2,8 @@
 
 #include <QLabel>
 #include <QStatusBar>
+#include <QStyle>
+#include <QVariant>
 
 namespace etest::app {
 
@@ -59,6 +61,12 @@ void AppStatusBarController::setMessage(const QString& msg) {
   }
 }
 
+void AppStatusBarController::setRunningState(bool running) {
+  status_bar_->setProperty("activated", running);
+  status_bar_->style()->unpolish(status_bar_);
+  status_bar_->style()->polish(status_bar_);
+}
+
 void AppStatusBarController::setProject(const QString& name) {
   if (label_project_) {
     label_project_->setText(name);
@@ -74,17 +82,13 @@ void AppStatusBarController::setEngineState(const QString& text) {
 void AppStatusBarController::setExecStats(int pass, int fail, int elapsed) {
   if (label_exec_stats_) {
     label_exec_stats_->setText(
-        QStringLiteral("✅ %1  ❌ %2  ⏱ %3s")
-            .arg(pass)
-            .arg(fail)
-            .arg(elapsed));
+        QStringLiteral("✅ %1  ❌ %2  ⏱ %3s").arg(pass).arg(fail).arg(elapsed));
   }
 }
 
 void AppStatusBarController::setCursorPos(int line, int col) {
   if (label_cursor_) {
-    label_cursor_->setText(
-        QStringLiteral("行 %1, 列 %2").arg(line).arg(col));
+    label_cursor_->setText(QStringLiteral("行 %1, 列 %2").arg(line).arg(col));
   }
 }
 

@@ -85,9 +85,15 @@ class MainWindow : public SARibbonMainWindow {
   void showEvent(QShowEvent* event) override;
   bool eventFilter(QObject* obj, QEvent* event) override;
 
+ private slots:
+  // 命令清单状态变化（enabled/checked）刷新
+  void onContextCommandsChanged();
+
  private:
+  // QADS
+  static void setupDockTitleBarButtons(ads::CDockAreaWidget* area);
+
   void initUi();
-  // 所有子部件创建完毕后统一连接跨组件信号（lazyInit 内调用）
   void initSignals();
   void lazyInit();
   void onThemeChanged(bool isDark);
@@ -109,11 +115,6 @@ class MainWindow : public SARibbonMainWindow {
   static QString contextKeyForEditor(IEditor* editor);
   SARibbonCategory* contextCategory(const QString& key);
 
- private slots:
-  // 命令清单状态变化（enabled/checked）刷新
-  void onContextCommandsChanged();
-
- private:
   // 项目相关
   bool tryCloseCurrentProject();
   void openRecentProject(const QString& path);
@@ -124,7 +125,8 @@ class MainWindow : public SARibbonMainWindow {
   void onOpenFile();
   void onCloseProject();
   void onNewFile();
-  void onQuickCreateFile(const QString& categoryId, const QString& extension,
+  void onQuickCreateFile(const QString& categoryId,
+                         const QString& extension,
                          const QString& baseName);
   void openSettingsDialog();
   void onProjectOpened(const QString& projectPath);
@@ -161,11 +163,18 @@ class MainWindow : public SARibbonMainWindow {
   void enableEditActions();
   void toggleSidebar();
 
-  // QADS
-  static void setupDockTitleBarButtons(ads::CDockAreaWidget* area);
+  void onOpenGuidance();
+  void ensureGuidanceCreated();
+  void setupGuidanceFlows();
+  QWidget* ribbonButtonForAction(QAction* action);
+  QWidget* findTopologyEditor() const;
+  QWidget* findTopologyCanvas(const QString& filePath) const;
+  QWidget* findTopologyDevicePalette() const;
+  QString writeGuidanceSampleTopology() const;
+
+ private:
   ads::CDockManager* dock_manager_ = nullptr;
 
-  // 活动栏 + 侧边栏
   SidebarNavWidget* sidebar_nav_ = nullptr;
   SidebarContentWidget* sidebar_content_ = nullptr;
   ProjectOverviewWidget* project_overview_widget_ = nullptr;
@@ -175,19 +184,15 @@ class MainWindow : public SARibbonMainWindow {
   QSplitter* h_splitter_ = nullptr;  // 水平：Sidebar / 垂直区域 / AuxSidebar
   QSplitter* v_splitter_ = nullptr;  // 垂直：ContainerWidget / BottomContainer
 
-  // 消息提示按钮
-  HintButton* hint_button_ = nullptr;
-
-  // 编辑器管理
-  EditorManager* editor_manager_ = nullptr;
+  HintButton* hint_button_ = nullptr;        // 消息提示按钮
+  EditorManager* editor_manager_ = nullptr;  // 编辑器管理
 
   // 中央堆叠容器（编辑态/运行态）
   QStackedWidget* central_stack_ = nullptr;
   QWidget* page_editor_widget_ = nullptr;  // page 0 编辑态容器
   ExecutionDashboard* exec_dashboard_page_ = nullptr;
 
-  // 欢迎页
-  WelcomeWidget* welcome_widget_ = nullptr;
+  WelcomeWidget* welcome_widget_ = nullptr;  // 欢迎页
   ads::CDockWidget* central_dock_ = nullptr;
 
   // 底部面板
@@ -197,19 +202,15 @@ class MainWindow : public SARibbonMainWindow {
   BottomContainerWidget* bottom_container_ = nullptr;
   int bottom_container_height_ = 200;
 
-  // 辅助侧边栏
-  QWidget* aux_sidebar_widget_ = nullptr;
+  QWidget* aux_sidebar_widget_ = nullptr;  // 辅助侧边栏
   int aux_sidebar_width_ = 280;
 
-  // 侧边栏展开宽度（用于折叠记忆）
-  int sidebar_expanded_width_ = 280;
+  int sidebar_expanded_width_ = 280;  // 侧边栏展开宽度（用于折叠记忆）
 
-  // M5/M6: ICD 信号注册表 + Repository（shared_ptr 确保存活）
   etest::core::SignalRegistry* signal_registry_ = nullptr;
   std::shared_ptr<icd::Repository> icd_repository_;
 
-  // 设置对话框（非模态，只创建一次）
-  SettingsDialog* settings_dialog_ = nullptr;
+  SettingsDialog* settings_dialog_ = nullptr;  // 非模态，只创建一次
 
   // 菜单和状态
   QMenu* recent_projects_menu_ = nullptr;
@@ -276,7 +277,6 @@ class MainWindow : public SARibbonMainWindow {
   QAction* login_manage_users_action_ = nullptr;
 
   // ── 执行引擎（委托给 ExecutionPanelController） ──
-
   // 附属工具启动
   QAction* tool_topology_action_ = nullptr;
   QAction* tool_protocol_action_ = nullptr;
@@ -286,23 +286,13 @@ class MainWindow : public SARibbonMainWindow {
   // 当前编辑器 Qsci 选区变化的信号连接（驱动 cut/copy）
   QMetaObject::Connection current_editor_selection_connection_;
 
-  bool first_show_ = true;
+  bool first_show_ = true;  // 窗口首次显示
 
   QAction* tool_testexecutor_action_ = nullptr;
 
   // QAB 文件搜索框
   QLineEdit* ribbon_search_edit_ = nullptr;
   QCompleter* ribbon_search_completer_ = nullptr;
-
-  // ── 新手引导（懒创建，D1/D16） ──
-  void onOpenGuidance();
-  void ensureGuidanceCreated();
-  void setupGuidanceFlows();
-  QWidget* ribbonButtonForAction(QAction* action);
-  QWidget* findTopologyEditor() const;
-  QWidget* findTopologyCanvas(const QString& filePath) const;
-  QWidget* findTopologyDevicePalette() const;
-  QString writeGuidanceSampleTopology() const;
 
   GuidanceController* guidance_controller_ = nullptr;
   GuidanceHomePage* guidance_home_page_ = nullptr;
@@ -311,4 +301,3 @@ class MainWindow : public SARibbonMainWindow {
 };
 
 }  // namespace etest::app
-

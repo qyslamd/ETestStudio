@@ -359,9 +359,11 @@ void MainWindow::initSignals() {
             if (locked) {
               disableEditActions();
               sidebar_content_->setEnabled(false);
+              status_bar_ctrl_->setRunningState(true);
             } else {
               enableEditActions();
               sidebar_content_->setEnabled(true);
+              status_bar_ctrl_->setRunningState(false);
             }
           });
 
@@ -540,8 +542,8 @@ void MainWindow::initSignals() {
           editor_manager_->openFile(path);
         });
     // 项目结构树：右键→用文本编辑器打开
-    connect(psWidget, &ProjectOverviewWidget::fileOpenAsTextRequested,
-            psWidget, [this](const QString& path) {
+    connect(psWidget, &ProjectOverviewWidget::fileOpenAsTextRequested, psWidget,
+            [this](const QString& path) {
               editor_manager_->openFile(path, QStringLiteral("text"));
             });
     // 项目结构树：文件删除/重命名同步到编辑器
@@ -1513,8 +1515,8 @@ void MainWindow::onNewFile() {
     return;
   }
   project_overview_widget_->createNewFile(wizard.selectedCategoryId(),
-                                           wizard.selectedExtension(),
-                                           wizard.selectedBaseName());
+                                          wizard.selectedExtension(),
+                                          wizard.selectedBaseName());
 }
 
 void MainWindow::onQuickCreateFile(const QString& categoryId,
