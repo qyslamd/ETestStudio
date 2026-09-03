@@ -4,13 +4,31 @@
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 
+#include <QAction>
 #include <QCheckBox>
+#include <QFocusEvent>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMouseEvent>
 #include <QPushButton>
+#include <QTimer>
 #include <QVBoxLayout>
+
+class MyLineEdit : public QLineEdit {
+  Q_OBJECT
+ public:
+  explicit MyLineEdit(QWidget* parent = nullptr) : QLineEdit(parent) {}
+
+ protected:
+  void focusInEvent(QFocusEvent* event) override {
+    QLineEdit::focusInEvent(event);
+    // 延迟 0 毫秒执行全选，确保在焦点事件和点击事件完全处理后进行
+    QTimer::singleShot(0, this, &QLineEdit::selectAll);
+  }
+};
+#include "LoginDialog.moc"
 
 namespace etest::app {
 
@@ -84,14 +102,16 @@ void LoginDialog::initUi() {
   titleRow->addStretch();
   titleRow->addWidget(closeBtn_);
 
-  usernameEdit_ = new QLineEdit(form);
+  usernameEdit_ = new MyLineEdit(form);
   usernameEdit_->setObjectName(QStringLiteral("loginUsername"));
   usernameEdit_->setPlaceholderText(QStringLiteral("admin"));
 
-  passwordEdit_ = new QLineEdit(form);
+  passwordEdit_ = new MyLineEdit(form);
   passwordEdit_->setObjectName(QStringLiteral("loginPassword"));
   passwordEdit_->setPlaceholderText(QStringLiteral("请输入密码"));
   passwordEdit_->setEchoMode(QLineEdit::Password);
+  show_password_action_ = passwordEdit_->addAction(
+      AppIconProvider::instance().icon("eye"), QLineEdit::TrailingPosition);
 
   rememberCheckBox_ = new QCheckBox(QStringLiteral("记住密码"), form);
   rememberCheckBox_->setObjectName(QStringLiteral("loginRemember"));
@@ -117,6 +137,17 @@ void LoginDialog::initUi() {
 }
 
 void LoginDialog::initSignals() {
+  connect(show_password_action_, &QAction::triggered, this, [this]() {
+    if (passwordEdit_->echoMode() == QLineEdit::Password) {
+      passwordEdit_->setEchoMode(QLineEdit::Normal);
+      show_password_action_->setIcon(
+          AppIconProvider::instance().icon("eye_closed"));
+    } else {
+      passwordEdit_->setEchoMode(QLineEdit::Password);
+      show_password_action_->setIcon(AppIconProvider::instance().icon("eye"));
+    }
+    passwordEdit_->update();
+  });
   // 关闭就意味着不登录
   connect(closeBtn_, &QPushButton::clicked, this, &QDialog::reject);
   connect(loginButton_, &QPushButton::clicked, this,

@@ -182,6 +182,21 @@ QSplitter::handle:vertical:pressed {
     background-color: #0055aa; 
 }
 
+/* ==================== QMainWindow separator ==================== */
+/* 设置分割线的颜色、宽度和边框 */
+QMainWindow::separator {
+    background-color: transparent;
+    width: 6px;
+    height: 6px;
+    border: none;
+}
+QMainWindow::separator:hover {
+    background-color: #0055aa;
+}
+QMainWindow::separator:pressed {
+    background-color: #0055aa;
+}
+
 /* Tab Widget — 由 TabBarStyle 全权自绘，不使用 QSS */
 QTabWidget::pane {
     border: none;
@@ -1988,10 +2003,13 @@ QLabel#PhSectionLabel {
 
 /* ==================== QDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */
 QDockWidget {
-    border: 1px solid #3C3C3C;
+    border: 1px solid red; /*D0D0D0*/
+    border-radius:8px;
 }
-QDockWidget > QWidget {
-    background: #252526;
+etest--ui--DockTitleBar {
+    background: red;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 }
 
 /* IcdPropertyPanel 内容区 */

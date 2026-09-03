@@ -1,8 +1,8 @@
 #pragma once
 
+#include <QFrame>
 #include <QLabel>
 #include <QToolButton>
-#include <QWidget>
 
 class QDockWidget;
 
@@ -11,7 +11,7 @@ namespace etest::ui {
 /// Custom title bar for QDockWidget, replaces the native title bar
 /// so button and icon sizes are fully controllable via layout.
 /// Used by TopologyEditorWidget and ProtocolEditorWidget.
-class DockTitleBar : public QWidget {
+class DockTitleBar : public QFrame {
   Q_OBJECT
  public:
   DockTitleBar(const QString& title,

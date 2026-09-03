@@ -162,6 +162,21 @@ QSplitter::handle:vertical:pressed {
     background-color: #0055aa; 
 }
 
+/* ==================== QMainWindow separator ==================== */
+/* 设置分割线的颜色、宽度和边框 */
+QMainWindow::separator {
+    background-color: transparent;
+    width: 6px;
+    height: 6px;
+    border: none;
+}
+QMainWindow::separator:hover {
+    background-color: #0055aa;
+}
+QMainWindow::separator:pressed {
+    background-color: #0055aa;
+}
+
 /* ==================== TopologyManagerWidget ==================== */
 QToolButton#topologyNewBtn {
     background-color: #FFFFFF;
@@ -818,10 +833,30 @@ QLabel#PhSectionLabel {
 
 /* ==================== QDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */
 QDockWidget {
-    border: 1px solid #D0D0D0;
+    border: 1px solid red; /*D0D0D0*/
+    border-radius:8px;
 }
-QDockWidget > QWidget {
-    background: #FAFAFA;
+etest--ui--DockTitleBar {
+    background-color: #2584CF;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom: 1px solid #D0D0D0;
+}
+QLabel#dockTitleBarLabel {
+    color: #333333;
+    font-size: 12px;
+    background: transparent;
+}
+QToolButton#dockFloatButton, QToolButton#dockCloseButton {
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+}
+QToolButton#dockFloatButton:hover, QToolButton#dockCloseButton:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+QToolButton#dockFloatButton:pressed, QToolButton#dockCloseButton:pressed {
+    background: rgba(0, 0, 0, 0.15);
 }
 
 /* ==================== PropertyPanelWidget ==================== */
@@ -845,26 +880,6 @@ QScrollArea#icdPropertyScroll > QWidget > QWidget {
 }
 QWidget#icdPropertyForm {
     background-color: transparent;
-}
-etest--ui--DockTitleBar {
-    background: #F0F0F0;
-    border-bottom: 1px solid #D0D0D0;
-}
-QLabel#dockTitleBarLabel {
-    color: #333333;
-    font-size: 12px;
-    background: transparent;
-}
-QToolButton#dockFloatButton, QToolButton#dockCloseButton {
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-}
-QToolButton#dockFloatButton:hover, QToolButton#dockCloseButton:hover {
-    background: rgba(0, 0, 0, 0.08);
-}
-QToolButton#dockFloatButton:pressed, QToolButton#dockCloseButton:pressed {
-    background: rgba(0, 0, 0, 0.15);
 }
 
 /* --- Open Files section (tree mode) --- */

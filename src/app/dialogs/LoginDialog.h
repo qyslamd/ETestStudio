@@ -7,6 +7,7 @@ class QLineEdit;
 class QPushButton;
 class QCheckBox;
 class QKeyEvent;
+class QAction;
 
 namespace etest::app {
 
@@ -30,6 +31,7 @@ class LoginDialog : public OverlayDialog {
   QCheckBox* rememberCheckBox_ = nullptr;
   QPushButton* loginButton_ = nullptr;
   QLabel* hintLabel_ = nullptr;
+  QAction* show_password_action_ = nullptr;
 };
 
 }  // namespace etest::app

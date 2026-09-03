@@ -11,7 +11,7 @@ namespace etest::ui {
 DockTitleBar::DockTitleBar(const QString& title,
                            QDockWidget* dockWidget,
                            QWidget* parent)
-    : QWidget(parent), dock_widget_(dockWidget) {
+    : QFrame(parent), dock_widget_(dockWidget) {
   auto* lay = new QHBoxLayout(this);
   lay->setContentsMargins(12, 0, 4, 0);
   lay->setSpacing(0);
@@ -30,9 +30,8 @@ DockTitleBar::DockTitleBar(const QString& title,
   float_btn_->setAutoRaise(true);
   float_btn_->setToolTip(QStringLiteral("浮动/停靠"));
   float_btn_->setCursor(Qt::ArrowCursor);
-  connect(float_btn_, &QAbstractButton::clicked, this, [this]() {
-    dock_widget_->setFloating(!dock_widget_->isFloating());
-  });
+  connect(float_btn_, &QAbstractButton::clicked, this,
+          [this]() { dock_widget_->setFloating(!dock_widget_->isFloating()); });
   lay->addWidget(float_btn_);
 
   close_btn_ = new QToolButton(this);
@@ -41,7 +40,8 @@ DockTitleBar::DockTitleBar(const QString& title,
   close_btn_->setAutoRaise(true);
   close_btn_->setToolTip(QStringLiteral("关闭"));
   close_btn_->setCursor(Qt::ArrowCursor);
-  connect(close_btn_, &QAbstractButton::clicked, dock_widget_, &QDockWidget::close);
+  connect(close_btn_, &QAbstractButton::clicked, dock_widget_,
+          &QDockWidget::close);
   lay->addWidget(close_btn_);
 
   setFixedHeight(32);
@@ -61,12 +61,12 @@ void DockTitleBar::updateIcons() {
   bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
   QString suffix = dark ? QStringLiteral("_dark") : QStringLiteral("_light");
 
-  float_btn_->setIcon(
-      QIcon(QStringLiteral(":/resources/icons/svg/dock_float%1.svg").arg(suffix)));
+  float_btn_->setIcon(QIcon(
+      QStringLiteral(":/resources/icons/svg/dock_float%1.svg").arg(suffix)));
   float_btn_->setIconSize(QSize(20, 20));
 
-  close_btn_->setIcon(
-      QIcon(QStringLiteral(":/resources/icons/svg/dock_close%1.svg").arg(suffix)));
+  close_btn_->setIcon(QIcon(
+      QStringLiteral(":/resources/icons/svg/dock_close%1.svg").arg(suffix)));
   close_btn_->setIconSize(QSize(20, 20));
 }
 
