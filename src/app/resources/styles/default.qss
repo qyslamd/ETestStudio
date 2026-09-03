@@ -50,27 +50,6 @@ QListView#WelcomeRecentList {
     color: #aaa;
 }
 
-/* ==================== QDoubleSpinBox ==================== */
-QDoubleSpinBox {
-    background-color: #FFFFFF;
-    color: #1F1F1F;
-    border: 1px solid #D0D0D0;
-    border-radius: 3px;
-    padding: 4px 8px;
-    selection-background-color: #CCE4F7;
-    selection-color: #1F1F1F;
-}
-QDoubleSpinBox:hover {
-    border-color: #007ACC;
-}
-QDoubleSpinBox:focus {
-    border-color: #007ACC;
-}
-QDoubleSpinBox:disabled {
-    background-color: #F5F5F5;
-    color: #AAAAAA;
-    border-color: #E0E0E0;
-}
 /* ==================== QScrollBar ==================== */
 QScrollBar:vertical {
     background-color: #F0F0F0;
@@ -240,7 +219,6 @@ QToolButton#icdFramePreviewDecodeBtn {
     color: #FFFFFF;
     border: 1px solid #0078D4;
     border-radius: 2px;
-    padding: 4px 12px;
     font-size: 12px;
 }
 QToolButton#icdFramePreviewDecodeBtn:hover {
@@ -870,11 +848,11 @@ QStackedWidget#topologyPropertyStack {
 }
 
 /* IcdPropertyPanel 内部滚动区内容 */
-QScrollArea#icdPropertyScroll {
+#icdPropertyScroll {
     background-color: transparent;
     border: none;
 }
-QScrollArea#icdPropertyScroll > QWidget > QWidget {
+#icdPropertyScroll > QWidget > QWidget {
     background-color: transparent;
 }
 QWidget#icdPropertyForm {
@@ -1114,13 +1092,6 @@ etest--app--SettingsDialog QLabel {
     color: #333333;
     background-color: transparent;
 }
-QComboBox QAbstractItemView {
-    background-color: #FFFFFF;
-    color: #1F1F1F;
-    selection-background-color: #CCE4F7;
-    selection-color: #1F1F1F;
-    border: 1px solid #D0D0D0;
-}
 
 /* 文本输入框 */
 etest--app--SettingsDialog QLineEdit {
@@ -1132,27 +1103,6 @@ etest--app--SettingsDialog QLineEdit {
 }
 etest--app--SettingsDialog QLineEdit:focus {
     border-color: #007ACC;
-}
-
-/* Fluent 下拉 / 数字控件 */
-etest--app--SettingsDialog QComboBox,
-etest--app--SettingsDialog QSpinBox {
-    background-color: #FFFFFF;
-    color: #1F1F1F;
-    border: 1px solid #D0D0D0;
-    border-radius: 6px;
-    padding: 5px 10px;
-    min-width: 120px;
-}
-etest--app--SettingsDialog QComboBox:hover,
-etest--app--SettingsDialog QSpinBox:hover,
-etest--app--SettingsDialog QComboBox:focus,
-etest--app--SettingsDialog QSpinBox:focus {
-    border-color: #0078D4;
-}
-etest--app--SettingsDialog QComboBox::drop-down {
-    border: none;
-    width: 22px;
 }
 
 /* 滚动区（外观页内嵌） */
@@ -1842,14 +1792,18 @@ QScrollArea {
 QScrollArea > QWidget > QWidget {
     background: transparent;
 }
+#protocolPropertyPanel{
+    background-color: #FFFFFF;
+}
+
 #ScrollAreaContent {
-    background: transparent;
+    background-color: transparent;
 }
 /* ===== QScrollArea 主题适配样式 END ===== */
 
 /* ===== QGroupBox 主题适配样式 START ===== */
 QGroupBox {
-    background-color: #F0F0F0;
+    background-color: #FAFAFA;
     border: 1px solid #CCCCCC;
     border-radius: 8px;
     margin-top: 0px;
@@ -2197,22 +2151,6 @@ QTextEdit#progPrecondEdit[error="true"] {
   color: #333333;
   font-size: 13px;
 }
-#stepModal QLineEdit, #stepModal QComboBox {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 8px;
-  padding: 6px 10px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-#stepModal QLineEdit:focus, #stepModal QComboBox:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
-}
-#stepModal QComboBox::drop-down {
-  border: none;
-  width: 22px;
-}
 #stepModal QCheckBox {
   color: #333333;
   font-size: 13px;
@@ -2297,24 +2235,7 @@ QLineEdit#frameNameEdit[error="true"],
 QLineEdit#frameIdEdit[error="true"] {
   border: 1.5px solid #D13438;
 }
-QComboBox#frameTypeCombo,
-QComboBox#byteOrderCombo {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 10px;
-  padding: 8px 12px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-QComboBox#frameTypeCombo:focus,
-QComboBox#byteOrderCombo:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
-}
-QComboBox#frameTypeCombo::drop-down, QComboBox#byteOrderCombo::drop-down {
-  border: none;
-  width: 22px;
-}
+
 QTextEdit#frameDescEdit {
   background-color: rgba(255, 255, 255, 0.85);
   border: 1.5px solid #D0D0DD;
@@ -2349,42 +2270,6 @@ QTextEdit#frameDescEdit:focus {
 #fieldTable QTableCornerButton::section {
   background-color: transparent;
   border: none;
-}
-#fieldTable QLineEdit, #fieldTable QSpinBox {
-  background-color: transparent;
-  border: none;
-  border-bottom: 1.5px solid transparent;
-  border-radius: 4px;
-  padding: 4px 6px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-#fieldTable QLineEdit:hover, #fieldTable QSpinBox:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-#fieldTable QLineEdit:focus, #fieldTable QSpinBox:focus {
-  background-color: #FFFFFF;
-  border-bottom: 1.5px solid #007ACC;
-}
-#fieldTable QLineEdit[error="true"] {
-  border-bottom: 1.5px solid #D13438;
-}
-#fieldTable QComboBox {
-  background-color: transparent;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 6px;
-  color: #333333;
-}
-#fieldTable QComboBox:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-#fieldTable QComboBox::drop-down {
-  border: none;
-  width: 18px;
-}
-#fieldTable QSpinBox::up-button, #fieldTable QSpinBox::down-button {
-  width: 14px;
 }
 #fieldDelBtn {
   background-color: transparent;
@@ -2578,31 +2463,6 @@ QTextEdit#frameDescEdit:focus {
 #topoConnArrow {
   color: #007ACC;
   font-size: 16px;
-}
-QComboBox#topoConnDeviceCombo,
-QComboBox#topoConnDevicePortCombo,
-QComboBox#topoConnUutCombo,
-QComboBox#topoConnUutPortCombo {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 8px;
-  padding: 5px 10px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-QComboBox#topoConnDeviceCombo,
-QComboBox#topoConnDevicePortCombo,
-QComboBox#topoConnUutCombo,
-QComboBox#topoConnUutPortCombo:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
-}
-QComboBox#topoConnDeviceCombo,
-QComboBox#topoConnDevicePortCombo,
-QComboBox#topoConnUutCombo,
-QComboBox#topoConnUutPortCombo::drop-down {
-  border: none;
-  width: 20px;
 }
 #topoAddConnBtn {
   background-color: #DBECF8;

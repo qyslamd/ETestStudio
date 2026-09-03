@@ -385,65 +385,6 @@ QLabel {
     color: #CCCCCC;
     background-color: transparent;
 }
-
-/* ComboBox */
-QComboBox {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 4px 8px;
-}
-QComboBox:hover {
-    border-color: #007ACC;
-}
-QComboBox::drop-down {
-    border: none;
-}
-QComboBox::down-arrow {
-    width: 10px;
-    height: 10px;
-    image: url(:/resources/icons/svg/drop_down_arrow_light.svg);
-}
-QComboBox QAbstractItemView {
-    background-color: #252526;
-    color: #CCCCCC;
-    selection-background-color: #094771;
-}
-
-/* SpinBox */
-QSpinBox {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 4px 8px;
-}
-QSpinBox:focus {
-    border-color: #007ACC;
-}
-
-/* DoubleSpinBox */
-QDoubleSpinBox {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #3C3C3C;
-    border-radius: 2px;
-    padding: 4px 8px;
-    selection-background-color: #264F78;
-    selection-color: #FFFFFF;
-}
-QDoubleSpinBox:hover {
-    border-color: #007ACC;
-}
-QDoubleSpinBox:focus {
-    border-color: #007ACC;
-}
-QDoubleSpinBox:disabled {
-    background-color: #2D2D2D;
-    color: #5A5A5A;
-    border-color: #2D2D2D;
-}
 /* CheckBox */
 QCheckBox {
     color: #CCCCCC;
@@ -1670,28 +1611,6 @@ etest--app--SettingsDialog QLineEdit {
 etest--app--SettingsDialog QLineEdit:focus {
     border-color: #007ACC;
 }
-
-/* Fluent 下拉 / 数字控件 */
-etest--app--SettingsDialog QComboBox,
-etest--app--SettingsDialog QSpinBox {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #454545;
-    border-radius: 6px;
-    padding: 5px 10px;
-    min-width: 120px;
-}
-etest--app--SettingsDialog QComboBox:hover,
-etest--app--SettingsDialog QSpinBox:hover,
-etest--app--SettingsDialog QComboBox:focus,
-etest--app--SettingsDialog QSpinBox:focus {
-    border-color: #4AA8FF;
-}
-etest--app--SettingsDialog QComboBox::drop-down {
-    border: none;
-    width: 22px;
-}
-/* Toggle 由 SwitchButton 自绘，删除设置页 QCheckBox 死样式 */
 
 /* 设置页中的按钮 — 已由全局 QPushButton 统一样式覆盖 */
 
@@ -3052,22 +2971,6 @@ QTextEdit#progPrecondEdit[error="true"] {
   color: #CCCCCC;
   font-size: 13px;
 }
-#stepModal QLineEdit, #stepModal QComboBox {
-  background-color: #3A3A44;
-  border: 1.5px solid #4A4A58;
-  border-radius: 8px;
-  padding: 6px 10px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-#stepModal QLineEdit:focus, #stepModal QComboBox:focus {
-  border-color: #007ACC;
-  background-color: #454550;
-}
-#stepModal QComboBox::drop-down {
-  border: none;
-  width: 22px;
-}
 #stepModal QCheckBox {
   color: #CCCCCC;
   font-size: 13px;
@@ -3152,24 +3055,6 @@ QLineEdit#frameNameEdit[error="true"],
 QLineEdit#frameIdEdit[error="true"] {
   border: 1.5px solid #D13438;
 }
-QComboBox#frameTypeCombo,
-QComboBox#byteOrderCombo {
-  background-color: #3A3A44;
-  border: 1.5px solid #4A4A58;
-  border-radius: 10px;
-  padding: 8px 12px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-QComboBox#frameTypeCombo:focus,
-QComboBox#byteOrderCombo:focus {
-  border-color: #007ACC;
-  background-color: #454550;
-}
-QComboBox#frameTypeCombo::drop-down, QComboBox#byteOrderCombo::drop-down {
-  border: none;
-  width: 22px;
-}
 QTextEdit#frameDescEdit {
   background-color: #3A3A44;
   border: 1.5px solid #4A4A58;
@@ -3205,41 +3090,8 @@ QTextEdit#frameDescEdit:focus {
   background-color: transparent;
   border: none;
 }
-#fieldTable QLineEdit, #fieldTable QSpinBox {
-  background-color: transparent;
-  border: none;
-  border-bottom: 1.5px solid transparent;
-  border-radius: 4px;
-  padding: 4px 6px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-#fieldTable QLineEdit:hover, #fieldTable QSpinBox:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-}
-#fieldTable QLineEdit:focus, #fieldTable QSpinBox:focus {
-  background-color: #454550;
-  border-bottom: 1.5px solid #007ACC;
-}
 #fieldTable QLineEdit[error="true"] {
   border-bottom: 1.5px solid #D13438;
-}
-#fieldTable QComboBox {
-  background-color: transparent;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 6px;
-  color: #CCCCCC;
-}
-#fieldTable QComboBox:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-}
-#fieldTable QComboBox::drop-down {
-  border: none;
-  width: 18px;
-}
-#fieldTable QSpinBox::up-button, #fieldTable QSpinBox::down-button {
-  width: 14px;
 }
 #fieldDelBtn {
   background-color: transparent;
@@ -3433,31 +3285,6 @@ QTextEdit#frameDescEdit:focus {
 #topoConnArrow {
   color: #007ACC;
   font-size: 16px;
-}
-QComboBox#topoConnDeviceCombo,
-QComboBox#topoConnDevicePortCombo,
-QComboBox#topoConnUutCombo,
-QComboBox#topoConnUutPortCombo {
-  background-color: #3A3A44;
-  border: 1.5px solid #4A4A58;
-  border-radius: 8px;
-  padding: 5px 10px;
-  color: #CCCCCC;
-  selection-background-color: #007ACC;
-}
-QComboBox#topoConnDeviceCombo,
-QComboBox#topoConnDevicePortCombo,
-QComboBox#topoConnUutCombo,
-QComboBox#topoConnUutPortCombo:focus {
-  border-color: #007ACC;
-  background-color: #454550;
-}
-QComboBox#topoConnDeviceCombo,
-QComboBox#topoConnDevicePortCombo,
-QComboBox#topoConnUutCombo,
-QComboBox#topoConnUutPortCombo::drop-down {
-  border: none;
-  width: 20px;
 }
 #topoAddConnBtn {
   background-color: rgba(0, 122, 204, 0.16);

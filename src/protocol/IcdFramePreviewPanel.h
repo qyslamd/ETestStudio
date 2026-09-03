@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QWidget>
+#include <QFrame>
 
 #include <icd/frame.hpp>
 
@@ -13,7 +13,7 @@ namespace etest::protocol {
 
 // 帧报文预览面板：输入十六进制报文，按当前帧协议解析出各字段值。
 // 属于帧级视图，与位布局视图、节点树、属性面板并列。
-class IcdFramePreviewPanel : public QWidget {
+class IcdFramePreviewPanel : public QFrame {
   Q_OBJECT
  public:
   explicit IcdFramePreviewPanel(QWidget* parent = nullptr);

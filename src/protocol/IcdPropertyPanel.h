@@ -1,10 +1,9 @@
 #pragma once
 
-#include <QWidget>
+#include <QFrame>
 #include <QVector>
-
-#include <icd/node.hpp>
 #include <icd/frame.hpp>
+#include <icd/node.hpp>
 
 class QCheckBox;
 class QComboBox;
@@ -16,7 +15,7 @@ class QSpinBox;
 
 namespace etest::protocol {
 
-class IcdPropertyPanel : public QWidget {
+class IcdPropertyPanel : public QFrame {
   Q_OBJECT
  public:
   explicit IcdPropertyPanel(QWidget* parent = nullptr);

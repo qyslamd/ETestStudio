@@ -957,11 +957,6 @@ void ContainerFieldItem::contextMenuEvent(
 }
 
 IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent) : QGraphicsScene(parent) {
-  LOG_INFO(
-      "ICD_UI", "theme manager scene background: {}, window background: {}",
-      ThemeManager::instance().sceneBackground().name().toStdString().c_str(),
-      ThemeManager::instance().windowBackground().name().toStdString().c_str());
-
   setBackgroundBrush(ThemeManager::instance().sceneBackground());
 }
 
@@ -1146,7 +1141,7 @@ void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {
 
   QRectF content_rect =
       scene_->itemsBoundingRect().adjusted(-10, -10, 160, 160);
-  QRectF default_rect(0, 0, 960, 720);
+  QRectF default_rect(0, 0, 500, 500);
   scene_->setSceneRect(content_rect.united(default_rect));
   centerOn(0, 0);
 }

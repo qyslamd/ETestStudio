@@ -20,7 +20,7 @@ using namespace utils;
 // Constructor & UI construction
 // ===========================================================================
 
-IcdPropertyPanel::IcdPropertyPanel(QWidget* parent) : QWidget(parent) {
+IcdPropertyPanel::IcdPropertyPanel(QWidget* parent) : QFrame(parent) {
   initUi();
 }
 

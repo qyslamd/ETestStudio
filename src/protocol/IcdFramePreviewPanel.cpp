@@ -13,7 +13,7 @@
 
 namespace etest::protocol {
 
-IcdFramePreviewPanel::IcdFramePreviewPanel(QWidget* parent) : QWidget(parent) {
+IcdFramePreviewPanel::IcdFramePreviewPanel(QWidget* parent) : QFrame(parent) {
   initUi();
 }
 
@@ -21,8 +21,8 @@ void IcdFramePreviewPanel::initUi() {
   setObjectName(QStringLiteral("icdFramePreviewPanel"));
 
   auto* outer = new QVBoxLayout(this);
-  outer->setContentsMargins(8, 6, 8, 8);
-  outer->setSpacing(6);
+  outer->setContentsMargins(0, 0, 0, 0);
+  outer->setSpacing(0);
 
   // 输入行：hex 输入框 + 解析按钮
   auto* input_row = new QHBoxLayout();
