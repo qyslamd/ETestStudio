@@ -11,15 +11,17 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "SwitchButton.h"
 #include "ThemeManager.h"
 #include "WizardTemplateCard.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
-#include "utils/switch_button.h"
 
 using namespace etest::core::config;
 
 namespace etest::app {
+
+using etest::ui::SwitchButton;
 
 // ── Page 1: 模板选择 ──
 
@@ -91,9 +93,8 @@ void NewProjectWizard::TemplatePage::initSignals() {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   connect(group_, &QButtonGroup::idClicked, this, &WizardPage::completeChanged);
 #else
-  connect(group_,
-          QOverload<QAbstractButton*>::of(&QButtonGroup::buttonClicked), this,
-          &WizardPage::completeChanged);
+  connect(group_, QOverload<QAbstractButton*>::of(&QButtonGroup::buttonClicked),
+          this, &WizardPage::completeChanged);
 #endif
 }
 

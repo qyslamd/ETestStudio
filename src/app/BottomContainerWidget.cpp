@@ -13,7 +13,8 @@ namespace etest::app {
 using etest::core_ui::AppIconProvider;
 using etest::core_ui::ThemeManager;
 
-BottomContainerWidget::BottomContainerWidget(QWidget* parent) : QFrame(parent) {
+BottomContainerWidget::BottomContainerWidget(QWidget* parent)
+    : RoundQFrame(parent) {
   initUi();
 }
 

@@ -744,6 +744,7 @@ void TopologyFileWizard::DeviceUutPage::initUi() {
   devListLay->addWidget(device_empty_);
   devListLay->addStretch();
   devScroll->setWidget(devContent);
+  devContent->setAutoFillBackground(true);
   devLay->addWidget(devScroll, 1);
 
   auto* devFooter = new QHBoxLayout();
@@ -805,6 +806,7 @@ void TopologyFileWizard::DeviceUutPage::initUi() {
   uutListLay->addWidget(uut_empty_);
   uutListLay->addStretch();
   uutScroll->setWidget(uutContent);
+  uutContent->setAutoFillBackground(true);
   uutLay->addWidget(uutScroll, 1);
 
   auto* uutFooter = new QHBoxLayout();

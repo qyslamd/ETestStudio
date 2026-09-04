@@ -171,6 +171,7 @@ void ProjectOverviewWidget::initUi() {
   sc_layout->addStretch();
 
   scroll_area->setWidget(scroll_content);
+  scroll_content->setAutoFillBackground(false);
   ph_layout->addWidget(scroll_area);
 
   stack_->addWidget(page_default_);  // index 0

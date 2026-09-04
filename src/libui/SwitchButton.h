@@ -5,7 +5,7 @@
 
 class QVariantAnimation;
 
-namespace etest::app {
+namespace etest::ui {
 
 // Fluent 风格纯滑块开关：胶囊底 + 白色圆形滑块（无文字、无凹槽）。
 // 配色通过 setOnBackground/setOffBackground 注入，配合 ThemeManager 语义色使用。
@@ -32,4 +32,4 @@ class SwitchButton : public QAbstractButton {
   qreal knob_position_ = 0.0;  // 0 = off，1 = on，由动画驱动
 };
 
-}  // namespace etest::app
+}  // namespace etest::ui

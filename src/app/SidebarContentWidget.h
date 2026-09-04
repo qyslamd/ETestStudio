@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QFrame>
 #include <QMap>
 #include <QStackedWidget>
 #include <QVBoxLayout>
+#include "RoundQFrame.h"
 
 class QLabel;
 
@@ -28,7 +28,8 @@ constexpr auto kSearch = "search";
 constexpr auto kGit = "git";
 }  // namespace PageId
 
-class SidebarContentWidget : public QFrame {
+using etest::ui::RoundQFrame;
+class SidebarContentWidget : public RoundQFrame {
   Q_OBJECT
 
  public:

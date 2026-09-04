@@ -14,6 +14,10 @@ add_library(${TARGET_NAME} STATIC
     styles/EtestComponentsFactory.cpp
     EtDockWidget.h
     EtDockWidget.cpp
+    SwitchButton.cpp
+    SwitchButton.h
+    RoundQFrame.cpp
+    RoundQFrame.h
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC

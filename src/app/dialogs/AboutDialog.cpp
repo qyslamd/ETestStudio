@@ -1,5 +1,4 @@
 #include "AboutDialog.h"
-
 #include <QLabel>
 #include <QLayout>
 #include <QPainter>
@@ -7,19 +6,18 @@
 #include <QStyle>
 #include <QToolButton>
 #include <QVBoxLayout>
-
-
+#include "RoundQFrame.h"
 #include "version.h"
 
 namespace etest::app {
 
+using etest::ui::RoundQFrame;
 AboutDialog::AboutDialog(QWidget* parent) : OverlayDialog(parent) {
   initUi();
 }
 
 void AboutDialog::initUi() {
-  auto* content = new QWidget;
-  content->setObjectName(QStringLiteral("aboutContent"));
+  auto* content = new RoundQFrame;
   content->setFixedSize(440, 540);
 
   auto* main_layout = new QVBoxLayout(content);

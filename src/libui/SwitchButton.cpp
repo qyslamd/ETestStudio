@@ -1,13 +1,12 @@
-#include "switch_button.h"
+#include "SwitchButton.h"
 
 #include <QPainter>
 #include <QPainterPath>
 #include <QVariantAnimation>
 
-namespace etest::app {
+namespace etest::ui {
 
-SwitchButton::SwitchButton(QWidget* parent)
-    : QAbstractButton(parent) {
+SwitchButton::SwitchButton(QWidget* parent) : QAbstractButton(parent) {
   setCursor(Qt::PointingHandCursor);
   setCheckable(true);
 
@@ -60,7 +59,8 @@ QSize SwitchButton::minimumSizeHint() const {
   return QSize(44, 24);
 }
 
-void SwitchButton::fillRoundRect(QPainter* p, const QRectF& rect,
+void SwitchButton::fillRoundRect(QPainter* p,
+                                 const QRectF& rect,
                                  const QBrush& brush) {
   p->save();
   QPainterPath path;
@@ -76,4 +76,4 @@ void SwitchButton::startKnobAnimation(bool checked) {
   knob_animation_->start();
 }
 
-}  // namespace etest::app
+}  // namespace etest::ui

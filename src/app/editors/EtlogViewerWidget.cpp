@@ -202,6 +202,7 @@ void EtlogViewerWidget::initUi() {
 
   auto* detail_inner = new QWidget();
   detail_scroll_->setWidget(detail_inner);
+  detail_inner->setAutoFillBackground(false);
   auto* outer_layout = new QVBoxLayout(detail_inner);
   outer_layout->setContentsMargins(0, 0, 0, 0);
 

@@ -8,19 +8,21 @@
 #include <QScrollBar>
 #include <QToolButton>
 #include <QVBoxLayout>
-
+#include "RoundQFrame.h"
+#include "SwitchButton.h"
 #include "ThemeManager.h"
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "core_ui/AppIconProvider.h"
-#include "utils/switch_button.h"
 #include "version.h"
-
 
 namespace etest::app {
 
 using namespace core::config;
+
+using etest::ui::RoundQFrame;
+using etest::ui::SwitchButton;
 
 SettingsDialog::SettingsDialog(QWidget* parent) : OverlayDialog(parent) {
   round_radius_ = 16;  // 遮罩圆角
@@ -32,8 +34,7 @@ void SettingsDialog::initUi() {
   setWindowTitle(QStringLiteral("设置"));
 
   // OverlayDialog 内容卡片（固定尺寸，居中显示于遮罩）
-  auto* content = new QWidget;
-  content->setObjectName(QStringLiteral("SettingsContent"));
+  auto* content = new RoundQFrame;
   content->setFixedSize(800, 600);
   auto* mainLayout = new QVBoxLayout(content);
   mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -154,6 +155,7 @@ void SettingsDialog::initUi() {
 
   auto* scrollContent = new QWidget();
   scroll_area_->setWidget(scrollContent);
+  scrollContent->setAutoFillBackground(false);
   auto* scrollLayout = new QVBoxLayout(scrollContent);
   scrollLayout->setContentsMargins(0, 0, 0, 0);
   scrollLayout->setSpacing(0);
@@ -728,8 +730,7 @@ QWidget* SettingsDialog::createAboutPage() {
 
 QWidget* SettingsDialog::createSettingsCard(QWidget* parent,
                                             const QString& title) {
-  auto* card = new QWidget(parent);
-  card->setObjectName("SettingsCard");
+  auto* card = new RoundQFrame(parent);
   auto* cardLayout = new QVBoxLayout(card);
   cardLayout->setContentsMargins(12, 8, 12, 8);
   cardLayout->setSpacing(0);

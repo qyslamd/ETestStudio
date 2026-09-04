@@ -1,5 +1,8 @@
 #include "MainWindow.h"
-
+#include <DockAreaTitleBar.h>
+#include <DockAreaWidget.h>
+#include <DockSplitter.h>
+#include <DockWidgetTab.h>
 #include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
@@ -36,25 +39,6 @@
 #include <QStringListModel>
 #include <QTimer>
 #include <QToolButton>
-#include "dialogs/AboutDialog.h"
-#include "dialogs/IcdSignalSelection.h"
-#include "dialogs/LoginDialog.h"
-#include "dialogs/UserManagerDialog.h"
-#include "guidance/guidance_config.h"
-#include "guidance/guidance_controller.h"
-#include "guidance/guidance_homepage.h"
-#include "wizards/NewFileGuideWizard.h"
-#include "wizards/QuickStartWizard.h"
-
-#include "SARibbonBar.h"
-#include "SARibbonCategory.h"
-#include "SARibbonPanel.h"
-#include "SARibbonQuickAccessBar.h"
-
-#include <DockAreaTitleBar.h>
-#include <DockAreaWidget.h>
-#include <DockSplitter.h>
-#include <DockWidgetTab.h>
 #include "AppIconProvider.h"
 #include "AppStatusBarController.h"
 #include "BottomContainerWidget.h"
@@ -67,6 +51,11 @@
 #include "ProjectController.h"
 #include "ProjectOverviewWidget.h"
 #include "ProtocolManagerWidget.h"
+#include "RoundQFrame.h"
+#include "SARibbonBar.h"
+#include "SARibbonCategory.h"
+#include "SARibbonPanel.h"
+#include "SARibbonQuickAccessBar.h"
 #include "SearchWidget.h"
 #include "SidebarContentWidget.h"
 #include "SidebarNavWidget.h"
@@ -84,11 +73,18 @@
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
+#include "dialogs/AboutDialog.h"
+#include "dialogs/IcdSignalSelection.h"
+#include "dialogs/LoginDialog.h"
 #include "dialogs/SettingsDialog.h"
+#include "dialogs/UserManagerDialog.h"
 #include "editors/EditorFactory.h"
 #include "editors/TextEditorWidget.h"
 #include "engine/StepRunner.h"
 #include "engine/TestExecutionEngine.h"
+#include "guidance/guidance_config.h"
+#include "guidance/guidance_controller.h"
+#include "guidance/guidance_homepage.h"
 #include "icd/repository.hpp"
 #include "logger/Logger.h"
 #include "logger/QtConsoleSink.h"
@@ -104,6 +100,8 @@
 #include "widgets/LogOutputPanel.h"
 #include "widgets/MessageService.h"
 #include "widgets/StartupSplashWidget.h"
+#include "wizards/NewFileGuideWizard.h"
+#include "wizards/QuickStartWizard.h"
 
 using namespace etest::core::config;
 using namespace etest::core::project;
@@ -114,6 +112,7 @@ namespace etest::app {
 
 using etest::core_ui::AppIconProvider;
 using etest::core_ui::ThemeManager;
+using etest::ui::RoundQFrame;
 
 MainWindow::MainWindow(QWidget* parent, StartupSplashWidget* splash)
     : SARibbonMainWindow(parent),
@@ -224,8 +223,7 @@ void MainWindow::initUi() {
 
   // 编辑器区域（提示栏 + DockManager）
   // 右侧垂直分裂器 上
-  auto* editor_area = new QFrame(v_splitter_);
-  editor_area->setObjectName("EditorArea");
+  auto* editor_area = new RoundQFrame(v_splitter_);
   auto* editor_area_layout = new QVBoxLayout(editor_area);
   editor_area_layout->setContentsMargins(0, 0, 0, 0);
   editor_area_layout->setSpacing(0);
@@ -244,7 +242,17 @@ void MainWindow::initUi() {
   welcome_widget_->refreshRecentProjects();
   central_dock_ = new ads::CDockWidget(QStringLiteral("欢迎"));
   central_dock_->setObjectName("CentralDock");
+  // central_dock_->setWidget(welcome_widget_,
+  //                          ads::CDockWidget::ForceNoScrollArea);
   central_dock_->setWidget(welcome_widget_);
+  // 直接干
+  {
+    if (auto scrollArea = central_dock_->findChild<QScrollArea*>()) {
+      if (auto* widget = scrollArea->widget()) {
+        widget->setAutoFillBackground(false);
+      }
+    }
+  }
   central_dock_->tabWidget()->setElideMode(Qt::ElideNone);
   dock_manager_->setCentralWidget(central_dock_);
   central_dock_->setFeature(ads::CDockWidget::DockWidgetClosable, true);

@@ -207,6 +207,7 @@ void IcdPropertyPanel::initUi() {
 
   // -- Assemble --
   scroll->setWidget(form_widget_);
+  form_widget_->setAutoFillBackground(false);
   outer_layout->addWidget(scroll, 1);
 
   // Start in the "empty" state

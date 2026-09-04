@@ -200,6 +200,13 @@ QMainWindow::separator:pressed {
     background-color: #0055aa;
 }
 
+/* ==================== RoundQFrame==================== */
+etest--ui--RoundQFrame{
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+}
+
 /* ==================== TopologyManagerWidget ==================== */
 QToolButton#topologyNewBtn {
     background-color: #FFFFFF;
@@ -278,11 +285,6 @@ QToolButton#icdFramePreviewDecodeBtn:disabled {
 }
 
 /* ==================== AboutDialog ==================== */
-#aboutContent {
-    background-color: #FFFFFF;
-    border: 1px solid #E0E0E0;
-    border-radius: 12px;
-}
 #aboutHeader {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
         stop: 0 #42A5F5, stop: 1 #1565C0);
@@ -756,11 +758,6 @@ etest--app--SidebarNavWidget QToolButton:hover {
 }
 
 /* ==================== SidebarContentWidget ==================== */
-etest--app--SidebarContentWidget {
-    background-color: transparent;
-    border:1px solid #D0D0D0;
-    border-radius:8px;
-}
 etest--app--SidebarContentWidget #sidebarTitleBar {
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
@@ -769,20 +766,6 @@ etest--app--SidebarContentWidget #sidebarTitleBar {
 #PageEditor{
     background-color: white;
     border:none;
-}
-
-/* ==================== EditorArea ==================== */
-#EditorArea {
-    background-color: transparent;
-    border-radius: 8px;
-    border: 1px solid #D0D0D0;
-}
-
-/* ==================== bottomContainerWidget ==================== */
-etest--app--BottomContainerWidget {
-    background-color: transparent;
-    border-radius: 8px;
-    border: 1px solid #D0D0D0;
 }
 
 /* ==================== Tab Close Button ==================== */
@@ -955,11 +938,7 @@ etest--app--SearchWidget QLabel#contentSectionLabel {
 
 /* ==================== etest--app--SettingsDialog ==================== */
 etest--app--SettingsDialog {
-    background-color: transparent;  /* 遮罩由 OverlayDialog paintEvent 绘制，卡片区由 #SettingsContent 覆盖 */
-}
-QWidget#SettingsContent {
-    background-color: #FFFFFF;
-    border-radius: 16px;
+    background-color: transparent;
 }
 QLabel#SettingsAppIcon {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
@@ -1047,12 +1026,6 @@ etest--app--SettingsDialog QListWidget::item:selected {
     color: #0078D4;
 }
 
-/* 设置卡片 */
-QWidget#SettingsCard {
-    background-color: #FAFAFA;
-    border: 1px solid #E0E0E0;
-    border-radius: 12px;
-}
 QLabel#SettingsCardTitle {
     color: #333333;
     font-weight: bold;
@@ -1158,7 +1131,7 @@ etest--app--EtlogViewerWidget {
     font-weight: bold;
 }
 
-/* ==================== Tab Close Button (Light) ==================== */
+/* ==================== bottomContainerWidget ==================== */
 etest--app--BottomContainerWidget QTabBar::close-button {
     image: url(:/resources/icons/svg/close_dark.svg);
     subcontrol-position: right;
@@ -2166,9 +2139,7 @@ QGroupBox[selected="true"] {
   font-weight: 500;
   padding: 2px 8px;
 }
-/* ===== ProtocolFileWizard 向导 (自动生成, 勿手改) END ===== */
 
-/* ===== TopologyFileWizard 向导 (自动生成, 勿手改) START ===== */
 #topoWizardCard {
   background-color: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(0, 0, 0, 0.07);

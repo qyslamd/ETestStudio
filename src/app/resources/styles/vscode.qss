@@ -201,7 +201,14 @@ QMainWindow::separator:pressed {
     background-color: #0055aa;
 }
 
-/* Tab Widget — 由 TabBarStyle 全权自绘，不使用 QSS */
+/* ==================== RoundQFrame==================== */
+etest--ui--RoundQFrame{
+    background-color: #252526;
+    border: 1px solid #3C3C3C;
+    border-radius: 8px;
+}
+
+/* ==================== QTabWidget==================== */
 QTabWidget::pane {
     border: none;
     background-color: #1E1E1E;
@@ -469,11 +476,6 @@ etest--app--SidebarNavWidget QToolButton:checked {
 }
 
 /* ==================== SidebarContentWidget ==================== */
-etest--app--SidebarContentWidget {
-    background-color: #252526;
-    border-radius:8px;
-    border:1px solid #454545;
-}
 etest--app--SidebarContentWidget QLabel {
     color: #BBBBBB;
     font-size: 11px;
@@ -495,19 +497,7 @@ etest--app--SidebarContentWidget QToolButton:hover {
     border-top-right-radius: 8px;
 }
 
-/* ==================== EditorArea ==================== */
-#EditorArea{
-    background-color:#252526;
-    border-radius:8px;
-    border:1px solid #454545;
-}
-
 /* ==================== etest--app--BottomContainerWidget ==================== */
-etest--app--BottomContainerWidget {
-    background-color:#252526;
-    border-radius:8px;
-    border:1px solid #454545;
-}
 etest--app--BottomContainerWidget QTabWidget {
     background-color: #1E1E1E;
     border:none;
@@ -930,7 +920,6 @@ etest--app--GitWidget QLabel#gitEmptyLabel {
 }
 
 /* ==================== page1 执行仪表盘底部 tab（#ExecBottomTabs） ==================== */
-/* 复刻 BottomContainerWidget 的 tab/表格/文本样式，保持 page0/page1 底部视觉一致 */
 #ExecBottomTabs {
     background-color: #1E1E1E;
 }
@@ -1323,12 +1312,9 @@ QLabel#WelcomeTipContent {
 
 /* ==================== etest--app--SettingsDialog ==================== */
 etest--app--SettingsDialog {
-    background-color: transparent;  /* 遮罩由 OverlayDialog paintEvent 绘制，卡片区由 #SettingsContent 覆盖 */
+    background-color: transparent;  
 }
-QWidget#SettingsContent {
-    background-color: #252526;
-    border-radius: 16px;
-}
+
 QLabel#SettingsAppIcon {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
         stop: 0 #0078D4, stop: 1 #4AA8FF);
@@ -1422,15 +1408,9 @@ QScrollArea {
     background: transparent;
 }
 QScrollArea > QWidget {
-    background-color: transparent;
+    background-color: #1E1E1E;
 }
 
-/* 卡片容器 */
-QWidget#SettingsCard {
-    background-color: #2D2D2D;
-    border: 1px solid #3C3C3C;
-    border-radius: 12px;
-}
 QLabel#SettingsCardTitle {
     color: #CCCCCC;
     font-weight: bold;
@@ -1492,11 +1472,6 @@ QComboBox QAbstractItemView {
 /* 设置页中的按钮 — 已由全局 QPushButton 统一样式覆盖 */
 
 /* ==================== AboutDialog ==================== */
-#aboutContent {
-    background-color: #252526;
-    border: 1px solid #3C3C3C;
-    border-radius: 12px;
-}
 #aboutHeader {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
         stop: 0 #1A8FE3, stop: 1 #0A5CA8);
@@ -2070,7 +2045,7 @@ QLineEdit[invalid="true"]{
     border: 1.5px solid #F44747;
 }
 
-/* ==================== EditorArea ==================== */
+/* ==================== QTextEdit ==================== */
 QTextEdit {
   background-color: #252526;
   border: 1px solid #4A4A58;

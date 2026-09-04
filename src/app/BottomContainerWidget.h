@@ -1,14 +1,15 @@
 #ifndef ETEST_APP_BOTTOM_CONTAINER_WIDGET_H_
 #define ETEST_APP_BOTTOM_CONTAINER_WIDGET_H_
 
-#include <QFrame>
 #include <QStringList>
 #include <QTabWidget>
 #include <QVBoxLayout>
+#include "RoundQFrame.h"
 
 namespace etest::app {
+using etest::ui::RoundQFrame;
 
-class BottomContainerWidget : public QFrame {
+class BottomContainerWidget : public RoundQFrame {
   Q_OBJECT
 
  public:

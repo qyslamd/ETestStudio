@@ -169,8 +169,6 @@ add_executable(${TARGET_NAME} WIN32
     dialogs/UserManagerDialog.cpp
     utils/window_mover.h
     utils/window_mover.cpp
-    utils/switch_button.h
-    utils/switch_button.cpp
     utils/WizardStepBar.h
     utils/WizardStepBar.cpp
     utils/SignalSyncHelper.h

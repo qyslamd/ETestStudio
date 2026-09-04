@@ -11,13 +11,12 @@
 
 namespace etest::app {
 
-SidebarContentWidget::SidebarContentWidget(QWidget* parent) : QFrame(parent) {
+SidebarContentWidget::SidebarContentWidget(QWidget* parent)
+    : RoundQFrame(parent) {
   initUi();
 }
 
 void SidebarContentWidget::initUi() {
-  setObjectName(QStringLiteral("sidebarContentWidget"));
-
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);

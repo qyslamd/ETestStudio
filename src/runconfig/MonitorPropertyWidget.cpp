@@ -66,6 +66,7 @@ MonitorPropertyWidget::MonitorPropertyWidget(QWidget* parent)
   layout->addWidget(delete_btn_);
 
   scroll->setWidget(form);
+  form->setAutoFillBackground(false);
   outer->addWidget(scroll);
 
   // 信号
