@@ -24,6 +24,8 @@ class IcdPropertyPanel : public QFrame {
   void showFrame(icd::Frame& frame);
   void clear();
 
+  QSize sizeHint() const override;
+
  signals:
   void nodeModified();
   void frameModified();

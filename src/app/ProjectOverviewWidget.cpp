@@ -182,9 +182,10 @@ void ProjectOverviewWidget::initUi() {
   tree_splitter_ = new QSplitter(Qt::Vertical, page_project_);
 
   // 已打开文件区域
-  open_files_widget_ = new QWidget();
+  open_files_widget_ = new QFrame;
+  open_files_widget_->setObjectName("projectTreeOpenedFileFrame");
   auto* of_layout = new QVBoxLayout(open_files_widget_);
-  of_layout->setContentsMargins(0, 0, 0, 0);
+  of_layout->setContentsMargins(0, 4, 0, 0);
   of_layout->setSpacing(0);
 
   open_files_header_label_ = new QLabel(open_files_widget_);
@@ -221,7 +222,14 @@ void ProjectOverviewWidget::initUi() {
   project_tree_model_ = new QStandardItemModel(this);
   project_tree_view_->setModel(project_tree_model_);
 
-  tree_splitter_->addWidget(project_tree_view_);
+  {
+    auto* frame = new QFrame;
+    frame->setObjectName("projectTreeOuterFrame");
+    auto* frame_layout = new QVBoxLayout(frame);
+    frame_layout->setContentsMargins(0, 0, 0, 0);
+    frame_layout->addWidget(project_tree_view_);
+    tree_splitter_->addWidget(frame);
+  }
   tree_splitter_->addWidget(open_files_widget_);
   tree_splitter_->setStretchFactor(0, 1);
   tree_splitter_->setStretchFactor(1, 0);

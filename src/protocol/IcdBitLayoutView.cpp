@@ -956,9 +956,8 @@ void ContainerFieldItem::contextMenuEvent(
   }
 }
 
-IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent) : QGraphicsScene(parent) {
-  setBackgroundBrush(ThemeManager::instance().sceneBackground());
-}
+IcdBitLayoutScene::IcdBitLayoutScene(QObject* parent)
+    : QGraphicsScene(parent) {}
 
 void IcdBitLayoutScene::appendLayoutItem(LayoutNodeItem* item) {
   item->setPos(left_margin_, next_y_);
@@ -1066,7 +1065,8 @@ void IcdBitLayoutView::initUi() {
   setRenderHint(QPainter::Antialiasing);
   setDragMode(QGraphicsView::ScrollHandDrag);
   setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
-  setBackgroundBrush(ThemeManager::instance().sceneBackground());
+  viewport()->setObjectName("QGraphicsViewPort");
+
   setFrameShape(QFrame::NoFrame);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -1081,15 +1081,12 @@ void IcdBitLayoutView::initUi() {
   connect(scene_, &IcdBitLayoutScene::nodeHovered, this,
           &IcdBitLayoutView::nodeHovered);
 
-  connect(
-      &ThemeManager::instance(), &ThemeManager::themeChanged, this,
-      [this](bool) {
-        scene_->setBackgroundBrush(ThemeManager::instance().sceneBackground());
-        setBackgroundBrush(ThemeManager::instance().sceneBackground());
-        if (last_frame_) {
-          loadFromFrame(*last_frame_);
-        }
-      });
+  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+          [this](bool) {
+            if (last_frame_) {
+              loadFromFrame(*last_frame_);
+            }
+          });
 }
 
 void IcdBitLayoutView::loadFromFrame(const icd::Frame& frame) {

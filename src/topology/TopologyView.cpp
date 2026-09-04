@@ -1,10 +1,4 @@
 #include "TopologyView.h"
-#include "TopologyScene.h"
-#include "TopologyTheme.h"
-#include "topology_items.h"
-
-#include "ThemeManager.h"
-
 #include <QAction>
 #include <QActionGroup>
 #include <QMenu>
@@ -15,8 +9,11 @@
 #include <QResizeEvent>
 #include <QScrollBar>
 #include <QWheelEvent>
-
+#include "ThemeManager.h"
+#include "TopologyScene.h"
+#include "TopologyTheme.h"
 #include "logger/Logger.h"
+#include "topology_items.h"
 
 namespace etest::topology {
 
@@ -28,12 +25,11 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
   setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  viewport()->setObjectName("QGraphicsViewPort");
 
   // Allow zooming into empty areas
   setInteractive(true);
 
-  // Style — adapt to current theme
-  setBackgroundBrush(topologyColors().sceneBackground);
   setFrameShape(QFrame::NoFrame);
 
   // Accept drops for device palette drag-and-drop
@@ -43,7 +39,6 @@ TopologyView::TopologyView(TopologyScene* scene, QWidget* parent)
 
   connect(&etest::core_ui::ThemeManager::instance(),
           &etest::core_ui::ThemeManager::themeChanged, this, [this](bool) {
-            setBackgroundBrush(topologyColors().sceneBackground);
             renderLegendCache();
             viewport()->update();
           });
@@ -63,7 +58,7 @@ void TopologyView::paintEvent(QPaintEvent* event) {
 
 void TopologyView::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
-  renderLegendCache();   // rebuild cache at new size
+  renderLegendCache();  // rebuild cache at new size
 }
 
 void TopologyView::renderLegendCache() {
@@ -97,7 +92,10 @@ void TopologyView::renderLegendCache() {
   p.setFont(f);
 
   // Port direction entries
-  struct PortEntry { QColor color; QString label; };
+  struct PortEntry {
+    QColor color;
+    QString label;
+  };
   PortEntry ports[] = {
       {tc.directionInput, QStringLiteral("输入")},
       {tc.directionOutput, QStringLiteral("输出")},
@@ -167,7 +165,8 @@ void TopologyView::zoomReset() {
 
 void TopologyView::zoomFit() {
   auto rect = scene()->itemsBoundingRect();
-  if (rect.isEmpty()) return;
+  if (rect.isEmpty())
+    return;
   rect.adjust(-40, -40, 40, 40);
   fitInView(rect, Qt::KeepAspectRatio);
   current_zoom_ = transform().m11();
@@ -245,41 +244,61 @@ void TopologyView::contextMenuEvent(QContextMenuEvent* event) {
 
   if (devPort) {
     auto* delAct = menu.addAction(QStringLiteral("删除端口"));
-    connect(delAct, &QAction::triggered, this,
-            [this, devPort]() { LOG_INFO("TOPOLOGY_UI", "右键删除设备端口"); emit deleteItemRequested(devPort); });
+    connect(delAct, &QAction::triggered, this, [this, devPort]() {
+      LOG_INFO("TOPOLOGY_UI", "右键删除设备端口");
+      emit deleteItemRequested(devPort);
+    });
   } else if (uutPort) {
     auto* delUutPortAct = menu.addAction(QStringLiteral("删除端口"));
-    connect(delUutPortAct, &QAction::triggered, this,
-            [this, uutPort]() { LOG_INFO("TOPOLOGY_UI", "右键删除 UUT 端口"); emit deleteItemRequested(uutPort); });
+    connect(delUutPortAct, &QAction::triggered, this, [this, uutPort]() {
+      LOG_INFO("TOPOLOGY_UI", "右键删除 UUT 端口");
+      emit deleteItemRequested(uutPort);
+    });
   } else if (uut) {
     auto* addPortAct = menu.addAction(QStringLiteral("添加端口"));
-    connect(addPortAct, &QAction::triggered, this,
-            [this, uut]() { LOG_INFO("TOPOLOGY_UI", "右键添加端口"); emit addUutPortRequested(uut->productIndex()); });
+    connect(addPortAct, &QAction::triggered, this, [this, uut]() {
+      LOG_INFO("TOPOLOGY_UI", "右键添加端口");
+      emit addUutPortRequested(uut->productIndex());
+    });
     menu.addSeparator();
     auto* act = menu.addAction(QStringLiteral("删除 UUT"));
-    connect(act, &QAction::triggered, this,
-            [this, uut]() { LOG_INFO("TOPOLOGY_UI", "右键删除 UUT"); emit deleteItemRequested(uut); });
+    connect(act, &QAction::triggered, this, [this, uut]() {
+      LOG_INFO("TOPOLOGY_UI", "右键删除 UUT");
+      emit deleteItemRequested(uut);
+    });
   } else if (dev) {
     auto* delAct = menu.addAction(QStringLiteral("删除设备"));
-    connect(delAct, &QAction::triggered, this,
-            [this, dev]() { LOG_INFO("TOPOLOGY_UI", "右键删除设备"); emit deleteItemRequested(dev); });
+    connect(delAct, &QAction::triggered, this, [this, dev]() {
+      LOG_INFO("TOPOLOGY_UI", "右键删除设备");
+      emit deleteItemRequested(dev);
+    });
     auto* saveAct = menu.addAction(QStringLiteral("另存为模板..."));
-    connect(saveAct, &QAction::triggered, this,
-            [this, dev]() { LOG_INFO("TOPOLOGY_UI", "右键保存模板"); emit saveTemplateRequested(dev); });
+    connect(saveAct, &QAction::triggered, this, [this, dev]() {
+      LOG_INFO("TOPOLOGY_UI", "右键保存模板");
+      emit saveTemplateRequested(dev);
+    });
   } else if (conn) {
     auto* delAct = menu.addAction(QStringLiteral("删除连线"));
-    connect(delAct, &QAction::triggered, this,
-            [this, conn]() { LOG_INFO("TOPOLOGY_UI", "右键删除连线"); emit deleteItemRequested(conn); });
+    connect(delAct, &QAction::triggered, this, [this, conn]() {
+      LOG_INFO("TOPOLOGY_UI", "右键删除连线");
+      emit deleteItemRequested(conn);
+    });
   } else {
     auto* addUutAct = menu.addAction(QStringLiteral("添加 UUT"));
-    connect(addUutAct, &QAction::triggered, this,
-            [this, scenePos]() { LOG_INFO("TOPOLOGY_UI", "右键添加 UUT"); emit addUutRequested(scenePos); });
+    connect(addUutAct, &QAction::triggered, this, [this, scenePos]() {
+      LOG_INFO("TOPOLOGY_UI", "右键添加 UUT");
+      emit addUutRequested(scenePos);
+    });
     auto* addDevAct = menu.addAction(QStringLiteral("添加设备"));
-    connect(addDevAct, &QAction::triggered, this,
-            [this, scenePos]() { LOG_INFO("TOPOLOGY_UI", "右键添加设备"); emit addDeviceRequested(scenePos); });
+    connect(addDevAct, &QAction::triggered, this, [this, scenePos]() {
+      LOG_INFO("TOPOLOGY_UI", "右键添加设备");
+      emit addDeviceRequested(scenePos);
+    });
     auto* addTmplAct = menu.addAction(QStringLiteral("从模板添加设备..."));
-    connect(addTmplAct, &QAction::triggered, this,
-            [this, scenePos]() { LOG_INFO("TOPOLOGY_UI", "右键从模板添加设备"); emit addDeviceFromTemplateRequested(scenePos); });
+    connect(addTmplAct, &QAction::triggered, this, [this, scenePos]() {
+      LOG_INFO("TOPOLOGY_UI", "右键从模板添加设备");
+      emit addDeviceFromTemplateRequested(scenePos);
+    });
   }
 
   menu.exec(event->globalPos());

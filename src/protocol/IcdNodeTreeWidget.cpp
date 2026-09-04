@@ -86,8 +86,8 @@ IcdNodeTreeWidget::IcdNodeTreeWidget(QWidget* parent) : QWidget(parent) {
 // ---------------------------------------------------------------------------
 void IcdNodeTreeWidget::initUi() {
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(0, 0, 0, 0);
-  layout->setSpacing(4);
+  layout->setContentsMargins(2, 0, 2, 0);
+  layout->setSpacing(2);
 
   filter_input_ = new QLineEdit(this);
   filter_input_->setPlaceholderText(QStringLiteral("搜索信号..."));

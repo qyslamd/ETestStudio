@@ -51,7 +51,7 @@ void DeviceListWidget::startDrag(Qt::DropActions supportedActions) {
 
 DevicePaletteWidget::DevicePaletteWidget(QWidget* parent) : QFrame(parent) {
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setContentsMargins(2, 0, 2, 0);
   layout->setSpacing(0);
 
   filter_input_ = new QLineEdit(this);

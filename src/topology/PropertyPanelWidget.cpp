@@ -23,7 +23,7 @@ PropertyPanelWidget::PropertyPanelWidget(TopologyDocument* doc, QWidget* parent)
     : QWidget(parent), doc_(doc) {
   setObjectName(QStringLiteral("topologyPropertyPanel"));
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setContentsMargins(2, 0, 2, 0);
   layout->setSpacing(0);
 
   stack_ = new QStackedWidget(this);
@@ -582,7 +582,8 @@ void PropertyPanelWidget::refreshDevicePortFrames() {
     devport_frames_stack_->setCurrentIndex(0);
     return;
   }
-  const QStringList& frames = dev->ports[editing_device_port_index_].boundFrameNames;
+  const QStringList& frames =
+      dev->ports[editing_device_port_index_].boundFrameNames;
   devport_frames_list_->clear();
   if (frames.isEmpty()) {
     devport_frames_stack_->setCurrentIndex(0);
@@ -666,7 +667,6 @@ void PropertyPanelWidget::buildDevicePortPage() {
   stack_->addWidget(w);
 }
 
-
 // ── Slots ──────────────────────────────────────────────────────
 
 void PropertyPanelWidget::onUutNameChanged() {
@@ -703,9 +703,8 @@ void PropertyPanelWidget::onUutAddPort() {
   // 场景刷新后，重新加载表格
   prod = doc_->product(editing_uut_index_);
   if (prod) {
-    const QStringList dirNames = {QStringLiteral("输入"),
-                                  QStringLiteral("输出"),
-                                  QStringLiteral("双向")};
+    const QStringList dirNames = {
+        QStringLiteral("输入"), QStringLiteral("输出"), QStringLiteral("双向")};
     uut_port_table_->blockSignals(true);
     uut_port_table_->setRowCount(prod->ports.size());
     int r = prod->ports.size() - 1;
@@ -733,9 +732,8 @@ void PropertyPanelWidget::onUutRemovePort() {
   // 场景刷新后，重新加载表格
   prod = doc_->product(editing_uut_index_);
   if (prod) {
-    const QStringList dirNames = {QStringLiteral("输入"),
-                                  QStringLiteral("输出"),
-                                  QStringLiteral("双向")};
+    const QStringList dirNames = {
+        QStringLiteral("输入"), QStringLiteral("输出"), QStringLiteral("双向")};
     uut_port_table_->blockSignals(true);
     uut_port_table_->setRowCount(prod->ports.size());
     for (int r = 0; r < prod->ports.size(); ++r) {
@@ -770,12 +768,11 @@ void PropertyPanelWidget::applyUutPorts(int productIndex) {
     if (r < saved_uut_ports_.size())
       port = saved_uut_ports_[r];
     port.name = nameItem->text();
-    port.direction =
-        dirItem && dirItem->text() == QStringLiteral("输出")
-            ? TopologyPort::Direction::Output
-        : dirItem && dirItem->text() == QStringLiteral("双向")
-            ? TopologyPort::Direction::Bidirectional
-            : TopologyPort::Direction::Input;
+    port.direction = dirItem && dirItem->text() == QStringLiteral("输出")
+                         ? TopologyPort::Direction::Output
+                     : dirItem && dirItem->text() == QStringLiteral("双向")
+                         ? TopologyPort::Direction::Bidirectional
+                         : TopologyPort::Direction::Input;
     port.functionType = FunctionType::CUSTOM;
     if (funcItem) {
       for (int ft = 0; ft <= static_cast<int>(FunctionType::CUSTOM); ++ft) {

@@ -26,7 +26,7 @@ IcdPropertyPanel::IcdPropertyPanel(QWidget* parent) : QFrame(parent) {
 
 void IcdPropertyPanel::initUi() {
   auto* outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(0, 0, 0, 0);
+  outer_layout->setContentsMargins(2, 0, 2, 0);
 
   // -- Scrollable form container --
   auto* scroll = new QScrollArea(this);
@@ -35,7 +35,7 @@ void IcdPropertyPanel::initUi() {
 
   form_widget_ = new QWidget(this);
   form_layout_ = new QFormLayout(form_widget_);
-  form_layout_->setContentsMargins(8, 8, 8, 8);
+  form_layout_->setContentsMargins(0, 0, 0, 0);
   form_layout_->setSpacing(6);
   form_layout_->setLabelAlignment(Qt::AlignRight);
 
@@ -543,6 +543,10 @@ void IcdPropertyPanel::showFrame(icd::Frame& frame) {
 
 void IcdPropertyPanel::clear() {
   clearForm();
+}
+
+QSize IcdPropertyPanel::sizeHint() const {
+  return QSize(330, 100);
 }
 
 }  // namespace etest::protocol

@@ -14,7 +14,7 @@ namespace etest::topology {
 TopologyOutlineWidget::TopologyOutlineWidget(QWidget* parent)
     : QWidget(parent) {
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setContentsMargins(2, 0, 2, 0);
   layout->setSpacing(0);
 
   filter_input_ = new QLineEdit(this);
@@ -45,13 +45,13 @@ void TopologyOutlineWidget::rebuildTree(TopologyDocument* doc) {
 
   updating_selection_ = true;
 
-  auto* uutCat = addCategoryItem(
-      QStringLiteral("UUTs (%1)").arg(doc->productCount()));
+  auto* uutCat =
+      addCategoryItem(QStringLiteral("UUTs (%1)").arg(doc->productCount()));
   for (int i = 0; i < doc->productCount(); ++i)
     addUutItem(i, doc, uutCat);
 
-  auto* devCat = addCategoryItem(
-      QStringLiteral("Devices (%1)").arg(doc->deviceCount()));
+  auto* devCat =
+      addCategoryItem(QStringLiteral("Devices (%1)").arg(doc->deviceCount()));
   for (int i = 0; i < doc->deviceCount(); ++i)
     addDeviceItem(i, doc, devCat);
 
@@ -68,11 +68,13 @@ void TopologyOutlineWidget::saveExpandedState() {
   expanded_keys_.clear();
   for (int c = 0; c < tree_->topLevelItemCount(); ++c) {
     auto* cat = tree_->topLevelItem(c);
-    if (!cat || !cat->isExpanded()) continue;
-    expanded_keys_.insert(QString::number(c)); // "c" → category expanded
+    if (!cat || !cat->isExpanded())
+      continue;
+    expanded_keys_.insert(QString::number(c));  // "c" → category expanded
     for (int i = 0; i < cat->childCount(); ++i) {
       auto* child = cat->child(i);
-      if (!child || !child->isExpanded()) continue;
+      if (!child || !child->isExpanded())
+        continue;
       int mainIdx = child->data(0, kRoleMainIdx).toInt();
       expanded_keys_.insert(QStringLiteral("%1/%2").arg(c).arg(mainIdx));
     }
@@ -91,12 +93,14 @@ void TopologyOutlineWidget::restoreExpandedState() {
 
   for (int c = 0; c < tree_->topLevelItemCount(); ++c) {
     auto* cat = tree_->topLevelItem(c);
-    if (!cat) continue;
+    if (!cat)
+      continue;
     if (expanded_keys_.contains(QString::number(c)))
       cat->setExpanded(true);
     for (int i = 0; i < cat->childCount(); ++i) {
       auto* child = cat->child(i);
-      if (!child) continue;
+      if (!child)
+        continue;
       int mainIdx = child->data(0, kRoleMainIdx).toInt();
       if (expanded_keys_.contains(QStringLiteral("%1/%2").arg(c).arg(mainIdx)))
         child->setExpanded(true);
@@ -105,8 +109,7 @@ void TopologyOutlineWidget::restoreExpandedState() {
   expanded_keys_.clear();
 }
 
-QTreeWidgetItem* TopologyOutlineWidget::addCategoryItem(
-    const QString& label) {
+QTreeWidgetItem* TopologyOutlineWidget::addCategoryItem(const QString& label) {
   auto* item = new QTreeWidgetItem(tree_);
   item->setText(0, label);
   item->setData(0, kRoleTag, static_cast<int>(ItemTag::Category));
@@ -117,8 +120,9 @@ QTreeWidgetItem* TopologyOutlineWidget::addCategoryItem(
   return item;
 }
 
-void TopologyOutlineWidget::addUutItem(int index, TopologyDocument* doc,
-                                        QTreeWidgetItem* parent) {
+void TopologyOutlineWidget::addUutItem(int index,
+                                       TopologyDocument* doc,
+                                       QTreeWidgetItem* parent) {
   const auto* prod = doc->product(index);
   if (!prod)
     return;
@@ -138,8 +142,9 @@ void TopologyOutlineWidget::addUutItem(int index, TopologyDocument* doc,
   }
 }
 
-void TopologyOutlineWidget::addDeviceItem(int index, TopologyDocument* doc,
-                                           QTreeWidgetItem* parent) {
+void TopologyOutlineWidget::addDeviceItem(int index,
+                                          TopologyDocument* doc,
+                                          QTreeWidgetItem* parent) {
   const auto* dev = doc->device(index);
   if (!dev)
     return;
@@ -160,16 +165,16 @@ void TopologyOutlineWidget::addDeviceItem(int index, TopologyDocument* doc,
 }
 
 void TopologyOutlineWidget::addConnectionItem(int index,
-                                               TopologyDocument* doc,
-                                               QTreeWidgetItem* parent) {
+                                              TopologyDocument* doc,
+                                              QTreeWidgetItem* parent) {
   const auto* conn = doc->connection(index);
   if (!conn)
     return;
 
   auto* item = new QTreeWidgetItem(parent);
   item->setText(0, QStringLiteral("%1:%2 -> %3:%4")
-                       .arg(conn->productName, conn->portName,
-                            conn->deviceName, conn->devicePort));
+                       .arg(conn->productName, conn->portName, conn->deviceName,
+                            conn->devicePort));
   item->setData(0, kRoleTag, static_cast<int>(ItemTag::Connection));
   item->setData(0, kRoleMainIdx, index);
   item->setData(0, kRoleSubIdx, -1);
@@ -181,7 +186,7 @@ void TopologyOutlineWidget::onFilterTextChanged(const QString& text) {
 }
 
 bool TopologyOutlineWidget::applyFilter(QTreeWidgetItem* item,
-                                         const QString& filter) {
+                                        const QString& filter) {
   if (filter.isEmpty()) {
     item->setHidden(false);
     for (int i = 0; i < item->childCount(); ++i)
@@ -193,8 +198,7 @@ bool TopologyOutlineWidget::applyFilter(QTreeWidgetItem* item,
     return true;
   }
 
-  bool selfMatch =
-      item->text(0).contains(filter, Qt::CaseInsensitive);
+  bool selfMatch = item->text(0).contains(filter, Qt::CaseInsensitive);
   bool childMatch = false;
   for (int i = 0; i < item->childCount(); ++i) {
     if (applyFilter(item->child(i), filter))
@@ -211,7 +215,7 @@ bool TopologyOutlineWidget::applyFilter(QTreeWidgetItem* item,
 }
 
 void TopologyOutlineWidget::onTreeItemClicked(QTreeWidgetItem* item,
-                                               int /*column*/) {
+                                              int /*column*/) {
   LOG_INFO("TOPOLOGY_UI", "大纲树点击导航");
   if (updating_selection_)
     return;
@@ -225,8 +229,9 @@ void TopologyOutlineWidget::onTreeItemClicked(QTreeWidgetItem* item,
   emit navigateRequested(static_cast<int>(tag), mainIdx, subIdx);
 }
 
-void TopologyOutlineWidget::selectForItem(int itemType, int mainIndex,
-                                           int subIndex) {
+void TopologyOutlineWidget::selectForItem(int itemType,
+                                          int mainIndex,
+                                          int subIndex) {
   updating_selection_ = true;
 
   tree_->clearSelection();
@@ -240,8 +245,7 @@ void TopologyOutlineWidget::selectForItem(int itemType, int mainIndex,
 
     for (int j = 0; j < cat->childCount(); ++j) {
       auto* child = cat->child(j);
-      if (static_cast<ItemTag>(child->data(0, kRoleTag).toInt()) !=
-          targetTag)
+      if (static_cast<ItemTag>(child->data(0, kRoleTag).toInt()) != targetTag)
         continue;
       if (child->data(0, kRoleMainIdx).toInt() != mainIndex)
         continue;

@@ -1411,6 +1411,18 @@ QScrollArea > QWidget {
     background-color: #1E1E1E;
 }
 
+/* ==================== QGraphicsView ==================== */
+QGraphicsView{
+    background: transparent;
+    border: 1px solid #3C3C3C;
+    border-bottom:none;
+    border-radius: 8px;
+}
+#QGraphicsViewPort{
+    border:none;
+    border-radius:8px;
+}
+
 QLabel#SettingsCardTitle {
     color: #CCCCCC;
     font-weight: bold;
@@ -1757,13 +1769,28 @@ QLabel#PhEmptyDesc {
 
 /* 分区标题（最近项目/最近文件） */
 QLabel#PhSectionLabel {
+    margin-left:2px;
     font-size: 11px;
     font-weight: 600;
     color: #9D9D9D;
 }
+#projectTreeOuterFrame{
+    border:1px solid #3C3C3C;
+    border-radius: 8px;
+    border-left:none;
+    border-right:none;
+}
+#projectTreeOpenedFileFrame{
+    border:1px solid #3C3C3C;
+    border-radius: 8px;
+    border-left:none;
+    border-right:none;
+}
 
 /* ==================== EtDockWidget + DockTitleBar（设备面板/大纲/属性面板等） ==================== */
 etest--ui--DockTitleBar {
+    margin-left:2px;
+    margin-right:2px;
     background-color: #4169E1;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
