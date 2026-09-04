@@ -18,8 +18,6 @@ BottomContainerWidget::BottomContainerWidget(QWidget* parent) : QFrame(parent) {
 }
 
 void BottomContainerWidget::initUi() {
-  setObjectName(QStringLiteral("bottomContainerWidget"));
-
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 1, 0, 0);
   layout->setSpacing(0);

@@ -25,16 +25,10 @@
 
 namespace etest::app {
 
-using etest::core_ui::ThemeManager;
 using etest::core_ui::AppIconProvider;
+using etest::core_ui::ThemeManager;
 
-enum {
-  kColStep = 0,
-  kColTarget,
-  kColStatus,
-  kColElapsed,
-  kColumnCount
-};
+enum { kColStep = 0, kColTarget, kColStatus, kColElapsed, kColumnCount };
 
 enum StepRoles {
   StepDataRole = Qt::UserRole + 1,
@@ -48,9 +42,10 @@ enum {
 namespace {
 QString themeIconPath(const QString& iconName) {
   bool dark = etest::core_ui::ThemeManager::instance().isDarkTheme();
-  return dark
-      ? QStringLiteral(":/resources/icons/svg/%1_light.svg").arg(iconName)
-      : QStringLiteral(":/resources/icons/svg/%1_dark.svg").arg(iconName);
+  return dark ? QStringLiteral(":/resources/icons/svg/%1_light.svg")
+                    .arg(iconName)
+              : QStringLiteral(":/resources/icons/svg/%1_dark.svg")
+                    .arg(iconName);
 }
 }  // namespace
 
@@ -66,16 +61,36 @@ QString EtlogViewerWidget::displayName() const {
   return QFileInfo(file_path_).fileName();
 }
 
-bool EtlogViewerWidget::isModified() const { return false; }
-bool EtlogViewerWidget::save() { return false; }
-bool EtlogViewerWidget::saveAs(const QString&) { return false; }
-QString EtlogViewerWidget::filePath() const { return file_path_; }
-QString EtlogViewerWidget::editorId() const { return file_path_; }
-QWidget* EtlogViewerWidget::widget() { return this; }
-QString EtlogViewerWidget::editorType() const { return QStringLiteral("etlog"); }
-QObject* EtlogViewerWidget::signalObject() { return this; }
-bool EtlogViewerWidget::canUndo() const { return false; }
-bool EtlogViewerWidget::canRedo() const { return false; }
+bool EtlogViewerWidget::isModified() const {
+  return false;
+}
+bool EtlogViewerWidget::save() {
+  return false;
+}
+bool EtlogViewerWidget::saveAs(const QString&) {
+  return false;
+}
+QString EtlogViewerWidget::filePath() const {
+  return file_path_;
+}
+QString EtlogViewerWidget::editorId() const {
+  return file_path_;
+}
+QWidget* EtlogViewerWidget::widget() {
+  return this;
+}
+QString EtlogViewerWidget::editorType() const {
+  return QStringLiteral("etlog");
+}
+QObject* EtlogViewerWidget::signalObject() {
+  return this;
+}
+bool EtlogViewerWidget::canUndo() const {
+  return false;
+}
+bool EtlogViewerWidget::canRedo() const {
+  return false;
+}
 void EtlogViewerWidget::undo() {}
 void EtlogViewerWidget::redo() {}
 
@@ -157,10 +172,10 @@ void EtlogViewerWidget::initUi() {
 
   step_model_ = new QStandardItemModel(0, kColumnCount, this);
   step_model_->setHorizontalHeaderLabels({
-    QStringLiteral("步骤"),
-    QStringLiteral("目标"),
-    QStringLiteral("状态"),
-    QStringLiteral("耗时(ms)"),
+      QStringLiteral("步骤"),
+      QStringLiteral("目标"),
+      QStringLiteral("状态"),
+      QStringLiteral("耗时(ms)"),
   });
 
   step_tree_ = new QTreeView(splitter);
@@ -174,18 +189,18 @@ void EtlogViewerWidget::initUi() {
   step_tree_->setUniformRowHeights(true);
   step_tree_->header()->setStretchLastSection(false);
   step_tree_->header()->setSectionResizeMode(kColStep, QHeaderView::Stretch);
-  step_tree_->header()->setSectionResizeMode(kColTarget, QHeaderView::ResizeToContents);
-  step_tree_->header()->setSectionResizeMode(kColStatus, QHeaderView::ResizeToContents);
-  step_tree_->header()->setSectionResizeMode(kColElapsed, QHeaderView::ResizeToContents);
+  step_tree_->header()->setSectionResizeMode(kColTarget,
+                                             QHeaderView::ResizeToContents);
+  step_tree_->header()->setSectionResizeMode(kColStatus,
+                                             QHeaderView::ResizeToContents);
+  step_tree_->header()->setSectionResizeMode(kColElapsed,
+                                             QHeaderView::ResizeToContents);
 
   detail_scroll_ = new QScrollArea(splitter);
-  detail_scroll_->setObjectName(QStringLiteral("etlogDetailScroll"));
-  detail_scroll_->viewport()->setObjectName(QStringLiteral("etlogDetailViewport"));
   detail_scroll_->setFrameShape(QFrame::NoFrame);
   detail_scroll_->setWidgetResizable(true);
 
   auto* detail_inner = new QWidget();
-  detail_inner->setObjectName(QStringLiteral("ScrollAreaContent"));
   detail_scroll_->setWidget(detail_inner);
   auto* outer_layout = new QVBoxLayout(detail_inner);
   outer_layout->setContentsMargins(0, 0, 0, 0);
@@ -256,7 +271,8 @@ void EtlogViewerWidget::initUi() {
 
   auto* empty_widget = new QWidget(this);
   auto* empty_layout = new QVBoxLayout(empty_widget);
-  empty_label_ = new QLabel(QStringLiteral("打开 .etlog 文件查看测试报告"), empty_widget);
+  empty_label_ =
+      new QLabel(QStringLiteral("打开 .etlog 文件查看测试报告"), empty_widget);
   empty_label_->setObjectName(QStringLiteral("etlogEmptyLabel"));
   empty_label_->setAlignment(Qt::AlignCenter);
   empty_layout->addWidget(empty_label_);
@@ -266,7 +282,8 @@ void EtlogViewerWidget::initUi() {
   applyThemeColors();
 
   connect(case_list_, &QListWidget::currentRowChanged, this, [this](int row) {
-    if (row < 0) return;
+    if (row < 0)
+      return;
     QJsonObject root = doc_.object();
     QJsonArray cases = root["cases"].toArray();
     if (row < cases.size()) {
@@ -276,15 +293,18 @@ void EtlogViewerWidget::initUi() {
 
   connect(step_tree_->selectionModel(), &QItemSelectionModel::currentChanged,
           this, [this](const QModelIndex& current, const QModelIndex&) {
-    if (!current.isValid()) return;
-    auto* item = step_model_->itemFromIndex(current.sibling(current.row(), 0));
-    if (!item) return;
-    QVariant data = item->data(StepDataRole);
-    if (data.isValid()) {
-      QJsonObject stepObj = QJsonObject::fromVariantMap(data.toMap());
-      populateStepDetail(stepObj);
-    }
-  });
+            if (!current.isValid())
+              return;
+            auto* item =
+                step_model_->itemFromIndex(current.sibling(current.row(), 0));
+            if (!item)
+              return;
+            QVariant data = item->data(StepDataRole);
+            if (data.isValid()) {
+              QJsonObject stepObj = QJsonObject::fromVariantMap(data.toMap());
+              populateStepDetail(stepObj);
+            }
+          });
 }
 
 void EtlogViewerWidget::populateSummary(const QJsonObject& root) {
@@ -300,9 +320,9 @@ void EtlogViewerWidget::populateSummary(const QJsonObject& root) {
   int dur = summary["durationMs"].toInt();
   Q_UNUSED(total);
 
-  icon_title_->setPixmap(
-      AppIconProvider::instance().icon(QStringLiteral("etlog_chart"))
-          .pixmap(16, 16));
+  icon_title_->setPixmap(AppIconProvider::instance()
+                             .icon(QStringLiteral("etlog_chart"))
+                             .pixmap(16, 16));
   title_label_->setText(suiteName);
 
   QStringList parts;
@@ -319,7 +339,9 @@ void EtlogViewerWidget::populateSummary(const QJsonObject& root) {
                  .arg(colorForStatus("ERROR").name())
                  .arg(err);
   }
-  parts << QStringLiteral("<img src='%1' width='14' height='14' style='vertical-align:middle'>&nbsp;%2ms")
+  parts << QStringLiteral(
+               "<img src='%1' width='14' height='14' "
+               "style='vertical-align:middle'>&nbsp;%2ms")
                .arg(themeIconPath(QStringLiteral("etlog_timer")))
                .arg(dur);
 
@@ -328,13 +350,13 @@ void EtlogViewerWidget::populateSummary(const QJsonObject& root) {
 
   QString start = root["startTime"].toString();
   QString end = root["endTime"].toString();
-  QString engineVer = root["executionInfo"].toObject()["engineVersion"].toString();
+  QString engineVer =
+      root["executionInfo"].toObject()["engineVersion"].toString();
   if (!engineVer.isEmpty()) {
     engineVer = QStringLiteral("  引擎版本: %1").arg(engineVer);
   }
   footer_label_->setText(
-      QStringLiteral("执行: %1 \xE2\x86\x92 %2%3")
-          .arg(start, end, engineVer));
+      QStringLiteral("执行: %1 \xE2\x86\x92 %2%3").arg(start, end, engineVer));
 }
 
 void EtlogViewerWidget::populateCaseList(const QJsonObject& root) {
@@ -375,8 +397,7 @@ void EtlogViewerWidget::populateStepDetail(const QJsonObject& step) {
   QString status = step["status"].toString();
   detail_status_->setText(status);
   detail_status_->setStyleSheet(
-      QStringLiteral("color: %1;")
-          .arg(colorForStatus(status).name()));
+      QStringLiteral("color: %1;").arg(colorForStatus(status).name()));
 
   detail_command_->setText(step["command"].toString());
   QString targetDisplay = step.contains("targetName")
@@ -384,9 +405,10 @@ void EtlogViewerWidget::populateStepDetail(const QJsonObject& step) {
                               : step["target"].toString();
   detail_target_->setText(targetDisplay);
 
-  detail_expected_->setText(step.contains("expectedValue")
-                                ? QString::number(step["expectedValue"].toDouble())
-                                : QStringLiteral("-"));
+  detail_expected_->setText(
+      step.contains("expectedValue")
+          ? QString::number(step["expectedValue"].toDouble())
+          : QStringLiteral("-"));
 
   detail_actual_->setText(step.contains("actualValue")
                               ? QString::number(step["actualValue"].toDouble())
@@ -400,8 +422,8 @@ void EtlogViewerWidget::populateStepDetail(const QJsonObject& step) {
 }
 
 void EtlogViewerWidget::buildStepTreeRecursive(QStandardItem* parent,
-                                                const QJsonArray& steps,
-                                                const QString& prefix) {
+                                               const QJsonArray& steps,
+                                               const QString& prefix) {
   for (int i = 0; i < steps.size(); ++i) {
     QJsonObject step = steps[i].toObject();
     QString path = prefix.isEmpty()
@@ -483,9 +505,10 @@ void EtlogViewerWidget::buildStepTreeRecursive(QStandardItem* parent,
       parent->appendRow(row);
 
       if (!thenSteps.isEmpty()) {
-        QString thenLabel = thenExecuted
-                                ? QStringLiteral("THEN")
-                                : QStringLiteral("THEN (\xE6\x9C\xAA\xE6\x89\xA7\xE8\xA1\x8C)");
+        QString thenLabel =
+            thenExecuted
+                ? QStringLiteral("THEN")
+                : QStringLiteral("THEN (\xE6\x9C\xAA\xE6\x89\xA7\xE8\xA1\x8C)");
         auto* thenItem = new QStandardItem(thenLabel);
         thenItem->setEditable(false);
         row[kColStep]->appendRow(thenItem);
@@ -494,9 +517,10 @@ void EtlogViewerWidget::buildStepTreeRecursive(QStandardItem* parent,
       }
 
       if (!elseSteps.isEmpty()) {
-        QString elseLabel = elseExecuted
-                                ? QStringLiteral("ELSE")
-                                : QStringLiteral("ELSE (\xE6\x9C\xAA\xE6\x89\xA7\xE8\xA1\x8C)");
+        QString elseLabel =
+            elseExecuted
+                ? QStringLiteral("ELSE")
+                : QStringLiteral("ELSE (\xE6\x9C\xAA\xE6\x89\xA7\xE8\xA1\x8C)");
         auto* elseItem = new QStandardItem(elseLabel);
         elseItem->setEditable(false);
         row[kColStep]->appendRow(elseItem);
@@ -529,17 +553,21 @@ QString EtlogViewerWidget::aggregatedStatus(const QJsonArray& steps) {
       prio = 1;
     if (prio > worst) {
       worst = prio;
-      if (worst == 5) return QStringLiteral("ERROR");
+      if (worst == 5)
+        return QStringLiteral("ERROR");
     }
 
     // Recurse into LOOP/WHILE iterations
     for (const auto& iter : step["iterations"].toArray()) {
-      QString sub = aggregatedStatus(
-          iter.toObject()["subSteps"].toArray());
-      if (sub == "ERROR") return QStringLiteral("ERROR");
-      if (sub == "FAIL" && worst < 4) worst = 4;
-      if (sub == "TIMEOUT" && worst < 3) worst = 3;
-      if (sub == "SKIPPED" && worst < 2) worst = 2;
+      QString sub = aggregatedStatus(iter.toObject()["subSteps"].toArray());
+      if (sub == "ERROR")
+        return QStringLiteral("ERROR");
+      if (sub == "FAIL" && worst < 4)
+        worst = 4;
+      if (sub == "TIMEOUT" && worst < 3)
+        worst = 3;
+      if (sub == "SKIPPED" && worst < 2)
+        worst = 2;
     }
 
     // Recurse into IF branches
@@ -548,10 +576,14 @@ QString EtlogViewerWidget::aggregatedStatus(const QJsonArray& steps) {
       QString thenSub = aggregatedStatus(branches["then"].toArray());
       QString elseSub = aggregatedStatus(branches["else"].toArray());
       for (const auto& sub : {thenSub, elseSub}) {
-        if (sub == "ERROR") return QStringLiteral("ERROR");
-        if (sub == "FAIL" && worst < 4) worst = 4;
-        if (sub == "TIMEOUT" && worst < 3) worst = 3;
-        if (sub == "SKIPPED" && worst < 2) worst = 2;
+        if (sub == "ERROR")
+          return QStringLiteral("ERROR");
+        if (sub == "FAIL" && worst < 4)
+          worst = 4;
+        if (sub == "TIMEOUT" && worst < 3)
+          worst = 3;
+        if (sub == "SKIPPED" && worst < 2)
+          worst = 2;
       }
     }
   }
@@ -571,12 +603,11 @@ QString EtlogViewerWidget::aggregatedStatus(const QJsonArray& steps) {
 }
 
 QList<QStandardItem*> EtlogViewerWidget::createStepRow(const QJsonObject& step,
-                                                        const QString& path) {
+                                                       const QString& path) {
   QString status = step["status"].toString();
   QString cmd = step["command"].toString();
-  QString target = step.contains("targetName")
-                       ? step["targetName"].toString()
-                       : step["target"].toString();
+  QString target = step.contains("targetName") ? step["targetName"].toString()
+                                               : step["target"].toString();
   int elapsed = step["elapsedMs"].toInt();
 
   auto* item0 = new QStandardItem(cmd);
@@ -627,8 +658,7 @@ void EtlogViewerWidget::applyThemeColors() {
       for (int i = 0; i < parent->rowCount(); ++i) {
         auto* statusItem = parent->child(i, kColStatus);
         if (statusItem) {
-          statusItem->setForeground(
-              QBrush(colorForStatus(statusItem->text())));
+          statusItem->setForeground(QBrush(colorForStatus(statusItem->text())));
         }
         auto* stepItem = parent->child(i, kColStep);
         if (stepItem && stepItem->hasChildren()) {
@@ -643,37 +673,46 @@ void EtlogViewerWidget::applyThemeColors() {
   QString currentStatus = detail_status_->text();
   if (currentStatus != QStringLiteral("-")) {
     detail_status_->setStyleSheet(
-        QStringLiteral("color: %1;").arg(
-            colorForStatus(currentStatus).name()));
+        QStringLiteral("color: %1;").arg(colorForStatus(currentStatus).name()));
   }
 
   refreshIcons();
 }
 
 QString EtlogViewerWidget::iconNameForStatus(const QString& status) {
-  if (status == "PASS") return QStringLiteral("etlog_pass");
-  if (status == "FAIL") return QStringLiteral("etlog_fail");
-  if (status == "ERROR") return QStringLiteral("etlog_error");
-  if (status == "TIMEOUT") return QStringLiteral("etlog_timer");
-  if (status == "SKIPPED") return QStringLiteral("etlog_skip");
+  if (status == "PASS")
+    return QStringLiteral("etlog_pass");
+  if (status == "FAIL")
+    return QStringLiteral("etlog_fail");
+  if (status == "ERROR")
+    return QStringLiteral("etlog_error");
+  if (status == "TIMEOUT")
+    return QStringLiteral("etlog_timer");
+  if (status == "SKIPPED")
+    return QStringLiteral("etlog_skip");
   return QStringLiteral("etlog_pending");
 }
 
 QColor EtlogViewerWidget::colorForStatus(const QString& status) {
   bool dark = ThemeManager::instance().isDarkTheme();
-  if (status == "PASS") return dark ? QColor(129, 199, 132) : QColor(76, 175, 80);
-  if (status == "FAIL") return dark ? QColor(229, 115, 115) : QColor(244, 67, 54);
-  if (status == "ERROR") return dark ? QColor(239, 83, 80) : QColor(183, 28, 28);
-  if (status == "TIMEOUT") return dark ? QColor(255, 183, 77) : QColor(255, 152, 0);
-  if (status == "SKIPPED") return dark ? QColor(189, 189, 189) : QColor(158, 158, 158);
+  if (status == "PASS")
+    return dark ? QColor(129, 199, 132) : QColor(76, 175, 80);
+  if (status == "FAIL")
+    return dark ? QColor(229, 115, 115) : QColor(244, 67, 54);
+  if (status == "ERROR")
+    return dark ? QColor(239, 83, 80) : QColor(183, 28, 28);
+  if (status == "TIMEOUT")
+    return dark ? QColor(255, 183, 77) : QColor(255, 152, 0);
+  if (status == "SKIPPED")
+    return dark ? QColor(189, 189, 189) : QColor(158, 158, 158);
   return dark ? QColor(97, 97, 97) : QColor(189, 189, 189);
 }
 
 void EtlogViewerWidget::refreshIcons() {
   // 1. 刷新标题栏图标
-  icon_title_->setPixmap(
-      AppIconProvider::instance().icon(QStringLiteral("etlog_chart"))
-          .pixmap(16, 16));
+  icon_title_->setPixmap(AppIconProvider::instance()
+                             .icon(QStringLiteral("etlog_chart"))
+                             .pixmap(16, 16));
 
   // 2. 刷新用例列表图标
   for (int i = 0; i < case_list_->count(); ++i) {

@@ -31,23 +31,39 @@ QListView#WelcomeRecentList {
     border: none;
 }
 
-/* ==================== ValueLabelWidget ==================== */
-#ValueLabelTitle {
-    font-weight: bold;
-    font-size: 12px;
+/* ==================== QLineEdit ==================== */
+QLineEdit {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid #D0D0DD;
+  border-radius: 8px;
+  padding: 4px 12px;
+  color: #333333;
+  selection-background-color: #007ACC;
 }
-#ValueLabelValue {
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
+QLineEdit:focus {
+  border-color: #007ACC;
+  background-color: #FFFFFF;
 }
-#ValueLabelRaw {
-    font-size: 10px;
-    color: #888;
+QLineEdit[error="true"] {
+  border: 1.5px solid #D13438;
 }
-#ValueLabelTs {
-    font-size: 9px;
-    color: #aaa;
+
+/* ==================== QTextEdit ==================== */
+QTextEdit {
+  background-color: rgba(255, 255, 255, 0.85);
+  border:none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #333333;
+  selection-background-color: #007ACC;
+}
+QTextEdit:focus {
+    border: 1px solid #007ACC;
+}
+
+QTextEdit[error="true"],
+QTextEdit[error="true"] {
+  border: 1.5px solid #D13438;
 }
 
 /* ==================== QScrollBar ==================== */
@@ -141,21 +157,32 @@ QSplitter::handle:vertical:pressed {
     background-color: #0055aa; 
 }
 
-/* ==================== QLineEdit ==================== */
-QLineEdit {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 8px;
-  padding: 4px 12px;
-  color: #333333;
-  selection-background-color: #007ACC;
+/* ==================== QScrollArea ==================== */
+QScrollArea {
+    border: none;
+    background: transparent;
 }
-QLineEdit:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
+QScrollArea > QWidget {
+    background-color: transparent;
 }
-QLineEdit[error="true"] {
-  border: 1.5px solid #D13438;
+
+/* ==================== ValueLabelWidget ==================== */
+#ValueLabelTitle {
+    font-weight: bold;
+    font-size: 12px;
+}
+#ValueLabelValue {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+#ValueLabelRaw {
+    font-size: 10px;
+    color: #888;
+}
+#ValueLabelTs {
+    font-size: 9px;
+    color: #aaa;
 }
 
 /* ==================== QMainWindow separator ==================== */
@@ -734,7 +761,7 @@ etest--app--SidebarContentWidget {
     border:1px solid #D0D0D0;
     border-radius:8px;
 }
-#sidebarTitleBar {
+etest--app--SidebarContentWidget #sidebarTitleBar {
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
 }
@@ -752,16 +779,10 @@ etest--app--SidebarContentWidget {
 }
 
 /* ==================== bottomContainerWidget ==================== */
-#bottomContainerWidget {
+etest--app--BottomContainerWidget {
     background-color: transparent;
     border-radius: 8px;
     border: 1px solid #D0D0D0;
-}
-
-etest--app--BottomContainerWidget {
-    background: transparent;
-    background-color: transparent;
-    border: none;
 }
 
 /* ==================== Tab Close Button ==================== */
@@ -791,16 +812,6 @@ etest--app--SidebarNavWidget QToolButton:checked {
 QWidget#PhPlaceholder {
     background-color: #F5F5F5;
     border-radius: 8px;
-}
-QScrollArea#PhScrollArea {
-    background-color: transparent;
-    border: none;
-}
-QScrollArea#PhScrollArea > QWidget > QWidget {
-    background-color: transparent;
-}
-QWidget#ScrollAreaContent {
-    background-color: transparent;
 }
 
 /* 空态提示卡（btn_grid 移除后简化） */
@@ -864,14 +875,6 @@ QStackedWidget#topologyPropertyStack {
     background-color: #FAFAFA;
 }
 
-/* IcdPropertyPanel 内部滚动区内容 */
-#icdPropertyScroll {
-    background-color: transparent;
-    border: none;
-}
-#icdPropertyScroll > QWidget > QWidget {
-    background-color: transparent;
-}
 QWidget#icdPropertyForm {
     background-color: transparent;
 }
@@ -1044,13 +1047,6 @@ etest--app--SettingsDialog QListWidget::item:selected {
     color: #0078D4;
 }
 
-/* 右侧页面容器 */
-/* 右侧平铺滚动区 */
-etest--app--SettingsDialog QScrollArea {
-    background: transparent;
-    border: none;
-}
-
 /* 设置卡片 */
 QWidget#SettingsCard {
     background-color: #FAFAFA;
@@ -1110,18 +1106,6 @@ etest--app--SettingsDialog QLabel {
     background-color: transparent;
 }
 
-/* 滚动区（外观页内嵌） */
-etest--app--SettingsDialog QScrollArea {
-    background-color: #FFFFFF;
-    border: none;
-}
-etest--app--SettingsDialog QScrollArea > QWidget {
-    background-color: #FFFFFF;
-}
-etest--app--SettingsDialog QScrollArea > QWidget > QWidget {
-    background-color: #FFFFFF;
-}
-
 /* 按钮 */
 QPushButton {
     background-color: #0078D4;
@@ -1165,12 +1149,6 @@ etest--app--EtlogViewerWidget {
 #etlogEmptyLabel {
     color: #999999;
     font-size: 16px;
-}
-#etlogDetailScroll {
-    background-color: #FFFFFF;
-}
-#etlogDetailViewport {
-    background-color: #FFFFFF;
 }
 #etlogDetailInner {
     background-color: #FFFFFF;
@@ -1775,23 +1753,6 @@ QComboBox[frameless="true"]:focus {
 }
 /* ===== QComboBox 主题适配样式 END ===== */
 
-/* ===== QScrollArea 主题适配样式 START ===== */
-QScrollArea {
-    border: none;
-    background: transparent;
-}
-QScrollArea > QWidget > QWidget {
-    background: transparent;
-}
-#protocolPropertyPanel{
-    background-color: #FFFFFF;
-}
-
-#ScrollAreaContent {
-    background-color: transparent;
-}
-/* ===== QScrollArea 主题适配样式 END ===== */
-
 /* ===== QGroupBox 主题适配样式 START ===== */
 QGroupBox {
     background-color: #FAFAFA;
@@ -1969,8 +1930,7 @@ QGroupBox[selected="true"] {
 #wizardCreateBtn:hover {
   background-color: #0A6E0A;
 }
-/* ===== NewProjectWizard 向导 (自动生成, 勿手改) END ===== */
-/* ===== TestProgramWizard 向导 (自动生成, 勿手改) START ===== */
+
 #tpWizardCard {
   background-color: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(0, 0, 0, 0.07);
@@ -1980,25 +1940,6 @@ QGroupBox[selected="true"] {
 #tpInfoIntro {
   color: #888888;
   font-size: 14px;
-}
-QTextEdit#progDescEdit,
-QTextEdit#progPrecondEdit {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 10px;
-  padding: 8px 10px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-QTextEdit#progDescEdit:focus,
-QTextEdit#progPrecondEdit:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
-}
-
-QTextEdit#progDescEdit[error="true"],
-QTextEdit#progPrecondEdit[error="true"] {
-  border: 1.5px solid #D13438;
 }
 
 #tpFieldLabel {
@@ -2166,19 +2107,6 @@ QTextEdit#progPrecondEdit[error="true"] {
   font-weight: 500;
 }
 
-QTextEdit#frameDescEdit {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1.5px solid #D0D0DD;
-  border-radius: 10px;
-  padding: 8px 10px;
-  color: #333333;
-  selection-background-color: #007ACC;
-}
-QTextEdit#frameDescEdit:focus {
-  border-color: #007ACC;
-  background-color: #FFFFFF;
-}
-
 #fieldTable {
   background-color: transparent;
   border: none;
@@ -2296,10 +2224,6 @@ QTextEdit#frameDescEdit:focus {
   background-color: rgba(255, 255, 255, 0.78);
   padding: 2px 10px;
   border-radius: 12px;
-}
-#topoScroll {
-  background-color: transparent;
-  border: none;
 }
 #topoEmptyHint {
   color: #AAAAAA;

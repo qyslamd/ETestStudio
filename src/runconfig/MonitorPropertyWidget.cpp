@@ -15,11 +15,14 @@ namespace etest::runconfig {
 
 namespace {
 const int kConnectionIdRole = Qt::UserRole + 1;
-const char* const kDisplayModes[] = {"waveform", "led", "meter", "gauge", "frame"};
-const char* const kDisplayNames[] = {"波形", "LED", "数字表", "指针表", "帧数据"};
+const char* const kDisplayModes[] = {"waveform", "led", "meter", "gauge",
+                                     "frame"};
+const char* const kDisplayNames[] = {"波形", "LED", "数字表", "指针表",
+                                     "帧数据"};
 }  // namespace
 
-MonitorPropertyWidget::MonitorPropertyWidget(QWidget* parent) : QWidget(parent) {
+MonitorPropertyWidget::MonitorPropertyWidget(QWidget* parent)
+    : QWidget(parent) {
   auto* outer = new QVBoxLayout(this);
   outer->setContentsMargins(0, 0, 0, 0);
 
@@ -72,9 +75,8 @@ MonitorPropertyWidget::MonitorPropertyWidget(QWidget* parent) : QWidget(parent) 
     }
     emit nameChanged(monitor_id_, t);
   });
-  connect(type_combo_,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this](int index) {
+  connect(type_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int index) {
             if (loading_ || monitor_id_.isEmpty()) {
               return;
             }
@@ -88,16 +90,17 @@ MonitorPropertyWidget::MonitorPropertyWidget(QWidget* parent) : QWidget(parent) 
     }
     rebuildConnectionList(conns_, current_connection_, bound_);
   });
-  connect(conn_list_, &QListView::clicked, this, [this](const QModelIndex& idx) {
-    if (loading_ || monitor_id_.isEmpty()) {
-      return;
-    }
-    const QString cid = idx.data(kConnectionIdRole).toString();
-    if (cid.isEmpty()) {
-      return;
-    }
-    emit connectionBound(monitor_id_, cid);
-  });
+  connect(conn_list_, &QListView::clicked, this,
+          [this](const QModelIndex& idx) {
+            if (loading_ || monitor_id_.isEmpty()) {
+              return;
+            }
+            const QString cid = idx.data(kConnectionIdRole).toString();
+            if (cid.isEmpty()) {
+              return;
+            }
+            emit connectionBound(monitor_id_, cid);
+          });
   connect(delete_btn_, &QPushButton::clicked, this, [this]() {
     if (!monitor_id_.isEmpty()) {
       emit deleteRequested(monitor_id_);
@@ -146,7 +149,8 @@ void MonitorPropertyWidget::clear() {
 
 void MonitorPropertyWidget::rebuildConnectionList(
     const QList<QPair<QString, QString>>& connections,
-    const QString& currentConnectionId, const QSet<QString>& boundConnectionIds) {
+    const QString& currentConnectionId,
+    const QSet<QString>& boundConnectionIds) {
   conn_model_->clear();
   const QString filter = search_box_->text().trimmed();
   for (const auto& conn : connections) {

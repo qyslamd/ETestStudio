@@ -9,13 +9,14 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#include "ThemeManager.h"
 #include "backup/BackupManager.h"
 #include "config/ConfigDefs.h"
 #include "config/ConfigManager.h"
 #include "core_ui/AppIconProvider.h"
-#include "ThemeManager.h"
 #include "utils/switch_button.h"
 #include "version.h"
+
 
 namespace etest::app {
 
@@ -53,8 +54,8 @@ void SettingsDialog::initUi() {
   titleGroup->setSpacing(0);
   auto* titleLabel = new QLabel(QStringLiteral("设置"), content);
   titleLabel->setObjectName(QStringLiteral("SettingsTitleText"));
-  auto* subtitleLabel = new QLabel(
-      QStringLiteral("ETest Studio · 自动化测试系统"), content);
+  auto* subtitleLabel =
+      new QLabel(QStringLiteral("ETest Studio · 自动化测试系统"), content);
   subtitleLabel->setObjectName(QStringLiteral("SettingsTitleSub"));
   titleGroup->addWidget(titleLabel);
   titleGroup->addWidget(subtitleLabel);
@@ -152,15 +153,14 @@ void SettingsDialog::initUi() {
   scroll_area_->setFrameShape(QFrame::NoFrame);
 
   auto* scrollContent = new QWidget();
-  scrollContent->setObjectName(QStringLiteral("ScrollAreaContent"));
   scroll_area_->setWidget(scrollContent);
   auto* scrollLayout = new QVBoxLayout(scrollContent);
   scrollLayout->setContentsMargins(0, 0, 0, 0);
   scrollLayout->setSpacing(0);
 
-  page_widgets_ = {createGeneralPage(),   createEditorPage(),
-                   createTerminalPage(),  createAppearancePage(),
-                   createProjectPage(),   createBackupPage(),
+  page_widgets_ = {createGeneralPage(),  createEditorPage(),
+                   createTerminalPage(), createAppearancePage(),
+                   createProjectPage(),  createBackupPage(),
                    createAboutPage()};
   for (QWidget* page : page_widgets_) {
     scrollLayout->addWidget(page);
@@ -214,37 +214,37 @@ void SettingsDialog::initSignals() {
 
   connect(btn_close_, &QPushButton::clicked, this, &QDialog::reject);
 
-  // 主题切换后刷新导航图标与 Toggle on 色（对话框复用，构造时烧入的值需跟随主题）
-  connect(&etest::core_ui::ThemeManager::instance(),
-          &etest::core_ui::ThemeManager::themeChanged, this, [this](bool) {
-            for (int i = 0; i < list_->count(); ++i) {
-              QListWidgetItem* item = list_->item(i);
-              const QString iconName = item->data(Qt::UserRole + 1).toString();
-              if (!iconName.isEmpty()) {
-                item->setIcon(
-                    etest::core_ui::AppIconProvider::instance().icon(iconName));
-              }
-              // 分组标签前景随主题刷新
-              if (item->data(Qt::UserRole).toInt() < 0) {
-                item->setForeground(
-                    etest::core_ui::ThemeManager::instance()
-                        .secondaryTextColor());
-              }
-            }
-            if (title_icon_) {
-              title_icon_->setPixmap(
-                  etest::core_ui::AppIconProvider::instance()
-                      .icon(QStringLiteral("welcome"))
-                      .pixmap(18, 18));
-            }
-            const QColor accent =
-                etest::core_ui::ThemeManager::instance().accentColor();
-            for (QAbstractButton* btn : check_map_) {
-              if (auto* sw = qobject_cast<SwitchButton*>(btn)) {
-                sw->setOnBackground(accent);
-              }
-            }
-          });
+  // 主题切换后刷新导航图标与 Toggle on
+  // 色（对话框复用，构造时烧入的值需跟随主题）
+  connect(
+      &etest::core_ui::ThemeManager::instance(),
+      &etest::core_ui::ThemeManager::themeChanged, this, [this](bool) {
+        for (int i = 0; i < list_->count(); ++i) {
+          QListWidgetItem* item = list_->item(i);
+          const QString iconName = item->data(Qt::UserRole + 1).toString();
+          if (!iconName.isEmpty()) {
+            item->setIcon(
+                etest::core_ui::AppIconProvider::instance().icon(iconName));
+          }
+          // 分组标签前景随主题刷新
+          if (item->data(Qt::UserRole).toInt() < 0) {
+            item->setForeground(
+                etest::core_ui::ThemeManager::instance().secondaryTextColor());
+          }
+        }
+        if (title_icon_) {
+          title_icon_->setPixmap(etest::core_ui::AppIconProvider::instance()
+                                     .icon(QStringLiteral("welcome"))
+                                     .pixmap(18, 18));
+        }
+        const QColor accent =
+            etest::core_ui::ThemeManager::instance().accentColor();
+        for (QAbstractButton* btn : check_map_) {
+          if (auto* sw = qobject_cast<SwitchButton*>(btn)) {
+            sw->setOnBackground(accent);
+          }
+        }
+      });
 }
 
 // =========================================================================
@@ -264,8 +264,9 @@ QWidget* SettingsDialog::createGeneralPage() {
 
   // 日志级别（int 值存 userData，仿主题下拉写法）
   {
-    auto* rightLayout = addSettingRow(cardLog, QStringLiteral("日志级别"),
-                                      QStringLiteral("记录到日志文件的最低级别"));
+    auto* rightLayout =
+        addSettingRow(cardLog, QStringLiteral("日志级别"),
+                      QStringLiteral("记录到日志文件的最低级别"));
     auto* combo = new QComboBox();
     combo->addItem(QStringLiteral("调试"), 0);
     combo->addItem(QStringLiteral("信息"), 1);
@@ -293,8 +294,9 @@ QWidget* SettingsDialog::createGeneralPage() {
 
   // 单文件大小上限（配置存字节，UI 以 MB 编辑，需手动转换）
   {
-    auto* rightLayout = addSettingRow(cardLog, QStringLiteral("单文件大小上限"),
-                                      QStringLiteral("单个日志文件的最大体积（MB）"));
+    auto* rightLayout =
+        addSettingRow(cardLog, QStringLiteral("单文件大小上限"),
+                      QStringLiteral("单个日志文件的最大体积（MB）"));
     auto* spin = new QSpinBox();
     spin->setRange(1, 512);
     spin->setSingleStep(1);
@@ -320,8 +322,7 @@ QWidget* SettingsDialog::createGeneralPage() {
                 CONFIG_LOG_DEFAULT_MAX_FILE_COUNT);
   addSpinBoxRow(cardLog, QStringLiteral("保留天数"),
                 QStringLiteral("超过该天数的日志文件将被清理"),
-                CONFIG_LOG_KEEP_DAYS, 1, 365, 1,
-                CONFIG_LOG_DEFAULT_KEEP_DAYS);
+                CONFIG_LOG_KEEP_DAYS, 1, 365, 1, CONFIG_LOG_DEFAULT_KEEP_DAYS);
 
   // --- 默认保存目录 card ---
   auto* cardPath = createSettingsCard(page, QStringLiteral("默认保存目录"));
@@ -666,7 +667,8 @@ QWidget* SettingsDialog::createBackupPage() {
   return page;
 }
 
-void SettingsDialog::addPageHeader(QVBoxLayout* layout, const QString& title,
+void SettingsDialog::addPageHeader(QVBoxLayout* layout,
+                                   const QString& title,
                                    const QString& subtitle) {
   auto* titleLabel = new QLabel(title, layout->parentWidget());
   titleLabel->setObjectName(QStringLiteral("SettingsPageTitle"));
@@ -705,15 +707,13 @@ QWidget* SettingsDialog::createAboutPage() {
   nameLabel->setAlignment(Qt::AlignCenter);
   cardLayout->addWidget(nameLabel);
 
-  auto* versionLabel =
-      new QLabel(QStringLiteral("版本 %1 · 自动化测试系统").arg(PROJECT_VERSION),
-                 card);
+  auto* versionLabel = new QLabel(
+      QStringLiteral("版本 %1 · 自动化测试系统").arg(PROJECT_VERSION), card);
   versionLabel->setObjectName(QStringLiteral("SettingsAboutVersion"));
   versionLabel->setAlignment(Qt::AlignCenter);
   cardLayout->addWidget(versionLabel);
 
-  auto* copyright =
-      new QLabel(QStringLiteral("Copyright © 2026 ETest"), card);
+  auto* copyright = new QLabel(QStringLiteral("Copyright © 2026 ETest"), card);
   copyright->setObjectName(QStringLiteral("SettingsAboutCopyright"));
   copyright->setAlignment(Qt::AlignCenter);
   cardLayout->addWidget(copyright);
@@ -809,9 +809,11 @@ QSpinBox* SettingsDialog::addSpinBoxRow(QWidget* parent,
   return spin;
 }
 
-QAbstractButton* SettingsDialog::addCheckBoxRow(
-    QWidget* parent, const QString& title, const QString& description,
-    const QString& configKey, bool defaultVal) {
+QAbstractButton* SettingsDialog::addCheckBoxRow(QWidget* parent,
+                                                const QString& title,
+                                                const QString& description,
+                                                const QString& configKey,
+                                                bool defaultVal) {
   auto* rightLayout = addSettingRow(parent, title, description);
 
   // Fluent Toggle（SwitchButton 自绘滑块），on=主题 accent、off=中性灰

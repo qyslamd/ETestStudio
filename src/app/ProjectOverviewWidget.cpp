@@ -85,7 +85,6 @@ void ProjectOverviewWidget::initUi() {
   scroll_area->setObjectName(QStringLiteral("PhScrollArea"));
 
   auto* scroll_content = new QWidget();
-  scroll_content->setObjectName(QStringLiteral("ScrollAreaContent"));
   auto* sc_layout = new QVBoxLayout(scroll_content);
   sc_layout->setContentsMargins(12, 8, 12, 8);
   sc_layout->setSpacing(16);
@@ -1001,8 +1000,7 @@ void ProjectOverviewWidget::onTreeEditStarted(const QModelIndex& index) {
   }
   // F2 / 延迟点击触发的编辑没有右键菜单的前置记录，补记旧路径；
   // 右键菜单「重命名」路径已设置过，此处覆盖为同一值，无害
-  rename_old_path_ =
-      absolutePath(item->data(RelativePathRole).toString());
+  rename_old_path_ = absolutePath(item->data(RelativePathRole).toString());
 }
 
 // ── 文件操作 ──

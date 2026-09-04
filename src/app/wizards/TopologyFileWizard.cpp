@@ -730,7 +730,6 @@ void TopologyFileWizard::DeviceUutPage::initUi() {
   devLay->addLayout(devHead);
 
   auto* devScroll = new QScrollArea(devPool);
-  devScroll->setObjectName(QStringLiteral("topoScroll"));
   devScroll->setWidgetResizable(true);
   devScroll->setFrameShape(QFrame::NoFrame);
   auto* devContent = new QWidget(devScroll);
@@ -793,7 +792,6 @@ void TopologyFileWizard::DeviceUutPage::initUi() {
   uutLay->addLayout(uutHead);
 
   auto* uutScroll = new QScrollArea(uutPool);
-  uutScroll->setObjectName(QStringLiteral("topoScroll"));
   uutScroll->setWidgetResizable(true);
   uutScroll->setFrameShape(QFrame::NoFrame);
   auto* uutContent = new QWidget(uutScroll);

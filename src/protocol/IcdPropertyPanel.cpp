@@ -30,12 +30,10 @@ void IcdPropertyPanel::initUi() {
 
   // -- Scrollable form container --
   auto* scroll = new QScrollArea(this);
-  scroll->setObjectName(QStringLiteral("icdPropertyScroll"));
   scroll->setWidgetResizable(true);
   scroll->setFrameShape(QFrame::NoFrame);
 
   form_widget_ = new QWidget(this);
-  form_widget_->setObjectName(QStringLiteral("ScrollAreaContent"));
   form_layout_ = new QFormLayout(form_widget_);
   form_layout_->setContentsMargins(8, 8, 8, 8);
   form_layout_->setSpacing(6);

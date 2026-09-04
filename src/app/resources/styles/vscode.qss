@@ -991,12 +991,6 @@ etest--app--EtlogViewerWidget {
     color: #858585;
     font-size: 16px;
 }
-#etlogDetailScroll {
-    background-color: #1E1E1E;
-}
-#etlogDetailViewport {
-    background-color: #1E1E1E;
-}
 #etlogDetailInner {
     background-color: #1E1E1E;
 }
@@ -1421,23 +1415,14 @@ etest--app--SettingsDialog QListWidget::item:selected {
     color: #4AA8FF;
 }
 
-/* 右侧页面容器 */
-/* 右侧平铺滚动区 */
-etest--app--SettingsDialog QScrollArea {
-    background: transparent;
-    border: none;
-}
 
-/* 外观页内嵌滚动区 */
-etest--app--SettingsDialog QScrollArea {
-    background-color: #1E1E1E;
+/* ==================== QScrollArea ==================== */
+QScrollArea {
     border: none;
+    background: transparent;
 }
-etest--app--SettingsDialog QScrollArea > QWidget {
-    background-color: #1E1E1E;
-}
-etest--app--SettingsDialog QScrollArea > QWidget > QWidget {
-    background-color: #1E1E1E;
+QScrollArea > QWidget {
+    background-color: transparent;
 }
 
 /* 卡片容器 */
@@ -1778,16 +1763,6 @@ QWidget#PhPlaceholder {
     background-color: #252526;
     border-radius: 8px;
 }
-QScrollArea#PhScrollArea {
-    background-color: transparent;
-    border: none;
-}
-QScrollArea#PhScrollArea > QWidget > QWidget {
-    background-color: transparent;
-}
-QWidget#ScrollAreaContent {
-    background-color: transparent;
-}
 
 /* 空态提示卡（btn_grid 移除后简化） */
 QFrame#PhEmptyCard {
@@ -1837,15 +1812,6 @@ QToolButton#dockFloatButton:pressed, QToolButton#dockCloseButton:pressed {
     background: rgba(255, 255, 255, 0.18);
 }
 
-
-/* IcdPropertyPanel 内容区 */
-QScrollArea#icdPropertyScroll {
-    background-color: #252526;
-    border: none;
-}
-QScrollArea#icdPropertyScroll > QWidget > QWidget {
-    background-color: #252526;
-}
 QWidget#icdPropertyForm {
     background-color: #252526;
 }
@@ -1978,7 +1944,7 @@ QToolButton#saverCloseBtn:pressed {
     color: #808080;
 }
 
-/* ValueLabelWidget */
+/* ==================== ValueLabelWidget ==================== */
 #ValueLabelTitle {
     font-size: 12px;
     font-weight: bold;
@@ -2104,7 +2070,7 @@ QLineEdit[invalid="true"]{
     border: 1.5px solid #F44747;
 }
 
-/* ===== QTextEdit===== */
+/* ==================== EditorArea ==================== */
 QTextEdit {
   background-color: #252526;
   border: 1px solid #4A4A58;
@@ -2115,7 +2081,7 @@ QTextEdit {
 }
 
 QTextEdit:focus {
-  border: 1.5px solid #007ACC;
+  border-color:#007ACC;
 }
 
 QTextEdit[error="true"],
@@ -2512,19 +2478,6 @@ QComboBox[frameless="true"]:focus {
     background: #363637;
 }
 /* ===== QComboBox 主题适配样式 END ===== */
-
-/* ===== QScrollArea 主题适配样式 START ===== */
-QScrollArea {
-    border: none;
-    background: transparent;
-}
-QScrollArea > QWidget > QWidget {
-    background: transparent;
-}
-#ScrollAreaContent {
-    background: transparent;
-}
-/* ===== QScrollArea 主题适配样式 END ===== */
 
 /* ===== QGroupBox 主题适配样式 START ===== */
 QGroupBox {
@@ -2998,10 +2951,6 @@ QGroupBox[selected="true"] {
   background-color: rgba(32, 32, 44, 0.78);
   padding: 2px 10px;
   border-radius: 12px;
-}
-#topoScroll {
-  background-color: transparent;
-  border: none;
 }
 #topoEmptyHint {
   color: #5A5A5A;
